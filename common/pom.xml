@@ -13,55 +13,6 @@
     <version>${sesame.version}</version>
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <version>2.3.1</version>
-                <executions>
-                    <execution>
-                        <id>overseer</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <configuration>
-                            <file>${project.basedir}/lib/overseer.jar</file>
-                            <groupId>org.overseer</groupId>
-                            <artifactId>overseer</artifactId>
-                            <version>1.0</version>
-                            <packaging>jar</packaging>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>classmexer</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <configuration>
-                            <file>${project.basedir}/lib/classmexer.jar</file>
-                            <groupId>org.classmexer</groupId>
-                            <artifactId>classmexer</artifactId>
-                            <version>1.0</version>
-                            <packaging>jar</packaging>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>flink-storm</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <configuration>
-                            <file>${project.basedir}/lib/flink-storm_2.11-1.5-SNAPSHOT.jar</file>
-                            <groupId>flink-storm</groupId>
-                            <artifactId>flink-storm</artifactId>
-                            <version>1.0</version>
-                            <packaging>jar</packaging>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- Assembly -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
