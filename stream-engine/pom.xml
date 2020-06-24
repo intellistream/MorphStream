@@ -10,7 +10,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>stream-engine</artifactId>
-    <version>${sesame.version}</version>
+    <version>0.0.1</version>
 
     <build>
         <plugins>
@@ -44,6 +44,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -207,12 +208,6 @@
             <groupId>net.jodah</groupId>
             <artifactId>expiringmap</artifactId>
             <version>0.5.7</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.classmexer</groupId>
-            <artifactId>classmexer</artifactId>
-            <version>1.0</version>
         </dependency>
 
         <dependency>
