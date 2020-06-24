@@ -1,8 +1,8 @@
 package sesame.queue;
 
-import sesame.execution.ExecutionNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.execution.ExecutionNode;
 
 import java.io.Serializable;
 import java.util.HashMap;

@@ -19,7 +19,7 @@ public class cacheHitSimulator_Distribution {
     //    static int num_functionTypes;//number of types of functions.
 //    private static double total_execution_cycles;//total Brisk.execution cycles.
 //    private static double[] num_cycles_per_function;//Brisk.execution cycles per function.
-	private static int[] generate_funcTrace(int num_functionTypes, Object[] num_cycles_per_function, int total_execution_cycles) {
+    private static int[] generate_funcTrace(int num_functionTypes, Object[] num_cycles_per_function, int total_execution_cycles) {
         double rate[] = new double[num_functionTypes];
         for (int i = 0; i < num_functionTypes; i++) {
             rate[i] = (double) num_cycles_per_function[i] / total_execution_cycles;
@@ -80,7 +80,7 @@ public class cacheHitSimulator_Distribution {
         return sum;
     }
 
-	private static Vector2D cacheHit(int[] event_trace, Map<Integer, Integer> instruction_per_function, int policy) {
+    private static Vector2D cacheHit(int[] event_trace, Map<Integer, Integer> instruction_per_function, int policy) {
         final int cache_size = 32000;
         int cache_used = 0;
         int compulsory_miss = 0;

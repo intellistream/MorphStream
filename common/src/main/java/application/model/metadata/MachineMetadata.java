@@ -3,8 +3,8 @@ package application.model.metadata;
 import java.io.Serializable;
 
 public class MachineMetadata implements Serializable {
-	private static final long serialVersionUID = 293204186702629110L;
-	private long timestamp;
+    private static final long serialVersionUID = 293204186702629110L;
+    private long timestamp;
     private String machineIP;
 
     /* values between [0, 1] */

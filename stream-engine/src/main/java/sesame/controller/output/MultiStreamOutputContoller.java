@@ -339,8 +339,6 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
 
-
-
     @Override
     public void create_marker_boardcast(MetaGroup meta, long timestamp, long bid, int myiteration) {
 

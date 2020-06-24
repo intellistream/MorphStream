@@ -5,8 +5,8 @@ import application.helper.Event;
 import static java.lang.Math.toIntExact;
 
 public class stateless_taskImpl extends stateless_task {
-	private static final long serialVersionUID = -3037968572420543072L;
-	private final int in_core_complexity;
+    private static final long serialVersionUID = -3037968572420543072L;
+    private final int in_core_complexity;
     private final int off_core_complexity;
     //private final int number_objects = 20000000;
     //myObject[] array = new myObject[number_objects];

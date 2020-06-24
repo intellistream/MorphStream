@@ -8,9 +8,10 @@ import java.util.PriorityQueue;
  * Author: Thilina
  * Date: 11/22/14
  */
-public class RunningMedianCalculator implements Serializable {	private static final long serialVersionUID = 16L;
+public class RunningMedianCalculator implements Serializable {
+    private static final long serialVersionUID = 16L;
 
-	PriorityQueue<Double> upperQueue;
+    PriorityQueue<Double> upperQueue;
     PriorityQueue<Double> lowerQueue;
 
     public RunningMedianCalculator() {

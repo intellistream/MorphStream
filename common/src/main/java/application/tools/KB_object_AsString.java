@@ -10,8 +10,8 @@ import java.util.ArrayList;
  * Use char as the basic element.
  */
 public class KB_object_AsString extends object {
-	private static final long serialVersionUID = -397143864082731725L;
-	char[] value;
+    private static final long serialVersionUID = -397143864082731725L;
+    char[] value;
 
     public KB_object_AsString() {
         value = new char[KB / 2];//each char occupy two bytes in java.

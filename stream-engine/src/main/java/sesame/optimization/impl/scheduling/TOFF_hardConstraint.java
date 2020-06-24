@@ -1,13 +1,13 @@
 package sesame.optimization.impl.scheduling;
 
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.ExecutionNode;
 import sesame.optimization.impl.PlanScheduler;
 import sesame.optimization.impl.SchedulingPlan;
 import sesame.optimization.model.Constraints;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 

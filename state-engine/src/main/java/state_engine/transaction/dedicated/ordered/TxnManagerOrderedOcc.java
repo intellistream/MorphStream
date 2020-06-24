@@ -1,16 +1,19 @@
 package state_engine.transaction.dedicated.ordered;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.OrderValidate;
 import state_engine.content.Content;
-import state_engine.storage.*;
+import state_engine.storage.SchemaRecord;
+import state_engine.storage.SchemaRecordRef;
+import state_engine.storage.StorageManager;
+import state_engine.storage.TableRecord;
 import state_engine.transaction.dedicated.TxnManagerDedicated;
 import state_engine.transaction.impl.Epoch;
 import state_engine.transaction.impl.GlobalTimestamp;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 
@@ -30,7 +33,6 @@ public class TxnManagerOrderedOcc extends TxnManagerDedicated {
 
         this.orderValidate = orderValidate;
     }
-
 
 
     @Override

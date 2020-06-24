@@ -27,7 +27,11 @@ import static state_engine.profiler.Metrics.NUM_ITEMS;
 public class GSCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(GSCombo.class);
     private static final long serialVersionUID = -2394340130331865581L;
-
+    int concurrency = 0;
+    int pre_concurrency = 0;
+    int[] concerned_length = new int[]{40};
+    int cnt = 0;
+    ArrayDeque<MicroEvent> prevents = new ArrayDeque<>();
     public GSCombo() {
         super(LOG, 0);
     }
@@ -95,13 +99,6 @@ public class GSCombo extends SPOUTCombo {
         if (enable_debug)
             show_stats();
     }
-
-    int concurrency = 0;
-    int pre_concurrency = 0;
-    int[] concerned_length = new int[]{40};
-    int cnt = 0;
-
-    ArrayDeque<MicroEvent> prevents = new ArrayDeque<>();
 
     private boolean key_conflict(int pre_key, int key) {
         return pre_key == key;

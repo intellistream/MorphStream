@@ -37,10 +37,10 @@ public class SlidingWindow {
         Random rnd = new Random(12345);
         for (int i = 0; i < 100; i++) {
             window.add(new SlidingWindowEntryImpl(start), entries -> {
-				for (SlidingWindowEntry e : entries) {
-					//System.out.println("Removed " + e.getTime());
-				}
-			});
+                for (SlidingWindowEntry e : entries) {
+                    //System.out.println("Removed " + e.getTime());
+                }
+            });
             start = start + rnd.nextInt(5);
             try {
                 Thread.sleep(2000);

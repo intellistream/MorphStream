@@ -14,8 +14,8 @@ import java.util.Random;
  * let's change it to 1 KB that is 1*1024 bytes.
  */
 public class KB_object implements Serializable {
-	private static final long serialVersionUID = -9073964378669329849L;
-	final int MB = 1024 * 1024;
+    private static final long serialVersionUID = -9073964378669329849L;
+    final int MB = 1024 * 1024;
     final int KB = 1024;
 
     byte[] value;

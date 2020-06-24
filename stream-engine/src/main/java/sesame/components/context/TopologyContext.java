@@ -1,5 +1,6 @@
 package sesame.components.context;
 
+import ch.usi.overseer.OverHpc;
 import sesame.components.TopologyComponent;
 import sesame.components.grouping.Grouping;
 import sesame.controller.input.InputStreamController;
@@ -8,7 +9,6 @@ import sesame.execution.ExecutionNode;
 import sesame.execution.runtime.executorThread;
 import sesame.execution.runtime.tuple.impl.Fields;
 import sesame.optimization.ExecutionPlan;
-import ch.usi.overseer.OverHpc;
 import state_engine.Database;
 
 import java.util.ArrayList;
@@ -175,7 +175,6 @@ public class TopologyContext {
             }
         }
     }
-
 
 
     public void Sequential_stopAll() {

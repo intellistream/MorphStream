@@ -1,9 +1,9 @@
 package sesame.components.operators.api;
 
 import application.util.Configuration;
+import org.slf4j.Logger;
 import sesame.components.windowing.TimestampExtractor;
 import sesame.components.windowing.TupleFieldTimestampExtractor;
-import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -43,12 +43,12 @@ public class OfflineTraining {
     }
 
     private static void printUsage() {
-		System.out.print(
-				"Usage: java -cp <jar-file> OfflineTraining <command>\n"
-						+ "Commands:\n"
-						+ "  train <input-path> <output-path>\n"
-						+ "  check <wordmap-path>\n"
-		);
+        System.out.print(
+                "Usage: java -cp <jar-file> OfflineTraining <command>\n"
+                        + "Commands:\n"
+                        + "  train <input-path> <output-path>\n"
+                        + "  check <wordmap-path>\n"
+        );
     }
 
     public static void main(String args[]) throws IOException {

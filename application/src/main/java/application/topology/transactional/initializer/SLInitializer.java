@@ -4,6 +4,8 @@ import application.param.sl.DepositEvent;
 import application.param.sl.TransactionEvent;
 import application.util.Configuration;
 import application.util.OsUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.Database;
 import state_engine.DatabaseException;
 import state_engine.common.SpinLock;
@@ -13,8 +15,6 @@ import state_engine.storage.datatype.DataBox;
 import state_engine.storage.datatype.LongDataBox;
 import state_engine.storage.datatype.StringDataBox;
 import state_engine.storage.table.RecordSchema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import state_engine.transaction.TableInitilizer;
 
 import java.io.BufferedWriter;
@@ -23,15 +23,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.SplittableRandom;
 
 import static application.CONTROL.NUM_EVENTS;
 import static application.CONTROL.enable_states_partition;
 import static application.Constants.Event_Path;
 import static application.constants.StreamLedgerConstants.Constant.*;
-import static state_engine.transaction.State.configure_store;
-import static state_engine.transaction.State.partioned_store;
-import static state_engine.transaction.State.shared_store;
+import static state_engine.transaction.State.*;
 import static state_engine.utils.PartitionHelper.getPartition_interval;
 import static xerial.jnuma.Numa.setLocalAlloc;
 
@@ -50,7 +51,7 @@ public class SLInitializer extends TableInitilizer {
         int partition_interval = getPartition_interval();
         int left_bound = thread_id * partition_interval;
         int right_bound;
-        if (thread_id == NUM_TASK  - 1) {//last executor need to handle left-over
+        if (thread_id == NUM_TASK - 1) {//last executor need to handle left-over
             right_bound = NUM_ACCOUNTS;
         } else {
             right_bound = (thread_id + 1) * partition_interval;
@@ -65,10 +66,6 @@ public class SLInitializer extends TableInitilizer {
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
-
-
-
-
 
 
     @Override
@@ -249,9 +246,6 @@ public class SLInitializer extends TableInitilizer {
     }
 
 
-
-
-
     @Override
     public boolean Prepared(String file) throws IOException {
         String event_path = Event_Path
@@ -411,7 +405,6 @@ public class SLInitializer extends TableInitilizer {
 
 
     /**
-     *
      * @param partition_id
      * @param bid_array
      * @param number_of_partitions

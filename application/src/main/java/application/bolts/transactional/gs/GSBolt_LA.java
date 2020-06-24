@@ -2,9 +2,9 @@ package application.bolts.transactional.gs;
 
 import application.param.mb.MicroEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
 import state_engine.DatabaseException;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
 
 import static state_engine.profiler.MeasureTools.*;
 

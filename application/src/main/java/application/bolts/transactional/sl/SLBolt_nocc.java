@@ -4,6 +4,8 @@ package application.bolts.transactional.sl;
 import application.param.sl.DepositEvent;
 import application.param.sl.TransactionEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.collector.OutputCollector;
@@ -11,8 +13,6 @@ import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.faulttolerance.impl.ValueState;
 import state_engine.DatabaseException;
 import state_engine.transaction.dedicated.TxnManagerNoLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -27,7 +27,7 @@ public class SLBolt_nocc extends SLBolt {
     private static final long serialVersionUID = -5968750340131744744L;
 
     public SLBolt_nocc(int fid, SINKCombo sink) {
-        super(LOG, fid,sink);
+        super(LOG, fid, sink);
         state = new ValueState();
     }
 

@@ -45,27 +45,33 @@ import sesame.execution.runtime.tuple.impl.Fields;
  * @author mjsax
  */
 public final class PositionReport extends AbstractInputTuple implements IPositionIdentifier, ISegmentIdentifier {
-    private final static long serialVersionUID = -4386109322233754497L;
-
-    // attribute indexes
-    /** The index of the speed attribute. */
+    /**
+     * The index of the speed attribute.
+     */
     public final static int SPD_IDX = 3;
 
-    /** The index of the express way attribute. */
+    // attribute indexes
+    /**
+     * The index of the express way attribute.
+     */
     public final static int XWAY_IDX = 4;
-
-    /** The index of the lane attribute. */
+    /**
+     * The index of the lane attribute.
+     */
     public final static int LANE_IDX = 5;
-
-    /** The index of the direction attribute. */
+    /**
+     * The index of the direction attribute.
+     */
     public final static int DIR_IDX = 6;
-
-    /** The index of the segment attribute. */
+    /**
+     * The index of the segment attribute.
+     */
     public final static int SEG_IDX = 7;
-
-    /** The index of the position attribute. */
+    /**
+     * The index of the position attribute.
+     */
     public final static int POS_IDX = 8;
-
+    private final static long serialVersionUID = -4386109322233754497L;
 
 
     public PositionReport() {
@@ -75,22 +81,14 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
     /**
      * Instantiates a new position record for the given attributes.
      *
-     * @param time
-     *            the time at which the position record was emitted (in LRB seconds)
-     * @param vid
-     *            the vehicle identifier
-     * @param speed
-     *            the current speed of the vehicle
-     * @param xway
-     *            the current expressway
-     * @param lane
-     *            the lane of the expressway
-     * @param direction
-     *            the traveling direction
-     * @param segment
-     *            the mile-long segment of the highway
-     * @param position
-     *            the horizontal position on the expressway
+     * @param time      the time at which the position record was emitted (in LRB seconds)
+     * @param vid       the vehicle identifier
+     * @param speed     the current speed of the vehicle
+     * @param xway      the current expressway
+     * @param lane      the lane of the expressway
+     * @param direction the traveling direction
+     * @param segment   the mile-long segment of the highway
+     * @param position  the horizontal position on the expressway
      */
     public PositionReport(Short time, Integer vid, Integer speed, Integer xway, Short lane, Short direction,
                           Short segment, Integer position) {
@@ -113,8 +111,21 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
         assert (super.size() == 9);
     }
 
+    /**
+     * Returns the schema of a {@link PositionReport}.
+     *
+     * @return the schema of a {@link PositionReport}
+     */
+    public static Fields getSchema() {
+        return new Fields(LRTopologyControl.TYPE_FIELD_NAME, LRTopologyControl.TIMESTAMP_FIELD_NAME,
+                LRTopologyControl.VEHICLE_ID_FIELD_NAME, LRTopologyControl.SPEED_FIELD_NAME, LRTopologyControl.XWAY_FIELD_NAME,
+                LRTopologyControl.LANE_FIELD_NAME, LRTopologyControl.DIRECTION_FIELD_NAME, LRTopologyControl.SEGMENT_FIELD_NAME,
+                LRTopologyControl.POSITION_FIELD_NAME);
+    }
 
-
+    public static Fields getLatencySchema() {
+        return null;
+    }
 
     /**
      * Returns the vehicle's speed of this {@link PositionReport}.
@@ -122,7 +133,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      * @return the speed of this position report
      */
     public final Integer getSpeed() {
-        return (Integer)super.get(SPD_IDX);
+        return (Integer) super.get(SPD_IDX);
     }
 
     /**
@@ -132,7 +143,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      */
     @Override
     public final Integer getXWay() {
-        return (Integer)super.get(XWAY_IDX);
+        return (Integer) super.get(XWAY_IDX);
     }
 
     /**
@@ -142,7 +153,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      */
     @Override
     public final Short getLane() {
-        return (Short)super.get(LANE_IDX);
+        return (Short) super.get(LANE_IDX);
     }
 
     /**
@@ -152,7 +163,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      */
     @Override
     public final Short getDirection() {
-        return (Short)super.get(DIR_IDX);
+        return (Short) super.get(DIR_IDX);
     }
 
     /**
@@ -162,7 +173,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      */
     @Override
     public final Short getSegment() {
-        return (Short)super.get(SEG_IDX);
+        return (Short) super.get(SEG_IDX);
     }
 
     /**
@@ -172,7 +183,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      */
     @Override
     public final Integer getPosition() {
-        return (Integer)super.get(POS_IDX);
+        return (Integer) super.get(POS_IDX);
     }
 
     /**
@@ -193,21 +204,5 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
         PositionReport pr = new PositionReport();
         pr.addAll(this);
         return pr;
-    }
-
-    /**
-     * Returns the schema of a {@link PositionReport}.
-     *
-     * @return the schema of a {@link PositionReport}
-     */
-    public static Fields getSchema() {
-        return new Fields(LRTopologyControl.TYPE_FIELD_NAME, LRTopologyControl.TIMESTAMP_FIELD_NAME,
-                LRTopologyControl.VEHICLE_ID_FIELD_NAME, LRTopologyControl.SPEED_FIELD_NAME, LRTopologyControl.XWAY_FIELD_NAME,
-                LRTopologyControl.LANE_FIELD_NAME, LRTopologyControl.DIRECTION_FIELD_NAME, LRTopologyControl.SEGMENT_FIELD_NAME,
-                LRTopologyControl.POSITION_FIELD_NAME);
-    }
-
-    public static Fields getLatencySchema() {
-        return null;
     }
 }

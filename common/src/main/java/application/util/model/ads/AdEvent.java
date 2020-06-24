@@ -5,9 +5,10 @@ import java.io.Serializable;
 /**
  * @author Maycon Viana Bordin <mayconbordin@gmail.com>
  */
-public class AdEvent implements Serializable {	private static final long serialVersionUID = 20L;
+public class AdEvent implements Serializable {
+    private static final long serialVersionUID = 20L;
 
-	private Type type;
+    private Type type;
     private String displayUrl;
     private long queryId;
     private long adID;

@@ -12,7 +12,7 @@ public class stable_sink_helper_multisink extends helper {
     long warm_start = 0, warm_end = 0;
     int pre_index_e = 0;
 
-    public stable_sink_helper_multisink(Logger LOG, int runtime, String metric_path,int thisTaskId) {
+    public stable_sink_helper_multisink(Logger LOG, int runtime, String metric_path, int thisTaskId) {
         super(runtime, 0, 0, metric_path, thisTaskId, false);
         sink_pid();
         start = System.nanoTime();

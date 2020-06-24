@@ -18,7 +18,7 @@ import state_engine.transaction.TableInitilizer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static application.constants.TP_TxnConstants.Constant.NUM_SEGMENTS;
+import static application.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static state_engine.utils.PartitionHelper.getPartition_interval;
 
 public class TPInitializer extends TableInitilizer {

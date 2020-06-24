@@ -22,11 +22,11 @@ import java.util.Collection;
  * @param <E> Object type that is to be inserted into the Bloom filter, e.g. String or Integer.
  * @author Magnus Skjegstad <magnus@skjegstad.com>
  */
-public class BloomFilter<E> implements Serializable {	private static final long serialVersionUID = 14L;
-
-	static final Charset charset = Charset.forName("UTF-8"); // encoding used for storing hash values as strings
+public class BloomFilter<E> implements Serializable {
+    static final Charset charset = Charset.forName("UTF-8"); // encoding used for storing hash values as strings
     static final String hashName = "MD5"; // MD5 gives good enough accuracy in most circumstances. Change to SHA1 if it's needed
     static final MessageDigest digestFunction;
+    private static final long serialVersionUID = 14L;
 
     static { // The digest method is reused between instances
         MessageDigest tmp;
@@ -179,21 +179,21 @@ public class BloomFilter<E> implements Serializable {	private static final long 
      */
     @Override
     public boolean equals(Object obj) {
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		final BloomFilter<E> other = (BloomFilter<E>) obj;
-		if (this.expectedNumberOfFilterElements != other.expectedNumberOfFilterElements) {
-			return false;
-		}
-		if (this.k != other.k) {
-			return false;
-		}
-		return this.bitSetSize == other.bitSetSize && !(this.bitset != other.bitset && (this.bitset == null || !this.bitset.equals(other.bitset)));
-	}
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final BloomFilter<E> other = (BloomFilter<E>) obj;
+        if (this.expectedNumberOfFilterElements != other.expectedNumberOfFilterElements) {
+            return false;
+        }
+        if (this.k != other.k) {
+            return false;
+        }
+        return this.bitSetSize == other.bitSetSize && !(this.bitset != other.bitset && (this.bitset == null || !this.bitset.equals(other.bitset)));
+    }
 
     /**
      * Calculates a hash code for this class.
@@ -370,7 +370,7 @@ public class BloomFilter<E> implements Serializable {	private static final long 
     }
 
     /**
-	 * Read a partition bit from the Bloom filter.
+     * Read a partition bit from the Bloom filter.
      *
      * @param bit the bit to read.
      * @return true if the bit is set, false if it is not.
@@ -380,7 +380,7 @@ public class BloomFilter<E> implements Serializable {	private static final long 
     }
 
     /**
-	 * Set a partition bit in the Bloom filter.
+     * Set a partition bit in the Bloom filter.
      *
      * @param bit   is the bit to set.
      * @param value If true, the bit is set. If false, the bit is cleared.
@@ -410,7 +410,7 @@ public class BloomFilter<E> implements Serializable {	private static final long 
 
     /**
      * Returns the number of elements added to the Bloom filter after it
-	 * was constructed or after clean() was called.
+     * was constructed or after clean() was called.
      *
      * @return number of elements added to the Bloom filter.
      */

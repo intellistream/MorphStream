@@ -5,6 +5,9 @@ import application.CONTROL;
 import static state_engine.Meta.MetaTypes.kMaxThreadNum;
 
 public class MeasureTools {
+    //control.
+    public static long[] measure_counts = new long[kMaxThreadNum];
+    public static boolean[] profile_start = new boolean[kMaxThreadNum];
     protected static Metrics metrics = Metrics.getInstance();
     static long[] total_start = new long[kMaxThreadNum];
     static long[] txn_start = new long[kMaxThreadNum];
@@ -17,10 +20,7 @@ public class MeasureTools {
     static long[] prepare_time = new long[kMaxThreadNum];
     static long[] post_time_start = new long[kMaxThreadNum];
     static long[] post_time = new long[kMaxThreadNum];
-    //control.
-    public static long[] measure_counts = new long[kMaxThreadNum];
     static long[] compute_end = new long[kMaxThreadNum];
-    public static boolean[] profile_start = new boolean[kMaxThreadNum];
     static long[] index_start = new long[kMaxThreadNum];
     static long[] index_time = new long[kMaxThreadNum];
     static long[] abort_start = new long[kMaxThreadNum];
@@ -201,6 +201,7 @@ public class MeasureTools {
             metrics.sync_ratio[thread_id].addValue(txn_wait[thread_id] / txn_total[thread_id]);
         }
     }
+
     //compute per event time spent.
     public static void END_TOTAL_TIME_MEASURE(int thread_id, int combo_bid_size) {
 

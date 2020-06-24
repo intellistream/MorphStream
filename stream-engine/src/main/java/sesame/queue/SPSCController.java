@@ -1,11 +1,11 @@
 package sesame.queue;
 
 import application.util.OsUtils;
-import sesame.execution.ExecutionNode;
 import org.jctools.queues.SpscArrayQueue;
 import org.jctools.queues.SpscLinkedQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.execution.ExecutionNode;
 
 import java.util.HashMap;
 import java.util.Queue;

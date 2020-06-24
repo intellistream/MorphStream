@@ -1,13 +1,14 @@
 package sesame.controller.output.partition;
+
 import application.util.Configuration;
-import sesame.components.TopologyComponent;
-import sesame.execution.ExecutionNode;
-import sesame.execution.runtime.collector.impl.Meta;
-import sesame.execution.runtime.tuple.impl.Fields;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.components.TopologyComponent;
+import sesame.execution.ExecutionNode;
+import sesame.execution.runtime.collector.impl.Meta;
+import sesame.execution.runtime.tuple.impl.Fields;
 
 import java.util.HashMap;
 import java.util.LinkedList;

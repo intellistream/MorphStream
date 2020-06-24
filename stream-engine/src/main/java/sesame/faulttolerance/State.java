@@ -1,10 +1,10 @@
 package sesame.faulttolerance;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;
 import sesame.execution.ExecutionNode;
 import sesame.execution.runtime.tuple.impl.Marker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;

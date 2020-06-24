@@ -8,9 +8,9 @@ import java.util.List;
 
 public class GoogleQuoteFetcher extends QuoteFetcher {
 
-	private static final long serialVersionUID = 3292469123361565774L;
+    private static final long serialVersionUID = 3292469123361565774L;
 
-	@Override
+    @Override
     public String fetchQuotes(String symbol, int days, int interval)
             throws Exception {
 

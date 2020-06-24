@@ -7,6 +7,8 @@ import application.constants.WordCountConstants;
 import application.constants.WordCountConstants.Component;
 import application.constants.WordCountConstants.Field;
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.components.exception.InvalidIDException;
 import sesame.components.grouping.FieldsGrouping;
@@ -14,8 +16,6 @@ import sesame.components.grouping.ShuffleGrouping;
 import sesame.controller.input.scheduler.SequentialScheduler;
 import sesame.execution.runtime.tuple.impl.Fields;
 import sesame.topology.BasicTopology;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static application.constants.WordCountConstants.PREFIX;
 

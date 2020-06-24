@@ -13,7 +13,10 @@ public class AlertEvent extends TxnEvent {
 
     private final int num_access;
     public boolean alert_result;
-
+    //place-rangeMap.
+    public SchemaRecordRef[] record_refs;
+    private int[] itemId;//keys.
+    private long[] ask_price;//new ask price
     /**
      * Creates a new AlertEvent.
      */
@@ -31,12 +34,6 @@ public class AlertEvent extends TxnEvent {
 
         setValues(num_access, rnd);
     }
-
-    //place-rangeMap.
-    public SchemaRecordRef[] record_refs;
-
-    private int[] itemId;//keys.
-    private long[] ask_price;//new ask price
 
     public AlertEvent(int bid, String bid_array, int partition_id, int number_of_partitions,
                       int num_access, String key_array, String alert_array) {

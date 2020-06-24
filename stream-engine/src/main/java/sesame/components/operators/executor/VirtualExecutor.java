@@ -1,6 +1,8 @@
 package sesame.components.operators.executor;
 
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionNode;
 import sesame.execution.runtime.collector.OutputCollector;
@@ -10,8 +12,6 @@ import sesame.faulttolerance.Writer;
 import sesame.topology.TopologyBuilder;
 import state_engine.common.OrderLock;
 import state_engine.common.OrderValidate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 

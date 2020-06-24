@@ -1,12 +1,12 @@
 package sesame.faulttolerance;
 
 import application.util.OsUtils;
-import sesame.components.TopologyComponent;
-import sesame.execution.ExecutionNode;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.components.TopologyComponent;
+import sesame.execution.ExecutionNode;
 
 import java.io.*;
 import java.nio.MappedByteBuffer;

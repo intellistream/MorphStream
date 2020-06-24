@@ -63,9 +63,9 @@ public class Set {
 
     public String toString() {
         StringBuilder str = new StringBuilder("[");
-		for (Integer block : blocks) { //Finding the matching address
-			str.append(block).append(", ");
-		}
+        for (Integer block : blocks) { //Finding the matching address
+            str.append(block).append(", ");
+        }
         return str.toString();
     }
 }

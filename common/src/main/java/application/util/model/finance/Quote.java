@@ -5,7 +5,8 @@ import org.joda.time.DateTime;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class Quote implements Serializable {private static final long serialVersionUID = 22L;
+public class Quote implements Serializable {
+    private static final long serialVersionUID = 22L;
     private String symbol;
     private DateTime openDate;
     private int interval;

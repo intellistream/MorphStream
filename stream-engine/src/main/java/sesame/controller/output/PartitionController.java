@@ -2,6 +2,9 @@ package sesame.controller.output;
 
 import application.util.Configuration;
 import application.util.datatypes.StreamValues;
+import org.jctools.queues.MpscArrayQueue;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
 import sesame.components.TopologyComponent;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionNode;
@@ -18,9 +21,6 @@ import sesame.execution.runtime.tuple.impl.msgs.StringMsg;
 import sesame.queue.MPSCController;
 import sesame.queue.QueueController;
 import sesame.queue.SPSCController;
-import org.jctools.queues.MpscArrayQueue;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.util.*;
@@ -45,16 +45,15 @@ public abstract class PartitionController implements IPartitionController, Seria
     protected final HashMap<Integer, ExecutionNode> downExecutor_list;
     protected final int downTaskSize;
     protected final ArrayList<Integer> extendedTargetId = new ArrayList<>();// This may be shared by multiple producers too
+    protected final TopologyContext[] context;//this may be shared by multiple producers.
     final TopologyComponent childOP;
     private final ExecutionNode executionNode;
     private final Logger LOG;
-
     private final QueueController controller;
     private final Collections[] collections;//this may be shared by multiple producers.
-    protected final TopologyContext[] context;//this may be shared by multiple producers.
     protected Integer[] targetTasks;
-    private int firt_executor_Id;
     int threashold;
+    private int firt_executor_Id;
 
     /**
      * @param operator

@@ -8,8 +8,8 @@ import java.util.LinkedList;
 public class Event extends LinkedList<String> {
     public static final String split_expression = "\t";
     public static final String null_expression = " ";
-	private static final long serialVersionUID = -2725154149946323980L;
-	public static int pos_time_stamp = 0;
+    private static final long serialVersionUID = -2725154149946323980L;
+    public static int pos_time_stamp = 0;
     public static int pos_key = 1;
     public static int pos_state = 2;
 
@@ -20,12 +20,12 @@ public class Event extends LinkedList<String> {
     }
 
     public Event(Long timeStamp, String key, String value) {
-		String sb = String.valueOf(timeStamp) +
-				split_expression +
-				key +
-				split_expression +
-				value;
-		//        event = sb.toString();//creates new string here already.
+        String sb = String.valueOf(timeStamp) +
+                split_expression +
+                key +
+                split_expression +
+                value;
+        //        event = sb.toString();//creates new string here already.
 //        this.value = value;
 //        this.key = key;
         this.add(String.valueOf(timeStamp));
@@ -43,14 +43,14 @@ public class Event extends LinkedList<String> {
      * @param flag
      */
     public Event(Long timeStamp, String key, String value, String flag) {
-		String sb = String.valueOf(timeStamp) +
-				split_expression +
-				key +
-				split_expression +
-				value +
-				split_expression +
-				flag;
-		this.add(String.valueOf(timeStamp));
+        String sb = String.valueOf(timeStamp) +
+                split_expression +
+                key +
+                split_expression +
+                value +
+                split_expression +
+                flag;
+        this.add(String.valueOf(timeStamp));
         this.add(key);
         this.add(value);
         this.add(sb);

@@ -1,5 +1,7 @@
 package state_engine.transaction.dedicated;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.Database;
 import state_engine.DatabaseException;
 import state_engine.Meta.MetaTypes;
@@ -13,8 +15,6 @@ import state_engine.transaction.function.Condition;
 import state_engine.transaction.function.Function;
 import state_engine.transaction.impl.TxnAccess;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -35,12 +35,11 @@ public abstract class TxnManagerDedicated implements TxnManager {
     protected TableRecords t_records_ = new TableRecords(64);
     protected boolean is_first_access_;
     protected long start_timestamp_;
+    protected long thread_count_;
+    protected int delta;//range of each partition. depends on the number of op in the stage.
     private long local_epoch_;
     private long local_ts_;
     private long thread_id_;
-    protected long thread_count_;
-
-    protected int delta;//range of each partition. depends on the number of op in the stage.
 
 
     public TxnManagerDedicated(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {

@@ -3,14 +3,9 @@ package state_engine.storage;
 import java.util.concurrent.RejectedExecutionException;
 
 public class TableRecordRef {
-    private volatile TableRecord record;
     public int cnt = 0;
+    private volatile TableRecord record;
     private String name;
-
-    public void setRecord(TableRecord record) {
-        this.record = record;
-        cnt++;
-    }
 
     public boolean isEmpty() {
         return cnt == 0;
@@ -32,5 +27,10 @@ public class TableRecordRef {
 //        }
 
         return record;
+    }
+
+    public void setRecord(TableRecord record) {
+        this.record = record;
+        cnt++;
     }
 }

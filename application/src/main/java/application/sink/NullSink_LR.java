@@ -1,12 +1,12 @@
 package application.sink;
 
 import application.datatype.util.LRTopologyControl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.operators.api.BaseSink;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;

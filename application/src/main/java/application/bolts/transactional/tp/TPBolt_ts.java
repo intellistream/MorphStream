@@ -23,7 +23,7 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static application.CONTROL.combo_bid_size;
 import static application.CONTROL.enable_app_combo;
-import static application.constants.TP_TxnConstants.Constant.NUM_SEGMENTS;
+import static application.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static state_engine.profiler.MeasureTools.*;
 
 

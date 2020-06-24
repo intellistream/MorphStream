@@ -12,9 +12,9 @@ import java.util.TreeMap;
 public abstract class LWMContent implements Content {
     public final static String LWM_CONTENT = "LWM_CONTENT";
     public TreeMap<Long, SchemaRecord> versions = new TreeMap<>();//In fact... there can be at most only one write to the d_record concurrently. It is safe to just use sorted hashmap.
-//	XLockQueue xLockQueue = new XLockQueue();
+    //	XLockQueue xLockQueue = new XLockQueue();
 //	XLockQueue sLockQueue = new XLockQueue();
-RWLock rw_lock_ = new RWLock();
+    RWLock rw_lock_ = new RWLock();
 
 
 //	class XLockQueue {
@@ -123,6 +123,7 @@ RWLock rw_lock_ = new RWLock();
     public void UnlockPartitions() {
 
     }
+
     @Override
     public void clean_map(long mark_ID) {
 

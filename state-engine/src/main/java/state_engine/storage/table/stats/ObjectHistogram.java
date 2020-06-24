@@ -7,12 +7,12 @@ package state_engine.storage.table.stats;
 //import frontend.voltdb.catalog.SimpleDatabase;
 //import frontend.voltdb.state_engine.utils.VoltTypeUtil;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.query.QueryPlan;
 import state_engine.storage.datatype.DataBox;
 import state_engine.storage.datatype.VoltType;
 import state_engine.storage.datatype.VoltTypeException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.Map.Entry;

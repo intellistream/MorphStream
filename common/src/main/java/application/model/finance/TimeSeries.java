@@ -14,7 +14,7 @@ public class TimeSeries {
     private final HashMap<IndicatorParameter, BigDecimal> minCache;
     private TreeMap<DateTime, BigDecimal> prices;
 
-	public TimeSeries(TreeMap<DateTime, BigDecimal> prices) {
+    public TimeSeries(TreeMap<DateTime, BigDecimal> prices) {
         this.prices = prices;
         this.previousPriceCache = new HashMap<>();
         this.smaCache = new HashMap<>();

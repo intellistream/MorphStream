@@ -76,7 +76,7 @@ public class FastHashSet<E>
      * default set_executor_ready capacity (16) and load factor (0.75).
      */
     public FastHashSet() {
-		map = new QuickHashMap<>(false);
+        map = new QuickHashMap<>(false);
     }
 
     /**
@@ -89,10 +89,10 @@ public class FastHashSet<E>
      * @throws NullPointerException if the specified collection is null
      */
     public FastHashSet(Collection<? extends E> c) {
-		map = new QuickHashMap<>(
-				Math.max((int) (c.size() / QuickHashMap.DEFAULT_LOAD_FACTOR) + 1,
-						QuickHashMap.DEFAULT_INITIAL_CAPACITY),
-				false);
+        map = new QuickHashMap<>(
+                Math.max((int) (c.size() / QuickHashMap.DEFAULT_LOAD_FACTOR) + 1,
+                        QuickHashMap.DEFAULT_INITIAL_CAPACITY),
+                false);
         addAll(c);
     }
 
@@ -106,7 +106,7 @@ public class FastHashSet<E>
      *                                  than zero, or if the load factor is nonpositive
      */
     public FastHashSet(int initialCapacity, float loadFactor) {
-		map = new QuickHashMap<>(initialCapacity, loadFactor, false);
+        map = new QuickHashMap<>(initialCapacity, loadFactor, false);
     }
 
     /**
@@ -118,7 +118,7 @@ public class FastHashSet<E>
      *                                  than zero
      */
     public FastHashSet(int initialCapacity) {
-		map = new QuickHashMap<>(initialCapacity, false);
+        map = new QuickHashMap<>(initialCapacity, false);
     }
 
     /**
@@ -135,7 +135,7 @@ public class FastHashSet<E>
      *                                  than zero, or if the load factor is nonpositive
      */
     FastHashSet(int initialCapacity, float loadFactor, boolean dummy) {
-		map = new FastLinkedHashMap<>(initialCapacity, loadFactor, false, false);
+        map = new FastLinkedHashMap<>(initialCapacity, loadFactor, false, false);
     }
 
     /**
@@ -260,9 +260,9 @@ public class FastHashSet<E>
         s.writeInt(map.size());
 
         // Write out all elements in the proper order.
-		for (E e : map.keySet()) {
-			s.writeObject(e);
-		}
+        for (E e : map.keySet()) {
+            s.writeObject(e);
+        }
     }
 
     /**
@@ -278,8 +278,8 @@ public class FastHashSet<E>
         int capacity = s.readInt();
         float loadFactor = s.readFloat();
         map = this instanceof FastLinkedHashSet<?> ?
-				new FastLinkedHashMap<>(capacity, loadFactor, false, false) :
-				new QuickHashMap<>(capacity, loadFactor, false);
+                new FastLinkedHashMap<>(capacity, loadFactor, false, false) :
+                new QuickHashMap<>(capacity, loadFactor, false);
 
         // Read in fieldSize
         int size = s.readInt();

@@ -176,9 +176,9 @@ public class ODTDBloomFilter {
      * Resets the data structure
      */
     public void clear() {
-		for (double[] bucket : buckets) {
-			Arrays.fill(bucket, 0d);
-		}
+        for (double[] bucket : buckets) {
+            Arrays.fill(bucket, 0d);
+        }
 
         Arrays.fill(timers, 0L);
     }

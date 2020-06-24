@@ -5,6 +5,9 @@ import application.constants.WordCountConstants.Field;
 import application.util.Configuration;
 import application.util.OsUtils;
 import application.util.datatypes.StreamValues;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.operators.api.Checkpointable;
 import sesame.components.operators.base.splitBolt;
 import sesame.execution.ExecutionGraph;
@@ -13,9 +16,6 @@ import sesame.execution.runtime.tuple.impl.Fields;
 import sesame.execution.runtime.tuple.impl.Marker;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.faulttolerance.impl.ValueState;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 

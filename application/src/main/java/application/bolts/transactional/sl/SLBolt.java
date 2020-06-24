@@ -3,13 +3,13 @@ package application.bolts.transactional.sl;
 import application.param.sl.DepositEvent;
 import application.param.sl.TransactionEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
 import sesame.components.operators.api.TransactionalBolt;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import state_engine.DatabaseException;
 import state_engine.storage.datatype.DataBox;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
 
 import java.util.List;
 
@@ -20,7 +20,8 @@ import static state_engine.Meta.MetaTypes.AccessType.READ_WRITE;
 import static state_engine.profiler.MeasureTools.*;
 
 public abstract class SLBolt extends TransactionalBolt {
-    SINKCombo sink ;
+    SINKCombo sink;
+
     public SLBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;

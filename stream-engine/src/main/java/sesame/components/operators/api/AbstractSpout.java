@@ -3,8 +3,8 @@ package sesame.components.operators.api;
 import application.constants.BaseConstants;
 import application.helper.wrapper.StringStatesWrapper;
 import application.util.OsUtils;
-import sesame.execution.runtime.tuple.impl.Marker;
 import org.slf4j.Logger;
+import sesame.execution.runtime.tuple.impl.Marker;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -158,7 +158,7 @@ public abstract class AbstractSpout extends Operator {
 
     }
 
-    protected void load_input(){
+    protected void load_input() {
         long start = System.nanoTime();
         // numTasks = config.getInt(getConfigKey(BaseConstants.BaseConf.SPOUT_THREADS));
 
@@ -191,7 +191,7 @@ public abstract class AbstractSpout extends Operator {
                 e1.printStackTrace();
             }
         }
-        long pid =OsUtils.getJVMID();
+        long pid = OsUtils.getJVMID();
         LOG.info("JVM PID  = " + pid);
 
         FileWriter fw;

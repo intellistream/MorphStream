@@ -1,6 +1,11 @@
 package sesame.execution.runtime.collector;
+
 import application.util.OsUtils;
 import application.util.datatypes.StreamValues;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;
 import sesame.components.context.TopologyContext;
 import sesame.controller.output.OutputController;
@@ -10,10 +15,6 @@ import sesame.execution.runtime.collector.impl.MetaGroup;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Marker;
 import sesame.execution.runtime.tuple.impl.Tuple;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.Set;

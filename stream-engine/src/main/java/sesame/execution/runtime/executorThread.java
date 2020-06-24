@@ -1,13 +1,13 @@
 package sesame.execution.runtime;
 
 import application.util.Configuration;
+import ch.usi.overseer.OverHpc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionNode;
-import ch.usi.overseer.OverHpc;
 import state_engine.DatabaseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,7 +15,7 @@ import java.util.Queue;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
-import static xerial.jnuma.Numa.*;
+import static xerial.jnuma.Numa.newCPUBitMask;
 
 /**
  * Created by shuhaozhang on 12/7/16.

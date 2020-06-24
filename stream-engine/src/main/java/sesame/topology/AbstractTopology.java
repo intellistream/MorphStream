@@ -3,11 +3,11 @@ package sesame.topology;
 import application.constants.BaseConstants;
 import application.util.ClassLoaderUtils;
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.components.operators.api.AbstractSpout;
 import sesame.components.operators.api.BaseSink;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class AbstractTopology {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractTopology.class);

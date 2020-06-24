@@ -1,12 +1,12 @@
 package state_engine.content;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.OrderLock;
 import state_engine.common.RWLock;
 import state_engine.storage.SchemaRecord;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicLong;
 

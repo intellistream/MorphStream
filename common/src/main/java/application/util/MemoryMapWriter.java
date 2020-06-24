@@ -8,7 +8,7 @@ import java.nio.channels.FileChannel;
 
 public class MemoryMapWriter {
 
-	public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException {
         File f = new File("c:/tmp/mapped.txt");
         f.delete();
 

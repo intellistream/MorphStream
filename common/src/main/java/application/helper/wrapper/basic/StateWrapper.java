@@ -12,8 +12,8 @@ import java.util.ArrayList;
 
 
 public abstract class StateWrapper<T> implements Serializable {
-	private static final long serialVersionUID = 3276941944488848300L;
-	protected Configuration config;
+    private static final long serialVersionUID = 3276941944488848300L;
+    protected Configuration config;
 
     /**
      * TODO: make it generic.

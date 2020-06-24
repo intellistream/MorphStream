@@ -1,5 +1,7 @@
 package sesame.topology;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.MultiStreamComponent;
 import sesame.components.Topology;
 import sesame.components.TopologyComponent;
@@ -17,8 +19,6 @@ import sesame.controller.input.InputStreamController;
 import sesame.controller.input.scheduler.SequentialScheduler;
 import sesame.execution.runtime.tuple.impl.OutputFieldsDeclarer;
 import state_engine.Database;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;

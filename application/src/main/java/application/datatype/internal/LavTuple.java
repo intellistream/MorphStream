@@ -105,6 +105,18 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
         return null;
     }
 
+    /**
+     * Returns the schema of a {@link LavTuple}.
+     *
+     * @return the schema of a {@link LavTuple}
+     */
+    public static Fields getSchema() {
+        return new Fields(LRTopologyControl.MINUTE_FIELD_NAME, LRTopologyControl.XWAY_FIELD_NAME,
+                LRTopologyControl.SEGMENT_FIELD_NAME, LRTopologyControl.DIRECTION_FIELD_NAME,
+                LRTopologyControl.LAST_AVERAGE_SPEED_FIELD_NAME,
+                LRTopologyControl.TIME_FIELD_NAME
+        );
+    }
 
     /**
      * Returns the timestamp of this {@link LavTuple}.
@@ -161,19 +173,6 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
      */
     public final Double getLav() {
         return (Double) super.get(LAV_IDX);
-    }
-
-    /**
-     * Returns the schema of a {@link LavTuple}.
-     *
-     * @return the schema of a {@link LavTuple}
-     */
-    public static Fields getSchema() {
-        return new Fields(LRTopologyControl.MINUTE_FIELD_NAME, LRTopologyControl.XWAY_FIELD_NAME,
-                LRTopologyControl.SEGMENT_FIELD_NAME, LRTopologyControl.DIRECTION_FIELD_NAME,
-                LRTopologyControl.LAST_AVERAGE_SPEED_FIELD_NAME,
-                LRTopologyControl.TIME_FIELD_NAME
-        );
     }
 
 

@@ -11,13 +11,12 @@ import static application.constants.OnlineBidingSystemConstants.Constant.MAX_TOP
 
 public class ToppingEvent extends TxnEvent {
 
+    private final int num_access;
     //place-rangeMap.
     public SchemaRecordRef[] record_refs;
     public boolean topping_result;
-
     private int[] itemId;
     private long[] itemTopUp;
-    private final int num_access;
 
     /**
      * Creates a new ToppingEvent.

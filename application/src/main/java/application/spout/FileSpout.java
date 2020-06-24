@@ -4,10 +4,10 @@ import application.constants.BaseConstants;
 import application.helper.parser.Parser;
 import application.util.OsUtils;
 import application.util.datatypes.StreamValues;
-import sesame.components.operators.api.AbstractSpout;
-import sesame.execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.components.operators.api.AbstractSpout;
+import sesame.execution.ExecutionGraph;
 
 import java.io.File;
 import java.io.FileNotFoundException;

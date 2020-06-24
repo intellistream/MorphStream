@@ -6,8 +6,8 @@ import java.util.ArrayList;
  * Created by tony on 6/5/2017.
  */
 public class B_object extends object {
-	private static final long serialVersionUID = 2225245845078346454L;
-	//    byte[] value;
+    private static final long serialVersionUID = 2225245845078346454L;
+    //    byte[] value;
     byte value;
 
     public B_object() {

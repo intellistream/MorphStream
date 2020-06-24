@@ -26,7 +26,7 @@ public class cacheHitSimulator_PI {
         return sum;
     }
 
-	private static Vector2D cacheHit(LinkedList<String> event_trace, Map<String, Integer> instruction_per_function, int policy) {
+    private static Vector2D cacheHit(LinkedList<String> event_trace, Map<String, Integer> instruction_per_function, int policy) {
         final int cache_size = 32000;
         int cache_used = 0;
         int compulsory_miss = 0;

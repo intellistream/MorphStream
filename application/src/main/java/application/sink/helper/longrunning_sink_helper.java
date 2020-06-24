@@ -10,18 +10,18 @@ public class longrunning_sink_helper extends helper {
     private static final Logger LOG = LoggerFactory.getLogger(longrunning_sink_helper.class);
     long warm_start = 0, warm_end = 0;
 
-    public longrunning_sink_helper(Logger LOG, int runtime, String metric_path,int thisTaskId) {
+    public longrunning_sink_helper(Logger LOG, int runtime, String metric_path, int thisTaskId) {
         super(runtime, 0, 0, metric_path, thisTaskId, false);
         warm_start = System.nanoTime();
         need_warm_up = false;
     }
 
 
-    public longrunning_sink_helper(longrunning_sink_helper sink_state,int thisTaskId) {
+    public longrunning_sink_helper(longrunning_sink_helper sink_state, int thisTaskId) {
         super(sink_state.runtimeInSEC, 0, 0, sink_state.metric_path, thisTaskId, false);
 
 
-		atomic_index_e = sink_state.atomic_index_e;
+        atomic_index_e = sink_state.atomic_index_e;
         start = sink_state.start;
         //end = sink_state.end;
         checkPoint = sink_state.checkPoint;
@@ -46,7 +46,7 @@ public class longrunning_sink_helper extends helper {
                 sink_pid();
                 print_pid = false;
                 start = System.nanoTime();
-				atomic_index_e.set(0);//clean atomic_index_e
+                atomic_index_e.set(0);//clean atomic_index_e
             }
 
             if (!print_pid) {//actual processing started and not finished..
@@ -54,7 +54,7 @@ public class longrunning_sink_helper extends helper {
                 if ((end - start) > measure_interval) {
                     checkPoint++;
                     strings.add(String.valueOf((atomic_index_e.get() * 1000000.0 / (end - start))));
-					atomic_index_e.set(0);//clean atomic_index_e
+                    atomic_index_e.set(0);//clean atomic_index_e
                     if (checkPoint == measure_times) {
                         LOG.info("finished measurement!");
                         output(strings);

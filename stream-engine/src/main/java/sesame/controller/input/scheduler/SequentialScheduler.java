@@ -1,11 +1,11 @@
 package sesame.controller.input.scheduler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.controller.input.InputStreamController;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.optimization.model.STAT;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.Queue;

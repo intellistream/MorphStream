@@ -5,6 +5,8 @@ import application.param.ob.AlertEvent;
 import application.param.ob.BuyingEvent;
 import application.param.ob.ToppingEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.collector.OutputCollector;
@@ -12,8 +14,6 @@ import sesame.execution.runtime.tuple.impl.Marker;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import state_engine.DatabaseException;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -32,7 +32,7 @@ public class OBBolt_ts_nopush extends OBBolt_ts {
     private Collection<AlertEvent> AlertEventsHolder;
 
     public OBBolt_ts_nopush(int fid, SINKCombo sink) {
-        super(fid,sink);
+        super(fid, sink);
     }
 
 

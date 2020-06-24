@@ -12,7 +12,7 @@ public class stable_sink_helper_verbose extends helper {
     private static final Logger LOG = LoggerFactory.getLogger(stable_sink_helper_verbose.class);
     long starting = System.nanoTime();
 
-    public stable_sink_helper_verbose(Logger LOG, int runtimeInSEC, String metric_path,int thisTaskId) {
+    public stable_sink_helper_verbose(Logger LOG, int runtimeInSEC, String metric_path, int thisTaskId) {
         super(runtimeInSEC, 0, 0, metric_path, thisTaskId, false);
         sink_pid();
     }

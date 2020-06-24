@@ -3,14 +3,14 @@ package sesame.optimization;
 import application.Platform;
 import application.util.Configuration;
 import application.util.OsUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.execution.ExecutionGraph;
 import sesame.optimization.impl.SchedulingPlan;
 import sesame.optimization.impl.scaling.scalingOptimization;
 import sesame.optimization.impl.scheduling.*;
 import sesame.optimization.model.Constraints;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

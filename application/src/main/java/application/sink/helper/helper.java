@@ -29,6 +29,7 @@ public abstract class helper {
     final double warm_up;
     final String sink_path;
     final String metric_path;
+    private final boolean measure;
     public double predict;//predicted throughput.
     public double size;
     /**
@@ -44,8 +45,6 @@ public abstract class helper {
     private int thisTaskId;
     private long predict_sum = 0;
     private long actual_sum = 0;
-
-    private final boolean measure;
     private long previous_bid = 0;
     private long current_bid = 0;
     private int local_index_e;

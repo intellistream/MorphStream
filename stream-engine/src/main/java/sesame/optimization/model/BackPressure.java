@@ -1,12 +1,12 @@
 package sesame.optimization.model;
 
 import application.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.ExecutionNode;
 import sesame.optimization.impl.SchedulingPlan;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 

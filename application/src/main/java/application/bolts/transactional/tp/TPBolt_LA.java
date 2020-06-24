@@ -2,18 +2,17 @@ package application.bolts.transactional.tp;
 
 import application.param.lr.LREvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
 import state_engine.DatabaseException;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
 
 import static state_engine.profiler.MeasureTools.*;
 
 public abstract class TPBolt_LA extends TPBolt {
 
     public TPBolt_LA(Logger log, int fid, SINKCombo sink) {
-        super(log, fid,sink);
+        super(log, fid, sink);
     }
-
 
 
     protected void LAL(LREvent event, long i, long _bid) throws DatabaseException {

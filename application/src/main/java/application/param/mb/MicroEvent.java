@@ -1,11 +1,11 @@
 package application.param.mb;
 
 import application.param.TxnEvent;
+import org.apache.commons.lang.StringUtils;
 import state_engine.storage.SchemaRecordRef;
 import state_engine.storage.datatype.DataBox;
 import state_engine.storage.datatype.IntDataBox;
 import state_engine.storage.datatype.StringDataBox;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,23 +75,6 @@ public class MicroEvent extends TxnEvent {
         setValues(keys);
     }
 
-    public int[] getKeys() {
-        return keys;
-    }
-
-    public List<DataBox>[] getValues() {
-        return value;
-    }
-
-    public SchemaRecordRef[] getRecord_refs() {
-        return record_refs;
-    }
-
-
-    public boolean READ_EVENT() {
-        return flag;
-    }
-
     private static String rightpad(String text, int length) {
         return StringUtils.rightPad(text, length); // Returns "****foobar"
 //        return String.format("%-" + length + "." + length + "s", text);
@@ -101,18 +84,33 @@ public class MicroEvent extends TxnEvent {
         return rightpad(String.valueOf(key), VALUE_LEN);
     }
 
-    private void set_values(int access_id, int key) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new IntDataBox(key));//key  4 bytes
-        values.add(new StringDataBox(GenerateValue(key), VALUE_LEN));//value_list   32 bytes..
-        value[access_id] = values;
+    public int[] getKeys() {
+        return keys;
     }
 
+    public List<DataBox>[] getValues() {
+        return value;
+    }
 
     public void setValues(int[] keys) {
         value = new ArrayList[NUM_ACCESSES];//Note, it should be arraylist instead of linkedlist as there's no add/remove later.
         for (int access_id = 0; access_id < NUM_ACCESSES; ++access_id) {
             set_values(access_id, keys[access_id]);
         }
+    }
+
+    public SchemaRecordRef[] getRecord_refs() {
+        return record_refs;
+    }
+
+    public boolean READ_EVENT() {
+        return flag;
+    }
+
+    private void set_values(int access_id, int key) {
+        List<DataBox> values = new ArrayList<>();
+        values.add(new IntDataBox(key));//key  4 bytes
+        values.add(new StringDataBox(GenerateValue(key), VALUE_LEN));//value_list   32 bytes..
+        value[access_id] = values;
     }
 }

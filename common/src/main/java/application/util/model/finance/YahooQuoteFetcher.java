@@ -8,9 +8,9 @@ import java.util.List;
 
 public class YahooQuoteFetcher extends QuoteFetcher {
 
-	private static final long serialVersionUID = -4323973310977875024L;
+    private static final long serialVersionUID = -4323973310977875024L;
 
-	public TimeSeries fetchAndParseDaily(String symbol, int days) throws Exception {
+    public TimeSeries fetchAndParseDaily(String symbol, int days) throws Exception {
         return fetchAndParse(symbol, days, 60 * 60 * 24);
     }
 

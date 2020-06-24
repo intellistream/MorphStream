@@ -1,6 +1,8 @@
 package state_engine.transaction.dedicated.ordered;
 
 import application.util.OsUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.common.Operation;
 import state_engine.content.T_StreamContent;
 import state_engine.profiler.Metrics;
@@ -10,8 +12,6 @@ import state_engine.storage.datatype.DoubleDataBox;
 import state_engine.storage.datatype.IntDataBox;
 import state_engine.storage.datatype.ListDoubleDataBox;
 import state_engine.transaction.function.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import state_engine.utils.SOURCE_CONTROL;
 
 import java.io.Closeable;
@@ -42,13 +42,12 @@ public final class TxnProcessingEngine {
 
     private int TOTAL_CORES;
     private long previous_ID = 0;
+    //    fast determine the corresponding instance. This design is for NUMA-awareness.
+    private HashMap<Integer, Instance> multi_engine = new HashMap<>();//one island one engine.
 
     private TxnProcessingEngine() {
 
     }
-
-    //    fast determine the corresponding instance. This design is for NUMA-awareness.
-    private HashMap<Integer, Instance> multi_engine = new HashMap<>();//one island one engine.
 //    private int partition = 1;//NUMA-awareness. Hardware Island. If it is one, it is the default shared-everything.
 //    private int range_min = 0;
 //    private int range_max = 1_000_000;//change this for different application.

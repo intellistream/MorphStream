@@ -15,7 +15,7 @@ public class MemoryMapReader {
      * @throws FileNotFoundException
      * @throws InterruptedException
      */
-	public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException {
 
 
         FileChannel fc = new RandomAccessFile(new File("c:/tmp/mapped.txt"), "rw").getChannel();

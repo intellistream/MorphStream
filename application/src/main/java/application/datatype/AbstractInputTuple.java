@@ -32,12 +32,13 @@ package application.datatype;
  * @author mjsax
  */
 public abstract class AbstractInputTuple extends AbstractLRBTuple {
-    private final static long serialVersionUID = 5607968457968961059L;
-
-    // attribute indexes
-    /** The index of the VID attribute. */
+    /**
+     * The index of the VID attribute.
+     */
     public final static int VID_IDX = 2;
 
+    // attribute indexes
+    private final static long serialVersionUID = 5607968457968961059L;
 
 
     protected AbstractInputTuple() {
@@ -54,14 +55,13 @@ public abstract class AbstractInputTuple extends AbstractLRBTuple {
     }
 
 
-
     /**
      * Returns the vehicle ID of this {@link AbstractInputTuple}.
      *
      * @return the VID of this tuple
      */
     public final Integer getVid() {
-        return (Integer)super.get(VID_IDX);
+        return (Integer) super.get(VID_IDX);
     }
 
 }

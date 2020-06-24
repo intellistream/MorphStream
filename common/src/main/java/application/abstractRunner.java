@@ -18,11 +18,9 @@ import java.util.Properties;
  * Created by I309939 on 7/30/2016.
  */
 public abstract class abstractRunner {
-    private static final Logger LOG = LoggerFactory.getLogger(abstractRunner.class);
-
     protected static final String RUN_LOCAL = "local";
     protected static final String RUN_REMOTE = "remote";
-
+    private static final Logger LOG = LoggerFactory.getLogger(abstractRunner.class);
     protected static String CFG_PATH = null;
 
     @Parameter(names = {"--Fault_tolerance"}, description = "Fault_tolerance enable")

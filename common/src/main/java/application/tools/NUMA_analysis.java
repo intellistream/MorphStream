@@ -2,7 +2,10 @@ package application.tools;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Scanner;
 
 /**
  * Created by szhang026 on 5/30/2016.
@@ -39,8 +42,8 @@ public class NUMA_analysis {
             for (record r : r_list) {
                 r.name = ID_Thread.get(r.TID);
             }
-			//sort by CPU_CLK_UNHALTED first
-			r_list.sort(Collections.reverseOrder((o1, o2) -> (o1.L2_Hit.compareTo(o2.L2_Hit))));
+            //sort by CPU_CLK_UNHALTED first
+            r_list.sort(Collections.reverseOrder((o1, o2) -> (o1.L2_Hit.compareTo(o2.L2_Hit))));
             for (record r : r_list) {
                 System.out.println(r.name + "," + r.RMA + "," + r.RMA_Stalls);
             }

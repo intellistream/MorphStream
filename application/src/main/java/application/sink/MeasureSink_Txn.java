@@ -1,8 +1,8 @@
 package application.sink;
 
-import sesame.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.execution.runtime.tuple.impl.Tuple;
 
 import static application.CONTROL.enable_latency_measurement;
 
@@ -38,7 +38,7 @@ public class MeasureSink_Txn extends MeasureSink {
 //				if (process_latency > stored_process_latency)//pick the worst.
 //				{
 //				LOG.debug("msgID:" + msgId + " is at:\t" + process_latency / 1E6 + "\tms");
-                        latency_map.add( process_latency);
+                        latency_map.add(process_latency);
 //				}
                     } catch (Exception e) {
                         System.nanoTime();

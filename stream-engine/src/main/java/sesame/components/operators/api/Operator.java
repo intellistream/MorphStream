@@ -3,6 +3,10 @@ package sesame.components.operators.api;
 import application.constants.BaseConstants;
 import application.util.Configuration;
 import application.util.OsUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.ExecutionNode;
@@ -16,10 +20,6 @@ import state_engine.Database;
 import state_engine.common.OrderLock;
 import state_engine.common.OrderValidate;
 import state_engine.transaction.impl.TxnContext;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -46,14 +46,9 @@ public abstract class Operator implements IOperator {
     public final Map<String, Double> input_selectivity;//input_selectivity used to capture multi-stream effect.
     public final Map<String, Double> output_selectivity;//output_selectivity can be > 1
     public final double branch_selectivity;
+    protected final Map<String, Fields> fields;
     private final boolean ByP;//Time by processing? or by input_event.
     private final double Event_frequency;
-
-    public Map<String, Fields> getOutputFields() {
-        return fields;
-    }
-
-    protected final Map<String, Fields> fields;
     public double read_selectivity;//the ratio of actual reading..
     public double loops = -1;//by default use argument loops.
     public boolean scalable = true;
@@ -77,10 +72,6 @@ public abstract class Operator implements IOperator {
     boolean Stateful = false;
     private double window = 1;//by default window fieldSize is 1, means per-tuple execution
     private double results = 0;
-
-
-
-
     /**
      * @param log
      * @param output_selectivity
@@ -119,6 +110,7 @@ public abstract class Operator implements IOperator {
 
     }
 
+
     Operator(Logger log, boolean byP, double event_frequency, double w) {
         LOG = log;
 
@@ -134,6 +126,9 @@ public abstract class Operator implements IOperator {
         fields = new HashMap<>();
     }
 
+    public Map<String, Fields> getOutputFields() {
+        return fields;
+    }
 
     public void setStateful() {
         Stateful = true;
@@ -241,12 +236,10 @@ public abstract class Operator implements IOperator {
     }
 
 
-
-
-
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
     }
+
     public void loadDB(int thread_Id, int thisTaskId, ExecutionGraph graph) {
 
         graph.topology.tableinitilizer.loadDB(thread_Id, this.context.getNUMTasks());
@@ -302,8 +295,6 @@ public abstract class Operator implements IOperator {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
 
     }
-
-
 
 
     public void setExecutionNode(ExecutionNode e) {

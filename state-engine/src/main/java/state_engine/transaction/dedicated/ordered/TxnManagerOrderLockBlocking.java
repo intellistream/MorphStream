@@ -1,5 +1,7 @@
 package state_engine.transaction.dedicated.ordered;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.OrderLock;
@@ -10,8 +12,6 @@ import state_engine.storage.StorageManager;
 import state_engine.storage.TableRecord;
 import state_engine.transaction.dedicated.TxnManagerDedicated;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 

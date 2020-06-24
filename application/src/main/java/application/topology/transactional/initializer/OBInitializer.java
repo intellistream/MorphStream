@@ -39,6 +39,7 @@ public class OBInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(OBInitializer.class);
     //triple decisions
     protected int[] triple_decision = new int[]{0, 0, 0, 0, 0, 0, 1, 2};//6:1:1 buy, alert, topping_handle.
+    private int i = 0;
 
     public OBInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
@@ -165,7 +166,6 @@ public class OBInitializer extends TableInitilizer {
         }
     }
 
-
     private RecordSchema Goods() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -180,7 +180,6 @@ public class OBInitializer extends TableInitilizer {
 
         return new RecordSchema(fieldNames, dataBoxes);
     }
-
 
     /**
      * OB
@@ -208,7 +207,6 @@ public class OBInitializer extends TableInitilizer {
 
         return new BuyingEvent(param.keys(), rnd, partition_id, bid_array, bid, number_of_partitions);
     }
-
 
     protected AlertEvent randomAlertEvents(int partition_id, long[] bid_array, int number_of_partitions, long bid, SplittableRandom rnd) {
         int pid = partition_id;
@@ -259,8 +257,6 @@ public class OBInitializer extends TableInitilizer {
         );
 
     }
-
-    private int i = 0;
 
     protected int next_decision3() {
         int rt = triple_decision[i];

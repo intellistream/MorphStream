@@ -34,9 +34,8 @@ public class OBBolt_ts extends OBBolt {
     private static final long serialVersionUID = -589295586738474236L;
     private static final Logger LOG = LoggerFactory.getLogger(OBBolt_ts.class);
     private final static double write_useful_time = 1556.713743100476;//write-compute time pre-measured.
-
-    private int thisTaskId;
     final ArrayDeque<BuyingEvent> buyingEvents = new ArrayDeque<>();
+    private int thisTaskId;
     private int alertEvents = 0, toppingEvents = 0;
 
 

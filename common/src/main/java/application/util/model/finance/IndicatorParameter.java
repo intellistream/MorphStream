@@ -25,17 +25,17 @@ public class IndicatorParameter {
 
     @Override
     public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
-		IndicatorParameter that = (IndicatorParameter) o;
+        IndicatorParameter that = (IndicatorParameter) o;
 
-		return period == that.period && time.equals(that.time);
-	}
+        return period == that.period && time.equals(that.time);
+    }
 
     @Override
     public int hashCode() {

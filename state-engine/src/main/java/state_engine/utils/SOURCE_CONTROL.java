@@ -14,46 +14,19 @@ public class SOURCE_CONTROL {
 //    static ReentrantLock counterLock = new ReentrantLock(true); // enable fairness policy
 
     static SpinLock counterLock = new SpinLock();
-
-    private volatile long counter = 0;
-
-    private AtomicInteger wm = new AtomicInteger(0);// it is already volatiled.
-
     private static SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
-
+    volatile boolean success = false;
+    private volatile long counter = 0;
+    private AtomicInteger wm = new AtomicInteger(0);// it is already volatiled.
     private int number_threads;
-
     private CyclicBarrier start_barrier;
-
     private CyclicBarrier end_barrier;
-
-
     private CyclicBarrier final_end_barrier;
-
-
-    private HashMap<Integer, Integer> iteration;
 //    private long _combo_bid_size;
+    private HashMap<Integer, Integer> iteration;
 
     public static SOURCE_CONTROL getInstance() {
         return ourInstance;
-    }
-
-
-    public void config(int number_threads) {
-
-//        this.number_threads = number_threads;
-        start_barrier = new CyclicBarrier(number_threads);
-        end_barrier = new CyclicBarrier(number_threads);
-
-        final_end_barrier= new CyclicBarrier(number_threads);
-
-        iteration = new HashMap<>();
-
-        for (int i = 0; i < number_threads; i++) {
-            iteration.put(i, 0);
-        }
-//        this._combo_bid_size = _combo_bid_size;
-
     }
 
     //return the starting point of counter.
@@ -68,14 +41,27 @@ public class SOURCE_CONTROL {
 //        return rt;
 //    }
 
+    public void config(int number_threads) {
+
+//        this.number_threads = number_threads;
+        start_barrier = new CyclicBarrier(number_threads);
+        end_barrier = new CyclicBarrier(number_threads);
+
+        final_end_barrier = new CyclicBarrier(number_threads);
+
+        iteration = new HashMap<>();
+
+        for (int i = 0; i < number_threads; i++) {
+            iteration.put(i, 0);
+        }
+//        this._combo_bid_size = _combo_bid_size;
+
+    }
+
     //return counter.
     public long Get() {
         return counter;
     }
-
-
-    volatile boolean success = false;
-
 
     private int min_iteration() {
         return Collections.min(iteration.values());

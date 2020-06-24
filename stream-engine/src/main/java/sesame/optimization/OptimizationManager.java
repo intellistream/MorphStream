@@ -38,10 +38,10 @@ public class OptimizationManager extends executorThread {
     public int start_executor = 0;
     public int end_executor = 1;
     public ExecutionGraph g;
+    public CountDownLatch latch;
     private Optimizer so;
     private ExecutionPlan executionPlan;
     private ExecutionManager EM;
-    public CountDownLatch latch;
     private long profiling_gaps = 10000;//10 seconds.
     private int profile_start = 0;
     private int profile_end = 1;

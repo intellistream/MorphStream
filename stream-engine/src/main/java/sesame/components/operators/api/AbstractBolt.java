@@ -1,10 +1,10 @@
 package sesame.components.operators.api;
 
+import org.slf4j.Logger;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Marker;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import state_engine.DatabaseException;
-import org.slf4j.Logger;
 
 import java.util.LinkedList;
 import java.util.Map;

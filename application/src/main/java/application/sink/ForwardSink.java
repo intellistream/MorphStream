@@ -2,12 +2,12 @@ package application.sink;
 
 import application.sink.helper.stable_sink_helper;
 import application.util.datatypes.StreamValues;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.operators.api.BaseSink;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author mayconbordin

@@ -5,9 +5,9 @@ import application.param.ob.AlertEvent;
 import application.param.ob.BuyingEvent;
 import application.param.ob.ToppingEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
 import state_engine.DatabaseException;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
 
 import static state_engine.profiler.MeasureTools.*;
 
@@ -17,7 +17,7 @@ public abstract class OBBolt_LA extends OBBolt {
 
 
     public OBBolt_LA(Logger log, int fid, SINKCombo sink) {
-        super(log, fid,sink);
+        super(log, fid, sink);
     }
 
 

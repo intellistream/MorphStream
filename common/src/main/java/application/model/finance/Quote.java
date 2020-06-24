@@ -6,8 +6,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 public class Quote implements Serializable {
-	private static final long serialVersionUID = -8673211467667688464L;
-	private String symbol;
+    private static final long serialVersionUID = -8673211467667688464L;
+    private String symbol;
     private DateTime openDate;
     private int interval;
     private BigDecimal open;

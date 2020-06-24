@@ -7,8 +7,9 @@ import application.bolts.transactional.ob.OBBolt_sstore;
 import application.bolts.transactional.ob.OBBolt_ts;
 import application.constants.OnlineBidingSystemConstants.Component;
 import application.topology.transactional.initializer.OBInitializer;
-import state_engine.transaction.TableInitilizer;
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.components.exception.InvalidIDException;
 import sesame.components.grouping.ShuffleGrouping;
@@ -16,8 +17,7 @@ import sesame.controller.input.scheduler.SequentialScheduler;
 import sesame.topology.TransactionTopology;
 import state_engine.common.PartitionedOrderLock;
 import state_engine.common.SpinLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import state_engine.transaction.TableInitilizer;
 
 import java.util.Random;
 
@@ -45,8 +45,9 @@ public class OnlineBiding extends TransactionTopology {
         Random r = new Random();
         return r.nextInt(max) + min;
     }
+
     //configure set_executor_ready database table.
-    public TableInitilizer initializeDB(SpinLock[] spinlock_){
+    public TableInitilizer initializeDB(SpinLock[] spinlock_) {
         double scale_factor = config.getDouble("scale_factor", 1);
         double theta = config.getDouble("theta", 1);
         int tthread = config.getInt("tthread");
@@ -72,6 +73,7 @@ public class OnlineBiding extends TransactionTopology {
 
         return ini;
     }
+
     @Override
     public Topology buildTopology() {
 

@@ -4,6 +4,8 @@ import application.param.ob.AlertEvent;
 import application.param.ob.BuyingEvent;
 import application.param.ob.ToppingEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.collector.OutputCollector;
@@ -11,8 +13,6 @@ import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.faulttolerance.impl.ValueState;
 import state_engine.DatabaseException;
 import state_engine.transaction.dedicated.TxnManagerNoLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ public class OBBolt_nocc extends OBBolt {
     private static final Logger LOG = LoggerFactory.getLogger(OBBolt_nocc.class);
 
     public OBBolt_nocc(int fid, SINKCombo sink) {
-        super(LOG, fid,sink);
+        super(LOG, fid, sink);
         state = new ValueState();
     }
 

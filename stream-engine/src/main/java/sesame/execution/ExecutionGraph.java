@@ -2,6 +2,8 @@ package sesame.execution;
 
 import application.Platform;
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.MultiStreamComponent;
 import sesame.components.Topology;
 import sesame.components.TopologyComponent;
@@ -14,8 +16,6 @@ import sesame.controller.output.MultiStreamOutputContoller;
 import sesame.controller.output.OutputController;
 import sesame.controller.output.PartitionController;
 import sesame.controller.output.partition.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -110,62 +110,62 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * The load factor used when none specified in constructor.
      */
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
-	/**
-	 * Index of 'not found' and 'end of iteration'.
-	 */
-	final static int NO_INDEX = -2;
+    /**
+     * Index of 'not found' and 'end of iteration'.
+     */
+    final static int NO_INDEX = -2;
+    /**
+     * Value to use if keyIndexShift is 0.
+     */
+    final static Object DUMMY_VALUE = new Object();
     /**
      * Maximum allowed load factor, since element index bits
      * cannot exceed number of hash bits (other bits are used to Store hashcode).
      */
-	private static final float MAXIMUM_LOAD_FACTOR = 1f;
+    private static final float MAXIMUM_LOAD_FACTOR = 1f;
     /**
      * Bits available to Store indices and hashcode bits.
      * Now the highest (31st) bit (negative/inverted values) is used as deleted flag,
      * 30th bit is used to mark end of list, thus 30 bits are available.
      */
-	private final static int AVAILABLE_BITS = 0x3FFFFFFF;
+    private final static int AVAILABLE_BITS = 0x3FFFFFFF;
     /**
      * Bits with control information on where to look for next entry in hash bin.
      */
-	private final static int CONTROL_BITS = 0xC0000000;
+    private final static int CONTROL_BITS = 0xC0000000;
     /**
      * This bits are used to mark empty cell.
      * Also, it's used in 'next' cell, and index must not be zero.
      * Used only in main hashtable, never in overflow.
      */
-	private final static int CONTROL_EMPTY = 0;
+    private final static int CONTROL_EMPTY = 0;
     /**
      * This bits are used only in main hashtable,
      * (when next cell is still empty) never in overflow.
      */
-	private final static int CONTROL_NEXT = 0x40000000;
+    private final static int CONTROL_NEXT = 0x40000000;
     /**
      * Next element is in overflow table.
      */
-	private final static int CONTROL_OVERFLOW = 0x80000000;
+    private final static int CONTROL_OVERFLOW = 0x80000000;
     /**
      * This bits marks 'end of list'.
      */
-	private final static int CONTROL_END = 0xC0000000;
-	/**
-	 * Value to use if keyIndexShift is 0.
-	 */
-	final static Object DUMMY_VALUE = new Object();
+    private final static int CONTROL_END = 0xC0000000;
     /**
      * The maximum capacity, used if a higher value is implicitly specified
      * by either of the constructors with arguments.
      * MUST be a power of two <= 1<<30.
      */
-	private static final int MAXIMUM_CAPACITY = 1 << 30;
+    private static final int MAXIMUM_CAPACITY = 1 << 30;
     /**
      * Index of null key.
      */
-	private final static int NULL_INDEX = -1;
+    private final static int NULL_INDEX = -1;
     // Iterator types
-	private final static int KEY_ITERATOR = 0;
-	private final static int ENTRY_ITERATOR = 1;
-	private final static int VALUE_ITERATOR = 2;
+    private final static int KEY_ITERATOR = 0;
+    private final static int ENTRY_ITERATOR = 1;
+    private final static int VALUE_ITERATOR = 2;
     /**
      * Value to distinguish null as 'key not found' from null as real value.
      */
@@ -176,14 +176,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      *
      * @serial
      */
-	private final float loadFactor;
-    /**
-     * True if this map contains null key.
-     * This makes iteration faster:
-     * null key in table == empty cell,
-     * no need for index table lookup.
-     */
-	private transient boolean nullKeyPresent;
+    private final float loadFactor;
     /**
      * The number of key-value mappings contained in this map.
      */
@@ -200,11 +193,6 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      */
     transient int keyIndexShift;
     /**
-     * Index of the first not occupied position in array.
-     * All elements starting with this index are free.
-     */
-	private transient int firstUnusedIndex = 0;
-    /**
      * The next fieldSize value at which to resize (capacity * load factor).
      *
      * @serial
@@ -218,6 +206,18 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * the HashMap fail-fast.  (See ConcurrentModificationException).
      */
     transient int modCount;
+    /**
+     * True if this map contains null key.
+     * This makes iteration faster:
+     * null key in table == empty cell,
+     * no need for index table lookup.
+     */
+    private transient boolean nullKeyPresent;
+    /**
+     * Index of the first not occupied position in array.
+     * All elements starting with this index are free.
+     */
+    private transient int firstUnusedIndex = 0;
     /**
      * Array of complex indices.
      * <profiling>
@@ -286,7 +286,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * @throws IllegalArgumentException if the set_executor_ready capacity is negative
      *                                  or the load factor is greater than one or is too low
      */
-	QuickHashMap(int initialCapacity, float loadFactor) {
+    QuickHashMap(int initialCapacity, float loadFactor) {
         this(initialCapacity, loadFactor, true);
     }
 
@@ -322,7 +322,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * @param initialCapacity the set_executor_ready capacity.
      * @throws IllegalArgumentException if the set_executor_ready capacity is negative.
      */
-	QuickHashMap(int initialCapacity) {
+    QuickHashMap(int initialCapacity) {
         this(initialCapacity, DEFAULT_LOAD_FACTOR, true);
     }
 
@@ -344,7 +344,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * @param m the map whose mappings are to be placed in this map
      * @throws NullPointerException if the specified map is null
      */
-	QuickHashMap(Map<? extends K, ? extends V> m) {
+    QuickHashMap(Map<? extends K, ? extends V> m) {
         this(Math.max((int) (m.size() / DEFAULT_LOAD_FACTOR) + 1,
                 DEFAULT_INITIAL_CAPACITY), DEFAULT_LOAD_FACTOR);
         for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
@@ -358,7 +358,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * otherwise encounter collisions for hashCodes that do not differ
      * in lower bits. Note: Null keys always map to hash 0, thus index 0.
      */
-	private static int hash(int h) {
+    private static int hash(int h) {
         // This function ensures that hashCodes that differ only by
         // constant multiples at each bit position have a bounded
         // number of collisions (approximately 8 at default load factor).
@@ -509,19 +509,19 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
                     return position;
             }
             // Move ForwardBolt
-			switch (control) {
-				case CONTROL_END:
-					return NO_INDEX; // END is more frequent - check it first
-				case CONTROL_OVERFLOW:
-					index = indexTable[hashLen + position];
-					break;
-				case CONTROL_NEXT:
-					index = indexTable[(hc + 1) & (hashLen - 1)];
-					break;
-				default:
+            switch (control) {
+                case CONTROL_END:
+                    return NO_INDEX; // END is more frequent - check it first
+                case CONTROL_OVERFLOW:
+                    index = indexTable[hashLen + position];
+                    break;
+                case CONTROL_NEXT:
+                    index = indexTable[(hc + 1) & (hashLen - 1)];
+                    break;
+                default:
 // CONTROL_EMPTY
-					return NO_INDEX;
-			}
+                    return NO_INDEX;
+            }
             control = index & CONTROL_BITS;
         }
     }
@@ -570,19 +570,19 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
                     return (V) keyValueTable[(position << 1) + 2];
             }
             // Move ForwardBolt
-			switch (control) {
-				case CONTROL_END:
-					return null; // END is more frequent - check it first
-				case CONTROL_OVERFLOW:
-					index = indexTable[hashLen + position];
-					break;
-				case CONTROL_NEXT:
-					index = indexTable[(hc + 1) & (hashLen - 1)];
-					break;
-				default:
+            switch (control) {
+                case CONTROL_END:
+                    return null; // END is more frequent - check it first
+                case CONTROL_OVERFLOW:
+                    index = indexTable[hashLen + position];
+                    break;
+                case CONTROL_NEXT:
+                    index = indexTable[(hc + 1) & (hashLen - 1)];
+                    break;
+                default:
 // CONTROL_EMPTY
-					return null;
-			}
+                    return null;
+            }
             control = index & CONTROL_BITS;
         }
     }
@@ -594,7 +594,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * @param i index in array, must be less than firstUnusedIndex
      * @return <tt>true</tt> if i-th is empty (was deleted)
      */
-	private boolean isEmpty(int i) {
+    private boolean isEmpty(int i) {
         return i == NULL_INDEX ? !nullKeyPresent :
                 firstDeletedIndex >= 0 &&
                         keyValueTable[(i << keyIndexShift) + 1] == null;
@@ -667,40 +667,40 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         int control = head & CONTROL_BITS;
         if (control != CONTROL_EMPTY && searchForExistingKey) {
             int index = head;
-			label:
-			while (true) {
-				int cur = index & (hashLen - 1);
-				if ((index & mask) == (hc & mask)) {
-					Object key1 = keyValueTable[(cur << keyIndexShift) + 1];
-					if (key == key1 || key.equals(key1)) {
-						Object oldValue;
-						if (keyIndexShift > 0) {
-							oldValue = keyValueTable[(cur << keyIndexShift) + 2];
-							keyValueTable[(cur << keyIndexShift) + 2] = value;
-						} else {
-							oldValue = DUMMY_VALUE;
-						}
-						if (callback) {
-							updateHook(cur);
-						}
-						return (V) oldValue;
-					}
-				}
-				depth++;
-				switch (index & CONTROL_BITS) {
-					case CONTROL_END:
-						break label;
-					case CONTROL_OVERFLOW:
-						index = indexTable[hashLen + cur];
-						break;
-					case CONTROL_NEXT:
-						index = indexTable[(i + 1) & (hashLen - 1)];
-						break;
-					default:
+            label:
+            while (true) {
+                int cur = index & (hashLen - 1);
+                if ((index & mask) == (hc & mask)) {
+                    Object key1 = keyValueTable[(cur << keyIndexShift) + 1];
+                    if (key == key1 || key.equals(key1)) {
+                        Object oldValue;
+                        if (keyIndexShift > 0) {
+                            oldValue = keyValueTable[(cur << keyIndexShift) + 2];
+                            keyValueTable[(cur << keyIndexShift) + 2] = value;
+                        } else {
+                            oldValue = DUMMY_VALUE;
+                        }
+                        if (callback) {
+                            updateHook(cur);
+                        }
+                        return (V) oldValue;
+                    }
+                }
+                depth++;
+                switch (index & CONTROL_BITS) {
+                    case CONTROL_END:
+                        break label;
+                    case CONTROL_OVERFLOW:
+                        index = indexTable[hashLen + cur];
+                        break;
+                    case CONTROL_NEXT:
+                        index = indexTable[(i + 1) & (hashLen - 1)];
+                        break;
+                    default:
 // CONTROL_EMPTY
-						break label;
-				}
-			}
+                        break label;
+                }
+            }
         }
         // Resize if needed
         boolean defragment = depth > 2 && firstUnusedIndex + depth <= threshold;
@@ -748,27 +748,27 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
                     keyValueTable[(k << keyIndexShift) + 2] = null;
                 }
                 int nextIndex, n;
-				switch (j & CONTROL_BITS) {
-					case CONTROL_END:
-						nextIndex = -1;
-						n = 0;
-						break;
-					case CONTROL_OVERFLOW:
-						nextIndex = hashLen + k;
-						n = indexTable[nextIndex];
-						break;
-					case CONTROL_NEXT:
-						nextIndex = (i + 1) & (hashLen - 1);
-						n = indexTable[nextIndex] | CONTROL_END;
-						indexTable[nextIndex] = 0;
-						head = (head & AVAILABLE_BITS) | CONTROL_OVERFLOW;
-						control = CONTROL_OVERFLOW;
-						break;
-					default:  // CONTROL_EMPTY
-						nextIndex = -1;
-						n = 0;
-						break;
-				}
+                switch (j & CONTROL_BITS) {
+                    case CONTROL_END:
+                        nextIndex = -1;
+                        n = 0;
+                        break;
+                    case CONTROL_OVERFLOW:
+                        nextIndex = hashLen + k;
+                        n = indexTable[nextIndex];
+                        break;
+                    case CONTROL_NEXT:
+                        nextIndex = (i + 1) & (hashLen - 1);
+                        n = indexTable[nextIndex] | CONTROL_END;
+                        indexTable[nextIndex] = 0;
+                        head = (head & AVAILABLE_BITS) | CONTROL_OVERFLOW;
+                        control = CONTROL_OVERFLOW;
+                        break;
+                    default:  // CONTROL_EMPTY
+                        nextIndex = -1;
+                        n = 0;
+                        break;
+                }
                 indexTable[hashLen + k] = firstDeletedIndex;
                 firstDeletedIndex = k;
                 if (callback) relocateHook(firstUnusedIndex, k);
@@ -858,83 +858,83 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             return (V) NOT_FOUND;
         // Search
         int mask = AVAILABLE_BITS ^ (hashLen - 1);
-		label:
-		while (true) {
-			int j = i & (hashLen - 1);
-			int k = hashLen + j;
-			if ((hc & mask) == (i & mask)) {
-				boolean found;
-				if (index == NO_INDEX) {
-					Object o = keyValueTable[(j << keyIndexShift) + 1];
-					found = key == o || key.equals(o);
-				} else {
-					found = j == index;
-				}
-				if (found) {
-					size--;
-					switch (i & CONTROL_BITS) {
-						case CONTROL_END:
-							if (prev >= 0) {
-								indexTable[prev] |= CONTROL_END; // (indexTable[prev] & AVAILABLE_BITS)
-							} else {
-								indexTable[curr] = 0;
-							}
-							break;
-						case CONTROL_OVERFLOW:
-							indexTable[curr] = indexTable[k];
-							break;
-						case CONTROL_NEXT:
-							int c2 = (curr + 1) & (hashLen - 1);
-							int i2 = indexTable[c2];
-							indexTable[curr] = i2 | CONTROL_END; // & AVAILABLE_BITS
+        label:
+        while (true) {
+            int j = i & (hashLen - 1);
+            int k = hashLen + j;
+            if ((hc & mask) == (i & mask)) {
+                boolean found;
+                if (index == NO_INDEX) {
+                    Object o = keyValueTable[(j << keyIndexShift) + 1];
+                    found = key == o || key.equals(o);
+                } else {
+                    found = j == index;
+                }
+                if (found) {
+                    size--;
+                    switch (i & CONTROL_BITS) {
+                        case CONTROL_END:
+                            if (prev >= 0) {
+                                indexTable[prev] |= CONTROL_END; // (indexTable[prev] & AVAILABLE_BITS)
+                            } else {
+                                indexTable[curr] = 0;
+                            }
+                            break;
+                        case CONTROL_OVERFLOW:
+                            indexTable[curr] = indexTable[k];
+                            break;
+                        case CONTROL_NEXT:
+                            int c2 = (curr + 1) & (hashLen - 1);
+                            int i2 = indexTable[c2];
+                            indexTable[curr] = i2 | CONTROL_END; // & AVAILABLE_BITS
 
-							indexTable[c2] = 0;
-							break;
-						default:  // CONTROL_EMPTY
-							indexTable[prev] |= CONTROL_END; // (indexTable[prev] & AVAILABLE_BITS)
+                            indexTable[c2] = 0;
+                            break;
+                        default:  // CONTROL_EMPTY
+                            indexTable[prev] |= CONTROL_END; // (indexTable[prev] & AVAILABLE_BITS)
 
-							indexTable[curr] = 0;
-							break;
-					}
-					if (size == 0) {
-						firstUnusedIndex = 0;
-						firstDeletedIndex = -1;
-					} else if (j == firstUnusedIndex - 1) {
-						firstUnusedIndex = j;
-					} else {
-						indexTable[k] = firstDeletedIndex;
-						firstDeletedIndex = j;
-					}
-					Object oldValue = index != NO_INDEX ? null :
-							keyIndexShift == 0 ? DUMMY_VALUE :
-									keyValueTable[(j << keyIndexShift) + 2];
-					keyValueTable[(j << keyIndexShift) + 1] = null;
-					if (keyIndexShift > 0) {
-						keyValueTable[(j << keyIndexShift) + 2] = null;
-					}
-					modCount++;
-					if (this instanceof FastLinkedHashMap) {
-						removeHook(j);
-					}
-					// validate("Remove "+key+", "+index);
-					return (V) oldValue;
-				}
-			}
-			prev = curr;
-			switch (i & CONTROL_BITS) {
-				case CONTROL_END:
-					break label;
-				case CONTROL_OVERFLOW:
-					curr = k;
-					break;
-				case CONTROL_NEXT:
-					curr = (curr + 1) & (hashLen - 1);
-					break;
-				default:
-					break label;
-			}
-			i = indexTable[curr];
-		}
+                            indexTable[curr] = 0;
+                            break;
+                    }
+                    if (size == 0) {
+                        firstUnusedIndex = 0;
+                        firstDeletedIndex = -1;
+                    } else if (j == firstUnusedIndex - 1) {
+                        firstUnusedIndex = j;
+                    } else {
+                        indexTable[k] = firstDeletedIndex;
+                        firstDeletedIndex = j;
+                    }
+                    Object oldValue = index != NO_INDEX ? null :
+                            keyIndexShift == 0 ? DUMMY_VALUE :
+                                    keyValueTable[(j << keyIndexShift) + 2];
+                    keyValueTable[(j << keyIndexShift) + 1] = null;
+                    if (keyIndexShift > 0) {
+                        keyValueTable[(j << keyIndexShift) + 2] = null;
+                    }
+                    modCount++;
+                    if (this instanceof FastLinkedHashMap) {
+                        removeHook(j);
+                    }
+                    // validate("Remove "+key+", "+index);
+                    return (V) oldValue;
+                }
+            }
+            prev = curr;
+            switch (i & CONTROL_BITS) {
+                case CONTROL_END:
+                    break label;
+                case CONTROL_OVERFLOW:
+                    curr = k;
+                    break;
+                case CONTROL_NEXT:
+                    curr = (curr + 1) & (hashLen - 1);
+                    break;
+                default:
+                    break label;
+            }
+            i = indexTable[curr];
+        }
         return (V) NOT_FOUND;
     }
 
@@ -1078,7 +1078,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * the iteration are undefined.  The set supports element removal,
      * which removes the corresponding mapping from the map, via the
      * <tt>Iterator.remove</tt>, <tt>Set.remove</tt>,
-	 * <tt>removeAll</tt>, <tt>retainAll</tt>, and <tt>relax_reset</tt>
+     * <tt>removeAll</tt>, <tt>retainAll</tt>, and <tt>relax_reset</tt>
      * operations.  It does not support the <tt>add</tt> or <tt>addAll</tt>
      * operations.
      */
@@ -1124,7 +1124,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * supports element removal, which removes the corresponding
      * mapping from the map, via the <tt>Iterator.remove</tt>,
      * <tt>Set.remove</tt>, <tt>removeAll</tt>, <tt>retainAll</tt> and
-	 * <tt>relax_reset</tt> operations.  It does not support the
+     * <tt>relax_reset</tt> operations.  It does not support the
      * <tt>add</tt> or <tt>addAll</tt> operations.
      *
      * @return a set view of the mappings contained in this map
@@ -1144,7 +1144,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * supports element removal, which removes the corresponding
      * mapping from the map, via the <tt>Iterator.remove</tt>,
      * <tt>Collection.remove</tt>, <tt>removeAll</tt>,
-	 * <tt>retainAll</tt> and <tt>relax_reset</tt> operations.  It does not
+     * <tt>retainAll</tt> and <tt>relax_reset</tt> operations.  It does not
      * support the <tt>add</tt> or <tt>addAll</tt> operations.
      */
     public Collection<V> values() {
@@ -1355,11 +1355,11 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      * value() method should return the real elements.
      */
     final class HashIterator<E> implements Iterator<E> {
-		final boolean simpleOrder = !(QuickHashMap.this instanceof FastLinkedHashMap<?, ?>);
+        final boolean simpleOrder = !(QuickHashMap.this instanceof FastLinkedHashMap<?, ?>);
+        final int iteratorType;
         int nextIndex = iterateFirst();
         int lastIndex = NO_INDEX;
         int expectedModCount = modCount; // For fast-fail
-		final int iteratorType;
 
         HashIterator(int iteratorType) {
             this.iteratorType = iteratorType;
@@ -1408,7 +1408,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
 
     // For Server VM with -XX:+DoEscapeAnalysis
     final class EntryIterator implements Iterator<Map.Entry<K, V>> {
-		final boolean simpleOrder = !(QuickHashMap.this instanceof FastLinkedHashMap<?, ?>);
+        final boolean simpleOrder = !(QuickHashMap.this instanceof FastLinkedHashMap<?, ?>);
         int nextIndex = iterateFirst();
         int lastIndex = NO_INDEX;
         int expectedModCount = modCount; // For fast-fail
@@ -1446,7 +1446,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
 
     private final class KeySet extends AbstractSet<K> {
         public Iterator<K> iterator() {
-			return new HashIterator<>(KEY_ITERATOR);
+            return new HashIterator<>(KEY_ITERATOR);
         }
 
         public int size() {
@@ -1622,7 +1622,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
 
     private final class Values extends AbstractCollection<V> {
         public Iterator<V> iterator() {
-			return new HashIterator<>(VALUE_ITERATOR);
+            return new HashIterator<>(VALUE_ITERATOR);
         }
 
         public int size() {

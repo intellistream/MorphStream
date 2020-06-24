@@ -24,29 +24,23 @@ import state_engine.transaction.TableInitilizer;
 
 import static application.CONTROL.enable_app_combo;
 import static application.constants.LinearRoadConstants.Conf.Executor_Threads;
-import static application.constants.TP_TxnConstants.Component.EXECUTOR;
-import static application.constants.TP_TxnConstants.Constant.NUM_SEGMENTS;
-import static application.constants.TP_TxnConstants.PREFIX;
+import static application.constants.TPConstants.Component.EXECUTOR;
+import static application.constants.TPConstants.Constant.NUM_SEGMENTS;
+import static application.constants.TPConstants.PREFIX;
 import static state_engine.content.Content.*;
 import static state_engine.utils.PartitionHelper.setPartition_interval;
 
-public class TP_Txn extends TransactionTopology {
-    private static final Logger LOG = LoggerFactory.getLogger(TP_Txn.class);
+public class TP extends TransactionTopology {
+    private static final Logger LOG = LoggerFactory.getLogger(TP.class);
 
-    public TP_Txn(String topologyName, Configuration config) {
+    public TP(String topologyName, Configuration config) {
         super(topologyName, config);
-//        initilize_parser();
-    }
-
-    public static String getPrefix() {
-        return PREFIX;
     }
 
     public void initialize() {
         super.initialize();
         sink = loadSink();
     }
-
 
     //TODO: Clean this method..
     @Override
@@ -58,24 +52,10 @@ public class TP_Txn extends TransactionTopology {
         TableInitilizer ini = new TPInitializer(db, scale_factor, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
-
             for (int i = 0; i < tthread; i++)
                 spinlock_[i] = new SpinLock();
-
-//            ini.loadDB(scale_factor, theta, getPartition_interval(), spinlock_);
-
-            //initilize order locks.
             PartitionedOrderLock.getInstance().initilize(tthread);
-        } else {
-//            ini.loadDB(scale_factor, theta);
         }
-        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
-
-
-//        ini.loadData_Central(scale_factor, theta); // Prepared data by multiple threads.
-
-//        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
-
         return ini;
     }
 
@@ -88,7 +68,6 @@ public class TP_Txn extends TransactionTopology {
 
             if (enable_app_combo) {
                 //spout only.
-
             } else {
                 builder.setBolt(LRTopologyControl.DISPATCHER,
                         new DispatcherBolt(), 1,

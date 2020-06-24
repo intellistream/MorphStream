@@ -20,12 +20,10 @@ public class OrderLock implements Serializable {
     //	SpinLock spinlock_ = new SpinLock();
 //	volatile int fid = 0;
     AtomicLong counter = new AtomicLong(0);// it is already volatiled.
+    SpinLock check_lock = new SpinLock();
+    boolean wasSignalled = false;//to fight with missing signals.
     //	private transient HashMap<Integer, HashMap<Integer, Boolean>> executors_ready;//<FID, ExecutorID, true/false>
     private int end_fid;
-
-    SpinLock check_lock = new SpinLock();
-
-    boolean wasSignalled = false;//to fight with missing signals.
 
     private OrderLock() {
 

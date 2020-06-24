@@ -1,13 +1,10 @@
 package sesame.components.operators.api;
 
 import application.tools.FastZipfGenerator;
-import application.util.Configuration;
-import sesame.components.context.TopologyContext;
-import sesame.execution.runtime.collector.OutputCollector;
-import sesame.execution.runtime.tuple.impl.Marker;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.execution.runtime.tuple.impl.Marker;
 
 import java.io.BufferedWriter;
 import java.util.ArrayList;
@@ -66,8 +63,8 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
         if (counter % batch_number_per_wm == 0) {
 //            myiteration++;
 //            success = false;
-           return true;
-        }else
+            return true;
+        } else
             return false;
     }
 

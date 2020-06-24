@@ -199,7 +199,7 @@ public class cacheHitSimulator_PI_generic {
                 if (e.equals(top_function.get(i))) {
                     if (first[i]) {//first time encounter
                         first[i] = false;
-						counter[i] = 0;//clean pre-count
+                        counter[i] = 0;//clean pre-count
                     } else {
                         counter[i] -= instruction_per_function.get(e);//remove itself.
                         bw[i].println(counter[i]);

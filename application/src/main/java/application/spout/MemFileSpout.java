@@ -2,12 +2,15 @@ package application.spout;
 
 import application.util.Configuration;
 import application.util.OsUtils;
-import sesame.components.operators.api.AbstractSpout;
-import sesame.execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.components.operators.api.AbstractSpout;
+import sesame.execution.ExecutionGraph;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 

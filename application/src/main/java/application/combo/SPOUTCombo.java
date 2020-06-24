@@ -29,11 +29,11 @@ import static state_engine.profiler.Metrics.NUM_ITEMS;
 
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public abstract class SPOUTCombo extends TransactionalSpout {
-    private static Logger LOG;
     private static final long serialVersionUID = -2394340130331865581L;
+    private static Logger LOG;
+    public final String split_exp = ";";
     public int the_end;
     public int global_cnt;
-    public final String split_exp = ";";
     public int num_events_per_thread;
 
     public int test_num_events_per_thread;
@@ -44,9 +44,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public Tuple marker;
     public GeneralMsg generalMsg;
     public int tthread;
-
-    TransactionalBolt bolt;//compose the bolt here.
     public SINKCombo sink = new SINKCombo();
+    TransactionalBolt bolt;//compose the bolt here.
+    int start_measure;
 
     public SPOUTCombo(Logger log, int i) {
         super(log, i);
@@ -105,15 +105,10 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         }
     }
 
-
     @Override
     public Integer default_scale(Configuration conf) {
         return 1;//4 for 7 sockets
     }
-
-
-
-    int start_measure;
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {

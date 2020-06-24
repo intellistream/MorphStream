@@ -1,9 +1,9 @@
 package application.sink;
 
-import sesame.execution.runtime.tuple.JumboTuple;
-import sesame.execution.runtime.tuple.impl.Marker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.execution.runtime.tuple.JumboTuple;
+import sesame.execution.runtime.tuple.impl.Marker;
 
 public class MeasureSink_FT extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(MeasureSink_FT.class);

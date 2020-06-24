@@ -1,8 +1,8 @@
 package application.sink;
 
 import application.util.OsUtils;
-import sesame.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
+import sesame.execution.runtime.tuple.impl.Tuple;
 
 import java.io.*;
 

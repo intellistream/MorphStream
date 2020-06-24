@@ -21,14 +21,14 @@ package application.bolts.lr;
 
 import application.datatype.*;
 import application.datatype.util.LRTopologyControl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.operators.api.Checkpointable;
 import sesame.components.operators.base.filterBolt;
 import sesame.execution.runtime.tuple.impl.Marker;
 import sesame.execution.runtime.tuple.impl.OutputFieldsDeclarer;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.faulttolerance.impl.ValueState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 

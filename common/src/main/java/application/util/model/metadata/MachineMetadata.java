@@ -2,7 +2,8 @@ package application.util.model.metadata;
 
 import java.io.Serializable;
 
-public class MachineMetadata implements Serializable {private static final long serialVersionUID = 32L;
+public class MachineMetadata implements Serializable {
+    private static final long serialVersionUID = 32L;
     private long timestamp;
     private String machineIP;
 

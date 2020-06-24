@@ -47,7 +47,7 @@ public class CaculateInst {
                 try {
                     fileHandler.close();
                 } catch (IOException ignored) {
-                /* ignore */
+                    /* ignore */
                 }
         }
     }

@@ -14,8 +14,8 @@ import java.util.Random;
 
 public class fully_stateful_task extends stateful_task {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(fully_stateful_task.class);
-	private static final long serialVersionUID = 3072579886348914507L;
-	final private int size_state;
+    private static final long serialVersionUID = 3072579886348914507L;
+    final private int size_state;
     protected ArrayList<KB_object> list = new ArrayList<>();
     private int in_core_complexity;
 

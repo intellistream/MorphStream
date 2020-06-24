@@ -9,8 +9,8 @@ import java.util.Random;
  * Created by I309939 on 7/29/2016.
  */
 public class partial_stateful_task extends stateful_task {
-	private static final long serialVersionUID = -3206825365749743835L;
-	final int SECTONANO = 1000000000;
+    private static final long serialVersionUID = -3206825365749743835L;
+    final int SECTONANO = 1000000000;
     final int SECTOMS = 1000000;
     private final int in_core_complexity;
     private final int window;

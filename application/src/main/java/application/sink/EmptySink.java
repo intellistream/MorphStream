@@ -1,10 +1,10 @@
 package application.sink;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.operators.api.BaseSink;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EmptySink extends BaseSink {
     private static final Logger LOG = LoggerFactory.getLogger(EmptySink.class);

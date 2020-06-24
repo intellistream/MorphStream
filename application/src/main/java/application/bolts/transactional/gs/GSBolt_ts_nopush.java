@@ -3,13 +3,13 @@ package application.bolts.transactional.gs;
 
 import application.param.mb.MicroEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.impl.Marker;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import state_engine.DatabaseException;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -26,7 +26,7 @@ public class GSBolt_ts_nopush extends GSBolt_ts {
     private Collection<MicroEvent> WriteEventsHolder;
 
     public GSBolt_ts_nopush(int fid, SINKCombo sink) {
-        super(fid,sink);
+        super(fid, sink);
     }
 
     @Override

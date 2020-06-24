@@ -4,8 +4,9 @@ package application.topology.transactional;
 import application.bolts.transactional.gs.*;
 import application.constants.GrepSumConstants.Component;
 import application.topology.transactional.initializer.MBInitializer;
-import state_engine.transaction.TableInitilizer;
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.components.exception.InvalidIDException;
 import sesame.components.grouping.ShuffleGrouping;
@@ -14,8 +15,7 @@ import sesame.topology.TransactionTopology;
 import state_engine.common.PartitionedOrderLock;
 import state_engine.common.SpinLock;
 import state_engine.profiler.Metrics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import state_engine.transaction.TableInitilizer;
 
 import static application.CONTROL.enable_app_combo;
 import static application.constants.GrepSumConstants.Conf.Executor_Threads;
@@ -26,6 +26,7 @@ import static state_engine.utils.PartitionHelper.setPartition_interval;
 
 public class GrepSum extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(GrepSum.class);
+
     public GrepSum(String topologyName, Configuration config) {
         super(topologyName, config);
     }

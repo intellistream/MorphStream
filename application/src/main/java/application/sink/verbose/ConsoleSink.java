@@ -1,12 +1,12 @@
 package application.sink.verbose;
 
-import sesame.components.operators.api.BaseSink;
 import application.sink.helper.stable_sink_helper_verbose;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sesame.components.operators.api.BaseSink;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static application.helper.Event.null_expression;
 import static application.helper.Event.split_expression;

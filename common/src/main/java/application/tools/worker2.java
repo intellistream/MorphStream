@@ -6,7 +6,7 @@ package application.tools;
 public class worker2 {
     final Control control = new Control();
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
         try {
             worker2 test = new worker2();
             test.test();

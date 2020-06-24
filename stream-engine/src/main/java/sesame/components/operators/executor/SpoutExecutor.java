@@ -2,10 +2,10 @@ package sesame.components.operators.executor;
 
 import sesame.components.operators.api.Checkpointable;
 import sesame.components.operators.api.Operator;
-import state_engine.Clock;
 import sesame.execution.ExecutionNode;
 import sesame.execution.runtime.tuple.impl.Marker;
 import sesame.faulttolerance.Writer;
+import state_engine.Clock;
 import state_engine.common.OrderLock;
 import state_engine.common.OrderValidate;
 

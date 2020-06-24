@@ -2,22 +2,23 @@ package sesame.execution.runtime;
 
 import application.Constants;
 import application.util.Configuration;
+import ch.usi.overseer.OverHpc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.components.operators.executor.BasicSpoutBatchExecutor;
 import sesame.execution.ExecutionNode;
 import sesame.execution.runtime.collector.OutputCollector;
 import sesame.optimization.model.STAT;
-import ch.usi.overseer.OverHpc;
 import state_engine.Clock;
 import state_engine.DatabaseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
-import static application.CONTROL.*;
+import static application.CONTROL.combo_bid_size;
+import static application.CONTROL.enable_app_combo;
 import static state_engine.content.Content.*;
 
 /**
@@ -124,11 +125,9 @@ public class spoutThread extends executorThread {
             Thread.currentThread().setName("Operator:" + executor.getOP() + "\tExecutor ID:" + executor.getExecutorID());
 
 
-
             initilize_queue(this.executor.getExecutorID());
             boolean binding_finished = true;
             //do Loading
-
 
 
             sp.prepare(conf, context, collector);
@@ -154,7 +153,7 @@ public class spoutThread extends executorThread {
             }
 
 
-                routing();
+            routing();
 
         } catch (InterruptedException | DatabaseException | BrokenBarrierException ignored) {
 //            e.printStackTrace();

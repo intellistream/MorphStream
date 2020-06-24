@@ -1,9 +1,9 @@
 package application.sink;
 
 import application.bolts.transactional.ob.BidingResult;
-import sesame.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.execution.runtime.tuple.impl.Tuple;
 
 public class OBSink extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(OBSink.class);

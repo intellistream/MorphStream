@@ -6,14 +6,9 @@ import java.util.concurrent.RejectedExecutionException;
  * A hack ref to SchemaRecord, simulating C++ pointer.
  */
 public class SchemaRecordRef {
-    private volatile SchemaRecord record;
     public int cnt = 0;
+    private volatile SchemaRecord record;
     private String name;
-
-    public void setRecord(SchemaRecord record) {
-        this.record = record;
-        cnt++;
-    }
 
     public boolean isEmpty() {
         return cnt == 0;
@@ -35,6 +30,11 @@ public class SchemaRecordRef {
 //        }
 
         return record;
+    }
+
+    public void setRecord(SchemaRecord record) {
+        this.record = record;
+        cnt++;
     }
 
 

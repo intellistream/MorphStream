@@ -6,12 +6,11 @@ public class TxnEvent {
     protected final int pid;
     protected final long[] bid_array;
     protected final int number_of_partitions;
-    //embeded state.
-    protected long timestamp;//emit timestamp
-
     public double[] index_time = new double[1];
     public double[] enqueue_time = new double[1];
     public boolean[] success;
+    //embeded state.
+    protected long timestamp;//emit timestamp
 
     public TxnEvent(long bid, int partition_id, String bid_array, int number_of_partitions) {
         this.bid = bid;

@@ -29,7 +29,8 @@ import java.util.concurrent.CountDownLatch;
 import static application.Constants.EVENTS.*;
 import static application.Constants.*;
 import static application.util.OsUtils.isUnix;
-import static xerial.jnuma.Numa.*;
+import static xerial.jnuma.Numa.getAffinity;
+import static xerial.jnuma.Numa.setAffinity;
 
 /**
  * Created by shuhaozhang on 19/8/16.
@@ -40,12 +41,12 @@ public class ExecutionManager {
     public final HashMap<Integer, executorThread> ThreadMap = new HashMap<>();
     public final AffinityController AC;
     private final OptimizationManager optimizationManager;
+    TxnProcessingEngine tp_engine;
     private int loadTargetHz;
     private int timeSliceLengthMs;
     private OverHpc HPCMonotor;
     private ExecutionGraph g;
     private boolean Txn_lock = true;
-
 
     public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager, Database db, Platform p) {
         this.g = g;
@@ -95,8 +96,6 @@ public class ExecutionManager {
             }
         }
     }
-
-    TxnProcessingEngine tp_engine;
 
     /**
      * Launch threads for each executor in executionGraph

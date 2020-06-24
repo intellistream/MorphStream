@@ -70,6 +70,6 @@ public class Cache {
 
     public String toString() {
 
-		return "Cache Sets: " + sets.length + "\n" + "Set Associativity: " + setAssoc + "\n" + "Block Size: 4";
+        return "Cache Sets: " + sets.length + "\n" + "Set Associativity: " + setAssoc + "\n" + "Block Size: 4";
     }
 }

@@ -17,11 +17,11 @@ public class OrderValidate implements Serializable {
 
 //	SpinLock spinlock_ = new SpinLock();
 
-//	public static OrderLock getHolder() {
+    //	public static OrderLock getHolder() {
 //		return ourInstance;
 //	}
 //	volatile int fid = 0;
-final AtomicLong bid = new AtomicLong();
+    final AtomicLong bid = new AtomicLong();
     //	private transient HashMap<Integer, HashMap<Integer, Boolean>> executors_ready;//<FID, ExecutorID, true/false>
     private int end_fid;
 

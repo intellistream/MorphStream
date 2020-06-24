@@ -8,8 +8,8 @@ import java.io.Serializable;
  * @author Maycon Viana Bordin <mayconbordin@gmail.com>
  */
 public class CallDetailRecord implements Serializable {
-	private static final long serialVersionUID = -2075589141482875705L;
-	private String callingNumber;
+    private static final long serialVersionUID = -2075589141482875705L;
+    private String callingNumber;
     private String calledNumber;
     private DateTime answerTime;
     private int callDuration;

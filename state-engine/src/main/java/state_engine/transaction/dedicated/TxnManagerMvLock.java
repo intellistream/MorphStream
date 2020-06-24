@@ -1,14 +1,14 @@
 package state_engine.transaction.dedicated;
 
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.Meta.MetaTypes;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.SchemaRecordRef;
 import state_engine.storage.StorageManager;
 import state_engine.storage.TableRecord;
 import state_engine.transaction.impl.TxnContext;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 
@@ -49,7 +49,7 @@ public class TxnManagerMvLock extends TxnManagerDedicated {
 //            return true;
 //        } else {
 ////				END_PHASE_MEASURE(thread_id_, INSERT_PHASE);
-            return true;
+        return true;
 //        }
     }
 

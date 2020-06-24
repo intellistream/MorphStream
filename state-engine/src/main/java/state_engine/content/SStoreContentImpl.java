@@ -1,21 +1,20 @@
 package state_engine.content;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.SpinLock;
 import state_engine.storage.SchemaRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 
-
 public class SStoreContentImpl extends SStoreContent {
+    public final static String SSTORE_CONTENT = "SSTORE_CONTENT";
     private static final Logger LOG = LoggerFactory.getLogger(SStoreContentImpl.class);
     public final int pid;
     final SpinLock spinlock_;//Each partition has a spin lock_ratio.
     AtomicLong timestamp_ = new AtomicLong(0);
-    public final static String SSTORE_CONTENT = "SSTORE_CONTENT";
 
     public SStoreContentImpl(SpinLock[] spinlock_, int pid) {
         this.pid = pid;

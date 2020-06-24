@@ -28,17 +28,15 @@ import static state_engine.content.Content.*;
 public class OBCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(OBCombo.class);
     private static final long serialVersionUID = -2394340130331865581L;
-
-    public OBCombo() {
-        super(LOG, 0);
-    }
-
     int concurrency = 0;
     int pre_concurrency = 0;
     int[] concerned_length = new int[]{1, 10, 50, 100, 250, 500, 750, 1000};
     int cnt = 0;
-
     ArrayDeque<TxnEvent> prevents = new ArrayDeque<>();
+
+    public OBCombo() {
+        super(LOG, 0);
+    }
 
     private boolean key_conflict(int pre_key, int key) {
         return pre_key == key;
@@ -191,29 +189,29 @@ public class OBCombo extends SPOUTCombo {
 
         switch (config.getInt("CCOption", 0)) {
             case CCOption_LOCK: {//no-order
-                bolt = new OBBolt_nocc(0,sink);
+                bolt = new OBBolt_nocc(0, sink);
                 break;
             }
             case CCOption_OrderLOCK: {//LOB
-                bolt = new OBBolt_olb(0,sink);
+                bolt = new OBBolt_olb(0, sink);
                 _combo_bid_size = 1;
                 break;
             }
             case CCOption_LWM: {//LWM
-                bolt = new OBBolt_lwm(0,sink);
+                bolt = new OBBolt_lwm(0, sink);
                 _combo_bid_size = 1;
                 break;
             }
             case CCOption_TStream: {//T-Stream
 
                 if (config.getBoolean("disable_pushdown", false))
-                    bolt = new OBBolt_ts_nopush(0,sink);
+                    bolt = new OBBolt_ts_nopush(0, sink);
                 else
-                    bolt = new OBBolt_ts(0,sink);
+                    bolt = new OBBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
-                bolt = new OBBolt_sstore(0,sink);
+                bolt = new OBBolt_sstore(0, sink);
                 _combo_bid_size = 1;
                 break;
             }

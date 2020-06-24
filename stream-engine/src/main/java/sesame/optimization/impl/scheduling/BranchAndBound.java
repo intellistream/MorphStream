@@ -1,6 +1,9 @@
 package sesame.optimization.impl.scheduling;
 
 import application.util.Configuration;
+import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.ExecutionNode;
@@ -9,9 +12,6 @@ import sesame.optimization.impl.PlanScheduler;
 import sesame.optimization.impl.SchedulingPlan;
 import sesame.optimization.model.Constraints;
 import sesame.optimization.model.cache;
-import org.apache.commons.collections.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.IntStream;

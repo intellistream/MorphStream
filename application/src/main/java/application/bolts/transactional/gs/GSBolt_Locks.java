@@ -3,11 +3,11 @@ package application.bolts.transactional.gs;
 
 import application.param.mb.MicroEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.faulttolerance.impl.ValueState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
 import state_engine.transaction.dedicated.TxnManagerLock;
 
@@ -21,8 +21,9 @@ import static state_engine.profiler.MeasureTools.*;
 public class GSBolt_Locks extends GSBolt {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_Locks.class);
     private static final long serialVersionUID = -5968750340131744744L;
+
     public GSBolt_Locks(int fid, SINKCombo sink) {
-        super(LOG, fid,sink);
+        super(LOG, fid, sink);
         state = new ValueState();
     }
 

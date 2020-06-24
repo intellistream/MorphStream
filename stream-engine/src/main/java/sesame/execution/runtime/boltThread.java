@@ -1,6 +1,9 @@
 package sesame.execution.runtime;
 
 import application.util.Configuration;
+import ch.usi.overseer.OverHpc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.components.operators.executor.BoltExecutor;
 import sesame.controller.input.InputStreamController;
@@ -10,11 +13,8 @@ import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.optimization.OptimizationManager;
 import sesame.optimization.model.STAT;
-import ch.usi.overseer.OverHpc;
 import state_engine.Clock;
 import state_engine.DatabaseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;

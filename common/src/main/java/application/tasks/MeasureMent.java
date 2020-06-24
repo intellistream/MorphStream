@@ -1,13 +1,14 @@
 package application.tasks;
+
 import java.util.ArrayDeque;
 
 public class MeasureMent {
 
+    protected final ArrayDeque<Long> latency_map = new ArrayDeque();
     public int batch_number_per_wm;
     boolean start_measure = false;
     long start, end;
     private int local_index_e;
-    protected final ArrayDeque<Long> latency_map = new ArrayDeque();
 
     public void start() {
         if (!start_measure) {//only once.

@@ -5,13 +5,13 @@ import application.datatype.util.LRTopologyControl;
 import application.sink.helper.stable_sink_helper;
 import application.util.Configuration;
 import application.util.OsUtils;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.operators.api.BaseSink;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Tuple;
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.HashMap;

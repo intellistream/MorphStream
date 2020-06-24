@@ -4,6 +4,8 @@ import application.param.MicroParam;
 import application.param.mb.MicroEvent;
 import application.util.Configuration;
 import application.util.OsUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.Database;
 import state_engine.DatabaseException;
 import state_engine.common.SpinLock;
@@ -13,8 +15,6 @@ import state_engine.storage.datatype.DataBox;
 import state_engine.storage.datatype.IntDataBox;
 import state_engine.storage.datatype.StringDataBox;
 import state_engine.storage.table.RecordSchema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import state_engine.transaction.TableInitilizer;
 
 import java.io.BufferedWriter;
@@ -30,9 +30,9 @@ import static application.CONTROL.enable_states_partition;
 import static application.Constants.Event_Path;
 import static application.constants.GrepSumConstants.Constant.VALUE_LEN;
 import static application.param.mb.MicroEvent.GenerateValue;
-import static state_engine.transaction.State.configure_store;
 import static state_engine.profiler.Metrics.NUM_ACCESSES;
 import static state_engine.profiler.Metrics.NUM_ITEMS;
+import static state_engine.transaction.State.configure_store;
 import static state_engine.utils.PartitionHelper.getPartition_interval;
 import static xerial.jnuma.Numa.setLocalAlloc;
 
@@ -43,6 +43,7 @@ public class MBInitializer extends TableInitilizer {
     //different R-W ratio.
     //just enable one of the decision array
     protected transient boolean[] read_decision;
+    int i = 0;
 
     public MBInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
@@ -272,8 +273,6 @@ public class MBInitializer extends TableInitilizer {
         }
         w.close();
     }
-
-    int i = 0;
 
     protected boolean next_read_decision() {
 

@@ -1,11 +1,12 @@
 package state_engine.transaction;
+
 import application.tools.FastZipfGenerator;
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.Database;
 import state_engine.benchmark.TxnParam;
 import state_engine.common.SpinLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -14,9 +15,9 @@ import java.util.SplittableRandom;
 
 import static application.CONTROL.NUM_EVENTS;
 import static application.CONTROL.enable_states_partition;
+import static state_engine.profiler.Metrics.NUM_ITEMS;
 import static state_engine.transaction.State.partioned_store;
 import static state_engine.transaction.State.shared_store;
-import static state_engine.profiler.Metrics.NUM_ITEMS;
 import static state_engine.utils.PartitionHelper.key_to_partition;
 
 public abstract class TableInitilizer {
@@ -26,32 +27,19 @@ public abstract class TableInitilizer {
     public final double theta;
     public final int tthread;
     public final Configuration config;
+    public final String split_exp = ";";
     public int floor_interval;
-
     public long[] p_bid;//used for partition.
     public transient FastZipfGenerator p_generator;
     public int number_partitions;
     public boolean[] multi_partion_decision;
     public SplittableRandom rnd = new SplittableRandom(1234);
-
-    public  int j = 0;
-    public  int p;
-
-    public final String split_exp = ";";
-
+    public int j = 0;
+    public int p;
     //dual-decision
     public transient int[] dual_decision = new int[]{0, 0, 0, 0, 1, 1, 1, 1};//1:1 deposite and transfer;
 
     private int i = 0;
-
-    protected int next_decision2() {
-
-        int rt = dual_decision[i];
-        i++;
-        if (i == 8)
-            i = 0;
-        return rt;
-    }
 
     public TableInitilizer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
         this.db = db;
@@ -91,6 +79,15 @@ public abstract class TableInitilizer {
         floor_interval = (int) Math.floor(NUM_ITEMS / (double) tthread);//NUM_ITEMS / tthread;
         p_generator = new FastZipfGenerator(NUM_ITEMS, theta, 0);
 
+    }
+
+    protected int next_decision2() {
+
+        int rt = dual_decision[i];
+        i++;
+        if (i == 8)
+            i = 0;
+        return rt;
     }
 
     public void loadDB(int maxContestants, String contestants) {
@@ -188,7 +185,7 @@ public abstract class TableInitilizer {
                 if (multi_parition_txn_flag) {//multi-partition
                     event = create_new_event(_number_partitions, i);
 
-                        _number_partitions = Math.min(number_partitions, 2);
+                    _number_partitions = Math.min(number_partitions, 2);
 
                     for (int k = 0; k < _number_partitions; k++) {//depo input_event only allows 2 partition
                         p_bid[p]++;

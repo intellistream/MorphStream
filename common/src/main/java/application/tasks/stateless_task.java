@@ -78,6 +78,21 @@ public abstract class stateless_task implements Serializable {
         return 0;
     }
 
+    public static int random_compute(int size) {
+        String generatedString = RandomStringUtils.randomAlphanumeric(size);
+        int i = 0;
+        for (char c : generatedString.toCharArray())
+            i += c;
+        return i;
+    }
+
+    public static int random_compute(String value) {
+        int i = 0;
+        for (char c : value.toCharArray())
+            i += c;
+        return i;
+    }
+
     /**
      * used in normal call
      *
@@ -94,20 +109,4 @@ public abstract class stateless_task implements Serializable {
      * @return
      */
     public abstract String execute(String value, long function_process_start);
-
-
-    public static int random_compute(int size) {
-        String generatedString = RandomStringUtils.randomAlphanumeric(size);
-        int i = 0;
-        for (char c : generatedString.toCharArray())
-            i += c;
-        return i;
-    }
-
-    public static int random_compute(String value) {
-        int i = 0;
-        for (char c : value.toCharArray())
-            i += c;
-        return i;
-    }
 }

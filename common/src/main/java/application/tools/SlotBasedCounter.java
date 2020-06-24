@@ -31,8 +31,8 @@ public final class SlotBasedCounter<T> implements Serializable {
     }
 
     public void incrementCount(T obj, int slot, long increment) {
-		long[] counts = objToCounts.computeIfAbsent(obj, k -> new long[this.numSlots]);
-		counts[slot] += increment;
+        long[] counts = objToCounts.computeIfAbsent(obj, k -> new long[this.numSlots]);
+        counts[slot] += increment;
     }
 
     public long getCount(T obj, int slot) {

@@ -3,11 +3,11 @@ package sesame.controller.output.partition;
 
 import application.util.Configuration;
 import application.util.datatypes.StreamValues;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;
 import sesame.execution.ExecutionNode;
 import sesame.execution.runtime.collector.impl.Meta;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;

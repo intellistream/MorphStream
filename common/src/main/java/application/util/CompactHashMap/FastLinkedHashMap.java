@@ -129,7 +129,7 @@ public class FastLinkedHashMap<K, V>
      *
      * @serial
      */
-	private final boolean accessOrder;
+    private final boolean accessOrder;
 
     /**
      * Index array:
@@ -137,19 +137,19 @@ public class FastLinkedHashMap<K, V>
      * (index of previous element in doubly linked list),
      * odd elements are 'after' (next element index).
      */
-	private transient int[] prevNext;
+    private transient int[] prevNext;
 
     /**
      * Index of the eldest map element,
      * head of the doubly linked list.
      */
-	private transient int headIndex;
+    private transient int headIndex;
 
     /**
      * Cached Entry of the eldest map element
      * for removeEldestEntry speedup.
      */
-	private transient Entry headEntry;
+    private transient Entry headEntry;
 
     /**
      * Constructs an empty insertion-ordered <tt>LinkedHashMap</tt> instance
@@ -328,12 +328,12 @@ public class FastLinkedHashMap<K, V>
      *               method returns <tt>true</tt>.  If the map was empty prior
      *               to the <tt>put</tt> or <tt>putAll</tt> invocation resulting
      *               in this invocation, this will be the entry that was just
-	 *               inserted; in other words, if the map contains a partition
+     *               inserted; in other words, if the map contains a partition
      *               entry, the eldest entry is also the newest.
      * @return <tt>true</tt> if the eldest entry should be removed
      * from the map; <tt>false</tt> if it should be retained.
      */
-	private boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+    private boolean removeEldestEntry(Map.Entry<K, V> eldest) {
         return false;
     }
 
@@ -426,7 +426,7 @@ public class FastLinkedHashMap<K, V>
     /**
      * Remove index from the linked list.
      */
-	private void removeIndex(int i) {
+    private void removeIndex(int i) {
         if (size == 0) {
             headIndex = NO_INDEX;
             headEntry = null;
@@ -447,7 +447,7 @@ public class FastLinkedHashMap<K, V>
      *
      * @param i index
      */
-	private void insertIndex(int i) {
+    private void insertIndex(int i) {
         if (headIndex == NO_INDEX) {
             prevNext[(i << 1) + 2] =
                     prevNext[(i << 1) + 3] =
@@ -467,7 +467,7 @@ public class FastLinkedHashMap<K, V>
      *
      * @param i index
      */
-	private void updateIndex(int i) {
+    private void updateIndex(int i) {
         if (accessOrder) {
             removeIndex(i);
             insertIndex(i);

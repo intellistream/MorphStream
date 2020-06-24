@@ -6,12 +6,11 @@ import application.param.sl.DepositEvent;
 import application.param.sl.TransactionEvent;
 import application.util.Configuration;
 import application.util.OsUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.collector.OutputCollector;
-import sesame.faulttolerance.impl.ValueState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,18 +28,15 @@ import static state_engine.content.Content.*;
 public class SLCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(SLCombo.class);
     private static final long serialVersionUID = -2394340130331865581L;
-
-    public SLCombo() {
-        super(LOG, 0);
-    }
-
     int concurrency = 0;
     int pre_concurrency = 0;
     int[] concerned_length = new int[]{1, 10, 40};
     int cnt = 0;
-
     ArrayDeque<TxnEvent> prevents = new ArrayDeque<>();
 
+    public SLCombo() {
+        super(LOG, 0);
+    }
 
     private boolean key_conflict(int pre_key, int key) {
         return pre_key == key;
@@ -205,29 +201,29 @@ public class SLCombo extends SPOUTCombo {
 
         switch (config.getInt("CCOption", 0)) {
             case CCOption_LOCK: {//no-order
-                bolt = new SLBolt_nocc(0,sink);
+                bolt = new SLBolt_nocc(0, sink);
                 break;
             }
             case CCOption_OrderLOCK: {//LOB
-                bolt = new SLBolt_olb(0,sink);
+                bolt = new SLBolt_olb(0, sink);
                 _combo_bid_size = 1;
                 break;
             }
             case CCOption_LWM: {//LWM
-                bolt = new SLBolt_lwm(0,sink);
+                bolt = new SLBolt_lwm(0, sink);
                 _combo_bid_size = 1;
                 break;
             }
             case CCOption_TStream: {//T-Stream
 
                 if (config.getBoolean("disable_pushdown", false))
-                    bolt = new SLBolt_ts_nopush(0,sink);
+                    bolt = new SLBolt_ts_nopush(0, sink);
                 else
-                    bolt = new SLBolt_ts(0,sink);
+                    bolt = new SLBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
-                bolt = new SLBolt_sstore(0,sink);
+                bolt = new SLBolt_sstore(0, sink);
                 _combo_bid_size = 1;
                 break;
             }

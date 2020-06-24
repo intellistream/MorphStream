@@ -7,8 +7,9 @@ import application.bolts.transactional.sl.SLBolt_sstore;
 import application.bolts.transactional.sl.SLBolt_ts;
 import application.constants.StreamLedgerConstants.Component;
 import application.topology.transactional.initializer.SLInitializer;
-import state_engine.transaction.TableInitilizer;
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.components.exception.InvalidIDException;
 import sesame.components.grouping.ShuffleGrouping;
@@ -16,8 +17,7 @@ import sesame.controller.input.scheduler.SequentialScheduler;
 import sesame.topology.TransactionTopology;
 import state_engine.common.PartitionedOrderLock;
 import state_engine.common.SpinLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import state_engine.transaction.TableInitilizer;
 
 import java.util.Random;
 

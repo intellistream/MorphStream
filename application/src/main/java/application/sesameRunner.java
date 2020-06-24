@@ -1,22 +1,26 @@
 package application;
 
-import application.constants.*;
-import application.topology.transactional.*;
+import application.constants.BaseConstants;
+import application.constants.GrepSumConstants;
+import application.topology.transactional.GrepSum;
+import application.topology.transactional.OnlineBiding;
+import application.topology.transactional.StreamLedger;
+import application.topology.transactional.TP;
 import application.util.Configuration;
 import application.util.Constants;
 import application.util.OsUtils;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.components.TopologyComponent;
 import sesame.execution.ExecutionNode;
 import sesame.execution.runtime.executorThread;
 import sesame.topology.TopologySubmitter;
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
 import state_engine.common.SpinLock;
 import state_engine.profiler.Metrics;
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import state_engine.utils.SINK_CONTROL;
 
 import java.io.*;
@@ -50,7 +54,7 @@ public class sesameRunner extends abstractRunner {
         driver.addApp("GrepSum", GrepSum.class);//GS
         driver.addApp("StreamLedger", StreamLedger.class);//SL
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
-        driver.addApp("TP_Txn", TP_Txn.class);//TP
+        driver.addApp("TP", TP.class);//TP
     }
 
     public static void main(String[] args) {
@@ -213,12 +217,6 @@ public class sesameRunner extends abstractRunner {
                     config.put("app", 2);
                     int threads = Math.max(1, (int) Math.floor((tthread)));
                     config.put(OB_THREADS, threads);
-                    break;
-                }
-                case "TP_Txn": {
-                    config.put("app", 3);
-                    int threads = Math.max(1, (int) Math.floor((tthread)));
-                    config.put(Executor_Threads, threads);
                     break;
                 }
                 case "TP": {

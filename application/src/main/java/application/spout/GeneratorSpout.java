@@ -1,9 +1,9 @@
 package application.spout;
 
-import sesame.components.operators.api.AbstractSpout;
-import sesame.execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.components.operators.api.AbstractSpout;
+import sesame.execution.ExecutionGraph;
 
 import static application.Constants.DEFAULT_STREAM_ID;
 

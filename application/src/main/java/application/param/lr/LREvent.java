@@ -6,28 +6,18 @@ import state_engine.storage.SchemaRecordRef;
 /**
  * Currently only consider position events.
  */
-public class LREvent  {
+public class LREvent {
 
     private final int tthread;
     private final long bid;
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    private long timestamp;
     public int count;
     public double lav;
+    public SchemaRecordRef speed_value;
+    public SchemaRecordRef count_value;
+    private long timestamp;
     private PositionReport posreport;//input_event associated meta data.
 //    private final AvgVehicleSpeedTuple vsreport;//intermediate input.
 
-
-    public SchemaRecordRef speed_value;
-    public SchemaRecordRef count_value;
 
     /**
      * creating a new LREvent.
@@ -45,6 +35,13 @@ public class LREvent  {
         count_value = new SchemaRecordRef();
     }
 
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 
     public PositionReport getPOSReport() {
         return posreport;

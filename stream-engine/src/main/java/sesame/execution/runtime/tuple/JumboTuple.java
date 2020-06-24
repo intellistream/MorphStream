@@ -1,11 +1,11 @@
 package sesame.execution.runtime.tuple;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.execution.runtime.tuple.impl.Marker;
 import sesame.execution.runtime.tuple.impl.Message;
 import sesame.execution.runtime.tuple.impl.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by shuhaozhang on 10/7/16.
@@ -71,7 +71,6 @@ public class JumboTuple implements Comparable<JumboTuple> {
         this.msg = new Message[1];
         this.msg[0] = message;
     }
-
 
 
     public int getSourceTask() {

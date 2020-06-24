@@ -3,11 +3,11 @@ package application.spout;
 import application.constants.BaseConstants.BaseConf;
 import application.constants.GrepSumConstants;
 import application.helper.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.operators.api.AbstractSpout;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.impl.Fields;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class LocalStateSpout extends AbstractSpout {
     private static final Logger LOG = LoggerFactory.getLogger(LocalStateSpout.class);

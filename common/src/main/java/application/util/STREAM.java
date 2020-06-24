@@ -2,9 +2,8 @@ package application.util;
 
 public class STREAM {
 
-    static Object lock = new Object();
-
     static final Object lock2 = new Object();
+    static Object lock = new Object();
     static volatile int _barrier;
     static double total_bandwidth[] = new double[4];
     static String[] label = {"Copy: ", "Scale: ", "Add: ", "Triad: "};
@@ -65,12 +64,12 @@ public class STREAM {
             System.out.println("=== Go!");
         } // Release Lock
 
-		for (Thread t : ts) {
-			try {
-				t.join();
-			} catch (Exception ignored) {
-			}
-		}
+        for (Thread t : ts) {
+            try {
+                t.join();
+            } catch (Exception ignored) {
+            }
+        }
 
         System.out.println("=== Caught the last thread.");
 
@@ -130,7 +129,7 @@ public class STREAM {
         double scalar;
         double[][] times = new double[4][NTIMES];
 
-   /* --- SETUP --- determine precision and check timing --- */
+        /* --- SETUP --- determine precision and check timing --- */
 
         BytesPerWord = precision;
         //System.out.println(HLINE);
@@ -139,7 +138,7 @@ public class STREAM {
         //System.out.println("Total memory required = "+ ((3.0 * BytesPerWord) * ( (double) N / 1048576.0)) + " MB." );
         //System.out.println("Each test is run "+NTIMES+" times, but only the *best* time for each is used.");
 
-   /* Get initial value for system clock. */
+        /* Get initial value for system clock. */
 
         for (j = 0; j < N; j++) {
             a[j] = 1.0;
@@ -169,7 +168,7 @@ public class STREAM {
         }       // block till all ready
         ticks = pr(ticks, pid, " starts main loop");
 
-   /*    --- MAIN LOOP --- repeat test cases NTIMES times --- */
+        /*    --- MAIN LOOP --- repeat test cases NTIMES times --- */
 
         scalar = 3.0;
         for (k = 0; k < NTIMES; k++) {
@@ -195,7 +194,7 @@ public class STREAM {
             times[3][k] = mysecond() - times[3][k];
         }
 
-   /*    --- SUMMARY --- */
+        /*    --- SUMMARY --- */
 
         for (k = 1; k < NTIMES; k++) { /* note -- skip first iteration */
             for (j = 0; j < 4; j++) {
@@ -217,7 +216,7 @@ public class STREAM {
             System.out.println();
         }
 
-   /* --- Check Results --- */
+        /* --- Check Results --- */
         //checkSTREAMresults();
         ticks = pr(ticks, pid, " exits");
         //System.out.println(HLINE);
@@ -242,7 +241,7 @@ public class STREAM {
         double t1, t2;
         double[] timesfound = new double[M];
 
-   /*  Collect a sequence of M unique time values from the system. */
+        /*  Collect a sequence of M unique time values from the system. */
 
         for (i = 0; i < M; i++) {
             t1 = mysecond();
@@ -251,11 +250,11 @@ public class STREAM {
             timesfound[i] = t1 = t2;
         }
 
-   /*
-    * Determine the minimum difference between these M values.
-    * This result will be our estimate (in microseconds) for the
-    * clock granularity.
-    */
+        /*
+         * Determine the minimum difference between these M values.
+         * This result will be our estimate (in microseconds) for the
+         * clock granularity.
+         */
 
         minDelta = 1000000;
         for (i = 1; i < M; i++) {

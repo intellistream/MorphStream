@@ -3,8 +3,8 @@ package application.model.predictor;
 import java.io.Serializable;
 
 public class Prediction implements Serializable {
-	private static final long serialVersionUID = -669815404243309408L;
-	private char[] entityId;
+    private static final long serialVersionUID = -669815404243309408L;
+    private char[] entityId;
     private double score;
     private String[] states;
     private boolean outlier;

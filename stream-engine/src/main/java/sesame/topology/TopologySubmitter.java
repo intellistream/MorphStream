@@ -22,9 +22,11 @@ import static state_engine.profiler.Metrics.POST_COMPUTE_COMPLEXITY;
 public class TopologySubmitter {
     private final static Logger LOG = LoggerFactory.getLogger(TopologySubmitter.class);
     private OptimizationManager OM;
+
     public OptimizationManager getOM() {
         return OM;
     }
+
     public void setOM(OptimizationManager OM) {
         this.OM = OM;
     }

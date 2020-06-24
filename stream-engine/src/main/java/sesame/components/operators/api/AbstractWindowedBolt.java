@@ -1,8 +1,8 @@
 package sesame.components.operators.api;
 
+import org.slf4j.Logger;
 import sesame.components.windowing.TupleWindow;
 import sesame.execution.runtime.tuple.impl.Marker;
-import org.slf4j.Logger;
 
 import java.util.Map;
 

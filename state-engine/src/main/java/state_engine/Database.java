@@ -10,12 +10,11 @@ import java.io.IOException;
 public abstract class Database {
     public int numTransactions = 0;//current number of activate transactions
     StorageManager storageManager;
+    EventManager eventManager;
 
     public EventManager getEventManager() {
         return eventManager;
     }
-
-    EventManager eventManager;
 
 //	public transient TxnParam param;
 

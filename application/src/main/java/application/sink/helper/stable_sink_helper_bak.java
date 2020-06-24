@@ -11,7 +11,7 @@ public class stable_sink_helper_bak extends helper {
     private static final Logger LOG = LoggerFactory.getLogger(stable_sink_helper_bak.class);
     long warm_start = 0, warm_end = 0;
 
-    public stable_sink_helper_bak(Logger LOG, int runtime, String metric_path,int thisTaskId) {
+    public stable_sink_helper_bak(Logger LOG, int runtime, String metric_path, int thisTaskId) {
         super(runtime, 0, 0, metric_path, thisTaskId, false);
         warm_start = System.nanoTime();
     }

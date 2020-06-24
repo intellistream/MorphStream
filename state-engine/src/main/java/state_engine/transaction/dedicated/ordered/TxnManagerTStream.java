@@ -1,5 +1,7 @@
 package state_engine.transaction.dedicated.ordered;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.Operation;
@@ -9,8 +11,6 @@ import state_engine.transaction.dedicated.TxnManagerDedicated;
 import state_engine.transaction.function.Condition;
 import state_engine.transaction.function.Function;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -47,7 +47,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //                break;
 //            }
 //
-//            case "TP_Txn": {
+//            case "TP": {
 //                delta = (int) Math.ceil(NUM_SEGMENTS / (double) thread_countw);//NUM_ITEMS / tthread;
 //                break;
 //            }
@@ -407,6 +407,6 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     @Override
     public void start_evaluate(int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
 
-        instance.start_evaluation(thread_Id,mark_ID);
+        instance.start_evaluation(thread_Id, mark_ID);
     }
 }

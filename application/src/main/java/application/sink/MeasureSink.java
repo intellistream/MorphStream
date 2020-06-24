@@ -5,12 +5,12 @@ import application.datatype.util.LRTopologyControl;
 import application.sink.helper.stable_sink_helper;
 import application.util.Configuration;
 import application.util.OsUtils;
-import sesame.components.operators.api.BaseSink;
-import sesame.execution.ExecutionGraph;
-import sesame.execution.runtime.tuple.impl.Tuple;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sesame.components.operators.api.BaseSink;
+import sesame.execution.ExecutionGraph;
+import sesame.execution.runtime.tuple.impl.Tuple;
 import state_engine.utils.SINK_CONTROL;
 
 import java.io.*;
@@ -28,15 +28,17 @@ public class MeasureSink extends BaseSink {
     protected static String directory;
     protected static String algorithm;
     protected static boolean profile = false;
-    protected stable_sink_helper helper;
-    protected int ccOption;
-    private boolean LAST = false;
-    //    private int batch_number_per_wm;
-    private int exe;
-
     //    int _combo_bid_size;
     protected final ArrayDeque<Long> latency_map = new ArrayDeque();
     public int batch_number_per_wm;
+    protected stable_sink_helper helper;
+    protected int ccOption;
+    protected int tthread;
+    int cnt = 0;
+    long start;
+    private boolean LAST = false;
+    //    private int batch_number_per_wm;
+    private int exe;
 
     public MeasureSink() {
         super(new HashMap<>());
@@ -48,7 +50,6 @@ public class MeasureSink extends BaseSink {
 //		this.input_selectivity.put(LRTopologyControl.ACCIDENTS_STREAM_ID, 1.0);
 
     }
-
 
     @Override
     public Integer default_scale(Configuration conf) {
@@ -127,18 +128,12 @@ public class MeasureSink extends BaseSink {
 
     }
 
-    protected int tthread;
-    int cnt = 0;
-
     @Override
     public void execute(Tuple input) throws InterruptedException {
         check(cnt, input);
 //        LOG.info("CNT:" + cnt);
         cnt++;
     }
-
-
-    long start;
 
     protected void latency_measure(Tuple input) {
         if (enable_latency_measurement) {

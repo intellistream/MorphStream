@@ -3,7 +3,7 @@ package application.constants;
 /**
  * @author mayconbordin
  */
-public interface TP_TxnConstants extends BaseConstants {
+public interface TPConstants extends BaseConstants {
     String PREFIX = "tptxn";
     int max_hz = 550000;
     String CONFIG_FILENAME = "LinearRoad.properties";

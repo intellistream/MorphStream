@@ -1,12 +1,12 @@
 package state_engine.content;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.SpinLock;
 import state_engine.content.common.RequestEntry;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.DataBox;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import state_engine.utils.Utils;
 
 import java.util.List;

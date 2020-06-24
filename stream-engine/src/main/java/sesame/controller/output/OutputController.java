@@ -72,7 +72,6 @@ public abstract class OutputController implements Serializable {
 //	public abstract void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, AbstractLRBTuple data) throws InterruptedException;
 
 
-
     public abstract void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException;
 
 
@@ -168,7 +167,6 @@ public abstract class OutputController implements Serializable {
 //	public abstract void try_fill_gap(String streamId);
 
     public abstract long getBID(String streamId);
-
 
 
 //	public abstract void increaseGap(String streamId);

@@ -1,12 +1,12 @@
 package sesame.controller.input.scheduler;
 
 import application.util.CompactHashMap.QuickHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.controller.input.InputStreamController;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.optimization.model.STAT;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
@@ -49,7 +49,7 @@ public class UniformedScheduler extends InputStreamController {
 //                for (int b = 0; b < batch; b++) {
 //                    t[b] = fetchFromqueue((P1C1Queue) getRQ().GetAndUpdate(streamId).GetAndUpdate(q_index));
 //                }
-                return fetchFromqueue_inorder(getRQ().get(streamId).get(q_index));
+                    return fetchFromqueue_inorder(getRQ().get(streamId).get(q_index));
             }
         }
         return null;
@@ -73,7 +73,7 @@ public class UniformedScheduler extends InputStreamController {
 //                for (int b = 0; b < batch; b++) {
 //                    t[b] = fetchFromqueue((P1C1Queue) getRQ().GetAndUpdate(streamId).GetAndUpdate(q_index));
 //                }
-                return fetchFromqueue(getRQ().get(streamId).get(q_index));
+                    return fetchFromqueue(getRQ().get(streamId).get(q_index));
             }
         }
         return null;

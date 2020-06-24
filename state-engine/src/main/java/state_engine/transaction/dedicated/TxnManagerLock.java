@@ -1,5 +1,8 @@
 package state_engine.transaction.dedicated;
 
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
 import state_engine.Meta.MetaTypes;
 import state_engine.content.Content;
@@ -9,9 +12,6 @@ import state_engine.storage.SchemaRecordRef;
 import state_engine.storage.StorageManager;
 import state_engine.storage.TableRecord;
 import state_engine.transaction.impl.TxnContext;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 
@@ -185,7 +185,7 @@ public class TxnManagerLock extends TxnManagerDedicated {
                 this.AbortTransaction();
                 return false;
             } else {
-                    BEGIN_TP_CORE_TIME_MEASURE(txn_context.thread_Id);
+                BEGIN_TP_CORE_TIME_MEASURE(txn_context.thread_Id);
                 /**
                  * 	 const RecordSchema *schema_ptr = t_record->record_->schema_ptr_;
                  char *local_data = MemAllocator::Alloc(schema_ptr->GetSchemaSize());

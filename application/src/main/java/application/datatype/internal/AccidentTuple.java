@@ -87,6 +87,18 @@ public final class AccidentTuple extends application.util.datatypes.StreamValues
         assert (super.size() == 4);
     }
 
+    /**
+     * Returns the schema of a {@link AccidentTuple}.
+     *
+     * @return the schema of a {@link AccidentTuple}
+     */
+    public static Fields getSchema() {
+        return new Fields(
+                LRTopologyControl.TIMESTAMP_FIELD_NAME,
+                LRTopologyControl.XWAY_FIELD_NAME,
+                LRTopologyControl.SEGMENT_FIELD_NAME,
+                LRTopologyControl.DIRECTION_FIELD_NAME);
+    }
 
     /**
      * Returns the timestamp (in LRB seconds) of this {@link AccidentTuple}.
@@ -134,18 +146,5 @@ public final class AccidentTuple extends application.util.datatypes.StreamValues
     @Override
     public final Short getDirection() {
         return (Short) super.get(DIR_IDX);
-    }
-
-    /**
-     * Returns the schema of a {@link AccidentTuple}.
-     *
-     * @return the schema of a {@link AccidentTuple}
-     */
-    public static Fields getSchema() {
-        return new Fields(
-                LRTopologyControl.TIMESTAMP_FIELD_NAME,
-                LRTopologyControl.XWAY_FIELD_NAME,
-                LRTopologyControl.SEGMENT_FIELD_NAME,
-                LRTopologyControl.DIRECTION_FIELD_NAME);
     }
 }

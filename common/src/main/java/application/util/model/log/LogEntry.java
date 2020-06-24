@@ -249,11 +249,11 @@ public class LogEntry {
         } else if (!timestamp.equals(other.timestamp))
             return false;
 
-		if (type == null) {
-			return other.type == null;
-		} else {
-			return type.equals(other.type);
-		}
+        if (type == null) {
+            return other.type == null;
+        } else {
+            return type.equals(other.type);
+        }
 
-	}
+    }
 }

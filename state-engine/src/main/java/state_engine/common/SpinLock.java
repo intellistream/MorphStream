@@ -18,7 +18,7 @@ public class SpinLock {
                 if (thread.isInterrupted()) return;//to exit program.
             }
 //        if (enable_profile)
-            count++;
+        count++;
     }
 
     public void unlock() {

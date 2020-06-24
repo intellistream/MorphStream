@@ -10,7 +10,6 @@ public class FastZipfGenerator {
     private NavigableMap<Double, Integer> map = new TreeMap<>();
 
 
-
     public FastZipfGenerator(int size, double skew, int offset) {
 
 

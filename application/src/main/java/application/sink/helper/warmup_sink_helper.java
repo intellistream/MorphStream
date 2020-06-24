@@ -12,16 +12,16 @@ public class warmup_sink_helper extends helper {
     private long periodic_start;
     private long periodic_end;
 
-    public warmup_sink_helper(Logger LOG, int runtime, String metric_path, double average_throughput,int thisTaskId) {
+    public warmup_sink_helper(Logger LOG, int runtime, String metric_path, double average_throughput, int thisTaskId) {
         super(runtime, 0, 0, metric_path, thisTaskId, false);
         this.average_throughput = average_throughput;
     }
 
-    public warmup_sink_helper(warmup_sink_helper sink_state,int thisTaskId) {
+    public warmup_sink_helper(warmup_sink_helper sink_state, int thisTaskId) {
         super(sink_state.runtimeInSEC, 0, 0, sink_state.metric_path, thisTaskId, false);
         this.average_throughput = sink_state.average_throughput;
 
-		atomic_index_e = sink_state.atomic_index_e;
+        atomic_index_e = sink_state.atomic_index_e;
         start = sink_state.start;
         //end = sink_state.end;
         checkPoint = sink_state.checkPoint;
@@ -51,7 +51,7 @@ public class warmup_sink_helper extends helper {
                 output(periodic_end - periodic_start);
                 return 1;
             }
-			atomic_index_e.set(0);//clean atomic_index_e
+            atomic_index_e.set(0);//clean atomic_index_e
         }
         start = System.nanoTime();
         return 0;

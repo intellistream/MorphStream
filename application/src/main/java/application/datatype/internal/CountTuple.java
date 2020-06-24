@@ -44,12 +44,13 @@ import static application.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
  */
 public final class CountTuple extends application.util.datatypes.StreamValues implements ISegmentIdentifier {
 
+    public static final int TIME_IDX = 5;
+
+    // attribute indexes
     /**
      * The index of the MINUTE attribute.
      */
     private final static int MINUTE_IDX = 0;
-
-    // attribute indexes
     /**
      * The index of the XWAY attribute.
      */
@@ -66,9 +67,6 @@ public final class CountTuple extends application.util.datatypes.StreamValues im
      * The index of the CNT attribute.
      */
     private final static int CNT_IDX = 4;
-
-    public static final int TIME_IDX = 5;
-
     private static final long serialVersionUID = 2521804330216975272L;
 
 

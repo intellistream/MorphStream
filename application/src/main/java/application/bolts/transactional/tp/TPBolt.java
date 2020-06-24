@@ -26,16 +26,17 @@ import static state_engine.profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static state_engine.profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public abstract class TPBolt extends TransactionalBolt {
-    SINKCombo sink;
     /**
      * Maps each vehicle to its average speed value that corresponds to the current 'minute number' and specified segment.
      */
     private final Map<Integer, Pair<AvgValue, SegmentIdentifier>> avgSpeedsMap = new HashMap<>();
+    SINKCombo sink;
+    TollNotification tollNotification;
+    Tuple tuple;
     /**
      * The currently processed 'minute number'.
      */
     private short currentMinute = 1;
-
     private short time = -1;//not in use.
 
     public TPBolt(Logger log, int fid, SINKCombo sink) {
@@ -82,9 +83,6 @@ public abstract class TPBolt extends TransactionalBolt {
 
     }
 
-
-    TollNotification tollNotification;
-
     TollNotification toll_process(Integer vid, Integer count, Double lav, short time) {
         int toll = 0;
 
@@ -106,9 +104,6 @@ public abstract class TPBolt extends TransactionalBolt {
 //                time, time, vid, lav, toll);
         return null;
     }
-
-
-    Tuple tuple;
 
     void REQUEST_POST(LREvent event) throws InterruptedException {
 

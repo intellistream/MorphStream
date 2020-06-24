@@ -15,6 +15,7 @@ import state_engine.transaction.impl.TxnContext;
 public class TPBolt_ts_nopush extends TPBolt_ts {
     private static final Logger LOG = LoggerFactory.getLogger(TPBolt_ts_nopush.class);
     private static final long serialVersionUID = -5968750340131744744L;
+
     public TPBolt_ts_nopush(int fid, SINKCombo sink) {
         super(fid, sink);
     }

@@ -9,44 +9,39 @@ import java.util.Map;
 import java.util.Properties;
 
 public class Configuration extends HashMap {
-	private static final long serialVersionUID = -694570235097133148L;
-
     public static final String TOPOLOGY_WORKER_CHILDOPTS = "work_opt";
     public static final String METRICS_ENABLED = "metrics.enabled";
     public static final String METRICS_REPORTER = "metrics.reporter";
     public static final String METRICS_INTERVAL_VALUE = "metrics.interval.value";
     public static final String METRICS_INTERVAL_UNIT = "metrics.interval.unit";
     public static final String METRICS_OUTPUT = "metrics.output";
-	public static final String TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT = "topology.bolts.window.length.count";
-	public static final String TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS = "topology.bolts.window.length.duration.ms";
-	public static final String TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT = "topology.bolts.window.sliding.interval.count";
-	public static final String TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS = "topology.bolts.window.sliding.interval.duration.ms";
-	/**
-	 * Bolt-specific configuration for windowed bolts to specify the name of the stream on which late tuples are
-	 * going to be emitted. This configuration should only be used from the BaseWindowedBolt.withLateTupleStream builder
-	 * method, and not as global parameter, otherwise IllegalArgumentException is going to be thrown.
-	 */
-	public static final String TOPOLOGY_BOLTS_LATE_TUPLE_STREAM = "topology.bolts.late.tuple.stream";
-	/**
-	 * Bolt-specific configuration for windowed bolts to specify the maximum time lag of the tuple timestamp
-	 * in milliseconds. It means that the tuple timestamps cannot be out of order by more than this amount.
-	 * This config will be effective only if {@link TimestampExtractor} is specified.
-	 */
+    public static final String TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT = "topology.bolts.window.length.count";
+    public static final String TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS = "topology.bolts.window.length.duration.ms";
+    public static final String TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT = "topology.bolts.window.sliding.interval.count";
+    public static final String TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS = "topology.bolts.window.sliding.interval.duration.ms";
+    /**
+     * Bolt-specific configuration for windowed bolts to specify the name of the stream on which late tuples are
+     * going to be emitted. This configuration should only be used from the BaseWindowedBolt.withLateTupleStream builder
+     * method, and not as global parameter, otherwise IllegalArgumentException is going to be thrown.
+     */
+    public static final String TOPOLOGY_BOLTS_LATE_TUPLE_STREAM = "topology.bolts.late.tuple.stream";
+    /**
+     * Bolt-specific configuration for windowed bolts to specify the maximum time lag of the tuple timestamp
+     * in milliseconds. It means that the tuple timestamps cannot be out of order by more than this amount.
+     * This config will be effective only if {@link TimestampExtractor} is specified.
+     */
 
-	public static final String TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS = "topology.bolts.tuple.timestamp.max.lag.ms";
-
-	/*
-	 * Bolt-specific configuration for windowed bolts to specify the time interval for generating
-	 * watermark events. Watermark event tracks the progress of time when tuple timestamp is used.
-	 * This config is effective only if {@link org.apache.storm.windowing.TimestampExtractor} is specified.
-	 */
-	public static final String TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS = "topology.bolts.watermark.event.interval.ms";
-	public static final String TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS = "topology.enable.message.timeouts";
-	public static final String TOPOLOGY_MESSAGE_TIMEOUT_SECS = "topology.message.timeout.secs";
-
-
-
-	//	public int loadTargetHz = 10000000;
+    public static final String TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS = "topology.bolts.tuple.timestamp.max.lag.ms";
+    /*
+     * Bolt-specific configuration for windowed bolts to specify the time interval for generating
+     * watermark events. Watermark event tracks the progress of time when tuple timestamp is used.
+     * This config is effective only if {@link org.apache.storm.windowing.TimestampExtractor} is specified.
+     */
+    public static final String TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS = "topology.bolts.watermark.event.interval.ms";
+    public static final String TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS = "topology.enable.message.timeouts";
+    public static final String TOPOLOGY_MESSAGE_TIMEOUT_SECS = "topology.message.timeout.secs";
+    private static final long serialVersionUID = -694570235097133148L;
+    //	public int loadTargetHz = 10000000;
     public int timeSliceLengthMs = 100;
     public boolean useLocalEventGenerator;
     protected String configPrefix = "";

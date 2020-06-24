@@ -25,8 +25,8 @@ public abstract class InputStreamController implements IISC {
      */
     private final HashMap<String, HashMap<Integer, Queue>> RQ = new HashMap<>();
     protected Set<String> keySet;
-//    Deserializer _kryo;
-TreeSet<JumboTuple> tuples = new TreeSet<>();//temporarily holds all retrieved tuples.
+    //    Deserializer _kryo;
+    TreeSet<JumboTuple> tuples = new TreeSet<>();//temporarily holds all retrieved tuples.
 
     protected InputStreamController() {
 //        _kryo = new Deserializer();

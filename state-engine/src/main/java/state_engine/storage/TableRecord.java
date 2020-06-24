@@ -1,10 +1,10 @@
 package state_engine.storage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import state_engine.common.SpinLock;
 import state_engine.content.*;
 import state_engine.storage.table.RowID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static state_engine.content.LWMContentImpl.LWM_CONTENT;
 import static state_engine.content.LockContentImpl.LOCK_CONTENT;
@@ -60,11 +60,11 @@ public class TableRecord implements Comparable<TableRecord> {
         return Math.toIntExact(record_.getId().getID() - o.record_.getId().getID());
     }
 
-    public void setID(RowID ID) {
-        this.record_.setID(ID);
-    }
-
     public int getID() {
         return record_.getId().getID();
+    }
+
+    public void setID(RowID ID) {
+        this.record_.setID(ID);
     }
 }

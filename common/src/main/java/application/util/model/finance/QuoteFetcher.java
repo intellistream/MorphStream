@@ -14,7 +14,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public abstract class QuoteFetcher implements Serializable {
-	private static final long serialVersionUID = 24L;
+    private static final long serialVersionUID = 24L;
+
     abstract public String fetchQuotes(String symbol, int days, int interval) throws Exception;
 
     abstract public List<Quote> parseQuotes(String symbol, String quoteList, int interval);

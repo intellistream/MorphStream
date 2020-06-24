@@ -3,13 +3,13 @@ package application.bolts.transactional.gs;
 
 import application.param.mb.MicroEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.faulttolerance.impl.ValueState;
 import state_engine.DatabaseException;
 import state_engine.transaction.dedicated.ordered.TxnManagerOrderedTo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static application.CONTROL.combo_bid_size;
 import static state_engine.profiler.MeasureTools.*;

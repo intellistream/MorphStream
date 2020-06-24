@@ -3,9 +3,9 @@ package application.bolts.transactional.sl;
 import application.param.sl.DepositEvent;
 import application.param.sl.TransactionEvent;
 import application.sink.SINKCombo;
+import org.slf4j.Logger;
 import state_engine.DatabaseException;
 import state_engine.transaction.impl.TxnContext;
-import org.slf4j.Logger;
 
 import static state_engine.profiler.MeasureTools.*;
 
@@ -13,7 +13,7 @@ public class SLBolt_LA extends SLBolt {
 
 
     public SLBolt_LA(Logger log, int fid, SINKCombo sink) {
-        super(log, fid,sink);
+        super(log, fid, sink);
     }
 
 

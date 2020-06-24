@@ -4,13 +4,13 @@ import application.constants.WordCountConstants.Field;
 import application.util.Configuration;
 import application.util.OsUtils;
 import application.util.datatypes.StreamValues;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.operators.base.MapBolt;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Fields;
 import sesame.execution.runtime.tuple.impl.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;

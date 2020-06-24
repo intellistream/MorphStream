@@ -2,12 +2,12 @@ package sesame.optimization.model;
 
 import application.Constants;
 import application.Platform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;
 import sesame.components.operators.executor.IExecutor;
 import sesame.execution.ExecutionNode;
 import sesame.optimization.impl.SchedulingPlan;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -113,7 +113,7 @@ public class RateModel implements Serializable {
 //                        * Math.ceil((stat.tuple_size / p.cache_line))
 //                        * (p.latency_map[0][7]);
 //
-                //RLAS-Min
+        //RLAS-Min
 //                0;
     }
 

@@ -1,6 +1,8 @@
 package sesame.optimization.impl.scaling;
 
 import application.util.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.components.TopologyComponent;
 import sesame.execution.ExecutionGraph;
@@ -13,8 +15,6 @@ import sesame.optimization.impl.scheduling.randomPlan_NoConstraints;
 import sesame.optimization.impl.scheduling.roundrobin;
 import sesame.optimization.model.Constraints;
 import sesame.optimization.model.cache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 

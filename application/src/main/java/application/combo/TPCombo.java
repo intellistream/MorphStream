@@ -28,19 +28,17 @@ import static state_engine.content.Content.*;
 public class TPCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(TPCombo.class);
     private static final long serialVersionUID = -2394340130331865581L;
-
-    public TPCombo() {
-        super(LOG, 0);
-    }
-
     HashMap<Short, Integer> keys = new HashMap();
     DescriptiveStatistics stats = new DescriptiveStatistics();
     int concurrency = 0;
     int pre_concurrency = 0;
     int[] concerned_length = new int[]{1, 10, 50, 100, 250, 500, 750, 1000};
     int cnt = 0;
-
     ArrayDeque<LREvent> prevents = new ArrayDeque<>();
+
+    public TPCombo() {
+        super(LOG, 0);
+    }
 
     private boolean check_conflict(LREvent pre_event, LREvent event) {
         Short pre_segment = pre_event.getPOSReport().getSegment();

@@ -19,21 +19,16 @@ public class Operation implements Comparable<Operation> {
     public final MetaTypes.AccessType accessType;
 
     public final TxnContext txn_context;
-    public volatile TableRecordRef records_ref;//for cross-record dependency.
-
-    public volatile SchemaRecordRef record_ref;//required by read-only: the place holder of the reading d_record.
     public final long bid;
     //required by READ_WRITE_and Condition.
     public final Function function;
-
-
+    public final String table_name;
+    public volatile TableRecordRef records_ref;//for cross-record dependency.
+    public volatile SchemaRecordRef record_ref;//required by read-only: the place holder of the reading d_record.
     public List<DataBox> value_list;//required by write-only: the value_list to be used to update the d_record.
-
     //only update corresponding column.
     public long value;
     public int column_id;
-
-    public final String table_name;
     //required by READ_WRITE.
     public volatile TableRecord s_record;//only if it is different from d_record.
     public volatile TableRecord[] condition_records;

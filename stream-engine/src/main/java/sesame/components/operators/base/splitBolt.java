@@ -1,7 +1,7 @@
 package sesame.components.operators.base;
 
-import sesame.components.operators.api.BaseOperator;
 import org.slf4j.Logger;
+import sesame.components.operators.api.BaseOperator;
 
 import java.util.Map;
 

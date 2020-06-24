@@ -2,7 +2,6 @@ package sesame.components;
 
 
 import application.Platform;
-
 import sesame.controller.input.InputStreamController;
 import sesame.topology.TransactionTopology;
 import state_engine.Database;

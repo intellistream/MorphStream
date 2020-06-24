@@ -9,14 +9,11 @@ import static application.CONTROL.sink_combo_bid_size;
 public class SINK_CONTROL {
 
     static ReentrantLock counterLock = new ReentrantLock(true); // enable fairness policy
-
-    private volatile int counter = 0;
-
+    private static SINK_CONTROL ourInstance = new SINK_CONTROL();
     public double throughput = 0;
 
     SpinLock lock = new SpinLock();
-
-    private static SINK_CONTROL ourInstance = new SINK_CONTROL();
+    private volatile int counter = 0;
     private int _combo_bid_size;
 
     public static SINK_CONTROL getInstance() {
