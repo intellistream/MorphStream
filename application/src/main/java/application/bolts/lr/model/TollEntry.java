@@ -22,7 +22,7 @@ import java.io.Serializable;
 
 
 /**
- * A data container to be used in {@link PersistenceTollDataStore} which is storable using the Java Persistence API.
+ * A data container to be used in {@link } which is storable using the Java Persistence API.
  *
  * @author richter
  */

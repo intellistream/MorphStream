@@ -19,8 +19,6 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static application.CONTROL.*;
-import static application.constants.PositionKeepingConstants.Constant.MOVING_AVERAGE_WINDOW;
-import static application.constants.PositionKeepingConstants.Constant.SIZE_VALUE;
 import static state_engine.Meta.MetaTypes.AccessType.*;
 
 /**
@@ -219,6 +217,8 @@ public final class TxnProcessingEngine {
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
+
+    //TODO: the following are mostly hard-coded.
     private void process(Operation operation, long mark_ID, boolean clean) {
 
         if (operation.accessType == READS_ONLY) {
@@ -327,7 +327,7 @@ public final class TxnProcessingEngine {
                 double sum = srcRecord.get(2).getDouble();
                 double[] nextDouble = operation.function.new_value;
 
-                for (int j = 0; j < SIZE_VALUE; j++) {
+                for (int j = 0; j < 50; j++) {
                     sum -= valueList.addItem(nextDouble[j]);
                     sum += nextDouble[j];
                 }
@@ -337,10 +337,10 @@ public final class TxnProcessingEngine {
                 // Operation.d_record.content_.WriteAccess(Operation.bid, new SchemaRecord(srcRecord), wid);//not even needed.
 
                 // configure return-record.
-                if (valueList.size() < MOVING_AVERAGE_WINDOW) {//just added
-                    operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(nextDouble[SIZE_VALUE - 1])));
+                if (valueList.size() < 1_000) {//just added
+                    operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(nextDouble[50 - 1])));
                 } else {
-                    operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(sum / MOVING_AVERAGE_WINDOW)));
+                    operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(sum / 1_000)));
                 }
 
 //                if (operation.record_ref.cnt == 0) {

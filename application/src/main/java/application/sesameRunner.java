@@ -27,8 +27,6 @@ import static application.CONTROL.enable_profile;
 import static application.Constants.System_Plan_Path;
 import static application.constants.LinearRoadConstants.Conf.Executor_Threads;
 import static application.constants.OnlineBidingSystemConstants.Conf.OB_THREADS;
-import static application.constants.PositionKeepingConstants.Conf.PK_THREADS;
-import static application.constants.SpikeDetectionConstants.Conf.MOVING_AVERAGE_THREADS;
 import static application.constants.StreamLedgerConstants.Conf.SL_THREADS;
 import static state_engine.content.Content.*;
 import static state_engine.content.LWMContentImpl.LWM_CONTENT;
