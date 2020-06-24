@@ -31,9 +31,7 @@ public class GSBolt_nocc extends GSBolt_Locks {
 
     @Override
     protected void write_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
-
         write_request(event, txn_context[(int) (i - _bid)]);//always success
-
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         WRITE_CORE(event);
         END_ACCESS_TIME_MEASURE_ACC(thread_Id);
@@ -43,9 +41,7 @@ public class GSBolt_nocc extends GSBolt_Locks {
 
     @Override
     protected void read_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
-
         read_request(event, txn_context[(int) (i - _bid)]);//always success..
-
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         READ_CORE(event);
         END_ACCESS_TIME_MEASURE_ACC(thread_Id);
@@ -55,8 +51,6 @@ public class GSBolt_nocc extends GSBolt_Locks {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        sink.configPrefix = this.getConfigPrefix();
-        sink.prepare(config, context, collector);
         transactionManager = new TxnManagerNoLock(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
     }
 

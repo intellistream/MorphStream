@@ -43,8 +43,6 @@ public class GSBolt_ts_nopush extends GSBolt_ts {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         WriteEventsHolder = new ArrayDeque<>();
-        sink.configPrefix = this.getConfigPrefix();
-        sink.prepare(config, context, collector);
     }
 
 

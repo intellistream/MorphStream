@@ -158,7 +158,8 @@ public class GSCombo extends SPOUTCombo {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
 
         super.initialize(thread_Id, thisTaskId, graph);
-
+        sink.configPrefix = this.getConfigPrefix();
+        sink.prepare(config, context, collector);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_LOCK: {//no-order
                 bolt = new GSBolt_nocc(0, sink);

@@ -56,10 +56,7 @@ public class TP_Txn extends TransactionTopology {
         int tthread = config.getInt("tthread");
         setPartition_interval((int) (Math.ceil(NUM_SEGMENTS / (double) tthread)), tthread);
         TableInitilizer ini = new TPInitializer(db, scale_factor, theta, tthread, config);
-
         ini.creates_Table(config);
-
-
         if (config.getBoolean("partition", false)) {
 
             for (int i = 0; i < tthread; i++)

@@ -5,7 +5,6 @@ import application.constants.WordCountConstants.Field;
 import application.util.Configuration;
 import application.util.OsUtils;
 import application.util.datatypes.StreamValues;
-import sesame.components.context.TopologyContext;
 import sesame.components.operators.api.Checkpointable;
 import sesame.components.operators.base.splitBolt;
 import sesame.execution.ExecutionGraph;
@@ -83,7 +82,7 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        long pid = OsUtils.getPID(TopologyContext.HPCMonotor);
+        long pid = OsUtils.getPID();
 //		LOG.info("PID  = " + pid);
     }
 

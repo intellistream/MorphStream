@@ -2,7 +2,6 @@ package application.bolts.lb;
 
 import application.constants.VoterSStoreExampleConstants;
 import application.util.OsUtils;
-import sesame.components.context.TopologyContext;
 import sesame.components.operators.api.BaseWindowedBolt;
 import sesame.components.windowing.TupleWindow;
 import sesame.execution.ExecutionGraph;
@@ -25,7 +24,7 @@ public class trendingLeaderboardBolt extends BaseWindowedBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        long pid = OsUtils.getPID(TopologyContext.HPCMonotor);
+        long pid = OsUtils.getPID();
         LOG.info("PID  = " + pid);
 
     }

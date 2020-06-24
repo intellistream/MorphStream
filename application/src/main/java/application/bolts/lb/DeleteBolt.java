@@ -3,7 +3,6 @@ package application.bolts.lb;
 import application.constants.WordCountConstants.Field;
 import application.util.OsUtils;
 import application.util.datatypes.StreamValues;
-import sesame.components.context.TopologyContext;
 import sesame.components.operators.base.MapBolt;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.tuple.JumboTuple;
@@ -66,7 +65,7 @@ public class DeleteBolt extends MapBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        long pid = OsUtils.getPID(TopologyContext.HPCMonotor);
+        long pid = OsUtils.getPID();
         LOG.info("PID  = " + pid);
     }
 }

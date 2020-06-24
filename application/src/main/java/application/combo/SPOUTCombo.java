@@ -122,7 +122,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
 
-        long pid = OsUtils.getPID(TopologyContext.HPCMonotor);
+        long pid = OsUtils.getPID();
         LOG.info("JVM PID  = " + pid);
 
         long end = System.nanoTime();

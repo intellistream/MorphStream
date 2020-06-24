@@ -185,7 +185,8 @@ public class OBCombo extends SPOUTCombo {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
 
         super.initialize(thread_Id, thisTaskId, graph);
-
+        sink.configPrefix = this.getConfigPrefix();
+        sink.prepare(config, context, collector);
         _combo_bid_size = combo_bid_size;
 
         switch (config.getInt("CCOption", 0)) {

@@ -1,6 +1,5 @@
 package application.util;
 
-import ch.usi.overseer.OverHpc;
 import sun.misc.Unsafe;
 
 import java.lang.management.ManagementFactory;
@@ -22,10 +21,8 @@ public final class OsUtils {
         return Long.valueOf(jvmName.split("@")[0]);
     }
 
-    public static long getPID(OverHpc HPCMonotor) {
-        if (HPCMonotor != null) {
-            return HPCMonotor.getThreadId();
-        }
+    public static long getPID() {
+
         return getJVMID();
     }
 

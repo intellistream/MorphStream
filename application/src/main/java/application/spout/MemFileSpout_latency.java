@@ -4,7 +4,6 @@ import application.constants.BaseConstants;
 import application.helper.wrapper.StringStatesWrapper;
 import application.util.Configuration;
 import application.util.OsUtils;
-import sesame.components.context.TopologyContext;
 import sesame.components.operators.api.AbstractSpout;
 import sesame.execution.ExecutionGraph;
 import org.slf4j.Logger;
@@ -87,7 +86,7 @@ public class MemFileSpout_latency extends AbstractSpout {
                 e1.printStackTrace();
             }
         }
-        long pid = OsUtils.getPID(TopologyContext.HPCMonotor);
+        long pid = OsUtils.getPID();
         LOG.info("JVM PID  = " + pid);
 
         int end_index = array_array.length * config.getInt("count_number", 1);

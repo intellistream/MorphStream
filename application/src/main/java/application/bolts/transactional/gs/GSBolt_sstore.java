@@ -40,8 +40,7 @@ public class GSBolt_sstore extends GSBolt_LA {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
-        sink.configPrefix = this.getConfigPrefix();
-        sink.prepare(config, context, collector);
+
         if (!enable_states_partition) {
             LOG.info("Please enable `enable_states_partition` for PAT scheme");
             System.exit(-1);

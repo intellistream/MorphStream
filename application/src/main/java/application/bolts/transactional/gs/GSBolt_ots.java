@@ -92,8 +92,7 @@ public class GSBolt_ots extends GSBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        sink.configPrefix = this.getConfigPrefix();
-        sink.prepare(config, context, collector);
+
         transactionManager = new TxnManagerOrderedTo(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
     }
 
