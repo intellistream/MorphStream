@@ -1,18 +1,14 @@
 package sesame.components.windowing;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 /**
  * Eviction policy that evicts events based on time duration.
  */
 public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext> {
     private static final Logger LOG = LoggerFactory.getLogger(org.apache.storm.windowing.TimeEvictionPolicy.class);
-
     private final int windowLength;
     private volatile EvictionContext evictionContext;
     private long delta;
-
     /**
      * Constructs a TimeEvictionPolicy that evicts events older
      * than the given window length in millis
@@ -22,7 +18,6 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
     public TimeEvictionPolicy(int windowLength) {
         this.windowLength = windowLength;
     }
-
     /**
      * {@inheritDoc}
      */
@@ -37,17 +32,14 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
         }
         return Action.PROCESS;
     }
-
     @Override
     public void track(Event<T> event) {
         // NOOP
     }
-
     @Override
     public EvictionContext getContext() {
         return evictionContext;
     }
-
     @Override
     public void setContext(EvictionContext context) {
         EvictionContext prevContext = evictionContext;
@@ -67,22 +59,18 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
             }
         }
     }
-
     @Override
     public void reset() {
         // NOOP
     }
-
     @Override
     public EvictionContext getState() {
         return evictionContext;
     }
-
     @Override
     public void restoreState(EvictionContext state) {
         this.evictionContext = state;
     }
-
     @Override
     public String toString() {
         return "TimeEvictionPolicy{" +

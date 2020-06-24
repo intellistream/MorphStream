@@ -1,6 +1,4 @@
 package sesame.components.windowing;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +7,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static sesame.components.windowing.EvictionPolicy.Action.*;
-
 public class WindowManager<T> implements TriggerHandler {
     /**
      * Expire old events every EXPIRE_EVENTS_THRESHOLD to
@@ -28,7 +25,6 @@ public class WindowManager<T> implements TriggerHandler {
     private final ReentrantLock lock;
     private EvictionPolicy<T, ?> evictionPolicy;
     private TriggerPolicy<T, ?> triggerPolicy;
-
     public WindowManager(WindowLifecycleListener<T> windowLifecycleListener, Collection<Event<T>> queue) {
         this.queue = queue;
         this.windowLifecycleListener = windowLifecycleListener;
@@ -37,7 +33,6 @@ public class WindowManager<T> implements TriggerHandler {
         eventsSinceLastExpiry = new AtomicInteger();
         lock = new ReentrantLock(true);
     }
-
     /**
      * The callback_bolt invoked by the trigger policy.
      */
@@ -76,19 +71,15 @@ public class WindowManager<T> implements TriggerHandler {
         triggerPolicy.reset();
         return !events.isEmpty();
     }
-
     public void setEvictionPolicy(EvictionPolicy<T, ?> evictionPolicy) {
         this.evictionPolicy = evictionPolicy;
     }
-
     public void setTriggerPolicy(TriggerPolicy<T, ?> triggerPolicy) {
         this.triggerPolicy = triggerPolicy;
     }
-
     public void add(T event) {
         add(event, System.currentTimeMillis());
     }
-
     /**
      * Add an input_event into the window, with the given ts as the tracking ts.
      *
@@ -98,7 +89,6 @@ public class WindowManager<T> implements TriggerHandler {
     private void add(T event, long ts) {
         add(new BasicEvent<T>(event, ts));
     }
-
     /**
      * Tracks a window input_event
      *
@@ -114,8 +104,6 @@ public class WindowManager<T> implements TriggerHandler {
         track(windowEvent);
         compactWindow();
     }
-
-
     /**
      * feed the input_event to the eviction and trigger policies
      * for bookkeeping and optionally firing the trigger.
@@ -124,7 +112,6 @@ public class WindowManager<T> implements TriggerHandler {
         evictionPolicy.track(windowEvent);
         triggerPolicy.track(windowEvent);
     }
-
     /**
      * expires events that fall out of the window every
      * EXPIRE_EVENTS_THRESHOLD so that the window does not grow
@@ -135,8 +122,6 @@ public class WindowManager<T> implements TriggerHandler {
             scanEvents(false);
         }
     }
-
-
     /**
      * Scan events in the queue, using the expiration policy to measure_end
      * if the input_event should be evicted or not.
@@ -176,7 +161,6 @@ public class WindowManager<T> implements TriggerHandler {
         }
         return eventsToProcess;
     }
-
     /**
      * Start the trigger policy and waterMarkEventGenerator if set
      */
@@ -188,12 +172,10 @@ public class WindowManager<T> implements TriggerHandler {
         //LOG.DEBUG("Starting trigger policy");
         triggerPolicy.start();
     }
-
     public void shutdown() {
         //LOG.DEBUG("Shutting down WindowManager");
         if (triggerPolicy != null) {
             triggerPolicy.shutdown();
         }
     }
-
 }

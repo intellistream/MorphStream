@@ -1,5 +1,4 @@
 package state_engine.transaction.dedicated;
-
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,18 +13,14 @@ import java.util.LinkedList;
 
 import static state_engine.Meta.MetaTypes.AccessType.*;
 import static state_engine.transaction.impl.TxnAccess.Access;
-
 /**
  * @TOOD: in-completed
  */
 public class TxnManagerMvLock extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerMvLock.class);
-
     public TxnManagerMvLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
-
     }
-
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) {
 //
@@ -52,7 +47,6 @@ public class TxnManagerMvLock extends TxnManagerDedicated {
         return true;
 //        }
     }
-
     @Override
     public boolean CommitTransaction(TxnContext txnContext) {
 ////		BEGIN_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
@@ -117,7 +111,6 @@ public class TxnManagerMvLock extends TxnManagerDedicated {
 ////		END_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
         return true;
     }
-
     @Override
     public void AbortTransaction() {
 //        // recover updated data and release locks.
@@ -153,8 +146,6 @@ public class TxnManagerMvLock extends TxnManagerDedicated {
 //        assert (access_list_.access_count_ <= kMaxAccessNum);
 //        access_list_.Clear();
     }
-
-
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
         SchemaRecord s_record = t_record.record_;
@@ -180,7 +171,6 @@ public class TxnManagerMvLock extends TxnManagerDedicated {
                 return false;
             } else {
                 LOG.trace(txn_context.getThisOpId() + " success to get lock_ratio" + DateTime.now());
-
                 /**
                  * 	 const RecordSchema *schema_ptr = t_record->record_->schema_ptr_;
                  char *local_data = MemAllocator::Alloc(schema_ptr->GetSchemaSize());
@@ -189,8 +179,6 @@ public class TxnManagerMvLock extends TxnManagerDedicated {
                  t_record->record_->CopyTo(local_record);
                  */
                 final SchemaRecord local_record = new SchemaRecord(t_record.record_);//copy from t_record to local_record.
-
-
                 /**
                  Access *access = access_list_.NewAccess();
                  access->access_type_ = READ_WRITE;
@@ -230,6 +218,4 @@ public class TxnManagerMvLock extends TxnManagerDedicated {
             return false;
         }
     }
-
-
 }

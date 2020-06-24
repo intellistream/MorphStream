@@ -1,14 +1,12 @@
 package sesame.controller.affinity;
-
-import application.Platform;
-import application.util.Configuration;
+import common.platform.Platform;
+import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 /**
  * Created by I309939 on 11/8/2016.
  */
@@ -21,14 +19,12 @@ public class AffinityController {
     private final int cores;
     private final int sockets;
     int offset = 0;
-
     public AffinityController(Configuration conf, Platform p) {
         this.conf = conf;
         this.sockets = conf.getInt("num_socket", 8);
         this.cores = conf.getInt("num_cpu", 35);
         mapping_node = Platform.getNodes(conf.getInt("machine"));
 //		Integer[] sockets_usage = new Integer[8];
-
         cpu_pnt.put(0, 1);
         for (int i = 1; i < 8; i++) {
             cpu_pnt.put(i, 0);
@@ -36,7 +32,6 @@ public class AffinityController {
         }
         //LOG.info("NUM of Sockets:" + sockets + "\tNUM of Cores:" + cores);
     }
-
     //depends on the server..
     public void clear() {
         cpu_pnt.put(0, 1);
@@ -44,7 +39,6 @@ public class AffinityController {
             cpu_pnt.put(i, 0);
         }
     }
-
     /**
      * one thread one socket mapping..
      *
@@ -52,7 +46,6 @@ public class AffinityController {
      * @return
      */
     public long[] require(int node) {
-
         if (node != -1) {
             return requirePerSocket(node);
 //            sockets_usage[node]++;
@@ -63,19 +56,15 @@ public class AffinityController {
         }
         return requirePerSocket(node);
     }
-
     private synchronized long[] requirePerSocket(int node) {
-
         if (node == -1) {//run as native execution
             return require();
         } else {
-
             int num_cpu = conf.getInt("num_cpu", 8);
             LOG.info("num_cpu:" + num_cpu);
             if (node >= sockets) {
                 node = sockets - 1;//make sure less than maximum num_socket.
             }
-
             long[] cpus = new long[num_cpu];
             for (int i = 0; i < num_cpu; i++) {
                 int cnt = cpu_pnt.get(node) % num_cpu;//make sure less than configurable cpus per socket.
@@ -89,14 +78,10 @@ public class AffinityController {
                     System.exit(-1);
                 }
                 cpu_pnt.put(node, (cnt + 1) % cores);
-
             }
-
             return cpus;
-
         }
     }
-
     /**
      * one thread one core mapping.
      *
@@ -104,26 +89,19 @@ public class AffinityController {
      * @return
      */
     public synchronized long[] requirePerCore(int node) {
-
         node += offset;//pick cores from next nodes.
-
         if (node == -1) {//run as native execution
             return require();
-
         } else {
-
             long[] cpus = new long[1];
-
             //LOG.DEBUG("request a core from Node:" + node);
             int cnt = cpu_pnt.get(node);
-
             try {
                 cpus[0] = (this.mapping_node[node].get(cnt));
             } catch (Exception e) {
                 LOG.info("No available CPUs");
                 System.exit(-1);
             }
-
 //			LOG.info("cnt:" + cnt + " pick CPU" + cpus[0] + " from nodes: " + node);
             if ((conf.getBoolean("profile", false) || conf.getBoolean("NAV", false)) && cnt == 17) {
                 offset++;
@@ -135,28 +113,18 @@ public class AffinityController {
             return cpus;
         }
     }
-
     //depends on the server..
     private long[] require() {
-
         int num_node = conf.getInt("num_socket", 1);
         int num_cpu = conf.getInt("num_cpu", 1);
-
         long[] cpus = new long[num_cpu * num_node];
-
-
         for (int j = 0; j < num_node; j++) {
             for (int i = num_cpu * j; i < num_cpu * j + num_cpu; i++) {
                 int cnt = cpu_pnt.get(j) % num_cpu;//make sure less than configurable CPU per socket.
                 cpus[i] = (this.mapping_node[j].get(cnt));
                 cpu_pnt.put(j, (cnt + 1) % cores);
-
             }
         }
-
         return cpus;
-
     }
-
-
 }

@@ -1,11 +1,9 @@
 package sesame.components.windowing;
-
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.*;
-
 /**
  * Invokes {@link TriggerHandler#onTrigger()} after the duration.
  */
@@ -16,11 +14,9 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
     private final EvictionPolicy<T, ?> evictionPolicy;
     private final long duration;
     private ScheduledFuture<?> executorFuture;
-
     public TimeTriggerPolicy(long millis, TriggerHandler handler) {
         this(millis, handler, null);
     }
-
     public TimeTriggerPolicy(long millis, TriggerHandler handler, EvictionPolicy<T, ?> evictionPolicy) {
         this.duration = millis;
         this.handler = handler;
@@ -31,22 +27,18 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
         this.executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         this.evictionPolicy = evictionPolicy;
     }
-
     @Override
     public void track(Event<T> event) {
         checkFailures();
     }
-
     @Override
     public void reset() {
         checkFailures();
     }
-
     @Override
     public void start() {
         executorFuture = executor.scheduleAtFixedRate(newTriggerTask(), duration, duration, TimeUnit.MILLISECONDS);
     }
-
     @Override
     public void shutdown() {
         executor.shutdown();
@@ -59,14 +51,12 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
             Thread.currentThread().interrupt();
         }
     }
-
     @Override
     public String toString() {
         return "TimeTriggerPolicy{" +
                 "duration=" + duration +
                 '}';
     }
-
     /*
      * Check for uncaught exceptions during the execution
      * of the trigger and fail fast.
@@ -83,7 +73,6 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
             }
         }
     }
-
     private Runnable newTriggerTask() {
         return () -> {
             // do not process current timestamp since tuples might arrive while the trigger is executing
@@ -105,14 +94,11 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
             }
         };
     }
-
     @Override
     public Void getState() {
         return null;
     }
-
     @Override
     public void restoreState(Void state) {
-
     }
 }

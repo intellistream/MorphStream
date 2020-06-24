@@ -25,7 +25,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>application.sesameRunner</mainClass>
+                            <mainClass>sesameRunner</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

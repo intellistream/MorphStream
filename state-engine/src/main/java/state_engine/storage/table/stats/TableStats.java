@@ -1,5 +1,4 @@
 package state_engine.storage.table.stats;
-
 import state_engine.query.QueryPlan;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.DataBox;
@@ -7,7 +6,6 @@ import state_engine.storage.table.RecordSchema;
 
 import java.util.ArrayList;
 import java.util.List;
-
 /**
  * A wrapper class to represent the statistics for a partition table.
  * Note that statistics are an estimate over the data in a table.
@@ -19,11 +17,8 @@ import java.util.List;
 public class TableStats {
     private boolean estimate;
     private int numRecords;
-
-
     private RecordSchema tableSchema;
     private List<Histogram> histograms;
-
     /**
      * Creates a new TableStats with a given RecordSchema.
      *
@@ -32,11 +27,8 @@ public class TableStats {
     public TableStats(RecordSchema tableSchema) {
         this.estimate = false;
         this.numRecords = 0;
-
-
         this.tableSchema = tableSchema;
         this.histograms = new ArrayList<>();
-
         for (DataBox dataType : tableSchema.getFieldTypes()) {
             switch (dataType.type()) {
                 case INT:
@@ -54,7 +46,6 @@ public class TableStats {
             }
         }
     }
-
     /**
      * Creates a new TableStats with a schema, a list of histograms,
      * and an estimate number of records.
@@ -66,14 +57,9 @@ public class TableStats {
     public TableStats(RecordSchema tableSchema, List<Histogram> histograms, int numRecords) {
         this.estimate = true;
         this.numRecords = numRecords;
-
         this.tableSchema = tableSchema;
         this.histograms = histograms;
-
-
     }
-
-
     /**
      * Adds the stats for a new d_record.
      *
@@ -81,8 +67,6 @@ public class TableStats {
      */
     public void addRecord(SchemaRecord record) {
         this.numRecords++;
-
-
         int count = 0;
         for (DataBox value : record.getValues()) {
             switch (value.type()) {
@@ -101,11 +85,9 @@ public class TableStats {
                 default:
                     break;
             }
-
             count++;
         }
     }
-
     /**
      * Remove the stats for an existing d_record.
      *
@@ -113,8 +95,6 @@ public class TableStats {
      */
     public void removeRecord(SchemaRecord record) {
         this.numRecords--;
-
-
         int count = 0;
         for (DataBox value : record.getValues()) {
             switch (value.type()) {
@@ -133,21 +113,16 @@ public class TableStats {
                 default:
                     break;
             }
-
             count++;
         }
     }
-
-
     /**
      * Clean the table states
      */
     public void clean() {
-
         this.numRecords = 0;
         this.histograms = new ArrayList<>();
         for (DataBox dataType : tableSchema.getFieldTypes()) {
-
             switch (dataType.type()) {
                 case INT:
                     this.histograms.add(new IntHistogram());
@@ -164,7 +139,6 @@ public class TableStats {
             }
         }
     }
-
     /**
      * Gets the number of records the target table contains.
      *
@@ -173,8 +147,6 @@ public class TableStats {
     public int getNumRecords() {
         return this.numRecords;
     }
-
-
     /**
      * Gets the estimate reduction factor a predicate
      * and value_list would result in over a certain column.
@@ -189,7 +161,6 @@ public class TableStats {
                                     DataBox value) {
         return this.getHistogram(index).computeReductionFactor(predicate, value);
     }
-
     /**
      * Creates a new TableStats which is the statistics for the table
      * that results from the given predicate and value_list applied to
@@ -204,10 +175,8 @@ public class TableStats {
                                         QueryPlan.PredicateOperator predicate,
                                         DataBox value) {
         List<Histogram> copyHistograms = new ArrayList<>();
-
         Histogram predHistogram = this.histograms.get(index);
         float reductionFactor = predHistogram.computeReductionFactor(predicate, value);
-
         for (int i = 0; i < this.histograms.size(); i++) {
             if (i == index) {
                 copyHistograms.add(predHistogram.copyWithPredicate(predicate, value));
@@ -216,11 +185,9 @@ public class TableStats {
                 copyHistograms.add(histogram.copyWithReduction(reductionFactor));
             }
         }
-
         int numRecords = (int) (this.numRecords * reductionFactor);
         return new TableStats(this.tableSchema, copyHistograms, numRecords);
     }
-
     /**
      * Creates a new TableStats which is the statistics for the table
      * that results from this TableStats joined with the given TableStats.
@@ -236,48 +203,34 @@ public class TableStats {
         // Assume `this` is the `TableStats` instance for the left relation.
         RecordSchema rightSchema = rightStats.getSchema();
         List<Histogram> rightHistograms = rightStats.getHistograms();
-
         List<String> rightFieldNames = rightSchema.getFieldNames();
         List<DataBox> rightDataBoxs = rightSchema.getFieldTypes();
-
         List<String> copyFields = new ArrayList<>();
-
         for (String leftFieldName : this.tableSchema.getFieldNames()) {
             copyFields.add(leftFieldName);
         }
-
         for (String rightFieldName : rightFieldNames) {
             copyFields.add(rightFieldName);
         }
-
         List<DataBox> copyDataBoxs = new ArrayList<>();
-
         for (DataBox leftDataBox : this.tableSchema.getFieldTypes()) {
             copyDataBoxs.add(leftDataBox);
         }
-
         for (DataBox rightDataBox : rightDataBoxs) {
             copyDataBoxs.add(rightDataBox);
         }
-
         RecordSchema copySchema = new RecordSchema(copyFields, copyDataBoxs);
-
         int inputSize = this.numRecords * rightStats.getNumRecords();
         int leftNumDistinct = this.getNumDistinct(leftIndex);
         int rightNumDistinct = rightStats.getNumDistinct(rightIndex);
         float reductionFactor = 1.0f / Math.max(leftNumDistinct, rightNumDistinct);
-
         List<Histogram> copyHistograms = new ArrayList<>();
-
         int leftNumRecords = this.numRecords;
         int rightNumRecords = rightStats.getNumRecords();
-
         float leftReductionFactor = ((float) inputSize / leftNumRecords) * reductionFactor;
         float rightReductionFactor = ((float) inputSize / rightNumRecords) * reductionFactor;
-
         float joinReductionFactor = leftReductionFactor;
         Histogram joinHistogram = this.histograms.get(leftIndex);
-
         for (int i = 0; i < this.histograms.size(); i++) {
             Histogram leftHistogram = this.histograms.get(i);
             if (i == leftIndex) {
@@ -286,7 +239,6 @@ public class TableStats {
                 copyHistograms.add(leftHistogram.copyWithReduction(leftReductionFactor));
             }
         }
-
         for (int i = 0; i < rightHistograms.size(); i++) {
             Histogram rightHistogram = rightHistograms.get(i);
             if (i == rightIndex) {
@@ -295,11 +247,9 @@ public class TableStats {
                 copyHistograms.add(rightHistogram.copyWithReduction(rightReductionFactor));
             }
         }
-
         int outputSize = (int) (inputSize * reductionFactor);
         return new TableStats(copySchema, copyHistograms, outputSize);
     }
-
     /**
      * Gets the histogram for a certain column.
      *
@@ -309,7 +259,6 @@ public class TableStats {
     public Histogram getHistogram(int index) {
         return this.histograms.get(index);
     }
-
     /**
      * Gets the histograms of this TableStatistics.
      *
@@ -318,7 +267,6 @@ public class TableStats {
     public List<Histogram> getHistograms() {
         return this.histograms;
     }
-
     /**
      * Gets the schema of this TableStatistics.
      *
@@ -327,7 +275,6 @@ public class TableStats {
     public RecordSchema getSchema() {
         return this.tableSchema;
     }
-
     /**
      * Gets the estimate number of distinct entries for a certain column.
      *
@@ -337,6 +284,4 @@ public class TableStats {
     public int getNumDistinct(int index) {
         return this.getHistogram(index).getNumDistinct();
     }
-
-
 }

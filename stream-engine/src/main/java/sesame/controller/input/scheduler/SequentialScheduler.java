@@ -1,5 +1,4 @@
 package sesame.controller.input.scheduler;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.controller.input.InputStreamController;
@@ -9,8 +8,6 @@ import sesame.optimization.model.STAT;
 
 import java.util.LinkedList;
 import java.util.Queue;
-
-
 /**
  * Created by shuhaozhang on 17/7/16.
  * every executor owns its own input scheduler.
@@ -19,7 +16,6 @@ public class SequentialScheduler extends InputStreamController {
     private static final Logger LOG = LoggerFactory.getLogger(SequentialScheduler.class);
     private static final long serialVersionUID = 5653765958500376011L;
     private final LinkedList<Queue> LQ = new LinkedList<>();
-
     /**
      * non-blocking fetch
      *
@@ -27,7 +23,6 @@ public class SequentialScheduler extends InputStreamController {
      */
     private int size;
     private int current = 0;
-
     public void initialize() {
         super.initialize();
         for (String streamId : keySet) {
@@ -40,18 +35,14 @@ public class SequentialScheduler extends InputStreamController {
             System.exit(-1);
         }
     }
-
-
     @Override
     public JumboTuple fetchResults_inorder() {
         if (current == size) {
             current = 0;
         }
         return fetchFromqueue_inorder(LQ.get(current++));
-
-
     }
-//
+    //
 //	@Override
 //	public JumboTuple fetchResults() {
 //		JumboTuple tuple = null;
@@ -66,7 +57,6 @@ public class SequentialScheduler extends InputStreamController {
 //
 //		return tuple;//return a tuple or null after failed trying all queues.
 //	}
-
     @Override
     public Object fetchResults() {
         if (current == size) {
@@ -74,7 +64,6 @@ public class SequentialScheduler extends InputStreamController {
         }
         return fetchFromqueue(LQ.get(current++));
     }
-
     /**
      * @return
      */
@@ -85,7 +74,6 @@ public class SequentialScheduler extends InputStreamController {
         }
         return fetchFromqueue_single(LQ.get(current++));
     }
-
     @Override
     public JumboTuple fetchResults(STAT stat, int batch) {
         if (current == size) {

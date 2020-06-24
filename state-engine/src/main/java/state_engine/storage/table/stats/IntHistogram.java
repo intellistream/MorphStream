@@ -1,5 +1,4 @@
 package state_engine.storage.table.stats;
-
 import state_engine.query.QueryPlan;
 import state_engine.storage.datatype.DataBox;
 
@@ -7,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-
 /**
  * A class that represents the histogram of an integer column.
  * An instance of IntHistogram exposes statistics helpful
@@ -17,15 +15,12 @@ import java.util.List;
 public class IntHistogram implements Histogram<Integer> {
     private static int NUM_BUCKETS = 10;
     private static int DEFAULT_BUCKET_SIZE = 10;
-
     private boolean estimate;
     private int rangeMin;
     private int rangeMax;
     private int numDistinct;
-
     private List<Bucket<Integer>> buckets;
     private HashSet<Integer> entrySet;
-
     /**
      * Creates a new IntHistogram with no entries.
      */
@@ -33,10 +28,8 @@ public class IntHistogram implements Histogram<Integer> {
         this.estimate = false;
         this.rangeMin = NUM_BUCKETS / 2 * DEFAULT_BUCKET_SIZE * -1;
         this.rangeMax = NUM_BUCKETS / 2 * DEFAULT_BUCKET_SIZE;
-
         this.buckets = new ArrayList<>();
         this.entrySet = new HashSet<>();
-
         // By default create a histogram from -50 to 50 with bucket size 10.
         for (int i = 0; i < NUM_BUCKETS; i++) {
             int start = this.rangeMin + (i * DEFAULT_BUCKET_SIZE);
@@ -44,7 +37,6 @@ public class IntHistogram implements Histogram<Integer> {
             this.buckets.add(new Bucket<>(start, end));
         }
     }
-
     /**
      * Creates a new IntHistogram with given buckets and
      * an estimate number of distinct entries.
@@ -55,10 +47,8 @@ public class IntHistogram implements Histogram<Integer> {
     public IntHistogram(List<Bucket<Integer>> buckets, int numDistinct) {
         this.estimate = true;
         this.numDistinct = numDistinct;
-
         this.buckets = buckets;
     }
-
     /**
      * Creates a new IntHistogram that would result from
      * applying the given reduction factor over this.
@@ -68,21 +58,17 @@ public class IntHistogram implements Histogram<Integer> {
      */
     public IntHistogram copyWithReduction(float reductionFactor) {
         List<Bucket<Integer>> copyBuckets = new ArrayList<>();
-
         for (Bucket<Integer> bucket : buckets) {
             int bucketCount = bucket.getCount();
             int bucketStart = bucket.getStart();
             int bucketEnd = bucket.getEnd();
-
             Bucket<Integer> copyBucket = new Bucket<>(bucketStart, bucketEnd);
             copyBucket.increment((int) (bucketCount * reductionFactor));
             copyBuckets.add(copyBucket);
         }
-
         int copyNumDistinct = (int) Math.ceil(this.getNumDistinct() * reductionFactor);
         return new IntHistogram(copyBuckets, copyNumDistinct);
     }
-
     /**
      * Creates a new IntHistogram that would result from
      * applying the given predicate and value_list over this.
@@ -94,16 +80,13 @@ public class IntHistogram implements Histogram<Integer> {
     public IntHistogram copyWithPredicate(QueryPlan.PredicateOperator predicate,
                                           DataBox value) {
         List<Bucket<Integer>> copyBuckets = new ArrayList<>();
-
         for (Bucket<Integer> bucket : buckets) {
             int bucketCount = bucket.getCount();
             int bucketStart = bucket.getStart();
             int bucketEnd = bucket.getEnd();
             int bucketSize = bucketEnd - bucketStart;
             int predValue = value.getInt();
-
             Bucket<Integer> copyBucket = new Bucket<>(bucketStart, bucketEnd);
-
             switch (predicate) {
                 case EQUALS:
                     if (predValue >= bucketStart && predValue < bucketEnd) {
@@ -141,20 +124,16 @@ public class IntHistogram implements Histogram<Integer> {
                 default:
                     break;
             }
-
             copyBuckets.add(copyBucket);
         }
-
         float reductionFactor = this.computeReductionFactor(predicate, value);
         int copyNumDistinct = (int) (this.getNumDistinct() * reductionFactor);
         return new IntHistogram(copyBuckets, copyNumDistinct);
     }
-
     @Override
     public int getSampleCount() {
         return 0;
     }
-
     /**
      * Gets the buckets of this IntHistogram.
      *
@@ -163,17 +142,14 @@ public class IntHistogram implements Histogram<Integer> {
     public List<Bucket<Integer>> getAllBuckets() {
         return this.buckets;
     }
-
     @Override
     public Long get(Integer value) {
         return null;
     }
-
     @Override
     public Collection<Integer> values() {
         return null;
     }
-
     /**
      * Adds an entry into this IntHistogram.
      * Buckets are start inclusive and end exclusive.
@@ -182,17 +158,14 @@ public class IntHistogram implements Histogram<Integer> {
         if (value >= this.rangeMax || value < this.rangeMin) {
             this.refactorBuckets(value);
         }
-
         //increment the corresponding bucket.
         for (Bucket<Integer> bucket : this.buckets) {
             if (value >= bucket.getStart() && value < bucket.getEnd()) {
                 bucket.increment();
             }
         }
-
         this.entrySet.add(value);
     }
-
     /**
      * Removes an entry from this IntHistogram.
      */
@@ -203,7 +176,6 @@ public class IntHistogram implements Histogram<Integer> {
             }
         }
     }
-
     /**
      * Computes the reduction factor that a predicate and value_list result in
      * over this IntHistogram. You'll find instance methods of this class
@@ -218,7 +190,6 @@ public class IntHistogram implements Histogram<Integer> {
     public float computeReductionFactor(QueryPlan.PredicateOperator predicate,
                                         DataBox value) {
         /* TODO: Implement me! */
-
         float rf;
         switch (predicate) {
             case EQUALS:
@@ -241,7 +212,6 @@ public class IntHistogram implements Histogram<Integer> {
         }
         return rf;
     }
-
     /**
      * Gets the number of entries within a certain range.
      *
@@ -251,16 +221,13 @@ public class IntHistogram implements Histogram<Integer> {
      */
     public int getEntriesInRange(Integer start, Integer end) {
         int entries = 0;
-
         for (Bucket<Integer> bucket : this.buckets) {
             int bucketStart = bucket.getStart();
             int bucketEnd = bucket.getEnd();
             int bucketSize = bucketEnd - bucketStart;
-
             if (bucketStart >= end) {
                 break;
             }
-
             // Note that the number returned is an approximation.
             if (bucketStart >= start && bucketEnd <= end) {
                 entries += bucket.getCount();
@@ -270,10 +237,8 @@ public class IntHistogram implements Histogram<Integer> {
                 entries += (int) Math.ceil(bucket.getCount() * ((bucketEnd - start) / (float) bucketSize));
             }
         }
-
         return entries;
     }
-
     /**
      * Gets the estimate minimum value_list of this. The estimate minimum
      * value_list is the start value_list of the leftmost bucket with some entries.
@@ -282,17 +247,14 @@ public class IntHistogram implements Histogram<Integer> {
      */
     public int getMinValueIndex() {
         int minValue = this.rangeMin;
-
         for (Bucket<Integer> bucket : this.buckets) {
             if (bucket.getCount() > 0) {
                 minValue = bucket.getStart();
                 break;
             }
         }
-
         return minValue;
     }
-
     /**
      * Gets the estimate maximum value_list of this. The estimate maximum
      * value_list is the end value_list of the rightmost bucket with some entries.
@@ -301,29 +263,23 @@ public class IntHistogram implements Histogram<Integer> {
      */
     public int getMaxValueIndex() {
         int maxValue = this.rangeMax;
-
         for (int i = this.buckets.size() - 1; i >= 0; i--) {
             Bucket<Integer> bucket = this.buckets.get(i);
-
             if (bucket.getCount() > 0) {
                 maxValue = bucket.getEnd();
                 break;
             }
         }
-
         return maxValue;
     }
-
     @Override
     public Integer getMinValue() {
         return null;
     }
-
     @Override
     public Integer getMaxValue() {
         return null;
     }
-
     /**
      * Gets the estimate number of distinct entries in this histogram.
      *
@@ -336,7 +292,6 @@ public class IntHistogram implements Histogram<Integer> {
             return entrySet.size();
         }
     }
-
     /**
      * Refactors the buckets backing this IntHistogram to allow
      * the given value_list to belong in a bucket of this IntHistogram.
@@ -347,29 +302,23 @@ public class IntHistogram implements Histogram<Integer> {
         while (value < this.rangeMin || value >= this.rangeMax) {
             int newRangeMin = this.rangeMin * 2;
             int newRangeMax = this.rangeMax * 2;
-
             int newRange = newRangeMax - newRangeMin;
             int newBucketSize = newRange / NUM_BUCKETS;
-
             List<Bucket<Integer>> newBuckets = new ArrayList<>();
             for (int i = 0; i < NUM_BUCKETS; i++) {
                 int newStart = newRangeMin + i * newBucketSize;
                 int newEnd = newStart + newBucketSize;
                 Bucket<Integer> newBucket = new Bucket<>(newStart, newEnd);
-
                 for (int j = 0; j < NUM_BUCKETS; j++) {
                     Bucket<Integer> oldBucket = this.buckets.get(j);
                     int oldStart = oldBucket.getStart();
                     int oldEnd = oldBucket.getEnd();
-
                     if (newStart <= oldStart && oldEnd <= newEnd) {
                         newBucket.increment(oldBucket.getCount());
                     }
                 }
-
                 newBuckets.add(newBucket);
             }
-
             this.rangeMin = newRangeMin;
             this.rangeMax = newRangeMax;
             this.buckets = newBuckets;

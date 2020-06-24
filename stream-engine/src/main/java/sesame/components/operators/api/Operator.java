@@ -1,8 +1,7 @@
 package sesame.components.operators.api;
-
-import application.constants.BaseConstants;
-import application.util.Configuration;
-import application.util.OsUtils;
+import common.constants.BaseConstants;
+import common.collections.Configuration;
+import common.collections.OsUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.slf4j.Logger;
@@ -25,11 +24,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import static application.CONTROL.combo_bid_size;
-import static application.CONTROL.enable_app_combo;
-import static application.Constants.DEFAULT_STREAM_ID;
-import static application.constants.BaseConstants.BaseField.TEXT;
-
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_app_combo;
+import static common.Constants.DEFAULT_STREAM_ID;
+import static common.constants.BaseConstants.BaseField.TEXT;
 public abstract class Operator implements IOperator {
     /**
      * Because the flexibility of noSQL stream processing, we force user to tell us the output formulation.
@@ -81,13 +79,10 @@ public abstract class Operator implements IOperator {
      * @param event_frequency
      * @param window_size
      */
-
-
     Operator(Logger log, Map<String, Double> input_selectivity,
              Map<String, Double> output_selectivity, double branch_selectivity,
              double read_selectivity, boolean byP, double event_frequency, double window_size) {
         LOG = log;
-
         if (input_selectivity == null) {
             this.input_selectivity = new HashMap<>();
             this.input_selectivity.put(DEFAULT_STREAM_ID, 1.0);
@@ -100,20 +95,15 @@ public abstract class Operator implements IOperator {
         } else {
             this.output_selectivity = output_selectivity;
         }
-
         this.branch_selectivity = branch_selectivity;
         this.read_selectivity = read_selectivity;
         ByP = byP;
         Event_frequency = event_frequency;
         window = window_size;
         fields = new HashMap<>();
-
     }
-
-
     Operator(Logger log, boolean byP, double event_frequency, double w) {
         LOG = log;
-
         this.input_selectivity = new HashMap<>();
         this.output_selectivity = new HashMap<>();
         this.input_selectivity.put(DEFAULT_STREAM_ID, 1.0);
@@ -125,55 +115,43 @@ public abstract class Operator implements IOperator {
         window = w;
         fields = new HashMap<>();
     }
-
     public Map<String, Fields> getOutputFields() {
         return fields;
     }
-
     public void setStateful() {
         Stateful = true;
     }
-
     public void display() {
     }
-
     public OutputCollector getCollector() {
         return collector;
     }
-
     public TopologyContext getContext() {
         return context;
     }
-
     private void setContext(TopologyContext context) {
         this.context = context;
     }
-
     public void setFields(Fields fields) {
         this.fields.put(BaseConstants.BaseStream.DEFAULT, fields);
     }
-
     public void setFields(String streamId, Fields fields) {
         this.fields.put(streamId, fields);
     }
-
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         if (fields.isEmpty()) {
             if (getDefaultFields() != null) {
                 fields.put(BaseConstants.BaseStream.DEFAULT, getDefaultFields());
             }
-
             if (getDefaultStreamFields() != null) {
                 fields.putAll(getDefaultStreamFields());
             }
         }
-
         for (Map.Entry<String, Fields> e : fields.entrySet()) {
             declarer.declareStream(e.getKey(), e.getValue());
         }
     }
-
     /**
      * default field.
      *
@@ -182,44 +160,33 @@ public abstract class Operator implements IOperator {
     protected Fields getDefaultFields() {//@define the output fields
         return new Fields(TEXT);
     }
-
     protected Map<String, Fields> getDefaultStreamFields() {
         return null;
     }
-
     public String getConfigPrefix() {
         return this.configPrefix;
     }
-
     public void setConfigPrefix(String configPrefix) {
         this.configPrefix = configPrefix;
     }
-
     public int getId() {
         return this.executor.getExecutorID();
     }
-
     public double getWindow() {
         return window;
     }
-
     public void setWindow(double window) {
         this.window = window;
     }
-
-
     public double getLoops() {
         return loops;
     }
-
     public double getResults() {
         return results;
     }
-
     public void setResults(double results) {
         this.results = results;
     }
-
     /**
      * This is the API to talk to actual thread.
      *
@@ -234,17 +201,12 @@ public abstract class Operator implements IOperator {
         base_initialize(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
 //		txn_context = new TxnContext(thisTaskId, fid, bid);
     }
-
-
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
     }
-
     public void loadDB(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-
         graph.topology.tableinitilizer.loadDB(thread_Id, this.context.getNUMTasks());
     }
-
     /**
      * Base init will always be called.
      *
@@ -262,15 +224,12 @@ public abstract class Operator implements IOperator {
         } else {
             LogManager.getLogger(LOG.getName()).setLevel(Level.INFO);
         }
-
         if (this instanceof Checkpointable) {
-
             if (state == null) {
                 LOG.info("The operator" + executor.getOP() + " is declared as checkpointable " +
                         "but no state is initialized");
 //				System.exit(-1);
             } else {
-
                 if (!enable_app_combo) {
                     state.source_state_ini(executor);
                     state.dst_state_init(executor);
@@ -279,11 +238,8 @@ public abstract class Operator implements IOperator {
         }
         db = getContext().getDb();
 //		TxnManagerLWM txnManagerLWM = new TxnManagerLWM(db.getStorageManager());
-
         initialize(thread_Id, thisTaskId, graph);
-
     }
-
     /**
      * This is the API to client application code.
      * This can be overwrite by specific operator to do some initialization work.
@@ -293,15 +249,10 @@ public abstract class Operator implements IOperator {
      * @param graph
      */
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-
     }
-
-
     public void setExecutionNode(ExecutionNode e) {
         this.executor = e;
     }
-
-
     /**
      * forward_checkpoint implementation
      * save state of the operator with or without MMIO.
@@ -314,8 +265,6 @@ public abstract class Operator implements IOperator {
     public boolean checkpoint_store(Serializable value, int sourceId, Marker marker) {
         return state.share_store(value, sourceId, marker, executor, context.getThisComponentId() + context.getThisTaskId());
     }
-
-
     /**
      * Simple forward the marker
      *
@@ -325,23 +274,18 @@ public abstract class Operator implements IOperator {
     public boolean checkpoint_forward(int sourceId) {
         return state.forward(sourceId, executor);
     }
-
     public Integer default_scale(Configuration conf) {
         return 1;
     }
-
     public int getFid() {
         return fid;
     }
-
     public boolean IsStateful() {
         return Stateful;
     }
-
     public void forceStop() {
         forceStop = true;
     }
-
     public double getEmpty() {
         return 0;
     }

@@ -2,15 +2,11 @@
  * Written by Cliff Click and released to the public domain, as explained at
  * http://creativecommons.org/licenses/publicdomain
  */
-
 package state_engine.index.high_scale_lib;
-
 import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Set;
-
-
 /**
  * A simple wrapper around {@link NonBlockingHashMap} making it implement the
  * {@link Set} interface.  All operations are Non-Blocking and multi-thread safe.
@@ -18,14 +14,10 @@ import java.util.Set;
  * @author Cliff Click
  * @since 1.5
  */
-
-
 public class NonBlockingHashSet<E> extends AbstractSet<E> implements Serializable {
     private static final Object V = "";
     private static final long serialVersionUID = 9094167573008039764L;
-
     private final NonBlockingHashMap<E, Object> _map;
-
     /**
      * Make a new empty {@link NonBlockingHashSet}.
      */
@@ -33,7 +25,6 @@ public class NonBlockingHashSet<E> extends AbstractSet<E> implements Serializabl
         super();
         _map = new NonBlockingHashMap<E, Object>();
     }
-
     /**
      * Add {@code o} to the set.
      *
@@ -43,14 +34,12 @@ public class NonBlockingHashSet<E> extends AbstractSet<E> implements Serializabl
     public boolean add(final E o) {
         return _map.putIfAbsent(o, V) != V;
     }
-
     /**
      * @return <tt>true</tt> if {@code o} is in the set.
      */
     public boolean contains(final Object o) {
         return _map.containsKey(o);
     }
-
     /**
      * Remove {@code o} from the set.
      *
@@ -60,7 +49,6 @@ public class NonBlockingHashSet<E> extends AbstractSet<E> implements Serializabl
     public boolean remove(final Object o) {
         return _map.remove(o) == V;
     }
-
     /**
      * Current count of elements in the set.  Due to concurrent racing updates,
      * the size is only ever approximate.  Updates due to the calling thread are
@@ -71,20 +59,16 @@ public class NonBlockingHashSet<E> extends AbstractSet<E> implements Serializabl
     public int size() {
         return _map.size();
     }
-
     /**
      * Empty the set.
      */
     public void clear() {
         _map.clear();
     }
-
     public Iterator<E> iterator() {
         return _map.keySet().iterator();
     }
-
     // ---
-
     /**
      * Atomically make the set immutable.  Future calls to mutate will throw an
      * IllegalStateException.  Existing mutator calls in other threads racing
@@ -103,7 +87,6 @@ public class NonBlockingHashSet<E> extends AbstractSet<E> implements Serializabl
      * read-only will cause updates arriving after construction is supposedly
      * complete to throw an {@link IllegalStateException}.
      */
-
     // (1) call _map's immutable() call
     // (2) get snapshot
     // (3) CAS down a local map, power-of-2 larger than _map.size()+1/8th

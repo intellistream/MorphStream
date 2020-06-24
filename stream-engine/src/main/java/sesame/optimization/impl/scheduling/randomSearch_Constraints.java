@@ -1,6 +1,5 @@
 package sesame.optimization.impl.scheduling;
-
-import application.util.Configuration;
+import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.execution.ExecutionGraph;
@@ -14,13 +13,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.stream.IntStream;
-
 /**
  * Created by tony on 7/11/2017.
  */
 public class randomSearch_Constraints extends PlanScheduler {
     private final static Logger LOG = LoggerFactory.getLogger(randomSearch_Constraints.class);
-
     public randomSearch_Constraints(ExecutionGraph graph, int numNodes, int numCPUs, Constraints cons, Configuration conf) {
         this.numNodes = numNodes;
         this.numCPUs = numCPUs;
@@ -28,11 +25,9 @@ public class randomSearch_Constraints extends PlanScheduler {
         this.cons = cons;
         this.conf = conf;
     }
-
     public SchedulingPlan Search(boolean worst_plan, int timeoutMs) {
         initilize(worst_plan, conf);
         //if it is not used in set_executor_ready plan..
-
         if (worst_plan)
             LOG.info("Randomly search for the worst plan");
         else
@@ -40,18 +35,15 @@ public class randomSearch_Constraints extends PlanScheduler {
         //main course.
         final ArrayList<ExecutionNode> sort_opList = graph.sort();
         final long s = System.currentTimeMillis();
-
         int threads = Runtime.getRuntime().availableProcessors();
         while (System.currentTimeMillis() - s < timeoutMs) {
             SchedulingPlan[] plans = new SchedulingPlan[threads];
             for (int i = 0; i < threads; i++)
                 plans[i] = new SchedulingPlan(currentPlan, true);
-
             IntStream.range(0, threads).parallel().forEach(i -> {
                 plans[i] = Packing(plans[i], plans[i].graph, sort_opList);
                 plans[i].getOutput_rate(true);
             });
-
             if (worst_plan) {//select the worst one
                 for (int i = 0; i < threads; i++) {
                     double outputRate = plans[i].getOutput_rate(true);
@@ -79,17 +71,14 @@ public class randomSearch_Constraints extends PlanScheduler {
         double output_rate = best_plan.getOutput_rate(true);
         return best_plan;
     }
-
     SchedulingPlan Packing(SchedulingPlan sp, ExecutionGraph graph, ArrayList<ExecutionNode> sort_opList) {
         final Iterator<ExecutionNode> iterator = sort_opList.iterator();
         Random r = new Random();
-
         while (iterator.hasNext()) {
             ExecutionNode executor = iterator.next();
             if (!sp.Allocated(executor)) {
                 int satisfy = cons.allstatisfy;//by default it is satisfied.
                 LinkedList<Integer> valid_places = new LinkedList<>();
-
                 for (int i = 0; i < numNodes; i++) {
                     sp.allocate(executor, i);
                     satisfy = cons.satisfy(sp, i);
@@ -99,7 +88,6 @@ public class randomSearch_Constraints extends PlanScheduler {
                         valid_places.add(i);
                     }
                 }
-
                 if (valid_places.size() == 0) {
                     LOG.info("Operator\t" + executor.getOP()
                             + "\tis set_failed to allocate, with CPU relax of:" + cons.relax_cpu + "\t, " +

@@ -14,18 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with VoltDB.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package state_engine.storage.datatype;
-
 //import frontend.voltdb.messaging.FastDeserializer;
 //import frontend.voltdb.messaging.FastSerializer;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.nio.ByteBuffer;
-
 /**
  * A class for serializing and deserializing Volt's 16-byte fixed precision and scale decimal format. The decimal's
  * are converted to/from Java's {@link BigDecimal BigDecimal} class. <code>BigDecimal</code> stores values
@@ -36,30 +32,24 @@ import java.nio.ByteBuffer;
  * a value_list before serialization.
  */
 public class VoltDecimalHelper {
-
-
     /**
      * The scale of decimals in Volt
      */
     public static final int kDefaultScale = 12;
-
     /**
      * The precision of decimals in Volt
      */
     public static final int kDefaultPrecision = 38;
-
     /**
      * Array containing the smallest 16-byte twos complement value_list that is used
      * as SQL null.
      */
     private static final byte[] NULL_INDICATOR =
             new BigInteger("-170141183460469231731687303715884105728").toByteArray();
-
     /**
      * Math context specifying the precision of decimals in Volt
      */
     private static final MathContext context = new MathContext(kDefaultPrecision);
-
     /**
      * Array of scale factors used to scale up <code>BigInteger</code>s retrieved from
      * <code>BigDecimal</code>s
@@ -123,7 +113,6 @@ public class VoltDecimalHelper {
 //        }
 //        out.write(expandToLength16(unscaledValue, isNegative));
 //    }
-
     /**
      * Serialize the null decimal sigil to a the provided {@link ByteBuffer ByteBuffer}
      *
@@ -132,7 +121,6 @@ public class VoltDecimalHelper {
     static public void serializeNull(ByteBuffer buf) {
         buf.put(NULL_INDICATOR);
     }
-
     /**
      * Converts BigInteger's byte representation containing a scaled magnitude to a fixed size 16 byte array
      * and set the sign in the most significant byte's most significant bit.
@@ -154,7 +142,6 @@ public class VoltDecimalHelper {
         }
         return replacement;
     }
-
 //    /**
 //     * Serialize the {@link BigDecimal BigDecimal} to Volt's fixed precision and scale 16-byte format.
 //     * @param bd {@link BigDecimal BigDecimal} to serialize
@@ -212,7 +199,6 @@ public class VoltDecimalHelper {
 //        }
 //        return bd;
 //    }
-
     /**
      * Deserialize a Volt fixed precision and scale 16-byte decimal from a String representation
      *
@@ -231,7 +217,6 @@ public class VoltDecimalHelper {
         }
         return bd;
     }
-
     /**
      * Deserialize a Volt fixed precision and scale 16-byte decimal and return
      * it as a {@link BigDecimal BigDecimal} .
@@ -252,7 +237,6 @@ public class VoltDecimalHelper {
         }
         return bd;
     }
-
     public static void main(String args[]) {
 //        ByteBuffer buffer = ByteBuffer.allocate(16);
 //        BigDecimal bd = new BigDecimal("-23325.23425");

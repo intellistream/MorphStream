@@ -1,9 +1,8 @@
 package sesame.optimization.model;
-
-import application.Platform;
-import application.util.CacheInfo;
-import application.util.Configuration;
-import application.util.OsUtils;
+import common.platform.Platform;
+import common.collections.CacheInfo;
+import common.collections.Configuration;
+import common.collections.OsUtils;
 import ch.usi.overseer.OverHpc;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
@@ -14,11 +13,9 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
-import static application.Constants.STAT_Path;
-import static application.util.OsUtils.isUnix;
-
+import static common.Constants.STAT_Path;
+import static common.collections.OsUtils.isUnix;
 //import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-
 /**
  * Created by parallels on 11/22/16.
  * This is used to d_record profiling results of each operator during the profiling phase.
@@ -28,7 +25,6 @@ import static application.util.OsUtils.isUnix;
  */
 public class STAT implements Serializable {
     private static final long serialVersionUID = 5L;
-
     private final static Logger LOG = LoggerFactory.getLogger(STAT.class);
     private final static boolean useHPC = true;
     public final ExecutionNode executionNode;
@@ -87,7 +83,6 @@ public class STAT implements Serializable {
     private boolean pHPC = false;
     private double repeate = 1;
     private boolean measured;
-
     public STAT(ExecutionNode pE, ExecutionNode executionNode, Configuration config, OverHpc hpcMonotor, Platform p) {
         HPCMonotor = hpcMonotor;
         this.srcNode = pE;
@@ -102,7 +97,6 @@ public class STAT implements Serializable {
             pHPC = true;
             LOG.info("HPC enabled!");
         }
-
         gc_factor = config.getDouble("gc_factor", 3);
         //LOG.DEBUG("GC factor: " + gc_factor);
 		/*
@@ -111,32 +105,23 @@ public class STAT implements Serializable {
 		  C_com: cycles spent in in-core-computation
 		  C_mem: cycles spent in out-of-core computation
 		 */
-
         double c_dat = 0;
         double c_com = 0;
         double c_mem = 0;
         tuple_size = 0;
-
         //initialize STATS
         for (int i = 0; i <= 1; i++) {
             cycles_stats_inFetch[i] = new DescriptiveStatistics();
             cycles_stats[i] = new DescriptiveStatistics();
-
             LLCM_stats_inFetch[i] = new DescriptiveStatistics();
             LLCM_stats[i] = new DescriptiveStatistics();
-
             LLCR_stats_inFetch[i] = new DescriptiveStatistics();
             LLCR_stats[i] = new DescriptiveStatistics();
-
             L1_stats_inFetch[i] = new DescriptiveStatistics();
             L1_stats[i] = new DescriptiveStatistics();
-
             L1D_stats_inFetch[i] = new DescriptiveStatistics();
             L1D_stats[i] = new DescriptiveStatistics();
-
         }
-
-
         // Acquire current process PID:
         if (pHPC) {
             assert HPCMonotor != null;
@@ -147,11 +132,9 @@ public class STAT implements Serializable {
             pid = -1;
         }
     }
-
-//	public void bind_measure() {
+    //	public void bind_measure() {
 //		HPCMonotor.bindEventsToThread(pid);
 //	}
-
     private void measure_start() {
         HPCMonotor.bindEventsToThread(pid);
         HPCMonotor.start();
@@ -161,7 +144,6 @@ public class STAT implements Serializable {
 //		previousValue[L1I_Index] = HPCMonotor.getEventFromThread(pid, L1I_Index);
 //		previousValue[L1D_Index] = HPCMonotor.getEventFromThread(pid, L1D_Index);
     }
-
     private void measure_end() {
         HPCMonotor.stop();
         currentvalue[CYCLE_Index] = HPCMonotor.getEventFromThread(pid, CYCLE_Index);
@@ -170,7 +152,6 @@ public class STAT implements Serializable {
 //		currentvalue[L1I_Index] = HPCMonotor.getEventFromThread(pid, L1I_Index);
 //		currentvalue[L1D_Index] = HPCMonotor.getEventFromThread(pid, L1D_Index);
     }
-
     public void start_measure() {
         measured = true;
         if (pHPC) {
@@ -178,15 +159,12 @@ public class STAT implements Serializable {
         }
 //		previousValue[CYCLE_Index] = System.nanoTime();
     }
-
     public void end_measure() {
         end_measure(1);
     }
-
     public void end_measure(int batch) {
 //		currentvalue[CYCLE_Index] = System.nanoTime();
 //		Exe_time = ((currentvalue[CYCLE_Index] - previousValue[CYCLE_Index]) * p.CLOCK_RATE / batch);
-
         if (pHPC) {
             measure_end();
             Exe_time = ((currentvalue[CYCLE_Index] - previousValue[CYCLE_Index]) * p.CLOCK_RATE / 2.5 / batch);
@@ -196,14 +174,11 @@ public class STAT implements Serializable {
 //			L1_DMiss = ((currentvalue[L1D_Index] - previousValue[L1D_Index]) / batch);
         }
 //		else {
-
 //		}
     }
-
     public void end_measure_inFetch(int batch) {
 //		currentvalue[CYCLE_Index] = System.nanoTime();
 //		Exe_time_inFetch = ((currentvalue[CYCLE_Index] - previousValue[CYCLE_Index]) * p.CLOCK_RATE / batch);
-
         if (pHPC) {
             measure_end();
             Exe_time_inFetch = ((currentvalue[CYCLE_Index] - previousValue[CYCLE_Index]) * p.CLOCK_RATE / 2.5 / batch);
@@ -213,7 +188,6 @@ public class STAT implements Serializable {
 //			L1_DMiss_inFetch = ((currentvalue[L1D_Index] - previousValue[L1D_Index]) / batch);
         }
     }
-
     /**
      * , stat.Exe_time, stat.LLC_Miss, stat.LLC_Reference
      * , stat.Exe_time_inFetch, stat.LLC_Miss_inFetch, stat.LLC_Reference_inFetch
@@ -229,46 +203,33 @@ public class STAT implements Serializable {
                 bit = 0;
             }
             tuple_stats.addValue(size_of_fetchTuple);
-
             cycles_stats_inFetch[bit].addValue(Exe_time_inFetch);
             cycles_stats[bit].addValue(Exe_time);
-
             LLCM_stats_inFetch[bit].addValue(LLC_Miss_inFetch);
             LLCM_stats[bit].addValue(LLC_Miss);
-
             LLCR_stats_inFetch[bit].addValue(LLC_Reference_inFetch);
             LLCR_stats[bit].addValue(LLC_Reference);
-
 //			L1_stats_inFetch[bit].addValue(L1_Miss_inFetch);
 //			L1_stats[bit].addValue(L1_Miss);
-
 //			L1D_stats_inFetch[bit].addValue(L1_DMiss_inFetch);
 //			L1D_stats_inFetch[bit].addValue(L1_DMiss);
-
             measured = false;
         }
     }
-
     private void setAllZero() {
         for (int i = 0; i <= 1; i++) {
             this.cycles_PS_inFetch[i] = 0;
             this.cycles_PS[i] = 0;
-
             this.LLC_MISS_PS_inFetch[i] = 0;
             this.LLC_MISS_PS[i] = 0;
-
             this.LLC_REF_PS_inFetch[i] = 0;
             this.LLC_REF_PS[i] = 0;
-
             this.L1_MISS_PS_inFetch[i] = 0;
             this.L1_MISS_PS[i] = 0;
-
             this.L1_DMISS_PS_inFetch[i] = 0;
             this.L1_DMISS_PS[i] = 0;
         }
     }
-
-
     public void load() {
         String dir = null;
 //				if (executionNode.isSourceNode() || executionNode.isLeafNode()) {
@@ -280,17 +241,12 @@ public class STAT implements Serializable {
                 + OsUtils.OS_wrapper(String.valueOf(conf.getInt("percentile")))
                 + OsUtils.OS_wrapper(String.valueOf(conf.getInt("batch")));
 //				}
-
         String target;
         if (executionNode.op.IsStateful()) {
-
             int numTasks = executionNode.operator.getNumTasks();
-
             target = executionNode.getOP() + numTasks + srcNode.getOP();
-
 //			LOG.info("Prepared initial target: "+target);c
             File tmpfile = new File(dir + OsUtils.OS_wrapper(target + ".txt"));
-
             while (!tmpfile.exists()) {
                 target = executionNode.getOP() + Math.max(1, (numTasks--)) + srcNode.getOP();
                 tmpfile = new File(dir + OsUtils.OS_wrapper(target + ".txt"));
@@ -298,19 +254,15 @@ public class STAT implements Serializable {
 //			LOG.info("Prepared final target:"+target);
 //			int numTasks = 5;
 //			target = executionNode.getOP() + numTasks + srcNode.getOP();
-
         } else {
             target = executionNode.getOP() + srcNode.getOP();
         }
         if (executionNode.getOP().equals("Virtual")) {
             setAllZero();
         } else {
-
             if (p.cachedInformation.isEmpty(target)) {
-
                 Scanner sc = null;
                 File file = new File(dir + OsUtils.OS_wrapper(target + ".txt"));
-
                 String read = null;
                 if (file.exists()) {
                     try {
@@ -332,32 +284,24 @@ public class STAT implements Serializable {
                 read_info(read);
             }
         }
-
     }
-
     private void read_info(String read) {
         String[] split = read.split("\t");
         int j = 0;
         for (int i = 0; i <= 1; i++) {
             this.cycles_PS_inFetch[i] = Double.parseDouble(split[j++]);
             this.cycles_PS[i] = Double.parseDouble(split[j++]);
-
             this.LLC_MISS_PS_inFetch[i] = Double.parseDouble(split[j++]);
             this.LLC_MISS_PS[i] = Double.parseDouble(split[j++]);
-
             this.LLC_REF_PS_inFetch[i] = Double.parseDouble(split[j++]);
             this.LLC_REF_PS[i] = Double.parseDouble(split[j++]);
-
             this.L1_MISS_PS_inFetch[i] = Double.parseDouble(split[j++]);
             this.L1_MISS_PS[i] = Double.parseDouble(split[j++]);
-
             this.L1_DMISS_PS_inFetch[i] = Double.parseDouble(split[j++]);
             this.L1_DMISS_PS[i] = Double.parseDouble(split[j++]);
         }
         this.tuple_size = Long.parseLong(split[j]);//the last one.
-
     }
-
     private void store_to_cache(CacheInfo cachedInformation, String key, String read) {
         if (read == null) {
             setAllZero();
@@ -365,11 +309,9 @@ public class STAT implements Serializable {
             cachedInformation.updateInfo(key, read);
         }
     }
-
     private String load_from_cache(CacheInfo cachedInformation, String key) {
         return cachedInformation.Info(key);
     }
-
     private void removeNAN() {
         if (Double.isNaN(this.tuple_size)) {
             this.tuple_size = 0;
@@ -381,39 +323,32 @@ public class STAT implements Serializable {
             if (Double.isNaN(this.cycles_PS[bit])) {
                 this.cycles_PS[bit] = 0;
             }
-
             if (Double.isNaN(this.LLC_MISS_PS_inFetch[bit])) {
                 this.LLC_MISS_PS_inFetch[bit] = 0;
             }
             if (Double.isNaN(this.LLC_MISS_PS[bit])) {
                 this.LLC_MISS_PS[bit] = 0;
             }
-
             if (Double.isNaN(this.LLC_REF_PS_inFetch[bit])) {
                 this.LLC_REF_PS_inFetch[bit] = 0;
             }
             if (Double.isNaN(this.LLC_REF_PS[bit])) {
                 this.LLC_REF_PS[bit] = 0;
             }
-
-
             if (Double.isNaN(this.L1_MISS_PS_inFetch[bit])) {
                 this.L1_MISS_PS_inFetch[bit] = 0;
             }
             if (Double.isNaN(this.L1_MISS_PS[bit])) {
                 this.L1_MISS_PS[bit] = 0;
             }
-
             if (Double.isNaN(this.L1_DMISS_PS_inFetch[bit])) {
                 this.L1_DMISS_PS_inFetch[bit] = 0;
             }
             if (Double.isNaN(this.L1_DMISS_PS[bit])) {
                 this.L1_DMISS_PS[bit] = 0;
             }
-
         }
     }
-
     private void store(int percentile) {
         LOG.info(this.executionNode.getOP() + " " + this.executionNode.getExecutorID() + " store profiling statistics");
         try {
@@ -423,18 +358,14 @@ public class STAT implements Serializable {
             File file = new File(dir);
             if (!file.mkdirs()) {
             }
-
             if (executionNode.op.IsStateful()) {
                 file = new File(dir + OsUtils.OS_wrapper(executionNode.getOP() + executionNode.operator.getNumTasks() + srcNode.getOP() + ".txt"));
             } else {
                 file = new File(dir + OsUtils.OS_wrapper(executionNode.getOP() + srcNode.getOP() + ".txt"));
-
             }
-
             try (Writer writer = new BufferedWriter(new OutputStreamWriter(
                     new FileOutputStream(file), StandardCharsets.UTF_8))) {
                 removeNAN();
-
                 for (int i = 0; i <= 1; i++) {
                     writer.write(this.cycles_PS_inFetch[i] + "\t");
                     writer.write(this.cycles_PS[i] + "\t");
@@ -456,20 +387,16 @@ public class STAT implements Serializable {
             System.exit(-1);
         }
     }
-
     public void finishProfile() {
         int percentile = conf.getInt("percentile", 90);
         if (percentile != -1) {
             for (int bit = 0; bit <= 1; bit++) {
                 cycles_PS_inFetch[bit] = cycles_stats_inFetch[bit].getPercentile(percentile);
                 cycles_PS[bit] = cycles_stats[bit].getPercentile(percentile);
-
                 LLC_MISS_PS_inFetch[bit] = LLCM_stats_inFetch[bit].getPercentile(percentile);
                 LLC_MISS_PS[bit] = LLCM_stats[bit].getPercentile(percentile);
-
                 LLC_REF_PS_inFetch[bit] = LLCR_stats_inFetch[bit].getPercentile(percentile);//GetAndUpdate median.
                 LLC_REF_PS[bit] = LLCR_stats[bit].getPercentile(percentile);//GetAndUpdate median.
-
                 L1_MISS_PS_inFetch[bit] = L1_stats_inFetch[bit].getPercentile(percentile);
                 L1_MISS_PS[bit] = L1_stats[bit].getPercentile(percentile);
                 L1_DMISS_PS_inFetch[bit] = L1D_stats_inFetch[bit].getPercentile(percentile);
@@ -478,7 +405,6 @@ public class STAT implements Serializable {
             }
             store(percentile);
         } else {
-
             for (int i = 10; i <= 100; i += 10) {
                 if (i == 50) {
                     continue;
@@ -486,13 +412,10 @@ public class STAT implements Serializable {
                 for (int bit = 0; bit <= 1; bit++) {
                     cycles_PS_inFetch[bit] = cycles_stats_inFetch[bit].getPercentile(i);
                     cycles_PS[bit] = cycles_stats[bit].getPercentile(i);
-
                     LLC_MISS_PS_inFetch[bit] = LLCM_stats_inFetch[bit].getPercentile(i);
                     LLC_MISS_PS[bit] = LLCM_stats[bit].getPercentile(i);
-
                     LLC_REF_PS_inFetch[bit] = LLCR_stats_inFetch[bit].getPercentile(i);//GetAndUpdate median.
                     LLC_REF_PS[bit] = LLCR_stats[bit].getPercentile(i);//GetAndUpdate median.
-
                     L1_MISS_PS_inFetch[bit] = L1_stats_inFetch[bit].getPercentile(i);
                     L1_MISS_PS[bit] = L1_stats[bit].getPercentile(i);
                     L1_DMISS_PS_inFetch[bit] = L1D_stats_inFetch[bit].getPercentile(i);
@@ -501,18 +424,14 @@ public class STAT implements Serializable {
                 }
                 store(i);
             }
-
             int i = 50;
             for (int bit = 0; bit <= 1; bit++) {
                 cycles_PS_inFetch[bit] = cycles_stats_inFetch[bit].getPercentile(i);
                 cycles_PS[bit] = cycles_stats[bit].getPercentile(i);
-
                 LLC_MISS_PS_inFetch[bit] = LLCM_stats_inFetch[bit].getPercentile(i);
                 LLC_MISS_PS[bit] = LLCM_stats[bit].getPercentile(i);
-
                 LLC_REF_PS_inFetch[bit] = LLCR_stats_inFetch[bit].getPercentile(i);//GetAndUpdate median.
                 LLC_REF_PS[bit] = LLCR_stats[bit].getPercentile(i);//GetAndUpdate median.
-
                 L1_MISS_PS_inFetch[bit] = L1_stats_inFetch[bit].getPercentile(i);
                 L1_MISS_PS[bit] = L1_stats[bit].getPercentile(i);
                 L1_DMISS_PS_inFetch[bit] = L1D_stats_inFetch[bit].getPercentile(i);
@@ -521,18 +440,14 @@ public class STAT implements Serializable {
             }
             store(i);
         }
-
-
         String dir = STAT_Path + OsUtils.OS_wrapper(conf.getConfigPrefix())
                 + OsUtils.OS_wrapper("execute.distribution")
                 + OsUtils.OS_wrapper(String.valueOf(conf.getInt("num_socket")))
                 + OsUtils.OS_wrapper(String.valueOf(conf.getInt("batch"))
         );
-
         File file = new File(dir);
         if (!file.mkdirs()) {
         }
-
         FileWriter f = null;
         try {
             if (executionNode.op.IsStateful()) {
@@ -540,7 +455,6 @@ public class STAT implements Serializable {
             } else {
                 f = new FileWriter(new File(dir + OsUtils.OS_wrapper(this.executionNode.getOP() + srcNode.getOP())));
             }
-
             Writer w = new BufferedWriter(f);
             for (double i = 0.5; i <= 100.0; i += 0.5) {
                 w.write(String.valueOf(cycles_stats[0].getPercentile(i) + "\n"));
@@ -549,14 +463,11 @@ public class STAT implements Serializable {
             w.write(cycles_stats[0].toString() + "\n");
             w.close();
             f.close();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
     public String toString() {
-
         StringBuilder sb = new StringBuilder();
         sb.append("Measure cnt:").append(this.tuple_stats.getN());
         for (int i = 0; i <= 1; i++) {
@@ -600,7 +511,6 @@ public class STAT implements Serializable {
 //        //            + "\tin processing tuples from executor:" + srcNode.operator.id + " with id:" + srcNode.getExecutorIDList()
 //        //           + "\tFection cycles C_dat:" + C_dat + "\t C_com:" + C_com + "\t C_mem:" + C_mem);
 //    }
-
 //    public void validate() {
 //
 //        LOG.info("\n======================Model Validation on " + executionNode.getExecutorID() + "===================\n");
@@ -644,6 +554,4 @@ public class STAT implements Serializable {
 //        return rt;
 //        //return C_dat + CRMA(tuple_size, sid, did) + C_com + C_mem;
 //    }
-
-
 }

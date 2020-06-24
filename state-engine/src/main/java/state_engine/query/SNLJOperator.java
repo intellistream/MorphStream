@@ -1,5 +1,4 @@
 package state_engine.query;
-
 import state_engine.DatabaseException;
 import state_engine.SimpleDatabase;
 import state_engine.storage.SchemaRecord;
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-
 public class SNLJOperator extends JoinOperator {
     private QueryOperator leftSource;
     private QueryOperator rightSource;
@@ -18,7 +16,6 @@ public class SNLJOperator extends JoinOperator {
     private String leftColumnName;
     private String rightColumnName;
     private SimpleDatabase.Transaction transaction;
-
     public SNLJOperator(QueryOperator leftSource,
                         QueryOperator rightSource,
                         String leftColumnName,
@@ -30,10 +27,8 @@ public class SNLJOperator extends JoinOperator {
                 rightColumnName,
                 transaction,
                 JoinType.SNLJ);
-
         this.stats = this.estimateStats();
         this.cost = this.estimateIOCost();
-
         this.leftSource = getLeftSource();
         this.rightSource = getRightSource();
         this.leftColumnIndex = getLeftColumnIndex();
@@ -42,11 +37,9 @@ public class SNLJOperator extends JoinOperator {
         this.rightColumnName = getRightColumnName();
         this.transaction = getTransaction();
     }
-
     public Iterator<SchemaRecord> iterator() throws QueryPlanException, DatabaseException {
         return new SNLJIterator();
     }
-
     public int estimateIOCost() {
         /* TODO: Implement me! */
 //
@@ -58,8 +51,6 @@ public class SNLJOperator extends JoinOperator {
 //		return io;
         return 0;
     }
-
-
     /**
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
@@ -68,14 +59,12 @@ public class SNLJOperator extends JoinOperator {
         private Iterator<SchemaRecord> rightIterator;
         private SchemaRecord leftRecord;
         private SchemaRecord nextRecord;
-
         public SNLJIterator() throws QueryPlanException, DatabaseException {
             this.leftIterator = SNLJOperator.this.getLeftSource().iterator();
             this.rightIterator = null;
             this.leftRecord = null;
             this.nextRecord = null;
         }
-
         /**
          * Checks if there are more d_record(s) to yield
          *
@@ -113,7 +102,6 @@ public class SNLJOperator extends JoinOperator {
                 this.leftRecord = null;
             }
         }
-
         /**
          * Yields the next d_record of this iterator.
          *
@@ -128,7 +116,6 @@ public class SNLJOperator extends JoinOperator {
             }
             throw new NoSuchElementException();
         }
-
         public void remove() {
             throw new UnsupportedOperationException();
         }

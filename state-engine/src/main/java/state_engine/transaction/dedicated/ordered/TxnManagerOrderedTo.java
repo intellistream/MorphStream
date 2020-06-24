@@ -1,5 +1,4 @@
 package state_engine.transaction.dedicated.ordered;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
@@ -17,19 +16,14 @@ import java.util.LinkedList;
 import static state_engine.Meta.MetaTypes.AccessType.*;
 import static state_engine.Meta.MetaTypes.kMaxAccessNum;
 import static state_engine.transaction.impl.TxnAccess.Access;
-
 /**
  * Conventional Timestamp ordering from Cavalia.
  */
 public class TxnManagerOrderedTo extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerOrderedTo.class);
-
     public TxnManagerOrderedTo(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
-
     }
-
-
     /**
      * not in use.
      *
@@ -63,8 +57,6 @@ public class TxnManagerOrderedTo extends TxnManagerDedicated {
             return true;
         }
     }
-
-
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_id, TableRecord t_record, SchemaRecordRef s_record_ref, MetaTypes.AccessType access_type) {
         if (is_first_access_) {
@@ -73,9 +65,7 @@ public class TxnManagerOrderedTo extends TxnManagerDedicated {
             is_first_access_ = false;
 //			END_CC_TS_ALLOC_TIME_MEASURE(thread_id_);
         }
-
         final SchemaRecord local_record = new SchemaRecord(t_record.record_);//copy from t_record to local_record.
-
         if (access_type == READ_WRITE) {
             // write will be pushed into a queue without blocking.
             // write should be installed right before commit.
@@ -115,8 +105,6 @@ public class TxnManagerOrderedTo extends TxnManagerDedicated {
         s_record_ref.setRecord(local_record);
         return true;
     }
-
-
     @Override
     public boolean CommitTransaction(TxnContext txnContext) {
 //		BEGIN_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
@@ -150,7 +138,6 @@ public class TxnManagerOrderedTo extends TxnManagerDedicated {
         // END_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
         return true;
     }
-
     @Override
     public void AbortTransaction() {
         for (int i = 0; i < access_list_.access_count_; ++i) {
@@ -167,6 +154,4 @@ public class TxnManagerOrderedTo extends TxnManagerDedicated {
         access_list_.Clear();
         is_first_access_ = true;
     }
-
-
 }

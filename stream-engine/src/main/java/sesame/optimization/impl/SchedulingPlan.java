@@ -1,8 +1,7 @@
 package sesame.optimization.impl;
-
-import application.Constants;
-import application.util.Configuration;
-import application.util.OsUtils;
+import common.Constants;
+import common.collections.Configuration;
+import common.collections.OsUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +20,8 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static application.Constants.*;
-
+import static common.Constants.*;
 //import brisk.optimization.txn.scheduling.Decision;
-
 /**
  * Created by I309939 on 11/8/2016.
  */
@@ -47,7 +44,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
     public int validOperators;//used in BnB
     public boolean BP_calculated = false;
     private boolean allocated;
-
     public SchedulingPlan(ExecutionGraph graph, int numNodes, Constraints cons, Configuration conf, Variables variables) {
         if (variables != null) {
             this.variables = variables;
@@ -61,7 +57,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         ini_allocationMap();
         ini_cacheMap();
     }
-
     /**
      * reverse the compressed graph to normal.
      */
@@ -77,7 +72,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             //reproduce the map.
             for (TopologyComponent tr : currentPlan.graph.topology.getRecords().values()) {
                 final Integer[] allocated_socket = new Integer[original_graph.topology.getRecord(tr.getId()).getNumTasks()];
-
                 int cnt = 0;
                 for (ExecutionNode e : tr.getExecutorList()) {
                     final int to_socket = currentPlan.allocation_decision(e);
@@ -85,18 +79,15 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
                         allocated_socket[cnt++] = to_socket;
                     }
                 }
-
                 for (int i = 0; i < allocated_socket.length; i++) {
                     final Integer to_socket = allocated_socket[i];
                     allocate(original_graph.topology.getRecord(tr.getId()).getExecutorList().get(i), to_socket);
                 }
             }
-
             allocate(original_graph.getvirtualGround(), 0);
             ini_cacheMap();
         }
     }
-
     /**
      * creates a primitive execution graph for this txn plan..
      *
@@ -127,7 +118,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         ini_allocationMap();
         ini_cacheMap();
     }
-
     public SchedulingPlan(Topology topology, int numNodes, Constraints cons, Parallelism parallelism, Configuration conf, Variables variables) {
         if (variables != null) {
             this.variables = variables;
@@ -142,7 +132,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         ini_allocationMap();
         ini_cacheMap();
     }
-
     /**
      * @param currentPlan
      * @param copy        duplicate graph.
@@ -159,7 +148,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         for (int i : currentPlan.allocationMap.keySet()) {
             allocationMap.put(i, currentPlan.allocationMap.get(i));
         }
-
         if (copy) {
             variables = new Variables(currentPlan.variables);
             graph = new ExecutionGraph(currentPlan.graph, currentPlan.conf);//duplicate this graph.
@@ -171,14 +159,12 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         }
         ini_cacheMap();
     }
-
     public static SchedulingPlan deserializeMyself(Configuration conf, int numNodes) throws
             IOException {
         String directory = System_Plan_Path + OsUtils.OS_wrapper("sesame")
                 + OsUtils.OS_wrapper(conf.getConfigPrefix())
                 + OsUtils.OS_wrapper(String.valueOf(numNodes))
                 + OsUtils.OS_wrapper(String.valueOf(conf.getDouble("gc_factor", 3)));
-
         FileInputStream f;
         if (conf.getBoolean("random", false)) {
             f = new FileInputStream(new File(directory + OsUtils.OS_wrapper("random.plan")));
@@ -193,18 +179,14 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         } else {
             f = new FileInputStream(new File(directory + OsUtils.OS_wrapper("opt.plan")));
         }
-
-
 // 		ObjectInputStream oi = new ObjectInputStream(f);
 //
-
         final SchedulingPlan plan = SerializationUtils.deserialize(f);//oi.readObject();
 //		plan.LOG = LoggerFactory.getLogger(SchedulingPlan.class);
 //		oi.close();
         f.close();
         return plan;
     }
-
     private void ini_cacheMap() {
         cacheMap = new HashMap<>();
         //initialize cache
@@ -221,7 +203,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             cacheMap.put(e.getExecutorID(), map);
         }
     }
-
     private void copyCacheMap(SchedulingPlan currentPlan) {
         for (ExecutionNode e : graph.getExecutionNodeArrayList()) {
             if (e.operator.input_streams == null) {
@@ -239,9 +220,7 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             }
         }
     }
-
     private String cache_display(ExecutionNode e, String streamId, String defaultStreamId) {
-
         return String.format("%-15s%-15s%-20s%-20s%-20s%-20s"
                 , String.format("\t%.4f", cacheMap.get(e.getExecutorID()).get(streamId).getInputRate() * 1E+6)
                 , String.format("\t%.4f", cacheMap.get(e.getExecutorID()).get(streamId).getOutputRate(defaultStreamId) * 1E+6)
@@ -251,7 +230,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
                 , String.format("\t%.4f", cacheMap.get(e.getExecutorID()).get(streamId).getMemory() / cons.Available_bandwidth(this.allocation_decision(e)) * 100)
         );
     }
-
     /**
      * produce plan recodes ready to be loaded and re-use.
      */
@@ -265,15 +243,12 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             }
             for (TopologyComponent topo : this.graph.topology.getRecords().values()) {
                 file = new File(directory + OsUtils.OS_wrapper(topo.getId() + ".txt"));
-
                 try (Writer writer = new BufferedWriter(new OutputStreamWriter(
                         new FileOutputStream(file), StandardCharsets.UTF_8))) {
-
                     writer.write("Parallelism\t" + topo.getNumTasks() + "\n");
                     for (ExecutionNode e : topo.getExecutorList()) {
                         writer.write(e.getExecutorID() + "\t" + mapping.get(e.getExecutorID()) + "\n");
                     }
-
                     writer.flush();
                     writer.close();
                 }
@@ -285,12 +260,10 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             writer.write("output_rate\t" + outputrate + "\n");
             writer.flush();
             writer.close();
-
         } catch (IOException e) {
             LOG.error("Not able to store the statistics");
         }
     }
-
     private void serializeMyself() throws IOException {
         String directory = System_Plan_Path + OsUtils.OS_wrapper("sesame")
                 + OsUtils.OS_wrapper(conf.getConfigPrefix())
@@ -299,8 +272,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         File file = new File(directory);
         if (!file.mkdirs()) {
         }
-
-
         FileOutputStream f;
         if (conf.getBoolean("random", false)) {
             f = new FileOutputStream(new File(directory + OsUtils.OS_wrapper("random.plan")));
@@ -315,15 +286,12 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         } else {
             f = new FileOutputStream(new File(directory + OsUtils.OS_wrapper("opt.plan")));
         }
-
         byte[] serialize = SerializationUtils.serialize(this);
 //		ObjectOutputStream o = new ObjectOutputStream(f);
 //		o.writeObject(this);
 //		o.close();
         f.write(serialize);
         f.close();
-
-
         FileWriter ff;
         if (conf.getBoolean("random", false)) {
             ff = new FileWriter(new File(directory + OsUtils.OS_wrapper("random.plan.readable")));
@@ -338,9 +306,7 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         } else {
             ff = new FileWriter(new File(directory + OsUtils.OS_wrapper("opt.plan.readable")));
         }
-
         Writer w = new BufferedWriter(ff);
-
         for (ExecutionNode e : graph.getExecutionNodeArrayList()) {
             if (e.operator.input_streams == null) {
                 w.write(String.format("%-18s%-10s%s", "\t" + e.getOP(), "\t"
@@ -362,7 +328,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         w.close();
         f.close();
     }
-
     /**
      * Dump the allocation plan to disk.
      */
@@ -376,34 +341,26 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             e.printStackTrace();
         }
     }
-
-
     public void ini_allocationMap() {
         for (ExecutionNode e : graph.getExecutionNodeArrayList()) {
             allocationMap.put(e.getExecutorID(), false);
         }
     }
-
     private void setALLAllocated() {
         for (ExecutionNode e : graph.getExecutionNodeArrayList()) {
             setAllocated(e);
         }
     }
-
-
     public boolean Allocated(ExecutionNode e) {
         assert allocationMap.get(e.getExecutorID()) != null;
         return allocationMap.get(e.getExecutorID());
     }
-
     public void setAllocated(ExecutionNode e) {
         allocationMap.put(e.getExecutorID(), true);
     }
-
     public void setDeallocated(ExecutionNode e) {
         allocationMap.put(e.getExecutorID(), false);
     }
-
     public cache getCacheMap(ExecutionNode e, String streamId) {
         try {
             return cacheMap.get(e.getExecutorID()).get(streamId);
@@ -412,8 +369,7 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             return null;
         }
     }
-
-//    public cache getCacheMap(ExecutionNode node) {
+    //    public cache getCacheMap(ExecutionNode node) {
 //        try {
 //        return cacheMap.GetAndUpdate(Constants.DEFAULT_STREAM_ID).GetAndUpdate(node.getExecutorID());
 //        } catch (Exception ex) {
@@ -421,45 +377,34 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
 //            return null;
 //        }
 //    }
-
     private void store(ExecutionNode e, String streamId) {
         cacheMap.get(e.getExecutorID()).get(streamId).store();
     }
-
     public void store(ExecutionNode e) {
         store(e, Constants.DEFAULT_STREAM_ID);
     }
-
     private void clean(ExecutionNode e, String streamId) {
         cacheMap.get(e.getExecutorID()).get(streamId).clean();
     }
-
     public void clean(ExecutionNode e) {
         clean(e, Constants.DEFAULT_STREAM_ID);
     }
-
     private void restore(ExecutionNode e, String streamId) {
         cacheMap.get(e.getExecutorID()).get(streamId).restore();
     }
-
     public void restore(ExecutionNode e) {
         restore(e, Constants.DEFAULT_STREAM_ID);
     }
-
-
     private boolean alert(ExecutionNode e, String streamId) {
         return cacheMap.get(e.getExecutorID()).get(streamId).alert();
     }
-
     public boolean alert(ExecutionNode e) {
         return alert(e, Constants.DEFAULT_STREAM_ID);
     }
-
     public void cache_clean() {
         ini_cacheMap();
         outputrate = -1;
     }
-
     @Override
     public int compareTo(SchedulingPlan o) {
         for (int i : mapping.keySet()) {
@@ -469,7 +414,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         }
         return 0;
     }
-
     public SchedulingPlan AllLocal(ExecutionGraph graph) {
         int spout_socket = 0;
         for (ExecutionNode executionNode : graph.getExecutionNodeArrayList()) {
@@ -484,7 +428,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         }
         return this;
     }
-
     /**
      * TODO: think about how to implement the ``worst plan"
      *
@@ -498,12 +441,9 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         }
         return this;
     }
-
     public boolean is_collocation(int srcId, int dstId) {
         return Allocated(graph.getExecutionNodeArrayList().get(srcId)) && Allocated(graph.getExecutionNodeArrayList().get(dstId)) && mapping.get(srcId).equals(mapping.get(dstId));
     }
-
-
     public void buildFromFileForBenchmark(int i, String prefix) throws FileNotFoundException {
         String path = MAP_Path + OsUtils.OS_wrapper("resourceBenchmark") + OsUtils.OS_wrapper(prefix);
         File file = new File(path);
@@ -516,7 +456,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             core_mapping.add(sc.nextInt());
         }
     }
-
     /**
      * The value_list (objective function) of every
      * intermediate solution is obtained by evaluating the objective
@@ -535,33 +474,26 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             return gM.getOutput_rate(true);
         }
     }
-
     public double getOutput_rate(boolean BP) {
         if (!allocated) {
             return 0;
         }
-
         GraphMetrics gM;
-
         if (BP) {
             gM = new GraphMetrics(this, true);
         } else {
             gM = new GraphMetrics(this, false);
         }
-
         //At this moment, cacheMap is correct.
         this.outputrate = gM.getOutput_rate(false);
         return this.outputrate;
     }
-
-
     public void finilize() {
         for (ExecutionNode executionNode : graph.getExecutionNodeArrayList()) {
             if (executionNode.operator.input_streams == null)//SPOUT
             {
                 cache cache = cacheMap.get(executionNode.getExecutorID()).get(Constants.DEFAULT_STREAM_ID);
                 cache.setInputRate(executionNode.getInputRate(Constants.DEFAULT_STREAM_ID, this, false));
-
                 cache.setBounded_processRate(executionNode.getBoundedProcessRate(Constants.DEFAULT_STREAM_ID, this, false));
                 cache.setExpected_processRate(executionNode.getExpectedProcessRate(Constants.DEFAULT_STREAM_ID, this, false));
                 cache.setOutputRate(executionNode.getOutputRate(Constants.DEFAULT_STREAM_ID, Constants.DEFAULT_STREAM_ID, this, false));
@@ -572,7 +504,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
                 for (String streamId : s) {
                     cache cache = cacheMap.get(executionNode.getExecutorID()).get(streamId);
                     cache.setInputRate(executionNode.getInputRate(streamId, this, false));
-
                     cache.setBounded_processRate(executionNode.getBoundedProcessRate(streamId, this, false));
                     cache.setExpected_processRate(executionNode.getExpectedProcessRate(streamId, this, false));
                     double sum = 0;
@@ -585,18 +516,14 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
                 }
             }
         }
-
     }
-
     public void cache_finilize_woBP(String streamId) {
         finilize();
     }
-
     public void planToString(boolean monte, boolean BP) {
         if (!this.success()) {
             LOG.info("==========(Bounded) Plan to String============");
         } else {
-
             if (BP) {
                 LOG.info("==========Plan to String============");
             } else {
@@ -605,10 +532,8 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             this.cache_clean();
             this.getOutput_rate(BP);
         }
-
         LOG.info(String.format("%-18s%-10s%-15s%-15s%-15s%-15s%-15s%-15s", "\t" + "BasicBoltBatchExecutor", "\tMapping", "\tInput"
                 , "\tOutput", "\tProcess(bounded)", "\tProcess(expected)", "\tCycles(%)", "\tMemory(%)"));
-
         for (ExecutionNode e : graph.getExecutionNodeArrayList()) {
             if (e.operator.input_streams == null) {
                 LOG.info(String.format("%-18s%-10s%s", "\t" + e.getOP_full(), "\t"
@@ -623,8 +548,6 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         }
         LOG.info("\n" + cons.relax_display() + "\n");
     }
-
-
     public void mapFromFile(int i, String prefix) throws FileNotFoundException {
         String path = MAP_Path + OsUtils.OS_wrapper(prefix);
         File file = new File(path);
@@ -639,24 +562,19 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             mapping.put(Integer.parseInt(entry[0]), Integer.parseInt(entry[1]));
         }
     }
-
     public boolean success() {
         return allocated;
     }
-
     public void set_failed() {
         allocated = false;
     }
-
     public void set_success() {
         setALLAllocated();//used in simulation or manual plan.
         allocated = true;
     }
-
     public int allocation_decision(ExecutionNode k) {
         return allocation_decision(k.getExecutorID());
     }
-
     public int allocation_decision(int e_id) {
         Integer integer = mapping.get(e_id);
         if (integer == null) {
@@ -665,11 +583,9 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         }
         return integer;
     }
-
     public long[] allowedCores() {
         return core_mapping.stream().mapToLong(i -> i).toArray();
     }
-
     /**
      * first fit collocation
      *
@@ -690,20 +606,17 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
                 deallocate(validationMap, dec.consumer);
             } else {
                 validOperators += 2;//valid_collocation
-
 //				final boolean measure_end = cons.valid_check(this);
 //				if (!measure_end) {
 //					LOG.info("The plan returned from BnB is wrong!");
 //					LOG.info(cons.show(this));
 //					System.exit(-1);
 //				}
-
                 return this;//TODO: first fit by now. Change to best fit later.
             }
         }
         return null;
     }
-
     /**
      * Try to allocate an executor
      *
@@ -721,19 +634,15 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             deallocate(validationMap, node);
             return null;
         }
-
 //		final boolean measure_end = cons.valid_check(this);
 //		if (!measure_end) {
 //			LOG.info("The plan returned from BnB is wrong!");
 //			LOG.info(cons.show(this));
 //			System.exit(-1);
 //		}
-
         validOperators++;//valid_allocate
         return this;
-
     }
-
     /**
      * Reverse allocate a partition executor
      *
@@ -747,27 +656,19 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
         deallocate(validationMap, node);
         validOperators--;//valid_allocate
         return this;
-
     }
-
-
     public void allocate(int eid, int i) {
         allocate(null, eid, i);
     }
-
     public void allocate(ExecutionNode executor, int i) {
         allocate(null, executor, i);
     }
-
     public void deallocate(ExecutionNode executor) {
         deallocate(null, executor);
     }
-
     public void deallocate(int executorID) {
         deallocate(null, executorID);
     }
-
-
     private void allocate(Map<Integer, Boolean> validationMap, int eid, int socket) {
         mapping.put(eid, socket);
         allocationMap.put(eid, true);
@@ -775,11 +676,9 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             validationMap.put(eid, true);
         }
     }
-
     private void allocate(Map<Integer, Boolean> validationMap, ExecutionNode executor, int socket) {
         allocate(validationMap, executor.getExecutorID(), socket);
     }
-
     private void deallocate(Map<Integer, Boolean> validationMap, int executorID) {
         if (mapping.containsKey(executorID)) {
             mapping.remove(executorID);
@@ -789,9 +688,7 @@ public class SchedulingPlan implements Comparable<SchedulingPlan>, Serializable 
             }
         }
     }
-
     private void deallocate(Map<Integer, Boolean> validationMap, ExecutionNode executor) {
         deallocate(validationMap, executor.getExecutorID());
     }
-
 }

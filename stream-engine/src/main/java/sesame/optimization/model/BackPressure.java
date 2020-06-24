@@ -1,6 +1,5 @@
 package sesame.optimization.model;
-
-import application.Constants;
+import common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;
@@ -9,18 +8,15 @@ import sesame.execution.ExecutionNode;
 import sesame.optimization.impl.SchedulingPlan;
 
 import java.util.*;
-
 /**
  * Created by tony on 7/5/2017.
  */
 public class BackPressure {
     private final static Logger LOG = LoggerFactory.getLogger(BackPressure.class);
-
     public static boolean BP(final SchedulingPlan sp) {
         boolean reduced = false;
         double original_input_rate = sp.variables.SOURCE_RATE;
         final double pressureCorrection = backPressureCorrection(sp, sp.graph);
-
         reduced = !(pressureCorrection > original_input_rate);
         sp.variables.SOURCE_RATE = pressureCorrection;
         sp.BP_calculated = true;
@@ -29,9 +25,7 @@ public class BackPressure {
         //sp.finilize();
         // sp.planToString(false);
     }
-
     private static double max_demandInputRate(ExecutionNode s, ExecutionNode s_, SchedulingPlan sp) {
-
         // double x;//let x be the max demand input rate of s.
         if (s.isLeafNode()) {//sink
             double target = Double.MAX_VALUE;
@@ -79,14 +73,12 @@ public class BackPressure {
                         }
                     }
                 }
-
             }
 
             /*
              * x=min(s.getBoundedProcessRate(), \forall x')
              * */
             Collections.sort(lx);
-
             double target = Double.MAX_VALUE;
             if (s.operator.input_streams != null) {
                 for (String input_streams : new HashSet<>(s.operator.input_streams)) {//if it has multiple input streams, it can only allow the /$slowest$/ one.
@@ -101,7 +93,6 @@ public class BackPressure {
             return Math.min(target, lx.get(0));
         }
     }
-
     private static double backPressureCorrection(final SchedulingPlan sp, ExecutionGraph graph) {
 //        LOG.info("======Backpressure_correction started======");
         double externalInput = Double.MAX_VALUE;

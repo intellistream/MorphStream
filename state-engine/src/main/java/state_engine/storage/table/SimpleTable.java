@@ -1,5 +1,4 @@
 package state_engine.storage.table;
-
 import state_engine.DatabaseException;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.DataBox;
@@ -10,7 +9,6 @@ import state_engine.storage.table.stats.TableStats;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-
 /**
  * A database table. Allows the user to add, delete, update, and get records.
  * A table has an associated schema, stats, and page allocator. The first page
@@ -25,36 +23,25 @@ import java.util.NoSuchElementException;
  */
 public class SimpleTable {
     public static final String FILENAME_PREFIX = "db";
-
     private RecordSchema schema;
-
     private Store store;
-
     private TableStats stats;
-
     private String tableName;
-
     private int numRecords;
-
-
     //TODO: move index structure here.
     //A table may or may not have index associated. The index structure should not be maintained outside.
-
     public SimpleTable(RecordSchema schema, String tableName) {
         this.schema = schema;
         this.tableName = tableName;
         this.stats = new TableStats(this.schema);
         store = new SimpleStore();
     }
-
     public void close() {
         store.clean();
     }
-
     public Iterator<SchemaRecord> iterator() {
         return new TableIterator();
     }
-
     /**
      * Adds a new d_record to this table.
      *
@@ -70,17 +57,12 @@ public class SimpleTable {
         } catch (SchemaException se) {
             throw new DatabaseException(se.getMessage());
         }
-
         this.numRecords++;
         final RowID rowID = new RowID(numRecords);
-
         store.addrow(rowID, row);
-
         this.stats.addRecord(record);
         return rowID;
     }
-
-
     /**
      * Delete all records in the table.
      */
@@ -89,7 +71,6 @@ public class SimpleTable {
         store.clean();
         this.stats.clean();
     }
-
     /**
      * Deletes the d_record specified by rid from the table.
      *
@@ -98,15 +79,11 @@ public class SimpleTable {
      * @throws DatabaseException if rid does not correspond to a valid d_record
      */
     public SchemaRecord deleteRecord(RowID rid) {
-
-
         this.numRecords--;
         final SchemaRecord oldRecord = store.deleterow(rid);
         this.stats.removeRecord(oldRecord);
-
         return oldRecord;
     }
-
     /**
      * Retrieves a d_record from the table.
      *
@@ -117,7 +94,6 @@ public class SimpleTable {
     public SchemaRecord getRecord(RowID rid) {
         return store.getrow(rid);
     }
-
     /**
      * Updates an existing d_record with new values and returns the old version of the d_record.
      * Make sure to update this.stats as necessary.
@@ -129,51 +105,38 @@ public class SimpleTable {
      *                           if the values do not correspond to the schema of this table
      */
     public SchemaRecord updateRecord(List<DataBox> values, RowID rid) throws DatabaseException {
-
         SchemaRecord record;
         try {
             record = this.schema.verify(values);
         } catch (SchemaException se) {
             throw new DatabaseException(se.getMessage());
         }
-
         SchemaRecord oldRecord = store.updaterow(record, rid);
-
         this.stats.removeRecord(oldRecord);
-
         return oldRecord;
     }
-
     public long getNumRecords() {
         return this.numRecords;
     }
-
     public RecordSchema getSchema() {
         return this.schema;
     }
-
     public TableStats getStats() {
         return this.stats;
     }
-
-
     public int getEntrySize() {
         return this.schema.getEntrySize();
     }
-
     /**
      * An implementation of Iterator that provides an iterator interface over all
      * of the records in this table.
      */
     private class TableIterator implements Iterator<SchemaRecord> {
-
         private Iterator<SchemaRecord> rowIter;
         private long recordCount;
-
         public TableIterator() {
             this.rowIter = store.getRowIterator();
         }
-
         /**
          * Checks if there are more d_record(s) to yield
          *
@@ -182,7 +145,6 @@ public class SimpleTable {
         public boolean hasNext() {
             return this.recordCount < numRecords;
         }
-
         /**
          * Yields the next d_record of this iterator.
          *
@@ -195,7 +157,6 @@ public class SimpleTable {
             }
             return rowIter.next();
         }
-
         public void remove() {
             throw new UnsupportedOperationException();
         }

@@ -1,5 +1,4 @@
 package state_engine.query;
-
 import state_engine.DatabaseException;
 import state_engine.SimpleDatabase;
 import state_engine.storage.SchemaRecord;
@@ -9,16 +8,13 @@ import state_engine.storage.table.stats.TableStats;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
 public class IndexScanOperator extends QueryOperator {
     private SimpleDatabase.Transaction transaction;
     private String tableName;
     private String columnName;
     private QueryPlan.PredicateOperator predicate;
     private DataBox value;
-
     private int columnIndex;
-
     /**
      * An index scan operator.
      *
@@ -42,11 +38,9 @@ public class IndexScanOperator extends QueryOperator {
         this.setOutputSchema(this.computeSchema());
         columnName = this.checkSchemaForColumn(this.getOutputSchema(), columnName);
         this.columnIndex = this.getOutputSchema().getFieldNames().indexOf(columnName);
-
         this.stats = this.estimateStats();
         this.cost = this.estimateIOCost();
     }
-
     public String str() {
         return "type: " + this.getType() +
                 "\ntable: " + this.tableName +
@@ -54,7 +48,6 @@ public class IndexScanOperator extends QueryOperator {
                 "\noperator: " + this.predicate +
                 "\nvalue_list: " + this.value;
     }
-
     /**
      * Estimates the table statistics for the result of executing this query operator.
      *
@@ -62,18 +55,15 @@ public class IndexScanOperator extends QueryOperator {
      */
     public TableStats estimateStats() throws QueryPlanException {
         TableStats stats;
-
         try {
             stats = this.transaction.getStats(this.tableName);
         } catch (DatabaseException de) {
             throw new QueryPlanException(de);
         }
-
         return stats.copyWithPredicate(this.columnIndex,
                 this.predicate,
                 this.value);
     }
-
     /**
      * Estimates the IO cost of executing this query operator.
      * You should calculate this estimate cost with the formula
@@ -93,7 +83,6 @@ public class IndexScanOperator extends QueryOperator {
      */
     public int estimateIOCost() {
         /* TODO: Implement me! */
-
 //		int io;
 //		try {
 //			TableStats t = this.transaction.getStats(this.tableName);
@@ -106,11 +95,9 @@ public class IndexScanOperator extends QueryOperator {
 //		}
 //		return io;
     }
-
     public Iterator<SchemaRecord> iterator() {
         return new IndexScanIterator();
     }
-
     public RecordSchema computeSchema() throws QueryPlanException {
         try {
             return this.transaction.getFullyQualifiedSchema(this.tableName);
@@ -118,14 +105,12 @@ public class IndexScanOperator extends QueryOperator {
             throw new QueryPlanException(de);
         }
     }
-
     /**
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
     private class IndexScanIterator implements Iterator<SchemaRecord> {
         private Iterator<SchemaRecord> sourceIterator;
         private SchemaRecord nextRecord;
-
         public IndexScanIterator() {
             this.nextRecord = null;
 //			if (IndexScanOperator.this.predicate == QueryPlan.PredicateOperator.EQUALS) {
@@ -159,7 +144,6 @@ public class IndexScanOperator extends QueryOperator {
 //						IndexScanOperator.this.value_list);
 //			}
         }
-
         /**
          * Checks if there are more d_record(s) to yield
          *
@@ -198,7 +182,6 @@ public class IndexScanOperator extends QueryOperator {
             }
             return false;
         }
-
         /**
          * Yields the next d_record of this iterator.
          *
@@ -213,7 +196,6 @@ public class IndexScanOperator extends QueryOperator {
             }
             throw new NoSuchElementException();
         }
-
         public void remove() {
             throw new UnsupportedOperationException();
         }

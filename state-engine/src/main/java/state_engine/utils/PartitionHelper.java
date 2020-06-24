@@ -1,19 +1,13 @@
 package state_engine.utils;
-
 public class PartitionHelper {
-
     private static int partition_interval;
-
     private static int partitions;
-
     public static int getPartitions() {
         return partitions;
     }
-
     public static int getPartition_interval() {
         return partition_interval;
     }
-
     /**
      * Each thread owns part of the data.
      *
@@ -24,13 +18,10 @@ public class PartitionHelper {
         PartitionHelper.partition_interval = partition_interval;
         PartitionHelper.partitions = partitions;
     }
-
     public static int key_to_partition(int key) {
         return (int) Math.floor(key / partition_interval);
     }
-
     public static int key_to_partition(String key) {
         return (int) Math.floor(Integer.parseInt(key) / partition_interval);
     }
-
 }

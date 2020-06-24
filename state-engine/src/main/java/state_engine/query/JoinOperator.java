@@ -1,5 +1,4 @@
 package state_engine.query;
-
 import state_engine.DatabaseException;
 import state_engine.SimpleDatabase;
 import state_engine.storage.SchemaRecord;
@@ -11,9 +10,7 @@ import state_engine.storage.table.stats.TableStats;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 public abstract class JoinOperator extends QueryOperator {
-
     private JoinType joinType;
     private QueryOperator leftSource;
     private QueryOperator rightSource;
@@ -22,7 +19,6 @@ public abstract class JoinOperator extends QueryOperator {
     private String leftColumnName;
     private String rightColumnName;
     private SimpleDatabase.Transaction transaction;
-
     /**
      * Create a join operator that pulls tuples from leftSource and rightSource. Returns tuples for which
      * leftColumnName and rightColumnName are equal.
@@ -48,31 +44,24 @@ public abstract class JoinOperator extends QueryOperator {
         this.setOutputSchema(this.computeSchema());
         this.transaction = transaction;
     }
-
     public abstract Iterator<SchemaRecord> iterator() throws QueryPlanException, DatabaseException;
-
     @Override
     public QueryOperator getSource() throws QueryPlanException {
         throw new QueryPlanException("There is no partition source for join operators. Please use " +
                 "getRightSource and getLeftSource and the corresponding set methods.");
     }
-
     public QueryOperator getLeftSource() {
         return this.leftSource;
     }
-
     public void setLeftSource(QueryOperator leftSource) {
         this.leftSource = leftSource;
     }
-
     public QueryOperator getRightSource() {
         return this.rightSource;
     }
-
     public void setRightSource(QueryOperator rightSource) {
         this.rightSource = rightSource;
     }
-
     public RecordSchema computeSchema() throws QueryPlanException {
         RecordSchema leftSchema = this.leftSource.getOutputSchema();
         RecordSchema rightSchema = this.rightSource.getOutputSchema();
@@ -93,13 +82,11 @@ public abstract class JoinOperator extends QueryOperator {
         leftSchemaTypes.addAll(rightSchemaTypes);
         return new RecordSchema(leftSchemaNames, leftSchemaTypes);
     }
-
     public String str() {
         return "type: " + this.joinType +
                 "\nleftColumn: " + this.leftColumnName +
                 "\nrightColumn: " + this.rightColumnName;
     }
-
     @Override
     public String toString() {
         String r = this.str();
@@ -114,7 +101,6 @@ public abstract class JoinOperator extends QueryOperator {
         }
         return r;
     }
-
     /**
      * Estimates the table statistics for the result of executing this query operator.
      *
@@ -123,60 +109,44 @@ public abstract class JoinOperator extends QueryOperator {
     public TableStats estimateStats() {
         TableStats leftStats = this.leftSource.getStats();
         TableStats rightStats = this.rightSource.getStats();
-
         return leftStats.copyWithJoin(this.leftColumnIndex,
                 rightStats,
                 this.rightColumnIndex);
     }
-
     public abstract int estimateIOCost() throws QueryPlanException;
-
     public RecordSchema getSchema(String tableName) throws DatabaseException {
         return this.transaction.getSchema(tableName);
     }
-
-
     public int getEntrySize(String tableName) throws DatabaseException {
         return this.transaction.getEntrySize(tableName);
     }
-
-
     public String getLeftColumnName() {
         return this.leftColumnName;
     }
-
     public String getRightColumnName() {
         return this.rightColumnName;
     }
-
     public SimpleDatabase.Transaction getTransaction() {
         return this.transaction;
     }
-
     public int getLeftColumnIndex() {
         return this.leftColumnIndex;
     }
-
     public int getRightColumnIndex() {
         return this.rightColumnIndex;
     }
-
     public Iterator<SchemaRecord> getTableIterator(String tableName) throws DatabaseException {
         return this.transaction.getRecordIterator(tableName);
     }
-
     public void createTempTable(RecordSchema schema, String tableName) throws DatabaseException {
         this.transaction.createTempTable(schema, tableName);
     }
-
     public RowID addRecord(String tableName, SchemaRecord row) throws DatabaseException {
         return this.transaction.addRecord(tableName, row);
     }
-
     public JoinType getJoinType() {
         return this.joinType;
     }
-
     public enum JoinType {
         SNLJ,
         PNLJ,

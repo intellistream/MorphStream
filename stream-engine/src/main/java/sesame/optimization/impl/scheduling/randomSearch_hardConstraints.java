@@ -1,6 +1,5 @@
 package sesame.optimization.impl.scheduling;
-
-import application.util.Configuration;
+import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.execution.ExecutionGraph;
@@ -14,14 +13,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.stream.IntStream;
-
 /**
  * Created by tony on 7/11/2017.
  */
 public class randomSearch_hardConstraints extends PlanScheduler {
     private final static Logger LOG = LoggerFactory.getLogger(randomSearch_hardConstraints.class);
     private final Variables variables;
-
     public randomSearch_hardConstraints(ExecutionGraph graph, int numNodes, int numCPUs, Constraints cons, Configuration conf, Variables variables) {
         this.variables = variables;
         this.numNodes = numNodes;
@@ -29,9 +26,7 @@ public class randomSearch_hardConstraints extends PlanScheduler {
         this.graph = graph;
         this.cons = cons;
         this.conf = conf;
-
     }
-
     public SchedulingPlan Search(boolean worst_plan, int timeoutMs) {
         initilize(worst_plan, conf, variables);
         //if it is not used in set_executor_ready plan..
@@ -39,7 +34,6 @@ public class randomSearch_hardConstraints extends PlanScheduler {
         //main course.
 //		final ArrayList<ExecutionNode> sort_opList = graph.sort();
         final long s = System.currentTimeMillis();
-
         int threads = Runtime.getRuntime().availableProcessors();
         SchedulingPlan[] plans = new SchedulingPlan[threads];
         SchedulingPlan best_plan = null;//local best plan used just for this search method
@@ -47,12 +41,10 @@ public class randomSearch_hardConstraints extends PlanScheduler {
             for (int i = 0; i < threads; i++) {
                 plans[i] = new SchedulingPlan(currentPlan, true);
             }
-
             IntStream.range(0, threads).parallel().forEach(i -> {
                 plans[i] = Packing(plans[i], plans[i].graph.getExecutionNodeArrayList());
                 plans[i].getOutput_rate(true);
             });
-
             for (int i = 0; i < threads; i++) {
                 double outputRate = plans[i].outputrate;
                 if (outputRate > targetOutput) {
@@ -63,7 +55,6 @@ public class randomSearch_hardConstraints extends PlanScheduler {
 //                        currentPlan = best_plan;
                 }
             }
-
             if (best_plan == null) {
                 LOG.info("failed to find any better plan");
                 best_plan = plans[0];
@@ -72,7 +63,6 @@ public class randomSearch_hardConstraints extends PlanScheduler {
         //double output_rate = best_plan.getOutput_rate();
         return best_plan;
     }
-
     private SchedulingPlan
     Packing(SchedulingPlan sp, ArrayList<ExecutionNode> sort_opList) {
         Random r = new Random();
@@ -82,20 +72,14 @@ public class randomSearch_hardConstraints extends PlanScheduler {
 //			if (sp.Allocated(executor)) {
 //				LOG.info("Something wrong in the algorithm!");
 //			}
-
             //pin spout thread to one socket.
-
 //			if (executor.isSourceNode()) {
 //				sp.allocate(executor, 1);
 //				continue;
 //			}
-
-
             //consider all the possible ways to allocate it.
             LinkedList<Integer> l = new LinkedList<>();
-
             for (int i = 0; i < numNodes; i++) {
-
                 sp.allocate(executor, i);
                 if (executor.isVirtual()) {
                     satisfy = cons.allstatisfy;
@@ -105,7 +89,6 @@ public class randomSearch_hardConstraints extends PlanScheduler {
                 sp.deallocate(executor);
                 if (satisfy == cons.allstatisfy) {
                     l.add(i);
-
 //					sp.allocate(executor, i);
 //					final boolean measure_end = cons.measure_end(sp);
 //					if (!measure_end) {
@@ -115,7 +98,6 @@ public class randomSearch_hardConstraints extends PlanScheduler {
 //					sp.deallocate(executor);
                 }
             }
-
             if (l.size() == 0) {
                 LOG.debug("Operator\t" + executor.getOP() + "\tis set_failed to allocate, with CPU relax of:" + cons.relax_display() + "\tsatisfying " + cons.constraintBy(satisfy));
                 sp.failed_executor = executor;//set failed executor
@@ -126,22 +108,18 @@ public class randomSearch_hardConstraints extends PlanScheduler {
                 sp.allocate(executor, integer);
                 sp.setAllocated(executor);
                 sp.cache_clean();
-
 //				final boolean measure_end = cons.measure_end(sp);
 //				if (!measure_end) {
 //					LOG.info("Something wrong in the algorithm!");
 //					LOG.info(cons.show(sp));
 //				}
-
             }
         }
-
 //		final boolean measure_end = cons.measure_end(sp);
 //		if (!measure_end) {
 //			LOG.info("Something wrong in the algorithm!");
 //			LOG.info(cons.show(sp));
 //		}
-
         sp.set_success();
         return sp;
     }

@@ -1,5 +1,4 @@
 package state_engine.transaction.dedicated;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.Meta.MetaTypes;
@@ -7,24 +6,18 @@ import state_engine.storage.SchemaRecordRef;
 import state_engine.storage.StorageManager;
 import state_engine.storage.TableRecord;
 import state_engine.transaction.impl.TxnContext;
-
 /**
  * No Locks at all.
  */
 public class TxnManagerNoLock extends TxnManagerLock {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerNoLock.class);
-
     public TxnManagerNoLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
-
     }
-
     @Override
     public void AbortTransaction() {
         throw new UnsupportedOperationException();
     }
-
-
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord
             t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
@@ -37,8 +30,6 @@ public class TxnManagerNoLock extends TxnManagerLock {
 //        access.timestamp_ = t_record.content_.GetTimestamp();
         return true;
     }
-
-
     @Override
     public boolean CommitTransaction(TxnContext txnContext) {
 //        for (int i = 0; i < access_list_.access_count_; ++i) {
@@ -58,5 +49,4 @@ public class TxnManagerNoLock extends TxnManagerLock {
 //        access_list_.Clear();
         return true;
     }
-
 }

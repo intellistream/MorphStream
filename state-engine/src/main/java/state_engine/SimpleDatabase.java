@@ -1,5 +1,4 @@
 package state_engine;
-
 import state_engine.benchmark.TxnParam;
 import state_engine.query.QueryPlan;
 import state_engine.storage.SchemaRecord;
@@ -10,7 +9,6 @@ import state_engine.storage.table.SimpleTable;
 import state_engine.storage.table.stats.TableStats;
 
 import java.util.*;
-
 /**
  * Simply put locks on tables for each transaction.
  * This could be useful to examine CC with streaming (remove all locks.) instead of CC with DB.
@@ -20,7 +18,6 @@ public class SimpleDatabase {
     public Map<String, SimpleTable> tables;
     private LockManager lockMan;
     private long numTransactions;
-
     /**
      * Creates a new database.
      *
@@ -30,9 +27,7 @@ public class SimpleDatabase {
     public SimpleDatabase(String fileDir) {
         numTransactions = 0;
         lockMan = new LockManager();
-
     }
-
     /**
      * Start a new transaction.
      *
@@ -43,7 +38,6 @@ public class SimpleDatabase {
         this.numTransactions++;
         return t;
     }
-
     /**
      * TODO: to be implemented.
      * Create a new table in this database with an index on each of the given column names.
@@ -58,10 +52,8 @@ public class SimpleDatabase {
         if (tables.containsKey(tableName)) {
             throw new DatabaseException("SimpleTable name already exists");
         }
-
         List<String> schemaColNames = s.getFieldNames();
         List<DataBox> schemaColType = s.getFieldTypes();
-
         HashSet<String> seenColNames = new HashSet<>();
         List<Integer> schemaColIndex = new ArrayList<>();
         for (String col : indexColumns) {
@@ -74,7 +66,6 @@ public class SimpleDatabase {
             seenColNames.add(col);
             schemaColIndex.add(schemaColNames.indexOf(col));
         }
-
         tables.put(tableName, new SimpleTable(s, tableName));
         for (int i : schemaColIndex) {
             String colName = schemaColNames.get(i);
@@ -83,8 +74,6 @@ public class SimpleDatabase {
             //this.indexLookup.put(indexName, new BtreeIndex(colType, indexName, this.fileDir));
         }
     }
-
-
     /**
      * Delete a table in this database.
      *
@@ -95,14 +84,10 @@ public class SimpleDatabase {
         if (!tables.containsKey(tableName)) {
             return false;
         }
-
         tables.get(tableName).close();
         tables.remove(tableName);
-
         return true;
     }
-
-
     /**
      * Delete all tables from this database.
      */
@@ -112,7 +97,6 @@ public class SimpleDatabase {
             dropTable(s);
         }
     }
-
     /**
      * Close this database.
      */
@@ -122,8 +106,6 @@ public class SimpleDatabase {
         }
         tables.clear();
     }
-
-
     /**
      * Create a new table in this database.
      *
@@ -135,17 +117,14 @@ public class SimpleDatabase {
         if (tables.containsKey(tableName)) {
             throw new DatabaseException("SimpleTable name already exists");
         }
-
         tables.put(tableName, new SimpleTable(s, tableName));
     }
-
     public class Transaction {
         long transNum;
         boolean active;
         HashMap<String, LockManager.LockType> locksHeld;
         HashMap<String, SimpleTable> tempTables;
         HashMap<String, String> aliasMaps;
-
         private Transaction(long tNum) {
             this.transNum = tNum;
             this.active = true;
@@ -153,19 +132,15 @@ public class SimpleDatabase {
             this.tempTables = new HashMap<>();
             this.aliasMaps = new HashMap<>();
         }
-
         public boolean isActive() {
             return this.active;
         }
-
         public void end() {
             assert (this.active);
-
             releaseAllLocks();
             deleteAllTempTables();
             this.active = false;
         }
-
         /**
          * Allows the user to query a table. See query#QueryPlan
          *
@@ -177,7 +152,6 @@ public class SimpleDatabase {
             checkAndGrabSharedLock(tableName);
             return new QueryPlan(this, tableName);
         }
-
         /**
          * Allows the user to provide an alias for a particular table. That alias is valid for the
          * remainder of the transaction. For a particular QueryPlan, once you specify an alias, you
@@ -189,7 +163,6 @@ public class SimpleDatabase {
          */
         public void queryAs(String tableName, String alias) throws DatabaseException {
             assert (this.active);
-
             if (tables.containsKey(alias)
                     || this.tempTables.containsKey(alias)
                     || this.aliasMaps.containsKey(alias)) {
@@ -204,7 +177,6 @@ public class SimpleDatabase {
                 throw new DatabaseException("SimpleTable name not found");
             }
         }
-
         /**
          * Create a temporary table within this transaction.
          *
@@ -214,16 +186,13 @@ public class SimpleDatabase {
          */
         public void createTempTable(RecordSchema schema, String tempTableName) throws DatabaseException {
             assert (this.active);
-
             if (tables.containsKey(tempTableName)
                     || this.tempTables.containsKey(tempTableName)) {
                 throw new DatabaseException("SimpleTable name already exists");
             }
-
             this.tempTables.put(tempTableName, new SimpleTable(schema, tempTableName));
             this.locksHeld.put(tempTableName, LockManager.LockType.EXCLUSIVE);
         }
-
         /**
          * Perform a check to see if the database has an index on this (table,column).
          *
@@ -240,57 +209,15 @@ public class SimpleDatabase {
 //			return true;
         }
 
-//		public Iterator<SchemaRecord> sortedScan(String tableName, String columnName) throws DatabaseException {
-//			SimpleTable tab = getTable(tableName);
-//			BtreeIndex index = resolveIndexFromName(tableName, columnName);
-//			return new RecordIterator(tab, index.sortedScan());
-//		}
-//
-//		public Iterator<SchemaRecord> sortedScanFrom(String tableName, String columnName, DataBox startValue) throws DatabaseException {
-//			SimpleTable tab = getTable(tableName);
-//			BtreeIndex index = resolveIndexFromName(tableName, columnName);
-//			return new RecordIterator(tab, index.sortedScanFrom(startValue));
-//		}
-//
-//		public Iterator<SchemaRecord> lookupKey(String tableName, String columnName, DataBox key) throws DatabaseException {
-//			SimpleTable tab = getTable(tableName);
-//			BtreeIndex index = resolveIndexFromName(tableName, columnName);
-//			return new RecordIterator(tab, index.lookupKey(key));
-//		}
-//
-//		public boolean contains(String tableName, String columnName, DataBox key) throws DatabaseException {
-//			checkAndGrabSharedLock(tableName);
-//			BtreeIndex index = resolveIndexFromName(tableName, columnName);
-//			return index.containsKey(key);
-//		}
-
         public RowID addRecord(String tableName, SchemaRecord row) throws DatabaseException {
             assert (this.active);
-
             checkAndGrabExclusiveLock(tableName);
             SimpleTable tab = getTable(tableName);
             RowID rid = tab.addRecord(row);
             row.setID(rid);
-//			RecordSchema s = tab.getSchema();
-//			List<String> colNames = s.getFieldNames();
-
-//			for (int i = 0; i < colNames.size(); i++) {
-//				String col = colNames.get(i);
-//				if (indexExists(tableName, col)) {
-//					resolveIndexFromName(tableName, col).insertKey(values.get(i), rid);
-//				}
-//			}
 
             return rid;
         }
-
-//		public int getNumMemoryPages() {
-//			assert (this.active);
-//
-//			return SimpleDatabase.this.numMemoryPages;
-//
-//		}
-
 
         /**
          * Delete all records.
@@ -303,7 +230,6 @@ public class SimpleDatabase {
             SimpleTable tab = getTable(tableName);
             tab.clean();
         }
-
         /**
          * Delete a row form the table.
          *
@@ -313,38 +239,22 @@ public class SimpleDatabase {
          */
         public void deleteRecord(String tableName, RowID rid) throws DatabaseException {
             assert (active);
-
             checkAndGrabExclusiveLock(tableName);
             SimpleTable tab = getTable(tableName);
             RecordSchema s = tab.getSchema();
-
             SchemaRecord rec = tab.deleteRecord(rid);
 
-
-//			List<DataBox> values = rec.getValues();
-//			List<String> colNames = s.getFieldNames();
-//			for (int i = 0; i < colNames.size(); i++) {
-//				String col = colNames.get(i);
-//				if (indexExists(tableName, col)) {
-//					resolveIndexFromName(tableName, col).deleteKey(values.get(i), rid);
-//				}
-//			}
         }
-
         public SchemaRecord getRecord(String tableName, RowID rid) throws DatabaseException {
             assert (active);
-
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getRecord(rid);
         }
-
         public Iterator<SchemaRecord> getRecordIterator(String tableName) throws DatabaseException {
             assert (this.active);
-
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).iterator();
         }
-
         /**
          * @param tableName the table to be updated.
          * @param values    the new values of the d_record
@@ -356,12 +266,9 @@ public class SimpleDatabase {
             checkAndGrabExclusiveLock(tableName);
             SimpleTable tab = getTable(tableName);
             RecordSchema s = tab.getSchema();
-
             SchemaRecord rec = tab.updateRecord(values, rid);
-
             List<DataBox> oldValues = rec.getValues();
             List<String> colNames = s.getFieldNames();
-
             for (String col : colNames) {
                 if (indexExists(tableName, col)) {
 //					BtreeIndex tree = resolveIndexFromName(tableName, col);
@@ -370,103 +277,60 @@ public class SimpleDatabase {
                 }
             }
         }
-
         public TableStats getStats(String tableName) throws DatabaseException {
             assert (this.active);
-
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getStats();
         }
-
-
         public int getEntrySize(String tableName) throws DatabaseException {
             assert (this.active);
-
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getEntrySize();
         }
-
         public long getNumRecords(String tableName) throws DatabaseException {
             assert (this.active);
-
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getNumRecords();
         }
-
-
         public RecordSchema getSchema(String tableName) throws DatabaseException {
             assert (this.active);
-
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getSchema();
         }
-
         public RecordSchema getFullyQualifiedSchema(String tableName) throws DatabaseException {
             assert (this.active);
-
             checkAndGrabSharedLock(tableName);
-
             RecordSchema schema = getTable(tableName).getSchema();
-
             List<String> newColumnNames = new ArrayList<>();
-
             for (String oldName : schema.getFieldNames()) {
                 newColumnNames.add(tableName + "." + oldName);
             }
-
             return new RecordSchema(newColumnNames, schema.getFieldTypes());
         }
-
-//		private BtreeIndex resolveIndexFromName(String tableName, String columnName) throws DatabaseException {
-//			while (aliasMaps.containsKey(tableName)) {
-//				tableName = aliasMaps.get(tableName);
-//			}
-//			if (columnName.contains(".")) {
-//				String columnPrefix = columnName.split("\\.")[0];
-//				while (aliasMaps.containsKey(columnPrefix)) {
-//					columnPrefix = aliasMaps.get(columnPrefix);
-//				}
-//				if (!tableName.equals(columnPrefix)) {
-//					throw new DatabaseException("Column: " + columnName + " is not a column of " + tableName);
-//				}
-//				columnName = columnName.split("\\.")[1];
-//			}
-//			String indexName = tableName + "," + columnName;
-//			if (SimpleDatabase.this.indexLookup.containsKey(indexName)) {
-//				return SimpleDatabase.this.indexLookup.get(indexName);
-//			}
-//			throw new DatabaseException("Index does not exist");
-//		}
 
         private SimpleTable getTable(String tableName) throws DatabaseException {
             if (this.tempTables.containsKey(tableName)) {
                 return this.tempTables.get(tableName);
             }
-
             while (aliasMaps.containsKey(tableName)) {
                 tableName = aliasMaps.get(tableName);
             }
-
             if (!tables.containsKey(tableName)) {
                 throw new DatabaseException("SimpleTable: " + tableName + "does not exist");
             }
             checkAndGrabSharedLock(tableName);
             return tables.get(tableName);
         }
-
         private void checkAndGrabSharedLock(String tableName) throws DatabaseException {
             if (this.locksHeld.containsKey(tableName)) {
                 return;
             }
-
             while (aliasMaps.containsKey(tableName)) {
                 tableName = aliasMaps.get(tableName);
             }
-
             if (!this.tempTables.containsKey(tableName) && !tables.containsKey(tableName)) {
                 throw new DatabaseException("SimpleTable: " + tableName + " Does not exist");
             }
-
             //TODO: it's now at table level.
             LockManager lockMan = SimpleDatabase.this.lockMan;
             if (lockMan.holdsLock(tableName, this.transNum, LockManager.LockType.SHARED)) {
@@ -475,56 +339,42 @@ public class SimpleDatabase {
                 lockMan.acquireLock(tableName, this.transNum, LockManager.LockType.SHARED);
             }
         }
-
         private void checkAndGrabExclusiveLock(String tableName) throws DatabaseException {
             while (aliasMaps.containsKey(tableName)) {
                 tableName = aliasMaps.get(tableName);
             }
-
             if (this.locksHeld.containsKey(tableName) && this.locksHeld.get(tableName).equals(LockManager.LockType.EXCLUSIVE)) {
                 return;
             }
-
             if (!this.tempTables.containsKey(tableName) && !tables.containsKey(tableName)) {
                 throw new DatabaseException("SimpleTable: " + tableName + " Does not exist");
             }
-
             LockManager lockMan = SimpleDatabase.this.lockMan;
-
             if (lockMan.holdsLock(tableName, this.transNum, LockManager.LockType.EXCLUSIVE)) {
                 this.locksHeld.put(tableName, LockManager.LockType.EXCLUSIVE);
             } else {
                 lockMan.acquireLock(tableName, this.transNum, LockManager.LockType.EXCLUSIVE);
             }
         }
-
         private void releaseAllLocks() {
             LockManager lockMan = SimpleDatabase.this.lockMan;
-
             for (String tableName : this.locksHeld.keySet()) {
                 lockMan.releaseLock(tableName, this.transNum);
             }
         }
-
         public void deleteTempTable(String tempTableName) {
             assert (this.active);
-
             if (!this.tempTables.containsKey(tempTableName)) {
                 return;
             }
-
             this.tempTables.get(tempTableName).close();
             tables.remove(tempTableName);
         }
-
         private void deleteAllTempTables() {
             Set<String> keys = tempTables.keySet();
-
             for (String tableName : keys) {
                 deleteTempTable(tableName);
             }
         }
-
-
     }
 }

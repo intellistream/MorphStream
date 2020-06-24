@@ -1,5 +1,4 @@
 package state_engine.transaction.dedicated.ordered;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
@@ -20,7 +19,6 @@ import java.util.LinkedList;
 import static state_engine.Meta.MetaTypes.AccessType.*;
 import static state_engine.Meta.MetaTypes.kMaxAccessNum;
 import static state_engine.transaction.impl.TxnAccess.Access;
-
 /**
  * two-phase locking with no-sync_ratio strategy
  * If stream is in-ordered, this CC will already provide the desired property.
@@ -29,18 +27,14 @@ import static state_engine.transaction.impl.TxnAccess.Access;
 public class TxnManagerOrderLock extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerOrderLock.class);
     final OrderLock orderLock;
-
     public TxnManagerOrderLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
-
         this.orderLock = OrderLock.getInstance();
 //		this.orderLock = orderLock;
     }
-
     public OrderLock getOrderLock() {
         return orderLock;
     }
-
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
             throws DatabaseException, InterruptedException {
@@ -68,7 +62,6 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
             return true;
         }
     }
-
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) throws InterruptedException {
         SchemaRecord s_record = t_record.record_;
@@ -94,7 +87,6 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
                 return false;
             } else {
 //				LOG.info(txn_context.thisTaskId + " success to get orderLock" + DateTime.now());
-
                 /**
                  * 	 const RecordSchema *schema_ptr = t_record->record_->schema_ptr_;
                  char *local_data = MemAllocator::Alloc(schema_ptr->GetSchemaSize());
@@ -103,7 +95,6 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
                  t_record->record_->CopyTo(local_record);
                  */
                 final SchemaRecord local_record = new SchemaRecord(t_record.record_);//copy from t_record to local_record.
-
                 /**
                  Access *access = access_list_.NewAccess();
                  access->access_type_ = READ_WRITE;
@@ -120,7 +111,6 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
                 access.table_id_ = table_name;
                 access.timestamp_ = t_record.content_.GetTimestamp();
                 record_ref.setRecord(local_record);
-
                 assert record_ref.getRecord() != null;
                 return true;
             }
@@ -145,8 +135,6 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
             return false;
         }
     }
-
-
     @Override
     public boolean CommitTransaction(TxnContext txn_context) {
 //		BEGIN_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
@@ -166,7 +154,6 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
 //#else
         long commit_ts = GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
 //		END_CC_TS_ALLOC_TIME_MEASURE(thread_id_);
-
         for (int i = 0; i < access_list_.access_count_; ++i) {
             Access access_ptr = access_list_.GetAccess(i);
             Content content_ref = access_ptr.access_record_.content_;
@@ -181,7 +168,6 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
                 content_ref.SetTimestamp(commit_ts);
             }
         }
-
         // commit.
 //#if defined(VALUE_LOGGING)
 //		logger_->CommitTransaction(this->thread_id_, curr_epoch, commit_ts, access_list_);
@@ -191,7 +177,6 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
 //		}
 //		logger_->CommitTransaction(this->thread_id_, curr_epoch, commit_ts, context->txn_type_, param);
 //#endif
-
         // release locks.
         for (int i = 0; i < access_list_.access_count_; ++i) {
             Access access_ptr = access_list_.GetAccess(i);
@@ -208,12 +193,10 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
         }
         assert (access_list_.access_count_ <= kMaxAccessNum);
         access_list_.Clear();
-
         orderLock.advance();
 //		END_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
         return true;
     }
-
     @Override
     public void AbortTransaction() {
         // recover updated data and release locks.
@@ -248,6 +231,4 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
         assert (access_list_.access_count_ <= kMaxAccessNum);
         access_list_.Clear();
     }
-
-
 }

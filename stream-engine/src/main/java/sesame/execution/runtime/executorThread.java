@@ -1,6 +1,5 @@
 package sesame.execution.runtime;
-
-import application.util.Configuration;
+import common.collections.Configuration;
 import ch.usi.overseer.OverHpc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,13 +15,11 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
 import static xerial.jnuma.Numa.newCPUBitMask;
-
 /**
  * Created by shuhaozhang on 12/7/16.
  */
 public abstract class executorThread extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(executorThread.class);
-
     public final ExecutionNode executor;
     protected final CountDownLatch latch;
     final Configuration conf;
@@ -42,7 +39,6 @@ public abstract class executorThread extends Thread {
     int batch;
     private boolean start = true;
     private volatile boolean ready = false;
-
     protected executorThread(ExecutionNode e, Configuration conf, TopologyContext context
             , long[] cpu, int node, CountDownLatch latch, OverHpc HPCMonotor, HashMap<Integer, executorThread> threadMap) {
         this.context = context;
@@ -53,36 +49,29 @@ public abstract class executorThread extends Thread {
         this.latch = latch;
         hpcMonotor = HPCMonotor;
         this.threadMap = threadMap;
-
         if (executor != null && !this.executor.isLeafNode()) {
             this.executor.getController().setContext(this.executor.getExecutorID(), context);
         }
     }
-
     public TopologyContext getContext() {
         return context;
     }
-
     public void setContext(TopologyContext context) {
         this.context = context;
     }
-
     private long[] convertToCPUMasK(long[] cpu) {
         final long[] cpuMask = newCPUBitMask();
         LOG.info("Empty cpuMask:" + Arrays.toString(cpuMask));
-
         for (long i : cpu) {
             cpuMask[(int) (i / 64)] |= 1L << (i % 64); //Create a bit mask setting a single CPU on
         }
         LOG.info("Configured cpuMask:" + Arrays.toString(cpuMask));
         return cpuMask;
     }
-
     public void initilize_queue(int executorID) {
         allocate_OutputQueue();
         assign_InputQueue();
     }
-
     private void pause() {
         for (TopologyComponent children : this.executor.getChildren_keySet()) {
             for (ExecutionNode c : children.getExecutorList()) {
@@ -94,7 +83,6 @@ public abstract class executorThread extends Thread {
             }
         }
     }
-
     private void pause_parent() {
         for (TopologyComponent parent : this.executor.getParents_keySet()) {
             for (ExecutionNode p : parent.getExecutorList()) {
@@ -106,7 +94,6 @@ public abstract class executorThread extends Thread {
             }
         }
     }
-
     private void restart() {
         for (TopologyComponent children : this.executor.getChildren_keySet()) {
             for (ExecutionNode c : children.getExecutorList()) {
@@ -118,7 +105,6 @@ public abstract class executorThread extends Thread {
             }
         }
     }
-
     private void restart_parents() {
         for (TopologyComponent parent : this.executor.getParents_keySet()) {
             for (ExecutionNode p : parent.getExecutorList()) {
@@ -130,19 +116,16 @@ public abstract class executorThread extends Thread {
             }
         }
     }
-
     public void migrate(long[] cpu) {
         migrating = true;//sync_ratio to be scheduled.
 //        LOG.info("Old CPU:" + Arrays.show(this.cpu));
         this.cpu = cpu;
 //        LOG.info("New CPU:" + Arrays.show(this.cpu));
     }
-
     public void migrate(int node) {
         migrating = true;//sync_ratio to be scheduled.
         this.node = node;
     }
-
     private void allocate_OutputQueue() {
 //        if (enable_latency_measurement) {
 //            executor.allocate_OutputQueue(conf.getBoolean("linked", false), 2);//no queueing delay.
@@ -150,29 +133,23 @@ public abstract class executorThread extends Thread {
         executor.allocate_OutputQueue(conf.getBoolean("linked", false), (int) (conf.getInt("targetHz") * conf.getDouble("checkpoint")));
 //        }
     }
-
     private void assign_InputQueue(String streamId) {
         executor.setReceive_queueOfChildren(streamId);
     }
-
     /**
      * Assign my output queue to my downstream executor.
      */
     private void assign_InputQueue() {
-
         for (String streamId : executor.operator.getOutput_streamsIds()) {
             assign_InputQueue(streamId);
         }
     }
-
     HashMap<Integer, Queue> get_receiving_queue(String streamId) {
         return executor.getInputStreamController().getReceive_queue(streamId);
     }
-
     HashMap<String, HashMap<Integer, Queue>> get_receiving_queue() {
         return executor.getInputStreamController().getRQ();
     }
-
     void routing() throws InterruptedException, DatabaseException, BrokenBarrierException {
 //        int s = 0;
         if (start) {
@@ -189,27 +166,20 @@ public abstract class executorThread extends Thread {
         }
         end_emit = System.nanoTime();
     }
-
     protected abstract void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException;
-
     protected abstract void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException;
-
     public int getExecutorID() {
         return executor.getExecutorID();
     }
-
     public String getOP() {
         return executor.getOP();
     }
-
     public double getResults() {
         return executor.op.getResults();
     }
-
     public boolean isReady() {
         return ready;
     }
-
     void Ready(Logger LOG) {
         //LOG.DEBUG("BasicBoltBatchExecutor:" + executor.getExecutorID() + " is set to ready");
         ready = true;

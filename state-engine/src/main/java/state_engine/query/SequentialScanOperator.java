@@ -1,5 +1,4 @@
 package state_engine.query;
-
 import state_engine.DatabaseException;
 import state_engine.SimpleDatabase;
 import state_engine.storage.SchemaRecord;
@@ -7,11 +6,9 @@ import state_engine.storage.table.RecordSchema;
 import state_engine.storage.table.stats.TableStats;
 
 import java.util.Iterator;
-
 public class SequentialScanOperator extends QueryOperator {
     private SimpleDatabase.Transaction transaction;
     private String tableName;
-
     /**
      * Creates a new SequentialScanOperator that provides an iterator on all tuples in a table.
      * <p>
@@ -32,15 +29,12 @@ public class SequentialScanOperator extends QueryOperator {
         this.stats = this.estimateStats();
         this.cost = this.estimateIOCost();
     }
-
     public String getTableName() {
         return this.tableName;
     }
-
     public Iterator<SchemaRecord> iterator() throws DatabaseException {
         return this.transaction.getRecordIterator(tableName);
     }
-
     public RecordSchema computeSchema() throws QueryPlanException {
         try {
             return this.transaction.getFullyQualifiedSchema(this.tableName);
@@ -48,13 +42,10 @@ public class SequentialScanOperator extends QueryOperator {
             throw new QueryPlanException(de);
         }
     }
-
     public String str() {
         return "type: " + this.getType() +
                 "\ntable: " + this.tableName;
     }
-
-
     /**
      * Estimates the table statistics for the result of executing this query operator.
      *
@@ -67,7 +58,6 @@ public class SequentialScanOperator extends QueryOperator {
             throw new QueryPlanException(de);
         }
     }
-
     public int estimateIOCost() {
 //		try {
 //			return this.transaction.getNumDataPages(this.tableName);

@@ -1,14 +1,10 @@
 package sesame.faulttolerance;
-
 import net.jpountz.lz4.LZ4BlockOutputStream;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
 public class compress {
-
-
     public static void LZ4compress(String filename, String lz4file) {
         byte[] buf = new byte[2048];
         try {
@@ -22,7 +18,6 @@ public class compress {
             in.close();
             out.close();
         } catch (IOException ignored) {
-
         }
     }
 }

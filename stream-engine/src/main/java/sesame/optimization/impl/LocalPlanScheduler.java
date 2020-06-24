@@ -1,10 +1,8 @@
 package sesame.optimization.impl;
-
-import application.util.Configuration;
+import common.collections.Configuration;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.ExecutionNode;
 import sesame.optimization.model.Constraints;
-
 /**
  * Created by tony on 7/11/2017.
  */
@@ -15,11 +13,8 @@ public abstract class LocalPlanScheduler extends PlanScheduler {
     protected SchedulingPlan best_plan = null;
     private SchedulingPlan currentPlan;
     private double targetOutput = 0;
-
     private void input_satisfy() {
-
     }
-
     protected int try_allocate(SchedulingPlan sp, ExecutionNode executor) {
         int satisfy = cons.allstatisfy;//by default it is satisfied.
         if (executor.getExecutorID() == -2) {
@@ -41,7 +36,6 @@ public abstract class LocalPlanScheduler extends PlanScheduler {
         }
         return satisfy;
     }
-
     private void storeCurrentPlan(ExecutionGraph graph, Configuration conf) {
         SchedulingPlan pre_plan = null;
         if (currentPlan != null && currentPlan.success()) {
@@ -52,7 +46,6 @@ public abstract class LocalPlanScheduler extends PlanScheduler {
             pre_plan = currentPlan = new SchedulingPlan(graph, numNodes, cons, conf, null);
         }
     }
-
     void initilize(ExecutionGraph graph, Configuration conf, boolean worst_plan) {
         if (worst_plan) {
             targetOutput = Double.MAX_VALUE;
@@ -61,6 +54,5 @@ public abstract class LocalPlanScheduler extends PlanScheduler {
         }
         storeCurrentPlan(graph, conf);
     }
-
     public abstract SchedulingPlan Search(boolean worst_plan, int timeoutMs);
 }

@@ -1,5 +1,4 @@
 package state_engine.content;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.Meta.MetaTypes;
@@ -10,7 +9,6 @@ import state_engine.transaction.impl.TxnContext;
 import java.util.TreeSet;
 
 import static state_engine.content.common.ContentCommon.kRecycleLength;
-
 /**
  * This corresponds to ACEP's SharedTable, but for every table d_record.
  */
@@ -23,12 +21,9 @@ public class LWMContentImpl extends LWMContent {
     volatile boolean is_writing_ = false;
     volatile TreeSet<Long> set = new TreeSet<>();
     volatile long lwm = Long.MAX_VALUE;
-
     public LWMContentImpl() {
         set.add(lwm);
     }
-
-
     @Override
     public boolean AcquireReadLock() {
         boolean rt = true;
@@ -41,7 +36,6 @@ public class LWMContentImpl extends LWMContent {
         wait_lock_.unlock();
         return rt;
     }
-
     /**
      * Read lock_ratio will not block write.. --> major difference to S2PL.
      * Write will still prevent Write.. --> multiple write to a d_record is not allowed.
@@ -60,7 +54,6 @@ public class LWMContentImpl extends LWMContent {
         wait_lock_.unlock();
         return rt;
     }
-
     @Override
     public void ReleaseReadLock() {
         wait_lock_.lock();
@@ -68,7 +61,6 @@ public class LWMContentImpl extends LWMContent {
         --read_count_;
         wait_lock_.unlock();
     }
-
     @Override
     public void ReleaseWriteLock() {
         wait_lock_.lock();
@@ -76,13 +68,10 @@ public class LWMContentImpl extends LWMContent {
         is_writing_ = false;
         wait_lock_.unlock();
     }
-
-
     @Override
     public long GetLWM() {
         return lwm;
     }
-
     @Override
     public SchemaRecord ReadAccess(TxnContext txn_context, MetaTypes.AccessType accessType) {
         int retry_count = 0;
@@ -110,25 +99,18 @@ public class LWMContentImpl extends LWMContent {
         SchemaRecord record = readValues(bid, -1, false);
 //        END_TP_CORE_TIME_MEASURE_TS(txn_context.thread_Id, 1);
         return record;
-
     }
-
     @Override
     public SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, MetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
-
     @Override
     public SchemaRecord readPreValues(long ts) {
         return null;
     }
-
     @Override
     public void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
-
     }
-
-
     //However, once T is ready to commit, it must obtain a certify lock_ratio on all items that it currently holds write locks on before it can commit.
     @Override
     public boolean AcquireCertifyLock() {
@@ -145,7 +127,6 @@ public class LWMContentImpl extends LWMContent {
         wait_lock_.unlock();
         return rt;
     }
-
     @Override
     public void WriteAccess(long commit_timestamp, long mark_ID, boolean clean, SchemaRecord local_record_) {
         rw_lock_.AcquireWriteLock();
@@ -153,18 +134,15 @@ public class LWMContentImpl extends LWMContent {
         CollectGarbage();
         rw_lock_.ReleaseWriteLock();
     }
-
     private void CollectGarbage() {
         if (versions.size() > kRecycleLength) {
             ClearHistory(lwm);
         }
     }
-
     private void ClearHistory(long min_thread_ts) {
 //		versions.clear();
         versions.headMap(min_thread_ts).clear();
     }
-
     @Override
     public void ReleaseCertifyLock() {
         wait_lock_.lock();
@@ -172,22 +150,17 @@ public class LWMContentImpl extends LWMContent {
         is_certifying_ = false;
         wait_lock_.unlock();
     }
-
     private void MaintainLWM() {
         lwm = set.first();
     }
-
     @Override
     public synchronized void AddLWM(long ts) {
         set.add(ts);
         MaintainLWM();
     }
-
     @Override
     public synchronized void DeleteLWM(long ts) {
         set.remove(ts);
         MaintainLWM();
     }
-
-
 }

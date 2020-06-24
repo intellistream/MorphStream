@@ -1,5 +1,4 @@
 package state_engine.common;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,8 +6,7 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static application.CONTROL.enable_debug;
-
+import static common.CONTROL.enable_debug;
 /**
  * Order lock_ratio should be globally shared.
  */
@@ -16,7 +14,6 @@ public class OrderLock implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(OrderLock.class);
     private static final long serialVersionUID = 1347267778748318967L;
     private static OrderLock ourInstance = new OrderLock();
-
     //	SpinLock spinlock_ = new SpinLock();
 //	volatile int fid = 0;
     AtomicLong counter = new AtomicLong(0);// it is already volatiled.
@@ -24,36 +21,27 @@ public class OrderLock implements Serializable {
     boolean wasSignalled = false;//to fight with missing signals.
     //	private transient HashMap<Integer, HashMap<Integer, Boolean>> executors_ready;//<FID, ExecutorID, true/false>
     private int end_fid;
-
     private OrderLock() {
-
     }
-
     public static OrderLock getInstance() {
         return ourInstance;
     }
-
-//	public int getFID() {
+    //	public int getFID() {
 //		return fid;
 //	}
-
     public long getBID() {
         return counter.get();
     }
-
-//	public synchronized void advanceFID() {
+    //	public synchronized void advanceFID() {
 //		fid++;
 //	}
-
 //	public synchronized void try_fill_gap() {
 //		counter.getAndIncrement();
 ////		fid = 0;
 //	}
-
     public void setBID(long bid) {
         this.counter.set(bid);
     }
-
     protected void fill_gap(LinkedList<Long> gap) {
 //		while (!gap.isEmpty()) {
 //			try_fill_gap(gap.);
@@ -66,7 +54,6 @@ public class OrderLock implements Serializable {
             }
         }
     }
-
     /**
      * fill the gap.
      *
@@ -79,8 +66,6 @@ public class OrderLock implements Serializable {
         }
         return false;
     }
-
-
     public boolean blocking_wait(final long bid) throws InterruptedException {
 
         /* busy waiting.
@@ -108,7 +93,6 @@ public class OrderLock implements Serializable {
         //clear signal and continue running.
         wasSignalled = false;
 */
-
         //busy waiting with sleep.
         while (!this.counter.compareAndSet(bid, bid)) {
             //not ready for this batch to proceed! Wait for previous batch to finish execution.
@@ -118,13 +102,9 @@ public class OrderLock implements Serializable {
 //                return false;
             }
         }
-
-
         return true;
     }
-
     public void advance() {
-
 //		try_fill_gap();
 //		try {
 //			Thread.sleep(10);
@@ -141,11 +121,9 @@ public class OrderLock implements Serializable {
             this.counter.notifyAll();
         }
 */
-
         long value = counter.incrementAndGet();//allow next batch to proceed.
         if (enable_debug)
             LOG.info("ADVANCE BID to:" + value + " Thread:" + Thread.currentThread().getName());
-
 //		//LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter+ " @ "+ DateTime.now());
 //		if (joinedOperators(txn_context)) {
 ////			advanceFID();//allow next operator to proceed.
@@ -156,7 +134,6 @@ public class OrderLock implements Serializable {
 //			executors_ready_rest(txn_context);
 //		}
     }
-
 //	public void initial(HashMap<Integer, HashMap<Integer, Boolean>> map) {
 //		executors_ready = map;
 //	}
@@ -164,7 +141,6 @@ public class OrderLock implements Serializable {
 //	public void set_executor_ready(int fid, int task_id) {
 //		executors_ready.get(fid).put(task_id, true);
 //	}
-
 //	/**
 //	 * have received all tuples from source.
 //	 *
@@ -173,11 +149,9 @@ public class OrderLock implements Serializable {
 //	private boolean all_executors_ready(int fid) {
 //		return !(executors_ready.get(fid).containsValue(false));
 //	}
-
 //	public void setEnd_fid(int end_fid) {
 //		this.end_fid = end_fid;
 //	}
-
 //	/**
 //	 * If the fid corresponding executors all finished their execution.
 //	 *
@@ -195,6 +169,4 @@ public class OrderLock implements Serializable {
 //			map.put(task_id, false);
 //		}
 //	}
-
-
 }

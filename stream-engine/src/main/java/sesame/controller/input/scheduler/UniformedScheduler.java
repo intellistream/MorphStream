@@ -1,6 +1,5 @@
 package sesame.controller.input.scheduler;
-
-import application.util.CompactHashMap.QuickHashMap;
+import common.util.CompactHashMap.QuickHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.controller.input.InputStreamController;
@@ -9,7 +8,6 @@ import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.optimization.model.STAT;
 
 import java.util.Arrays;
-
 /**
  * TODO: The over head is still too large.
  * Created by shuhaozhang on 17/7/16.
@@ -21,7 +19,6 @@ public class UniformedScheduler extends InputStreamController {
     private String[] streams;
     private int stream_index = 0;
     private int queue_index = 0;
-
     public void initialize() {
         super.initialize();
         this.streams = Arrays.copyOf(getRQ().keySet().toArray(), getRQ().keySet().size(), String[].class);
@@ -29,8 +26,6 @@ public class UniformedScheduler extends InputStreamController {
             queues.put(streamId, Arrays.copyOf(getRQ().get(streamId).keySet().toArray(), getRQ().get(streamId).size(), Integer[].class));
         }
     }
-
-
     @Override
     public JumboTuple fetchResults_inorder() {
         //        JumboTuple[] t = new JumboTuple[batch];
@@ -45,7 +40,6 @@ public class UniformedScheduler extends InputStreamController {
                 int q_index = qids[j % queueIdLength];
                 if (queueIdLength > 1)
                     //LOG.DEBUG("Uniformed shoulder, queue index:" + q_index);
-
 //                for (int b = 0; b < batch; b++) {
 //                    t[b] = fetchFromqueue((P1C1Queue) getRQ().GetAndUpdate(streamId).GetAndUpdate(q_index));
 //                }
@@ -54,7 +48,6 @@ public class UniformedScheduler extends InputStreamController {
         }
         return null;
     }
-
     @Override
     public Object fetchResults() {
 //        JumboTuple[] t = new JumboTuple[batch];
@@ -69,7 +62,6 @@ public class UniformedScheduler extends InputStreamController {
                 int q_index = qids[j % queueIdLength];
                 if (queueIdLength > 1)
                     //LOG.DEBUG("Uniformed shoulder, queue index:" + q_index);
-
 //                for (int b = 0; b < batch; b++) {
 //                    t[b] = fetchFromqueue((P1C1Queue) getRQ().GetAndUpdate(streamId).GetAndUpdate(q_index));
 //                }
@@ -78,13 +70,10 @@ public class UniformedScheduler extends InputStreamController {
         }
         return null;
     }
-
     @Override
     public Tuple fetchResults_single() {
-
         throw new UnsupportedOperationException();
     }
-
     @Override
     public JumboTuple fetchResults(STAT stat, int batch) {
         return null;

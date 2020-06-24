@@ -1,5 +1,4 @@
 package state_engine.transaction.dedicated;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
@@ -18,18 +17,14 @@ import java.util.LinkedList;
 import static state_engine.Meta.MetaTypes.AccessType.*;
 import static state_engine.Meta.MetaTypes.kMaxAccessNum;
 import static state_engine.transaction.impl.TxnAccess.Access;
-
 /**
  * Conventional occ from Cavalia.
  */
 public class TxnManagerOcc extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerOcc.class);
-
     public TxnManagerOcc(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
-
     }
-
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException {
         record.is_visible_ = false;
@@ -47,10 +42,8 @@ public class TxnManagerOcc extends TxnManagerDedicated {
             return true;
         }
     }
-
     @Override
     public boolean CommitTransaction(TxnContext txnContext) {
-
         // step 1: acquire lock_ratio and validate
         int lock_count = 0;
         boolean is_success = true;
@@ -82,7 +75,6 @@ public class TxnManagerOcc extends TxnManagerDedicated {
                 content_ref.AcquireWriteLock();
             }
         }
-
         /**
          * // step 2: if success, then overwrite and commit
          * if (is_success == true) {
@@ -120,7 +112,6 @@ public class TxnManagerOcc extends TxnManagerDedicated {
          *    }
          * }
          */
-
         // step 2: if success, then overwrite and commit
         if (is_success) {
 //				BEGIN_CC_TS_ALLOC_TIME_MEASURE(thread_id_);
@@ -145,8 +136,6 @@ public class TxnManagerOcc extends TxnManagerDedicated {
                     content_ref.SetTimestamp(commit_ts);
                 }
             }
-
-
             /**
              * // commit.
              * #if defined(VALUE_LOGGING)
@@ -182,7 +171,6 @@ public class TxnManagerOcc extends TxnManagerDedicated {
              */
             // commit.
             //TODO: LOG disabled..
-
             // step 3: release locks and clean up.
             for (int i = 0; i < access_list_.access_count_; ++i) {
                 Access access_ptr = access_list_.GetAccess(i);
@@ -200,13 +188,11 @@ public class TxnManagerOcc extends TxnManagerDedicated {
                 }
             }
         }
-
         // if failed.
         else {
             // step 3: release locks and clean up.
             for (int i = 0; i < access_list_.access_count_; ++i) {
                 Access access_ptr = access_list_.GetAccess(i);
-
                 if (access_ptr.access_type_ == READ_ONLY) {
                     access_ptr.access_record_.content_.ReleaseReadLock();
                 } else if (access_ptr.access_type_ == READ_WRITE) {
@@ -234,16 +220,12 @@ public class TxnManagerOcc extends TxnManagerDedicated {
         access_list_.Clear();
         return is_success;
     }
-
     @Override
     public void AbortTransaction() {
         assert (false);
     }
-
-
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef s_record_ref, MetaTypes.AccessType accessType) {
-
         if (accessType == READ_ONLY) {
             Access access = access_list_.NewAccess();
             access.access_type_ = READ_ONLY;
@@ -262,7 +244,6 @@ public class TxnManagerOcc extends TxnManagerDedicated {
             Access access = access_list_.NewAccess();
             access.access_type_ = READ_WRITE;
             access.access_record_ = t_record;
-
             /** copy data
              BEGIN_CC_MEM_ALLOC_TIME_MEASURE(thread_id_);
              const RecordSchema *schema_ptr = t_record->record_->schema_ptr_;
@@ -272,7 +253,6 @@ public class TxnManagerOcc extends TxnManagerDedicated {
              END_CC_MEM_ALLOC_TIME_MEASURE(thread_id_);
              */
             final SchemaRecord local_record = new SchemaRecord(t_record.record_);//copy from t_record to local_record.
-
             /**
              access->timestamp_ = t_record->content_.GetTimestamp();
              COMPILER_MEMORY_FENCE;
@@ -282,10 +262,8 @@ public class TxnManagerOcc extends TxnManagerDedicated {
              */
             access.timestamp_ = t_record.content_.GetTimestamp();
             //memory fence? why is it needed?
-
             access.local_record_ = local_record;
             access.table_id_ = table_name;
-
             /**
              *  // reset returned d_record.
              s_record = local_record;
@@ -293,7 +271,6 @@ public class TxnManagerOcc extends TxnManagerDedicated {
              */
             s_record_ref.setRecord(local_record);
             return true;
-
         } else if (accessType == DELETE_ONLY) {
             LOG.info(t_record.toString() + "is locked by deleter");
             t_record.record_.is_visible_ = false;
@@ -310,6 +287,4 @@ public class TxnManagerOcc extends TxnManagerDedicated {
             return false;
         }
     }
-
-
 }

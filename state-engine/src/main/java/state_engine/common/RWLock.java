@@ -1,12 +1,9 @@
 package state_engine.common;
-
 public class RWLock {
-
     final static int NO_LOCK = 0, READ_LOCK = 1, WRITE_LOCK = 2;//enum LockType : size_t{ NO_LOCK, READ_LOCK, WRITE_LOCK };
     SpinLock spinlock_ = new SpinLock();
     volatile int reader_count_ = 0;
     volatile int lock_type_ = NO_LOCK;
-
     public void AcquireReadLock() {
         while (lock_type_ == WRITE_LOCK) {
             //spin sync_ratio.
@@ -26,7 +23,6 @@ public class RWLock {
             return;
         }
     }
-
     public void AcquireWriteLock() {
         while (true) {
             while (lock_type_ != NO_LOCK) {
@@ -42,7 +38,6 @@ public class RWLock {
             }
         }
     }
-
     public void ReleaseReadLock() {
         spinlock_.lock();
         --reader_count_;
@@ -51,7 +46,6 @@ public class RWLock {
         }
         spinlock_.unlock();
     }
-
     public boolean TryReadLock() {
         boolean rt = false;
         spinlock_.lock();
@@ -68,13 +62,11 @@ public class RWLock {
         spinlock_.unlock();
         return rt;
     }
-
     public boolean TryWriteLock() {
         boolean rt = false;
         spinlock_.lock();
         if (lock_type_ == NO_LOCK) {
             lock_type_ = WRITE_LOCK;
-
             rt = true;
         } else {
             rt = false;
@@ -82,12 +74,9 @@ public class RWLock {
         spinlock_.unlock();
         return rt;
     }
-
     public void ReleaseWriteLock() {
         spinlock_.lock();
         lock_type_ = NO_LOCK;
         spinlock_.unlock();
     }
-
-
 }

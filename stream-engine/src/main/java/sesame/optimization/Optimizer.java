@@ -1,8 +1,7 @@
 package sesame.optimization;
-
-import application.Platform;
-import application.util.Configuration;
-import application.util.OsUtils;
+import common.platform.Platform;
+import common.collections.Configuration;
+import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
@@ -14,8 +13,6 @@ import sesame.optimization.model.Constraints;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-
-
 /**
  * TODO: The execution should be allocated in NUMA-aware manner.
  * TODO: the current optimization goal is only the output rate, support more in future!
@@ -42,10 +39,8 @@ public class Optimizer {
     private final Constraints cons;
     private final int numNodes;
     private SchedulingPlan currentPlan;
-
     public Optimizer(ExecutionGraph g, boolean benchmark,
                      Configuration conf, Platform p, SchedulingPlan scaling_plan) {
-
         this.conf = conf;
         this.currentPlan = scaling_plan;
         numNodes = conf.getInt("num_socket", 1);
@@ -56,7 +51,6 @@ public class Optimizer {
         LOG.info("GC factor:" + conf.getDouble("gc_factor", 1));
         this.graph = g;
     }
-
     public SchedulingPlan benchmark_plan(int cnt, String prefix) {
         SchedulingPlan SP = new SchedulingPlan(graph, numNodes, cons, conf, null);
         LOG.info("Start benchmarking");
@@ -64,26 +58,21 @@ public class Optimizer {
             SP.buildFromFileForBenchmark(cnt, prefix);
             currentPlan = SP;
         } catch (FileNotFoundException ignored) {
-
         }
         currentPlan.set_success();
         return currentPlan;
     }
-
-
     public SchedulingPlan manual_plan(int cnt, String prefix) {
         SchedulingPlan SP = new SchedulingPlan(graph, numNodes, cons, conf, null);
         try {
             SP.mapFromFile(cnt, prefix);
             currentPlan = SP;
-
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         currentPlan.set_success();
         return currentPlan;
     }
-
     public SchedulingPlan load_opt_plan(Topology topology) {
         SchedulingPlan SP = null;//new SchedulingPlan(topology, numNodes, cons, conf, true);
         try {
@@ -95,7 +84,6 @@ public class Optimizer {
         currentPlan.set_success();
         return currentPlan;
     }
-
     /**
      * @return the txn plan
      */
@@ -110,16 +98,13 @@ public class Optimizer {
 //            cons.show(graph, currentPlan);
         }
         //TODO: we can have a control logic here to determine if we want to re-lanuch.
-
         SchedulingPlan new_plan = allocation(graph);
-
         if (new_plan == null || !new_plan.success()) {
             LOG.info("failed to find valid new plan, use original plan instead.");
             new_plan = new SchedulingPlan(currentPlan, true);
         } else {
             new_plan.planToString(false, true);
         }
-
         LOG.info("measure_end the optimized plan before writing plan to disk");
         final boolean check = cons.check(new_plan);
         if (!check) {
@@ -131,7 +116,6 @@ public class Optimizer {
             LOG.info(cons.show(new_plan));
         }
         double optimize_output_rate = new_plan.getOutput_rate(false);
-
 //		if (current_output_rate > optimize_output_rate) {
 //			LOG.info("no better plan found! CPU relax is:" + cons.relax_cpu
 //					+ "\tMemory relax is:" + cons.relax_memory
@@ -161,7 +145,6 @@ public class Optimizer {
         new_plan.planToFile(conf, true);
         return new_plan;
     }
-
     /**
      * TODO: support different algorithms later.
      * TODO: implement the worst case plan in future.
@@ -171,10 +154,8 @@ public class Optimizer {
      */
     private SchedulingPlan allocation(final ExecutionGraph graph) {
 //		conf.put("backPressure",false);
-
         {//different optimization algorithm..
             if (conf.getBoolean("random", false)) {
-
                 if (conf.getBoolean("worst", false)) {
                     return new randomSearch_Constraints(graph, numNodes, numCPUs, cons, conf)
                             .Search(conf.getBoolean("worst", false), 30000); // constraint-aware
@@ -189,22 +170,18 @@ public class Optimizer {
                 return new TOFF(graph, numNodes, numCPUs, cons, conf)
                         .Search(false, -1);
             } else {
-
                 if (OsUtils.isMac()) {//for test purpose
                     return new BranchAndBound(graph, numNodes, numCPUs, cons, conf, null)
                             .Search(conf.getBoolean("worst", false), 1000);
                 }
                 return new BranchAndBound(graph, numNodes, numCPUs, cons, conf, null)
                         .Search(conf.getBoolean("worst", false), 30000);
-
             }
 //               return      new randomSearch_Constraints(graph,numNodes,numCPUs,cons).Search(true,50000);
             //what if we assume resource consumption and process rate is fixed...
             //new ... txn algorithm.
         }
     }
-
-
     public SchedulingPlan scalingPlan(boolean random) {
         final SchedulingPlan scaling_plan;
         if (OsUtils.isMac()) {

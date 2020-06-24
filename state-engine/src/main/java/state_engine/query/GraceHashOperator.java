@@ -1,17 +1,12 @@
 package state_engine.query;
-
 import state_engine.DatabaseException;
 import state_engine.SimpleDatabase;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.DataBox;
 
 import java.util.*;
-
-
 public class GraceHashOperator extends JoinOperator {
-
     private int numBuffers;//?
-
     public GraceHashOperator(QueryOperator leftSource,
                              QueryOperator rightSource,
                              String leftColumnName,
@@ -23,19 +18,15 @@ public class GraceHashOperator extends JoinOperator {
                 rightColumnName,
                 transaction,
                 JoinType.GRACEHASH);
-
 //		this.numBuffers = transaction.getNumMemoryPages();
         this.stats = this.estimateStats();
         this.cost = this.estimateIOCost();
     }
-
     public Iterator<SchemaRecord> iterator() throws QueryPlanException, DatabaseException {
         return new GraceHashIterator();
     }
-
     public int estimateIOCost() {
         /* TODO: Implement me! */
-
 //		int io;
 //		int r = GraceHashOperator.this.getLeftSource().getStats().getNumPages();
 //		int s = GraceHashOperator.this.getRightSource().getStats().getNumPages();
@@ -43,7 +34,6 @@ public class GraceHashOperator extends JoinOperator {
 //		return io;
         return 0;
     }
-
     /**
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
@@ -59,7 +49,6 @@ public class GraceHashOperator extends JoinOperator {
         private int currIndexInList;
         private ArrayList<SchemaRecord> currList;
         private List<DataBox> rightRecordVals;
-
         public GraceHashIterator() throws QueryPlanException, DatabaseException {
             this.leftIterator = getLeftSource().iterator();
             this.rightIterator = getRightSource().iterator();
@@ -115,9 +104,7 @@ public class GraceHashOperator extends JoinOperator {
                 this.rightRecordVals = this.rightRecord.getValues();
                 this.currList = this.inMemoryHashTable.get(this.rightRecord.getValues().get(GraceHashOperator.this.getRightColumnIndex()));
             }
-
         }
-
         /**
          * Checks if there are more d_record(s) to yield
          *
@@ -173,7 +160,6 @@ public class GraceHashOperator extends JoinOperator {
                 }
             }
         }
-
         /**
          * Yields the next d_record of this iterator.
          *
@@ -188,7 +174,6 @@ public class GraceHashOperator extends JoinOperator {
             }
             throw new NoSuchElementException();
         }
-
         public void remove() {
             throw new UnsupportedOperationException();
         }

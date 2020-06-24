@@ -1,12 +1,8 @@
 package state_engine.profiler;
-
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
 import static state_engine.Meta.MetaTypes.kMaxThreadNum;
-
 public class Metrics {
-
-
     public static int COMPUTE_COMPLEXITY = 10;//default setting. 1, 10, 100
     public static int POST_COMPUTE_COMPLEXITY = 1;
     //change to 3 for S_STORE testing.
@@ -17,12 +13,10 @@ public class Metrics {
     public DescriptiveStatistics[] txn_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] stream_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] overhead_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-
     public DescriptiveStatistics[] index_ratio = new DescriptiveStatistics[kMaxThreadNum];//index
     public DescriptiveStatistics[] useful_ratio = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
     public DescriptiveStatistics[] sync_ratio = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
     public DescriptiveStatistics[] lock_ratio = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-
     // Op id, descriptive
 //    public Map<String, DescriptiveStatistics> useful_ratio = new HashMap<>();//useful_work time.
 //    public Map<String, DescriptiveStatistics> abort_ratio = new HashMap<>();//abort
@@ -32,7 +26,6 @@ public class Metrics {
 //    public Map<String, DescriptiveStatistics> exe_ratio = new HashMap<>();//not in use.
 //    public Map<String, DescriptiveStatistics> order_wait = new HashMap<>();//order sync_ratio
 //    public Map<String, DescriptiveStatistics> enqueue_time = new HashMap<>();//event enqueue
-
     //TODO: single op for now. per task/thread.
 //    public DescriptiveStatistics[] ts_allocation = new DescriptiveStatistics[kMaxThreadNum];//timestamp allocation
     public DescriptiveStatistics[] average_tp_core = new DescriptiveStatistics[kMaxThreadNum];// average tp processing time per thread without considering synchronization.
@@ -43,17 +36,12 @@ public class Metrics {
     /**
      * Specially for T-Stream..
      */
-
     public DescriptiveStatistics[] enqueue_time = new DescriptiveStatistics[kMaxThreadNum];//event enqueue
-
-
     private Metrics() {
     }
-
     public static Metrics getInstance() {
         return ourInstance;
     }
-
     /**
      * Initilize all metric counters.
      */
@@ -65,27 +53,19 @@ public class Metrics {
 //        sync_ratio.put(ID, new DescriptiveStatistics());
 //        ts_allocation.put(ID, new DescriptiveStatistics());
 //        enqueue_time.put(ID, new DescriptiveStatistics());
-
         NUM_ACCESSES = num_access;
     }
-
     public void initilize(int task) {
-
         txn_total[task] = new DescriptiveStatistics();
         stream_total[task] = new DescriptiveStatistics();
         overhead_total[task] = new DescriptiveStatistics();
-
-
         useful_ratio[task] = new DescriptiveStatistics();
         index_ratio[task] = new DescriptiveStatistics();
         sync_ratio[task] = new DescriptiveStatistics();
         lock_ratio[task] = new DescriptiveStatistics();
-
         average_tp_core[task] = new DescriptiveStatistics();
         average_txn_construct[task] = new DescriptiveStatistics();
         average_tp_submit[task] = new DescriptiveStatistics();
         average_tp_w_syn[task] = new DescriptiveStatistics();
-
     }
-
 }

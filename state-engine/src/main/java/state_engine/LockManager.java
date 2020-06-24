@@ -1,17 +1,14 @@
 package state_engine;
-
 /**
  * The LockManager provides a basic locking implementation that ensures that only one transaction runs at a time.
  */
 public class LockManager {
     private boolean databaseLocked;
     private long databaseTransactionOwner;
-
     public LockManager() {
         this.databaseLocked = false;
         this.databaseTransactionOwner = -1;
     }
-
     /**
      * Acquires a lock_ratio on tableNum of type lockType for transaction transNum.
      *
@@ -27,14 +24,11 @@ public class LockManager {
             try {
                 wait();
             } catch (InterruptedException ignored) {
-
             }
         }
-
         this.databaseTransactionOwner = transNum;
         this.databaseLocked = true;
     }
-
     /**
      * Releases transNum's lock_ratio on tableName.
      *
@@ -45,11 +39,9 @@ public class LockManager {
         if (this.databaseLocked && this.databaseTransactionOwner == transNum) {
             this.databaseLocked = false;
             this.databaseTransactionOwner = -1;
-
             notifyAll();
         }
     }
-
     /**
      * Returns a boolean indicating whether or not transNum holds a lock_ratio of type lockType on tableName.
      *
@@ -61,6 +53,5 @@ public class LockManager {
     public synchronized boolean holdsLock(String tableName, long transNum, LockType lockType) {
         return this.databaseLocked && this.databaseTransactionOwner == transNum;
     }
-
     public enum LockType {SHARED, EXCLUSIVE}
 }

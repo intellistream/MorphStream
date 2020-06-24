@@ -1,5 +1,4 @@
 package state_engine.storage;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.common.SpinLock;
@@ -11,15 +10,12 @@ import static state_engine.content.LockContentImpl.LOCK_CONTENT;
 import static state_engine.content.T_StreamContentImpl.T_STREAMCONTENT;
 import static state_engine.content.ToContentImpl.TO_CONTENT;
 import static state_engine.content.common.ContentCommon.content_type;
-
 public class TableRecord implements Comparable<TableRecord> {
     private static final Logger LOG = LoggerFactory.getLogger(TableRecord.class);
     final int size;
     public Content content_;
     public SchemaRecord record_;//this record may be changed by multiple threads.
-
     public TableRecord(SchemaRecord record) {
-
         switch (content_type) {
             case LOCK_CONTENT:
                 content_ = new LockContentImpl();
@@ -43,27 +39,22 @@ public class TableRecord implements Comparable<TableRecord> {
         record_ = record;
         size = sizeof(record);
     }
-
     public TableRecord(SchemaRecord record, int pid, SpinLock[] spinlock_) {
 //        LOG.info(record.GetPrimaryKey() + " belongs to pid:" + pid);
         content_ = new SStoreContentImpl(spinlock_, pid);//every record has an associated partition (and a lock_ratio for sure..).
         record_ = record;
         size = sizeof(record);
     }
-
     private int sizeof(SchemaRecord record) {
         return 0;
     }
-
     @Override
     public int compareTo(TableRecord o) {
         return Math.toIntExact(record_.getId().getID() - o.record_.getId().getID());
     }
-
     public int getID() {
         return record_.getId().getID();
     }
-
     public void setID(RowID ID) {
         this.record_.setID(ID);
     }

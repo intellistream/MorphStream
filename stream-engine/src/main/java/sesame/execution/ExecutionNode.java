@@ -1,9 +1,7 @@
 package sesame.execution;
-
-
-import application.Constants;
-import application.Platform;
-import application.util.Configuration;
+import common.Constants;
+import common.platform.Platform;
+import common.collections.Configuration;
 import ch.usi.overseer.OverHpc;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
@@ -25,7 +23,6 @@ import state_engine.common.OrderValidate;
 
 import java.io.Serializable;
 import java.util.*;
-
 /**
  * Created by shuhaozhang on 11/7/16.
  *
@@ -55,7 +52,6 @@ public class ExecutionNode implements Serializable {
     private boolean _statistics;
     private boolean first_executor;
     private boolean needsProfile;
-
     public ExecutionNode(TopologyComponent rec, int i, Platform p, int compressRatio) {
         this.operator = rec;
         this.executorID = i;
@@ -66,7 +62,6 @@ public class ExecutionNode implements Serializable {
         if (op != null) {
             this.op = SerializationUtils.clone(op);
             RM = new RateModel(op, p);
-
         } else {
             this.op = null;
             RM = new RateModel(null, p);
@@ -75,7 +70,6 @@ public class ExecutionNode implements Serializable {
         children = new HashMap();
         needsProfile = false;
     }
-
     public ExecutionNode(ExecutionNode e, TopologyComponent topo, Platform p) {
         compressRatio = e.compressRatio;
         this.operator = topo;
@@ -91,7 +85,6 @@ public class ExecutionNode implements Serializable {
         if (op != null) {
             this.op = SerializationUtils.clone(op);
             RM = new RateModel(op, p);
-
         } else {
             this.op = null;
             RM = new RateModel(null, p);
@@ -100,7 +93,6 @@ public class ExecutionNode implements Serializable {
         children = new HashMap();
         needsProfile = e.needsProfile;
     }
-
     public ExecutionNode(TopologyComponent rec, int i, Platform p) {
         this.operator = rec;
         this.executorID = i;
@@ -114,34 +106,27 @@ public class ExecutionNode implements Serializable {
         if (op != null) {
             this.op = SerializationUtils.clone(op);
             RM = new RateModel(op, p);
-
         } else {
             this.op = null;
             RM = new RateModel(null, p);
         }
         needsProfile = false;
     }
-
     public boolean isFirst_executor() {
         return first_executor;
     }
-
     public void setFirst_executor(boolean first_executor) {
         this.first_executor = first_executor;
     }
-
     public void setNeedsProfile() {
         this.needsProfile = true;
     }
-
     public String toString() {
         return this.getOP();
     }
-
     public boolean is_statistics() {
         return _statistics;
     }
-
     /**
      * custom inputStreamController for this execution mapping_node.
      *
@@ -150,31 +135,24 @@ public class ExecutionNode implements Serializable {
     public boolean hasScheduler() {
         return inputStreamController != null;
     }
-
     public InputStreamController getInputStreamController() {
         return inputStreamController;
     }
-
     public void setInputStreamController(InputStreamController inputStreamController) {
         this.inputStreamController = inputStreamController;
     }
-
     public HashMap<TopologyComponent, ArrayList<ExecutionNode>> getParents() {
         return parents;
     }
-
     public Set<TopologyComponent> getParents_keySet() {
         return parents.keySet();
     }
-
     public HashMap<TopologyComponent, ArrayList<ExecutionNode>> getChildren() {
         return children;
     }
-
     public Set<TopologyComponent> getChildren_keySet() {
         return children.keySet();
     }
-
     public ArrayList<ExecutionNode> getParentsOf(TopologyComponent operator) {
         ArrayList<ExecutionNode> executionNodes = parents.get(operator);
         if (executionNodes == null) {
@@ -182,24 +160,19 @@ public class ExecutionNode implements Serializable {
         }
         return executionNodes;
     }
-
     public String getOP() {
         return operator.getId();
     }
-
     public String getOP_full() {
         return operator.getId() + "(" + executorID + ")";
     }
-
     public ArrayList<ExecutionNode> getChildrenOf(TopologyComponent operator) {
         return children.get(operator);
     }
-
     public OutputController getController() {
         return controller;
     }
-
-//    /**
+    //    /**
 //     * TODO: It's too costly to measure_end this flag every time. This is in Brisk.execution critical metric_path!!
 //     * Move it to construction phase and Store it locally!
 //     */
@@ -207,35 +180,27 @@ public class ExecutionNode implements Serializable {
 //
 //        return partition.getPartitionController(streamId, boltID);
 //    }
-
     public void setController(OutputController controller) {
         this.controller = controller;
     }
-
     public int getExecutorID() {
         return executorID;
     }
-
     public boolean isSourceNode() {
         return operator.getOp() instanceof SpoutExecutor;
     }
-
     public boolean isLeafNode() {
         return operator.isLeafNode();
     }
-
     private boolean isLeadNode() {
         final ExecutionNode node = operator.getExecutorList().iterator().next();
         return this == node;
     }
-
     public boolean isEmpty() {
         return getController() == null || getController().isEmpty();
     }
-
     public void setReceive_queueOfChildren(String streamId) {
         if (!isLeafNode()) {
-
             final OutputController controller = getController();
             if (!controller.isShared() || this.isLeadNode()) {
                 //for each downstream Operator ID
@@ -243,7 +208,6 @@ public class ExecutionNode implements Serializable {
                     for (TopologyComponent op : this.operator.getChildrenOfStream(streamId).keySet()) {
                         for (ExecutionNode downstream_executor : op.getExecutorList()) {
                             int executorID = this.getExecutorID();
-
                             //GetAndUpdate output queue from output partition.
                             final Queue queue = this.getController()
                                     .getPartitionController(streamId, op.getId())
@@ -264,7 +228,6 @@ public class ExecutionNode implements Serializable {
             this.inputStreamController.initialize();
         }
     }
-
     public void allocate_OutputQueue(boolean linked, int desired_elements_epoch_per_core) {
         if (!isLeafNode()) {
             final OutputController controller = getController();
@@ -277,28 +240,22 @@ public class ExecutionNode implements Serializable {
             }
         }
     }
-
     public void setDeactivate() {
         activate = false;
     }
-
     public boolean isActivate() {
         return activate;
     }
-
     public boolean isLast_executor() {
         return last_executor;
     }
-
     public void setLast_executorOfBolt(boolean last_executor) {
         this.last_executor = last_executor;
     }
-
     public String inputAggregationType(TopologyComponent operator) {
         //TODO: extend this in future.
         return "sum";
     }
-
     //GetAndUpdate partition ratio for the downstream executor
     public double getPartition_ratio(String input_stream_downOpID, String downOpID, int ExecutorID) {
         if (ExecutorID == -2) {
@@ -316,12 +273,10 @@ public class ExecutionNode implements Serializable {
         }
         return partition_ratio;
     }
-
     public boolean noParents() {
         final Set<TopologyComponent> parents_set = this.getParents_keySet();//multiple parent
         return parents_set.size() == 0;
     }
-
     public void prepareProfilingStruct(Configuration conf, OverHpc hpcMonotor, TopologyContext context, Platform p) {
         if (noParents()) {             //producer
             profiling.put(-1, new STAT(this, this, conf, hpcMonotor, p));
@@ -338,11 +293,9 @@ public class ExecutionNode implements Serializable {
             }
         }
     }
-
     /**
      * In terms of latency
      */
-
     public double getCommConsumption(ExecutionNode parentE, SchedulingPlan plan, boolean bound) {
         double sum = 0;
         if (this.operator.input_streams == null)//SPOUT
@@ -357,7 +310,6 @@ public class ExecutionNode implements Serializable {
         }
         return sum;
     }
-
     /**
      * In terms of bandwdith
      *
@@ -380,7 +332,6 @@ public class ExecutionNode implements Serializable {
         }
         return sum;
     }
-
     public double getMemConsumption(SchedulingPlan plan, boolean bound) {
         double sum = 0;
         if (this.operator.input_streams == null)//SPOUT
@@ -392,7 +343,6 @@ public class ExecutionNode implements Serializable {
         }
         return sum;
     }
-
     /**
      * @param sp
      * @return the process_rate of current setting.
@@ -400,12 +350,10 @@ public class ExecutionNode implements Serializable {
     public double getUnitCycles(ExecutionNode parentE, String streamId, SchedulingPlan sp, boolean bound) {
         return RM.cycles_scPertuple(this, parentE, streamId, sp, bound);
     }
-
     public int getdemandCores() {
         assert this.compressRatio > 0;
         return this.compressRatio;
     }
-
     public double getdemandCycles(SchedulingPlan plan, boolean bound) {
         double sum = 0;
         if (this.operator.input_streams == null)//SPOUT
@@ -417,22 +365,17 @@ public class ExecutionNode implements Serializable {
         }
         return sum;
     }
-
     public double getdemandCycles(String streamId, SchedulingPlan plan, boolean bound) {
-
         if (this.operator.input_streams == null)//SPOUT
         {
             return RM.getdemandCycles_c(this, Constants.DEFAULT_STREAM_ID, plan, bound);
         }
 //        for (String streamId : this.operator.input_streams)
         return RM.getdemandCycles_c(this, streamId, plan, bound);
-
     }
-
-//    public double getInputRate(String streamId, ExecutionNode producer, double sourceRate, SchedulingPlan sp) {
+    //    public double getInputRate(String streamId, ExecutionNode producer, double sourceRate, SchedulingPlan sp) {
 //        return RM.ri_sc(this, producer, streamId, sourceRate, sp);
 //    }
-
     public double getMemConsumption(String streamId, SchedulingPlan plan, boolean bound) {
         double sum = 0;
         if (this.operator.input_streams == null)//SPOUT
@@ -441,41 +384,32 @@ public class ExecutionNode implements Serializable {
         }
         return RM.getMemConsumption(this, streamId, plan, bound);
     }
-
     public double getInputRate(String streamId, SchedulingPlan sp, boolean bound) {
         return RM.ri_c(this, streamId, sp, bound);
     }
-
     public double getInputRate(String streamId, ExecutionNode producer, SchedulingPlan sp, boolean bound) {
         return RM.ri_sc(this, producer, streamId, sp, bound);
     }
-
     public double getExpectedProcessRate(String streamId, ExecutionNode producer, SchedulingPlan sp, boolean bound) {
         return RM.erp_sc(this, producer, streamId, sp, bound);
     }
-
     public double getExpectedProcessRate(String streamId, SchedulingPlan sp, boolean bound) {
         return RM.erp_c(this, streamId, sp, bound);
     }
-
     public double getBoundedProcessRate(String streamId, SchedulingPlan sp, boolean bound) {
         return RM.brp_c(this, streamId, sp, bound);
     }
-
     public double getBoundedProcessRate(String streamId, ExecutionNode parentE, SchedulingPlan sp, boolean bound) {
         return RM.brp_sc(this, parentE, streamId, sp, bound);
     }
-
     //GetAndUpdate outputRate of specific output streams..
     public double getOutputRate(String executionNode_InputStreamId, String executionNode_OnputStreamId, ExecutionNode parent, SchedulingPlan sp, boolean bound) {
         return RM.ro_sc(this, parent, executionNode_InputStreamId, executionNode_OnputStreamId, sp, bound);
     }
-
     public double getOutputRate(String executionNode_InputStreamId, String executionNode_OnputStreamId, SchedulingPlan sp, boolean bound) {
         return RM.ro_c(this, executionNode_InputStreamId, executionNode_OnputStreamId, sp, bound);
     }
-
-//	public boolean children_BP_Corrected() {
+    //	public boolean children_BP_Corrected() {
 //		Set<TopologyComponent> children_keySet = this.getChildren_keySet();
 //		if (children_keySet.size() == 0) {
 //			return true;
@@ -490,12 +424,10 @@ public class ExecutionNode implements Serializable {
 //		}
 //		return true;
 //	}
-
     public double CleangetOutput_rate(String executionNode_InputStreamId
             , String executionNode_OnputStreamId, final SchedulingPlan sp, boolean bound) {
         return RM.CleangetOutput_rate(this, executionNode_InputStreamId, executionNode_OnputStreamId, sp, bound);
     }
-
     /**
      * make sure this executor is not idle for the given producer
      *
@@ -503,7 +435,6 @@ public class ExecutionNode implements Serializable {
      * @return
      */
     public boolean idle(ExecutionNode producer) {
-
         for (String outputstreams : producer.operator.getOutput_streamsIds()) {
             for (String inputstreams : new HashSet<>(this.operator.input_streams)) {
                 if (outputstreams.equalsIgnoreCase(inputstreams)) {
@@ -515,34 +446,25 @@ public class ExecutionNode implements Serializable {
         }
         return true;
     }
-
     public boolean isVirtual() {
         return executorID == -2;
     }
-
     public void display() {
         op.display();
     }
-
     public boolean needsProfile() {
         return needsProfile;
     }
-
     public void configureWriter(Writer writer) {
         op.configureWriter(writer);
     }
-
     public void configureLocker(OrderLock lock, OrderValidate orderValidate) {
         op.configureLocker(lock, orderValidate);
     }
-
     public void clean_state(Marker marker) {
         op.clean_state(marker);
     }
-
     public void earlier_clean_state(Marker marker) {
         op.earlier_clean_state(marker);
     }
-
-
 }

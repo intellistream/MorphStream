@@ -1,16 +1,13 @@
 package sesame.optimization.impl;
-
-import application.util.Configuration;
+import common.collections.Configuration;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.ExecutionNode;
 import sesame.optimization.model.Constraints;
 import sesame.optimization.model.Variables;
-
 /**
  * Created by tony on 7/11/2017.
  */
 public abstract class PlanScheduler {
-
     public Configuration conf;
     protected ExecutionGraph graph;
     protected Constraints cons;
@@ -20,11 +17,8 @@ public abstract class PlanScheduler {
     protected SchedulingPlan best_plan = null;
     protected SchedulingPlan Pre_plan = null;
     protected double targetOutput = 0;
-
     private void input_satisfy() {
-
     }
-
     protected int try_allocate(SchedulingPlan sp, ExecutionNode executor) {
         int satisfy = cons.allstatisfy;//by default it is satisfied.
         if (executor.getExecutorID() == -2) {
@@ -45,7 +39,6 @@ public abstract class PlanScheduler {
         }
         return satisfy;
     }
-
     private void storeCurrentPlan(Configuration conf) {
         if (currentPlan != null && currentPlan.success()) {
             Pre_plan = best_plan = currentPlan;
@@ -53,7 +46,6 @@ public abstract class PlanScheduler {
             Pre_plan = best_plan = currentPlan = new SchedulingPlan(graph, numNodes, cons, conf, null);
         }
     }
-
     private void storeCurrentPlan(Configuration conf, Variables variables) {
         if (currentPlan != null && currentPlan.success()) {
             Pre_plan = best_plan = currentPlan;
@@ -61,8 +53,6 @@ public abstract class PlanScheduler {
             Pre_plan = best_plan = currentPlan = new SchedulingPlan(graph, numNodes, cons, conf, variables);
         }
     }
-
-
     protected void initilize(boolean worst_plan, Configuration conf) {
         if (worst_plan) {
             targetOutput = Double.MAX_VALUE;
@@ -71,7 +61,6 @@ public abstract class PlanScheduler {
         }
         storeCurrentPlan(conf);
     }
-
     protected void initilize(boolean worst_plan, Configuration conf, Variables variables) {
         if (worst_plan) {
             targetOutput = Double.MAX_VALUE;
@@ -80,7 +69,5 @@ public abstract class PlanScheduler {
         }
         storeCurrentPlan(conf, variables);
     }
-
-
     public abstract SchedulingPlan Search(boolean worst_plan, int timeoutMs);
 }

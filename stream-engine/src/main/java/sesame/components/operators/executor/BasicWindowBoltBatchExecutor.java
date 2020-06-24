@@ -1,6 +1,5 @@
 package sesame.components.operators.executor;
-
-import application.util.Configuration;
+import common.collections.Configuration;
 import sesame.components.context.TopologyContext;
 import sesame.components.operators.api.AbstractWindowedBolt;
 import sesame.components.operators.api.BaseWindowedBolt;
@@ -15,25 +14,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-
-
 public class BasicWindowBoltBatchExecutor extends BoltExecutor {
     private static final long serialVersionUID = 369470953543118848L;
     AbstractWindowedBolt _op;
     private transient WindowManager<Tuple> windowManager;
     private transient BaseWindowedBolt.Duration windowLengthDuration;
-
     public BasicWindowBoltBatchExecutor(AbstractWindowedBolt op) {
         super(op);
         _op = op;
     }
-
-
     private WindowManager<Tuple> initWindowManager(WindowLifecycleListener<Tuple> lifecycleListener, Map<String, Object> topoConf,
                                                    TopologyContext context, Collection<Event<Tuple>> queue) {
-
         WindowManager<Tuple> manager = new WindowManager<>(lifecycleListener, queue);
-
         BaseWindowedBolt.Count windowLengthCount = null;
         BaseWindowedBolt.Duration slidingIntervalDuration = null;
         BaseWindowedBolt.Count slidingIntervalCount = null;
@@ -57,11 +49,9 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
         if (topoConf.containsKey(Configuration.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM)) {
             throw new IllegalArgumentException("Late tuple stream can be defined only when specifying a timestamp field");
         }
-
         // validate
         validate(topoConf, windowLengthCount, windowLengthDuration,
                 slidingIntervalCount, slidingIntervalDuration);
-
         EvictionPolicy<Tuple, ?> evictionPolicy = getEvictionPolicy(windowLengthCount, windowLengthDuration);
         TriggerPolicy<Tuple, ?> triggerPolicy = getTriggerPolicy(slidingIntervalCount, slidingIntervalDuration,
                 manager, evictionPolicy);
@@ -69,7 +59,6 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
         manager.setTriggerPolicy(triggerPolicy);
         return manager;
     }
-
     private TriggerPolicy getTriggerPolicy(BaseWindowedBolt.Count slidingIntervalCount
             , BaseWindowedBolt.Duration slidingIntervalDuration
             , WindowManager<Tuple> manager, EvictionPolicy<Tuple, ?> evictionPolicy) {
@@ -79,20 +68,13 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
             return new TimeTriggerPolicy(slidingIntervalDuration.value, manager, evictionPolicy);
         }
     }
-
     private EvictionPolicy<Tuple, ?> getEvictionPolicy(BaseWindowedBolt.Count windowLengthCount, BaseWindowedBolt.Duration windowLengthDuration) {
         if (windowLengthCount != null) {
-
             return new CountEvictionPolicy<>(windowLengthCount.value);
-
         } else {
-
             return new TimeEvictionPolicy<>(windowLengthDuration.value);
-
         }
     }
-
-
     private int getTopologyTimeoutMillis(Map<String, Object> topoConf) {
         if (topoConf.get(Configuration.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS) != null) {
             boolean timeOutsEnabled = (boolean) topoConf.get(Configuration.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
@@ -106,7 +88,6 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
         }
         return timeout * 1000;
     }
-
     private void ensureDurationLessThanTimeout(int duration, int timeout) {
         if (duration > timeout) {
             throw new IllegalArgumentException("Window duration (length + sliding interval) value_list " + duration +
@@ -114,16 +95,12 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
                     " value_list " + timeout);
         }
     }
-
     private void validate(Map<String, Object> topoConf, BaseWindowedBolt.Count windowLengthCount, BaseWindowedBolt.Duration windowLengthDuration,
                           BaseWindowedBolt.Count slidingIntervalCount, BaseWindowedBolt.Duration slidingIntervalDuration) {
-
         int topologyTimeout = getTopologyTimeoutMillis(topoConf);
-
         if (windowLengthCount == null && windowLengthDuration == null) {
             throw new IllegalArgumentException("Window length is not specified");
         }
-
         if (windowLengthDuration != null && slidingIntervalDuration != null) {
             ensureDurationLessThanTimeout(windowLengthDuration.value + slidingIntervalDuration.value, topologyTimeout);
         } else if (windowLengthDuration != null) {
@@ -131,16 +108,12 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
         } else if (slidingIntervalDuration != null) {
             ensureDurationLessThanTimeout(slidingIntervalDuration.value, topologyTimeout);
         }
-
     }
-
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         super.prepare(stormConf, context, collector);
         WindowLifecycleListener<Tuple> listener = newWindowLifecycleListener();
         this.windowManager = initWindowManager(listener, stormConf, context, new ConcurrentLinkedQueue<>());
-
     }
-
     private WindowLifecycleListener<Tuple> newWindowLifecycleListener() {
         return new WindowLifecycleListener<Tuple>() {
             @Override
@@ -149,36 +122,29 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
                  * NO-OP1: the events are ack-ed in execute
                  */
             }
-
-
             @Override
             public void onActivation(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples, Long timestamp) {
                 boltExecute(tuples, newTuples, expiredTuples, timestamp);
             }
         };
     }
-
     private void boltExecute(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples, Long timestamp) {
         _op.execute(new TupleWindowImpl(tuples, newTuples, expiredTuples, getWindowStartTs(timestamp), timestamp));
     }
-
     public void execute(JumboTuple in) throws InterruptedException {
         for (int i = 0; i < in.length; i++) {
             final Tuple input = in.getTuple(i);
             windowManager.add(input);
         }
     }
-
     @Override
     public void execute(Tuple in) throws InterruptedException {
         //not supported yet.
     }
-
     @Override
     public void profile_execute(JumboTuple in) {
         //not suppported yet.
     }
-
     private Long getWindowStartTs(Long endTs) {
         Long res = null;
         if (endTs != null && windowLengthDuration != null) {
@@ -186,7 +152,6 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
         }
         return res;
     }
-
     @Override
     public void cleanup() {
 //		if (waterMarkEventGenerator != null) {
@@ -195,7 +160,6 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
         windowManager.shutdown();
         _op.cleanup();
     }
-
     @Override
     public void callback(int callee, Marker marker) {
         //Not implemented yet.

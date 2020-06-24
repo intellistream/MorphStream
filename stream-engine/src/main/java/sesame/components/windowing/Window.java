@@ -1,8 +1,6 @@
 package sesame.components.windowing;
-
 import java.util.Iterator;
 import java.util.List;
-
 /**
  * A view of events in a sliding window.
  *
@@ -20,7 +18,6 @@ interface Window<T> {
      * @return the list of events in the window.
      */
     List<T> get();
-
     /**
      * Returns an iterator over the events in the window.
      * <p>
@@ -33,7 +30,6 @@ interface Window<T> {
     default Iterator<T> getIter() {
         throw new UnsupportedOperationException("Not implemented");
     }
-
     /**
      * Get the list of newly added events in the window since the last time the window was generated.
      * <p>
@@ -44,7 +40,6 @@ interface Window<T> {
      * @throws UnsupportedOperationException if using
      */
     List<T> getNew();
-
     /**
      * Get the list of events expired from the window since the last time the window was generated.
      * <p>
@@ -55,7 +50,6 @@ interface Window<T> {
      * @throws UnsupportedOperationException if using
      */
     List<T> getExpired();
-
     /**
      * If processing based on input_event time, returns the window end time based on watermark otherwise
      * returns the window end time based on processing time.
@@ -63,7 +57,6 @@ interface Window<T> {
      * @return the window end timestamp
      */
     Long getEndTimestamp();
-
     /**
      * Returns the window start timestamp. Will return null if the window length is not based on time duration.
      *

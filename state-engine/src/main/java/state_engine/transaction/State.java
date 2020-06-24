@@ -1,15 +1,11 @@
 package state_engine.transaction;
+import common.tools.FastZipfGenerator;
 
-import application.tools.FastZipfGenerator;
-
-import static application.CONTROL.enable_states_partition;
-
-
+import static common.CONTROL.enable_states_partition;
 public class State {
     public static FastZipfGenerator shared_store;
     public static FastZipfGenerator[] partioned_store;
-
-//    public static void initilize(Configuration config) {
+    //    public static void initilize(Configuration config) {
 //        double scale_factor = config.getDouble("scale_factor", 1);
 //        double theta = config.getDouble("theta", 0);
 //        int tthread = config.getInt("tthread", 0);
@@ -31,7 +27,6 @@ public class State {
 //
 //        }
 //    }
-
     public static void configure_store(double scale_factor, double theta, int tthread, int numItems) {
         int floor_interval;
         if (enable_states_partition) {

@@ -1,26 +1,21 @@
 package state_engine.storage.datatype;
-
 import org.apache.commons.lang.StringUtils;
 
 import java.nio.charset.Charset;
-
 /**
  * Fixed-length String data type which serializes to UTF-8 bytes.
  */
 public class StringDataBox extends DataBox {
     private String s;
-
     public StringDataBox(String s) {
         this.s = s;
     }
-
     /**
      * Construct an empty StringDataBox.
      */
     public StringDataBox() {
         this.s = "";
     }
-
     /**
      * Construct a StringDataBox with length len and value_list s.
      *
@@ -34,7 +29,6 @@ public class StringDataBox extends DataBox {
             this.s = String.format("%-" + len + "s", s);
         }
     }
-
     /**
      * Construct a StringDataBox from the bytes in buf.
      *
@@ -43,35 +37,28 @@ public class StringDataBox extends DataBox {
     public StringDataBox(byte[] buf) {
         this.s = new String(buf, Charset.forName("UTF-8"));
     }
-
     public StringDataBox(int len) {
         this.s = "";
-
         for (int i = 0; i < len; i++) {
             this.s += " ";
         }
     }
-
     @Override
     public StringDataBox clone() {
         return new StringDataBox(s);
     }
-
     @Override
     public String getString() {
         return this.s;
     }
-
     @Override
     public void setString(String s, int len) {
         this.s = StringUtils.rightPad(s, len);//String.format("%-" + len + "s", s);
     }
-
     @Override
     public Types type() {
         return DataBox.Types.STRING;
     }
-
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -86,12 +73,10 @@ public class StringDataBox extends DataBox {
         StringDataBox other = (StringDataBox) obj;
         return this.getString().equals(other.getString());
     }
-
     @Override
     public int hashCode() {
         return this.getString().hashCode();
     }
-
     @Override
     public int compareTo(Object obj) {
         if (this.getClass() != obj.getClass()) {
@@ -100,17 +85,14 @@ public class StringDataBox extends DataBox {
         StringDataBox other = (StringDataBox) obj;
         return this.getString().compareTo(other.getString());
     }
-
     @Override
     public byte[] getBytes() {
         return this.s.getBytes(Charset.forName("UTF-8"));
     }
-
     @Override
     public int getSize() {
         return s.getBytes(Charset.forName("UTF-8")).length;
     }
-
     @Override
     public String toString() {
         return this.s;

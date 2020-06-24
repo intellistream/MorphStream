@@ -1,9 +1,6 @@
 package state_engine.transaction.impl;
-
 public class Epoch {
-
     static volatile long curr_epoch_;
-
     public static long GetEpoch() {
         return curr_epoch_;
     }

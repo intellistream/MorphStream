@@ -1,22 +1,18 @@
 package state_engine.common;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * used in Occ, but its performance is very bad.
  */
 public class OrderValidate implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(OrderValidate.class);
     private static final long serialVersionUID = 905380243120316314L;
-//	private static OrderLock ourInstance = new OrderLock();
-
+    //	private static OrderLock ourInstance = new OrderLock();
 //	SpinLock spinlock_ = new SpinLock();
-
     //	public static OrderLock getHolder() {
 //		return ourInstance;
 //	}
@@ -24,32 +20,24 @@ public class OrderValidate implements Serializable {
     final AtomicLong bid = new AtomicLong();
     //	private transient HashMap<Integer, HashMap<Integer, Boolean>> executors_ready;//<FID, ExecutorID, true/false>
     private int end_fid;
-
     public OrderValidate() {
-
     }
-
-//	public int getFID() {
+    //	public int getFID() {
 //		return fid;
 //	}
-
     public long getBID() {
         return bid.get();
     }
-
-//	public synchronized void advanceFID() {
+    //	public synchronized void advanceFID() {
 //		fid++;
 //	}
-
 //	public synchronized void try_fill_gap() {
 //		counter.getAndIncrement();
 ////		fid = 0;
 //	}
-
     public void setBID(long bid) {
         this.bid.set(bid);
     }
-
     protected void fill_gap(LinkedList<Long> gap) {
 //		while (!gap.isEmpty()) {
 //			try_fill_gap(gap.);
@@ -62,7 +50,6 @@ public class OrderValidate implements Serializable {
             }
         }
     }
-
     /**
      * fill the gap.
      *
@@ -76,9 +63,7 @@ public class OrderValidate implements Serializable {
         }
         return false;
     }
-
     public boolean validate(final long bid) {
-
         if (!this.bid.compareAndSet(bid, bid)) {
             //not ready for this batch to proceed! Wait for previous batch to finish execution.
 //			fill_gap(gap);
@@ -86,9 +71,7 @@ public class OrderValidate implements Serializable {
         }
         return true;
     }
-
     public void advance() {
-
 //		try_fill_gap();
         bid.incrementAndGet();//allow next batch to proceed.
         //LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter + " @ " + DateTime.now());
@@ -101,7 +84,6 @@ public class OrderValidate implements Serializable {
 //			executors_ready_rest(txn_context);
 //		}
     }
-
 //	public void initial(HashMap<Integer, HashMap<Integer, Boolean>> map) {
 //		executors_ready = map;
 //	}
@@ -109,7 +91,6 @@ public class OrderValidate implements Serializable {
 //	public void set_executor_ready(int fid, int task_id) {
 //		executors_ready.get(fid).put(task_id, true);
 //	}
-
 //	/**
 //	 * have received all tuples from source.
 //	 *
@@ -118,11 +99,9 @@ public class OrderValidate implements Serializable {
 //	private boolean all_executors_ready(int fid) {
 //		return !(executors_ready.get(fid).containsValue(false));
 //	}
-
 //	public void setEnd_fid(int end_fid) {
 //		this.end_fid = end_fid;
 //	}
-
 //	/**
 //	 * If the fid corresponding executors all finished their execution.
 //	 *
@@ -140,6 +119,4 @@ public class OrderValidate implements Serializable {
 //			map.put(task_id, false);
 //		}
 //	}
-
-
 }

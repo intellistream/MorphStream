@@ -1,6 +1,5 @@
 package sesame.faulttolerance;
-
-import application.util.OsUtils;
+import common.collections.OsUtils;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
@@ -11,7 +10,6 @@ import sesame.execution.ExecutionNode;
 import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-
 /**
  * Operator shares the same writer.
  * Only one executor needs to perform the write!
@@ -27,16 +25,12 @@ public class Writer {
     Collections collections;
     private volatile int iteration = 0;
     private volatile int cnt = 0;
-
     public Writer(TopologyComponent operator, int numTasks) {
-
         this.operator = operator;
         this.numTasks = numTasks;
 //		this.collections = new HashMap<>();
         this.collections = new Collections(this.operator, this.operator.getNumTasks());
     }
-
-
     /**
      * TODO: implement the faster caller to store in future version.
      *
@@ -53,7 +47,6 @@ public class Writer {
             called_executors = 0;
         }
     }
-
     private synchronized File create_dir(long msgId) {
         String directory = System.getProperty("user.home")
                 + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("checkpoints")
@@ -64,14 +57,11 @@ public class Writer {
         }
         return file;
     }
-
-
     public void save_state_MMIO_compress(long msgId, long timeStampNano
             , int myiteration, String path, boolean compress, ExecutionNode executor, State state) throws IOException {
         if (!reliable) {
             save_state_MMIO_synchronize(executor);
         }
-
         File file = create_dir(msgId);
         if (compress) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -80,7 +70,6 @@ public class Writer {
             ObjectOutputStream objectOut = new ObjectOutputStream(Lz4out);
             objectOut.writeObject(state.value());
             objectOut.close();
-
             byte[] data = baos.toByteArray();
             //LOG.DEBUG(path + " save state with marker Id:" + msgId + " size to store:" + data.length);
             out = new RandomAccessFile(file
@@ -96,9 +85,7 @@ public class Writer {
                     .getChannel().map(FileChannel.MapMode.READ_WRITE, 0, data.length);
             out.put(data);
         }
-
         reliable = false;
-
 //		// decompress data
 //		// - method 1: when the decompressed length is known
 //		LZ4FastDecompressor decompressor = factory.fastDecompressor();
@@ -112,23 +99,15 @@ public class Writer {
 //		int decompressedLength2 = decompressor2.decompress(compressed, 0, compressedLength, restored, 0);
 //		// decompressedLength == decompressedLength2
     }
-
-
     public void save_state(long msgId, long timeStampNano, int myiteration, String path, ExecutionNode executor, State state) throws IOException {
-
         File file = create_dir(msgId);
-
         byte[] data = SerializationUtils.serialize(state.value());
-
         try (FileOutputStream fos = new FileOutputStream(file + OsUtils.OS_wrapper(path + "@" + timeStampNano))) {
             fos.write(data);
             fos.close(); //There is no more need for this line since you had created the instance of "fos" inside the try. And this will automatically close the OutputStream
             //LOG.DEBUG(path + " save state with marker Id:" + msgId + " size to store:" + data.length);
         }
-
     }
-
-
     /**
      * the original MMIO.
      *
@@ -142,61 +121,43 @@ public class Writer {
         if (!reliable && out != null) {
             save_state_MMIO_synchronize(executor);
         }
-
-
         File file = create_dir(msgId);
-
         byte[] data = SerializationUtils.serialize(state.value());
-
         out = new RandomAccessFile(file
                 + OsUtils.OS_wrapper(path + "@" + timeStampNano), "rw")
                 .getChannel().map(FileChannel.MapMode.READ_WRITE, 0, data.length);
         out.put(data);
         reliable = false;
     }
-
-
     public synchronized void save_state_MMIO_shared(long msgId, long timeStampNano, int myiteration
             , String path, ExecutionNode executor, State state) throws IOException {
-
 //		collections.putIfAbsent(myiteration, new Collections(executor.operator, executor.operator.getNumTasks()));
 //		collections.GetAndUpdate(myiteration).add(msgId, timeStampNano, executor, myiteration, state.value_list());
-
         collections.add(msgId, timeStampNano, executor, myiteration, state.value());
     }
-
-
     class Collections {
         final int numTasks;
         private final int base;
         Serializable[] state;//an array of Serializable information from all executors of the same operator.
-
         Collections(TopologyComponent operator, int numTasks) {
             this.numTasks = numTasks;
             this.base = operator.getExecutorList().get(0).getExecutorID();
         }
-
         public synchronized void add(long msgId, Long timeStampNano, ExecutionNode executor, int myiteration, Serializable state_value) throws IOException {
             final int index = executor.getExecutorID() - base;
-
             if (myiteration > iteration) {
                 //LOG.DEBUG("Iteration" + myiteration + " started by: " + executor.getOP_full());
                 state = new Serializable[numTasks];
                 iteration++;
             }
-
             state[index] = state_value;
             cnt++;
-
             if (cnt == numTasks) {
                 LOG.info("iteration" + myiteration + " ready to write to disk by: " + executor.getOP_full());
-
                 if (!reliable) {
                     save_state_MMIO_synchronize(executor);
                 }
-
                 File file = create_dir(msgId);
-
 //				byte[] data = SerializationUtils.serialize(state);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
 //			GZIPOutputStream gzipOut = new GZIPOutputStream(baos);
@@ -204,9 +165,7 @@ public class Writer {
                 ObjectOutputStream objectOut = new ObjectOutputStream(Lz4out);
                 objectOut.writeObject(state);
                 objectOut.close();
-
                 byte[] data = baos.toByteArray();
-
                 LOG.info("save state with marker Id:" + msgId + " size to store:" + data.length);
                 out = new RandomAccessFile(file
                         + OsUtils.OS_wrapper(operator.getId() + "@" + timeStampNano), "rw")
@@ -217,5 +176,4 @@ public class Writer {
             }
         }
     }
-
 }

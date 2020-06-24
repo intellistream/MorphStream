@@ -1,5 +1,4 @@
 package state_engine.transaction.dedicated.ordered;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
@@ -17,25 +16,19 @@ import java.util.LinkedList;
 import static state_engine.Meta.MetaTypes.AccessType.*;
 import static state_engine.Meta.MetaTypes.kMaxAccessNum;
 import static state_engine.transaction.impl.TxnAccess.Access;
-
 /**
  * mimic of ACEP's LWM method.
  */
 public class TxnManagerLWM extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerLWM.class);
     final OrderLock orderLock;
-
-
     public TxnManagerLWM(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
-
         this.orderLock = OrderLock.getInstance();
     }
-
     public OrderLock getOrderLock() {
         return orderLock;
     }
-
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
             throws DatabaseException, InterruptedException {
@@ -60,8 +53,6 @@ public class TxnManagerLWM extends TxnManagerDedicated {
             return true;
         }
     }
-
-
     /**
      * This function shall be called for every input event *in order*
      *
@@ -87,22 +78,16 @@ public class TxnManagerLWM extends TxnManagerDedicated {
             default:
         }
     }
-
     //The following makes sure the lock_ratio is added in event sequence as in ACEP.
     @Override
     protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
         InsertLock(t_record, txn_context, accessType);
         return true;
     }
-
-
     @Override
     public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
-
         if (accessType == READ_ONLY) {
-
             SchemaRecord local_record = t_record.content_.ReadAccess(txn_context, accessType);// return the correct version.
-
             Access access = access_list_.NewAccess();
             access.access_type_ = READ_ONLY;
             access.access_record_ = t_record;
@@ -110,9 +95,7 @@ public class TxnManagerLWM extends TxnManagerDedicated {
             access.local_record_ = local_record;
             record_ref.setRecord(local_record);
             return true;
-
         } else if (accessType == READ_WRITE) {
-
             SchemaRecord local_record = t_record.content_.ReadAccess(txn_context, accessType);// return the correct version.
             Access access = access_list_.NewAccess();
             access.access_type_ = READ_WRITE;
@@ -122,24 +105,18 @@ public class TxnManagerLWM extends TxnManagerDedicated {
             access.timestamp_ = t_record.content_.GetTimestamp();
             record_ref.setRecord(local_record);//the application can only access to a local copy at this point of time.
             return true;
-
         } else {//does not support deletion..
             assert (false);
             return false;
         }
     }
-
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
         //Different from locking scheme, LWM returns only local copy... The actual install happens later at commit stage.
-
         if (accessType == READ_ONLY) {
             //The following makes sure the lock_ratio is added in event sequence
-
             InsertLock(t_record, txn_context, accessType);
-
             SchemaRecord local_record = t_record.content_.ReadAccess(txn_context, accessType);// return the correct version.
-
             Access access = access_list_.NewAccess();
             access.access_type_ = READ_ONLY;
             access.access_record_ = t_record;
@@ -147,7 +124,6 @@ public class TxnManagerLWM extends TxnManagerDedicated {
             access.local_record_ = local_record;
             record_ref.setRecord(local_record);
             return true;
-
         } else if (accessType == READ_WRITE) {
             InsertLock(t_record, txn_context, accessType);
             SchemaRecord local_record = t_record.content_.ReadAccess(txn_context, accessType);// return the correct version.
@@ -159,14 +135,11 @@ public class TxnManagerLWM extends TxnManagerDedicated {
             access.timestamp_ = t_record.content_.GetTimestamp();
             record_ref.setRecord(local_record);//the application can only access to a local copy at this point of time.
             return true;
-
         } else {//does not support deletion..
             assert (false);
             return false;
         }
     }
-
-
     @Override
     public boolean CommitTransaction(TxnContext txn_context) {
         boolean is_success = true;
@@ -187,11 +160,8 @@ public class TxnManagerLWM extends TxnManagerDedicated {
 				}
 			}
 		}*/
-
         // install.
-
         long commit_timestamp = txn_context.getBID();
-
         if (is_success) {
 //			long curr_epoch = Epoch.GetEpoch();
 //			commit_timestamp = GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
@@ -208,7 +178,6 @@ public class TxnManagerLWM extends TxnManagerDedicated {
             Access access_ptr = access_list_.GetAccess(i);
             if (access_ptr.access_type_ == READ_ONLY) {
                 access_ptr.access_record_.content_.ReleaseReadLock();
-
             } else if (access_ptr.access_type_ == READ_WRITE) {
 //				if (certify_count > 0) {
 //					access_ptr.access_record_.content_.ReleaseCertifyLock();
@@ -218,9 +187,7 @@ public class TxnManagerLWM extends TxnManagerDedicated {
 //				}
             }
         }
-
         assert (certify_count == 0);
-
         if (is_success) {
             // clean up.
             for (int i = 0; i < access_list_.access_count_; ++i) {
@@ -237,19 +204,14 @@ public class TxnManagerLWM extends TxnManagerDedicated {
                 access_ptr.local_record_ = null;
             }
         }
-
         assert (access_list_.access_count_ <= kMaxAccessNum);
         access_list_.Clear();
         is_first_access_ = true;
-
 //		END_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
         return is_success;
-
     }
-
     @Override
     public void AbortTransaction() {
         //not in use in this scheme.
     }
-
 }

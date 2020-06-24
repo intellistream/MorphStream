@@ -1,5 +1,4 @@
 package state_engine.content;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.Meta.MetaTypes;
@@ -10,7 +9,6 @@ import state_engine.storage.datatype.DataBox;
 import state_engine.utils.Utils;
 
 import java.util.List;
-
 /**
  * #elif TO
  * ToContentImpl content_;
@@ -37,8 +35,6 @@ public class ToContentImpl extends ToContent {
     // commit request queue.
     private RequestEntry commit_requests_head_;
     private SpinLock spinlock_ = new SpinLock();
-
-
     public ToContentImpl() {
         read_ts_ = 0;
         write_ts_ = 0;
@@ -48,7 +44,6 @@ public class ToContentImpl extends ToContent {
         write_requests_head_ = null;
         commit_requests_head_ = null;
     }
-
     /**
      * @param timestamp
      * @param data
@@ -82,7 +77,6 @@ public class ToContentImpl extends ToContent {
         spinlock_.unlock();
         return is_success;
     }
-
     @Override
     public boolean RequestWriteAccess(final long timestamp, List<DataBox> data) {
         boolean is_success = true;
@@ -99,8 +93,6 @@ public class ToContentImpl extends ToContent {
         spinlock_.unlock();
         return is_success;
     }
-
-
     /**
      * commit write Operation.
      *
@@ -139,7 +131,6 @@ public class ToContentImpl extends ToContent {
         }
         spinlock_.unlock();
     }
-
     @Override
     public void RequestAbort(long timestamp) {
         spinlock_.lock();
@@ -149,28 +140,20 @@ public class ToContentImpl extends ToContent {
         //delete entry;
         //entry = NULL;
     }
-
     @Override
     public SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, MetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
-
     @Override
     public SchemaRecord readPreValues(long ts) {
         return null;
     }
-
     @Override
     public void clean_map(long mark_ID) {
-
     }
-
     @Override
     public void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
-
     }
-
-
     // this function is always called after write has been installed or aborted.
     void UpdateBuffer() {
         while (true) {
@@ -192,7 +175,6 @@ public class ToContentImpl extends ToContent {
                 // copy data here.
                 // data has already been allocated.
                 read_entry.data_ = Utils.memcpy(data);//memcpy( * (read_entry -> data_), data_ptr_, data_size_);
-
                 // directly read.
                 if (read_ts_ < read_entry.timestamp_) {
                     read_ts_ = read_entry.timestamp_;
@@ -248,19 +230,14 @@ public class ToContentImpl extends ToContent {
 //			win_commit = null;
         }
     }
-
-
     long GetMinReadTimestamp() {
         RequestEntry tmp_entry = read_requests_head_;
         return GetMinTimestamp(tmp_entry);
     }
-
     long GetMinWriteTimestamp() {
         RequestEntry tmp_entry = write_requests_head_;
         return GetMinTimestamp(tmp_entry);
     }
-
-
     long GetMinTimestamp(RequestEntry tmp_entry) {
         long new_min_ts = Integer.MAX_VALUE;
         // the request list is sorted from big to small
@@ -274,8 +251,6 @@ public class ToContentImpl extends ToContent {
         }
         return new_min_ts;
     }
-
-
     // we can get a list of matching request
     RequestEntry DebufferCommitRequest() {
         RequestEntry ret_entry = null;
@@ -294,7 +269,6 @@ public class ToContentImpl extends ToContent {
         }
         return ret_entry;
     }
-
     RequestEntry DebufferReadRequest() {
         RequestEntry ret_entry = null;
         RequestEntry tmp_entry = read_requests_head_;
@@ -312,11 +286,9 @@ public class ToContentImpl extends ToContent {
         }
         return ret_entry;
     }
-
     // we can always get exactly one matching request.
     RequestEntry DebufferWriteRequest(final long timestamp) {
         assert (write_requests_head_ != null);
-
         RequestEntry ret_entry = write_requests_head_;
         RequestEntry prev_entry = null;
         while (ret_entry != null && ret_entry.timestamp_ != timestamp) {
@@ -325,7 +297,6 @@ public class ToContentImpl extends ToContent {
         }
         // we must find exactly one matcing request.
         assert (ret_entry != null);
-
         if (prev_entry != null) {
             prev_entry.next_ = ret_entry.next_;
         } else {
@@ -334,8 +305,6 @@ public class ToContentImpl extends ToContent {
         ret_entry.next_ = null;
         return ret_entry;
     }
-
-
     private void BufferReadRequest(final long timestamp, List<DataBox> data, boolean[] is_ready) {
         RequestEntry entry = new RequestEntry();
         entry.timestamp_ = timestamp;
@@ -362,7 +331,6 @@ public class ToContentImpl extends ToContent {
             min_read_ts_ = timestamp;
         }
     }
-
     private void BufferWriteRequest(final long timestamp, List<DataBox> data) {
         RequestEntry entry = new RequestEntry();
         entry.timestamp_ = timestamp;
@@ -388,7 +356,6 @@ public class ToContentImpl extends ToContent {
             min_write_ts_ = timestamp;
         }
     }
-
     void BufferCommitRequest(final long timestamp, boolean[] is_ready) {
         RequestEntry entry = new RequestEntry();
         entry.timestamp_ = timestamp;

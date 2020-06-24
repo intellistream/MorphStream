@@ -1,9 +1,7 @@
 package sesame.components.windowing;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
-
 public interface WindowLifecycleListener<T> {
     /**
      * Called on expiry of events from the window due to {@link EvictionPolicy}
@@ -11,7 +9,6 @@ public interface WindowLifecycleListener<T> {
      * @param events the expired events
      */
     void onExpiry(List<T> events);
-
     /**
      * Called on activation of the window due to the {@link TriggerPolicy}
      *
@@ -23,7 +20,6 @@ public interface WindowLifecycleListener<T> {
     default void onActivation(List<T> events, List<T> newEvents, List<T> expired, Long referenceTime) {
         throw new UnsupportedOperationException("Not implemented");
     }
-
     /**
      * Called on activation of the window due to the {@link TriggerPolicy}. This is typically invoked when
      * the windows are persisted in state and is huge to be loaded entirely in memory.

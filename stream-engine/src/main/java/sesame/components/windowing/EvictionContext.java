@@ -1,5 +1,4 @@
 package sesame.components.windowing;
-
 /**
  * Context information that can be used by the eviction policy
  */
@@ -12,22 +11,18 @@ public interface EvictionContext {
      * @return the reference time in millis
      */
     Long getReferenceTime();
-
     /**
      * Returns the sliding count for count based windows
      *
      * @return the sliding count
      */
     Long getSlidingCount();
-
-
     /**
      * Returns the sliding interval for time based windows
      *
      * @return the sliding interval
      */
     Long getSlidingInterval();
-
     /**
      * Returns the current count of events in the queue up to the reference time
      * based on which count based evictions can be performed.

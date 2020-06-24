@@ -1,6 +1,5 @@
 package sesame.components.operators.api;
-
-import application.util.Configuration;
+import common.collections.Configuration;
 import org.slf4j.Logger;
 import sesame.components.windowing.TimestampExtractor;
 import sesame.components.windowing.TupleFieldTimestampExtractor;
@@ -8,23 +7,18 @@ import sesame.components.windowing.TupleFieldTimestampExtractor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
-
     private static final long serialVersionUID = 8521068118350597004L;
     private final transient Map<String, Object> windowConfiguration;
     private TimestampExtractor timestampExtractor;
-
     protected BaseWindowedBolt(double w) {
         super((double) 0, w);
         windowConfiguration = new HashMap<>();
     }
-
     public BaseWindowedBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity, double branch_selectivity, double read_selectivity, boolean byP, double event_frequency, double w) {
         super(log, input_selectivity, output_selectivity, branch_selectivity, read_selectivity, byP, event_frequency, w);
         windowConfiguration = new HashMap<>();
     }
-
     private BaseWindowedBolt withWindowLength(Count count) {
         if (count.value <= 0) {
             throw new IllegalArgumentException("Window length must be positive [" + count + "]");
@@ -32,16 +26,13 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         windowConfiguration.put(Configuration.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT, count.value);
         return this;
     }
-
     private BaseWindowedBolt withWindowLength(Duration duration) {
         if (duration.value <= 0) {
             throw new IllegalArgumentException("Window length must be positive [" + duration + "]");
         }
-
         windowConfiguration.put(Configuration.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS, duration.value);
         return this;
     }
-
     private BaseWindowedBolt withSlidingInterval(Count count) {
         if (count.value <= 0) {
             throw new IllegalArgumentException("Sliding interval must be positive [" + count + "]");
@@ -49,7 +40,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         windowConfiguration.put(Configuration.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT, count.value);
         return this;
     }
-
     private BaseWindowedBolt withSlidingInterval(Duration duration) {
         if (duration.value <= 0) {
             throw new IllegalArgumentException("Sliding interval must be positive [" + duration + "]");
@@ -57,7 +47,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         windowConfiguration.put(Configuration.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, duration.value);
         return this;
     }
-
     /**
      * JumboTuple count based sliding window configuration.
      *
@@ -67,7 +56,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     public BaseWindowedBolt withWindow(Count windowLength, Count slidingInterval) {
         return withWindowLength(windowLength).withSlidingInterval(slidingInterval);
     }
-
     /**
      * JumboTuple count and time duration based sliding window configuration.
      *
@@ -77,7 +65,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     public BaseWindowedBolt withWindow(Count windowLength, Duration slidingInterval) {
         return withWindowLength(windowLength).withSlidingInterval(slidingInterval);
     }
-
     /**
      * Time duration and count based sliding window configuration.
      *
@@ -87,7 +74,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     public BaseWindowedBolt withWindow(Duration windowLength, Count slidingInterval) {
         return withWindowLength(windowLength).withSlidingInterval(slidingInterval);
     }
-
     /**
      * Time duration based sliding window configuration.
      *
@@ -97,7 +83,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     public BaseWindowedBolt withWindow(Duration windowLength, Duration slidingInterval) {
         return withWindowLength(windowLength).withSlidingInterval(slidingInterval);
     }
-
     /**
      * A tuple count based window that slides with every incoming tuple.
      *
@@ -106,7 +91,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     public BaseWindowedBolt withWindow(Count windowLength) {
         return withWindowLength(windowLength).withSlidingInterval(new Count(1));
     }
-
     /**
      * A time duration based window that slides with every incoming tuple.
      *
@@ -115,7 +99,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     public BaseWindowedBolt withWindow(Duration windowLength) {
         return withWindowLength(windowLength).withSlidingInterval(new Count(1));
     }
-
     /**
      * A count based tumbling window.
      *
@@ -124,7 +107,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     public BaseWindowedBolt withTumblingWindow(Count count) {
         return withWindowLength(count).withSlidingInterval(count);
     }
-
     /**
      * A time duration based tumbling window.
      *
@@ -133,7 +115,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     public BaseWindowedBolt withTumblingWindow(Duration duration) {
         return withWindowLength(duration).withSlidingInterval(duration);
     }
-
     /**
      * Specify a field in the tuple that represents the timestamp as a long value_list. If this
      * field is not present in the incoming tuple, an {@link IllegalArgumentException} will be thrown.
@@ -143,7 +124,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     public BaseWindowedBolt withTimestampField(String fieldName) {
         return withTimestampExtractor(TupleFieldTimestampExtractor.of(fieldName));
     }
-
     /**
      * Specify the timestamp extractor implementation.
      *
@@ -156,11 +136,9 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         this.timestampExtractor = timestampExtractor;
         return this;
     }
-
     public TimestampExtractor getTimestampExtractor() {
         return timestampExtractor;
     }
-
     /**
      * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the
      * {@link org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field.
@@ -173,7 +151,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         windowConfiguration.put(Configuration.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM, streamId);
         return this;
     }
-
     /**
      * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps
      * cannot be out of order by more than this amount.
@@ -184,7 +161,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         windowConfiguration.put(Configuration.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS, duration.value);
         return this;
     }
-
     /**
      * Specify the watermark input_event generation interval. For tuple based timestamps, watermark events
      * are used to track the progress of time
@@ -195,17 +171,14 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         windowConfiguration.put(Configuration.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, interval.value);
         return this;
     }
-
     /**
      * Holds a count value_list for count based windows and sliding intervals.
      */
     public static class Count {
         public final int value;
-
         public Count(int value) {
             this.value = value;
         }
-
         /**
          * Returns a {@link Count} of given value_list.
          *
@@ -215,7 +188,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         public static Count of(int value) {
             return new Count(value);
         }
-
         @Override
         public String toString() {
             return "Count{" +
@@ -223,17 +195,14 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
                     '}';
         }
     }
-
     /**
      * Holds a Time duration for time based windows and sliding intervals.
      */
     public static class Duration {
         public final int value;
-
         public Duration(int value, TimeUnit timeUnit) {
             this.value = (int) timeUnit.toMillis(value);
         }
-
         /**
          * Returns a {@link Duration} corresponding to the the given value_list in milli seconds.
          *
@@ -243,7 +212,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         public static Duration of(int milliseconds) {
             return new Duration(milliseconds, TimeUnit.MILLISECONDS);
         }
-
         /**
          * Returns a {@link Duration} corresponding to the the given value_list in days.
          *
@@ -253,7 +221,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         public static Duration days(int days) {
             return new Duration(days, TimeUnit.DAYS);
         }
-
         /**
          * Returns a {@link Duration} corresponding to the the given value_list in hours.
          *
@@ -263,7 +230,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         public static Duration hours(int hours) {
             return new Duration(hours, TimeUnit.HOURS);
         }
-
         /**
          * Returns a {@link Duration} corresponding to the the given value_list in minutes.
          *
@@ -273,7 +239,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         public static Duration minutes(int minutes) {
             return new Duration(minutes, TimeUnit.MINUTES);
         }
-
         /**
          * Returns a {@link Duration} corresponding to the the given value_list in seconds.
          *
@@ -283,7 +248,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
         public static Duration seconds(int seconds) {
             return new Duration(seconds, TimeUnit.SECONDS);
         }
-
         @Override
         public String toString() {
             return "Duration{" +
@@ -291,8 +255,6 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
                     '}';
         }
     }
-
-
 //	public Map<String, Object> getComponentConfiguration() {
 //		return windowConfiguration;
 //	}

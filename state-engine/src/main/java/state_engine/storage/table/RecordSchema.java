@@ -1,5 +1,4 @@
 package state_engine.storage.table;
-
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.*;
 
@@ -7,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 /**
  * The RecordSchema of a particular table.
  * <p>
@@ -21,25 +19,19 @@ public class RecordSchema {
     private List<String> fields;
     private List<DataBox> fieldTypes;
     private int size;
-
     public RecordSchema(List<String> fields, List<DataBox> fieldTypes) {
         assert (fields.size() == fieldTypes.size());
-
         this.fields = fields;
         this.fieldTypes = fieldTypes;
         this.size = 0;
-
         for (DataBox dt : fieldTypes) {
             this.size += dt.getSize();
         }
         secondary_num_ = fields.size();
-
     }
-
     public int getSecondary_num_() {
         return secondary_num_;
     }
-
     /**
      * Verifies that a list of DataBoxes corresponds to this schema. A list of
      * DataBoxes corresponds to this schema if the number of DataBoxes in the
@@ -54,23 +46,18 @@ public class RecordSchema {
         if (values.size() != this.fieldTypes.size()) {
             throw new SchemaException("Different numbers of fields specified.");
         }
-
         for (int i = 0; i < values.size(); i++) {
             DataBox valueType = values.get(i);
             DataBox fieldType = this.fieldTypes.get(i);
-
             if (!(valueType.type().equals(fieldType.type()))) {
                 throw new SchemaException("Field " + i + " is " + valueType.type() + " instead of " + fieldType.type() + ".");
             }
-
             if (valueType.getSize() != fieldType.getSize()) {
                 throw new SchemaException("Field " + i + " is " + valueType.getSize() + " bytes instead of " + fieldType.getSize() + " bytes.");
             }
         }
-
         return new SchemaRecord(values);
     }
-
     /**
      * Serializes the provided d_record into a byte[]. Uses the DataBoxes'
      * serialization methods. A serialized d_record is represented as the
@@ -82,14 +69,11 @@ public class RecordSchema {
      */
     public byte[] encode(SchemaRecord record) {
         ByteBuffer byteBuffer = ByteBuffer.allocate(this.size);
-
         for (DataBox value : record.getValues()) {
             byteBuffer.put(value.getBytes());
         }
-
         return byteBuffer.array();
     }
-
     /**
      * Takes a byte[] and decodes it into a SchemaRecord. This method assumes that the
      * input byte[] represents a d_record that corresponds to this schema.
@@ -99,12 +83,10 @@ public class RecordSchema {
      */
     public SchemaRecord decode(byte[] input) {
         int offset = 0;
-
         List<DataBox> values = new ArrayList<>();
         for (DataBox field : fieldTypes) {
             byte[] fieldBytes = Arrays.copyOfRange(input, offset, offset + field.getSize());
             offset += field.getSize();
-
             switch (field.type()) {
                 case STRING:
                     values.add(new StringDataBox(fieldBytes));
@@ -120,47 +102,36 @@ public class RecordSchema {
                     break;
             }
         }
-
         return new SchemaRecord(values);
     }
-
     public int getEntrySize() {
         return this.size;
     }
-
     public List<String> getFieldNames() {
         return this.fields;
     }
-
     public List<DataBox> getFieldTypes() {
         return this.fieldTypes;
     }
-
     @Override
     public boolean equals(Object other) {
         if (!(other instanceof RecordSchema)) {
             return false;
         }
-
         RecordSchema otherSchema = (RecordSchema) other;
-
         if (this.fields.size() != otherSchema.fields.size()) {
             return false;
         }
-
         for (int i = 0; i < this.fields.size(); i++) {
             DataBox thisType = this.fieldTypes.get(i);
             DataBox otherType = otherSchema.fieldTypes.get(i);
-
             if (thisType.type() != otherType.type()) {
                 return false;
             }
-
             if (thisType.type().equals(DataBox.Types.STRING) && thisType.getSize() != otherType.getSize()) {
                 return false;
             }
         }
-
         return true;
     }
 }

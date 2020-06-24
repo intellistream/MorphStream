@@ -73,7 +73,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>application.state_engine.utils</mainClass>
+                            <mainClass>common.state_engine.utils</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

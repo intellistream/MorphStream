@@ -1,6 +1,5 @@
 package sesame.optimization.impl.scheduling;
-
-import application.util.Configuration;
+import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.execution.ExecutionGraph;
@@ -10,8 +9,6 @@ import sesame.optimization.impl.SchedulingPlan;
 import sesame.optimization.model.Constraints;
 
 import java.util.ArrayList;
-
-
 /**
  * Created by tony on 3/20/2017.
  */
@@ -20,7 +17,6 @@ public class TOFF_hardConstraint extends PlanScheduler {
     //    double relax_cpu;
 //    double relax_memory;
 //    double relax_qpi;
-
     public TOFF_hardConstraint(ExecutionGraph graph, int numNodes, int numCPUs, Constraints cons, Configuration conf) {
         this.numNodes = numNodes;
         this.numCPUs = numCPUs;
@@ -28,20 +24,16 @@ public class TOFF_hardConstraint extends PlanScheduler {
         this.cons = cons; //this.relax_cpu = this.relax_memory = this.relax_qpi = relax;//set default relax
         this.conf = conf;
     }
-
     //TO-FF: topological ordered first fit algorithm.
     public SchedulingPlan Search(boolean worst_plan, int timeoutMs) {
         initilize(worst_plan, conf);
         //main course.
         final ArrayList<ExecutionNode> sort_opList = graph.sort();
         final long s = System.currentTimeMillis();
-
         double output_rate;
-
         currentPlan = FF_Packing(currentPlan, sort_opList);
         //At this moment, currentplan's cacheMap is correct.
         output_rate = currentPlan.getOutput_rate(true);
-
         if (output_rate > targetOutput) {
             targetOutput = output_rate;
             best_plan = new SchedulingPlan(currentPlan, false);//GetAndUpdate best plan
@@ -52,9 +44,7 @@ public class TOFF_hardConstraint extends PlanScheduler {
         best_plan.outputrate = output_rate;
         return best_plan;
     }
-
     private SchedulingPlan FF_Packing(SchedulingPlan sp, ArrayList<ExecutionNode> sort_opList) {
-
         for (ExecutionNode executor : sort_opList) {
             //            if(executor.getOP().equalsIgnoreCase(ACCOUNT_BALANCE_BOLT_NAME)){
 //                LOG.info("");
@@ -85,8 +75,6 @@ public class TOFF_hardConstraint extends PlanScheduler {
 //        sp.relax_qpi = this.relax_qpi;
         return sp;
     }
-
-
     //    void initial_allocation(ArrayList<ExecutionNode> sort_opList) {
 //        final Iterator<ExecutionNode> iterator = sort_opList.iterator();
 //        while (iterator.hasNext()) {

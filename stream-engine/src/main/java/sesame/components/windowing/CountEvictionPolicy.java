@@ -1,7 +1,5 @@
 package sesame.components.windowing;
-
 import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * An eviction policy that tracks input_event counts and can
  * evict based on a threshold count.
@@ -12,12 +10,10 @@ public class CountEvictionPolicy<T> implements EvictionPolicy<T, Long> {
     private final int threshold;
     private final AtomicLong currentCount;
     private EvictionContext context;
-
     public CountEvictionPolicy(int count) {
         this.threshold = count;
         this.currentCount = new AtomicLong();
     }
-
     @Override
     public Action evict(Event<T> event) {
         /*
@@ -36,24 +32,20 @@ public class CountEvictionPolicy<T> implements EvictionPolicy<T, Long> {
         }
         return Action.PROCESS;
     }
-
     @Override
     public void track(Event<T> event) {
         if (!event.isWatermark()) {
             currentCount.incrementAndGet();
         }
     }
-
     @Override
     public EvictionContext getContext() {
         return context;
     }
-
     @Override
     public void setContext(EvictionContext context) {
         this.context = context;
     }
-
     @Override
     public String toString() {
         return "CountEvictionPolicy{" +
@@ -61,17 +53,14 @@ public class CountEvictionPolicy<T> implements EvictionPolicy<T, Long> {
                 ", currentCount=" + currentCount +
                 '}';
     }
-
     @Override
     public void reset() {
         // NOOP
     }
-
     @Override
     public Long getState() {
         return currentCount.get();
     }
-
     @Override
     public void restoreState(Long state) {
         currentCount.set(state);

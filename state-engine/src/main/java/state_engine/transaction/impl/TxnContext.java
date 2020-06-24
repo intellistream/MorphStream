@@ -1,14 +1,10 @@
 package state_engine.transaction.impl;
-
 import state_engine.storage.SchemaRecordRef;
-
-
 public class TxnContext {
     public final int thread_Id;
     private final int fid;
     private final long bid;
     private final String thisOpId;
-
     public long[] partition_bid;
     //    public long lock_ratio;
     public long index_time;
@@ -22,7 +18,6 @@ public class TxnContext {
     private boolean is_dependent_;
     private boolean is_adhoc_;
     private SchemaRecordRef record_ref;
-
     public TxnContext(int thread_Id, int fid, long bid) {
         this.thread_Id = thread_Id;
         this.thisOpId = null;
@@ -33,9 +28,7 @@ public class TxnContext {
         is_dependent_ = false;
         is_retry_ = false;
         record_ref = null;
-
     }
-
     /**
      * Multi-keys transaction
      *
@@ -53,9 +46,7 @@ public class TxnContext {
         is_retry_ = false;
         thread_Id = -1;
         record_ref = null;
-
     }
-
     /**
      * Single key transaction.
      *
@@ -67,45 +58,34 @@ public class TxnContext {
     public TxnContext(String thisOpId, int fid, long bid, SchemaRecordRef record_ref) {
         this(thisOpId, fid, bid);
     }
-
     public TxnContext(int thread_Id, int fid, long bid, SchemaRecordRef record_ref) {
         this(thread_Id, fid, bid);
         this.record_ref = record_ref;
     }
-
     public TxnContext(String thisOpId, int fid, long bid, double[] index_time) {
         this(thisOpId, fid, bid);
         index_time_ = index_time;
     }
-
     public TxnContext(int thread_Id, int fid, long bid, double[] index_time) {
         this(thread_Id, fid, bid);
         index_time_ = index_time;
     }
-
     public TxnContext(int thread_id, int fid, long bid, int pid) {
         this(thread_id, fid, bid);
         this.pid = pid;
     }
-
     public TxnContext(int thread_id, int fid, long[] bid, int pid) {
         this(thread_id, fid, bid[0]);
-
         this.partition_bid = bid;
         this.pid = pid;
     }
-
     public String getThisOpId() {
         return thisOpId;
     }
-
-
     public int getFID() {
         return fid;
     }
-
     public long getBID() {
         return bid;
     }
-
 }

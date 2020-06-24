@@ -1,12 +1,10 @@
 package state_engine.storage.table.stats;
-
 //import frontend.edu.brown.state_engine.utils.CollectionUtil;
 //import frontend.edu.brown.state_engine.utils.JSONUtil;
 //import frontend.voltdb.VoltType;
 //import frontend.voltdb.VoltTypeException;
 //import frontend.voltdb.catalog.SimpleDatabase;
 //import frontend.voltdb.state_engine.utils.VoltTypeUtil;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.query.QueryPlan;
@@ -16,7 +14,6 @@ import state_engine.storage.datatype.VoltTypeException;
 
 import java.util.*;
 import java.util.Map.Entry;
-
 /**
  * A very nice and simple generic Histogram
  *
@@ -49,14 +46,12 @@ public class ObjectHistogram<X> implements Histogram<X> {
      * on some natural ordering
      */
     private transient Comparable<X> min_value;
-
     /**
      * Constructor
      */
     public ObjectHistogram() {
         // Nothing...
     }
-
     /**
      * Constructor
      *
@@ -65,7 +60,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public ObjectHistogram(boolean keepZeroEntries) {
         this.keep_zero_entries = keepZeroEntries;
     }
-
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ObjectHistogram<?>) {
@@ -74,7 +68,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
         }
         return (false);
     }
-
 //	/**
 //	 * Copy Constructor.
 //	 * This is the same as calling putHistogram()
@@ -85,7 +78,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //		assert (other != null);
 //		this.add(other);
 //	}
-
     /**
      * The main method that updates a value_list in the histogram with a given sample count
      * This should be called by one of the public interface methods that are synchronized
@@ -100,7 +92,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
         if (value == null) {
             return (0);
         }
-
         // HACK: Try to infer the internal type if we don't have it already
         if (this.value_type == VoltType.INVALID) {
             try {
@@ -109,16 +100,13 @@ public class ObjectHistogram<X> implements Histogram<X> {
                 this.value_type = VoltType.NULL;
             }
         }
-
         this.num_samples += count;
-
         // If we already have this value_list in our histogram, then add the new
         // count to its existing overhead_total
         Long existing = this.histogram.get(value);
         if (existing != null) {
             count += existing;
         }
-
         // We can't have a negative value_list
         if (count < 0) {
             String msg = String.format("Invalid negative count for key '%s' [count=%d]", value, count);
@@ -138,7 +126,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
         this.dirty = true;
         return (count);
     }
-
 //	@Override
 //	public ObjectHistogram<X> setKeepZeroEntries(boolean flag) {
 //		// When this option is disabled, we need to remove all of the zeroed entries
@@ -162,12 +149,10 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //		this.keep_zero_entries = flag;
 //		return (this);
 //	}
-
 //	@Override
 //	public boolean isZeroEntriesEnabled() {
 //		return this.keep_zero_entries;
 //	}
-
     /**
      * Recalculate the min/max count value_list sets
      * Since this is expensive, this should only be done whenever that information is needed
@@ -181,11 +166,9 @@ public class ObjectHistogram<X> implements Histogram<X> {
         if (this.max_count_values == null) {
             this.max_count_values = new ArrayList<>();
         }
-
         if (this.dirty == false) {
             return;
         }
-
         // New Min/Max Counts
         // The reason we have to loop through and check every time is that our
         // value_list may be the current min/max count and thus it may or may not still
@@ -194,18 +177,15 @@ public class ObjectHistogram<X> implements Histogram<X> {
         this.min_count = Long.MAX_VALUE;
         this.min_value = null;
         this.max_value = null;
-
         for (Entry<X, Long> e : this.histogram.entrySet()) {
             X value = e.getKey();
             long cnt = e.getValue();
-
             // Is this value_list the new min/max values?
             if (this.min_value == null || this.min_value.compareTo(value) > 0) {
                 this.min_value = (Comparable<X>) value;
             } else if (this.max_value == null || this.max_value.compareTo(value) < 0) {
                 this.max_value = (Comparable<X>) value;
             }
-
             if (cnt <= this.min_count) {
                 if (cnt < this.min_count) {
                     this.min_count_values.clear();
@@ -223,7 +203,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
         } // FOR
         this.dirty = false;
     }
-
     /**
      * Get the number of samples entered into the histogram using the put methods
      *
@@ -233,7 +212,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public int getSampleCount() {
         return (this.num_samples);
     }
-
     /**
      * Return the internal variable for what we "think" the type is for this
      * Histogram Use this at your own risk
@@ -243,8 +221,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public VoltType getEstimatedType() {
         return (this.value_type);
     }
-
-//	/**
+    //	/**
 //	 * Get the number of unique values entered into the histogram
 //	 *
 //	 * @return
@@ -253,18 +230,15 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //	public int getValueCount() {
 //		return (this.histogram.values().size());
 //	}
-
     @Override
     public Collection<X> values() {
         return (Collections.unmodifiableCollection(this.histogram.keySet()));
     }
-
     @Override
     public synchronized void add(X value) {
         this._put(value, 1);
     }
-
-//	@Override
+    //	@Override
 //	public Collection<X> getValuesForCount(long count) {
 //		Set<X> ret = new HashSet<X>();
 //		for (Entry<X, Long> e : this.histogram.entrySet()) {
@@ -274,7 +248,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //		} // FOR
 //		return (ret);
 //	}
-
 //	@Override
 //	public synchronized void clean() {
 //		this.histogram.clean();
@@ -321,50 +294,39 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //	public boolean isEmpty() {
 //		return (this.histogram.isEmpty());
 //	}
-
     // ----------------------------------------------------------------------------
     // PUT METHODS
     // ----------------------------------------------------------------------------
-
 //	@Override
 //	public synchronized long put(X value_list, long delta_long) {
 //		return this._put(value_list, delta_long);
 //	}
-
     @Override
     public void removeValue(X value) {
-
     }
-
     @Override
     public float computeReductionFactor(QueryPlan.PredicateOperator predicate, DataBox value) {
         return 0;
     }
-
     @Override
     public int getEntriesInRange(X start, X end) {
         return 0;
     }
-
     @Override
     public int getMinValueIndex() {
         return 0;
     }
-
     @Override
     public int getMaxValueIndex() {
         return 0;
     }
-
     @SuppressWarnings("unchecked")
-
     @Override
     public X getMinValue() {
         this.calculateInternalValues();
         return ((X) this.min_value);
     }
-
-//	@Override
+    //	@Override
 //	public void putAll() {
 //		this.put(this.histogram.keySet(), 1);
 //	}
@@ -380,7 +342,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //			this._put(v, count);
 //		} // FOR
 //	}
-
 //	@Override
 //	public synchronized void put(Histogram<X> other) {
 //		if (other == this || other == null) {
@@ -399,11 +360,9 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //			} // FOR
 //		}
 //	}
-
     // ----------------------------------------------------------------------------
     // DECREMENT METHODS
     // ----------------------------------------------------------------------------
-
 //	@Override
 //	public synchronized long dec(X value_list, long delta_long) {
 //		assert (this.histogram.containsKey(value_list));
@@ -426,7 +385,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //			this._put(v, -1 * delta_long);
 //		} // FOR
 //	}
-
 //	@Override
 //	public synchronized void dec(Histogram<X> other) {
 //		if (other instanceof ObjectHistogram) {
@@ -442,33 +400,27 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //			} // FOR
 //		}
 //	}
-
     // ----------------------------------------------------------------------------
     // MIN/MAX METHODS
     // ----------------------------------------------------------------------------
-
     @SuppressWarnings("unchecked")
     @Override
     public X getMaxValue() {
         this.calculateInternalValues();
         return ((X) this.max_value);
     }
-
     @Override
     public int getNumDistinct() {
         return 0;
     }
-
     @Override
     public Histogram<X> copyWithReduction(float reductionFactor) {
         return null;
     }
-
     @Override
     public Histogram<X> copyWithPredicate(QueryPlan.PredicateOperator predicate, DataBox value) {
         return null;
     }
-
     /**
      * Returns the current count for the given value_list
      * If the value_list was never entered into the histogram, then the count will be null
@@ -479,7 +431,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public Long get(X value) {
         return (this.histogram.get(value));
     }
-
 //	@Override
 //	public long getMinCount() {
 //		this.calculateInternalValues();
@@ -503,11 +454,9 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //		this.calculateInternalValues();
 //		return (this.max_count_values);
 //	}
-
     // ----------------------------------------------------------------------------
     // UTILITY METHODS
     // ----------------------------------------------------------------------------
-
 //	@Override
 //	public synchronized long set(X value_list, long i) {
 //		Long orig = this.get(value_list);
@@ -525,11 +474,9 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //		}
 //		return 0l;
 //	}
-
     // ----------------------------------------------------------------------------
     // GET METHODS
     // ----------------------------------------------------------------------------
-
     /**
      * Returns the current count for the given value_list.
      * If that value_list was nevered entered in the histogram, then the value_list returned will be value_if_null
@@ -542,7 +489,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
         Long count = this.histogram.get(value);
         return (count == null ? value_if_null : count);
     }
-
     /**
      * Returns true if this histogram contains the specified key.
      *
@@ -552,18 +498,15 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public boolean contains(X value) {
         return (this.histogram.containsKey(value));
     }
-
     public enum Members {
         VALUE_TYPE,
         HISTOGRAM,
         NUM_SAMPLES,
         KEEP_ZERO_ENTRIES,
     }
-
     // ----------------------------------------------------------------------------
     // DEBUG METHODS
     // ----------------------------------------------------------------------------
-
 //	@Override
 //	public Histogram<X> setDebugLabels(Map<?, String> names_map) {
 //		if (names_map == null) {
@@ -620,7 +563,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //	public String toString(int max_chars, int max_len) {
 //		return HistogramUtil.toString(this, max_chars, max_len);
 //	}
-
     // ----------------------------------------------------------------------------
     // SERIALIZATION METHODS
     // ----------------------------------------------------------------------------
@@ -638,7 +580,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //	public void save(File output_path) throws IOException {
 //		JSONUtil.save(this, output_path);
 //	}
-
 //	@Override
 //	public String toJSONString() {
 //		return (JSONUtil.toJSONString(this));
@@ -684,7 +625,6 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //			}
 //		} // FOR
 //	}
-
 //	@Override
 //	public void fromJSON(JSONObject object, SimpleDatabase catalog_db) throws JSONException {
 //		this.value_type = VoltType.typeFromString(object.get(Members.VALUE_TYPE.name()).toString());

@@ -1,5 +1,4 @@
 package sesame.optimization.routing;
-
 import sesame.components.TopologyComponent;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.ExecutionNode;
@@ -7,14 +6,11 @@ import sesame.optimization.impl.SchedulingPlan;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-
 /**
  * Created by I309939 on 11/8/2016.
  */
-
 class Variable_list extends LinkedList {
     private static final long serialVersionUID = -5807395681735317165L;
-
     public Variable getVariables(int source, int dest) {
         for (Object o : this) {
             Variable v = (Variable) o;
@@ -25,27 +21,20 @@ class Variable_list extends LinkedList {
         return null;
     }
 }
-
 class Variable {
     public final int source_label;//belongs to which mapping_node.
     public final int dest_label;//belongs to which mapping_node.
-
     public Variable(int source_label, int dest_label, String var_name) {
         this.source_label = source_label;
         this.dest_label = dest_label;
     }
-
 }
-
 public class RoutingOptimizer {
     private final ExecutionGraph g;
     private final Variable_list VarList = new Variable_list();
-
     public RoutingOptimizer(ExecutionGraph g) {
-
         this.g = g;
     }
-
     //build variable list without h constraint function.
     private void buildVarListwithout_h() {
         for (ExecutionNode mn : g.getExecutionNodeArrayList()) {
@@ -57,7 +46,6 @@ public class RoutingOptimizer {
             }
         }
     }
-
     private double get_numerator(ArrayList<Double> array, int i) {
         double rt = 1;
         for (int j = 0; j < array.size(); j++) {
@@ -66,7 +54,6 @@ public class RoutingOptimizer {
         }
         return rt;
     }
-
 //    /**
 //     * take executor speed into account to do local optimal partition
 //     *
@@ -102,7 +89,6 @@ public class RoutingOptimizer {
 //        }
 //    }
 //
-
     /**
      * TODO: implement this in next version
      *
@@ -119,7 +105,6 @@ public class RoutingOptimizer {
 //                    update_partition(plan, parent);
 //        }
     }
-
     /**
      * currently use local optimal way to optimize the routing.
      *

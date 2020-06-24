@@ -1,5 +1,4 @@
 package sesame.components.windowing;
-
 /**
  * The callback_bolt fired by {@link TriggerPolicy} when the trigger
  * condition is satisfied.

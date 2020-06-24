@@ -1,6 +1,5 @@
 package sesame.optimization.impl.scheduling;
-
-import application.util.Configuration;
+import common.collections.Configuration;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,25 +14,18 @@ import sesame.optimization.model.cache;
 
 import java.util.*;
 import java.util.stream.IntStream;
-
 //import javax.ws.rs.NotSupportedException;
-
-
 /**
  * collocation decision
  */
-
 class Node implements Comparable {
     private static final Logger LOG = LoggerFactory.getLogger(Node.class);
     List<Decision> decisions;
     SchedulingPlan plan;
     double output_rate;//output rate of this node. maybe bound output rate or actual.. depends on whether this node is valid allocated.
-
     //   int newAllocate;
     Node() {
-
     }
-
     public Node(Node e) {
         this.decisions = new LinkedList<>(e.decisions);
         this.plan = new SchedulingPlan(e.plan, false);
@@ -41,7 +33,6 @@ class Node implements Comparable {
         this.setValidOperators(e.getvalidOperators());
         this.output_rate = e.output_rate;
     }
-
     public Node(List<Decision> decisions, Map<Integer,
             Boolean> validationMap, SchedulingPlan plan) {
         this.decisions = new LinkedList<>(decisions);
@@ -49,7 +40,6 @@ class Node implements Comparable {
         this.setValidationMap(new HashMap<>(validationMap));//duplicates the validationMap.
         this.setValidOperators(plan.validOperators);
         this.output_rate = plan.getBound_rate();//bounded function
-
         //enabled in debug mode
 //		if (!measure_end(validationMap, this.getvalidOperators())) {
 //			LOG.error("Something wrong here, Type anything to continue");
@@ -57,24 +47,18 @@ class Node implements Comparable {
 //			scanner.nextLine();
 //		}
     }
-
     public Map<Integer, Boolean> getValidationMap() {
         return plan.validationMap;
     }
-
     public void setValidationMap(Map<Integer, Boolean> validationMap) {
         plan.validationMap = validationMap;
     }
-
     public int getvalidOperators() {
         return plan.validOperators;
     }
-
     private void setValidOperators(int validOperators) {
         plan.validOperators = validOperators;//setValidOperators
     }
-
-
     private boolean check(Map<Integer, Boolean> validationMap, int validOperators) {
         int sum = 0;
         for (boolean b : validationMap.values()) {
@@ -84,7 +68,6 @@ class Node implements Comparable {
         }
         return sum == validOperators;
     }
-
     @Override
     public int compareTo(Object obj) {
         Node emp = (Node) obj;
@@ -111,17 +94,13 @@ class Node implements Comparable {
         }
         return 0;
     }
-
 //	public void validOperators_inc() {
 //		plan.validOperators++;
 //	}
 }
-
 class Node_Stack extends Stack<Node> {
-
     private static final long serialVersionUID = 7228068721836919471L;
 }
-
 /**
  * Search for optimal placement based on B&B.
  */
@@ -133,7 +112,6 @@ public class BranchAndBound extends PlanScheduler {
     private Node_Stack stack;
     private boolean restores = false;
     private boolean single_restores = false;
-
     public BranchAndBound(ExecutionGraph graph, int numNodes,
                           int numCPUs, Constraints cons, Configuration conf, SchedulingPlan scaling_plan) {
         this.conf = conf;
@@ -146,12 +124,10 @@ public class BranchAndBound extends PlanScheduler {
         LOG.info("compressed graph size:" + this.graph.getExecutionNodeArrayList().size());
         this.cons = cons;
         solution_node = new Node();
-
         if (scaling_plan != null && scaling_plan.success()) {
             currentPlan = scaling_plan;
         }
     }
-
     private Map<Integer, Boolean> initialValidation(ExecutionGraph graph) {
         Map<Integer, Boolean> validationMap = new HashMap<>();
         for (ExecutionNode e : graph.getExecutionNodeArrayList()) {
@@ -164,7 +140,6 @@ public class BranchAndBound extends PlanScheduler {
         }
         return validationMap;
     }
-
     private List<Decision> initialAllDecisions(ExecutionGraph graph) {
         List<Decision> decisionList = new LinkedList<>();
         for (ExecutionNode e : graph.getExecutionNodeArrayList()) {
@@ -184,22 +159,17 @@ public class BranchAndBound extends PlanScheduler {
         }
         return decisionList;
     }
-
-
     public SchedulingPlan Search(boolean worst_plan, int timeoutMs) {
         initilize(worst_plan, conf);
         double initialOutputRate = 0;
         double bk_sourceRate = currentPlan.variables.SOURCE_RATE;
-
         if (currentPlan.success()) {
             LOG.info("Use previously obtained plan as set_executor_ready plan");
             solution_node.plan = currentPlan;
             solution_node.output_rate = solution_node.plan.outputrate;
-
         } else {
             PlanScheduler initialScheduler;
             initialScheduler = new randomSearch_hardConstraints(graph, numNodes, numCPUs, cons, conf, null);
-
             boolean tss = true;
             if (tss) {
                 long start = System.nanoTime();
@@ -223,11 +193,8 @@ public class BranchAndBound extends PlanScheduler {
         cons.backup();
         cons.relax_reset();
         currentPlan.variables.SOURCE_RATE = bk_sourceRate;
-
         long start = System.nanoTime();
-
         SchedulingPlan plan = BnBSearching(timeoutMs);
-
         long end = System.nanoTime();
         LOG.info("It takes " + String.format("%.2f", (end - start) / 1E9) + " seconds to finish branch and bound searching");
         if (!plan.success()) {
@@ -243,23 +210,18 @@ public class BranchAndBound extends PlanScheduler {
         final SchedulingPlan decompression_plan = new SchedulingPlan(plan, original_graph);//convert graph back.
         return decompression_plan;//return the plan for further process.
     }
-
     public SchedulingPlan Search(ExecutionGraph graph) {
         return Search(false, 0);
     }
-
-
     private SchedulingPlan BnBSearching(int timeoutMs) {
         //LOG.DEBUG("BnB allowed time (sec):" + timeoutMs / 1000 / 1E3);
         node = new Node();
         stack = new Node_Stack();
         boolean improvedByBB = false;
         long end;
-
         node.decisions = initialAllDecisions(graph);
         node.plan = new SchedulingPlan(graph, numNodes, cons, conf, currentPlan.variables).AllLocal(graph);
         node.setValidationMap(initialValidation(graph));
-
 //		for (ExecutionNode executionNode : graph.getExecutionNodeArrayList()) {
 //			if (executionNode.operator.type == spoutType || executionNode.isVirtual()) {
 //				node.plan.allocate(executionNode, 0);
@@ -268,21 +230,16 @@ public class BranchAndBound extends PlanScheduler {
         node.output_rate = node.plan.getBound_rate();
         LOG.info("======Bound output rate:=======\t" + node.output_rate * 1E6);
         conf.put("bound", node.output_rate * 1E6);
-
-
         if (node.output_rate < solution_node.output_rate) {
             LOG.info("Bounded output rate is smaller than set_executor_ready plan's output rate??");
             node.plan.planToString(false, true);
         }
-
         stack.push(node);
-
         long start = System.currentTimeMillis();
         while (!stack.isEmpty()) {
             node = stack.pop();//the output rate of node is already updated during the construction of the node.
 //                LOG.info("solution_node.output_rate:" + solution_node.output_rate + "\tnode.outputRate:" + node.output_rate + "\t node.validOperators:" + node.validOperators);
             if (node.getvalidOperators() == graph.getExecutionNodeArrayList().size()) {
-
                 if (node.output_rate > solution_node.output_rate/*|| (solution_node.getvalidOperators() == 0 && !restores)*/) {
                     final double org_output_rate = solution_node.output_rate;
                     solution_node = new Node(node);
@@ -298,10 +255,8 @@ public class BranchAndBound extends PlanScheduler {
                 Clean(node);//eliminate un-relevant decisions.
                 Expand(node);
             }
-
             end = System.currentTimeMillis();
             double timeElaspedMS = (end - start);
-
             if (timeElaspedMS > timeoutMs) {//timeElaspedSEC> timeoutMs / 1E3) {//timeoutMs / 1E3) {
                 LOG.info("BnB takes too long: " + timeElaspedMS + " ms, now force to exist." + "\tcurrent nodes's output rate:"
                         + node.output_rate * 1E6 + "\tstack size:"
@@ -333,7 +288,6 @@ public class BranchAndBound extends PlanScheduler {
 //						return end_process();
 //					}
 //					break;
-
                     if (!solution_node.plan.success()) {
                         return end_process();
                     } else {
@@ -344,16 +298,13 @@ public class BranchAndBound extends PlanScheduler {
         }
         return solution_node.plan;
     }
-
     private SchedulingPlan end_process() {
         LOG.info("All efforts are failed, figure out the bottleneck operators and try to scale it up.");
         double largest_ratio = 1;
         for (ExecutionNode e : node.plan.graph.getExecutionNodeArrayList()) {
-
             if (e.operator.isLeadNode() || e.operator.isLeafNode()) {//don't scale spout and sink
                 continue;
             }
-
             Set<String> s = new HashSet<>(e.operator.input_streams);//remove duplicate input streams.
             for (String streamId : s) {
                 cache cache = node.plan.cacheMap.get(e.getExecutorID()).get(streamId);
@@ -378,11 +329,8 @@ public class BranchAndBound extends PlanScheduler {
         }
         return node.plan;
     }
-
     private SchedulingPlan Packing(SchedulingPlan sp, ArrayList<ExecutionNode> sort_opList) {
         final Iterator<ExecutionNode> iterator = sort_opList.iterator();
-
-
 //		HashMap<ExecutionNode, LinkedList<Integer>> map = new HashMap<>();//all combinations.
         while (iterator.hasNext()) {
             ExecutionNode executor = iterator.next();
@@ -390,7 +338,6 @@ public class BranchAndBound extends PlanScheduler {
                 int satisfy = cons.allstatisfy;//by default it is satisfied.
                 List<Integer> distinctNodes = new LinkedList<>();
                 IntStream.range(0, numNodes).filter(s -> !identical(node, distinctNodes, s)).forEach(distinctNodes::add);
-
                 for (int i : distinctNodes) {
                     sp.allocate(executor, i);
                     satisfy = cons.satisfy(sp, i);
@@ -400,7 +347,6 @@ public class BranchAndBound extends PlanScheduler {
                         sp.deallocate(executor);
                     }
                 }
-
                 if (satisfy != cons.allstatisfy) {
                     LOG.info("Operator\t" + executor.getOP()
                             + "\t is set_failed to allocate: " + satisfy);
@@ -411,12 +357,10 @@ public class BranchAndBound extends PlanScheduler {
         }
         //TODO: here, we have found all combinations to allocate the rest non-scheduled operators.
         //find the best one out of them?
-
 //		allocate_and_calculate(graph.getExecutionNodeArrayList().size(), node.plan, map);
         sp.set_success();
         return sp;
     }
-
     private void allocate_and_calculate(int size, SchedulingPlan plan, HashMap<ExecutionNode, LinkedList<Integer>> map) {
         for (ExecutionNode e : map.keySet()) {
             SchedulingPlan new_plan = new SchedulingPlan(plan, false);
@@ -425,9 +369,7 @@ public class BranchAndBound extends PlanScheduler {
             allocate_and_calculate(size, new_plan, e, map);
         }
     }
-
     private void allocate_and_calculate(int totalOperators, SchedulingPlan plan, ExecutionNode executionNode, HashMap<ExecutionNode, LinkedList<Integer>> map) {
-
         double max = 0;
         final LinkedList<Integer> integers = map.get(executionNode);
         for (Integer integer : integers) {
@@ -436,7 +378,6 @@ public class BranchAndBound extends PlanScheduler {
             new_plan.validationMap = new HashMap<>(plan.validationMap);
             new_plan.validOperators = plan.validOperators;
             new_plan.valid_allocate(executionNode, to_socket);
-
             for (ExecutionNode e : map.keySet()) {
                 if (!new_plan.validationMap.get(e.getExecutorID())) {
                     SchedulingPlan new_new_plan = new SchedulingPlan(new_plan, false);
@@ -452,12 +393,9 @@ public class BranchAndBound extends PlanScheduler {
                 if (best_plan.outputrate < output_rate) {
                     best_plan = new_plan;
                 }
-
             }
         }
     }
-
-
     /**
      * remove unnecessary decisions
      *
@@ -479,19 +417,15 @@ public class BranchAndBound extends PlanScheduler {
 //		LOG.info("Decision shrink from:" + node.decisions.size() + "to:" + cleaned.size());
         e.decisions = cleaned;
     }
-
     private void pushAll(Node_Stack stack, Map<Integer, List<Node>> children) {
-
         for (List<Node> nodeList : children.values()) {
             for (Node node : nodeList) {
                 stack.push(node);
             }
         }
     }
-
     private boolean Expand(Node e) {
         Map<Integer, List<Node>> children = ChildrenOf(e);
-
         if (children != null) {
 //			//**converging faster
 //			//	children.sort(Comparator.comparingDouble(Node::getvalidOperators));//increasing order
@@ -510,7 +444,6 @@ public class BranchAndBound extends PlanScheduler {
             return false;
         }
     }
-
     /**
      * if the newly created node is already in the cache, we shall not add it into children.
      *
@@ -526,14 +459,12 @@ public class BranchAndBound extends PlanScheduler {
         }
         return false;
     }
-
     private void CreateDoublePlans(SchedulingPlan plan, List<Decision> sub_decisionList, Node cur, List<Node> children) {
         if (plan != null) {
             Node c = new Node(sub_decisionList, cur.getValidationMap(), plan);//collocating nodes.
             children.add(c);
         }
     }
-
     /**
      * @param plan
      * @param sub_decisionList
@@ -550,10 +481,7 @@ public class BranchAndBound extends PlanScheduler {
         }
         return false;
     }
-
     private boolean branching_body(Node cur, Decision dec, List<Decision> sub_decisionList, List<Node> children, List<Integer> distinctNodes) {
-
-
         if (dec.producer == null) { //cases that consumer does not care as no NUMA.
             for (int s : distinctNodes) {
                 cur = new Node(node);
@@ -562,7 +490,6 @@ public class BranchAndBound extends PlanScheduler {
                     CreateSinglePlans(plan1, sub_decisionList, cur, children);
                 }
             }
-
         } else {
             if (bothReDeterminable(cur.getValidationMap(), dec)) {
                 // double_plans.computeIfAbsent(dec,k-> new LinkedList<>());
@@ -586,13 +513,10 @@ public class BranchAndBound extends PlanScheduler {
                 }
             }
         }
-
         return !children.isEmpty();
     }
-
     private Map<Integer, List<Node>> parallel_branching(List<Decision> decisionList, List<Integer> distinctNodes) {
         Map<Integer, List<Node>> global_children = new HashMap<>();
-
         IntStream.range(0, decisionList.size()).parallel().forEach(
                 i -> {
                     Node cur = new Node(node);
@@ -611,11 +535,9 @@ public class BranchAndBound extends PlanScheduler {
 //		}
         return global_children;
     }
-
     private List<Node> parallel_branching2(List<Decision> decisionList, List<Integer> distinctNodes) {
         List<Node> Flat_children =
                 Collections.synchronizedList(new LinkedList<>());
-
 //		LOG.info("decisionList.size():" + decisionList.size());
         IntStream.range(0, decisionList.size()).parallel().forEach(
                 i -> {
@@ -632,10 +554,8 @@ public class BranchAndBound extends PlanScheduler {
         );
         return Flat_children;
     }
-
     private List<Node> sequential_branching(List<Decision> decisionList, List<Integer> distinctNodes) {
         List<Node> Flat_children = new LinkedList<>();
-
         for (int i = 0; i < decisionList.size(); i++) {
             Node cur = new Node(node);
             Decision dec = decisionList.get(i);
@@ -648,7 +568,6 @@ public class BranchAndBound extends PlanScheduler {
         }
         return Flat_children;
     }
-
     /**
      * In each level of children, there are many-many repeated decisions.
      * Try to eliminate them.
@@ -657,18 +576,14 @@ public class BranchAndBound extends PlanScheduler {
      * @return
      */
     private Map<Integer, List<Node>> ChildrenOf(Node e) {
-
         //refine decisions here: remove all decisions that are no longer useful (involves already valid operators)
-
         List<Decision> decisionList = e.decisions;
         if (decisionList.isEmpty()) {
             return null;
         }
-
         // select only one form those "Identical Compute Nodes"
         List<Integer> distinctNodes =
                 new ArrayList<>();
-
         IntStream.range(0, numNodes).filter(s -> !identical(node, distinctNodes, s)).forEach(distinctNodes::add);
 //		long start = System.nanoTime();
         Map<Integer, List<Node>> nodeList = parallel_branching(decisionList, distinctNodes);
@@ -677,7 +592,6 @@ public class BranchAndBound extends PlanScheduler {
 //		//LOG.DEBUG("parallel branch takes (seconds):" + String.format("%.2f", (end - start) / 1E9));
         return nodeList;
     }
-
     private boolean identical(Node e, List<Integer> distinctNodes, int s) {
         for (int a : distinctNodes) {
             if (this.cons.identical_Nodes(e.getValidationMap(), e.plan, a, s)) {
@@ -686,14 +600,12 @@ public class BranchAndBound extends PlanScheduler {
         }
         return false;
     }
-
     private List<Node> covertMaptoList(Map<Integer, List<Node>> children) {
         List<Node> c =
                 Collections.synchronizedList(new ArrayList<Node>());
         children.values().parallelStream().forEach(c::addAll);
         return c;
     }
-
     private boolean parentsDetermined(Map<Integer, Boolean> validationMap, ExecutionNode executionNode) {
         for (TopologyComponent topo : executionNode.getParents().keySet()) {
             for (ExecutionNode parent : executionNode.getParentsOf(topo)) {
@@ -704,7 +616,6 @@ public class BranchAndBound extends PlanScheduler {
         }
         return true;
     }
-
     private boolean parentsDetermined(Map<Integer, Boolean> validationMap, ExecutionNode srcNode, ExecutionNode executionNode) {
         for (TopologyComponent topo : executionNode.getParents().keySet()) {
             for (ExecutionNode parent : executionNode.getParentsOf(topo)) {
@@ -715,7 +626,6 @@ public class BranchAndBound extends PlanScheduler {
         }
         return true;
     }
-
     /**
      * the nodes must haven't been allocated, but their parents must all be allocated.
      *

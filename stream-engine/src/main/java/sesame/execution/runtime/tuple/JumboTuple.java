@@ -1,12 +1,10 @@
 package sesame.execution.runtime.tuple;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
 import sesame.execution.runtime.tuple.impl.Marker;
 import sesame.execution.runtime.tuple.impl.Message;
 import sesame.execution.runtime.tuple.impl.Tuple;
-
 /**
  * Created by shuhaozhang on 10/7/16.
  * TODO:Make it generic!!
@@ -20,13 +18,10 @@ public class JumboTuple implements Comparable<JumboTuple> {
     public final Message[] msg;
     protected final int sourceId;
     private final TopologyContext context;//context given by producer
-
     //	private final int targetTasks;//this is no longer required as we avoid the usage of multi-consumer based implementation.
     public int length;//length of batch
     private long bid;
     //context is not going to be serialized.
-
-
     public JumboTuple(JumboTuple clone) {
         this.bid = clone.bid;
         this.sourceId = clone.sourceId;
@@ -35,8 +30,6 @@ public class JumboTuple implements Comparable<JumboTuple> {
         msg = new Message[length];
         System.arraycopy(clone.msg, 0, msg, 0, length);
     }
-
-
     public JumboTuple(int sourceId, long bid, int length, TopologyContext context) {
         this.sourceId = sourceId;
 //		this.targetTasks = targetTasks;
@@ -44,9 +37,7 @@ public class JumboTuple implements Comparable<JumboTuple> {
         this.msg = new Message[length];
         this.context = context;
         this.bid = bid;
-
     }
-
     public JumboTuple(int sourceId, long bid, int msg_size, TopologyContext context, Message... msg) {
         this.sourceId = sourceId;
 //		this.targetTasks = targetTasks;
@@ -55,7 +46,6 @@ public class JumboTuple implements Comparable<JumboTuple> {
         this.msg = msg;
         this.bid = bid;
     }
-
     /**
      * used in normal Tuple.
      *
@@ -71,56 +61,39 @@ public class JumboTuple implements Comparable<JumboTuple> {
         this.msg = new Message[1];
         this.msg[0] = message;
     }
-
-
     public int getSourceTask() {
         return sourceId;
     }
-
     public Tuple getTuple(int i) {
         return new Tuple(bid, sourceId, context, msg[i]);
     }
-
     public TopologyContext getContext() {
         return context;
     }
-
     public void add(Integer p, Message message) {
         msg[p] = message;
     }
-
-
     public String getSourceComponent() {
         return context.getComponent(sourceId).getId();
     }
-
     public String getSourceStreamId(int index_msg) {
         return msg[index_msg].streamId;
     }
-
     private int fieldIndex(String field, int index_msg) {
         return context.getComponentOutputFields(getSourceComponent(), getSourceStreamId(index_msg)).fieldIndex(field);
     }
-
     public Marker getMarker(int i) {
         return msg[i].getMarker();
     }
-
-
     public Object getValue(int index_field, int index_msg) {
         return msg[index_msg].getValue(index_field);
     }
-
     public Message getMsg(int index_msg) {
-
         return msg[index_msg];
     }
-
     public Object getValueByField(String field, int index_msg) {
         return msg[index_msg].getValue(fieldIndex(field, index_msg));
     }
-
-
     /**
      * Implicit assumption that String is passed as char array.
      *
@@ -129,59 +102,43 @@ public class JumboTuple implements Comparable<JumboTuple> {
      * @return
      */
     public String getString(int index_field, int index_msg) {
-
         return new String(getCharArray(index_field, index_msg));
 //		return new String((String) msg[index_msg].getValue(index_field));
-
     }
-
     public char[] getCharArray(int index_field, int index_msg) {
         return (char[]) msg[index_msg].getValue(index_field);
     }
-
     public int getInt(int index_field, int index_msg) {
         return (int) getValue(index_field, index_msg);
     }
-
     public long getLong(int index_field, int index_msg) {
         return (long) getValue(index_field, index_msg);
     }
-
     public double getDouble(int index_field, int index_msg) {
         return (double) getValue(index_field, index_msg);
     }
-
-
     public String getStringByField(String field, int index_msg) {
         return (String) getValueByField(field, index_msg);
     }
-
     public double getDoubleByField(String field, int index_msg) {
         return (double) getValueByField(field, index_msg);
     }
-
     public int getIntegerByField(String field, int index_msg) {
         return (int) getValueByField(field, index_msg);
     }
-
     public long getLongByField(String field, int index_msg) {
         return (long) getValueByField(field, index_msg);
     }
-
     public boolean getBooleanByField(String field, int index_msg) {
         return (boolean) getValueByField(field, index_msg);
     }
-
     public long getBID() {
         return bid;
     }
-
     @Override
     public int compareTo(JumboTuple o) {
         return Long.compare(this.bid, o.bid);
     }
-
-
 //	public int getTargetId() {
 //		return targetTasks;
 //	}

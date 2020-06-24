@@ -1,8 +1,6 @@
 package sesame.optimization;
-
 import sesame.optimization.impl.SchedulingPlan;
 import sesame.optimization.routing.RoutingPlan;
-
 /**
  * Created by I309939 on 11/8/2016.
  */
@@ -21,33 +19,26 @@ public class ExecutionPlan {
      */
     public boolean benchmark = false;
     public int profile_executor = -1;//start from -1;
-
     public ExecutionPlan() {
         SP = null;
         RP = null;
     }
-
     public ExecutionPlan(SchedulingPlan SP, RoutingPlan RP) {
         this.RP = RP;
         this.SP = SP;
     }
-
     public SchedulingPlan getSP() {
         return SP;
     }
-
     public boolean isProfile(int executorID) {
         return profile && (profile_executor == executorID);
     }
-
     public void setProfile() {
         this.profile = true;
     }
-
     public void disable_profile() {
         this.profile = false;
     }
-
     /**
      * correct one.
      *
@@ -58,7 +49,6 @@ public class ExecutionPlan {
         if (SP == null) return 0;//default is 0
         return SP.allocation_decision(executorID);
     }
-
 //	/**
 //	 * Ad-hoc test purpose.
 //	 *
@@ -72,5 +62,4 @@ public class ExecutionPlan {
 //			return 0;
 //		}
 //	}
-
 }

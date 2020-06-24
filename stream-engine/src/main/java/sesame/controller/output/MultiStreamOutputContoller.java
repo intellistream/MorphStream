@@ -1,7 +1,6 @@
 package sesame.controller.output;
-
-import application.Constants;
-import application.util.datatypes.StreamValues;
+import common.Constants;
+import common.util.datatypes.StreamValues;
 import sesame.components.MultiStreamComponent;
 import sesame.components.context.TopologyContext;
 import sesame.components.streaminfo;
@@ -11,8 +10,6 @@ import sesame.execution.runtime.tuple.impl.Marker;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
-
-
 /**
  * Created by shuhaozhang on 15/7/16.
  * Every executor has a outputStream Controller.
@@ -25,7 +22,6 @@ public class MultiStreamOutputContoller extends OutputController {
     private final HashMap<String, HashMap<String, PartitionController>> PClist;
     private HashMap<String, PartitionController[]> collections;
     private HashMap<String, Integer> counter;
-
     public MultiStreamOutputContoller(
             MultiStreamComponent op,
             HashMap<String, HashMap<String, PartitionController>> PClist) {
@@ -34,7 +30,6 @@ public class MultiStreamOutputContoller extends OutputController {
         this.PClist = PClist;
         collections = new HashMap<>();
         counter = new HashMap<>();//to fight against GC.
-
         for (String streamId : output_streams.keySet()) {
             PartitionController[] PartitionControllers = new PartitionController[getPartitionController(streamId).size()];
             for (int i = 0; i < getPartitionController(streamId).size(); i++) {
@@ -44,24 +39,18 @@ public class MultiStreamOutputContoller extends OutputController {
             collections.put(streamId, PartitionControllers);
         }
     }
-
-
     @Override
     public PartitionController getPartitionController(String streamId, String boltID) {
         return PClist.get(streamId).get(boltID);
     }
-
     @Override
     public Collection<PartitionController> getPartitionController() {
         return PClist.get(Constants.DEFAULT_STREAM_ID).values();
     }
-
     @Override
     public Collection<PartitionController> getPartitionController(String StreamId) {
         return PClist.get(StreamId).values();
     }
-
-
     public boolean isEmpty() {
         for (String stream : PClist.keySet()) {
             for (String op : PClist.get(stream).keySet()) {
@@ -72,7 +61,6 @@ public class MultiStreamOutputContoller extends OutputController {
         }
         return true;
     }
-
     @Override
     public void allocatequeue(boolean linked, int desired_elements_epoch_per_core) {
         for (String stream : PClist.keySet()) {
@@ -81,8 +69,6 @@ public class MultiStreamOutputContoller extends OutputController {
             }
         }
     }
-
-
     /**
      * Broadcast output tuples to all downstream operators.
      *
@@ -100,7 +86,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit(MetaGroup.get(p.childOP), streamId, bid, output);
         }
     }
-
     @Override
     public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, Object output) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -109,7 +94,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit(MetaGroup.get(p.childOP), streamId, bid, output);
         }
     }
-
     @Override
     public void force_emitOnStream(MetaGroup MetaGroup, String streamId, long bid, StreamValues data) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -118,8 +102,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.force_emit(MetaGroup.get(p.childOP), streamId, bid, data);
         }
     }
-
-
     @Override
     public void force_emitOnStream(MetaGroup MetaGroup, String streamId, long bid, Object... data) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -128,7 +110,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.force_emit(MetaGroup.get(p.childOP), streamId, bid, data);
         }
     }
-
     @Override
     public void force_emitOnStream(MetaGroup MetaGroup, String streamId, long[] bid, long msg_id, Object... data) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -137,7 +118,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.force_emit(MetaGroup.get(p.childOP), streamId, bid, msg_id, data);
         }
     }
-
     @Override
     public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, StreamValues data) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -146,8 +126,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit(MetaGroup.get(p.childOP), streamId, bid, data);
         }
     }
-
-
     @Override
     public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -156,8 +134,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit(MetaGroup.get(p.childOP), streamId, bid, deviceID, movingAvergeInstant, nextDouble);
         }
     }
-
-
     @Override
     public void force_emitOnStream(MetaGroup MetaGroup, String streamId, char[] data) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -166,17 +142,14 @@ public class MultiStreamOutputContoller extends OutputController {
             p.force_emit(MetaGroup.get(p.childOP), streamId, -1, data);//default bid is -1
         }
     }
-
     @Override
     public void emitOnStream(MetaGroup MetaGroup, String streamId, char[] data) throws InterruptedException {
-
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
             p.emit(MetaGroup.get(p.childOP), streamId, -1, data);//default bid is -1
         }
     }
-
     @Override
     public void emitOnStream(MetaGroup MetaGroup, String streamId, char[] data, long bid, long timestamp) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -185,7 +158,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit(MetaGroup.get(p.childOP), streamId, -1, data, bid, timestamp);//default bid is -1
         }
     }
-
     public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, char[] output) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
@@ -193,7 +165,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit(MetaGroup.get(p.childOP), streamId, bid, output);
         }
     }
-
     public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, char[] key, long value) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
@@ -201,7 +172,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit(MetaGroup.get(p.childOP), streamId, bid, key, value);
         }
     }
-
     /**
      * Broadcast output tuples to all downstream operators.
      *
@@ -220,7 +190,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_inorder(MetaGroup.get(p.childOP), streamId, bid, gap, output);
         }
     }
-
     @Override
     public void emitOnStream_inorder(MetaGroup MetaGroup, String streamId, long bid, LinkedList<Long> gap, char[] output) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -229,7 +198,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_inorder(MetaGroup.get(p.childOP), streamId, bid, gap, output);
         }
     }
-
     @Override
     public void emitOnStream_inorder(MetaGroup MetaGroup, String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -238,7 +206,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_inorder(MetaGroup.get(p.childOP), streamId, bid, gap, tuple);
         }
     }
-
     @Override
     public void emitOnStream_inorder_single(MetaGroup MetaGroup, String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -247,7 +214,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_inorder_single(MetaGroup.get(p.childOP), streamId, bid, gap, tuple);
         }
     }
-
     @Override
     public void emitOnStream_inorder_push(MetaGroup MetaGroup, String streamId, long bid, LinkedList<Long> gap) {
         PartitionController[] it = collections.get(streamId);
@@ -256,7 +222,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_inorder_push(MetaGroup.get(p.childOP), streamId, bid, gap);
         }
     }
-
     /**
      * Broadcast output tuples to all downstream operators.
      *
@@ -273,7 +238,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_bid(MetaGroup.get(p.childOP), streamId, output);
         }
     }
-
     @Override
     public void emitOnStream_bid(MetaGroup MetaGroup, String streamId, Object output) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -282,7 +246,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_bid(MetaGroup.get(p.childOP), streamId, output);
         }
     }
-
     @Override
     public void emitOnStream_bid(MetaGroup MetaGroup, String streamId, char[] data) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -291,7 +254,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_bid(MetaGroup.get(p.childOP), streamId, data);
         }
     }
-
     @Override
     public void emitOnStream_nowait(MetaGroup MetaGroup, String streamId, Object... output) {
         PartitionController[] it = collections.get(streamId);
@@ -300,7 +262,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_nowait(MetaGroup.get(p.childOP), streamId, output);
         }
     }
-
     @Override
     public void emitOnStream_nowait(MetaGroup MetaGroup, String streamId, char[] key, long value) {
         PartitionController[] it = collections.get(streamId);
@@ -309,17 +270,14 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_nowait(MetaGroup.get(p.childOP), streamId, key, value);
         }
     }
-
     @Override
     public void emitOnStream(MetaGroup MetaGroup, String streamId, char[] key, long value) throws InterruptedException {
-
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
             p.emit(MetaGroup.get(p.childOP), streamId, key, value);
         }
     }
-
     @Override
     public void emitOnStream(MetaGroup MetaGroup, String streamId, char[] key, long value, long bid, long TimeStamp) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -328,7 +286,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit(MetaGroup.get(p.childOP), streamId, key, value, bid, TimeStamp);
         }
     }
-
     @Override
     public void emitOnStream_nowait(MetaGroup MetaGroup, String streamId, char[] str) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
@@ -337,11 +294,8 @@ public class MultiStreamOutputContoller extends OutputController {
             p.emit_nowait(MetaGroup.get(p.childOP), streamId, str);
         }
     }
-
-
     @Override
     public void create_marker_boardcast(MetaGroup meta, long timestamp, long bid, int myiteration) {
-
         //non-blocking boardcast.
 //		Runnable r = () -> {
 //			for (PartitionController p :
@@ -350,8 +304,6 @@ public class MultiStreamOutputContoller extends OutputController {
 //			}
 //		};
 //		new Thread(r).start();
-
-
         for (String streamId : PClist.keySet()) {
             PartitionController[] it = collections.get(streamId);
             for (int i = 0; i < it.length; i++) {
@@ -360,7 +312,6 @@ public class MultiStreamOutputContoller extends OutputController {
             }
         }
     }
-
     @Override
     public void create_marker_single(MetaGroup meta, long timestamp, String streamId, long bid, int myiteration) {
         PartitionController[] it = collections.get(streamId);
@@ -369,7 +320,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.create_marker_single(meta.get(p.childOP), streamId, timestamp, bid, myiteration);
         }
     }
-
     @Override
     public void create_marker_boardcast(MetaGroup meta, long timestamp, String streamId, long bid, int myiteration) {
 //        non-blocking boardcast.
@@ -384,18 +334,14 @@ public class MultiStreamOutputContoller extends OutputController {
 //            }
 //		};
 //		new Thread(r).start();
-
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
             p.create_marker_boardcast(meta.get(p.childOP), streamId, timestamp, bid, myiteration);
         }
     }
-
-
     @Override
     public void marker_boardcast(MetaGroup MetaGroup, long bid, Marker marker) {
-
 //		//non-blocking boardcast.
 //		Runnable r = () -> {
 //			for (PartitionController p :
@@ -412,10 +358,8 @@ public class MultiStreamOutputContoller extends OutputController {
             }
         }
     }
-
     @Override
     public void marker_boardcast(MetaGroup MetaGroup, String streamId, long bid, Marker marker) {
-
 //		//non-blocking boardcast.
 //		Runnable r = () -> {
 //			for (PartitionController p :
@@ -430,7 +374,6 @@ public class MultiStreamOutputContoller extends OutputController {
             p.marker_boardcast(MetaGroup.get(p.childOP), streamId, bid, marker);
         }
     }
-
     @Override
     public void setContext(int executorID, TopologyContext context) {
         for (String stream : PClist.keySet()) {
@@ -439,7 +382,6 @@ public class MultiStreamOutputContoller extends OutputController {
             }
         }
     }
-
     /**
      * TODO: not sure if this is still needed.
      *
@@ -447,11 +389,7 @@ public class MultiStreamOutputContoller extends OutputController {
      * @return
      */
     public long getBID(String streamId) {
-
         return 0;
-
 //		return PClist.GetAndUpdate(streamId).values().iterator().next().getBID();
     }
-
-
 }
