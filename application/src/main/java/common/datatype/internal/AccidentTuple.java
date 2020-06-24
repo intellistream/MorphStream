@@ -17,9 +17,9 @@
  * #_
  */
 package common.datatype.internal;
+import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import common.collections.Time;
 import sesame.execution.runtime.tuple.impl.Fields;
 /**
  * {@link AccidentTuple} represents an intermediate result tuple; and reports and accident that occurred in a specific

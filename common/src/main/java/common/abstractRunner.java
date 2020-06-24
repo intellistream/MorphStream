@@ -1,8 +1,8 @@
 package common;
-import common.collections.Constants;
-import common.collections.OsUtils;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.internal.Lists;
+import common.collections.Constants;
+import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

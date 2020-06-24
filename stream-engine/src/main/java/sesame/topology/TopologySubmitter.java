@@ -6,11 +6,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.components.TopologyComponent;
+import sesame.components.exception.UnhandledCaseException;
 import sesame.execution.ExecutionGraph;
 import sesame.optimization.OptimizationManager;
 import state_engine.common.SpinLock;
 import state_engine.profiler.Metrics;
+
 import java.util.Collection;
+
 import static common.CONTROL.enable_shared_state;
 import static sesame.controller.affinity.SequentialBinding.SequentialBindingInitilize;
 import static state_engine.profiler.Metrics.POST_COMPUTE_COMPLEXITY;
@@ -24,7 +27,7 @@ public class TopologySubmitter {
     /**
      * TODO: support different configurations in TM.
      */
-    public Topology submitTopology(Topology topology, Configuration conf) {
+    public Topology submitTopology(Topology topology, Configuration conf) throws UnhandledCaseException {
         //compile
         ExecutionGraph g = new TopologyComiler().generateEG(topology, conf);
         Collection<TopologyComponent> topologyComponents = g.topology.getRecords().values();
@@ -47,7 +50,7 @@ public class TopologySubmitter {
             long end = System.nanoTime();
             LOG.info("DB initialize takes:" + (end - start) / 1E6 + " ms");
             OM.lanuch(topology.getPlatform(), topology.db);
-        } else
+        }else
             OM.lanuch(topology.getPlatform(), topology.db);
         OM.start();
         return g.topology;

@@ -1,9 +1,9 @@
 package common.sink;
 import common.Constants;
-import common.datatype.util.LRTopologyControl;
-import common.sink.helper.stable_sink_helper;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.datatype.util.LRTopologyControl;
+import common.sink.helper.stable_sink_helper;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

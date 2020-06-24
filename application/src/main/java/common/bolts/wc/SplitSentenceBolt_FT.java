@@ -1,8 +1,8 @@
 package common.bolts.wc;
-import common.constants.BaseConstants;
-import common.constants.WordCountConstants.Field;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.constants.BaseConstants;
+import common.constants.WordCountConstants.Field;
 import common.util.datatypes.StreamValues;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

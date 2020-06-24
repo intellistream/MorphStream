@@ -1,7 +1,7 @@
 package common.model.geoip;
-import common.constants.BaseConstants;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.constants.BaseConstants;
 public class IPLocationFactory {
     public static final String GEOIP2 = "geoip2";
     public static IPLocation create(String name, Configuration config) {

@@ -1,8 +1,8 @@
 package common.topology.transactional;
 import common.bolts.transactional.gs.*;
+import common.collections.Configuration;
 import common.constants.GrepSumConstants.Component;
 import common.topology.transactional.initializer.MBInitializer;
-import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.Topology;

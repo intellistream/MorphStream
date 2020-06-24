@@ -1,7 +1,7 @@
 package common.bolts.wc;
-import common.constants.WordCountConstants.Field;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.constants.WordCountConstants.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.operators.base.MapBolt;

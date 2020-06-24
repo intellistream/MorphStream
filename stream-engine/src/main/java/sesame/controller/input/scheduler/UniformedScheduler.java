@@ -3,9 +3,6 @@ import common.util.CompactHashMap.QuickHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.controller.input.InputStreamController;
-import sesame.execution.runtime.tuple.JumboTuple;
-import sesame.execution.runtime.tuple.impl.Tuple;
-import sesame.optimization.model.STAT;
 
 import java.util.Arrays;
 /**
@@ -27,28 +24,6 @@ public class UniformedScheduler extends InputStreamController {
         }
     }
     @Override
-    public JumboTuple fetchResults_inorder() {
-        //        JumboTuple[] t = new JumboTuple[batch];
-        for (int i = stream_index++; i < streams.length + stream_index; i++) {
-            String streamId = streams[i % streams.length];
-            //assert RQ != null;
-            //final HashMap<Integer, P1C1Queue<JumboTuple>> integerP1C1QueueHashMap = RQ.GetAndUpdate(streamId);
-            Integer[] qids = queues.get(streamId);
-            int queueIdLength = qids.length;
-            for (int j = queue_index++; j < queueIdLength + queue_index; ) {
-                //Integer[] queueId = Arrays.copyOf(integerP1C1QueueHashMap.keySet().toArray(),integerP1C1QueueHashMap.fieldSize(),Integer[].class);
-                int q_index = qids[j % queueIdLength];
-                if (queueIdLength > 1)
-                    //LOG.DEBUG("Uniformed shoulder, queue index:" + q_index);
-//                for (int b = 0; b < batch; b++) {
-//                    t[b] = fetchFromqueue((P1C1Queue) getRQ().GetAndUpdate(streamId).GetAndUpdate(q_index));
-//                }
-                    return fetchFromqueue_inorder(getRQ().get(streamId).get(q_index));
-            }
-        }
-        return null;
-    }
-    @Override
     public Object fetchResults() {
 //        JumboTuple[] t = new JumboTuple[batch];
         for (int i = stream_index++; i < streams.length + stream_index; i++) {
@@ -68,14 +43,6 @@ public class UniformedScheduler extends InputStreamController {
                     return fetchFromqueue(getRQ().get(streamId).get(q_index));
             }
         }
-        return null;
-    }
-    @Override
-    public Tuple fetchResults_single() {
-        throw new UnsupportedOperationException();
-    }
-    @Override
-    public JumboTuple fetchResults(STAT stat, int batch) {
         return null;
     }
 }

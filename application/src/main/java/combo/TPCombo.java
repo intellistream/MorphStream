@@ -1,11 +1,11 @@
 package combo;
 import common.bolts.transactional.tp.*;
+import common.collections.Configuration;
+import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.datatype.AbstractLRBTuple;
 import common.datatype.PositionReport;
 import common.param.lr.LREvent;
-import common.collections.Configuration;
-import common.collections.OsUtils;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

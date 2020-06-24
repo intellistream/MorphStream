@@ -1,7 +1,7 @@
 package sesame.topology;
-import common.constants.BaseConstants;
 import common.collections.ClassLoaderUtils;
 import common.collections.Configuration;
+import common.constants.BaseConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.Topology;

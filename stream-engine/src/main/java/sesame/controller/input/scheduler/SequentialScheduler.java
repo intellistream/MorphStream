@@ -2,9 +2,6 @@ package sesame.controller.input.scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.controller.input.InputStreamController;
-import sesame.execution.runtime.tuple.JumboTuple;
-import sesame.execution.runtime.tuple.impl.Tuple;
-import sesame.optimization.model.STAT;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -35,13 +32,6 @@ public class SequentialScheduler extends InputStreamController {
             System.exit(-1);
         }
     }
-    @Override
-    public JumboTuple fetchResults_inorder() {
-        if (current == size) {
-            current = 0;
-        }
-        return fetchFromqueue_inorder(LQ.get(current++));
-    }
     //
 //	@Override
 //	public JumboTuple fetchResults() {
@@ -63,22 +53,5 @@ public class SequentialScheduler extends InputStreamController {
             current = 0;
         }
         return fetchFromqueue(LQ.get(current++));
-    }
-    /**
-     * @return
-     */
-    @Override
-    public Tuple fetchResults_single() {
-        if (current == size) {
-            current = 0;
-        }
-        return fetchFromqueue_single(LQ.get(current++));
-    }
-    @Override
-    public JumboTuple fetchResults(STAT stat, int batch) {
-        if (current == size) {
-            current = 0;
-        }
-        return fetchFromqueue(LQ.get(current++), stat, batch);
     }
 }

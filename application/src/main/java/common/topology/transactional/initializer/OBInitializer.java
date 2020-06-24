@@ -1,10 +1,10 @@
 package common.topology.transactional.initializer;
+import common.collections.Configuration;
+import common.collections.OsUtils;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.OBParam;
 import common.param.ob.ToppingEvent;
-import common.collections.Configuration;
-import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.Database;

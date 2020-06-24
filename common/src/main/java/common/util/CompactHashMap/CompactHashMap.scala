@@ -161,6 +161,29 @@ class CompactHashMap[K, V](
         myValues(i2) = value
     }
 
+  /** Resize map.
+   */
+  private[this] def resize(key: K, value: V, bits: Int) {
+    // determine keys and streamValues classes by first inserted objects
+    // if they were not specified during map creation
+    if (keyClass eq null) keyClass = (
+      if (key.asInstanceOf[Object] eq null) classOf[Object]
+      else key.asInstanceOf[Object].getClass
+      ).asInstanceOf[Class[K]]
+    if (valueClass eq null) valueClass = (
+      if (value.asInstanceOf[Object] eq null) classOf[Object]
+      else value.asInstanceOf[Object].getClass
+      ).asInstanceOf[Class[V]]
+    //
+    if (myValues ne null) {
+      myKeys = FixedHashSet(bits, myKeys)
+      myValues = resizeArray(myValues, myKeys.capacity)
+    } else {
+      myKeys = FixedHashSet(bits, keyClass, myKeys.loadFactor)
+      myValues = newArray(valueClass, myKeys.capacity)
+    }
+  }
+
   /** This method allows one to add a new mapping from integer <code>key</code>
    * to integer <code>value</code> to the map. If the map already contains a
    * mapping for <code>key</code>, it will be overridden by this
@@ -252,29 +275,6 @@ class CompactHashMap[K, V](
     }
   }
 
-  /** Resize map.
-   */
-  private[this] def resize(key: K, value: V, bits: Int) {
-    // determine keys and streamValues classes by first inserted objects
-    // if they were not specified during map creation
-    if (keyClass eq null) keyClass = (
-      if (key.asInstanceOf[Object] eq null) classOf[Object]
-      else key.asInstanceOf[Object].getClass
-      ).asInstanceOf[Class[K]]
-    if (valueClass eq null) valueClass = (
-      if (value.asInstanceOf[Object] eq null) classOf[Object]
-      else value.asInstanceOf[Object].getClass
-      ).asInstanceOf[Class[V]]
-    //
-    if (myValues ne null) {
-      myKeys = FixedHashSet(bits, myKeys)
-      myValues = resizeArray(myValues, myKeys.capacity)
-    } else {
-      myKeys = FixedHashSet(bits, keyClass, myKeys.loadFactor)
-      myValues = newArray(valueClass, myKeys.capacity)
-    }
-  }
-
   /** Insert new key-value mapping or update existing with given function.
    *
    * @param  key            The key to update
@@ -362,6 +362,16 @@ class CompactHashMap[K, V](
     new CompactHashMap(newKeys, newValues, valueClass)
   }
 
+  private def this(
+                    keys: FixedHashSet[K],
+                    streamValues: Array[V],
+                    valClass: Class[V]
+                  ) = {
+    this(keys.elemClass, valClass)
+    myKeys = keys
+    myValues = streamValues
+  }
+
   /** Returns a new map containing all elements of this map that
    * satisfy the predicate <code>profiling</code> (without Tuple2).
    *
@@ -383,16 +393,6 @@ class CompactHashMap[K, V](
         }
       })
     new CompactHashMap(newKeys, newValues, valueClass)
-  }
-
-  private def this(
-                    keys: FixedHashSet[K],
-                    streamValues: Array[V],
-                    valClass: Class[V]
-                  ) = {
-    this(keys.elemClass, valClass)
-    myKeys = keys
-    myValues = streamValues
   }
 
   /** Converts this map to a fresh Array with elements.

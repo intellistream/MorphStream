@@ -1,6 +1,6 @@
 package sesame.execution;
-import common.platform.Platform;
 import common.collections.Configuration;
+import common.platform.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.MultiStreamComponent;
@@ -147,27 +147,7 @@ public class ExecutionGraph extends RawExecutionGraph {
             virtualNode.getParentsOf(sink.operator).add(par);
         }
         build_streamController(conf.getInt("batch", 100));
-        if (!conf.getBoolean("NAV", true)) {
-            Loading(conf, p);
-        }
-    }
-    public void Loading(Configuration conf, Platform p) {
-//		//LOG.DEBUG("Loading statistics");
-        //This will produce a un-closed thread pool. do not use.
-//		getExecutionNodeArrayList().parallelStream().forEach((executionNode) -> {
-//			executionNode.prepareProfilingStruct(conf, null, null, p);
-//			if (!conf.getBoolean("profile", true)) {
-//				for (int srcId : executionNode.profiling.keySet()) {
-//					executionNode.profiling.GetAndUpdate(srcId).Prepared();
-//				}
-//			}
-//		});
-        for (ExecutionNode executionNode : getExecutionNodeArrayList()) {
-            executionNode.prepareProfilingStruct(conf, null, null, p);
-            for (int srcId : executionNode.profiling.keySet()) {
-                executionNode.profiling.get(srcId).load();
-            }
-        }
+
     }
     public ExecutionNode getSpout() {
         return spout;

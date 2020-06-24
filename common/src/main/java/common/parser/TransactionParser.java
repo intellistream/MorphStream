@@ -1,7 +1,7 @@
 package common.parser;
+import com.google.common.collect.ImmutableList;
 import common.helper.parser.Parser;
 import common.util.datatypes.StreamValues;
-import com.google.common.collect.ImmutableList;
 
 import java.util.LinkedList;
 import java.util.List;

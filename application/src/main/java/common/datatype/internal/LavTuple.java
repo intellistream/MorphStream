@@ -17,9 +17,9 @@
  * #_
  */
 package common.datatype.internal;
+import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import common.collections.Time;
 import common.util.datatypes.StreamValues;
 import sesame.execution.runtime.tuple.impl.Fields;
 /**

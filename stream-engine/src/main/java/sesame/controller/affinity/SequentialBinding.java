@@ -1,6 +1,6 @@
 package sesame.controller.affinity;
-import common.platform.Platform;
 import common.collections.OsUtils;
+import common.platform.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

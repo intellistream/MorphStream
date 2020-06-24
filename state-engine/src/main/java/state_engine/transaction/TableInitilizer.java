@@ -1,6 +1,6 @@
 package state_engine.transaction;
-import common.tools.FastZipfGenerator;
 import common.collections.Configuration;
+import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.Database;

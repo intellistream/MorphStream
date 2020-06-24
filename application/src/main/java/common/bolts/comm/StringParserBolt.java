@@ -1,7 +1,7 @@
 package common.bolts.comm;
+import common.collections.Configuration;
 import common.helper.parser.Parser;
 import common.parser.StringParser;
-import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.operators.base.MapBolt;

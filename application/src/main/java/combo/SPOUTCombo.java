@@ -1,8 +1,8 @@
 package combo;
-import common.sink.SINKCombo;
-import common.tools.FastZipfGenerator;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.sink.SINKCombo;
+import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import sesame.components.context.TopologyContext;
 import sesame.components.operators.api.TransactionalBolt;

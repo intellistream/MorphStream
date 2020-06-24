@@ -1,8 +1,8 @@
 package common.spout;
-import common.constants.BaseConstants;
-import common.helper.wrapper.StringStatesWrapper;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.constants.BaseConstants;
+import common.helper.wrapper.StringStatesWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.operators.api.AbstractSpout;

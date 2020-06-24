@@ -1,5 +1,4 @@
 package sesame.components.context;
-import ch.usi.overseer.OverHpc;
 import sesame.components.TopologyComponent;
 import sesame.components.grouping.Grouping;
 import sesame.controller.input.InputStreamController;
@@ -7,7 +6,6 @@ import sesame.execution.ExecutionGraph;
 import sesame.execution.ExecutionNode;
 import sesame.execution.runtime.executorThread;
 import sesame.execution.runtime.tuple.impl.Fields;
-import sesame.optimization.ExecutionPlan;
 import state_engine.Database;
 
 import java.util.ArrayList;
@@ -21,8 +19,7 @@ import java.util.Map;
  * <profiling/>
  */
 public class TopologyContext {
-    public static ExecutionPlan plan;
-    public static OverHpc HPCMonotor;
+
     private static ExecutionGraph graph;
     private static Database db;
     private static HashMap<Integer, executorThread> threadMap;
@@ -31,12 +28,11 @@ public class TopologyContext {
      * Instead of Store Brisk.topology, we Store Brisk.execution graph directly!
      * This is a global access memory structure,
      */
-    public TopologyContext(ExecutionGraph g, Database db, ExecutionPlan plan, ExecutionNode executor, HashMap<Integer, executorThread> threadMap, OverHpc HPCMonotor) {
-        TopologyContext.plan = plan;
+    public TopologyContext(ExecutionGraph g, Database db, ExecutionNode executor, HashMap<Integer, executorThread> threadMap) {
+
         TopologyContext.graph = g;
         TopologyContext.db = db;
         TopologyContext.threadMap = threadMap;
-        TopologyContext.HPCMonotor = HPCMonotor;
         this._taskId = executor.getExecutorID();
     }
     public Database getDb() {
@@ -57,9 +53,7 @@ public class TopologyContext {
     private String getComponentId(int taskId) {
         return getComponent(taskId).getId();
     }
-    public ExecutionPlan getPlan() {
-        return plan;
-    }
+
     public ExecutionGraph getGraph() {
         return graph;
     }
@@ -149,24 +143,6 @@ public class TopologyContext {
             }
         }
         force_existALL();
-//        for (int id : threadMap.keySet()) {//sequentially stop from spout.
-//            if (id != getThisTaskId()) {
-//                int cnt = 0;
-//                while (threadMap.get(id).isAlive()) {
-//                    try {
-//                        Thread.sleep(10);
-//                    } catch (InterruptedException e) {
-//                        //e.printStackTrace();
-//                    }
-//                    threadMap.get(id).interrupt();
-//                    cnt++;
-//                    if (cnt > 100) {
-//                        System.out.println("Failed to interrupt thread: " + threadMap.get(id).getName());
-////                        threadMap.get(id).stop();
-//                    }
-//                }
-//            }
-//        }
         //stop myself.
         threadMap.get(getThisTaskId()).running = false;
         threadMap.get(getThisTaskId()).interrupt();

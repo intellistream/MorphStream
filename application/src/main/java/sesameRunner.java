@@ -1,5 +1,10 @@
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
 import common.CONTROL;
 import common.abstractRunner;
+import common.collections.Configuration;
+import common.collections.Constants;
+import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.constants.GrepSumConstants;
 import common.platform.HP_Machine;
@@ -9,16 +14,12 @@ import common.topology.transactional.GrepSum;
 import common.topology.transactional.OnlineBiding;
 import common.topology.transactional.StreamLedger;
 import common.topology.transactional.TollProcessing;
-import common.collections.Configuration;
-import common.collections.Constants;
-import common.collections.OsUtils;
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
 import sesame.components.TopologyComponent;
+import sesame.components.exception.UnhandledCaseException;
 import sesame.execution.ExecutionNode;
 import sesame.execution.runtime.executorThread;
 import sesame.topology.TopologySubmitter;
@@ -73,7 +74,11 @@ public class sesameRunner extends abstractRunner {
     }
     private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
         TopologySubmitter submitter = new TopologySubmitter();
-        final_topology = submitter.submitTopology(topology, conf);
+        try {
+            final_topology = submitter.submitTopology(topology, conf);
+        } catch (UnhandledCaseException e) {
+            e.printStackTrace();
+        }
         executorThread sinkThread = submitter.getOM().getEM().getSinkThread();
         long start = System.currentTimeMillis();
         sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins

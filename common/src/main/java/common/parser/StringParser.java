@@ -1,7 +1,7 @@
 package common.parser;
+import com.google.common.collect.ImmutableList;
 import common.helper.parser.Parser;
 import common.util.datatypes.StreamValues;
-import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,12 +1,12 @@
 package common.topology.transactional;
 import common.bolts.lr.DispatcherBolt;
 import common.bolts.transactional.tp.*;
+import common.collections.Configuration;
 import common.constants.LinearRoadConstants;
 import common.constants.LinearRoadConstants.Field;
 import common.datatype.util.LRTopologyControl;
 import common.datatype.util.SegmentIdentifier;
 import common.topology.transactional.initializer.TPInitializer;
-import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.Topology;

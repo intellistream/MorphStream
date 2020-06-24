@@ -1,8 +1,8 @@
 package common.topology.transactional.initializer;
-import common.param.MicroParam;
-import common.param.mb.MicroEvent;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.param.MicroParam;
+import common.param.mb.MicroEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.Database;

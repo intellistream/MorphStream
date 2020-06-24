@@ -1,6 +1,5 @@
 package sesame.execution.runtime;
 import common.collections.Configuration;
-import ch.usi.overseer.OverHpc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;
@@ -24,7 +23,6 @@ public abstract class executorThread extends Thread {
     protected final CountDownLatch latch;
     final Configuration conf;
     private final HashMap<Integer, executorThread> threadMap;
-    private final OverHpc hpcMonotor;
     public boolean running = true;
     public boolean profiling = false;
     public long[] cpu;
@@ -40,14 +38,14 @@ public abstract class executorThread extends Thread {
     private boolean start = true;
     private volatile boolean ready = false;
     protected executorThread(ExecutionNode e, Configuration conf, TopologyContext context
-            , long[] cpu, int node, CountDownLatch latch, OverHpc HPCMonotor, HashMap<Integer, executorThread> threadMap) {
+            , long[] cpu, int node, CountDownLatch latch, HashMap<Integer, executorThread> threadMap) {
         this.context = context;
         this.conf = conf;
         executor = e;
         this.cpu = cpu;
         this.node = node;
         this.latch = latch;
-        hpcMonotor = HPCMonotor;
+
         this.threadMap = threadMap;
         if (executor != null && !this.executor.isLeafNode()) {
             this.executor.getController().setContext(this.executor.getExecutorID(), context);

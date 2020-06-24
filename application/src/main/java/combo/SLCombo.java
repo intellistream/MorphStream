@@ -1,10 +1,10 @@
 package combo;
 import common.bolts.transactional.sl.*;
+import common.collections.Configuration;
+import common.collections.OsUtils;
 import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import common.collections.Configuration;
-import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;

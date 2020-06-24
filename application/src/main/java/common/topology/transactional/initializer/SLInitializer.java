@@ -1,8 +1,8 @@
 package common.topology.transactional.initializer;
-import common.param.sl.DepositEvent;
-import common.param.sl.TransactionEvent;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.param.sl.DepositEvent;
+import common.param.sl.TransactionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.Database;

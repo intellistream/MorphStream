@@ -1,7 +1,7 @@
 package sesame.components.operators.api;
-import common.constants.BaseConstants;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.constants.BaseConstants;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.slf4j.Logger;

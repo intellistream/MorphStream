@@ -1,9 +1,9 @@
 package common.helper.wrapper.basic;
 //import applications.state_engine.utils.Configuration;
+import common.collections.Configuration;
 import common.helper.Event;
 import common.tools.B_object;
 import common.tools.object;
-import common.collections.Configuration;
 
 import java.io.Serializable;
 import java.util.ArrayList;

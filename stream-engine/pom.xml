@@ -210,12 +210,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.overseer</groupId>
-            <artifactId>overseer</artifactId>
-            <version>1.0</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.classmexer</groupId>
             <artifactId>classmexer</artifactId>
             <version>1.0</version>

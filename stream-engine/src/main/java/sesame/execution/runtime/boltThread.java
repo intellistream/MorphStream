@@ -1,6 +1,5 @@
 package sesame.execution.runtime;
 import common.collections.Configuration;
-import ch.usi.overseer.OverHpc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
@@ -11,7 +10,6 @@ import sesame.execution.runtime.collector.OutputCollector;
 import sesame.execution.runtime.tuple.JumboTuple;
 import sesame.execution.runtime.tuple.impl.Tuple;
 import sesame.optimization.OptimizationManager;
-import sesame.optimization.model.STAT;
 import state_engine.Clock;
 import state_engine.DatabaseException;
 
@@ -19,7 +17,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
@@ -34,8 +31,6 @@ public class boltThread extends executorThread {
     private final BoltExecutor bolt;
     private final OutputCollector collector;
     private final InputStreamController scheduler;
-    public volatile boolean binding_finished = false;
-    private boolean UNIX = false;
     private int miss = 0;
     /**
      * @param e
@@ -44,15 +39,14 @@ public class boltThread extends executorThread {
      * @param cpu
      * @param node
      * @param latch
-     * @param HPCMonotor
      * @param optimizationManager
      * @param threadMap
      * @param clock
      */
     public boltThread(ExecutionNode e, TopologyContext context, Configuration conf, long[] cpu
-            , int node, CountDownLatch latch, OverHpc HPCMonotor, OptimizationManager optimizationManager
+            , int node, CountDownLatch latch, OptimizationManager optimizationManager
             , HashMap<Integer, executorThread> threadMap, Clock clock) {
-        super(e, conf, context, cpu, node, latch, HPCMonotor, threadMap);
+        super(e, conf, context, cpu, node, latch, threadMap);
         bolt = (BoltExecutor) e.op;
         scheduler = e.getInputStreamController();
         this.collector = new OutputCollector(e, context);
@@ -90,13 +84,6 @@ public class boltThread extends executorThread {
      * @throws DatabaseException
      */
     protected void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException {
-//        Tuple in = fetchResult_single();
-//        if (in != null) {
-//            bolt.execute(in);
-//            cnt += batch;
-//        } else {
-//            miss++;
-//        }
         Object tuple = fetchResult();
         if (tuple instanceof Tuple) {
             if (tuple != null) {
@@ -113,23 +100,6 @@ public class boltThread extends executorThread {
                 miss++;
             }
         }
-//        if (enable_shared_state) {//this is for T-Stream.
-//            Tuple in = fetchResult_single();
-//            if (in != null) {
-//                bolt.execute(in);
-//                cnt += batch;
-//            } else {
-//                miss++;
-//            }
-//        } else {
-//            JumboTuple in = fetchResult();
-//            if (in != null) {
-//                bolt.execute(in);
-//                cnt += batch;
-//            } else {
-//                miss++;
-//            }
-//        }
     }
     protected void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException {
         _execute_noControl();
@@ -138,13 +108,7 @@ public class boltThread extends executorThread {
     public void run() {
         try {
             Thread.currentThread().setName("Operator:" + executor.getOP() + "\tExecutor ID:" + executor.getExecutorID());
-            if (TopologyContext.plan.getSP() != null) {
-                for (String Istream : new HashSet<>(executor.operator.input_streams)) {
-//					for (String Ostream : new HashSet<>(executor.operator.getOutput_streamsIds())) {
-                    expected_throughput += executor.getExpectedProcessRate(Istream, TopologyContext.plan.getSP(), false) * 1E6;
-//					}
-                }
-            }
+
             initilize_queue(this.executor.getExecutorID());
             //do preparation.
             bolt.prepare(conf, context, collector);
@@ -191,16 +155,5 @@ public class boltThread extends executorThread {
      */
     private Object fetchResult() {
         return scheduler.fetchResults();
-//		return scheduler.fetchResults_inorder();
-    }
-    private Tuple fetchResult_single() {
-        return scheduler.fetchResults_single();
-//		return scheduler.fetchResults_inorder();
-    }
-    private JumboTuple fetchResult(STAT stat, int batch) {
-        return scheduler.fetchResults(stat, batch);
-    }
-    private JumboTuple fetchResult(ExecutionNode src, STAT stat, int batch) {
-        return scheduler.fetchResults(src, stat, batch);
     }
 }

@@ -1,7 +1,7 @@
 package sesame.components.operators.api;
+import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.helper.wrapper.StringStatesWrapper;
-import common.collections.OsUtils;
 import org.slf4j.Logger;
 import sesame.execution.runtime.tuple.impl.Marker;
 

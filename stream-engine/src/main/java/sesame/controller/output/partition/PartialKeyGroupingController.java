@@ -1,7 +1,7 @@
 package sesame.controller.output.partition;
-import common.collections.Configuration;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.TopologyComponent;

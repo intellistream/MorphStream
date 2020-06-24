@@ -1,7 +1,7 @@
 package common.spout;
+import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.helper.parser.Parser;
-import common.collections.OsUtils;
 import common.util.datatypes.StreamValues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
