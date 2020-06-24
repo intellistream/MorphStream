@@ -101,12 +101,10 @@ public class sesameRunner extends abstractRunner {
             } else {
                 TopologyComponent sink = submitter.getOM().g.getSink().operator;
                 double sum = 0;
-//			double pre_results = sinkThread.getResults();
                 int cnt = 0;
                 for (ExecutionNode e : sink.getExecutorList()) {
                     double results = e.op.getResults();
                     if (results != 0) {
-//					pre_results = results;
                         sum += results;
                     } else {
                         sum += sum / cnt;
