@@ -1,0 +1,165 @@
+package application.bolts.transactional.tp;
+
+
+import application.param.lr.LREvent;
+import application.sink.SINKCombo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sesame.components.context.TopologyContext;
+import sesame.execution.ExecutionGraph;
+import sesame.execution.runtime.collector.OutputCollector;
+import sesame.execution.runtime.tuple.impl.Marker;
+import sesame.execution.runtime.tuple.impl.Tuple;
+import sesame.faulttolerance.impl.ValueState;
+import state_engine.DatabaseException;
+import state_engine.transaction.dedicated.ordered.TxnManagerTStream;
+import state_engine.transaction.function.AVG;
+import state_engine.transaction.function.CNT;
+import state_engine.transaction.impl.TxnContext;
+
+import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.concurrent.BrokenBarrierException;
+
+import static application.CONTROL.combo_bid_size;
+import static application.CONTROL.enable_app_combo;
+import static application.constants.TP_TxnConstants.Constant.NUM_SEGMENTS;
+import static state_engine.profiler.MeasureTools.*;
+
+
+/**
+ * Combine Read-Write for TStream.
+ */
+public class TPBolt_ts extends TPBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(TPBolt_ts.class);
+    private static final long serialVersionUID = -5968750340131744744L;
+    ArrayDeque<LREvent> LREvents = new ArrayDeque<>();
+
+
+    public TPBolt_ts(int fid, SINKCombo sink) {
+        super(LOG, fid, sink);
+        state = new ValueState();
+    }
+
+    public TPBolt_ts(int fid) {
+        super(LOG, fid, null);
+        state = new ValueState();
+    }
+
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+//        prepareEvents();
+        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
+                , context.getThisTaskId(), context.getGraph());
+    }
+
+
+    /**
+     * THIS IS ONLY USED BY TSTREAM.
+     * IT CONSTRUCTS and POSTPONES TXNS.
+     */
+    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException {
+
+        BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
+
+        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+
+            TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
+            LREvent event = (LREvent) input_event;
+            (event).setTimestamp(timestamp);
+
+            REQUEST_CONSTRUCT(event, txnContext);
+
+        }
+
+        END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
+    }
+
+    protected void REQUEST_CONSTRUCT(LREvent event, TxnContext txnContext) throws DatabaseException {
+        //it simply construct the operations and return.
+        transactionManager.Asy_ModifyRecord_Read(txnContext
+                , "segment_speed"
+                , String.valueOf(event.getPOSReport().getSegment())
+                , event.speed_value//holder to be filled up.
+                , new AVG(event.getPOSReport().getSpeed())
+        );          //asynchronously return.
+
+        transactionManager.Asy_ModifyRecord_Read(txnContext
+                , "segment_cnt"
+                , String.valueOf(event.getPOSReport().getSegment())
+                , event.count_value//holder to be filled up.
+                , new CNT(event.getPOSReport().getVid())
+        );          //asynchronously return.
+        LREvents.add(event);
+    }
+
+
+    @Override
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+        super.initialize(thread_Id, thisTaskId, graph);
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_SEGMENTS, this.context.getThisComponent().getNumTasks());
+    }
+
+
+    @Override
+    public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+
+        if (in.isMarker()) {
+
+            int readSize = LREvents.size();
+
+            BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
+
+            BEGIN_TP_TIME_MEASURE(thread_Id);
+
+            transactionManager.start_evaluate(thread_Id, this.fid);//start lazy evaluation in transaction manager.
+
+            END_TP_TIME_MEASURE(thread_Id);
+
+            BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+
+            REQUEST_REQUEST_CORE();
+
+            END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, 0, 0);
+
+            END_TRANSACTION_TIME_MEASURE_TS(thread_Id, 0);
+
+            REQUEST_POST();
+
+            if (!enable_app_combo) {
+                final Marker marker = in.getMarker();
+                this.collector.ack(in, marker);//tell spout it has finished transaction processing.
+            } else {
+
+            }
+
+            END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize);
+
+            LREvents.clear();//clear stored events.
+
+        } else {
+            execute_ts_normal(in);
+        }
+    }
+
+
+    protected void REQUEST_POST() throws InterruptedException {
+        BEGIN_POST_TIME_MEASURE(thread_Id);
+        for (LREvent event : LREvents) {
+            REQUEST_POST(event);
+        }
+        END_POST_TIME_MEASURE_ACC(thread_Id);
+    }
+
+
+    protected void REQUEST_REQUEST_CORE() {
+
+        for (LREvent event : LREvents) {
+            TXN_REQUEST_CORE_TS(event);
+        }
+    }
+
+    private void TXN_REQUEST_CORE_TS(LREvent event) {
+        event.count = event.count_value.getRecord().getValue().getInt();
+        event.lav = event.speed_value.getRecord().getValue().getDouble();
+    }
+}
