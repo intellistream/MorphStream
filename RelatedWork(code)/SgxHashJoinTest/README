@@ -1,0 +1,13 @@
+this PoC is based on the Intel's sample code. to run it go to the project directory:
+
+1. make clean && make
+2. ./app /path/to/tableA.csv size_of_tableA columnA_to_join /path/to/tableB.csv size_of_tableB columnB_to_join
+
+I was running it on Big Data Benchmark data. my command looked for example like that:
+
+./app ../rankings_1node.csv 50000 1 ../uservisits_1node.csv 200000 2
+
+---
+Kajetan
+
+contact: maliszewski@tu-berlin.de
