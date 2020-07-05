@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.9)
 
 # Set project name and version
-project(Foo VERSION 1.2.3)
+project(sesame VERSION 1.2.3)
 
 # Set environment variables
 include(${PROJECT_SOURCE_DIR}/cmake/SetEnv.cmake)

@@ -8,7 +8,7 @@ if(NOT LIBRARY_NAME)
 endif()
 
 # Library folder name (by default is the project name in lowercase)
-# Example: #include <foo/foo.h>
+# Example: #include <sesame/sesame.h>
 if(NOT LIBRARY_FOLDER)
   set(LIBRARY_FOLDER ${PROJECT_NAME_LOWERCASE})
 endif()
