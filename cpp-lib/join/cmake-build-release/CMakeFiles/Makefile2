@@ -53,59 +53,59 @@ CMAKE_BINARY_DIR = /Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: join/all
-all: example_internal/all
+all: impl/all
+all: test_internal/all
 
 .PHONY : all
 
 # The main recursive "preinstall" target.
-preinstall: join/preinstall
-preinstall: example_internal/preinstall
+preinstall: impl/preinstall
+preinstall: test_internal/preinstall
 
 .PHONY : preinstall
 
 # The main recursive "clean" target.
 clean: CMakeFiles/uninstall.dir/clean
-clean: join/clean
-clean: example_internal/clean
+clean: impl/clean
+clean: test_internal/clean
 
 .PHONY : clean
 
 #=============================================================================
-# Directory level rules for directory example_internal
+# Directory level rules for directory impl
 
 # Recursive "all" directory target.
-example_internal/all: example_internal/CMakeFiles/test.dir/all
+impl/all: impl/CMakeFiles/impl.dir/all
 
-.PHONY : example_internal/all
+.PHONY : impl/all
 
 # Recursive "preinstall" directory target.
-example_internal/preinstall:
+impl/preinstall:
 
-.PHONY : example_internal/preinstall
+.PHONY : impl/preinstall
 
 # Recursive "clean" directory target.
-example_internal/clean: example_internal/CMakeFiles/test.dir/clean
+impl/clean: impl/CMakeFiles/impl.dir/clean
 
-.PHONY : example_internal/clean
+.PHONY : impl/clean
 
 #=============================================================================
-# Directory level rules for directory join
+# Directory level rules for directory test_internal
 
 # Recursive "all" directory target.
-join/all: join/CMakeFiles/join.dir/all
+test_internal/all: test_internal/CMakeFiles/test.dir/all
 
-.PHONY : join/all
+.PHONY : test_internal/all
 
 # Recursive "preinstall" directory target.
-join/preinstall:
+test_internal/preinstall:
 
-.PHONY : join/preinstall
+.PHONY : test_internal/preinstall
 
 # Recursive "clean" directory target.
-join/clean: join/CMakeFiles/join.dir/clean
+test_internal/clean: test_internal/CMakeFiles/test.dir/clean
 
-.PHONY : join/clean
+.PHONY : test_internal/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/uninstall.dir
@@ -135,58 +135,58 @@ CMakeFiles/uninstall.dir/clean:
 .PHONY : CMakeFiles/uninstall.dir/clean
 
 #=============================================================================
-# Target rules for target join/CMakeFiles/join.dir
+# Target rules for target impl/CMakeFiles/impl.dir
 
 # All Build rule for target.
-join/CMakeFiles/join.dir/all:
-	$(MAKE) -f join/CMakeFiles/join.dir/build.make join/CMakeFiles/join.dir/depend
-	$(MAKE) -f join/CMakeFiles/join.dir/build.make join/CMakeFiles/join.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/CMakeFiles --progress-num=1,2 "Built target join"
-.PHONY : join/CMakeFiles/join.dir/all
+impl/CMakeFiles/impl.dir/all:
+	$(MAKE) -f impl/CMakeFiles/impl.dir/build.make impl/CMakeFiles/impl.dir/depend
+	$(MAKE) -f impl/CMakeFiles/impl.dir/build.make impl/CMakeFiles/impl.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/CMakeFiles --progress-num=1,2 "Built target impl"
+.PHONY : impl/CMakeFiles/impl.dir/all
 
 # Build rule for subdir invocation for target.
-join/CMakeFiles/join.dir/rule: cmake_check_build_system
+impl/CMakeFiles/impl.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 join/CMakeFiles/join.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 impl/CMakeFiles/impl.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/CMakeFiles 0
-.PHONY : join/CMakeFiles/join.dir/rule
+.PHONY : impl/CMakeFiles/impl.dir/rule
 
 # Convenience name for target.
-join: join/CMakeFiles/join.dir/rule
+impl: impl/CMakeFiles/impl.dir/rule
 
-.PHONY : join
+.PHONY : impl
 
 # clean rule for target.
-join/CMakeFiles/join.dir/clean:
-	$(MAKE) -f join/CMakeFiles/join.dir/build.make join/CMakeFiles/join.dir/clean
-.PHONY : join/CMakeFiles/join.dir/clean
+impl/CMakeFiles/impl.dir/clean:
+	$(MAKE) -f impl/CMakeFiles/impl.dir/build.make impl/CMakeFiles/impl.dir/clean
+.PHONY : impl/CMakeFiles/impl.dir/clean
 
 #=============================================================================
-# Target rules for target example_internal/CMakeFiles/test.dir
+# Target rules for target test_internal/CMakeFiles/test.dir
 
 # All Build rule for target.
-example_internal/CMakeFiles/test.dir/all: join/CMakeFiles/join.dir/all
-	$(MAKE) -f example_internal/CMakeFiles/test.dir/build.make example_internal/CMakeFiles/test.dir/depend
-	$(MAKE) -f example_internal/CMakeFiles/test.dir/build.make example_internal/CMakeFiles/test.dir/build
+test_internal/CMakeFiles/test.dir/all: impl/CMakeFiles/impl.dir/all
+	$(MAKE) -f test_internal/CMakeFiles/test.dir/build.make test_internal/CMakeFiles/test.dir/depend
+	$(MAKE) -f test_internal/CMakeFiles/test.dir/build.make test_internal/CMakeFiles/test.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/CMakeFiles --progress-num=3,4 "Built target test"
-.PHONY : example_internal/CMakeFiles/test.dir/all
+.PHONY : test_internal/CMakeFiles/test.dir/all
 
 # Build rule for subdir invocation for target.
-example_internal/CMakeFiles/test.dir/rule: cmake_check_build_system
+test_internal/CMakeFiles/test.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/CMakeFiles 4
-	$(MAKE) -f CMakeFiles/Makefile2 example_internal/CMakeFiles/test.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 test_internal/CMakeFiles/test.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/CMakeFiles 0
-.PHONY : example_internal/CMakeFiles/test.dir/rule
+.PHONY : test_internal/CMakeFiles/test.dir/rule
 
 # Convenience name for target.
-test: example_internal/CMakeFiles/test.dir/rule
+test: test_internal/CMakeFiles/test.dir/rule
 
 .PHONY : test
 
 # clean rule for target.
-example_internal/CMakeFiles/test.dir/clean:
-	$(MAKE) -f example_internal/CMakeFiles/test.dir/build.make example_internal/CMakeFiles/test.dir/clean
-.PHONY : example_internal/CMakeFiles/test.dir/clean
+test_internal/CMakeFiles/test.dir/clean:
+	$(MAKE) -f test_internal/CMakeFiles/test.dir/build.make test_internal/CMakeFiles/test.dir/clean
+.PHONY : test_internal/CMakeFiles/test.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

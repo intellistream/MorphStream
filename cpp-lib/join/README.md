@@ -10,11 +10,11 @@ CMake library example that can be found using `find_package()`.
 
   * The main **advantage** of this example is that it is _auto-generated_.
     You only need to change the _project name_, and add the files that need to
-    be compiled in [foo/CMakeLists.txt](join/CMakeLists.txt).
+    be compiled in [foo/CMakeLists.txt](impl/CMakeLists.txt).
 
   * Autogenetared library version file: `#include <foo/version.h>`
 
-  * `FOO_DEBUG` added on Debug. See [foo/foo.cpp#L7-L11](join/join.cpp#L7-L11).
+  * `FOO_DEBUG` added on Debug. See [foo/foo.cpp#L7-L11](impl/join.cpp#L7-L11).
 
   * `CMAKE_DEBUG_POSTFIX = 'd'` (allowing `Debug` and `Release` to not collide).
      See [cmake/SetEnv.cmake#L17](cmake/SetEnv.cmake#L17).
@@ -115,12 +115,12 @@ order to change this behavior. For example,
 
 ### How to use the library (internally in subfolders)?
 
-See the [example of internal subfolder](example_internal/).
+See the [example of internal subfolder](test_internal/).
 
 
 ### How to use the library (as dependency) in an external project?
 
-See the [example of external project](example_external/).
+See the [example of external project](test_external/).
 Once the library is intalled, cmake would be able to find it using
 `find_package(...)` command.
 

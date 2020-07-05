@@ -34,8 +34,8 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/cmake_install.cmake")
-  include("/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/cmake_install.cmake")
+  include("/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/impl/cmake_install.cmake")
+  include("/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/test_internal/cmake_install.cmake")
 
 endif()
 

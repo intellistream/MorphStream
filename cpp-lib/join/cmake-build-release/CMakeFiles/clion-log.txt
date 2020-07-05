@@ -1,18 +1,4 @@
 /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" /Users/shuhaozhang/Sesame/cpp-lib/join
--- The C compiler identification is AppleClang 11.0.0.11000033
--- The CXX compiler identification is AppleClang 11.0.0.11000033
--- Check for working C compiler: /Library/Developer/CommandLineTools/usr/bin/cc
--- Check for working C compiler: /Library/Developer/CommandLineTools/usr/bin/cc -- works
--- Detecting C compiler ABI info
--- Detecting C compiler ABI info - done
--- Detecting C compile features
--- Detecting C compile features - done
--- Check for working CXX compiler: /Library/Developer/CommandLineTools/usr/bin/c++
--- Check for working CXX compiler: /Library/Developer/CommandLineTools/usr/bin/c++ -- works
--- Detecting CXX compiler ABI info
--- Detecting CXX compiler ABI info - done
--- Detecting CXX compile features
--- Detecting CXX compile features - done
 -- BUILD_SHARED_LIBS: OFF
 -- CMAKE_BUILD_TYPE: Release
 -- CMAKE_GENERATOR: Single-config

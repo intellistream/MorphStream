@@ -79,7 +79,7 @@ test_EXTERNAL_OBJECTS =
 
 example_internal/test: example_internal/CMakeFiles/test.dir/test.cpp.o
 example_internal/test: example_internal/CMakeFiles/test.dir/build.make
-example_internal/test: join/libjoin.a
+example_internal/test: impl/libimpl.a
 example_internal/test: example_internal/CMakeFiles/test.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable test"
 	cd /Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test.dir/link.txt --verbose=$(VERBOSE)

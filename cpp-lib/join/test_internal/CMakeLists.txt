@@ -1,6 +1,6 @@
 add_executable(test test.cpp)
 
-target_link_libraries(test PRIVATE join::join)
+target_link_libraries(test PRIVATE impl::impl)
 
 install(
   TARGETS test

@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.9)
 
 # Set project name and version
-project(join VERSION 1.0.0)
+project(impl VERSION 1.0.0)
 
 # Set environment variables
 include(${PROJECT_SOURCE_DIR}/cmake/SetEnv.cmake)
@@ -11,4 +11,4 @@ include(${PROJECT_SOURCE_DIR}/cmake/SetEnv.cmake)
 add_subdirectory(${LIBRARY_FOLDER})
 
 # Library examples
-add_subdirectory(example_internal)
+add_subdirectory(test_internal)

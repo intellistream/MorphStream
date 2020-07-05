@@ -4,7 +4,7 @@
 # compile CXX with /Library/Developer/CommandLineTools/usr/bin/c++
 CXX_FLAGS = -O3 -DNDEBUG -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk   -std=gnu++11
 
-CXX_DEFINES = -DJOIN_DEBUG=0
+CXX_DEFINES = -DIMPL_DEBUG=0
 
 CXX_INCLUDES = -I/Users/shuhaozhang/Sesame/cpp-lib/join -I/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/generated_headers 
 
