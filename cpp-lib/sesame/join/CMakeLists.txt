@@ -1,11 +1,11 @@
 # Set SOURCES variable
 set(SOURCES
-        sesame.cpp
+        join.cpp
 )
 
 # Set HEADERS_PUBLIC variable (public headers, included in the library)
 set(HEADERS_PUBLIC
-        sesame.h
+        join.h
 )
 
 # Set HEADERS_PRIVATE variable, if needed.

@@ -8,4 +8,4 @@ find_package(sesame 1.0.0 CONFIG REQUIRED)
 add_executable(bar bar.cpp)
 
 # add library
-target_link_libraries(bar PRIVATE sesame::foo)
+target_link_libraries(bar PRIVATE join::join)
