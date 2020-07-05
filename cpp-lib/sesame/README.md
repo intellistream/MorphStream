@@ -127,7 +127,7 @@ Once the library is intalled, cmake would be able to find it using
     cmake_minimum_required(VERSION 3.9)
     project(Bar)
 
-    find_package(Foo 1.2.3 REQUIRED)
+    find_package(Foo 1.0.0 REQUIRED)
 
     add_executable(bar bar.cpp)
     target_link_libraries(bar PRIVATE Foo::foo)
