@@ -44,7 +44,7 @@ if [[ $SO == "Linux" ]]; then
         -S ${SCRIPT_ABS_PATH}/example_external/ \
         -B ${SCRIPT_ABS_PATH}/example_external/${BUILD_DIR} \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-        -DFoo_DIR="${SCRIPT_ABS_PATH}/${INSTALL_DIR}/lib/cmake/Foo/"
+        -DFoo_DIR="${SCRIPT_ABS_PATH}/${INSTALL_DIR}/lib/cmake/sesame/"
 
     # compile
     cmake \
@@ -58,7 +58,7 @@ else
     cmake \
         -S ${SCRIPT_ABS_PATH}/example_external/ \
         -B ${SCRIPT_ABS_PATH}/example_external/${BUILD_DIR} \
-        -DFoo_DIR="${SCRIPT_ABS_PATH}/${INSTALL_DIR}/lib/cmake/Foo/"
+        -DFoo_DIR="${SCRIPT_ABS_PATH}/${INSTALL_DIR}/lib/cmake/sesame/"
 
     # compile
     cmake \

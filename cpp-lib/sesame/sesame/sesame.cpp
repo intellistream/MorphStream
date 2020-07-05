@@ -1,4 +1,4 @@
-#include <foo/foo.h>
+#include <sesame/sesame.h>
 
 #include <stdio.h>
 

@@ -1,5 +1,5 @@
-#ifndef FOO_FOO_H
-#define FOO_FOO_H
+#ifndef sesame_H
+#define sesame_H
 
 #include <foo/version.h>
 

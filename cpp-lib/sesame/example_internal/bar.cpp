@@ -1,4 +1,4 @@
-#include "foo/foo.h"
+#include "sesame/sesame.h"
 
 int main(int argc, char *argv[]) {
   foo_print_version();

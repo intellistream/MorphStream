@@ -1,11 +1,11 @@
 # Set SOURCES variable
 set(SOURCES
-  foo.cpp
+        sesame.cpp
 )
 
 # Set HEADERS_PUBLIC variable (public headers, included in the library)
 set(HEADERS_PUBLIC
-  foo.h
+        sesame.h
 )
 
 # Set HEADERS_PRIVATE variable, if needed.
