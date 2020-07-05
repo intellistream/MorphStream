@@ -1,0 +1,9 @@
+#ifndef JOIN_VERSION_
+#define JOIN_VERSION_
+
+#define JOIN_MAJOR_VERSION (1)
+#define JOIN_MINOR_VERSION (0)
+#define JOIN_PATCH_VERSION (0)
+#define JOIN_VERSION "1.0.0"
+
+#endif  // JOIN_VERSION_

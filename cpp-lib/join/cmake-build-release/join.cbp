@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="join"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\cmake\;CMake Files\join\;CMake Files\example_internal\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/local">
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 install/local"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/strip">
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 install/strip"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="uninstall">
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 uninstall"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install">
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 install"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="list_install_components">
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 list_install_components"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="join">
+				<Option output="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/libjoin.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DJOIN_DEBUG=0"/>
+					<Add directory="/Users/shuhaozhang/Sesame/cpp-lib/join"/>
+					<Add directory="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/generated_headers"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/11.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/Makefile&quot;  VERBOSE=1 join"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="join/fast">
+				<Option output="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/libjoin.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DJOIN_DEBUG=0"/>
+					<Add directory="/Users/shuhaozhang/Sesame/cpp-lib/join"/>
+					<Add directory="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/generated_headers"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/11.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/Makefile&quot;  VERBOSE=1 join/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/join/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test">
+				<Option output="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DJOIN_DEBUG=0"/>
+					<Add directory="/Users/shuhaozhang/Sesame/cpp-lib/join"/>
+					<Add directory="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/generated_headers"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/11.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/Makefile&quot;  VERBOSE=1 test"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test/fast">
+				<Option output="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DJOIN_DEBUG=0"/>
+					<Add directory="/Users/shuhaozhang/Sesame/cpp-lib/join"/>
+					<Add directory="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/generated_headers"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/11.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/Makefile&quot;  VERBOSE=1 test/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release/example_internal/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/example_internal/test.cpp">
+			<Option target="test"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/join/join.cpp">
+			<Option target="join"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/join/join.h">
+			<Option target="join"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake/CMakeRegistry.cmake">
+			<Option virtualFolder="CMake Files\cmake\"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake/Config.cmake.in">
+			<Option virtualFolder="CMake Files\cmake\"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake/LibraryConfig.cmake">
+			<Option virtualFolder="CMake Files\cmake\"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake/SetEnv.cmake">
+			<Option virtualFolder="CMake Files\cmake\"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/cmake/Uninstall.cmake.in">
+			<Option virtualFolder="CMake Files\cmake\"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/join/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\join\"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/join/version.h.in">
+			<Option virtualFolder="CMake Files\join\"/>
+		</Unit>
+		<Unit filename="/Users/shuhaozhang/Sesame/cpp-lib/join/example_internal/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\example_internal\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

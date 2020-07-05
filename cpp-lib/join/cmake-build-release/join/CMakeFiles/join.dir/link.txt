@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc libjoin.a  CMakeFiles/join.dir/join.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib libjoin.a
