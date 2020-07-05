@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.9)
-project(Bar)
+project(App)
 
 # find package Foo (example library)
 find_package(sesame 1.0.0 CONFIG REQUIRED)
 
 # add binary
-add_executable(bar bar.cpp)
+add_executable(app external_app.cpp)
 
 # add library
-target_link_libraries(bar PRIVATE join::join)
+target_link_libraries(app PRIVATE join::join)

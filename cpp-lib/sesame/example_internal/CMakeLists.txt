@@ -1,8 +1,8 @@
-add_executable(bar bar.cpp)
+add_executable(test test.cpp)
 
-target_link_libraries(bar PRIVATE join::join)
+target_link_libraries(test PRIVATE join::join)
 
 install(
-  TARGETS bar
+  TARGETS test
   RUNTIME DESTINATION bin
 )
