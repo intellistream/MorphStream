@@ -6,7 +6,7 @@ add_library(${LIBRARY_NAME}
   )
 
 # Alias:
-#   - Foo::sesame alias of sesame
+#   - Foo::foo alias of foo
 add_library(${PROJECT_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 
 # C++11
@@ -22,7 +22,7 @@ target_compile_definitions(${LIBRARY_NAME} PUBLIC
 
 # Global includes. Used by all targets
 # Note:
-#   - header can be included by C++ code `#include <sesame/sesame.h>`
+#   - header can be included by C++ code `#include <foo/foo.h>`
 #   - header location in project: ${CMAKE_CURRENT_BINARY_DIR}/generated_headers
 target_include_directories(
   ${LIBRARY_NAME} PUBLIC
@@ -33,8 +33,8 @@ target_include_directories(
 
 # Targets:
 #   - <prefix>/lib/libfoo.a
-#   - header location after install: <prefix>/sesame/sesame.h
-#   - headers can be included by C++ code `#include <sesame/sesame.h>`
+#   - header location after install: <prefix>/foo/foo.h
+#   - headers can be included by C++ code `#include <foo/foo.h>`
 install(
     TARGETS              "${LIBRARY_NAME}"
     EXPORT               "${TARGETS_EXPORT_NAME}"
@@ -45,14 +45,14 @@ install(
 )
 
 # Headers:
-#   - sesame/*.h -> <prefix>/include/sesame/*.h
+#   - foo/*.h -> <prefix>/include/foo/*.h
 install(
     FILES ${HEADERS_PUBLIC}
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBRARY_FOLDER}"
 )
 
 # Headers:
-#   - generated_headers/sesame/version.h -> <prefix>/include/sesame/version.h
+#   - generated_headers/foo/version.h -> <prefix>/include/foo/version.h
 install(
     FILES       "${GENERATED_HEADERS_DIR}/${LIBRARY_FOLDER}/version.h"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBRARY_FOLDER}"

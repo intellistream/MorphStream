@@ -10,5 +10,5 @@ void foo_print_version(void)
     const char *m = "Not debug";
   #endif
 
-  printf("This is sesame version %s (%s)\n", FOO_VERSION, m);
+  printf("This is foo version %s (%s)\n", FOO_VERSION, m);
 }
