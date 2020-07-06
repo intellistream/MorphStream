@@ -14,7 +14,7 @@ CMake library example that can be found using `find_package()`.
 
   * Autogenetared library version file: `#include <foo/version.h>`
 
-  * `FOO_DEBUG` added on Debug. See [foo/foo.cpp#L7-L11](impl/join.cpp#L7-L11).
+  * `FOO_DEBUG` added on Debug. See [foo/foo.cpp#L7-L11](impl/version.cpp#L7-L11).
 
   * `CMAKE_DEBUG_POSTFIX = 'd'` (allowing `Debug` and `Release` to not collide).
      See [cmake/SetEnv.cmake#L17](cmake/SetEnv.cmake#L17).

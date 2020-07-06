@@ -299,12 +299,6 @@ impl_BINARY_DIR:STATIC=/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-releas
 //Value Computed by CMake
 impl_SOURCE_DIR:STATIC=/Users/shuhaozhang/Sesame/cpp-lib/join
 
-//Value Computed by CMake
-join_BINARY_DIR:STATIC=/Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release
-
-//Value Computed by CMake
-join_SOURCE_DIR:STATIC=/Users/shuhaozhang/Sesame/cpp-lib/join
-
 
 ########################
 # INTERNAL cache entries

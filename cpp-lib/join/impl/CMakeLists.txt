@@ -1,11 +1,11 @@
 # Set SOURCES variable
 set(SOURCES
-        join.cpp
+        version.cpp
 )
 
 # Set HEADERS_PUBLIC variable (public headers, included in the library)
 set(HEADERS_PUBLIC
-        join.h
+        version.h
 )
 
 # Set HEADERS_PRIVATE variable, if needed.

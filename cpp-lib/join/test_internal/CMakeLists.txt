@@ -1,4 +1,4 @@
-add_executable(test test.cpp)
+add_executable(test main.cpp)
 
 target_link_libraries(test PRIVATE impl::impl)
 
