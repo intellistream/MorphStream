@@ -10,11 +10,11 @@ CMake library example that can be found using `find_package()`.
 
   * The main **advantage** of this example is that it is _auto-generated_.
     You only need to change the _project name_, and add the files that need to
-    be compiled in [foo/CMakeLists.txt](impl/CMakeLists.txt).
+    be compiled in [foo/CMakeLists.txt](join_impl/CMakeLists.txt).
 
   * Autogenetared library version file: `#include <foo/version.h>`
 
-  * `FOO_DEBUG` added on Debug. See [foo/foo.cpp#L7-L11](impl/version.cpp#L7-L11).
+  * `FOO_DEBUG` added on Debug. See [foo/foo.cpp#L7-L11](join_impl/info.cpp#L7-L11).
 
   * `CMAKE_DEBUG_POSTFIX = 'd'` (allowing `Debug` and `Release` to not collide).
      See [cmake/SetEnv.cmake#L17](cmake/SetEnv.cmake#L17).

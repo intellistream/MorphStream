@@ -3,7 +3,7 @@
 #endif
 
 //#include "benchmark.h"
-#include "impl/version.h"
+#include "join_impl/info.h"
 //#include "timer/clock.h"
 #include <algorithm>
 #include <zconf.h>

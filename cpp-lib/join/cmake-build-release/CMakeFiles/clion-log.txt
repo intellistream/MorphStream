@@ -1,9 +1,0 @@
-/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" /Users/shuhaozhang/Sesame/cpp-lib/join
--- BUILD_SHARED_LIBS: OFF
--- CMAKE_BUILD_TYPE: Release
--- CMAKE_GENERATOR: Single-config
--- CMAKE_GENERATOR: Unix Makefiles
--- CMAKE_REGISTRY_FOLDER: OFF
--- Configuring done
--- Generating done
--- Build files have been written to: /Users/shuhaozhang/Sesame/cpp-lib/join/cmake-build-release

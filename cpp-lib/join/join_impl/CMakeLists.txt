@@ -1,11 +1,11 @@
 # Set SOURCES variable
 set(SOURCES
-        version.cpp
+        info.cpp
 )
 
 # Set HEADERS_PUBLIC variable (public headers, included in the library)
 set(HEADERS_PUBLIC
-        version.h
+        info.h
 )
 
 # Set HEADERS_PRIVATE variable, if needed.
