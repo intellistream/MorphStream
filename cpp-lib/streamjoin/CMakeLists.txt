@@ -2,13 +2,21 @@ cmake_minimum_required(VERSION 3.9)
 project(streamjoin)
 set(CMAKE_CXX_STANDARD 14)
 
-#add_executable(streamjoin main.cpp)
 
-add_library(streamjoin SHARED main.cpp)
+# Set SOURCES variable
+set(SOURCES
+        src/streamjoin.cpp
+        )
 
-#install the library to /usr/local/lib
-#/usr/local is the default path.
-install (TARGETS streamjoin
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin)
+# Set HEADERS_PUBLIC variable (public headers, included in the library)
+set(HEADERS_PUBLIC
+        include/streamjoin.h
+        )
+
+# Set HEADERS_PRIVATE variable
+# (these private headers won't be included in the library)
+# set(HEADERS_PRIVATE
+#     foo_private.h
+# )
+
+include(${PROJECT_SOURCE_DIR}/cmake/LibraryConfig.cmake)

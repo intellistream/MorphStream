@@ -1,6 +1,7 @@
 #include <iostream>
+#include <streamjoin.h>
 
 int main() {
-  std::cout << "Hello, World!" << std::endl;
+  PRINT_VERSION();
   return 0;
 }
