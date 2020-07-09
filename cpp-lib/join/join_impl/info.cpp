@@ -3,6 +3,5 @@
 #include <stdio.h>
 
 void print_version(void) {
-  const char *m = "Not debug";
-  printf("This is Join Lib version %s (%s)\n", JOIN_IMPL_VERSION, m);
+  printf("Welcome to Stream Join Lib (version %s)\n", JOIN_IMPL_VERSION);
 }
