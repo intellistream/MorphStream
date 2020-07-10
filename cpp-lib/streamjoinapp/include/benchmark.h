@@ -1,0 +1,9 @@
+//
+// Created by tony on 10.07.20.
+//
+
+#ifndef STREAMJOINAPP__BENCHMARK_H_
+#define STREAMJOINAPP__BENCHMARK_H_
+
+
+#endif // STREAMJOINAPP__BENCHMARK_H_
