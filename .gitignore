@@ -1,4 +1,13 @@
-/common/target/classes/
+/common/target/
+/stream-engine/target/
+/state-engine/target/
+/application/target/
+/.idea/
+/application/application.iml
+/common/common.iml
+/state-engine/state-engine.iml
+/stream-engine/stream-engine.iml
+
 /metric_output/
 
 # builds
@@ -32,3 +41,5 @@ _install/
 *.app
 
 /.github/
+
+
