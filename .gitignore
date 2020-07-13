@@ -31,3 +31,4 @@ _install/
 *.out
 *.app
 
+/.github/
