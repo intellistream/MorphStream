@@ -1,8 +1,10 @@
 package combo;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.param.sl.TransactionEvent;
 import common.sink.SINKCombo;
 import common.tools.FastZipfGenerator;
+import common.topology.transactional.initializer.slinitializer.datagenerator.DataConfig;
 import org.slf4j.Logger;
 import sesame.components.context.TopologyContext;
 import sesame.components.operators.api.TransactionalBolt;
@@ -44,11 +46,29 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public SINKCombo sink = new SINKCombo();
     TransactionalBolt bolt;//compose the bolt here.
     int start_measure;
+
+//    event = new TransactionEvent(
+//                    0, //bid
+//                            0, //pid
+//                            "[0]", //bid_array
+//                            1,//num_of_partition
+//                            "0",//getSourceAccountId
+//                            "0",//getSourceBookEntryId
+//                            "1",//getTargetAccountId
+//                            "1",//getTargetBookEntryId
+//                            2,  //getAccountTransfer
+//                            2  //getBookEntryTransfer
+//    );
+
+
     public SPOUTCombo(Logger log, int i) {
         super(log, i);
         LOG = log;
         this.scalable = false;
         state = new ValueState();
+
+
+
     }
     public abstract void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector);
     @Override
@@ -110,26 +130,42 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         double scale_factor = config.getDouble("scale_factor", 1);
         double theta = config.getDouble("theta", 0);
         p_generator = new FastZipfGenerator(NUM_ITEMS, theta, 0);
-        double checkpoint = config.getDouble("checkpoint", 1);
-        batch_number_per_wm = (int) (checkpoint);//10K, 1K, 100.
+
+//        double checkpoint = config.getDouble("checkpoint", 1);
+//        batch_number_per_wm = (int) (checkpoint);//10K, 1K, 100.
+
+
         LOG.info("batch_number_per_wm (watermark events length)= " + (batch_number_per_wm) * combo_bid_size);
         num_events_per_thread = NUM_EVENTS / tthread / combo_bid_size;
+
+        if(num_events_per_thread*tthread<NUM_EVENTS) // assuming combo_bid_size == 1 always
+            if(thread_Id<(NUM_EVENTS-num_events_per_thread*tthread))
+                num_events_per_thread++;
+
+
+        System.out.println("Thread..."+thread_Id+"...events..."+test_num_events_per_thread);
+
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
             MeasureTools.measure_counts[thisTaskId] = MeasureStart;//skip warm-up phase.
             start_measure = 0;
         } else {
-            test_num_events_per_thread = TEST_NUM_EVENST / combo_bid_size;
+//            test_num_events_per_thread = TEST_NUM_EVENST / combo_bid_size;
+            test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
             start_measure = MeasureStart;
+
         }
+        batch_number_per_wm = num_events_per_thread;//10K, 1K, 100.
+
         counter = 0;
-        mybids = new long[test_num_events_per_thread];//5000 batches.
+        mybids = new long[num_events_per_thread];//5000 batches.
         myevents = new Object[num_events_per_thread];
-        for (int i = 0; i < test_num_events_per_thread; i++) {
-            mybids[i] = thisTaskId * (combo_bid_size) + i * tthread * combo_bid_size;
-        }
+//        for (int i = 0; i < test_num_events_per_thread; i++) {
+//            mybids[i] = thisTaskId * (combo_bid_size) + i * tthread * combo_bid_size;
+//        }
         if (config.getInt("CCOption", 0) == CCOption_TStream) {
-            the_end = test_num_events_per_thread - test_num_events_per_thread % batch_number_per_wm;
+//            the_end = test_num_events_per_thread - test_num_events_per_thread % batch_number_per_wm; // we are expecting batch per watermark to be less then number of events per thread?
+            the_end = test_num_events_per_thread;
         } else {
             the_end = test_num_events_per_thread;
         }

@@ -3,6 +3,7 @@ import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.common.Operation;
+import state_engine.common.OperationChain;
 import state_engine.content.T_StreamContent;
 import state_engine.profiler.Metrics;
 import state_engine.storage.SchemaRecord;
@@ -119,6 +120,8 @@ public final class TxnProcessingEngine {
             standalone_engine.close();
         }
     }
+
+    // DD: Transfer event processing
     private void CT_Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         // read
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
@@ -146,6 +149,8 @@ public final class TxnProcessingEngine {
         //Fix it later.
         // check the preconditions
         //TODO: make the condition checking more generic in future.
+
+        // DD: Transaction Operation is conditioned on both source asset and account balance. So the operation can depend on both.
         if (sourceAccountBalance > operation.condition.arg1
                 && sourceAccountBalance > operation.condition.arg2
                 && sourceAssetValue > operation.condition.arg3) {
@@ -302,10 +307,12 @@ public final class TxnProcessingEngine {
     }
     //TODO: actual evaluation on the operation_chain.
     private void process(MyList<Operation> operation_chain, long mark_ID) {
-        while (true) {
-            Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness.
-            if (operation == null) return;
-            process(operation, mark_ID, false);
+
+        Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness.
+        while (operation!=null) {
+            if (operation != null)
+                process(operation, mark_ID, false);
+            operation = operation_chain.pollFirst();
         }//loop.
 //        if (enable_work_stealing) {
 //            while (true) {
@@ -367,7 +374,11 @@ public final class TxnProcessingEngine {
 //        assert instance != null;
 //        for (Map.Entry<Range<Integer>, Holder> rangeHolderEntry : holder.entrySet()) {
 //            Holder operation_chain = rangeHolderEntry.getValue();
-        for (MyList<Operation> operation_chain : holder.holder_v1.values()) {
+
+        for (OperationChain operationChain : holder.holder_v1.values()) {
+
+            MyList<Operation> operation_chain = operationChain.getOperations();
+
 //        for (int i = 0; i < H2_SIZE; i++) {
 //            ConcurrentSkipListSet<Operation> operation_chain = holder.holder_v2[i];
 //        Set<Operation> operation_chain = holder.holder_v3;
@@ -450,9 +461,14 @@ public final class TxnProcessingEngine {
     public class Holder {
         //version 1: single list Operation on one key
         //	ConcurrentSkipListSet holder_v1 = new ConcurrentSkipListSet();
-        public ConcurrentHashMap<String, MyList<Operation>> holder_v1 = new ConcurrentHashMap<>();
+        public ConcurrentHashMap<String, OperationChain> holder_v1 = new ConcurrentHashMap<>();
+//        public ConcurrentHashMap<String, MyList<Operation>> holder_v1 = new ConcurrentHashMap<>();
 //        public ConcurrentSkipListSet<Operation>[] holder_v2 = new ConcurrentSkipListSet[H2_SIZE];
     }
+
+//     DD: We keep basically keep multiple holders and distribute operations among them.
+//     For example, holder with key 1 can hold operations on tuples with key, 1-100,
+//     holder with key 2 can hold operations on tuples with key 101-200 and so on...
     public class Holder_in_range {
         public ConcurrentHashMap<Integer, Holder> rangeMap = new ConcurrentHashMap<>();//each op has a holder.
         public Holder_in_range(Integer num_op) {

@@ -129,7 +129,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         common = conf.getBoolean("common", false);
         final ArrayList<ExecutionNode> executionNodeArrayList = getExecutionNodeArrayList();
         spout = executionNodeArrayList.get(0);
-        sink = executionNodeArrayList.get(executionNodeArrayList.size() - 1);
+        sink = executionNodeArrayList.get(executionNodeArrayList.size() - 1);// Aqif: Since we have only one component in TStream SLCombo, this is the last spout ExecutionNode
         virtualNode = addVirtual(p);
         for (ExecutionNode executor : executionNodeArrayList) {
             if (executor.isLeafNode()) {

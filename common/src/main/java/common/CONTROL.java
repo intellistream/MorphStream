@@ -5,8 +5,8 @@ public interface CONTROL {
     int MeasureStart = 0;//10_000;//server needs at least 10,000 to compile, so skip them.
     int MeasureBound = 1_000;
     //application related.
-    int NUM_EVENTS = 1_000; //different input events.. TODO: It must be kept small as GC pressure increases rapidly. Fix this in future work.
-    int TEST_NUM_EVENST = 1_000;//total runs per thread.
+    int NUM_EVENTS = 10000; //different input events.. TODO: It must be kept small as GC pressure increases rapidly. Fix this in future work.
+    int TEST_NUM_EVENST = 10000;//total runs per thread.
     //combo optimization
     boolean enable_app_combo = true;//compose all operators into one.
     int combo_bid_size = 1;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).

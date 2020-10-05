@@ -20,6 +20,9 @@ public interface Constants {
     String Event_Path = System.getProperty("user.home")
 //            + (OsUtils.isMac() ? "" : OsUtils.OS_wrapper("Documents"))
             + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("EVENT");
+    String Synth_Data_Folder_Path = System.getProperty("user.home")
+//            + (OsUtils.isMac() ? "" : OsUtils.OS_wrapper("Documents"))
+            + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
     char sinkType = 's';
     char spoutType = 'p';
     char boltType = 'b';

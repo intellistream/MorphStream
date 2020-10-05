@@ -1,21 +1,30 @@
 package state_engine.transaction.dedicated.ordered;
+import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.DatabaseException;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.Operation;
+import state_engine.common.OperationChain;
 import state_engine.storage.*;
 import state_engine.storage.datatype.DataBox;
 import state_engine.transaction.dedicated.TxnManagerDedicated;
 import state_engine.transaction.function.Condition;
 import state_engine.transaction.function.Function;
 import state_engine.transaction.impl.TxnContext;
+import state_engine.utils.SOURCE_CONTROL;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static common.CONTROL.kMaxThreadNum;
+import static common.Constants.Synth_Data_Folder_Path;
 import static state_engine.Meta.MetaTypes.AccessType.INSERT_ONLY;
 import static state_engine.transaction.impl.TxnAccess.Access;
 /**
@@ -96,7 +105,9 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     }
     private int getTaskId(String key) {
         Integer _key = Integer.valueOf(key);
-        return _key / delta;
+        //DD: Number of accounts / threads (tasks) gives us delta and record key is probably incremental upto number of accounts.
+//        return _key / delta;
+        return 0; // for time being we are dealing with single task only.
     }
     /**
      * build the Operation chain.. concurrently..
@@ -108,12 +119,15 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      * @param record_ref
      * @param txn_context
      */
+
+
     public void operation_chain_construction_read_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, SchemaRecordRef record_ref, TxnContext txn_context) {
-        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-        MyList<Operation> myList = holder.get(primaryKey);
+//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        MyList<Operation> myList = holder.get(primaryKey);
 //        LOG.info(String.valueOf(OsUtils.Addresser.addressOf(record_ref)));
-        myList.add(new Operation(table_name, txn_context, bid, accessType, record, record_ref));
+//        myList.add(new Operation(table_name, txn_context, bid, accessType, record, record_ref));
+        addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, record_ref), table_name, primaryKey);
 //        Integer key = Integer.valueOf(record.record_.GetPrimaryKey());
 //        int taskId = getTaskId(key);
 //        int h2ID = getH2ID(key);
@@ -123,11 +137,12 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.add(new Operation(txn_context, bid, accessType, record, record_ref));
     }
     public void operation_chain_construction_read_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, TableRecordRef record_ref, TxnContext txn_context) {
-        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-        MyList<Operation> myList = holder.get(primaryKey);
+//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        MyList<Operation> myList = holder.get(primaryKey);
 //        LOG.info(String.valueOf(OsUtils.Addresser.addressOf(record_ref)));
-        myList.add(new Operation(table_name, txn_context, bid, accessType, record, record_ref));
+//        myList.add(new Operation(table_name, txn_context, bid, accessType, record, record_ref));
+        addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, record_ref), table_name, primaryKey);
 //        Integer key = Integer.valueOf(record.record_.GetPrimaryKey());
 //        int taskId = getTaskId(key);
 //        int h2ID = getH2ID(key);
@@ -146,9 +161,14 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      * @param txn_context
      */
     private void operation_chain_construction_write_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, List<DataBox> value, TxnContext txn_context) {
-        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-        holder.get(primaryKey).add(new Operation(table_name, txn_context, bid, accessType, record, value));
+
+//        ConcurrentHashMap<String, MyList<Operation>> holder =
+//                // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
+//                instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        holder.get(primaryKey).add(new Operation(table_name, txn_context, bid, accessType, record, value));
+
+        addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, value), table_name, primaryKey);
 //        int taskId = getTaskId(record);
 //        int h2ID = getH2ID(taskId);
 ////        LOG.debug("Submit read for record:" + record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
@@ -157,9 +177,10 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.add(new Operation(txn_context, bid, accessType, record, value_list));
     }
     private void operation_chain_construction_write_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, long value, int column_id, TxnContext txn_context) {
-        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-        holder.get(primaryKey).add(new Operation(table_name, txn_context, bid, accessType, record, value, column_id));
+//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        holder.get(primaryKey).add(new Operation(table_name, txn_context, bid, accessType, record, value, column_id));
+        addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, value, column_id), table_name, primaryKey);
 //        int taskId = getTaskId(record);
 //        int h2ID = getH2ID(taskId);
 ////        LOG.debug("Submit read for record:" + record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
@@ -169,11 +190,12 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     }
     private void operation_chain_construction_modify_read(TableRecord record, String table_name, long bid,
                                                           MetaTypes.AccessType accessType, SchemaRecordRef record_ref, Function function, TxnContext txn_context) {
-        String primaryKey = record.record_.GetPrimaryKey();
-        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        //simple sequential build.
-        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-        holder.get(primaryKey).add(new Operation(table_name, txn_context, bid, accessType, record, record_ref, function));
+//        String primaryKey = record.record_.GetPrimaryKey();
+//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        //simple sequential build.
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        holder.get(primaryKey).add(new Operation(table_name, txn_context, bid, accessType, record, record_ref, function));
+        addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, record_ref, function), table_name, record.record_.GetPrimaryKey());
 //        int taskId = getTaskId(record);
 //        int h2ID = getH2ID(taskId);
 //        LOG.debug("Submit read for record:" + record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
@@ -181,11 +203,15 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 ////        Set<Operation> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(record)).holder_v3;
 //        holder.add(new Operation(txn_context, bid, accessType, record, record_ref, function));
     }
+
+    //READ_WRITE
     private void operation_chain_construction_modify_only(TableRecord s_record, String table_name, long bid, MetaTypes.AccessType accessType, TableRecord d_record, Function function, TxnContext txn_context, int column_id) {
-        String primaryKey = d_record.record_.GetPrimaryKey();
-        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-        holder.get(primaryKey).add(new Operation(table_name, s_record, d_record, bid, accessType, function, txn_context, column_id));
+//        String primaryKey = d_record.record_.GetPrimaryKey();
+//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        holder.get(primaryKey).add(new Operation(table_name, s_record, d_record, bid, accessType, function, txn_context, column_id));
+        addOperationToChain(new Operation(table_name, s_record, d_record, bid, accessType, function, txn_context, column_id), table_name, d_record.record_.GetPrimaryKey());
+//        updateDependencies();
 //        int taskId = getTaskId(d_record);
 //        int h2ID = getH2ID(taskId);
 ////        LOG.debug("Submit read for record:" + d_record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
@@ -193,11 +219,15 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 ////        Set<Operation> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(s_record)).holder_v3;
 //        holder.add(new Operation(s_record, d_record, bid, accessType, function, txn_context));
     }
-    private void operation_chain_construction_modify_only(String table_name, long bid, MetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, Function function, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
-        String primaryKey = d_record.record_.GetPrimaryKey();
-        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-        holder.get(primaryKey).add(new Operation(table_name, s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success));
+    private void operation_chain_construction_modify_only(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, Function function,
+                                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
+//        String primaryKey = d_record.record_.GetPrimaryKey();
+//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        holder.get(primaryKey).add(new Operation(table_name, s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success));
+        addOperationToChain(new Operation(table_name, s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
+        checkDataDependencies(table_name, key, bid, condition_sourceTable, condition_source);
+
 //
 //        int taskId = getTaskId(d_record);
 //        int h2ID = getH2ID(taskId);
@@ -206,11 +236,16 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 ////        Set<Operation> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(d_record)).holder_v3;
 //        holder.add(new Operation(s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success));
     }
-    private void operation_chain_construction_modify_only(String table_name, long bid, MetaTypes.AccessType accessType, TableRecord d_record, Function function, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
-        String primaryKey = d_record.record_.GetPrimaryKey();
-        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-        holder.get(primaryKey).add(new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success));
+
+    //READ_WRITE_COND
+    private void operation_chain_construction_modify_only(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord d_record, Function function,
+                                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
+//        String primaryKey = d_record.record_.GetPrimaryKey();
+//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        holder.get(primaryKey).add(new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success));
+        addOperationToChain(new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
+        checkDataDependencies(table_name, key, bid, condition_sourceTable, condition_source);
 //        int taskId = getTaskId(d_record);
 //        int h2ID = getH2ID(taskId);
 ////        LOG.debug("Submit read for record:" + d_record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
@@ -218,12 +253,16 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 ////        Set<Operation> holder = instance.getHolder(fid).rangeMap.get(getTaskId(d_record)).holder_v3;
 //        holder.add(new Operation(d_record, bid, accessType, function, condition_records, condition, txn_context, success));
     }
-    private void operation_chain_construction_modify_read(String table_name, long bid, MetaTypes.AccessType accessType, TableRecord d_record, SchemaRecordRef record_ref, Function function
-            , TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
-        String primaryKey = d_record.record_.GetPrimaryKey();
-        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-        holder.get(primaryKey).add(new Operation(table_name, d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success));
+
+    //READ_WRITE_COND_READ
+    private void operation_chain_construction_modify_read(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord d_record, SchemaRecordRef record_ref, Function function,
+                                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
+//        String primaryKey = d_record.record_.GetPrimaryKey();
+//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        holder.get(primaryKey).add(new Operation(table_name, d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success));
+        addOperationToChain(new Operation(table_name, d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
+        checkDataDependencies(table_name, key, bid, condition_sourceTable, condition_source);
 //        int taskId = getTaskId(d_record);
 //        int h2ID = getH2ID(taskId);
 //        LOG.debug("Submit read for record:" + d_record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
@@ -231,6 +270,52 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        Set<Operation> holder = instance.getHolder(fid).rangeMap.get(getTaskId(d_record)).holder_v3;
 //        holder.add(new Operation(d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success));
     }
+
+    private void checkDataDependencies(String table_name, String key, long bid, String[] condition_sourceTable, String[] condition_source) {
+
+        OperationChain dependent = instance.getHolder(table_name).rangeMap.get(getTaskId(key)).holder_v1.get(key);
+
+        for (int index=0; index<condition_source.length; index++) {
+            if(table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
+                continue;
+
+            ConcurrentHashMap<String, OperationChain> dependencyHolder = instance.getHolder(condition_sourceTable[index]).rangeMap.get(getTaskId(condition_source[index])).holder_v1;
+            OperationChain dependency = dependencyHolder.get(condition_source[index]);
+            if(dependency == null) {
+                // we add dependency operation chain for the sake of recording a potential dependency on it due to some delayed event arrival.
+                dependency = new OperationChain(condition_sourceTable[index], condition_source[index]);
+                dependencyHolder.put(condition_source[index], dependency);
+            }
+
+            // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is  enough.
+            if(dependency.getOperations().isEmpty() || dependency.getOperations().first().bid >= bid) { // if dependencies first op's bid is >= current bid, then it has no operation that we depend upon, but it could be a potential dependency in case we have delayed transactions (events)
+                // if dependency has no operations on it or no operation with id < current operation id.
+                // we will like to record it as potential future dependency, if a delayed operation with id < current bid arrives
+                dependency.addPotentialDependent(dependent, bid);
+            } else { // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
+                dependent.addDependency(dependency); // record dependency
+            }
+        }
+
+        // check if current operation causes other operation chains to depend upon current one.
+        // This may happen when a delayed event arrives.
+        dependent.checkOtherPotentialDependencies(bid);
+
+    }
+
+    private void addOperationToChain(Operation operation, String table_name, String primaryKey){
+        // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
+        ConcurrentHashMap<String, OperationChain> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+        holder.putIfAbsent(primaryKey, new OperationChain(table_name, primaryKey));
+        holder.get(primaryKey).addOperation(operation);
+
+
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        MyList<Operation> myList = holder.get(primaryKey);
+//        myList.add(operation);
+    }
+
     /**
      * Build Operation chains during SP execution.
      *
@@ -291,22 +376,25 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         operation_chain_construction_modify_read(t_record, srcTable, bid, accessType, record_ref, function, txn_context);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
-    protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, TableRecord s_record, SchemaRecordRef record_ref, Function function,
-                                              TableRecord[] condition_source, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
+    protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, SchemaRecordRef record_ref, Function function,
+                                              String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
         long bid = txn_context.getBID();
-        operation_chain_construction_modify_read(srcTable, bid, accessType,
-                s_record, record_ref, function, condition_source, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
+        operation_chain_construction_modify_read(srcTable, key, bid, accessType,
+                s_record, record_ref, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
     @Override
-    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, TableRecord s_record, TableRecord d_record, Function function, TableRecord[] condition_source, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
+    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, TableRecord d_record, Function function,
+                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
         long bid = txn_context.getBID();
-        operation_chain_construction_modify_only(srcTable, bid, accessType, s_record, d_record, function, condition_source, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
+        operation_chain_construction_modify_only(srcTable, key, bid, accessType, s_record, d_record, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
-    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, TableRecord s_record, Function function, TableRecord[] condition_source, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
+
+    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, Function function,
+                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
         long bid = txn_context.getBID();
-        operation_chain_construction_modify_only(srcTable, bid, accessType, s_record, function, condition_source, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
+        operation_chain_construction_modify_only(srcTable, key, bid, accessType, s_record, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
     /**
@@ -318,6 +406,50 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      */
     @Override
     public void start_evaluate(int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
+//        SOURCE_CONTROL.getInstance().Wait_Start(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+//        if(thread_Id==0)
+//            dumpDependencies();
+//        SOURCE_CONTROL.getInstance().Wait_End(thread_Id);//sync for all threads to come to this line.
         instance.start_evaluation(thread_Id, mark_ID);
     }
+
+    public void dumpDependencies() {
+
+        ArrayList<String> dependencies = new ArrayList<>();
+        ConcurrentHashMap<String, OperationChain> accountsHolder = instance.getHolder("accounts").rangeMap.get(getTaskId("10")).holder_v1;
+        ConcurrentHashMap<String, OperationChain> booksHolder = instance.getHolder("bookEntries").rangeMap.get(getTaskId("10")).holder_v1;
+
+        ConcurrentHashMap.KeySetView<String, OperationChain> keys = accountsHolder.keySet();
+        for (String key : keys) {
+            accountsHolder.get(key).addAllDependencies(dependencies);
+        }
+        keys = booksHolder.keySet();
+        for (String key : keys) {
+            booksHolder.get(key).addAllDependencies(dependencies);
+        }
+
+
+        FileWriter fileWriter = null;
+        try {
+
+            File file = new File(System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA") + OsUtils.OS_wrapper("dependency_edges_as_recorded.csv"));
+            if (file.exists())
+                file.delete();
+            file.createNewFile();
+
+            fileWriter = new FileWriter(file);
+            fileWriter.write("source,target\n");
+
+            for(String dependency: dependencies)
+                fileWriter.write(dependency+"\n");
+            fileWriter.close();
+            System.out.println("Recorded dependencies dumped...");
+        } catch (IOException e) {
+            System.out.println("An error occurred while storing dependencies graph.");
+            e.printStackTrace();
+        }
+
+
+    }
+
 }

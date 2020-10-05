@@ -49,12 +49,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
      */
     @Override
     public boolean checkpoint(int counter) {
-        if (counter % batch_number_per_wm == 0) {
-//            myiteration++;
-//            success = false;
-            return true;
-        } else
-            return false;
+        return (counter % batch_number_per_wm == 0);
     }
     @Override
     public void forward_checkpoint(int sourceId, long bid, Marker marker) throws InterruptedException {

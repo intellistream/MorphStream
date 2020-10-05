@@ -101,7 +101,7 @@ public class TransactionEvent extends TxnEvent {
     // ------------------------------------------------------------------------
     @Override
     public String toString() {
-        return "TransactionEvent {"
+        return "TransactionEvent ("+bid+") {"
                 + "sourceAccountId=" + sourceAccountId
                 + ", targetAccountId=" + targetAccountId
                 + ", sourceBookEntryId=" + sourceBookEntryId

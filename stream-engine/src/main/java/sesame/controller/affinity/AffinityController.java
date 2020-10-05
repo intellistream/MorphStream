@@ -26,7 +26,7 @@ public class AffinityController {
         mapping_node = Platform.getNodes(conf.getInt("machine"));
 //		Integer[] sockets_usage = new Integer[8];
         cpu_pnt.put(0, 1);
-        for (int i = 1; i < 8; i++) {
+        for (int i = 1; i < 8; i++) { //TODO: Aqif: What is cpu_pnt and why we are looping upto 8
             cpu_pnt.put(i, 0);
 //			sockets_usage[i] = 0;
         }

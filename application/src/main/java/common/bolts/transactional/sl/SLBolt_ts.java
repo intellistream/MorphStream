@@ -18,6 +18,7 @@ import state_engine.transaction.function.INC;
 import state_engine.transaction.impl.TxnContext;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -48,10 +49,15 @@ public class SLBolt_ts extends SLBolt {
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
+        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
     }
+
+    ArrayList<String> ocs = new ArrayList<>();
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+
         if (in.isMarker()) {
+//            System.out.println("Marker reached.....................%%%%%%%%%%%%");
             int readSize = transactionEvents.size();
             BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
             BEGIN_TP_TIME_MEASURE(thread_Id);
@@ -74,6 +80,7 @@ public class SLBolt_ts extends SLBolt {
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
+//            System.out.println("thread: "+thread_Id+", event_id: "+_bid);
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TxnEvent event = (TxnEvent) input_event;
             if (enable_latency_measurement)
@@ -87,39 +94,48 @@ public class SLBolt_ts extends SLBolt {
         END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);//includes post time deposite..
     }
     protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
+//        System.out.println(event.toString());
         String[] srcTable = new String[]{"accounts", "bookEntries"};
         String[] srcID = new String[]{event.getSourceAccountId(), event.getSourceBookEntryId()};
+
+        if(!ocs.contains("accounts_"+event.getSourceAccountId()))
+            ocs.add("accounts_"+event.getSourceAccountId());
+        if(!ocs.contains("accounts_"+event.getTargetAccountId()))
+            ocs.add("accounts_"+event.getTargetAccountId());
+        if(!ocs.contains("bookEntries_"+event.getSourceBookEntryId()))
+            ocs.add("bookEntries_"+event.getSourceBookEntryId());
+        if(!ocs.contains("bookEntries_"+event.getTargetBookEntryId()))
+            ocs.add("bookEntries_"+event.getTargetBookEntryId());
+
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "accounts",
-                event.getSourceAccountId()
-                , event.src_account_value,//to be fill up.
+                event.getSourceAccountId(), event.src_account_value,//to be fill up.
                 new DEC(event.getAccountTransfer()),
                 srcTable, srcID,//condition source, condition id.
-                new Condition(
-                        event.getMinAccountBalance(),
-                        event.getAccountTransfer(), event.getBookEntryTransfer()),
+                new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
                 event.success);          //asynchronously return.
+
         transactionManager.Asy_ModifyRecord(txnContext,
                 "bookEntries", event.getSourceBookEntryId()
-                , new DEC(event.getBookEntryTransfer()), srcTable, srcID,
-                new Condition(event.getMinAccountBalance(),
-                        event.getAccountTransfer(), event.getBookEntryTransfer()),
+                , new DEC(event.getBookEntryTransfer()),
+                srcTable, srcID,
+                new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
                 event.success);   //asynchronously return.
+
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "accounts",
-                event.getTargetAccountId()
-                , event.dst_account_value,//to be fill up.
+                event.getTargetAccountId(), event.dst_account_value,//to be fill up.
                 new INC(event.getAccountTransfer()),
                 srcTable, srcID//condition source, condition id.
-                , new Condition(event.getMinAccountBalance(),
-                        event.getAccountTransfer(), event.getBookEntryTransfer()),
+                , new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
                 event.success);          //asynchronously return.
+
         transactionManager.Asy_ModifyRecord(txnContext,
                 "bookEntries",
-                event.getTargetBookEntryId()
-                , new INC(event.getBookEntryTransfer()), srcTable, srcID,
-                new Condition(event.getMinAccountBalance(),
-                        event.getAccountTransfer(), event.getBookEntryTransfer()),
+                event.getTargetBookEntryId(),
+                new INC(event.getBookEntryTransfer()),
+                srcTable, srcID,
+                new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
                 event.success);   //asynchronously return.
         transactionEvents.add(event);
     }

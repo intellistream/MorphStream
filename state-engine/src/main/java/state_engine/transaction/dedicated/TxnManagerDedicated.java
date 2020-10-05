@@ -170,6 +170,8 @@ public abstract class TxnManagerDedicated implements TxnManager {
             return false;
         }
     }
+
+    // Modify for deposit
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function) throws DatabaseException {
         MetaTypes.AccessType accessType = AccessType.READ_WRITE;
@@ -222,7 +224,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(src_key);
         TableRecord d_record = storageManager_.getTable(srcTable).SelectKeyRecord(dest_key);
         if (d_record != null) {
-            return Asy_ModifyRecordCC(txn_context, srcTable, s_record, d_record, function, condition_records, condition, accessType, success);
+            return Asy_ModifyRecordCC(txn_context, srcTable, src_key, s_record, d_record, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
         } else {
             LOG.info("No record is found:" + src_key);
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
@@ -248,7 +250,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         condition_records[0] = s_record;
         if (s_record != null) {
-            return Asy_ModifyRecordCC(txn_context, srcTable, s_record, function, condition_records, condition, accessType, success);
+            return Asy_ModifyRecordCC(txn_context, srcTable, key, s_record, function, new String[]{srcTable}, new String[]{key}, condition_records, condition, accessType, success);
         } else {
             LOG.info("No record is found:" + key);
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
@@ -269,8 +271,21 @@ public abstract class TxnManagerDedicated implements TxnManager {
      * @return
      * @throws DatabaseException
      */
+
+//     transactionManager.Asy_ModifyRecord(txnContext,
+//            "bookEntries", event.getSourceBookEntryId()
+//            , new DEC(event.getBookEntryTransfer())
+//            , srcTable, srcID,
+//            new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
+//    event.success);   //asynchronously return.
+
     @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, boolean[] success) throws DatabaseException {
+    public boolean Asy_ModifyRecord(TxnContext txn_context,
+                                    String srcTable, String key,
+                                    Function function,
+                                    String[] condition_sourceTable, String[] condition_source,
+                                    Condition condition,
+                                    boolean[] success) throws DatabaseException {
         MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
         BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
@@ -280,15 +295,33 @@ public abstract class TxnManagerDedicated implements TxnManager {
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
         if (s_record != null) {
-            return Asy_ModifyRecordCC(txn_context, srcTable, s_record, function, condition_records, condition, accessType, success);
+            return Asy_ModifyRecordCC(txn_context, srcTable, key, s_record, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
         } else {
             LOG.info("No record is found:" + key);
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
             return false;
         }
     }
+
+//     Decrement Source
+//     transactionManager.Asy_ModifyRecord_Read(
+//     txnContext, "accounts", event.getSourceAccountId(), event.src_account_value,//to be fill up.
+//              new DEC(event.getAccountTransfer()),
+//              rcTable, srcID,//condition source, condition id.
+//              new Condition( event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()), event.success);
+
+//      Increment Destination
+//      transactionManager.Asy_ModifyRecord_Read(
+//              txnContext, "accounts", event.getTargetAccountId(), event.dst_account_value,//to be fill up.
+//              new INC(event.getAccountTransfer()),
+//              srcTable, srcID//condition source, condition id.
+//              , new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()), event.success);
+
     @Override
-    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, boolean[] success) throws DatabaseException {
+    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
+                                         Function function,
+                                         String[] condition_sourceTable, String[] condition_source,
+                                         Condition condition, boolean[] success) throws DatabaseException {
         MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND_READ;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
         for (int i = 0; i < condition_source.length; i++) {
@@ -300,9 +333,10 @@ public abstract class TxnManagerDedicated implements TxnManager {
                 return false;
             }
         }
+
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return Asy_ModifyRecord_ReadCC(txn_context, srcTable, s_record, record_ref, function, condition_records, condition, accessType, success);
+            return Asy_ModifyRecord_ReadCC(txn_context, srcTable, key, s_record, record_ref, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
             LOG.info("No record is found:" + key);
@@ -444,8 +478,8 @@ public abstract class TxnManagerDedicated implements TxnManager {
      * @param success
      * @return
      */
-    protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, TableRecord s_record, SchemaRecordRef record_ref, Function function,
-                                              TableRecord[] condition_records, Condition condition, AccessType accessType, boolean[] success) {
+    protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, String sourceKey, TableRecord s_record, SchemaRecordRef record_ref, Function function,
+                                              String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, AccessType accessType, boolean[] success) {
         throw new UnsupportedOperationException();
     }
     protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, TableRecord t_record, SchemaRecordRef record_ref, Function function, AccessType accessType) {
@@ -457,11 +491,13 @@ public abstract class TxnManagerDedicated implements TxnManager {
     protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, TableRecord t_record, Function function, AccessType accessType) {
         return Asy_ModifyRecordCC(txn_context, srcTable, t_record, t_record, function, accessType, 1);
     }
-    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, TableRecord s_record, TableRecord d_record, Function function, TableRecord[] condition_source, Condition condition, AccessType accessType, boolean[] success) {
+    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String sourceKey, TableRecord s_record, TableRecord d_record, Function function,
+                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, AccessType accessType, boolean[] success) {
         throw new UnsupportedOperationException();
     }
-    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, TableRecord s_record, Function function, TableRecord[] condition_source, Condition condition, AccessType accessType, boolean[] success) {
-        return Asy_ModifyRecordCC(txn_context, srcTable, s_record, s_record, function, condition_source, condition, accessType, success);
+    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String sourceKey, TableRecord s_record, Function function,
+                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, AccessType accessType, boolean[] success) {
+        return Asy_ModifyRecordCC(txn_context, srcTable, sourceKey, s_record, s_record, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
     }
     protected abstract boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType access_type) throws InterruptedException;
     public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType accessType) {
