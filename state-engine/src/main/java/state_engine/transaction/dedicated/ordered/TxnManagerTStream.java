@@ -37,7 +37,10 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         super(storageManager, thisComponentId, thisTaskId, thread_countw);
         instance = TxnProcessingEngine.getInstance();
 //        delta_long = (int) Math.ceil(NUM_ITEMS / (double) thread_countw);//range of each partition. depends on the number of op in the stage.
-        delta = (int) Math.ceil(NUM_RECORDS / (double) thread_countw);//NUM_ITEMS / tthread;
+//        delta = (int) Math.ceil(NUM_RECORDS / (double) thread_countw);//NUM_ITEMS / tthread;
+
+        delta = (int) (100*1*10000/(double) thread_countw); // Check id generation in DateGenerator.
+
 //        switch (config.getInt("app")) {
 //            case "StreamLedger": {
 //                delta = (int) Math.ceil(NUM_ACCOUNTS / (double) thread_countw);//NUM_ITEMS / tthread;
@@ -106,8 +109,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     private int getTaskId(String key) {
         Integer _key = Integer.valueOf(key);
         //DD: Number of accounts / threads (tasks) gives us delta and record key is probably incremental upto number of accounts.
-//        return _key / delta;
-        return 0; // for time being we are dealing with single task only.
+        return _key / delta;
     }
     /**
      * build the Operation chain.. concurrently..
@@ -406,18 +408,21 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      */
     @Override
     public void start_evaluate(int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
-//        SOURCE_CONTROL.getInstance().Wait_Start(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-//        if(thread_Id==0)
-//            dumpDependencies();
-//        SOURCE_CONTROL.getInstance().Wait_End(thread_Id);//sync for all threads to come to this line.
+
+        SOURCE_CONTROL.getInstance().Wait_Start(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+//        dumpDependenciesForThread(thread_Id);
+        if(thread_Id==0)
+            mergeDependencyFiles();
         instance.start_evaluation(thread_Id, mark_ID);
+        SOURCE_CONTROL.getInstance().Wait_End(thread_Id);//sync for all threads to come to this line.
+
     }
 
-    public void dumpDependencies() {
+    public void dumpDependenciesForThread(int thread_id) { // SL Specific code in TxnManager, where else to put it?
 
         ArrayList<String> dependencies = new ArrayList<>();
-        ConcurrentHashMap<String, OperationChain> accountsHolder = instance.getHolder("accounts").rangeMap.get(getTaskId("10")).holder_v1;
-        ConcurrentHashMap<String, OperationChain> booksHolder = instance.getHolder("bookEntries").rangeMap.get(getTaskId("10")).holder_v1;
+        ConcurrentHashMap<String, OperationChain> accountsHolder = instance.getHolder("accounts").rangeMap.get(thread_id).holder_v1;
+        ConcurrentHashMap<String, OperationChain> booksHolder = instance.getHolder("bookEntries").rangeMap.get(thread_id).holder_v1;
 
         ConcurrentHashMap.KeySetView<String, OperationChain> keys = accountsHolder.keySet();
         for (String key : keys) {
@@ -428,11 +433,10 @@ public class TxnManagerTStream extends TxnManagerDedicated {
             booksHolder.get(key).addAllDependencies(dependencies);
         }
 
-
         FileWriter fileWriter = null;
         try {
 
-            File file = new File(System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA") + OsUtils.OS_wrapper("dependency_edges_as_recorded.csv"));
+            File file = new File(System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA") + OsUtils.OS_wrapper(String.format("dependency_edges_thread_%d.csv", thread_id)));
             if (file.exists())
                 file.delete();
             file.createNewFile();
@@ -443,13 +447,22 @@ public class TxnManagerTStream extends TxnManagerDedicated {
             for(String dependency: dependencies)
                 fileWriter.write(dependency+"\n");
             fileWriter.close();
-            System.out.println("Recorded dependencies dumped...");
+            System.out.println("Recorded dependencies dumped...thread: "+thread_id);
         } catch (IOException e) {
             System.out.println("An error occurred while storing dependencies graph.");
             e.printStackTrace();
         }
 
+    }
 
+
+    private void mergeDependencyFiles() {
+
+        ArrayList<String> dependencies = new ArrayList<>();
+
+        for(int lop=0; lop<thread_count_; lop++) {
+
+        }
     }
 
 }

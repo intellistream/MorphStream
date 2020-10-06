@@ -33,7 +33,7 @@ public class SOURCE_CONTROL {
 //        return rt;
 //    }
     public void config(int number_threads) {
-//        this.number_threads = number_threads;
+        this.number_threads = number_threads;
         start_barrier = new CyclicBarrier(number_threads);
         end_barrier = new CyclicBarrier(number_threads);
         final_end_barrier = new CyclicBarrier(number_threads);
@@ -43,6 +43,7 @@ public class SOURCE_CONTROL {
         }
 //        this._combo_bid_size = _combo_bid_size;
     }
+
     //return counter.
     public long Get() {
         return counter;
@@ -94,6 +95,43 @@ public class SOURCE_CONTROL {
 //        iteration.put(thread_Id, itr + 1);
 //        assert barrier.getNumberWaiting() == 0;
     }
+
+
+    private int barriersCreatedForDependencyLevel = -1;
+    private CyclicBarrier dLevelStartBarrier;
+    private CyclicBarrier dLevelEndBarrier;
+
+    public void createBarrierForDependencyLevel(int dLevel) {
+        if(dLevel == barriersCreatedForDependencyLevel)
+            return;
+        barriersCreatedForDependencyLevel = dLevel;
+
+        dLevelStartBarrier = new CyclicBarrier(number_threads);
+        dLevelEndBarrier = new CyclicBarrier(number_threads);
+    }
+
+    public void Wait_Start_For_Evaluation(int thread_Id) {
+        try {
+            dLevelStartBarrier.await();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    public void Wait_End_For_Evaluation(int thread_Id) {
+        try {
+            dLevelEndBarrier.await();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void OneThreadFinished(int thread_Id) {
+        number_threads-=1;
+        System.out.println("Remaining thread: "+number_threads);
+    }
+
+
+
     public void Final_END(int thread_Id) {
 //        this.wm.incrementAndGet();
 //        //busy waiting

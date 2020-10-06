@@ -368,23 +368,114 @@ public final class TxnProcessingEngine {
         // LOG.debug("submit to engine: "+ rt);
         return rt;
     }
-    private int submit_task(int thread_Id, Holder holder, Collection<Callable<Object>> callables, long mark_ID) {
-        int sum = 0;
+
+    /**
+     * @param thread_Id
+     * @param mark_ID
+     * @return time spend in tp evaluation.
+     * @throws InterruptedException
+     */
+    public void start_evaluation(int thread_Id, long mark_ID) throws InterruptedException {
+        int dependencyLevelToProcess = 0;
+        int totalChainsToProcess = 0;
+        int totalChainsProcessed = 0;
+
+        Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
+        for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
+            totalChainsToProcess += tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values().size();
+        }
+
+        updateDependencyLevels(thread_Id);
+
+        while(totalChainsProcessed < totalChainsToProcess) {
+
+            SOURCE_CONTROL.getInstance().createBarrierForDependencyLevel(dependencyLevelToProcess);
+
+//            if(thread_Id==0)
+//                System.out.println(String.format("...Processing at level %d...", dependencyLevelToProcess));
+
+            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation(thread_Id);
+
+            totalChainsProcessed += evaluation(thread_Id, dependencyLevelToProcess,previous_ID - kMaxThreadNum);
+            dependencyLevelToProcess+=1;
+//            System.out.println(String.format("thread: %2d... %d Chains processed of %d chains... left: %d", thread_Id, totalChainsProcessed, totalChainsToProcess, totalChainsToProcess - totalChainsProcessed));
+
+            if(totalChainsProcessed == totalChainsToProcess) {
+                SOURCE_CONTROL.getInstance().OneThreadFinished(thread_Id);
+            }
+
+            SOURCE_CONTROL.getInstance().Wait_End_For_Evaluation(thread_Id);
+
+        }
+
+    }
+
+    private void updateDependencyLevels(int thread_Id) {
+
+        Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
+        for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
+            ConcurrentHashMap<String, OperationChain> accountsHolder = tableHolderInRange.rangeMap.get(thread_Id).holder_v1;
+            ConcurrentHashMap.KeySetView<String, OperationChain> keys = accountsHolder.keySet();
+            for (String key : keys) {
+                accountsHolder.get(key).updateDependencyLevel();
+            }
+        }
+
+    }
+
+
+    private int evaluation(int thread_Id, int dependencyLevelToProcess, long mark_ID) throws InterruptedException {
+//        BEGIN_TP_SUBMIT_TIME_MEASURE(thread_Id);
+        //LOG.DEBUG(thread_Id + "\tall source marked checkpoint, starts TP evaluation for watermark bid\t" + bid);
+        Collection<Callable<Object>> callables = new Vector<>();
+
+        int processedChains = 0;
+        Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
+        for (Holder_in_range holder_in_range : tablesHolderInRange) {
+            Holder holder = holder_in_range.rangeMap.get(thread_Id);
+            processedChains += submit_task(dependencyLevelToProcess, holder, callables, mark_ID);
+        }
+//        END_TP_SUBMIT_TIME_MEASURE(thread_Id, task);
+//
+//        for (Callable<Object> callable : callables) {
+//
+//            LOG.info("Thread:" + thread_Id + " is submitting:" + ((MyList<Operation>) ((Task) callable).operation_chain).getPrimaryKey());
+//
+//
+//        }
+        if (enable_engine) {
+            if (enable_work_partition) {
+                multi_engine.get(ThreadToEngine(thread_Id)).executor.invokeAll(callables);
+            } else
+                standalone_engine.executor.invokeAll(callables);
+        }
+        //blocking sync_ratio for all operation_chain to complete.
+        //TODO: For now, we don't know the relationship between operation_chain and transaction, otherwise, we can asynchronously return.
+//        for (Holder_in_range holder_in_range : holder_by_stage.values())
+//            holder_in_range.rangeMap.clear();
+//        callables.clear();
+        return processedChains;
+    }
+
+    private int submit_task(int dependencyLevelToProcess, Holder holder, Collection<Callable<Object>> callables, long mark_ID) {
+        int processedChains = 0;
 //        Instance instance = standalone_engine;//multi_engine.get(key);
 //        assert instance != null;
 //        for (Map.Entry<Range<Integer>, Holder> rangeHolderEntry : holder.entrySet()) {
 //            Holder operation_chain = rangeHolderEntry.getValue();
 
-        for (OperationChain operationChain : holder.holder_v1.values()) {
+        Collection<OperationChain> values = holder.holder_v1.values();
+        for (OperationChain operationChain : values) {
 
+            if(operationChain.getDependencyLevel()!=dependencyLevelToProcess)
+                continue;
+            processedChains += 1;
             MyList<Operation> operation_chain = operationChain.getOperations();
-
 //        for (int i = 0; i < H2_SIZE; i++) {
 //            ConcurrentSkipListSet<Operation> operation_chain = holder.holder_v2[i];
 //        Set<Operation> operation_chain = holder.holder_v3;
             if (operation_chain.size() > 0) {
                 if (enable_profile)
-                    sum += operation_chain.size();
 //                Instance instance = standalone_engine;//multi_engine.get(key);
                 if (!Thread.currentThread().isInterrupted()) {
                     if (enable_engine) {
@@ -406,55 +497,11 @@ public final class TxnProcessingEngine {
                     }
                 }
             }
+
         }
-        return sum;
+        return processedChains;
     }
-    private int evaluation(int thread_Id, long mark_ID) throws InterruptedException {
-//        BEGIN_TP_SUBMIT_TIME_MEASURE(thread_Id);
-        //LOG.DEBUG(thread_Id + "\tall source marked checkpoint, starts TP evaluation for watermark bid\t" + bid);
-        Collection<Callable<Object>> callables = new Vector<>();
-        int task = 0;
-        for (Holder_in_range holder_in_range : holder_by_stage.values()) {
-            Holder holder = holder_in_range.rangeMap.get(thread_Id);
-            task += submit_task(thread_Id, holder, callables, mark_ID);
-        }
-//        END_TP_SUBMIT_TIME_MEASURE(thread_Id, task);
-//
-//        for (Callable<Object> callable : callables) {
-//
-//            LOG.info("Thread:" + thread_Id + " is submitting:" + ((MyList<Operation>) ((Task) callable).operation_chain).getPrimaryKey());
-//
-//
-//        }
-        if (enable_engine) {
-            if (enable_work_partition) {
-                multi_engine.get(ThreadToEngine(thread_Id)).executor.invokeAll(callables);
-            } else
-                standalone_engine.executor.invokeAll(callables);
-        }
-        //blocking sync_ratio for all operation_chain to complete.
-        //TODO: For now, we don't know the relationship between operation_chain and transaction, otherwise, we can asynchronously return.
-//        for (Holder_in_range holder_in_range : holder_by_stage.values())
-//            holder_in_range.rangeMap.clear();
-//        callables.clear();
-        return task;
-    }
-    /**
-     * @param thread_Id
-     * @param mark_ID
-     * @return time spend in tp evaluation.
-     * @throws InterruptedException
-     */
-    public void start_evaluation(int thread_Id, long mark_ID) throws InterruptedException {
-        SOURCE_CONTROL.getInstance().Wait_Start(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-//        BEGIN_TP_CORE_TIME_MEASURE(thread_Id);
-        int size = evaluation(thread_Id, previous_ID - kMaxThreadNum);
-//        SOURCE_CONTROL.getInstance().CLEARWM();//sync_ratio for all threads to come to this line.
-//        END_TP_CORE_TIME_MEASURE_TS(thread_Id, size);//exclude task submission and synchronization time.
-//        SOURCE_CONTROL.getInstance().Wait_Start();//no sync here. sync later.
-//        previous_ID = mark_ID;
-        SOURCE_CONTROL.getInstance().Wait_End(thread_Id);//sync for all threads to come to this line.
-    }
+
     /**
      * There shall be $num_op$ Holders.
      */

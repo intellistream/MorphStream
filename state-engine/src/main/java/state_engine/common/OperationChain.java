@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class OperationChain implements Comparable<OperationChain>{
 
@@ -55,9 +56,7 @@ public class OperationChain implements Comparable<OperationChain>{
         return null;
     }
 
-    public void removePotentialDependent(OperationChain potentialDependent) {
-        // ignoring for now, does not effect the correctness.
-    }
+
 
     public void checkOtherPotentialDependencies(long dependencyBid) {
         List<DependentInfo> processed = new ArrayList<>();
@@ -75,15 +74,33 @@ public class OperationChain implements Comparable<OperationChain>{
 
     }
 
-    public int getDependencyLevel() {
-        int maxDependencyLevel = 0;
-        for(OperationChain opChain : dependsUpon) {
-            int opChainLevel = opChain.getDependencyLevel();
-            if(opChainLevel+1 > maxDependencyLevel)
-                maxDependencyLevel = opChainLevel+1;
-        }
+    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
+    public int dependencyLevel = -1;
 
-        return maxDependencyLevel;
+    public synchronized void updateDependencyLevel() {
+
+        if(isDependencyLevelCalculated)
+            return;
+
+        dependencyLevel = 0;
+        for (OperationChain oc: dependsUpon) {
+
+            if(!oc.hasValidDependencyLevel())
+                oc.updateDependencyLevel();
+
+            if(oc.getDependencyLevel()>=dependencyLevel) {
+                dependencyLevel = oc.getDependencyLevel()+1;
+            }
+        }
+        isDependencyLevelCalculated = true;
+    }
+
+    public boolean hasValidDependencyLevel(){
+        return isDependencyLevelCalculated;
+    }
+
+    public int getDependencyLevel() {
+        return dependencyLevel;
     }
 
     @Override

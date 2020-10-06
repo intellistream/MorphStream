@@ -57,7 +57,6 @@ public class SLBolt_ts extends SLBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         if (in.isMarker()) {
-//            System.out.println("Marker reached.....................%%%%%%%%%%%%");
             int readSize = transactionEvents.size();
             BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
             BEGIN_TP_TIME_MEASURE(thread_Id);
