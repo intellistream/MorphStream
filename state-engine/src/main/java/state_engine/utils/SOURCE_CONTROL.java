@@ -101,23 +101,25 @@ public class SOURCE_CONTROL {
     private CyclicBarrier dLevelStartBarrier;
     private CyclicBarrier dLevelEndBarrier;
 
-    public void createBarrierForDependencyLevel(int dLevel) {
-        if(dLevel == barriersCreatedForDependencyLevel)
+    public synchronized void createBarrierForDependencyLevel(int dLevel) {
+        if(dLevel == barriersCreatedForDependencyLevel || number_threads==0)
             return;
-        barriersCreatedForDependencyLevel = dLevel;
 
+        System.out.println(number_threads);
         dLevelStartBarrier = new CyclicBarrier(number_threads);
         dLevelEndBarrier = new CyclicBarrier(number_threads);
+        barriersCreatedForDependencyLevel = dLevel;
     }
 
-    public void Wait_Start_For_Evaluation(int thread_Id) {
+
+    public void Wait_Start_For_Evaluation() {
         try {
             dLevelStartBarrier.await();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-    public void Wait_End_For_Evaluation(int thread_Id) {
+    public void Wait_End_For_Evaluation() {
         try {
             dLevelEndBarrier.await();
         } catch (Exception ex) {
@@ -125,12 +127,9 @@ public class SOURCE_CONTROL {
         }
     }
 
-    public void OneThreadFinished(int thread_Id) {
+    public synchronized void OneThreadFinished() {
         number_threads-=1;
-        System.out.println("Remaining thread: "+number_threads);
     }
-
-
 
     public void Final_END(int thread_Id) {
 //        this.wm.incrementAndGet();
@@ -155,3 +154,88 @@ public class SOURCE_CONTROL {
 //        assert barrier.getNumberWaiting() == 0;
     }
 }
+
+//******* STATS BEGIN *******
+//        Time spent in pre transaction                                             : 26.452%
+//        Time spent in transaction processing                                      : 72.066%
+//        Other time (read input, dump results to a file)                           : 1.483%
+//        ******* PRE_TXN BREAKDOWN *******
+//        Time spent creating Operation Chains                                      : 8.849%
+//        Time spent recording data dependencies                                    : 12.168%
+//        Time spent of recording data dependencies for out of transaction checking : 3.002%
+//        ******* TRANSACTION PROCESSING BREAKDOWN *******
+//        Time spent processing transactions                                        : 71.008%
+//        Time spent on state accessing                                             : 1.056%
+//        Time spent calculating levels                                             : 0.396%
+//        Time spent on iterative processing                                        : 6.631%
+//        Threads wait time and other overhead                                      : 63.981%
+//
+//
+//        **************************************
+//        ******* STATS BEGIN IN SECONDS *******
+//        Total time                                                                : 266.070 seconds
+//        Time spent in pre transaction                                             : 70.380 seconds
+//        Time spent in transaction processing                                      : 191.745 seconds
+//        Other time (read input, dump results to a file)                           : 3.945 seconds
+//        ******* PRE_TXN BREAKDOWN *******
+//        Time spent creating Operation Chains                                      : 23.544 seconds
+//        Time spent recording data dependencies                                    : 32.374 seconds
+//        Time spent of recording data dependencies for out of transaction checking : 7.988 seconds
+//        ******* TRANSACTION PROCESSING BREAKDOWN *******
+//        Time spent processing transactions                                        : 188.932 seconds
+//        Time spent on state accessing                                             : 2.809 seconds
+//        Time spent calculating levels                                             : 1.053 seconds
+//        Time spent on iterative processing                                        : 17.643 seconds
+//        Threads wait time and other overhead                                      : 170.236 seconds
+//        ******* STATS ENDS *******
+
+//        ******* STATS BEGIN *******
+//        Time spent in pre transaction                                             : 28.720%
+//        Time spent in transaction processing                                      : 68.093%
+//        Other time (read input, dump results to a file)                           : 3.187%
+//        ******* PRE_TXN BREAKDOWN *******
+//        Time spent creating Operation Chains                                      : 10.418%
+//        Time spent recording data dependencies                                    : 12.778%
+//        Time spent of recording data dependencies for out of transaction checking : 2.493%
+//        ******* TRANSACTION PROCESSING BREAKDOWN *******
+//        Time spent processing transactions                                        : 67.003%
+//        Time spent on state accessing                                             : 1.069%
+//        Time spent calculating levels                                             : 1.518%
+//        Time spent on iterative processing                                        : 41.239%
+//        Threads wait time and other overhead                                      : 24.245%
+//
+//
+//        **************************************
+//        ******* STATS BEGIN IN SECONDS *******
+//        Total time                                                                : 259.395 seconds
+//        Time spent in pre transaction                                             : 74.499 seconds
+//        Time spent in transaction processing                                      : 176.629 seconds
+//        Other time (read input, dump results to a file)                           : 8.267 seconds
+//        ******* PRE_TXN BREAKDOWN *******
+//        Time spent creating Operation Chains                                      : 27.023 seconds
+//        Time spent recording data dependencies                                    : 33.145 seconds
+//        Time spent of recording data dependencies for out of transaction checking : 6.468 seconds
+//        ******* TRANSACTION PROCESSING BREAKDOWN *******
+//        Time spent processing transactions                                        : 173.802 seconds
+//        Time spent on state accessing                                             : 2.772 seconds
+//        Time spent calculating levels                                             : 3.939 seconds
+//        Time spent on iterative processing                                        : 106.973 seconds
+//        Threads wait time and other overhead                                      : 62.891 seconds
+//        ******* STATS ENDS *******
+
+
+
+//        ******* TRANSACTION PROCESSING BREAKDOWN *******
+//        Time spent processing transactions                                        : 188.932 seconds
+//        Time spent on state accessing                                             : 2.809 seconds
+//        Time spent calculating levels                                             : 1.053 seconds
+//        Time spent on iterative processing                                        : 17.643 seconds
+//        Threads wait time and other overhead                                      : 170.236 seconds
+
+
+//        ******* TRANSACTION PROCESSING BREAKDOWN *******
+//        Time spent processing transactions                                        : 173.802 seconds
+//        Time spent on state accessing                                             : 2.772 seconds
+//        Time spent calculating levels                                             : 3.939 seconds
+//        Time spent on iterative processing                                        : 106.973 seconds
+//        Threads wait time and other overhead                                      : 62.891 seconds

@@ -55,7 +55,7 @@ public class TPBolt_ts extends TPBolt {
             (event).setTimestamp(timestamp);
             REQUEST_CONSTRUCT(event, txnContext);
         }
-        END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
+        END_PRE_TXN_TIME_MEASURE(thread_Id);
     }
     protected void REQUEST_CONSTRUCT(LREvent event, TxnContext txnContext) throws DatabaseException {
         //it simply construct the operations and return.
@@ -82,14 +82,14 @@ public class TPBolt_ts extends TPBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
             int readSize = LREvents.size();
-            BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
-            BEGIN_TP_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_PROCESSING_TIME_MEASURE(thread_Id);
             transactionManager.start_evaluate(thread_Id, this.fid);//start lazy evaluation in transaction manager.
-            END_TP_TIME_MEASURE(thread_Id);
+            END_TXN_PROCESSING_TIME_MEASURE(thread_Id);
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
             REQUEST_REQUEST_CORE();
             END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, 0, 0);
-            END_TRANSACTION_TIME_MEASURE_TS(thread_Id, 0);
+            END_TXN_TIME_MEASURE_TS(thread_Id, 0);
             REQUEST_POST();
             if (!enable_app_combo) {
                 final Marker marker = in.getMarker();

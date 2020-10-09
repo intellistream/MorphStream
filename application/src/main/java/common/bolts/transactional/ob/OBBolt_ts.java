@@ -90,14 +90,14 @@ public class OBBolt_ts extends OBBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
             int readSize = buyingEvents.size();
-            BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
-            BEGIN_TP_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_PROCESSING_TIME_MEASURE(thread_Id);
             transactionManager.start_evaluate(thread_Id, this.fid);//start lazy evaluation in transaction manager.
-            END_TP_TIME_MEASURE(thread_Id);// overhead_total TP time.
+            END_TXN_PROCESSING_TIME_MEASURE(thread_Id);// overhead_total TP time.
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
             BUYING_REQUEST_CORE();
             END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, write_useful_time, alertEvents + toppingEvents);//overhead_total compute time.
-            END_TRANSACTION_TIME_MEASURE_TS(thread_Id, write_useful_time * toppingEvents);//overhead_total txn time.
+            END_TXN_TIME_MEASURE_TS(thread_Id, write_useful_time * toppingEvents);//overhead_total txn time.
 //            BEGIN_POST_TIME_MEASURE(thread_Id);
             BUYING_REQUEST_POST();
 //            END_POST_TIME_MEASURE_ACC(thread_Id);
@@ -131,7 +131,7 @@ public class OBBolt_ts extends OBBolt {
                 TOPPING_REQUEST_CONSTRUCT((ToppingEvent) event, txnContext);
             }
         }
-        END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
+        END_PRE_TXN_TIME_MEASURE(thread_Id);
     }
     private void BUYING_REQUEST_POST() throws InterruptedException {
         for (BuyingEvent event : buyingEvents) {

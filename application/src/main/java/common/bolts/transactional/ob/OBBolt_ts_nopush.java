@@ -56,16 +56,16 @@ public class OBBolt_ts_nopush extends OBBolt_ts {
             int readSize = buyingEvents.size();
             int alertSize = AlertEventsHolder.size();
             int toppingSize = ToppingEventsHolder.size();
-            BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
-            BEGIN_TP_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_PROCESSING_TIME_MEASURE(thread_Id);
             transactionManager.start_evaluate(thread_Id, this.fid);//start lazy evaluation in transaction manager.
-            END_TP_TIME_MEASURE(thread_Id);// overhead_total TP time.
+            END_TXN_PROCESSING_TIME_MEASURE(thread_Id);// overhead_total TP time.
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
             BUYING_REQUEST_CORE();
             ALERT_REQUEST_CORE();
             TOPPING_REQUEST_CORE();
             END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, 0, alertSize + toppingSize);//overhead_total compute time.
-            END_TRANSACTION_TIME_MEASURE_TS(thread_Id, 0);//overhead_total txn time.
+            END_TXN_TIME_MEASURE_TS(thread_Id, 0);//overhead_total txn time.
             BUYING_REQUEST_POST();
             ALERT_REQUEST_POST();
             TOPPING_REQUEST_POST();

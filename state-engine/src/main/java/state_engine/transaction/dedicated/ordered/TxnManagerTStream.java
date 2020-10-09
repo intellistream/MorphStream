@@ -6,6 +6,7 @@ import state_engine.DatabaseException;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.Operation;
 import state_engine.common.OperationChain;
+import state_engine.profiler.MeasureTools;
 import state_engine.storage.*;
 import state_engine.storage.datatype.DataBox;
 import state_engine.transaction.dedicated.TxnManagerDedicated;
@@ -23,8 +24,6 @@ import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static common.CONTROL.kMaxThreadNum;
-import static common.Constants.Synth_Data_Folder_Path;
 import static state_engine.Meta.MetaTypes.AccessType.INSERT_ONLY;
 import static state_engine.transaction.impl.TxnAccess.Access;
 /**
@@ -33,13 +32,13 @@ import static state_engine.transaction.impl.TxnAccess.Access;
 public class TxnManagerTStream extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerTStream.class);
     TxnProcessingEngine instance;
-    public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int NUM_RECORDS, int thread_countw) {
+    public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int NUM_ACCOUNTS, int thread_countw) {
         super(storageManager, thisComponentId, thisTaskId, thread_countw);
         instance = TxnProcessingEngine.getInstance();
 //        delta_long = (int) Math.ceil(NUM_ITEMS / (double) thread_countw);//range of each partition. depends on the number of op in the stage.
-//        delta = (int) Math.ceil(NUM_RECORDS / (double) thread_countw);//NUM_ITEMS / tthread;
+//        delta = (int) Math.ceil(NUM_ACCOUNTS / (double) thread_countw);//NUM_ITEMS / tthread;
 
-        delta = (int) (100*1*10000/(double) thread_countw); // Check id generation in DateGenerator.
+        delta = (int) (10*1*100000/(double) thread_countw); // Check id generation in DateGenerator.
 
 //        switch (config.getInt("app")) {
 //            case "StreamLedger": {
@@ -109,7 +108,8 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     private int getTaskId(String key) {
         Integer _key = Integer.valueOf(key);
         //DD: Number of accounts / threads (tasks) gives us delta and record key is probably incremental upto number of accounts.
-        return _key / delta;
+//        return _key / delta;
+        return _key % 12;
     }
     /**
      * build the Operation chain.. concurrently..
@@ -228,7 +228,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        holder.get(primaryKey).add(new Operation(table_name, s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success));
         addOperationToChain(new Operation(table_name, s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
-        checkDataDependencies(table_name, key, bid, condition_sourceTable, condition_source);
+        checkDataDependencies(txn_context.thread_Id, table_name, key, bid, condition_sourceTable, condition_source);
 
 //
 //        int taskId = getTaskId(d_record);
@@ -239,15 +239,20 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.add(new Operation(s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success));
     }
 
-    //READ_WRITE_COND
+    //READ_WRITE_COND // TRANSFER_AST
     private void operation_chain_construction_modify_only(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord d_record, Function function,
                                                           String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
 //        String primaryKey = d_record.record_.GetPrimaryKey();
 //        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        holder.get(primaryKey).add(new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success));
+        MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
         addOperationToChain(new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
-        checkDataDependencies(table_name, key, bid, condition_sourceTable, condition_source);
+        MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
+
+        MeasureTools.BEGIN_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
+        checkDataDependencies(txn_context.thread_Id, table_name, key, bid, condition_sourceTable, condition_source);
+        MeasureTools.END_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
 //        int taskId = getTaskId(d_record);
 //        int h2ID = getH2ID(taskId);
 ////        LOG.debug("Submit read for record:" + d_record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
@@ -256,15 +261,20 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.add(new Operation(d_record, bid, accessType, function, condition_records, condition, txn_context, success));
     }
 
-    //READ_WRITE_COND_READ
+    //READ_WRITE_COND_READ // TRANSFER_ACT
     private void operation_chain_construction_modify_read(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord d_record, SchemaRecordRef record_ref, Function function,
                                                           String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
 //        String primaryKey = d_record.record_.GetPrimaryKey();
 //        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        holder.get(primaryKey).add(new Operation(table_name, d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success));
+        MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
         addOperationToChain(new Operation(table_name, d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
-        checkDataDependencies(table_name, key, bid, condition_sourceTable, condition_source);
+        MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
+
+        MeasureTools.BEGIN_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
+        checkDataDependencies(txn_context.thread_Id, table_name, key, bid, condition_sourceTable, condition_source);
+        MeasureTools.END_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
 //        int taskId = getTaskId(d_record);
 //        int h2ID = getH2ID(taskId);
 //        LOG.debug("Submit read for record:" + d_record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
@@ -273,7 +283,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.add(new Operation(d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success));
     }
 
-    private void checkDataDependencies(String table_name, String key, long bid, String[] condition_sourceTable, String[] condition_source) {
+    private void checkDataDependencies(int thread_Id, String table_name, String key, long bid, String[] condition_sourceTable, String[] condition_source) {
 
         OperationChain dependent = instance.getHolder(table_name).rangeMap.get(getTaskId(key)).holder_v1.get(key);
 
@@ -298,20 +308,20 @@ public class TxnManagerTStream extends TxnManagerDedicated {
                 dependent.addDependency(dependency); // record dependency
             }
         }
-
         // check if current operation causes other operation chains to depend upon current one.
         // This may happen when a delayed event arrives.
+
+        MeasureTools.BEGIN_DEPENDENCY_OUTOFORDER_OVERHEAD_TIME_MEASURE(thread_Id);
         dependent.checkOtherPotentialDependencies(bid);
+        MeasureTools.END_DEPENDENCY_OUTOFORDER_OVERHEAD_TIME_MEASURE(thread_Id);
 
     }
 
     private void addOperationToChain(Operation operation, String table_name, String primaryKey){
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         ConcurrentHashMap<String, OperationChain> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-//        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
         holder.putIfAbsent(primaryKey, new OperationChain(table_name, primaryKey));
         holder.get(primaryKey).addOperation(operation);
-
 
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        MyList<Operation> myList = holder.get(primaryKey);
@@ -378,6 +388,8 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         operation_chain_construction_modify_read(t_record, srcTable, bid, accessType, record_ref, function, txn_context);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
+
+    // TRANSFER_ACT
     protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, SchemaRecordRef record_ref, Function function,
                                               String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
         long bid = txn_context.getBID();
@@ -392,7 +404,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         operation_chain_construction_modify_only(srcTable, key, bid, accessType, s_record, d_record, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
-
+    // TRANSFER_AST
     protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, Function function,
                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
         long bid = txn_context.getBID();
@@ -411,8 +423,8 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 
         SOURCE_CONTROL.getInstance().Wait_Start(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
 //        dumpDependenciesForThread(thread_Id);
-        if(thread_Id==0)
-            mergeDependencyFiles();
+//        if(thread_Id==0)
+//            mergeDependencyFiles();
         instance.start_evaluation(thread_Id, mark_ID);
         SOURCE_CONTROL.getInstance().Wait_End(thread_Id);//sync for all threads to come to this line.
 

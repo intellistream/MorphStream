@@ -81,7 +81,7 @@ public class GSBolt_ots extends GSBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException {
         PRE_EXECUTE(in);
         //begin transaction processing.
-        BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
+        BEGIN_TXN_TIME_MEASURE(thread_Id);
         TXN_PROCESS(_bid);
         //end transaction processing.
         END_TRANSACTION_TIME_MEASURE(thread_Id);

@@ -18,13 +18,14 @@ import state_engine.transaction.function.INC;
 import state_engine.transaction.impl.TxnContext;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
+import state_engine.profiler.MeasureTools;
+
 import static common.CONTROL.*;
 import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
-import static state_engine.profiler.MeasureTools.*;
+
 public class SLBolt_ts extends SLBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
@@ -52,22 +53,27 @@ public class SLBolt_ts extends SLBolt {
         // Aqif: For TStream taskId increases by 1 and executorId is always 0.
     }
 
-    ArrayList<String> ocs = new ArrayList<>();
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         if (in.isMarker()) {
             int readSize = transactionEvents.size();
-            BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
-            BEGIN_TP_TIME_MEASURE(thread_Id);
+
+            MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
+
+            MeasureTools.BEGIN_TXN_PROCESSING_TIME_MEASURE(thread_Id);
             transactionManager.start_evaluate(thread_Id, in.getBID());//start lazy evaluation in transaction manager.
-            END_TP_TIME_MEASURE(thread_Id);
-            BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+            MeasureTools.END_TXN_PROCESSING_TIME_MEASURE(thread_Id);
+
+            MeasureTools.BEGIN_ACCESS_TIME_MEASURE(thread_Id);
             TRANSFER_REQUEST_CORE();
-            END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, write_useful_time, depositeEvents);
-            END_TRANSACTION_TIME_MEASURE_TS(thread_Id, write_useful_time * depositeEvents);//overhead_total txn time
+            MeasureTools.END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, write_useful_time, depositeEvents);
+
+            MeasureTools.END_TXN_TIME_MEASURE_TS(thread_Id, write_useful_time * depositeEvents);//overhead_total txn time
+
             TRANSFER_REQUEST_POST();
-            END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize + depositeEvents);
+            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize + depositeEvents);
+
             transactionEvents.clear();//all tuples in the holder is finished.
             if (enable_profile) {
                 depositeEvents = 0;//all tuples in the holder is finished.
@@ -77,7 +83,7 @@ public class SLBolt_ts extends SLBolt {
         }
     }
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
-        BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
+        MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
 //            System.out.println("thread: "+thread_Id+", event_id: "+_bid);
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
@@ -90,21 +96,12 @@ public class SLBolt_ts extends SLBolt {
                 TRANSFER_REQUEST_CONSTRUCT((TransactionEvent) event, txnContext);
             }
         }
-        END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);//includes post time deposite..
+        MeasureTools.END_PRE_TXN_TIME_MEASURE(thread_Id);//includes post time deposite..
     }
     protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
 //        System.out.println(event.toString());
         String[] srcTable = new String[]{"accounts", "bookEntries"};
         String[] srcID = new String[]{event.getSourceAccountId(), event.getSourceBookEntryId()};
-
-        if(!ocs.contains("accounts_"+event.getSourceAccountId()))
-            ocs.add("accounts_"+event.getSourceAccountId());
-        if(!ocs.contains("accounts_"+event.getTargetAccountId()))
-            ocs.add("accounts_"+event.getTargetAccountId());
-        if(!ocs.contains("bookEntries_"+event.getSourceBookEntryId()))
-            ocs.add("bookEntries_"+event.getSourceBookEntryId());
-        if(!ocs.contains("bookEntries_"+event.getTargetBookEntryId()))
-            ocs.add("bookEntries_"+event.getTargetBookEntryId());
 
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "accounts",
@@ -142,9 +139,9 @@ public class SLBolt_ts extends SLBolt {
         //it simply construct the operations and return.
         transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()));// read and modify the account itself.
         transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()));// read and modify the asset itself.
-        BEGIN_POST_TIME_MEASURE(thread_Id);
+        MeasureTools.BEGIN_POST_TIME_MEASURE(thread_Id);
         DEPOSITE_REQUEST_POST(event);
-        END_POST_TIME_MEASURE_ACC(thread_Id);
+        MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
         depositeEvents++;
     }
     private void TRANSFER_REQUEST_POST() throws InterruptedException {

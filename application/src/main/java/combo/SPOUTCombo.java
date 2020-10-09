@@ -142,9 +142,6 @@ public abstract class SPOUTCombo extends TransactionalSpout {
             if(thread_Id<(NUM_EVENTS-num_events_per_thread*tthread))
                 num_events_per_thread++;
 
-
-        System.out.println("Thread..."+thread_Id+"...events..."+test_num_events_per_thread);
-
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
             MeasureTools.measure_counts[thisTaskId] = MeasureStart;//skip warm-up phase.

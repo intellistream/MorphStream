@@ -12,10 +12,12 @@ import state_engine.transaction.impl.TxnContext;
 import state_engine.utils.SOURCE_CONTROL;
 
 import java.util.concurrent.BrokenBarrierException;
+import state_engine.profiler.MeasureTools;
 
 import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_latency_measurement;
-import static state_engine.profiler.MeasureTools.*;
+
+
 public abstract class TransactionalBolt<T> extends MapBolt implements Checkpointable {
     protected static final Logger LOG = LoggerFactory.getLogger(TransactionalBolt.class);
     private static final long serialVersionUID = -3899457584889441657L;
@@ -70,16 +72,16 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
     }
     protected abstract void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException;
     protected void nocc_execute(Tuple in) throws DatabaseException, InterruptedException {
-        BEGIN_TOTAL_TIME_MEASURE(thread_Id);//start measure prepare and total.
+        MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);//start measure prepare and total.
         PRE_EXECUTE(in);
-        END_PREPARE_TIME_MEASURE(thread_Id);
+        MeasureTools.END_PREPARE_TIME_MEASURE(thread_Id);
         //begin transaction processing.
-        BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);//need to amortize.
+        MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);//need to amortize.
         TXN_PROCESS(_bid);
         //end transaction processing.
-        END_TRANSACTION_TIME_MEASURE(thread_Id);
+        MeasureTools.END_TRANSACTION_TIME_MEASURE(thread_Id);
         POST_PROCESS(_bid, timestamp, combo_bid_size);
-        END_TOTAL_TIME_MEASURE(thread_Id, combo_bid_size);
+        MeasureTools.END_TOTAL_TIME_MEASURE(thread_Id, combo_bid_size);
     }
     /**
      * This is used for all LAL based schemes including LOCK and MVLK.
@@ -91,17 +93,17 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
      */
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
-        BEGIN_TOTAL_TIME_MEASURE(thread_Id);//start measure prepare and total.
+        MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);//start measure prepare and total.
         PRE_EXECUTE(in);
-        END_PREPARE_TIME_MEASURE(thread_Id);
+        MeasureTools.END_PREPARE_TIME_MEASURE(thread_Id);
         //begin transaction processing.
-        BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);//need to amortize.
+        MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);//need to amortize.
         LAL_PROCESS(_bid);
         PostLAL_process(_bid);
         //end transaction processing.
-        END_TRANSACTION_TIME_MEASURE(thread_Id);
+        MeasureTools.END_TRANSACTION_TIME_MEASURE(thread_Id);
         POST_PROCESS(_bid, timestamp, 1);//otherwise deadlock.
-        END_TOTAL_TIME_MEASURE(thread_Id, 1);//otherwise deadlock.
+        MeasureTools.END_TOTAL_TIME_MEASURE(thread_Id, 1);//otherwise deadlock.
     }
     @Override
     public void forward_checkpoint_single(int sourceId, long bid, Marker marker) {
@@ -140,9 +142,9 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
     }
     protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
         //pre stream processing phase..
-        BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
+        MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
-        END_PREPARE_TIME_MEASURE_TS(thread_Id);
+        MeasureTools.END_PREPARE_TIME_MEASURE_TS(thread_Id);
         PRE_TXN_PROCESS(_bid, timestamp);
     }
     protected void PRE_TXN_PROCESS(long bid, long timestamp) throws DatabaseException, InterruptedException {
@@ -162,5 +164,6 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
         POST_COMPUTE_COMPLEXITY = Metrics.POST_COMPUTE_COMPLEXITY;
         //LOG.DEBUG("NUM_ACCESSES: " + NUM_ACCESSES + " theta:" + theta);
         SOURCE_CONTROL.getInstance().config(tthread);
+        SOURCE_CONTROL.getInstance().createBarrierForDependencyLevel(0);
     }
 }

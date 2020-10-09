@@ -10,9 +10,24 @@ public class Metrics {
     public static int NUM_ITEMS = 1_000_000;//1. 1_000_000; 2. ? ; 3. 1_000  //1_000_000 YCSB has 16 million records, Ledger use 200 million records.
     public static int H2_SIZE;
     private static Metrics ourInstance = new Metrics();
+
+    public DescriptiveStatistics[] total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+
     public DescriptiveStatistics[] txn_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+    public DescriptiveStatistics[] txn_processing_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+    public DescriptiveStatistics[] state_access_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+    public DescriptiveStatistics[] calculate_levels_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+    public DescriptiveStatistics[] iterative_processing_useful_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+
+    public DescriptiveStatistics[] pre_txn_total = new DescriptiveStatistics[kMaxThreadNum];
+    public DescriptiveStatistics[] create_oc_total = new DescriptiveStatistics[kMaxThreadNum];
+    public DescriptiveStatistics[] dependency_checking_total = new DescriptiveStatistics[kMaxThreadNum];
+    public DescriptiveStatistics[] dependency_outoforder_overhead_total = new DescriptiveStatistics[kMaxThreadNum];
+
+
     public DescriptiveStatistics[] stream_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] overhead_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+
     public DescriptiveStatistics[] index_ratio = new DescriptiveStatistics[kMaxThreadNum];//index
     public DescriptiveStatistics[] useful_ratio = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
     public DescriptiveStatistics[] sync_ratio = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
@@ -56,7 +71,21 @@ public class Metrics {
         NUM_ACCESSES = num_access;
     }
     public void initilize(int task) {
+
+        total[task] = new DescriptiveStatistics();
+
         txn_total[task] = new DescriptiveStatistics();
+        txn_processing_total[task] = new DescriptiveStatistics();
+        state_access_total[task] = new DescriptiveStatistics();
+        calculate_levels_total[task] = new DescriptiveStatistics();
+        iterative_processing_useful_total[task] = new DescriptiveStatistics();
+
+
+        pre_txn_total[task] = new DescriptiveStatistics();
+        create_oc_total[task] = new DescriptiveStatistics();
+        dependency_checking_total[task] = new DescriptiveStatistics();
+        dependency_outoforder_overhead_total[task] = new DescriptiveStatistics();
+
         stream_total[task] = new DescriptiveStatistics();
         overhead_total[task] = new DescriptiveStatistics();
         useful_ratio[task] = new DescriptiveStatistics();

@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 
 import static state_engine.Meta.MetaTypes.kMaxAccessNum;
-import static state_engine.profiler.MeasureTools.BEGIN_INDEX_TIME_MEASURE;
-import static state_engine.profiler.MeasureTools.END_INDEX_TIME_MEASURE_ACC;
+import state_engine.profiler.MeasureTools;
 /**
  * TxnManagerDedicated is a thread-local structure.
  */
@@ -175,9 +174,9 @@ public abstract class TxnManagerDedicated implements TxnManager {
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function) throws DatabaseException {
         MetaTypes.AccessType accessType = AccessType.READ_WRITE;
-        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
+//        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
+//        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
         if (t_record != null) {
             return Asy_ModifyRecordCC(txn_context, srcTable, t_record, t_record, function, accessType, 1);
         } else {
@@ -279,7 +278,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
 //            new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
 //    event.success);   //asynchronously return.
 
-    @Override
+    @Override // TRANSFER_AST
     public boolean Asy_ModifyRecord(TxnContext txn_context,
                                     String srcTable, String key,
                                     Function function,
@@ -288,12 +287,12 @@ public abstract class TxnManagerDedicated implements TxnManager {
                                     boolean[] success) throws DatabaseException {
         MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
-        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
+//        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
+//        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
         if (s_record != null) {
             return Asy_ModifyRecordCC(txn_context, srcTable, key, s_record, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
         } else {
@@ -317,24 +316,23 @@ public abstract class TxnManagerDedicated implements TxnManager {
 //              srcTable, srcID//condition source, condition id.
 //              , new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()), event.success);
 
-    @Override
+    @Override // TRANSFER_ACT
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                          Function function,
                                          String[] condition_sourceTable, String[] condition_source,
                                          Condition condition, boolean[] success) throws DatabaseException {
         MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND_READ;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
+//        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         for (int i = 0; i < condition_source.length; i++) {
-//            BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
-//            END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
             if (condition_records[i] == null) {
                 LOG.info("No record is found for condition source:" + condition_source[i]);
                 return false;
             }
         }
-
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
+//        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
         if (s_record != null) {
             return Asy_ModifyRecord_ReadCC(txn_context, srcTable, key, s_record, record_ref, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
         } else {
@@ -357,9 +355,9 @@ public abstract class TxnManagerDedicated implements TxnManager {
      * @return
      */
     public boolean SelectKeyRecord(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException, InterruptedException {
-        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
+        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);//index look up.
-        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
+        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
 //
         if (t_record != null) {
 //			BEGIN_PHASE_MEASURE(thread_id_, SELECT_PHASE);
@@ -385,9 +383,9 @@ public abstract class TxnManagerDedicated implements TxnManager {
         }
     }
     public boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException {
-        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
+        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);
-        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
+        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
         if (t_record != null) {
             boolean rt = SelectKeyRecord_noLockCC(txn_context, table_name, t_record, record_, access_type);
             return rt;

@@ -17,7 +17,7 @@ import java.util.LinkedList;
 import static common.CONTROL.enable_debug;
 import static state_engine.Meta.MetaTypes.AccessType.*;
 import static state_engine.Meta.MetaTypes.kMaxAccessNum;
-import static state_engine.profiler.MeasureTools.BEGIN_TP_CORE_TIME_MEASURE;
+import state_engine.profiler.MeasureTools;
 import static state_engine.transaction.impl.TxnAccess.Access;
 /**
  * conventional two-phase locking with no-sync_ratio strategy from Cavalia.
@@ -173,7 +173,7 @@ public class TxnManagerLock extends TxnManagerDedicated {
                 this.AbortTransaction();
                 return false;
             } else {
-                BEGIN_TP_CORE_TIME_MEASURE(txn_context.thread_Id);
+                MeasureTools.BEGIN_TP_CORE_TIME_MEASURE(txn_context.thread_Id);
                 /**
                  * 	 const RecordSchema *schema_ptr = t_record->record_->schema_ptr_;
                  char *local_data = MemAllocator::Alloc(schema_ptr->GetSchemaSize());

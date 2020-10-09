@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import state_engine.common.Operation;
 import state_engine.common.OperationChain;
 import state_engine.content.T_StreamContent;
+import state_engine.profiler.MeasureTools;
 import state_engine.profiler.Metrics;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.DataBox;
@@ -308,7 +309,7 @@ public final class TxnProcessingEngine {
     //TODO: actual evaluation on the operation_chain.
     private void process(MyList<Operation> operation_chain, long mark_ID) {
 
-        Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness.
+        Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
         while (operation!=null) {
             if (operation != null)
                 process(operation, mark_ID, false);
@@ -385,26 +386,33 @@ public final class TxnProcessingEngine {
             totalChainsToProcess += tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values().size();
         }
 
+        System.out.println(String.format("Processing %d chains for thread %d.", totalChainsToProcess, thread_Id));
+
+        MeasureTools.BEGIN_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
         updateDependencyLevels(thread_Id);
+        MeasureTools.END_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
+
+        if(totalChainsToProcess==0) {
+            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation();
+            SOURCE_CONTROL.getInstance().OneThreadFinished();
+            SOURCE_CONTROL.getInstance().Wait_End_For_Evaluation();
+        }
 
         while(totalChainsProcessed < totalChainsToProcess) {
 
-            SOURCE_CONTROL.getInstance().createBarrierForDependencyLevel(dependencyLevelToProcess);
+            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation();
 
-//            if(thread_Id==0)
-//                System.out.println(String.format("...Processing at level %d...", dependencyLevelToProcess));
-
-            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation(thread_Id);
-
+            MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
             totalChainsProcessed += evaluation(thread_Id, dependencyLevelToProcess,previous_ID - kMaxThreadNum);
-            dependencyLevelToProcess+=1;
-//            System.out.println(String.format("thread: %2d... %d Chains processed of %d chains... left: %d", thread_Id, totalChainsProcessed, totalChainsToProcess, totalChainsToProcess - totalChainsProcessed));
+            MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
 
+            dependencyLevelToProcess+=1;
             if(totalChainsProcessed == totalChainsToProcess) {
-                SOURCE_CONTROL.getInstance().OneThreadFinished(thread_Id);
+                SOURCE_CONTROL.getInstance().OneThreadFinished();
             }
 
-            SOURCE_CONTROL.getInstance().Wait_End_For_Evaluation(thread_Id);
+            SOURCE_CONTROL.getInstance().Wait_End_For_Evaluation();
+            SOURCE_CONTROL.getInstance().createBarrierForDependencyLevel(dependencyLevelToProcess);
 
         }
 
@@ -418,9 +426,8 @@ public final class TxnProcessingEngine {
             ConcurrentHashMap.KeySetView<String, OperationChain> keys = accountsHolder.keySet();
             for (String key : keys) {
                 accountsHolder.get(key).updateDependencyLevel();
-            }
+            };
         }
-
     }
 
 

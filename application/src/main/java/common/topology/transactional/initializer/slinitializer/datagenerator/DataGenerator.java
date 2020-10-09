@@ -154,7 +154,8 @@ public class DataGenerator {
 
         DataTransaction t = new DataTransaction(mDataTransactions.size(), srcAccOC.getId(), srcAstOC.getId(), dstAccOC.getId(), dstAstOC.getId());
         mDataTransactions.add(t);
-        System.out.println(mDataTransactions.size());
+        if(mDataTransactions.size()%1000==0)
+            System.out.println(mDataTransactions.size());
     }
 
     private void getReadyForTraversal() {
@@ -206,10 +207,13 @@ public class DataGenerator {
             mPickAccountOrAssets[lop] = mAccountLevelsDistribution[lop] < mAssetLevelsDistribution[lop];
         }
 
-//        System.out.println("Dependency Distribution...");
-//        for(int lop=0;  lop<mOcLevelsDistribution.length; lop++){
-//                System.out.println("Level..."+lop+", ratio..."+mOcLevelsDistribution[lop]);
-//        }
+        if(mDataTransactions.size()%1000 == 0) {
+            System.out.println("Dependency Distribution...");
+            for(int lop=0;  lop<mOcLevelsDistribution.length; lop++){
+                System.out.print(lop+": "+mOcLevelsDistribution[lop]+"; ");
+            }
+            System.out.println(" ");
+        }
     }
 
     private void dumpGeneratedDataToFile() {
@@ -343,7 +347,7 @@ public class DataGenerator {
     }
 
     private int getNewAccountId() {
-        int id = randomGenerator.nextInt(100*DataConfig.totalBatches*DataConfig.tuplesPerBatch);
+        int id = randomGenerator.nextInt(10*DataConfig.totalBatches*DataConfig.tuplesPerBatch);
         while(mGeneratedAccountIds.contains(id)) {
             id++;
         }
@@ -352,7 +356,7 @@ public class DataGenerator {
     }
 
     private int getNewAssetId() {
-        int id = randomGenerator.nextInt(100*DataConfig.totalBatches*DataConfig.tuplesPerBatch);
+        int id = randomGenerator.nextInt(10*DataConfig.totalBatches*DataConfig.tuplesPerBatch);
         while(mGeneratedAssetIds.contains(id)) {
             id++;
         }

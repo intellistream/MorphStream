@@ -5,7 +5,9 @@ import state_engine.transaction.dedicated.ordered.MyList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class OperationChain implements Comparable<OperationChain>{
@@ -74,14 +76,14 @@ public class OperationChain implements Comparable<OperationChain>{
 
     }
 
-    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
+    private AtomicBoolean isDependencyLevelCalculated = new AtomicBoolean(false); // we only do this once before executing all OCs.
     public int dependencyLevel = -1;
+
 
     public synchronized void updateDependencyLevel() {
 
-        if(isDependencyLevelCalculated)
+        if(isDependencyLevelCalculated.get())
             return;
-
         dependencyLevel = 0;
         for (OperationChain oc: dependsUpon) {
 
@@ -92,11 +94,11 @@ public class OperationChain implements Comparable<OperationChain>{
                 dependencyLevel = oc.getDependencyLevel()+1;
             }
         }
-        isDependencyLevelCalculated = true;
+        isDependencyLevelCalculated.set(true);
     }
 
     public boolean hasValidDependencyLevel(){
-        return isDependencyLevelCalculated;
+        return isDependencyLevelCalculated.get();
     }
 
     public int getDependencyLevel() {

@@ -50,7 +50,7 @@ public class GSBolt_ts extends GSBolt {
                 write_construct(event, txnContext);
             }
         }
-        END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
+        END_PRE_TXN_TIME_MEASURE(thread_Id);
     }
     void read_construct(MicroEvent event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < NUM_ACCESSES; i++) {
@@ -105,14 +105,14 @@ public class GSBolt_ts extends GSBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
             int readSize = EventsHolder.size();
-            BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
-            BEGIN_TP_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_PROCESSING_TIME_MEASURE(thread_Id);
             transactionManager.start_evaluate(thread_Id, in.getBID());//start lazy evaluation in transaction manager.
-            END_TP_TIME_MEASURE(thread_Id);// overhead_total TP time.
+            END_TXN_PROCESSING_TIME_MEASURE(thread_Id);// overhead_total TP time.
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
             READ_REQUEST_CORE();
             END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, write_useful_time, writeEvents);//overhead_total compute time.
-            END_TRANSACTION_TIME_MEASURE_TS(thread_Id, write_useful_time * writeEvents);//overhead_total txn time.
+            END_TXN_TIME_MEASURE_TS(thread_Id, write_useful_time * writeEvents);//overhead_total txn time.
             READ_POST();
             if (!enable_app_combo) {
                 final Marker marker = in.getMarker();

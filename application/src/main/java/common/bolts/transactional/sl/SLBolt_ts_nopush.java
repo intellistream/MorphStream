@@ -43,15 +43,15 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
         if (in.isMarker()) {
             int readSize = transactionEvents.size();
             int depoSize = depositeEvents.size();
-            BEGIN_TRANSACTION_TIME_MEASURE(thread_Id);
-            BEGIN_TP_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_TIME_MEASURE(thread_Id);
+            BEGIN_TXN_PROCESSING_TIME_MEASURE(thread_Id);
             transactionManager.start_evaluate(thread_Id, in.getBID());//start lazy evaluation in transaction manager.
-            END_TP_TIME_MEASURE(thread_Id);
+            END_TXN_PROCESSING_TIME_MEASURE(thread_Id);
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
             TRANSFER_REQUEST_CORE();
             DEPOSITE_REQUEST_CORE();
             END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize + depoSize, 0, 0);
-            END_TRANSACTION_TIME_MEASURE_TS(thread_Id, 0);//overhead_total txn time
+            END_TXN_TIME_MEASURE_TS(thread_Id, 0);//overhead_total txn time
             TRANSFER_REQUEST_POST();
             DEPOSITE_REQUEST_POST();
             END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize + depoSize);
