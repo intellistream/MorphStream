@@ -38,7 +38,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        delta_long = (int) Math.ceil(NUM_ITEMS / (double) thread_countw);//range of each partition. depends on the number of op in the stage.
 //        delta = (int) Math.ceil(NUM_ACCOUNTS / (double) thread_countw);//NUM_ITEMS / tthread;
 
-        delta = (int) (10*1*100000/(double) thread_countw); // Check id generation in DateGenerator.
+        delta = (int) ((10*1*100000)/(double) thread_countw); // Check id generation in DateGenerator.
 
 //        switch (config.getInt("app")) {
 //            case "StreamLedger": {
@@ -108,8 +108,8 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     private int getTaskId(String key) {
         Integer _key = Integer.valueOf(key);
         //DD: Number of accounts / threads (tasks) gives us delta and record key is probably incremental upto number of accounts.
-//        return _key / delta;
-        return _key % 12;
+        return _key / delta;
+//        return _key % 12;
     }
     /**
      * build the Operation chain.. concurrently..

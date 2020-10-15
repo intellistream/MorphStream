@@ -393,15 +393,14 @@ public final class TxnProcessingEngine {
         MeasureTools.END_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
 
         if(totalChainsToProcess==0) {
-            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation();
+//            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation();
             SOURCE_CONTROL.getInstance().OneThreadFinished();
             SOURCE_CONTROL.getInstance().Wait_End_For_Evaluation();
         }
 
         while(totalChainsProcessed < totalChainsToProcess) {
 
-            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation();
-
+//            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation();
             MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
             totalChainsProcessed += evaluation(thread_Id, dependencyLevelToProcess,previous_ID - kMaxThreadNum);
             MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
@@ -426,7 +425,7 @@ public final class TxnProcessingEngine {
             ConcurrentHashMap.KeySetView<String, OperationChain> keys = accountsHolder.keySet();
             for (String key : keys) {
                 accountsHolder.get(key).updateDependencyLevel();
-            };
+            }
         }
     }
 

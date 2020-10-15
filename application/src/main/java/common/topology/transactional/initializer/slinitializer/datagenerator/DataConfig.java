@@ -2,7 +2,7 @@ package common.topology.transactional.initializer.slinitializer.datagenerator;
 
 public class DataConfig {
     public static int totalBatches = 1;
-    public static int tuplesPerBatch = 10000;
+    public static int tuplesPerBatch = 100000;
     public static float generatedTuplesBeforeAddingDependency = 0.0f; //Percentage of tuples to generate before introducing dependency
     public static float[] dependenciesDistributionToLevels;
     static {

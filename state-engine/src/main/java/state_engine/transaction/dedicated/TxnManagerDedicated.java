@@ -285,14 +285,14 @@ public abstract class TxnManagerDedicated implements TxnManager {
                                     String[] condition_sourceTable, String[] condition_source,
                                     Condition condition,
                                     boolean[] success) throws DatabaseException {
+        MeasureTools.BEGIN_DB_ACCESS_TIME_MEASURE(txn_context.thread_Id);
         MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
-//        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-//        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
+        MeasureTools.END_DB_ACCESS_TIME_MEASURE(txn_context.thread_Id, txn_context.is_retry_);
         if (s_record != null) {
             return Asy_ModifyRecordCC(txn_context, srcTable, key, s_record, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
         } else {
@@ -321,9 +321,10 @@ public abstract class TxnManagerDedicated implements TxnManager {
                                          Function function,
                                          String[] condition_sourceTable, String[] condition_source,
                                          Condition condition, boolean[] success) throws DatabaseException {
+
+        MeasureTools.BEGIN_DB_ACCESS_TIME_MEASURE(txn_context.thread_Id);
         MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND_READ;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
-//        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
             if (condition_records[i] == null) {
@@ -332,7 +333,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
             }
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-//        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
+        MeasureTools.END_DB_ACCESS_TIME_MEASURE(txn_context.thread_Id, txn_context.is_retry_);
         if (s_record != null) {
             return Asy_ModifyRecord_ReadCC(txn_context, srcTable, key, s_record, record_ref, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
         } else {

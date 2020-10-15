@@ -36,7 +36,6 @@ import static common.Constants.System_Plan_Path;
 import static common.constants.LinearRoadConstants.Conf.Executor_Threads;
 import static common.constants.OnlineBidingSystemConstants.Conf.OB_THREADS;
 import static common.constants.StreamLedgerConstants.Conf.SL_THREADS;
-import static state_engine.Meta.MetaTypes.kMaxThreadNum;
 import static state_engine.content.Content.*;
 import static state_engine.content.LWMContentImpl.LWM_CONTENT;
 import static state_engine.content.LockContentImpl.LOCK_CONTENT;
@@ -263,6 +262,7 @@ public class sesameRunner extends abstractRunner {
             double create_oc_time = 0;
             double dependency_checking_time = 0;
             double dependency_outoforder_overhead_time = 0;
+            double db_access_time = 0;
 
             for (int i = 0; i < tthread; i++) {
                 useful_ratio += metrics.useful_ratio[i].getMean();
@@ -285,6 +285,7 @@ public class sesameRunner extends abstractRunner {
                 create_oc_time += metrics.create_oc_total[i].getMean();
                 dependency_checking_time += metrics.dependency_checking_total[i].getMean();
                 dependency_outoforder_overhead_time += metrics.dependency_outoforder_overhead_total[i].getMean();
+                db_access_time += metrics.db_access_time[i].getMean();
 
             }
             //get average ratio per thread.
@@ -310,6 +311,7 @@ public class sesameRunner extends abstractRunner {
             create_oc_time = create_oc_time / tthread;
             dependency_checking_time = dependency_checking_time / tthread;
             dependency_outoforder_overhead_time = dependency_outoforder_overhead_time / tthread;
+            db_access_time = db_access_time / tthread;
 
             System.out.println("******* STATS BEGIN *******");
 
@@ -320,7 +322,9 @@ public class sesameRunner extends abstractRunner {
             System.out.println("******* PRE_TXN BREAKDOWN *******");
             System.out.println(String.format("Time spent creating Operation Chains                                      : %.3f%%", (create_oc_time/total)*100.0f));
             System.out.println(String.format("Time spent recording data dependencies                                    : %.3f%%", (dependency_checking_time/total)*100.0f));
-            System.out.println(String.format("Time spent of recording data dependencies for out of transaction checking : %.3f%%", (dependency_outoforder_overhead_time/total)*100.0f));
+//            System.out.println(String.format("Time spent of recording data dependencies for out of transaction checking : %.3f%%", (dependency_outoforder_overhead_time/total)*100.0f));
+            System.out.println(String.format("Time spent to access DB                                                   : %.3f%%", (db_access_time/total)*100.0f));
+            System.out.println(String.format("Not accounting for                                                        : %.3f%%", ((pre_txn_time-create_oc_time-dependency_checking_time-db_access_time)/total)*100.0f));
 
             System.out.println("******* TRANSACTION PROCESSING BREAKDOWN *******");
             System.out.println(String.format("Time spent processing transactions                                        : %.3f%%", (txn_processing/total)*100.0f));

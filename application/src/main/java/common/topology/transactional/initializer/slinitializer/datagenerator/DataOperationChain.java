@@ -1,6 +1,7 @@
 package common.topology.transactional.initializer.slinitializer.datagenerator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 
 public class DataOperationChain {
@@ -15,9 +16,12 @@ public class DataOperationChain {
     private ArrayList<DataOperationChain> dependsUpon = new ArrayList<>();
     private ArrayList<DataOperationChain> dependents = new ArrayList<>();
 
+    private HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel;
 
-    public DataOperationChain(String stateId) {
+    public DataOperationChain(String stateId, HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel) {
         this.stateId = stateId;
+        this.operationChainsByLevel = operationChainsByLevel;
+        updateLevelInMap();
     }
     public String getStateId() {
         return stateId;
@@ -32,6 +36,19 @@ public class DataOperationChain {
 
     public void markReadyForTraversal() {
         readForTraversal = true;
+    }
+
+    private void updateLevelInMap() {
+        if(!operationChainsByLevel.containsKey(getDependencyLevel())) {
+            operationChainsByLevel.put(getDependencyLevel(), new ArrayList<>());
+        }
+        operationChainsByLevel.get(getDependencyLevel()).add(this);
+    }
+
+    private void removeFromMap() {
+        if(null != operationChainsByLevel.get(getDependencyLevel())) {
+            operationChainsByLevel.get(getDependencyLevel()).remove(this);
+        }
     }
 
     public void registerAllDependenciesToList( ArrayList<String> allDependencies) {
@@ -91,7 +108,7 @@ public class DataOperationChain {
         if(isDependencyLevelDirty)
             return;
         isDependencyLevelDirty = true;
-
+        removeFromMap();
         for (DataOperationChain doc: dependents) {
             doc.markAllDependencyLevelsDirty();
         }
@@ -102,6 +119,7 @@ public class DataOperationChain {
             return;
         updateDependencyLevel();
         isDependencyLevelDirty = false;
+        updateLevelInMap();
 
         for (DataOperationChain doc: dependents) {
             doc.updateAllDependencyLevel();

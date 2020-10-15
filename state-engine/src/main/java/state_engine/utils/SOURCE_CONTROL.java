@@ -105,7 +105,6 @@ public class SOURCE_CONTROL {
         if(dLevel == barriersCreatedForDependencyLevel || number_threads==0)
             return;
 
-        System.out.println(number_threads);
         dLevelStartBarrier = new CyclicBarrier(number_threads);
         dLevelEndBarrier = new CyclicBarrier(number_threads);
         barriersCreatedForDependencyLevel = dLevel;

@@ -100,40 +100,54 @@ public class SLBolt_ts extends SLBolt {
     }
     protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
 //        System.out.println(event.toString());
+//        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txnContext.thread_Id);
+
         String[] srcTable = new String[]{"accounts", "bookEntries"};
         String[] srcID = new String[]{event.getSourceAccountId(), event.getSourceBookEntryId()};
+
+        DEC decrement1 = new DEC(event.getAccountTransfer());
+        Condition condition1 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
+        DEC decrement2 = new DEC(event.getBookEntryTransfer());
+        Condition condition2 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
+        INC increment1 =  new INC(event.getAccountTransfer());
+        Condition condition3 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
+        INC increment2 = new INC(event.getBookEntryTransfer());
+        Condition condition4 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
+
+//        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txnContext.thread_Id, false);
 
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "accounts",
                 event.getSourceAccountId(), event.src_account_value,//to be fill up.
-                new DEC(event.getAccountTransfer()),
+                decrement1,
                 srcTable, srcID,//condition source, condition id.
-                new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
+                condition1,
                 event.success);          //asynchronously return.
 
         transactionManager.Asy_ModifyRecord(txnContext,
                 "bookEntries", event.getSourceBookEntryId()
-                , new DEC(event.getBookEntryTransfer()),
+                , decrement2,
                 srcTable, srcID,
-                new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
+                condition2,
                 event.success);   //asynchronously return.
 
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "accounts",
                 event.getTargetAccountId(), event.dst_account_value,//to be fill up.
-                new INC(event.getAccountTransfer()),
+                increment1,
                 srcTable, srcID//condition source, condition id.
-                , new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
+                , condition3,
                 event.success);          //asynchronously return.
 
         transactionManager.Asy_ModifyRecord(txnContext,
                 "bookEntries",
                 event.getTargetBookEntryId(),
-                new INC(event.getBookEntryTransfer()),
+                increment2,
                 srcTable, srcID,
-                new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()),
+                condition4,
                 event.success);   //asynchronously return.
         transactionEvents.add(event);
+
     }
     protected void DEPOSITE_REQUEST_CONSTRUCT(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.

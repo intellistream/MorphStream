@@ -49,6 +49,8 @@ public class MeasureTools {
     static long[] access_start = new long[kMaxThreadNum];
     static double[] access_total = new double[kMaxThreadNum];
 
+    static long[] db_access_start = new long[kMaxThreadNum];
+    static long[] db_access_time = new long[kMaxThreadNum];
 
     static long[] tp_core_start = new long[kMaxThreadNum];
     static double[] tp_core = new double[kMaxThreadNum];
@@ -104,15 +106,15 @@ public class MeasureTools {
     }
 
     public static void BEGIN_INDEX_TIME_MEASURE(int thread_id) {
-//        if (profile_start[thread_id])
-//            index_start[thread_id] = System.nanoTime();
+        if (profile_start[thread_id])
+            index_start[thread_id] = System.nanoTime();
     }
     public static void END_INDEX_TIME_MEASURE_ACC(int thread_id, boolean is_retry_) {
-//        if (profile_start[thread_id]) {
-//            if (!is_retry_)
-//                index_time[thread_id] += System.nanoTime() - index_start[thread_id];
-//        }
+        if (profile_start[thread_id]) {
+            index_time[thread_id] += System.nanoTime() - index_start[thread_id];
+        }
     }
+
     public static void BEGIN_POST_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             post_time_start[thread_id] = System.nanoTime();
@@ -220,6 +222,17 @@ public class MeasureTools {
         }
     }
 
+    public static void BEGIN_DB_ACCESS_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            db_access_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_DB_ACCESS_TIME_MEASURE(int thread_id, boolean is_retry_) {
+        if (profile_start[thread_id]) {
+            db_access_time[thread_id] += System.nanoTime() - db_access_start[thread_id];
+        }
+    }
+
     public static void BEGIN_DEPENDENCY_OUTOFORDER_OVERHEAD_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             dependency_outoforder_overhead_start[thread_id] = System.nanoTime();
@@ -319,6 +332,8 @@ public class MeasureTools {
             metrics.create_oc_total[thread_id].addValue(create_oc_total[thread_id] / txn_size);
             metrics.dependency_checking_total[thread_id].addValue(dependency_checking_total[thread_id] / txn_size);
             metrics.dependency_outoforder_overhead_total[thread_id].addValue(dependency_outoforder_overhead_total[thread_id] / txn_size);
+            metrics.db_access_time[thread_id].addValue(db_access_time[thread_id] / txn_size);
+
 //            metrics.average_tp_core[thread_id].addValue(tp_core[thread_id] / txn_size);
 //            metrics.average_tp_submit[thread_id].addValue(tp_submit[thread_id] / txn_size);
 //            metrics.average_txn_construct[thread_id].addValue((double) pre_txn_total[thread_id] / txn_size);
@@ -340,6 +355,7 @@ public class MeasureTools {
             create_oc_total[thread_id] = 0;
             dependency_checking_total[thread_id] = 0;
             dependency_outoforder_overhead_total[thread_id] = 0;
+            db_access_time[thread_id] = 0;
 
             write_handle[thread_id] = 0;
             prepare_time[thread_id] = 0;

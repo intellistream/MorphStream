@@ -23,6 +23,7 @@ public class Metrics {
     public DescriptiveStatistics[] create_oc_total = new DescriptiveStatistics[kMaxThreadNum];
     public DescriptiveStatistics[] dependency_checking_total = new DescriptiveStatistics[kMaxThreadNum];
     public DescriptiveStatistics[] dependency_outoforder_overhead_total = new DescriptiveStatistics[kMaxThreadNum];
+    public DescriptiveStatistics[] db_access_time = new DescriptiveStatistics[kMaxThreadNum];
 
 
     public DescriptiveStatistics[] stream_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
@@ -85,6 +86,7 @@ public class Metrics {
         create_oc_total[task] = new DescriptiveStatistics();
         dependency_checking_total[task] = new DescriptiveStatistics();
         dependency_outoforder_overhead_total[task] = new DescriptiveStatistics();
+        db_access_time[task] = new DescriptiveStatistics();
 
         stream_total[task] = new DescriptiveStatistics();
         overhead_total[task] = new DescriptiveStatistics();
