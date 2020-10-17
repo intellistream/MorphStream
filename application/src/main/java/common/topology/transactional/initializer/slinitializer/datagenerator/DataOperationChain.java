@@ -34,18 +34,6 @@ public class DataOperationChain {
         return operationsCount;
     }
 
-    public void markReadyForTraversal() {
-        readForTraversal = true;
-    }
-
-    public void markDependentsReadyForTraversal() {
-        if(readForTraversal)
-            return;
-        readForTraversal = true;
-        for (DataOperationChain doc: dependents) {
-            doc.markDependentsReadyForTraversal();
-        }
-    }
 
     private void updateLevelInMap() {
         if(!operationChainsByLevel.containsKey(getDependencyLevel())) {
@@ -85,12 +73,18 @@ public class DataOperationChain {
         return chains;
     }
 
-    public void addDependency(DataOperationChain dependency) {
-        dependsUpon.add(dependency);
+
+    public void markReadyForTraversal() {
+        readForTraversal = true;
     }
 
-    public void addDependent(DataOperationChain dependent) {
-        dependents.add(dependent);
+    public void markDependentsReadyForTraversal() {
+        if(readForTraversal)
+            return;
+        readForTraversal = true;
+        for (DataOperationChain doc: dependents) {
+            doc.markDependentsReadyForTraversal();
+        }
     }
 
     public boolean hasInAllDependents(DataOperationChain oc) {
@@ -107,6 +101,38 @@ public class DataOperationChain {
             if(traversalResult) break;
         }
         return traversalResult;
+    }
+
+    public void markDependsUponReadyForTraversal() {
+        if(readForTraversal)
+            return;
+        readForTraversal = true;
+        for (DataOperationChain doc: dependsUpon) {
+            doc.markDependentsReadyForTraversal();
+        }
+    }
+    public boolean doesDependsUpon(DataOperationChain oc) {
+//        if(!readForTraversal)
+//            return false;
+//        readForTraversal = false;
+
+        boolean traversalResult = false;
+        for (DataOperationChain doc: dependsUpon) {
+            traversalResult |= oc.equals(doc);
+            if(traversalResult) break;
+
+            traversalResult |= doc.hasInAllDependents(oc);
+            if(traversalResult) break;
+        }
+        return traversalResult;
+    }
+
+    public void addDependency(DataOperationChain dependency) {
+        dependsUpon.add(dependency);
+    }
+
+    public void addDependent(DataOperationChain dependent) {
+        dependents.add(dependent);
     }
 
     public boolean hasDependents(){

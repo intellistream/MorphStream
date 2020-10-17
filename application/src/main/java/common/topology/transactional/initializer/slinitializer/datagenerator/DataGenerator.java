@@ -68,6 +68,19 @@ public class DataGenerator {
         DataOperationChain dstAccOC = null;
         DataOperationChain dstAstOC = null;
 
+
+        boolean srcAcc_dependsUpon_srcAst = false;
+        boolean srcAst_dependsUpon_srcAcc = false;
+
+        boolean dstAst_dependsUpon_srcAst = false;
+        boolean dstAst_dependsUpon_srcAcc = false;
+        boolean dstAst_dependsUpon_dstAcc = false;
+
+        boolean dstAcc_dependsUpon_srcAst = false;
+        boolean dstAcc_dependsUpon_srcAcc = false;
+        boolean dstAcc_dependsUpon_dstAst = false;
+
+
         if(mOcLevelsDistribution[0] >= DataConfig.dependenciesDistributionToLevels[0]) {
 
             int selectedLevel = 0;
@@ -113,47 +126,78 @@ public class DataGenerator {
 
         }
         else {
-
             srcAccOC = getNewAccountOC();
             srcAstOC = getNewAssetOC();
             dstAccOC = getNewAccountOC();
             dstAstOC = getNewAssetOC();
         }
 
-        // register dependencies for srcAccount
-        if(srcAccOC.getOperationsCount()>0) {
-            srcAccOC.addDependent(srcAstOC);
-            srcAstOC.addDependency(srcAccOC);
 
-            dstAstOC.markDependentsReadyForTraversal();
-            if(!dstAstOC.hasInAllDependents(dstAccOC)) {
+        dstAcc_dependsUpon_dstAst = dstAccOC.doesDependsUpon(dstAstOC);
+        dstAst_dependsUpon_dstAcc = dstAstOC.doesDependsUpon(dstAccOC);
+
+        if(srcAccOC.getOperationsCount()>0) {
+            srcAst_dependsUpon_srcAcc = srcAstOC.doesDependsUpon(srcAccOC);
+            dstAcc_dependsUpon_srcAcc = dstAccOC.doesDependsUpon(srcAccOC);
+            dstAst_dependsUpon_srcAcc = dstAstOC.doesDependsUpon(srcAccOC);
+
+            if(!srcAst_dependsUpon_srcAcc) {
+                srcAstOC.addDependency(srcAccOC);
+                srcAccOC.addDependent(srcAstOC);
+            }
+
+            if(!dstAcc_dependsUpon_srcAcc && !dstAcc_dependsUpon_dstAst) {
                 dstAccOC.addDependency(srcAccOC);
                 srcAccOC.addDependent(dstAccOC);
             }
 
-            dstAccOC.markDependentsReadyForTraversal();
-            if(!dstAccOC.hasInAllDependents(dstAstOC)) {
+            if(!dstAst_dependsUpon_srcAcc && !dstAst_dependsUpon_dstAcc) {
                 dstAstOC.addDependency(srcAccOC);
                 srcAccOC.addDependent(dstAstOC);
             }
+
         }
 
         // register dependencies for srcAssets
         if(srcAstOC.getOperationsCount()>0) {
-            srcAstOC.addDependent(srcAccOC);
-            srcAccOC.addDependency(srcAstOC);
+            srcAcc_dependsUpon_srcAst = srcAstOC.doesDependsUpon(srcAstOC);
+            dstAcc_dependsUpon_srcAst = dstAccOC.doesDependsUpon(srcAstOC);
+            dstAst_dependsUpon_srcAst = dstAstOC.doesDependsUpon(srcAstOC);
 
-            dstAstOC.markDependentsReadyForTraversal();
-            if(!dstAstOC.hasInAllDependents(dstAccOC)) {
+            if(!srcAcc_dependsUpon_srcAst) {
+                srcAstOC.addDependent(srcAccOC);
+                srcAccOC.addDependency(srcAstOC);
+            }
+
+            if(!dstAcc_dependsUpon_srcAst && !dstAcc_dependsUpon_dstAst) {
                 dstAccOC.addDependency(srcAstOC);
                 srcAstOC.addDependent(dstAccOC);
             }
 
-            dstAccOC.markDependentsReadyForTraversal();
-            if(!dstAccOC.hasInAllDependents(dstAstOC)) {
+            if(!dstAst_dependsUpon_srcAst && !dstAst_dependsUpon_dstAcc) {
                 dstAstOC.addDependency(srcAstOC);
                 srcAstOC.addDependent(dstAstOC);
             }
+
+        }
+
+
+        if(srcAccOC.getOperationsCount()>0) {
+            srcAstOC.markAllDependencyLevelsDirty();
+            dstAccOC.markAllDependencyLevelsDirty();
+            dstAstOC.markAllDependencyLevelsDirty();
+
+            srcAstOC.updateAllDependencyLevel();
+            dstAccOC.updateAllDependencyLevel();
+            dstAstOC.updateAllDependencyLevel();
+        } else {
+            srcAccOC.markAllDependencyLevelsDirty();
+            dstAccOC.markAllDependencyLevelsDirty();
+            dstAstOC.markAllDependencyLevelsDirty();
+
+            srcAccOC.updateAllDependencyLevel();
+            dstAccOC.updateAllDependencyLevel();
+            dstAstOC.updateAllDependencyLevel();
         }
 
         // register operations to
@@ -161,11 +205,6 @@ public class DataGenerator {
         srcAstOC.addAnOperation();
         dstAccOC.addAnOperation();
         dstAstOC.addAnOperation();
-
-        srcAccOC.markAllDependencyLevelsDirty();
-        srcAstOC.markAllDependencyLevelsDirty();
-        srcAccOC.updateAllDependencyLevel();
-        srcAstOC.updateAllDependencyLevel();
 
         DataTransaction t = new DataTransaction(mDataTransactions.size(), srcAccOC.getId(), srcAstOC.getId(), dstAccOC.getId(), dstAstOC.getId());
         mDataTransactions.add(t);
@@ -187,7 +226,6 @@ public class DataGenerator {
         float totalOCCount = accountOCCount+assetOCCount;
 
         for(int lop=0; lop<DataConfig.dependenciesDistributionToLevels.length; lop++) {
-
 
             float accountLevelCount = 0;
             if(accountOperationChainsByLevel.containsKey(lop))
@@ -250,10 +288,12 @@ public class DataGenerator {
             else
                 return null;
 
+            // Todo: do not filter.
             ArrayList<DataOperationChain> selectedLevelFilteredOCs = new ArrayList<>();
             for(DataOperationChain oc: independentOcs) {
-                if(!oc.hasDependents())
+                if(!oc.hasDependents()){
                     selectedLevelFilteredOCs.add(oc);
+                }
             }
 
             if(selectedLevelFilteredOCs.size()==0)
@@ -263,20 +303,16 @@ public class DataGenerator {
             DataOperationChain oc = selectedLevelFilteredOCs.get(pos);
 
             boolean isIndependents = false;
-            oc.markDependentsReadyForTraversal();
-            isIndependents = oc.hasInAllDependents(srcOC);
-            oc.markDependentsReadyForTraversal();
-            isIndependents |= oc.hasInAllDependents(srcAst);
+            isIndependents = srcOC.doesDependsUpon(oc);
+            isIndependents |= srcAst.doesDependsUpon(oc);
 
             while(oc==srcOC || oc==srcAst || isIndependents) {
                 pos++;
                 if(pos<selectedLevelFilteredOCs.size()) {
                     oc = selectedLevelFilteredOCs.get(pos);
 
-                    oc.markDependentsReadyForTraversal();
-                    isIndependents = oc.hasInAllDependents(srcOC);
-                    oc.markDependentsReadyForTraversal();
-                    isIndependents |= oc.hasInAllDependents(srcAst);
+                    isIndependents = srcOC.doesDependsUpon(oc);
+                    isIndependents |= srcAst.doesDependsUpon(oc);
                 } else {
                     oc = null;
                     break;
