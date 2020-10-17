@@ -16,11 +16,13 @@ public class DataGenerator {
     }
 
     private ArrayList<DataTransaction> mDataTransactions = new ArrayList<>();
-    private ArrayList<Integer> mGeneratedAccountIds = new ArrayList<>();
-    private ArrayList<Integer> mGeneratedAssetIds = new ArrayList<>();
+    private HashMap<Integer, Object> mGeneratedIds = new HashMap<>();
 
     private ArrayList<DataOperationChain> mAllAccountOperationChains = new ArrayList<>();
     private ArrayList<DataOperationChain> mAllAssetOperationChains = new ArrayList<>();
+
+    private HashMap<Integer, ArrayList<DataOperationChain>> accountOperationChainsByLevel = new HashMap<>();
+    private HashMap<Integer, ArrayList<DataOperationChain>> assetsOperationChainsByLevel = new HashMap<>();
 
     private float[] mAccountLevelsDistribution = new float[DataConfig.dependenciesDistributionToLevels.length];
     private float[] mAssetLevelsDistribution = new float[DataConfig.dependenciesDistributionToLevels.length];
@@ -30,8 +32,13 @@ public class DataGenerator {
     private Random randomGenerator = new Random();
     private IOutputHandler mDataOutputHandler;
 
+    private int[] mPreGeneratedIds;
+    private int mNewIdIndex;
+
     public void GenerateData(String rootPath) {
         mDataOutputHandler = new GephiOutputHandler(rootPath);
+        preGeneratedIds();
+
         for(int batchNumber = 0; batchNumber<DataConfig.totalBatches; batchNumber++) {
             initializeDatStructures();
             for(int tupleNumber = 0; tupleNumber<DataConfig.tuplesPerBatch; tupleNumber++) {
@@ -41,6 +48,17 @@ public class DataGenerator {
             dumpGeneratedDataToFile();
             clearDataStructures();
         }
+    }
+
+    private void preGeneratedIds(){
+
+        int totalIdsNeeded = (DataConfig.tuplesPerBatch+1)*4;
+        mPreGeneratedIds = new int[totalIdsNeeded];
+        for(int index =0; index<totalIdsNeeded; index++) {
+            mPreGeneratedIds[index] = getNewId();
+        }
+        mGeneratedIds.clear();
+        mNewIdIndex = 0;
     }
 
     private void GenerateTuple() {
@@ -107,13 +125,13 @@ public class DataGenerator {
             srcAccOC.addDependent(srcAstOC);
             srcAstOC.addDependency(srcAccOC);
 
-            getReadyForTraversal();
+            dstAstOC.markDependentsReadyForTraversal();
             if(!dstAstOC.hasInAllDependents(dstAccOC)) {
                 dstAccOC.addDependency(srcAccOC);
                 srcAccOC.addDependent(dstAccOC);
             }
 
-            getReadyForTraversal();
+            dstAccOC.markDependentsReadyForTraversal();
             if(!dstAccOC.hasInAllDependents(dstAstOC)) {
                 dstAstOC.addDependency(srcAccOC);
                 srcAccOC.addDependent(dstAstOC);
@@ -125,13 +143,13 @@ public class DataGenerator {
             srcAstOC.addDependent(srcAccOC);
             srcAccOC.addDependency(srcAstOC);
 
-            getReadyForTraversal();
+            dstAstOC.markDependentsReadyForTraversal();
             if(!dstAstOC.hasInAllDependents(dstAccOC)) {
                 dstAccOC.addDependency(srcAstOC);
                 srcAstOC.addDependent(dstAccOC);
             }
 
-            getReadyForTraversal();
+            dstAccOC.markDependentsReadyForTraversal();
             if(!dstAccOC.hasInAllDependents(dstAstOC)) {
                 dstAstOC.addDependency(srcAstOC);
                 srcAstOC.addDependent(dstAstOC);
@@ -151,12 +169,9 @@ public class DataGenerator {
 
         DataTransaction t = new DataTransaction(mDataTransactions.size(), srcAccOC.getId(), srcAstOC.getId(), dstAccOC.getId(), dstAstOC.getId());
         mDataTransactions.add(t);
-        if(mDataTransactions.size()%1000==0)
+        if(mDataTransactions.size()%10000==0)
             System.out.println(mDataTransactions.size());
     }
-
-    HashMap<Integer, ArrayList<DataOperationChain>> accountOperationChainsByLevel = new HashMap<>();
-    HashMap<Integer, ArrayList<DataOperationChain>> assetsOperationChainsByLevel = new HashMap<>();
 
     private void getReadyForTraversal() {
         for(DataOperationChain chain: mAllAccountOperationChains)
@@ -188,7 +203,7 @@ public class DataGenerator {
             mPickAccountOrAssets[lop] = mAccountLevelsDistribution[lop] < mAssetLevelsDistribution[lop];
         }
 
-        if(mDataTransactions.size()%1000 == 0) {
+        if(mDataTransactions.size()%10000 == 0) {
             System.out.println("Dependency Distribution...");
             for(int lop=0;  lop<mOcLevelsDistribution.length; lop++){
                 System.out.print(lop+": "+mOcLevelsDistribution[lop]+"; ");
@@ -209,69 +224,20 @@ public class DataGenerator {
 
 
     private DataOperationChain getNewAccountOC() {
-        int accId = getNewAccountId();
+        int accId = mPreGeneratedIds[mNewIdIndex];
         DataOperationChain oc = new DataOperationChain("act_"+accId, accountOperationChainsByLevel);
         mAllAccountOperationChains.add(oc);
-        return  oc;
-    }
-
-    private DataOperationChain getRandomExistingDestAccountForOC(DataOperationChain srcOC, DataOperationChain srcAst) {
-        DataOperationChain oc = null;
-        if(mAllAccountOperationChains.size()>(DataConfig.tuplesPerBatch*DataConfig.generatedTuplesBeforeAddingDependency)) {
-            int pos = randomGenerator.nextInt(mAllAccountOperationChains.size());
-            oc = mAllAccountOperationChains.get(pos);
-
-            getReadyForTraversal();
-            boolean isIndependents = oc.hasInAllDependents(srcOC) || oc.hasInAllDependents(srcAst);
-            while(oc==srcOC || isIndependents) {
-                pos++;
-                if(pos<mAllAccountOperationChains.size()) {
-                    oc = mAllAccountOperationChains.get(pos);
-                } else {
-                    oc = getNewAccountOC();
-                    break;
-                }
-                getReadyForTraversal();
-                isIndependents = oc.hasInAllDependents(srcOC) || oc.hasInAllDependents(srcAst);
-            }
-        } else {
-            oc = getNewAccountOC();
-        }
+        mNewIdIndex++;
         return  oc;
     }
 
     private DataOperationChain getNewAssetOC() {
-        int astId = getNewAssetId();
+        int astId = mPreGeneratedIds[mNewIdIndex];
         DataOperationChain oc = new DataOperationChain("ast_"+astId, assetsOperationChainsByLevel);
         mAllAssetOperationChains.add(oc);
+        mNewIdIndex++;
         return  oc;
     }
-
-    private DataOperationChain getRandomExistingDestAssetForOC(DataOperationChain srcOC, DataOperationChain srcAst) {
-        DataOperationChain oc = null;
-        if(mAllAssetOperationChains.size()>(DataConfig.tuplesPerBatch*DataConfig.generatedTuplesBeforeAddingDependency)) {
-            int pos = randomGenerator.nextInt(mAllAssetOperationChains.size());
-            oc = mAllAssetOperationChains.get(pos);
-
-            getReadyForTraversal();
-            boolean isIndependents = oc.hasInAllDependents(srcOC) || oc.hasInAllDependents(srcAst);
-            while(oc==srcAst || isIndependents) {
-                pos++;
-                if(pos<mAllAssetOperationChains.size())
-                    oc = mAllAssetOperationChains.get(pos);
-                else {
-                    oc = getNewAssetOC();
-                    break;
-                }
-                getReadyForTraversal();
-                isIndependents = oc.hasInAllDependents(srcOC) || oc.hasInAllDependents(srcAst);
-            }
-        } else {
-            oc = getNewAssetOC();
-        }
-        return  oc;
-    }
-
 
     private DataOperationChain getRandomExistingDestOC(HashMap<Integer, ArrayList<DataOperationChain>> allOcs, DataOperationChain srcOC, DataOperationChain srcAst) {
 
@@ -296,14 +262,21 @@ public class DataGenerator {
             int pos = randomGenerator.nextInt(selectedLevelFilteredOCs.size());
             DataOperationChain oc = selectedLevelFilteredOCs.get(pos);
 
-            getReadyForTraversal();
-            boolean isIndependents = oc.hasInAllDependents(srcOC) || oc.hasInAllDependents(srcAst);
+            boolean isIndependents = false;
+            oc.markDependentsReadyForTraversal();
+            isIndependents = oc.hasInAllDependents(srcOC);
+            oc.markDependentsReadyForTraversal();
+            isIndependents |= oc.hasInAllDependents(srcAst);
+
             while(oc==srcOC || oc==srcAst || isIndependents) {
                 pos++;
                 if(pos<selectedLevelFilteredOCs.size()) {
                     oc = selectedLevelFilteredOCs.get(pos);
-                    getReadyForTraversal();
-                    isIndependents = oc.hasInAllDependents(srcOC) || oc.hasInAllDependents(srcAst);
+
+                    oc.markDependentsReadyForTraversal();
+                    isIndependents = oc.hasInAllDependents(srcOC);
+                    oc.markDependentsReadyForTraversal();
+                    isIndependents |= oc.hasInAllDependents(srcAst);
                 } else {
                     oc = null;
                     break;
@@ -323,11 +296,6 @@ public class DataGenerator {
         ArrayList<DataOperationChain> selectedLevelFilteredOCs = null;
         if(ocs.containsKey(selectionLevel))
             selectedLevelFilteredOCs = ocs.get(selectionLevel);
-//        ArrayList<DataOperationChain> selectedLevelFilteredOCs = new ArrayList<>();
-//        for(DataOperationChain oc: ocs) {
-//            if(oc.getDependencyLevel()==selectionLevel)
-//                selectedLevelFilteredOCs.add(oc);
-//        }
 
         DataOperationChain oc = null;
         if(selectedLevelFilteredOCs!=null && selectedLevelFilteredOCs.size()>0) {
@@ -341,28 +309,18 @@ public class DataGenerator {
 
     // Pre generate them.
     // Each thread can choose an id like we select transactions for each thread in TStream.
-    private int getNewAccountId() {
-        int id = randomGenerator.nextInt(10*DataConfig.totalBatches*DataConfig.tuplesPerBatch);
-        while(mGeneratedAccountIds.contains(id)) {
+    private int getNewId() {
+        int id = randomGenerator.nextInt(10*DataConfig.tuplesPerBatch*5);
+        while(mGeneratedIds.containsKey(id)) {
             id++;
         }
-        mGeneratedAccountIds.add(id);
+        mGeneratedIds.put(id, null);
         return id;
     }
 
-    private int getNewAssetId() {
-        int id = randomGenerator.nextInt(10*DataConfig.totalBatches*DataConfig.tuplesPerBatch);
-        while(mGeneratedAssetIds.contains(id)) {
-            id++;
-        }
-        mGeneratedAssetIds.add(id);
-        return id;
-    }
 
     private void initializeDatStructures() {
         mDataTransactions = new ArrayList<>();
-        mGeneratedAccountIds = new ArrayList<>();
-        mGeneratedAssetIds = new ArrayList<>();
 
         mAllAccountOperationChains = new ArrayList<>();
         mAllAssetOperationChains = new ArrayList<>();
@@ -375,15 +333,6 @@ public class DataGenerator {
             mDataTransactions = null;
         }
 
-        if(mGeneratedAccountIds!=null) {
-            mGeneratedAccountIds.clear();
-            mGeneratedAccountIds = null;
-        }
-
-        if(mGeneratedAssetIds!=null) {
-            mGeneratedAssetIds.clear();
-            mGeneratedAssetIds = null;
-        }
 
         if(mAllAccountOperationChains!=null) {
             mAllAccountOperationChains.clear();

@@ -38,6 +38,15 @@ public class DataOperationChain {
         readForTraversal = true;
     }
 
+    public void markDependentsReadyForTraversal() {
+        if(readForTraversal)
+            return;
+        readForTraversal = true;
+        for (DataOperationChain doc: dependents) {
+            doc.markDependentsReadyForTraversal();
+        }
+    }
+
     private void updateLevelInMap() {
         if(!operationChainsByLevel.containsKey(getDependencyLevel())) {
             operationChainsByLevel.put(getDependencyLevel(), new ArrayList<>());
