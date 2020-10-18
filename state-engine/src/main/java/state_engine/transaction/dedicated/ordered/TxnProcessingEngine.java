@@ -393,25 +393,22 @@ public final class TxnProcessingEngine {
         MeasureTools.END_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
 
         if(totalChainsToProcess==0) {
-//            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation();
-            SOURCE_CONTROL.getInstance().OneThreadFinished();
-            SOURCE_CONTROL.getInstance().Wait_End_For_Evaluation();
+            SOURCE_CONTROL.getInstance().oneThreadCompleted();
+            SOURCE_CONTROL.getInstance().waitForEvaluation();
         }
 
         while(totalChainsProcessed < totalChainsToProcess) {
 
-//            SOURCE_CONTROL.getInstance().Wait_Start_For_Evaluation();
             MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
             totalChainsProcessed += evaluation(thread_Id, dependencyLevelToProcess,previous_ID - kMaxThreadNum);
             MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
 
             dependencyLevelToProcess+=1;
-            if(totalChainsProcessed == totalChainsToProcess) {
-                SOURCE_CONTROL.getInstance().OneThreadFinished();
-            }
+            if(totalChainsProcessed == totalChainsToProcess)
+                SOURCE_CONTROL.getInstance().oneThreadCompleted();
 
-            SOURCE_CONTROL.getInstance().Wait_End_For_Evaluation();
-            SOURCE_CONTROL.getInstance().createBarrierForDependencyLevel(dependencyLevelToProcess);
+            SOURCE_CONTROL.getInstance().waitForEvaluation();
+            SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(dependencyLevelToProcess);
 
         }
 

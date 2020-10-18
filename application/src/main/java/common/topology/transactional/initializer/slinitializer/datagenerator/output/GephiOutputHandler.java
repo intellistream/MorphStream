@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class GephiOutputHandler extends FileOutputHandler {
@@ -20,7 +21,7 @@ public class GephiOutputHandler extends FileOutputHandler {
     }
 
     @Override
-    public void sinkDependenciesEdges(List<DataOperationChain> allAccountOperationChains, List<DataOperationChain> allAssetOperationChains) {
+    public void sinkDependenciesEdges(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetOperationChains) {
         FileWriter fileWriter = null;
         try {
             File file = new File(mRootPath+mDependencyEdgesFileName);
@@ -30,11 +31,15 @@ public class GephiOutputHandler extends FileOutputHandler {
 
             fileWriter = new FileWriter(file);
             fileWriter.write("source,target\n");
+            for(ArrayList<DataOperationChain> operationChains: allAccountOperationChains.values()) {
+                for(DataOperationChain oc: operationChains)
+                    oc.markReadyForTraversal();
+            }
 
-            for(DataOperationChain oc: allAccountOperationChains)
-                oc.markReadyForTraversal();
-            for(DataOperationChain oc: allAssetOperationChains)
-                oc.markReadyForTraversal();
+            for(ArrayList<DataOperationChain> operationChains: allAssetOperationChains.values()) {
+                for(DataOperationChain oc: operationChains)
+                    oc.markReadyForTraversal();
+            }
             writeDependencyEdges(allAccountOperationChains, fileWriter);
             writeDependencyEdges(allAssetOperationChains, fileWriter);
 
@@ -46,13 +51,15 @@ public class GephiOutputHandler extends FileOutputHandler {
 
     }
 
-    private void writeDependencyEdges(List<DataOperationChain> operationChains, FileWriter fileWriter) throws IOException {
+    private void writeDependencyEdges(HashMap<Integer, ArrayList<DataOperationChain>> allOperationChains, FileWriter fileWriter) throws IOException {
 
-        for(DataOperationChain oc: operationChains) {
-            ArrayList<String> dependencies = new ArrayList<>();
-            oc.registerAllDependenciesToList(dependencies);
-            for(String dependency: dependencies) {
-                fileWriter.write(dependency+"\n");
+        for(ArrayList<DataOperationChain> operationChains: allOperationChains.values()) {
+            for(DataOperationChain oc: operationChains) {
+                ArrayList<String> dependencies = new ArrayList<>();
+                oc.registerAllDependenciesToList(dependencies);
+                for(String dependency: dependencies) {
+                    fileWriter.write(dependency+"\n");
+                }
             }
         }
     }

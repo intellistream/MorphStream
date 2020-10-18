@@ -4,5 +4,5 @@ package common.collections;
  * Updated at  BriskRunner line 262
  */
 public class Constants {
-    public volatile static double default_sourceRate = 1000_000;//xxx K events / second
+    public volatile static double default_sourceRate = 1_000_000;//xxx K events / second
 }

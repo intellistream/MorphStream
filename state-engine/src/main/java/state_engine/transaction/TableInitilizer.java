@@ -131,13 +131,17 @@ public abstract class TableInitilizer {
     }
     public abstract boolean Prepared(String file) throws IOException;
     public void prepare_input_events(String file_path, boolean fixed) throws IOException {
-        db.getEventManager().ini(NUM_EVENTS);
+        prepare_input_events(file_path, NUM_EVENTS, fixed);
+    }
+
+    public void prepare_input_events(String file_path, int totalEvents, boolean fixed) throws IOException {
+        db.getEventManager().ini(totalEvents);
         int _number_partitions = number_partitions;
         //try to read from file.
         if (!Prepared(file_path + tthread)) {
             //if failed, create new one.
             Object event;
-            for (int i = 0; i < NUM_EVENTS; i++) {
+            for (int i = 0; i < totalEvents; i++) {
                 boolean multi_parition_txn_flag = multi_partion_decision[j];
                 j++;
                 if (j == 8)

@@ -171,6 +171,11 @@ public abstract class abstractRunner {
     public int parallelism = 10;
     @Parameter(names = {"--compressRatio"}, description = "compressRatio")
     public int compressRatio = 1;
+    @Parameter(names = {"--totalEvents"}, description = "Total Events Count")
+    public int totalEvents = 1;
+    @Parameter(names = {"--numberOfBatches"}, description = "Batch Count")
+    public int numberOfBatches = 1;
+
     public abstractRunner() {
         if (OsUtils.isWindows()) {
             CFG_PATH = "common\\src\\main\\resources\\config\\%s.properties";
@@ -211,6 +216,8 @@ public abstract class abstractRunner {
         config.put("profile_start", profile_start);
         config.put("profile_end", profile_end);
         config.put("gc_factor", gc_factor);
+        config.put("totalEvents", totalEvents);
+        config.put("numberOfBatches", numberOfBatches);
         if (num_socket != -1) {
             config.put("num_socket", num_socket);
         } else {

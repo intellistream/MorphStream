@@ -164,6 +164,5 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
         POST_COMPUTE_COMPLEXITY = Metrics.POST_COMPUTE_COMPLEXITY;
         //LOG.DEBUG("NUM_ACCESSES: " + NUM_ACCESSES + " theta:" + theta);
         SOURCE_CONTROL.getInstance().config(tthread);
-        SOURCE_CONTROL.getInstance().createBarrierForDependencyLevel(0);
     }
 }

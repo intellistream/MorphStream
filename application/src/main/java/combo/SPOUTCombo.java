@@ -1,10 +1,9 @@
 package combo;
+import common.CONTROL;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.param.sl.TransactionEvent;
 import common.sink.SINKCombo;
 import common.tools.FastZipfGenerator;
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataConfig;
 import org.slf4j.Logger;
 import sesame.components.context.TopologyContext;
 import sesame.components.operators.api.TransactionalBolt;
@@ -22,7 +21,6 @@ import state_engine.utils.SOURCE_CONTROL;
 
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static state_engine.content.Content.CCOption_SStore;
 import static state_engine.content.Content.CCOption_TStream;
@@ -46,6 +44,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public SINKCombo sink = new SINKCombo();
     TransactionalBolt bolt;//compose the bolt here.
     int start_measure;
+
+    protected int totalEvents = 0;
+    protected int numberOfBatches = 0;
 
 //    event = new TransactionEvent(
 //                    0, //bid
@@ -78,9 +79,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 if (taskId == 0)
                     sink.start();
             }
-            if (counter < test_num_events_per_thread) {
+            if (counter < num_events_per_thread) {
                 long bid = mybids[counter];
-                if (enable_latency_measurement)
+                if (CONTROL.enable_latency_measurement)
                     generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, myevents[counter % num_events_per_thread], System.nanoTime());
                 else {
                     generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, myevents[counter % num_events_per_thread]);
@@ -90,7 +91,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 counter++;
 //                LOG.info("COUNTER:" + counter);
                 if (ccOption == CCOption_TStream) {// This is only required by T-Stream.
-                    if (!enable_app_combo) {
+                    if (!CONTROL.enable_app_combo) {
                         forward_checkpoint(this.taskId, bid, null);
                     } else {
                         if (checkpoint(counter)) {
@@ -100,7 +101,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                     }
                 }
                 if (counter == the_end) {
-                    SOURCE_CONTROL.getInstance().Final_END(taskId);//sync for all threads to come to this line.
+                    SOURCE_CONTROL.getInstance().finalThreadsSynchronization(taskId);//sync for all threads to come to this line.
                     if (taskId == 0)
                         sink.end(global_cnt);
                 }
@@ -113,6 +114,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public Integer default_scale(Configuration conf) {
         return 1;//4 for 7 sockets
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         LOG.info("Spout initialize is being called");
@@ -125,6 +127,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         ccOption = config.getInt("CCOption", 0);
         bid = 0;
         tthread = config.getInt("tthread");
+        totalEvents = config.getInt("totalEvents");
+        numberOfBatches = config.getInt("numberOfBatches");
+
         checkpoint_interval_sec = config.getDouble("checkpoint");
         target_Hz = (int) config.getDouble("targetHz", 10000000);
         double scale_factor = config.getDouble("scale_factor", 1);
@@ -134,26 +139,27 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 //        double checkpoint = config.getDouble("checkpoint", 1);
 //        batch_number_per_wm = (int) (checkpoint);//10K, 1K, 100.
 
+        LOG.info("batch_number_per_wm (watermark events length)= " + (batch_number_per_wm) * CONTROL.combo_bid_size);
+        LOG.info("total events... " + totalEvents);
+        LOG.info("events per thread... " +num_events_per_thread);
 
-        LOG.info("batch_number_per_wm (watermark events length)= " + (batch_number_per_wm) * combo_bid_size);
-        num_events_per_thread = NUM_EVENTS / tthread / combo_bid_size;
+        num_events_per_thread = totalEvents / tthread / CONTROL.combo_bid_size;
 
-        if(num_events_per_thread*tthread<NUM_EVENTS) // assuming combo_bid_size == 1 always
-            if(thread_Id<(NUM_EVENTS-num_events_per_thread*tthread))
+        if(num_events_per_thread*tthread< totalEvents) // assuming combo_bid_size == 1 always
+            if(thread_Id<(totalEvents -num_events_per_thread*tthread))
                 num_events_per_thread++;
 
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
-            MeasureTools.measure_counts[thisTaskId] = MeasureStart;//skip warm-up phase.
+            MeasureTools.measure_counts[thisTaskId] = CONTROL.MeasureStart;//skip warm-up phase.
             start_measure = 0;
         } else {
 //            test_num_events_per_thread = TEST_NUM_EVENST / combo_bid_size;
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
-            start_measure = MeasureStart;
-
+            start_measure = CONTROL.MeasureStart;
         }
-        batch_number_per_wm = num_events_per_thread;//10K, 1K, 100.
 
+        batch_number_per_wm = num_events_per_thread/numberOfBatches;//10K, 1K, 100.
         counter = 0;
         mybids = new long[num_events_per_thread];//5000 batches.
         myevents = new Object[num_events_per_thread];
@@ -169,7 +175,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             global_cnt = (the_end) * tthread;
         } else {
-            global_cnt = (the_end - MeasureStart) * tthread;
+            global_cnt = (the_end - CONTROL.MeasureStart) * tthread;
         }
         Metrics metrics = Metrics.getInstance();
         metrics.initilize(thread_Id);

@@ -37,8 +37,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         instance = TxnProcessingEngine.getInstance();
 //        delta_long = (int) Math.ceil(NUM_ITEMS / (double) thread_countw);//range of each partition. depends on the number of op in the stage.
 //        delta = (int) Math.ceil(NUM_ACCOUNTS / (double) thread_countw);//NUM_ITEMS / tthread;
-
-        delta = (int) ((10*1*100000)/(double) thread_countw); // Check id generation in DateGenerator.
+        delta = (int) ((10*10000000*5)/(double) thread_countw); // Check id generation in DateGenerator.
 
 //        switch (config.getInt("app")) {
 //            case "StreamLedger": {
@@ -421,12 +420,12 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     @Override
     public void start_evaluate(int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
 
-        SOURCE_CONTROL.getInstance().Wait_Start(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        SOURCE_CONTROL.getInstance().preStateAccessThreadsSynchronization(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
 //        dumpDependenciesForThread(thread_Id);
 //        if(thread_Id==0)
 //            mergeDependencyFiles();
         instance.start_evaluation(thread_Id, mark_ID);
-        SOURCE_CONTROL.getInstance().Wait_End(thread_Id);//sync for all threads to come to this line.
+        SOURCE_CONTROL.getInstance().postStateAccessThreadsSynchronization(thread_Id);//sync for all threads to come to this line.
 
     }
 

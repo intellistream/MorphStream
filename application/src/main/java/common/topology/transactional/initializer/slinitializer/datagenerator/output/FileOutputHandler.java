@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 public class FileOutputHandler implements IOutputHandler {
@@ -67,7 +68,7 @@ public class FileOutputHandler implements IOutputHandler {
     }
 
     @Override
-    public void sinkDependenciesEdges(List<DataOperationChain> allAccountOperationChains, List<DataOperationChain> allAssetOperationChains) {
+    public void sinkDependenciesEdges(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetOperationChains) {
         FileWriter fileWriter = null;
         try {
             File file = new File(mRootPath+mDependencyEdgesFileName);
@@ -89,13 +90,15 @@ public class FileOutputHandler implements IOutputHandler {
 
     }
 
-    private void writeDependencyEdges(List<DataOperationChain> operationChains, FileWriter fileWriter) throws IOException {
+    private void writeDependencyEdges(HashMap<Integer, ArrayList<DataOperationChain>> allOperationChains, FileWriter fileWriter) throws IOException {
 
-        for(DataOperationChain oc: operationChains) {
-            if(!oc.hasDependents()) {
-                ArrayList<String> dependencyChains = oc.getDependencyChainInfo();
-                for(String dependencyChain: dependencyChains) {
-                    fileWriter.write("\""+dependencyChain+"\",\n");
+        for(ArrayList<DataOperationChain> operationChains: allOperationChains.values()) {
+            for(DataOperationChain oc: operationChains) {
+                if(!oc.hasDependents()) {
+                    ArrayList<String> dependencyChains = oc.getDependencyChainInfo();
+                    for(String dependencyChain: dependencyChains) {
+                        fileWriter.write("\""+dependencyChain+"\",\n");
+                    }
                 }
             }
         }
@@ -103,7 +106,7 @@ public class FileOutputHandler implements IOutputHandler {
 
 
     @Override
-    public void sinkDependenciesVertices(List<DataOperationChain> allAccountOperationChains, List<DataOperationChain> allAssetsOperationChains) {
+    public void sinkDependenciesVertices(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetsOperationChains) {
          try {
             File file = new File(mRootPath+mDependencyVerticesFileName);
             if (file.exists())
@@ -114,21 +117,19 @@ public class FileOutputHandler implements IOutputHandler {
              fileWriter = new FileWriter(file);
              fileWriter.write("id,label\n");
 
-             for(DataOperationChain chain: allAccountOperationChains)
-                 chain.markReadyForTraversal();
-
-             for(DataOperationChain chain: allAssetsOperationChains)
-                 chain.markReadyForTraversal();
-
              int vertexId = 0;
-             for(DataOperationChain chain: allAccountOperationChains) {
-                 fileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
-                 vertexId++;
+             for(ArrayList<DataOperationChain> operationChains: allAccountOperationChains.values()) {
+                 for(DataOperationChain chain: operationChains) {
+                     fileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
+                     vertexId++;
+                 }
              }
 
-             for(DataOperationChain chain: allAssetsOperationChains) {
-                 fileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
-                 vertexId++;
+             for(ArrayList<DataOperationChain> operationChains: allAssetsOperationChains.values()) {
+                 for(DataOperationChain chain: operationChains) {
+                     fileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
+                     vertexId++;
+                 }
              }
 
              fileWriter.close();

@@ -22,11 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-import state_engine.utils.PartitionHelper;
 
-import static common.CONTROL.NUM_EVENTS;
-import static common.CONTROL.enable_states_partition;
-import static common.Constants.Event_Path;
 import static common.Constants.Synth_Data_Folder_Path;
 import static common.constants.StreamLedgerConstants.Constant.*;
 import static state_engine.transaction.State.*;
@@ -45,15 +41,21 @@ public class SLInitializer extends TableInitilizer {
         if(thread_id>0) // we are using single thread to load data.
             return;
 
+        LOG.info("Thread:" + thread_id + " loading records...");
         int startingBalance = 100000;
+        int records = 0;
         File file = new File(Synth_Data_Folder_Path+ OsUtils.OS_wrapper("dependency_vertices.csv"));
         try {
+
             Scanner sc = new Scanner(file);
             sc.nextLine(); // skipping csv column names
             while(sc.hasNext()) {
-                String recordStr = sc.nextLine();
-                String _key = recordStr.split(",")[1].substring(4).trim();
-                if(recordStr.contains("act_")) {
+                String id = sc.nextLine();
+                records++;
+                if(records%100000==0)
+                    LOG.info("Thread:" + records + " records loaded...");
+                String _key = id.split(",")[1].substring(4).trim();
+                if(id.contains("act_")) {
                     insertAccountRecord(_key, startingBalance);
                 } else {
                     insertAssetRecord(_key, startingBalance);
@@ -63,7 +65,7 @@ public class SLInitializer extends TableInitilizer {
             e.printStackTrace();
         }
 
-        LOG.info("Thread:" + thread_id + " finished loading records.");
+        LOG.info("Thread:" + thread_id + " finished loading records...");
     }
 
     @Override
@@ -204,7 +206,7 @@ public class SLInitializer extends TableInitilizer {
         RecordSchema b = BookEntryScheme();
         db.createTable(b, "bookEntries");
         try {
-            prepare_input_events("SL_Events", false);
+            prepare_input_events("SL_Events", config.getInt("totalEvents"), false);
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -21,7 +21,7 @@ public class DataOperationChain {
     public DataOperationChain(String stateId, HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel) {
         this.stateId = stateId;
         this.operationChainsByLevel = operationChainsByLevel;
-        updateLevelInMap();
+        updateLevelInMap(0);
     }
     public String getStateId() {
         return stateId;
@@ -32,20 +32,6 @@ public class DataOperationChain {
 
     public int getOperationsCount() {
         return operationsCount;
-    }
-
-
-    private void updateLevelInMap() {
-        if(!operationChainsByLevel.containsKey(getDependencyLevel())) {
-            operationChainsByLevel.put(getDependencyLevel(), new ArrayList<>());
-        }
-        operationChainsByLevel.get(getDependencyLevel()).add(this);
-    }
-
-    private void removeFromMap() {
-        if(null != operationChainsByLevel.get(getDependencyLevel())) {
-            operationChainsByLevel.get(getDependencyLevel()).remove(this);
-        }
     }
 
     public void registerAllDependenciesToList( ArrayList<String> allDependencies) {
@@ -112,10 +98,6 @@ public class DataOperationChain {
         }
     }
     public boolean doesDependsUpon(DataOperationChain oc) {
-//        if(!readForTraversal)
-//            return false;
-//        readForTraversal = false;
-
         boolean traversalResult = false;
         for (DataOperationChain doc: dependsUpon) {
             traversalResult |= oc.equals(doc);
@@ -139,26 +121,48 @@ public class DataOperationChain {
         return !dependents.isEmpty();
     }
 
+    private void updateLevelInMap(int dependencyLevel) {
+        synchronized(operationChainsByLevel) {
+            if(!operationChainsByLevel.containsKey(dependencyLevel)) {
+                operationChainsByLevel.put(dependencyLevel, new ArrayList<>(DataConfig.tuplesPerBatch/DataConfig.dependenciesDistributionToLevels.length));
+            }
+            operationChainsByLevel.get(getDependencyLevel()).add(this);
+        }
+    }
+
+    private void removeFromMap(int dependencyLevel) {
+        synchronized(operationChainsByLevel) {
+            ArrayList<DataOperationChain> targetList = operationChainsByLevel.get(dependencyLevel);
+            if(null != targetList) {
+                DataOperationChain removedOC = targetList.remove(targetList.size() - 1);
+                if(removedOC!=null && removedOC!=this)
+                    targetList.set(targetList.indexOf(this), removedOC);
+            }
+        }
+    }
+
     public void markAllDependencyLevelsDirty() {
         if(isDependencyLevelDirty)
             return;
         isDependencyLevelDirty = true;
-        removeFromMap();
         for (DataOperationChain doc: dependents) {
             doc.markAllDependencyLevelsDirty();
         }
     }
 
     public void updateAllDependencyLevel() {
-        if(!isDependencyLevelDirty)
-            return;
-        updateDependencyLevel();
-        isDependencyLevelDirty = false;
-        updateLevelInMap();
 
-        for (DataOperationChain doc: dependents) {
-            doc.updateAllDependencyLevel();
+        int oldLevel = dependencyLevel;
+        updateDependencyLevel();
+
+        if(oldLevel!=dependencyLevel) {
+            removeFromMap(oldLevel);
+            updateLevelInMap(dependencyLevel);
+            for (DataOperationChain doc: dependents) {
+                doc.updateAllDependencyLevel();
+            }
         }
+
     }
 
     private void updateDependencyLevel() {
@@ -169,6 +173,29 @@ public class DataOperationChain {
             }
         }
     }
+
+//    public int currentDependencyLevel() {
+//        int dependencyLevel = 0;
+//        for(DataOperationChain oc: dependsUpon) {
+//            if(oc.getDependencyLevel()>=dependencyLevel) {
+//                dependencyLevel = oc.getDependencyLevel()+1;
+//            }
+//        }
+//        return dependencyLevel;
+//    }
+
+//    public void pushDependencyLevelToDependents(int newDependencyLevel) {
+//
+//        if(newDependencyLevel>dependencyLevel) {
+//            removeFromMap(dependencyLevel);
+//            dependencyLevel = newDependencyLevel;
+//            updateLevelInMap(dependencyLevel);
+//            for (DataOperationChain doc: dependents) {
+//                doc.pushDependencyLevelToDependents(newDependencyLevel+1);
+//            }
+//        }
+//
+//    }
 
     public int getDependencyLevel() {
         return dependencyLevel;

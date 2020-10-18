@@ -53,9 +53,11 @@ public class SLBolt_ts extends SLBolt {
         // Aqif: For TStream taskId increases by 1 and executorId is always 0.
     }
 
+    int count=0;
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
+        count++;
         if (in.isMarker()) {
             int readSize = transactionEvents.size();
 

@@ -43,12 +43,15 @@ import static state_engine.content.SStoreContentImpl.SSTORE_CONTENT;
 import static state_engine.content.T_StreamContentImpl.T_STREAMCONTENT;
 import static state_engine.content.ToContentImpl.TO_CONTENT;
 import static state_engine.content.common.ContentCommon.content_type;
+
 public class sesameRunner extends abstractRunner {
+
     private static final Logger LOG = LoggerFactory.getLogger(sesameRunner.class);
     private static Topology final_topology;
     private final AppDriver driver;
     private final Configuration config = new Configuration();
     private Platform platform;
+
     private sesameRunner() {
         driver = new AppDriver();
         //Transactional Application
@@ -57,6 +60,7 @@ public class sesameRunner extends abstractRunner {
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP
     }
+
     public static void main(String[] args) {
         sesameRunner runner = new sesameRunner();
         JCommander cmd = new JCommander(runner);
@@ -72,6 +76,7 @@ public class sesameRunner extends abstractRunner {
             LOG.error("Error in running topology locally", ex);
         }
     }
+
     private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
         TopologySubmitter submitter = new TopologySubmitter();
         try {

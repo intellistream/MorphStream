@@ -136,7 +136,10 @@ public class SLCombo extends SPOUTCombo {
 
                 mybids[index] = Integer.parseInt(split[0]);
                 myevents[index ++] = event;
-                if (index  == num_events_per_thread) break;
+                if (index  == num_events_per_thread) {
+                    break;
+
+                }
                 for (int j = 0; j < (tthread - 1) * combo_bid_size; j++) {
                     if (sc.hasNextLine())
                         sc.nextLine();//skip un-related.
@@ -149,99 +152,10 @@ public class SLCombo extends SPOUTCombo {
             show_stats();
     }
 
-//    @Override
-//    public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) {
-////        tEvents = new Object[]
-////        {
-//////                new TransactionEvent(2,0, "[2]", 1, "2", "2", "4", "4", 2,  2  ),
-////                new TransactionEvent(0,0, "[0]", 1, "2", "5", "1", "2", 2, 2),
-////                new TransactionEvent(1,0, "[1]", 1, "3", "5", "6", "6", 2, 2),
-////                new TransactionEvent(2,0, "[2]", 1, "7", "2", "3", "6", 2, 2),
-////                new TransactionEvent(3,0, "[3]", 1, "2", "7", "3", "6", 2, 2),
-//////                new TransactionEvent(3,0, "[3]", 1, "7", "6", "4", "5", 2, 2),
-////                // to add dependency.
-////                // Use the state as source with an operation registered on it.
-////                // If used both ids which has op registered on them, will result in cross circular dependency
-////                // This means we should use at least 1 new id in sources everytime.
-////                //
-////
-////
-//////                new TransactionEvent(0,0, "[0]", 1, "2", "5", "2", "2", 2,  2  ),
-//////                    new TransactionEvent(7,0, "[7]", 1, "0", "0", "1", "1", 2,  2  ),
-//////                    new TransactionEvent(8,0, "[8]", 1, "0", "0", "1", "1", 2,  2  ),
-//////                    new TransactionEvent(9,0, "[9]", 1, "0", "0", "1", "1", 2,  2  )
-////        };
-//
-//        int number_partitions = Math.min(tthread, config.getInt("number_partitions"));
-//        String event_path = Event_Path
-//                + OsUtils.OS_wrapper("enable_states_partition=" + String.valueOf(enable_states_partition))
-//                + OsUtils.OS_wrapper("NUM_EVENTS=" + String.valueOf(NUM_EVENTS))
-//                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + String.valueOf(config.getDouble("ratio_of_multi_partition", 1)))
-//                + OsUtils.OS_wrapper("number_partitions=" + String.valueOf(number_partitions));
-//
-//        if (Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file_name))))
-//            throw new UnsupportedOperationException();
-//        Scanner sc;
-//        try {
-//            sc = new Scanner(new File(event_path + OsUtils.OS_wrapper(file_name)));
-//            int i = 0;
-//            Object event = null;
-//            for (int j = 0; j < taskId; j++) {
-//                sc.nextLine();
-//            }
-//            while (sc.hasNextLine()) {
-//                String read = sc.nextLine();
-//                String[] split = read.split(split_exp);
-//                if (split.length < 4) {
-//                    LOG.info("Loading wrong file!" + Arrays.toString(split));
-//                    System.exit(-1);
-//                }
-//                if (split[4].endsWith("DepositEvent")) {//DepositEvent
-//                    event = new DepositEvent(
-//                            Integer.parseInt(split[0]), //bid
-//                            Integer.parseInt(split[1]), //pid
-//                            split[2], //bid_array
-//                            Integer.parseInt(split[3]),//num_of_partition
-//                            split[5],//getAccountId
-//                            split[6],//getBookEntryId
-//                            Integer.parseInt(split[7]),  //getAccountTransfer
-//                            Integer.parseInt(split[8])  //getBookEntryTransfer
-//                    );
-//                } else if (split[4].endsWith("TransactionEvent")) {//TransactionEvent
-//                    event = new TransactionEvent(
-//                            Integer.parseInt(split[0]), //bid
-//                            Integer.parseInt(split[1]), //pid
-//                            split[2], //bid_array
-//                            Integer.parseInt(split[3]),//num_of_partition
-//                            split[5],//getSourceAccountId
-//                            split[6],//getSourceBookEntryId
-//                            split[7],//getTargetAccountId
-//                            split[8],//getTargetBookEntryId
-//                            Integer.parseInt(split[9]),  //getAccountTransfer
-//                            Integer.parseInt(split[10])  //getBookEntryTransfer
-//                    );
-//                }
-////                db.eventManager.put(input_event, Integer.parseInt(split[0]));
-//                myevents[i++] = event;
-//                if (i == num_events_per_thread) break;
-//                for (int j = 0; j < (tthread - 1) * combo_bid_size; j++) {
-//                    if (sc.hasNextLine())
-//                        sc.nextLine();//skip un-related.
-//                }
-//            }
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//        if (enable_debug)
-//            show_stats();
-//    }
-
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
 
-
         super.initialize(thread_Id, thisTaskId, graph);
-
 
         sink.configPrefix = this.getConfigPrefix();
         sink.prepare(config, context, collector);
