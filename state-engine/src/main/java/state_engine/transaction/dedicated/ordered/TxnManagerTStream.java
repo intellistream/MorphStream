@@ -32,13 +32,12 @@ import static state_engine.transaction.impl.TxnAccess.Access;
 public class TxnManagerTStream extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerTStream.class);
     TxnProcessingEngine instance;
-    public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int NUM_ACCOUNTS, int thread_countw) {
+    public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw) {
         super(storageManager, thisComponentId, thisTaskId, thread_countw);
         instance = TxnProcessingEngine.getInstance();
 //        delta_long = (int) Math.ceil(NUM_ITEMS / (double) thread_countw);//range of each partition. depends on the number of op in the stage.
 //        delta = (int) Math.ceil(NUM_ACCOUNTS / (double) thread_countw);//NUM_ITEMS / tthread;
-        delta = (int) ((10*10000000*5)/(double) thread_countw); // Check id generation in DateGenerator.
-
+        delta = (int) Math.ceil( numberOfStates / (double) thread_countw ); // Check id generation in DateGenerator.
 //        switch (config.getInt("app")) {
 //            case "StreamLedger": {
 //                delta = (int) Math.ceil(NUM_ACCOUNTS / (double) thread_countw);//NUM_ITEMS / tthread;
@@ -107,6 +106,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     private int getTaskId(String key) {
         Integer _key = Integer.valueOf(key);
         //DD: Number of accounts / threads (tasks) gives us delta and record key is probably incremental upto number of accounts.
+//        System.out.println("Thread id: "+(_key / delta));
         return _key / delta;
 //        return _key % 12;
     }

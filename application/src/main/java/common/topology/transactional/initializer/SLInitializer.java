@@ -1,9 +1,6 @@
 package common.topology.transactional.initializer;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.param.sl.DepositEvent;
-import common.param.sl.TransactionEvent;
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.Database;
@@ -23,16 +20,17 @@ import java.nio.file.Paths;
 import java.util.*;
 
 
-import static common.Constants.Synth_Data_Folder_Path;
 import static common.constants.StreamLedgerConstants.Constant.*;
 import static state_engine.transaction.State.*;
 import static xerial.jnuma.Numa.setLocalAlloc;
 public class SLInitializer extends TableInitilizer {
 
     private static final Logger LOG = LoggerFactory.getLogger(SLInitializer.class);
+    private String dataRootPath;
 
-    public SLInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
+    public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
+        this.dataRootPath = dataRootPath;
         configure_store(scale_factor, theta, tthread, NUM_ACCOUNTS);
     }
 
@@ -44,7 +42,7 @@ public class SLInitializer extends TableInitilizer {
         LOG.info("Thread:" + thread_id + " loading records...");
         int startingBalance = 100000;
         int records = 0;
-        File file = new File(Synth_Data_Folder_Path+ OsUtils.OS_wrapper("dependency_vertices.csv"));
+        File file = new File(dataRootPath+ OsUtils.OS_wrapper("dependency_vertices.csv"));
         try {
 
             Scanner sc = new Scanner(file);
@@ -187,7 +185,7 @@ public class SLInitializer extends TableInitilizer {
 
     @Override
     public boolean Prepared(String file) throws IOException {
-        return Files.exists(Paths.get(Synth_Data_Folder_Path));
+        return Files.exists(Paths.get(dataRootPath));
     }
 
     @Override
@@ -206,7 +204,7 @@ public class SLInitializer extends TableInitilizer {
         RecordSchema b = BookEntryScheme();
         db.createTable(b, "bookEntries");
         try {
-            prepare_input_events("SL_Events", config.getInt("totalEvents"), false);
+            prepare_input_events("SL_Events", config.getInt("totalEventsPerBatch")*config.getInt("numberOfBatches"), false);
         } catch (IOException e) {
             e.printStackTrace();
         }

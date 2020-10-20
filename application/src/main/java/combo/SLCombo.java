@@ -5,8 +5,6 @@ import common.collections.OsUtils;
 import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataConfig;
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.context.TopologyContext;
@@ -15,14 +13,9 @@ import sesame.execution.runtime.collector.OutputCollector;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Scanner;
+import java.util.*;
 
 import static common.CONTROL.*;
-import static common.Constants.Event_Path;
 import static state_engine.content.Content.*;
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class SLCombo extends SPOUTCombo {
@@ -135,15 +128,22 @@ public class SLCombo extends SPOUTCombo {
 //                db.eventManager.put(input_event, Integer.parseInt(split[0]));
 
                 mybids[index] = Integer.parseInt(split[0]);
-                myevents[index ++] = event;
+                myevents[index++] = event;
                 if (index  == num_events_per_thread) {
                     break;
+                }
+                if(index%batch_number_per_wm==0) {
+                    for (int j = 0; j < (totalEventsPerBatch+taskId-1-(taskId+(batch_number_per_wm-1)*tthread)); j++) {
+                        if (sc.hasNextLine())
+                            sc.nextLine();//skip un-related.
+                    }
+                } else {
+                    for (int j = 0; j < (tthread - 1) * combo_bid_size; j++) {
+                        if (sc.hasNextLine())
+                            sc.nextLine();//skip un-related.
+                    }
+                }
 
-                }
-                for (int j = 0; j < (tthread - 1) * combo_bid_size; j++) {
-                    if (sc.hasNextLine())
-                        sc.nextLine();//skip un-related.
-                }
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();

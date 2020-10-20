@@ -3,12 +3,11 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.internal.Lists;
 import common.collections.Constants;
 import common.collections.OsUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
@@ -171,28 +170,33 @@ public abstract class abstractRunner {
     public int parallelism = 10;
     @Parameter(names = {"--compressRatio"}, description = "compressRatio")
     public int compressRatio = 1;
-    @Parameter(names = {"--totalEvents"}, description = "Total Events Count")
-    public int totalEvents = 1;
+    @Parameter(names = {"--totalEventsPerBatch"}, description = "Total Events Count")
+    public int totalEventsPerBatch = 1;
     @Parameter(names = {"--numberOfBatches"}, description = "Batch Count")
     public int numberOfBatches = 1;
+    @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
 
     public abstractRunner() {
-        if (OsUtils.isWindows()) {
-            CFG_PATH = "common\\src\\main\\resources\\config\\%s.properties";
-            metric_path = "..\\Documents\\sesame\\metric_output";
-        } else {
-            CFG_PATH = "common/src/main/resources/config/%s.properties";
-            metric_path = "../sesame/metric_output";
-        }
+//        if (OsUtils.isWindows()) {
+//            CFG_PATH = "\\config\\%s.properties";
+//            metric_path = "\\Documents\\sesame\\metric_output";
+//        } else {
+//            CFG_PATH = "/config/%s.properties";
+//            metric_path = "/sesame/metric_output";
+//        }
+
+            CFG_PATH = "/config/%s.properties";
+            metric_path = "/Documents/sesame/metric_output";
     }
-    public static Properties loadProperties(String filename) throws IOException {
+    public Properties loadProperties(String filename) throws IOException {
         Properties properties = new Properties();
-        InputStream is;
-        is = new FileInputStream(filename);
+        InputStream is = abstractRunner.class.getResourceAsStream(filename);
         properties.load(is);
         is.close();
         return properties;
     }
+
     public void configuration(HashMap<String, Object> config) {
         config.put("disable_pushdown", disable_pushdown);
         config.put("common", application);
@@ -216,8 +220,10 @@ public abstract class abstractRunner {
         config.put("profile_start", profile_start);
         config.put("profile_end", profile_end);
         config.put("gc_factor", gc_factor);
-        config.put("totalEvents", totalEvents);
+        config.put("totalEventsPerBatch", totalEventsPerBatch);
         config.put("numberOfBatches", numberOfBatches);
+        config.put("rootFilePath", rootPath);
+
         if (num_socket != -1) {
             config.put("num_socket", num_socket);
         } else {

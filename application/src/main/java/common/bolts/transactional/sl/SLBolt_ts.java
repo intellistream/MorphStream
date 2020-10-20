@@ -43,8 +43,9 @@ public class SLBolt_ts extends SLBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
+        int numberOfStates = 10 * config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches") * 5;
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
-                NUM_ACCOUNTS, this.context.getThisComponent().getNumTasks());
+                numberOfStates, this.context.getThisComponent().getNumTasks());
         transactionEvents = new ArrayDeque<>();
     }
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {

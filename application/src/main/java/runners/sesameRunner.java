@@ -1,3 +1,5 @@
+package runners;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import common.CONTROL;
@@ -52,7 +54,7 @@ public class sesameRunner extends abstractRunner {
     private final Configuration config = new Configuration();
     private Platform platform;
 
-    private sesameRunner() {
+    public sesameRunner() {
         driver = new AppDriver();
         //Transactional Application
         driver.addApp("GrepSum", GrepSum.class);//GS
@@ -120,7 +122,7 @@ public class sesameRunner extends abstractRunner {
             }
         }
     }
-    private void run() throws InterruptedException {
+    public void run() throws InterruptedException {
         // Loads the configuration file set by the user or the default
         // configuration
         // Prepared default configuration

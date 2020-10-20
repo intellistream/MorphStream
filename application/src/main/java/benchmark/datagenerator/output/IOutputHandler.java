@@ -1,7 +1,7 @@
-package common.topology.transactional.initializer.slinitializer.datagenerator.output;
+package benchmark.datagenerator.output;
 
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataOperationChain;
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataTransaction;
+import benchmark.datagenerator.DataOperationChain;
+import benchmark.datagenerator.DataTransaction;
 
 import java.util.ArrayList;
 import java.util.HashMap;

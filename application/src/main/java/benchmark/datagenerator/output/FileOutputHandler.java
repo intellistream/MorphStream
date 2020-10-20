@@ -1,8 +1,8 @@
-package common.topology.transactional.initializer.slinitializer.datagenerator.output;
+package benchmark.datagenerator.output;
 
 
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataTransaction;
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataOperationChain;
+import benchmark.datagenerator.DataTransaction;
+import benchmark.datagenerator.DataOperationChain;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -32,31 +32,53 @@ public class FileOutputHandler implements IOutputHandler {
         if(mTransactionsFileName==null) {
             mTransactionsFileName = "transactions.txt";
         }
+        File file = new File(mRootPath+mTransactionsFileName);
+        if (file.exists())
+            file.delete();
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         mDependencyEdgesFileName = dependencyFileName;
         if(mDependencyEdgesFileName ==null) {
             mDependencyEdgesFileName = "dependency_edges.csv";
+        }
+        file = new File(mRootPath+mDependencyEdgesFileName);
+        if (file.exists())
+            file.delete();
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         mDependencyVerticesFileName = dependencyVerticesFileName;
         if(mDependencyVerticesFileName ==null) {
             mDependencyVerticesFileName = "dependency_vertices.csv";
         }
+        file = new File(mRootPath+mDependencyVerticesFileName);
+        if (file.exists())
+            file.delete();
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
     public void sinkTransactions(List<DataTransaction> dataTransactions) {
 
-            Collections.shuffle(dataTransactions);
-
         FileWriter fileWriter = null;
         try {
             File file = new File(mRootPath+mTransactionsFileName);
-            if (file.exists())
-                file.delete();
-            file.createNewFile();
+            if (!file.exists())
+                file.createNewFile();
 
-            fileWriter = new FileWriter(file);
+            fileWriter = new FileWriter(file, true);
             for(int lop = 0; lop< dataTransactions.size(); lop++)
                 fileWriter.write (dataTransactions.get(lop).toString()+"\n");
             fileWriter.close();
@@ -72,11 +94,10 @@ public class FileOutputHandler implements IOutputHandler {
         FileWriter fileWriter = null;
         try {
             File file = new File(mRootPath+mDependencyEdgesFileName);
-            if (file.exists())
-                file.delete();
-            file.createNewFile();
+            if (!file.exists())
+                file.createNewFile();
 
-            fileWriter = new FileWriter(file);
+            fileWriter = new FileWriter(file, true);
             fileWriter.write("source,target\n");
 
             writeDependencyEdges(allAccountOperationChains, fileWriter);
@@ -108,13 +129,11 @@ public class FileOutputHandler implements IOutputHandler {
     @Override
     public void sinkDependenciesVertices(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetsOperationChains) {
          try {
-            File file = new File(mRootPath+mDependencyVerticesFileName);
-            if (file.exists())
-                file.delete();
-            file.createNewFile();
+             File file = new File(mRootPath+mDependencyVerticesFileName);
+             if (!file.exists())
+                 file.createNewFile();
 
-             FileWriter fileWriter = null;
-             fileWriter = new FileWriter(file);
+             FileWriter fileWriter = new FileWriter(file, true);
              fileWriter.write("id,label\n");
 
              int vertexId = 0;

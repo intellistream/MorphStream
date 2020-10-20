@@ -1,13 +1,12 @@
-package common.topology.transactional.initializer.slinitializer.datagenerator.output;
+package benchmark.datagenerator.output;
 
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataOperationChain;
+import benchmark.datagenerator.DataOperationChain;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class GephiOutputHandler extends FileOutputHandler {
 
@@ -25,11 +24,10 @@ public class GephiOutputHandler extends FileOutputHandler {
         FileWriter fileWriter = null;
         try {
             File file = new File(mRootPath+mDependencyEdgesFileName);
-            if (file.exists())
-                file.delete();
-            file.createNewFile();
+            if (!file.exists())
+                file.createNewFile();
 
-            fileWriter = new FileWriter(file);
+            fileWriter = new FileWriter(file, true);
             fileWriter.write("source,target\n");
             for(ArrayList<DataOperationChain> operationChains: allAccountOperationChains.values()) {
                 for(DataOperationChain oc: operationChains)

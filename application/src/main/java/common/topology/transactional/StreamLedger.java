@@ -1,5 +1,4 @@
 package common.topology.transactional;
-import common.CONTROL;
 import common.bolts.transactional.sl.SLBolt_lwm;
 import common.bolts.transactional.sl.SLBolt_olb;
 import common.bolts.transactional.sl.SLBolt_sstore;
@@ -7,7 +6,6 @@ import common.bolts.transactional.sl.SLBolt_ts;
 import common.collections.Configuration;
 import common.constants.StreamLedgerConstants.Component;
 import common.topology.transactional.initializer.SLInitializer;
-import common.topology.transactional.initializer.slinitializer.datagenerator.DataConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sesame.components.Topology;
@@ -47,7 +45,7 @@ public class StreamLedger extends TransactionTopology {
         double theta = config.getDouble("theta", 1);
         int tthread = config.getInt("tthread");
         setPartition_interval((int) (Math.ceil(NUM_ACCOUNTS / (double) tthread)), tthread);
-        TableInitilizer ini = new SLInitializer(db, scale_factor, theta, tthread, config);
+        TableInitilizer ini = new SLInitializer(db, config.getString("rootFilePath"), scale_factor, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)

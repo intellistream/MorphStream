@@ -38,6 +38,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <!-- Compiling -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

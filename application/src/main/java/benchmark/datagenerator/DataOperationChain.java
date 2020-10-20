@@ -1,4 +1,4 @@
-package common.topology.transactional.initializer.slinitializer.datagenerator;
+package benchmark.datagenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,11 +17,13 @@ public class DataOperationChain {
     private ArrayList<DataOperationChain> dependents = new ArrayList<>();
 
     private HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel;
+    private int averageRecordsPerDeLevel;
 
-    public DataOperationChain(String stateId, HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel) {
+    public DataOperationChain(String stateId, int averageRecordsPerDeLevel, HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel) {
         this.stateId = stateId;
         this.operationChainsByLevel = operationChainsByLevel;
-        updateLevelInMap(0);
+        this.averageRecordsPerDeLevel = averageRecordsPerDeLevel;
+        updateLevelInMap(0, averageRecordsPerDeLevel);
     }
     public String getStateId() {
         return stateId;
@@ -121,10 +123,10 @@ public class DataOperationChain {
         return !dependents.isEmpty();
     }
 
-    private void updateLevelInMap(int dependencyLevel) {
+    private void updateLevelInMap(int dependencyLevel, int averageRecordsPerDeLevel) {
         synchronized(operationChainsByLevel) {
             if(!operationChainsByLevel.containsKey(dependencyLevel)) {
-                operationChainsByLevel.put(dependencyLevel, new ArrayList<>(DataConfig.tuplesPerBatch/DataConfig.dependenciesDistributionToLevels.length));
+                operationChainsByLevel.put(dependencyLevel, new ArrayList<>(averageRecordsPerDeLevel));
             }
             operationChainsByLevel.get(getDependencyLevel()).add(this);
         }
@@ -157,7 +159,7 @@ public class DataOperationChain {
 
         if(oldLevel!=dependencyLevel) {
             removeFromMap(oldLevel);
-            updateLevelInMap(dependencyLevel);
+            updateLevelInMap(dependencyLevel, averageRecordsPerDeLevel);
             for (DataOperationChain doc: dependents) {
                 doc.updateAllDependencyLevel();
             }

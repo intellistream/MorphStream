@@ -412,6 +412,7 @@ public final class TxnProcessingEngine {
 
         }
 
+        System.out.println(String.format("Processed %d chains for thread %d.", totalChainsToProcess, thread_Id));
     }
 
     private void updateDependencyLevels(int thread_Id) {

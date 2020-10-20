@@ -45,7 +45,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     TransactionalBolt bolt;//compose the bolt here.
     int start_measure;
 
-    protected int totalEvents = 0;
+    protected int totalEventsPerBatch = 0;
     protected int numberOfBatches = 0;
 
 //    event = new TransactionEvent(
@@ -89,7 +89,6 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 tuple = new Tuple(bid, this.taskId, context, generalMsg);
                 bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
                 counter++;
-//                LOG.info("COUNTER:" + counter);
                 if (ccOption == CCOption_TStream) {// This is only required by T-Stream.
                     if (!CONTROL.enable_app_combo) {
                         forward_checkpoint(this.taskId, bid, null);
@@ -127,7 +126,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         ccOption = config.getInt("CCOption", 0);
         bid = 0;
         tthread = config.getInt("tthread");
-        totalEvents = config.getInt("totalEvents");
+        totalEventsPerBatch = config.getInt("totalEventsPerBatch");
         numberOfBatches = config.getInt("numberOfBatches");
 
         checkpoint_interval_sec = config.getDouble("checkpoint");
@@ -136,47 +135,38 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         double theta = config.getDouble("theta", 0);
         p_generator = new FastZipfGenerator(NUM_ITEMS, theta, 0);
 
-//        double checkpoint = config.getDouble("checkpoint", 1);
-//        batch_number_per_wm = (int) (checkpoint);//10K, 1K, 100.
+        batch_number_per_wm = totalEventsPerBatch/tthread;//10K, 1K, 100.
 
-        LOG.info("batch_number_per_wm (watermark events length)= " + (batch_number_per_wm) * CONTROL.combo_bid_size);
-        LOG.info("total events... " + totalEvents);
+        if(batch_number_per_wm*tthread< totalEventsPerBatch) // assuming combo_bid_size == 1 always
+            if(thread_Id<(totalEventsPerBatch - batch_number_per_wm*tthread))
+                batch_number_per_wm++;
+
+        num_events_per_thread = batch_number_per_wm * numberOfBatches;
+
+        LOG.info("total events per batch... " + totalEventsPerBatch);
         LOG.info("events per thread... " +num_events_per_thread);
-
-        num_events_per_thread = totalEvents / tthread / CONTROL.combo_bid_size;
-
-        if(num_events_per_thread*tthread< totalEvents) // assuming combo_bid_size == 1 always
-            if(thread_Id<(totalEvents -num_events_per_thread*tthread))
-                num_events_per_thread++;
+        LOG.info("batch_number_per_wm (watermark events length)= " + batch_number_per_wm);
 
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
             MeasureTools.measure_counts[thisTaskId] = CONTROL.MeasureStart;//skip warm-up phase.
             start_measure = 0;
         } else {
-//            test_num_events_per_thread = TEST_NUM_EVENST / combo_bid_size;
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
             start_measure = CONTROL.MeasureStart;
         }
 
-        batch_number_per_wm = num_events_per_thread/numberOfBatches;//10K, 1K, 100.
         counter = 0;
         mybids = new long[num_events_per_thread];//5000 batches.
         myevents = new Object[num_events_per_thread];
-//        for (int i = 0; i < test_num_events_per_thread; i++) {
-//            mybids[i] = thisTaskId * (combo_bid_size) + i * tthread * combo_bid_size;
-//        }
-        if (config.getInt("CCOption", 0) == CCOption_TStream) {
-//            the_end = test_num_events_per_thread - test_num_events_per_thread % batch_number_per_wm; // we are expecting batch per watermark to be less then number of events per thread?
-            the_end = test_num_events_per_thread;
-        } else {
-            the_end = test_num_events_per_thread;
-        }
+        the_end = num_events_per_thread;
+
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             global_cnt = (the_end) * tthread;
         } else {
             global_cnt = (the_end - CONTROL.MeasureStart) * tthread;
         }
+
         Metrics metrics = Metrics.getInstance();
         metrics.initilize(thread_Id);
     }

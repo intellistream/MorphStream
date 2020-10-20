@@ -1,4 +1,4 @@
-package common.topology.transactional.initializer.slinitializer.datagenerator;
+package benchmark.datagenerator;
 
 public class DataTransaction {
     private int id;

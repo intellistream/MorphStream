@@ -68,6 +68,7 @@ public class SOURCE_CONTROL {
         try {
             if(threadId==0){
                 completedThreadsCount = 0;
+                dependencyLevelToProcess=-1;
                 updateThreadBarrierOnDLevel(0);
             }
             startBarrier.await();
@@ -106,6 +107,7 @@ public class SOURCE_CONTROL {
     public synchronized void updateThreadBarrierOnDLevel(int dLevelToProcess) {
         if(completedThreadsCount==totalThreads || dependencyLevelToProcess == dLevelToProcess)
             return;
+        dependencyLevelToProcess = dLevelToProcess;
         dLevelEndBarrier = dLevelBarriers.get(totalThreads-completedThreadsCount);
     }
 
