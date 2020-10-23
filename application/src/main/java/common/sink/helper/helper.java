@@ -56,7 +56,7 @@ public abstract class helper {
         warm_up = 2 * 1E9;//warm up 1 seconds.
         this.metric_path = metric_path;
         this.throughput_path = metric_path + OsUtils.OS_wrapper("throughput.txt");
-        this.sink_path = metric_path + OsUtils.OS_wrapper("sink_threadId.txt");
+        this.sink_path = metric_path + OsUtils.OS_wrapper("sink_%d.txt");
         atomic_index_e = new AtomicInteger(0);
 //        local_index_e = 0;
         start = Long.MAX_VALUE;
@@ -116,7 +116,7 @@ public abstract class helper {
             LOG.warn("Not able to create metrics directories");
         }
         try {
-            fw = new FileWriter(new File(sink_path));
+            fw = new FileWriter(new File(String.format(sink_path, pid)));
             writer = new BufferedWriter(fw);
         } catch (IOException e) {
             // TODO Auto-generated catch block

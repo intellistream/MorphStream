@@ -386,7 +386,7 @@ public final class TxnProcessingEngine {
             totalChainsToProcess += tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values().size();
         }
 
-        System.out.println(String.format("Processing %d chains for thread %d.", totalChainsToProcess, thread_Id));
+//        System.out.println(String.format("Processing %d chains for thread %d.", totalChainsToProcess, thread_Id));
 
         MeasureTools.BEGIN_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
         updateDependencyLevels(thread_Id);
@@ -412,7 +412,7 @@ public final class TxnProcessingEngine {
 
         }
 
-        System.out.println(String.format("Processed %d chains for thread %d.", totalChainsToProcess, thread_Id));
+//        System.out.println(String.format("Processed %d chains for thread %d.", totalChainsToProcess, thread_Id));
     }
 
     private void updateDependencyLevels(int thread_Id) {

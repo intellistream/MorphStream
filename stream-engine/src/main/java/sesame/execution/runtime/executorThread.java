@@ -13,7 +13,7 @@ import java.util.Queue;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
-import static xerial.jnuma.Numa.newCPUBitMask;
+//import static xerial.jnuma.Numa.newCPUBitMask;
 /**
  * Created by shuhaozhang on 12/7/16.
  */
@@ -57,15 +57,15 @@ public abstract class executorThread extends Thread {
     public void setContext(TopologyContext context) {
         this.context = context;
     }
-    private long[] convertToCPUMasK(long[] cpu) {
-        final long[] cpuMask = newCPUBitMask();
-        LOG.info("Empty cpuMask:" + Arrays.toString(cpuMask));
-        for (long i : cpu) {
-            cpuMask[(int) (i / 64)] |= 1L << (i % 64); //Create a bit mask setting a single CPU on
-        }
-        LOG.info("Configured cpuMask:" + Arrays.toString(cpuMask));
-        return cpuMask;
-    }
+//    private long[] convertToCPUMasK(long[] cpu) {
+//        final long[] cpuMask = newCPUBitMask();
+//        LOG.info("Empty cpuMask:" + Arrays.toString(cpuMask));
+//        for (long i : cpu) {
+//            cpuMask[(int) (i / 64)] |= 1L << (i % 64); //Create a bit mask setting a single CPU on
+//        }
+//        LOG.info("Configured cpuMask:" + Arrays.toString(cpuMask));
+//        return cpuMask;
+//    }
     public void initilize_queue(int executorID) {
         allocate_OutputQueue();
         assign_InputQueue();

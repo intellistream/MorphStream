@@ -1,20 +1,25 @@
-package benchmark.datagenerator;
+package datagenerator;
 
-import benchmark.datagenerator.output.GephiOutputHandler;
-import benchmark.datagenerator.output.IOutputHandler;
+import common.collections.OsUtils;
+import datagenerator.output.GephiOutputHandler;
+import datagenerator.output.IOutputHandler;
+import sun.security.provider.MD5;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Random;
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
+import java.lang.reflect.Array;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 
 public class DataGenerator {
 
-    private HashMap<Integer, Object> mGeneratedIds = new HashMap<>();
+    private HashMap<Integer, Object> mGeneratedIds;
     private Random mRandomGenerator = new Random();
     private int[] mPreGeneratedIds;
 
-    private DatGeneratorConfig dataConfig;
+    private DataGeneratorConfig dataConfig;
 
     private ArrayList<DataTransaction> mDataTransactions;
     private HashMap<Integer, ArrayList<DataOperationChain>> mAccountOperationChainsByLevel;
@@ -43,9 +48,10 @@ public class DataGenerator {
     private long updateDependencyStart = 0;
     private long updateDependency = 0;
 
-    public DataGenerator(DatGeneratorConfig dataConfig) {
+    public DataGenerator(DataGeneratorConfig dataConfig) {
         this.dataConfig = dataConfig;
         this.mTotalTuplesToGenerate = dataConfig.tuplesPerBatch * dataConfig.totalBatches;
+        this.mGeneratedIds = new HashMap<>((mTotalTuplesToGenerate+2)*4);
         this.mDataTransactions = new ArrayList<>(mTotalTuplesToGenerate);
         this.mAccountOperationChainsByLevel = new HashMap<>();
         this.mAssetsOperationChainsByLevel = new HashMap<>();
@@ -56,16 +62,25 @@ public class DataGenerator {
     }
 
     public void GenerateData() {
-        mDataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
-        preGeneratedIds();
 
-        for(int tupleNumber = 0; tupleNumber< mTotalTuplesToGenerate; tupleNumber++) {
+        File file = new File(dataConfig.rootPath);
+        if(file.exists()) {
+            System.out.println("Data already exists.. skipping data generation...");
+            return;
+        }
+        file.mkdirs();
+
+        mDataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
+
+        preGeneratedIds();
+        System.out.println(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
+        for(int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate; tupleNumber++) {
             totalTimeStart = System.nanoTime();
             GenerateTuple();
             totalTime += System.nanoTime() - totalTimeStart;
             UpdateStats();
 
-            if(mTransactionId %10000 == 0) {
+            if(mTransactionId %100000 == 0) {
                 float selectTuplesPer = (selectTuples*1.0f)/(totalTime *1.0f)*100.0f;
                 float updateDependencyPer = (updateDependency*1.0f)/(totalTime *1.0f)*100.0f;
                 System.out.println(String.format("Dependency Distribution...select tuple time: %.3f%%, update dependency time: %.3f%%", selectTuplesPer, updateDependencyPer));
@@ -81,15 +96,51 @@ public class DataGenerator {
 
     }
 
-    private void preGeneratedIds(){
+    private void preGeneratedIds() {
 
-        int totalIdsNeeded = (mTotalTuplesToGenerate +1)*4;
+        int totalIdsNeeded = (mTotalTuplesToGenerate+1)*4;
         mPreGeneratedIds = new int[totalIdsNeeded];
-        for(int index =0; index<totalIdsNeeded; index++) {
-            mPreGeneratedIds[index] = getNewId();
+
+        FileWriter fileWriter = null;
+        try {
+            File file = new File(dataConfig.idsPath + String.format("ids_%d.txt", totalIdsNeeded));
+            if (!file.exists()) {
+                for(int index =0; index<totalIdsNeeded; index++) {
+                    if(index%100000==0)
+                        System.out.println(String.format("%d ids generated...", index));
+                    mPreGeneratedIds[index] = getNewId();
+                }
+
+                System.out.println(String.format("Writing %d ids to file...", totalIdsNeeded));
+
+                file.createNewFile();
+                fileWriter = new FileWriter(file, true);
+                for(int lop = 0; lop< mPreGeneratedIds.length; lop++)
+                    fileWriter.write (mPreGeneratedIds[lop]+"\n");
+                fileWriter.close();
+
+                System.out.println(String.format("Done writing ids..."));
+
+            } else {
+
+                System.out.println(String.format("Reading ids from file %s...", String.format("ids_%d.txt", totalIdsNeeded)));
+
+                Scanner sc = new Scanner(file);
+                for(int index = 0; index< mPreGeneratedIds.length; index++) {
+                    mPreGeneratedIds[index] = Integer.parseInt(sc.nextLine());
+                    if(index%100000==0)
+                        System.out.println(String.format("%d ids read...", index));
+                }
+
+                System.out.println(String.format("Done reading ids..."));
+            }
+
+        } catch (IOException e) {
+            System.out.println("An error occurred while storing transactions.");
+            e.printStackTrace();
         }
-        mGeneratedIds.clear();
         mNewIdIndex = 0;
+
     }
 
     private void GenerateTuple() {
@@ -234,7 +285,7 @@ public class DataGenerator {
         DataTransaction t = new DataTransaction(mTransactionId, srcAccOC.getId(), srcAstOC.getId(), dstAccOC.getId(), dstAstOC.getId());
         mDataTransactions.add(t);
         mTransactionId++;
-        if(mTransactionId %10000==0)
+        if(mTransactionId %100000==0)
             System.out.println(mTransactionId);
 
     }
@@ -300,11 +351,25 @@ public class DataGenerator {
     }
 
     private void dumpGeneratedDataToFile() {
-//        if(dataConfig.shufflingActive) {
-//            System.out.println(String.format("Shuffling transactions..."));
-//            for(int lop=0; lop<dataConfig.totalBatches; lop++)
-//                Collections.shuffle(mDataTransactions.subList(lop*dataConfig.tuplesPerBatch, (lop+1)*dataConfig.tuplesPerBatch));
-//        }
+
+        File versionFile = new File(dataConfig.rootPath.substring(0, dataConfig.rootPath.length()-1)+String.format("_%d_%d_%d.txt", dataConfig.tuplesPerBatch,dataConfig.totalBatches,dataConfig.numberOfDLevels));
+        try {
+            versionFile.createNewFile();
+            FileWriter fileWriter = new FileWriter(versionFile);
+            fileWriter.write(String.format("Tuples per batch      : %d\n", dataConfig.tuplesPerBatch));
+            fileWriter.write(String.format("Total batches         : %d\n", dataConfig.totalBatches));
+            fileWriter.write(String.format("Dependency depth      : %d\n", dataConfig.numberOfDLevels));
+            fileWriter.write(String.format("%s\n", Arrays.toString(mOcLevelsDistribution)));
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if(dataConfig.shufflingActive) {
+            System.out.println(String.format("Shuffling transactions..."));
+            for(int lop=0; lop<dataConfig.totalBatches; lop++)
+                Collections.shuffle(mDataTransactions.subList(lop*dataConfig.tuplesPerBatch, (lop+1)*dataConfig.tuplesPerBatch));
+        }
 
         System.out.println(String.format("Dumping transactions..."));
         mDataOutputHandler.sinkTransactions(mDataTransactions);
@@ -337,6 +402,8 @@ public class DataGenerator {
         int id = mRandomGenerator.nextInt(10 * mTotalTuplesToGenerate * 5);
         while(mGeneratedIds.containsKey(id)) {
             id++;
+            if(id>=10 * mTotalTuplesToGenerate * 5)
+                id = 0;
         }
         mGeneratedIds.put(id, null);
         return id;

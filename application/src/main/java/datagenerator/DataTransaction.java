@@ -1,4 +1,4 @@
-package benchmark.datagenerator;
+package datagenerator;
 
 public class DataTransaction {
     private int id;

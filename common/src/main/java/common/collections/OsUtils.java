@@ -5,7 +5,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Field;
 
-import static xerial.jnuma.Numa.numNodes;
+//import static xerial.jnuma.Numa.numNodes;
 /**
  * Created by I309939 on 5/3/2016.
  */
@@ -26,6 +26,7 @@ public final class OsUtils {
         } else {
         }
     }
+
     public static String OS_wrapper(String path) {
         if (isWindows()) {
             return "\\" + path;
@@ -37,6 +38,19 @@ public final class OsUtils {
             return null;
         }
     }
+
+    public static String osWrapperPostFix(String path) {
+        if (isWindows()) {
+            return path + "\\";
+        } else if (isMac()) {
+            return path + "/";
+        } else if (isUnix()) {
+            return path + "/";
+        } else {
+            return null;
+        }
+    }
+
     public static boolean isWindows() {
         return (OS.contains("win"));
     }
@@ -49,9 +63,9 @@ public final class OsUtils {
     public static int TotalCores() {
         return Runtime.getRuntime().availableProcessors() / 2;
     }
-    public static int totalSockets() {
-        return numNodes();
-    }
+//    public static int totalSockets() {
+//        return numNodes();
+//    }
     public static class Addresser {
         private static Unsafe unsafe;
         static {

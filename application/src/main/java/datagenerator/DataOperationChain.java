@@ -1,4 +1,4 @@
-package benchmark.datagenerator;
+package datagenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -33,7 +33,7 @@ import static state_engine.profiler.Metrics.NUM_ACCESSES;
 import static state_engine.profiler.Metrics.NUM_ITEMS;
 import static state_engine.transaction.State.configure_store;
 import static state_engine.utils.PartitionHelper.getPartition_interval;
-import static xerial.jnuma.Numa.setLocalAlloc;
+//import static xerial.jnuma.Numa.setLocalAlloc;
 public class MBInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(MBInitializer.class);
     //different R-W ratio.
@@ -131,7 +131,7 @@ public class MBInitializer extends TableInitilizer {
     public void loadData_Central(double scale_factor, double theta, int partition_interval, SpinLock[] spinlock_) {
         int elements = (int) (NUM_ITEMS * scale_factor);
         int elements_per_socket;
-        setLocalAlloc();
+//        setLocalAlloc();
         if (OsUtils.isMac())
             elements_per_socket = elements;
         else
@@ -154,7 +154,7 @@ public class MBInitializer extends TableInitilizer {
     public void loadData_Central(double scale_factor, double theta) {
         int elements = (int) (NUM_ITEMS * scale_factor);
         int elements_per_socket;
-        setLocalAlloc();
+//        setLocalAlloc();
         elements_per_socket = elements / 4;
         int i = 0;
         for (int key = 0; key < elements; key++) {

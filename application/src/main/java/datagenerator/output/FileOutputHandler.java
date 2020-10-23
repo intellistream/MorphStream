@@ -1,14 +1,13 @@
-package benchmark.datagenerator.output;
+package datagenerator.output;
 
 
-import benchmark.datagenerator.DataTransaction;
-import benchmark.datagenerator.DataOperationChain;
+import datagenerator.DataTransaction;
+import datagenerator.DataOperationChain;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -25,46 +24,20 @@ public class FileOutputHandler implements IOutputHandler {
 
     public FileOutputHandler(String rootPath, String transactionsFileName, String dependencyFileName, String dependencyVerticesFileName){
         mRootPath = rootPath;
-        File rootFolder = new File(mRootPath);
-        if(!rootFolder.exists())
-            rootFolder.mkdirs();
+
         mTransactionsFileName = transactionsFileName;
         if(mTransactionsFileName==null) {
             mTransactionsFileName = "transactions.txt";
-        }
-        File file = new File(mRootPath+mTransactionsFileName);
-        if (file.exists())
-            file.delete();
-        try {
-            file.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         mDependencyEdgesFileName = dependencyFileName;
         if(mDependencyEdgesFileName ==null) {
             mDependencyEdgesFileName = "dependency_edges.csv";
         }
-        file = new File(mRootPath+mDependencyEdgesFileName);
-        if (file.exists())
-            file.delete();
-        try {
-            file.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         mDependencyVerticesFileName = dependencyVerticesFileName;
         if(mDependencyVerticesFileName ==null) {
             mDependencyVerticesFileName = "dependency_vertices.csv";
-        }
-        file = new File(mRootPath+mDependencyVerticesFileName);
-        if (file.exists())
-            file.delete();
-        try {
-            file.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
     }
@@ -75,6 +48,7 @@ public class FileOutputHandler implements IOutputHandler {
         FileWriter fileWriter = null;
         try {
             File file = new File(mRootPath+mTransactionsFileName);
+            System.out.println(String.format("Transactions path is %s", mRootPath+mTransactionsFileName));
             if (!file.exists())
                 file.createNewFile();
 
@@ -94,6 +68,7 @@ public class FileOutputHandler implements IOutputHandler {
         FileWriter fileWriter = null;
         try {
             File file = new File(mRootPath+mDependencyEdgesFileName);
+            System.out.println(String.format("Edges path is %s", mRootPath+mDependencyEdgesFileName));
             if (!file.exists())
                 file.createNewFile();
 
@@ -130,6 +105,7 @@ public class FileOutputHandler implements IOutputHandler {
     public void sinkDependenciesVertices(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetsOperationChains) {
          try {
              File file = new File(mRootPath+mDependencyVerticesFileName);
+             System.out.println(String.format("Vertices path is %s", mRootPath+mDependencyEdgesFileName));
              if (!file.exists())
                  file.createNewFile();
 

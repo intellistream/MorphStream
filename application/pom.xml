@@ -22,7 +22,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>runners.sesameRunner</mainClass>
+                            <mainClass>runners.BenchmarkRunner</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

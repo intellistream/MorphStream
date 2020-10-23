@@ -186,8 +186,9 @@ public abstract class abstractRunner {
 //            metric_path = "/sesame/metric_output";
 //        }
 
-            CFG_PATH = "/config/%s.properties";
-            metric_path = "/Documents/sesame/metric_output";
+        CFG_PATH = "/config/%s.properties";
+        System.out.println(String.format("Metric folder path %s.", metric_path));
+
     }
     public Properties loadProperties(String filename) throws IOException {
         Properties properties = new Properties();
@@ -198,6 +199,8 @@ public abstract class abstractRunner {
     }
 
     public void configuration(HashMap<String, Object> config) {
+        metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
+
         config.put("disable_pushdown", disable_pushdown);
         config.put("common", application);
         config.put("ratio_of_multi_partition", ratio_of_multi_partition);
@@ -227,12 +230,14 @@ public abstract class abstractRunner {
         if (num_socket != -1) {
             config.put("num_socket", num_socket);
         } else {
-            config.put("num_socket", OsUtils.totalSockets());
+//            config.put("num_socket", OsUtils.totalSockets());
+            config.put("num_socket", 1);
         }
         if (num_cpu != -1) {
             config.put("num_cpu", num_cpu);
         } else {
-            config.put("num_cpu", OsUtils.TotalCores() / OsUtils.totalSockets());
+//            config.put("num_cpu", OsUtils.TotalCores() / OsUtils.totalSockets());
+            config.put("num_cpu", OsUtils.TotalCores() / 1);
         }
         config.put("transaction", transaction);
         config.put("Fault_tolerance", Fault_tolerance);

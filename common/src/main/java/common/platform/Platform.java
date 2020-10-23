@@ -5,8 +5,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static xerial.jnuma.Numa.numCPUs;
-import static xerial.jnuma.Numa.numNodes;
+//import static xerial.jnuma.Numa.numCPUs;
+//import static xerial.jnuma.Numa.numNodes;
 public class Platform implements Serializable {
     private static final long serialVersionUID = 6290015463753518580L;
     public double cache_line;//bytes
@@ -28,7 +28,7 @@ public class Platform implements Serializable {
      */
     double latency_L2;//measured latency in ns for each cache line sized tuple access.
     double latency_LOCAL_MEM;//measured latency in ns for each cache line access.
-    double CoresPerSocket = numCPUs() / (numNodes() > 2 ? numNodes() : 1);//8 cores per socket
+    double CoresPerSocket = 0;//numCPUs() / (numNodes() > 2 ? numNodes() : 1);//8 cores per socket
     /**
      * @param machine
      * @return
@@ -181,7 +181,13 @@ public class Platform implements Serializable {
                     node_3
             };
         } else {//my MAC..
-            Integer[] no_0 = {5, 4, 3, 2, 1, 0};//
+
+            int cores = 48;
+            Integer[] no_0 = new Integer[cores];
+            for(int lop=0; lop<cores; lop++) {
+                no_0[lop] = lop;
+            }
+
             node_0 = new ArrayList<>(Arrays.asList(no_0));
             return new ArrayList[]{
                     node_0

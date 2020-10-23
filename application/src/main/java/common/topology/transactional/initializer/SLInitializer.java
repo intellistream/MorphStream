@@ -22,7 +22,7 @@ import java.util.*;
 
 import static common.constants.StreamLedgerConstants.Constant.*;
 import static state_engine.transaction.State.*;
-import static xerial.jnuma.Numa.setLocalAlloc;
+//import static xerial.jnuma.Numa.setLocalAlloc;
 public class SLInitializer extends TableInitilizer {
 
     private static final Logger LOG = LoggerFactory.getLogger(SLInitializer.class);
@@ -42,7 +42,8 @@ public class SLInitializer extends TableInitilizer {
         LOG.info("Thread:" + thread_id + " loading records...");
         int startingBalance = 100000;
         int records = 0;
-        File file = new File(dataRootPath+ OsUtils.OS_wrapper("dependency_vertices.csv"));
+        File file = new File(dataRootPath+"dependency_vertices.csv");
+        System.out.println(String.format("SLinit folder path %s.", dataRootPath+"dependency_vertices.csv"));
         try {
 
             Scanner sc = new Scanner(file);
@@ -138,7 +139,7 @@ public class SLInitializer extends TableInitilizer {
     public void loadData_Central(double scale_factor, double theta, int partition_interval, SpinLock[] spinlock_) {
         int elements = (int) (NUM_ACCOUNTS * scale_factor);
         int elements_per_socket;
-        setLocalAlloc();
+//        setLocalAlloc();
         if (OsUtils.isMac())
             elements_per_socket = elements;
         else
@@ -156,7 +157,7 @@ public class SLInitializer extends TableInitilizer {
     @Override
     public void loadData_Central(double scale_factor, double theta) {
         int elements = (int) (NUM_ACCOUNTS * scale_factor);
-        setLocalAlloc();
+//        setLocalAlloc();
         int i = 0;
         for (int key = 0; key < elements; key++) {
             String _key = GenerateKey(ACCOUNT_ID_PREFIX, key);

@@ -1,6 +1,6 @@
-package benchmark.datagenerator.output;
+package datagenerator.output;
 
-import benchmark.datagenerator.DataOperationChain;
+import datagenerator.DataOperationChain;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -23,7 +23,9 @@ public class GephiOutputHandler extends FileOutputHandler {
     public void sinkDependenciesEdges(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetOperationChains) {
         FileWriter fileWriter = null;
         try {
+
             File file = new File(mRootPath+mDependencyEdgesFileName);
+            System.out.println(String.format("Edges path is %s", mRootPath+mDependencyEdgesFileName));
             if (!file.exists())
                 file.createNewFile();
 

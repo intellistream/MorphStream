@@ -92,11 +92,12 @@ public class SLCombo extends SPOUTCombo {
 
 
     @Override
-    public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) {
+    public void loadEvent(String filePath, Configuration config, TopologyContext context, OutputCollector collector) {
 
-        String Synth_Data_Folder_Path = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
-        File file = new File(Synth_Data_Folder_Path+OsUtils.OS_wrapper("transactions.txt"));
+//        String Synth_Data_Folder_Path = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
+        File file = new File(filePath+"transactions.txt");
 
+        System.out.println(String.format("SLinit folder path %s.", filePath+ "transactions.txt"));
         if (!file.exists())
             throw new UnsupportedOperationException();
 
@@ -192,7 +193,7 @@ public class SLCombo extends SPOUTCombo {
         bolt.prepare(config, context, collector);
         if (enable_shared_state)
             bolt.loadDB(config, context, collector);
-        loadEvent("transactions.txt", config, context, collector);
+        loadEvent(config.getString("rootFilePath"), config, context, collector);
 //        loadEvent("SL_Events" + tthread, config, context, collector);
 //        bolt.sink.batch_number_per_wm = batch_number_per_wm;
     }
