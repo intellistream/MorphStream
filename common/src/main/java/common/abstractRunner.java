@@ -199,7 +199,7 @@ public abstract class abstractRunner {
     }
 
     public void configuration(HashMap<String, Object> config) {
-        metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
+        metric_path = rootPath + OsUtils.osWrapperPostFix("metric_output");
 
         config.put("disable_pushdown", disable_pushdown);
         config.put("common", application);

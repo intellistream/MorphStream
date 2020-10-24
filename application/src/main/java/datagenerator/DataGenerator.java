@@ -32,7 +32,9 @@ public class DataGenerator {
     private float[] mOcLevelsDistribution;
     private boolean[] mPickAccountOrAssets;
 
-    private int mNewIdIndex = 0;
+//    private int mNewIdIndex = 0;
+    private int mAccIdIndex = 0;
+    private int mAstIdIndex = 0;
     private int mTransactionId = 0;
     private int mTotalTuplesToGenerate;
 
@@ -51,7 +53,7 @@ public class DataGenerator {
     public DataGenerator(DataGeneratorConfig dataConfig) {
         this.dataConfig = dataConfig;
         this.mTotalTuplesToGenerate = dataConfig.tuplesPerBatch * dataConfig.totalBatches;
-        this.mGeneratedIds = new HashMap<>((mTotalTuplesToGenerate+2)*4);
+        this.mGeneratedIds = new HashMap<>((mTotalTuplesToGenerate+2)*2);
         this.mDataTransactions = new ArrayList<>(mTotalTuplesToGenerate);
         this.mAccountOperationChainsByLevel = new HashMap<>();
         this.mAssetsOperationChainsByLevel = new HashMap<>();
@@ -68,7 +70,6 @@ public class DataGenerator {
             System.out.println("Data already exists.. skipping data generation...");
             return;
         }
-        file.mkdirs();
 
         mDataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
 
@@ -93,24 +94,24 @@ public class DataGenerator {
         }
         dumpGeneratedDataToFile();
         System.out.println("Date Generation is done...");
-
+        clearDataStructures();
     }
 
     private void preGeneratedIds() {
 
-        int totalIdsNeeded = (mTotalTuplesToGenerate+1)*4;
+        int totalIdsNeeded = (mTotalTuplesToGenerate+1)*2;
         mPreGeneratedIds = new int[totalIdsNeeded];
 
         FileWriter fileWriter = null;
         try {
             File file = new File(dataConfig.idsPath + String.format("ids_%d.txt", totalIdsNeeded));
             if (!file.exists()) {
+                new File(dataConfig.idsPath).mkdirs();
                 for(int index =0; index<totalIdsNeeded; index++) {
                     if(index%100000==0)
                         System.out.println(String.format("%d ids generated...", index));
                     mPreGeneratedIds[index] = getNewId();
                 }
-
                 System.out.println(String.format("Writing %d ids to file...", totalIdsNeeded));
 
                 file.createNewFile();
@@ -122,25 +123,25 @@ public class DataGenerator {
                 System.out.println(String.format("Done writing ids..."));
 
             } else {
-
                 System.out.println(String.format("Reading ids from file %s...", String.format("ids_%d.txt", totalIdsNeeded)));
-
-                Scanner sc = new Scanner(file);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
                 for(int index = 0; index< mPreGeneratedIds.length; index++) {
-                    mPreGeneratedIds[index] = Integer.parseInt(sc.nextLine());
+                    mPreGeneratedIds[index] = Integer.parseInt(reader.readLine());
                     if(index%100000==0)
-                        System.out.println(String.format("%d ids read...", index));
+                        System.out.println(String.format("%d ids read...%d", index,mPreGeneratedIds[index]));
                 }
-
+                reader.close();
                 System.out.println(String.format("Done reading ids..."));
             }
-
+            mGeneratedIds.clear();
+            mGeneratedIds = null;
         } catch (IOException e) {
             System.out.println("An error occurred while storing transactions.");
             e.printStackTrace();
         }
-        mNewIdIndex = 0;
-
+//        mNewIdIndex = 0;
+        mAccIdIndex = 0;
+        mAstIdIndex = 0;
     }
 
     private void GenerateTuple() {
@@ -326,6 +327,10 @@ public class DataGenerator {
                         !srcOC.doesDependsUpon(oc)  &&
                         !srcAst.doesDependsUpon(oc))
                     break;
+                if(independentOcs.size()-lop > 100) {
+                    oc = null;
+                    break;
+                }
                 oc=null;
             }
             return oc;
@@ -352,6 +357,13 @@ public class DataGenerator {
 
     private void dumpGeneratedDataToFile() {
 
+        File file = new File(dataConfig.rootPath);
+        if(file.exists()) {
+            System.out.println("Data already exists.. skipping data generation...");
+            return;
+        }
+        file.mkdirs();
+
         File versionFile = new File(dataConfig.rootPath.substring(0, dataConfig.rootPath.length()-1)+String.format("_%d_%d_%d.txt", dataConfig.tuplesPerBatch,dataConfig.totalBatches,dataConfig.numberOfDLevels));
         try {
             versionFile.createNewFile();
@@ -374,8 +386,8 @@ public class DataGenerator {
         System.out.println(String.format("Dumping transactions..."));
         mDataOutputHandler.sinkTransactions(mDataTransactions);
 
-        System.out.println(String.format("Dumping Dependency Edges..."));
-        mDataOutputHandler.sinkDependenciesEdges(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
+//        System.out.println(String.format("Dumping Dependency Edges..."));
+//        mDataOutputHandler.sinkDependenciesEdges(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
 
         System.out.println(String.format("Dumping Dependency Vertices..."));
         mDataOutputHandler.sinkDependenciesVertices(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
@@ -383,17 +395,17 @@ public class DataGenerator {
 
     private DataOperationChain getNewAccountOC() {
         totalAccountRecords++;
-        int accId = mPreGeneratedIds[mNewIdIndex];
+        int accId = mPreGeneratedIds[mAccIdIndex];
         DataOperationChain oc = new DataOperationChain("act_"+accId, mTotalTuplesToGenerate /dataConfig.numberOfDLevels, mAccountOperationChainsByLevel);
-        mNewIdIndex++;
+        mAccIdIndex++;
         return  oc;
     }
 
     private DataOperationChain getNewAssetOC() {
         totalAccountRecords++;
-        int astId = mPreGeneratedIds[mNewIdIndex];
+        int astId = mPreGeneratedIds[mAstIdIndex];
         DataOperationChain oc = new DataOperationChain("ast_"+astId, mTotalTuplesToGenerate /dataConfig.numberOfDLevels, mAssetsOperationChainsByLevel);
-        mNewIdIndex++;
+        mAstIdIndex++;
         return  oc;
     }
 
@@ -411,7 +423,8 @@ public class DataGenerator {
 
     private void clearDataStructures() {
 
-        mNewIdIndex = 0;
+        mAccIdIndex = 0;
+        mAstIdIndex = 0;
 
         if(mDataTransactions !=null) {
             mDataTransactions.clear();

@@ -22,7 +22,7 @@ public abstract class TransactionTopology extends BasicTopology {
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
         LOG.info(dateFormat.format(date)); //2016/11/16 12:08:43
-        this.db = new CavaliaDatabase(config.getString("metrics.output") + OsUtils.OS_wrapper(dateFormat.format(date)));
+        this.db = new CavaliaDatabase(config.getString("metrics.output") + dateFormat.format(date));
     }
     public void initialize() {
         super.initialize();

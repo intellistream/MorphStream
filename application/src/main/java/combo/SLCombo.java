@@ -5,14 +5,17 @@ import common.collections.OsUtils;
 import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
+import datagenerator.DataGenerator;
+import datagenerator.DataTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import runners.TransactionsHolder;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.collector.OutputCollector;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
+import java.lang.reflect.Array;
 import java.util.*;
 
 import static common.CONTROL.*;
@@ -94,60 +97,58 @@ public class SLCombo extends SPOUTCombo {
     @Override
     public void loadEvent(String filePath, Configuration config, TopologyContext context, OutputCollector collector) {
 
-//        String Synth_Data_Folder_Path = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
-        File file = new File(filePath+"transactions.txt");
-
-        System.out.println(String.format("SLinit folder path %s.", filePath+ "transactions.txt"));
-        if (!file.exists())
-            throw new UnsupportedOperationException();
-
-        Scanner sc;
-        try {
-
-            Object event = null;
-            sc = new Scanner(file);
-            for (int j = 0; j < taskId; j++) {
-                sc.nextLine();
-            }
-
-            int index = 0;
-            while (sc.hasNextLine()) {
-                String read = sc.nextLine();
-                String[] split = read.split(",");
-                event = new TransactionEvent(
-                        Integer.parseInt(split[0]), //bid
-                        0, //pid
-                       String.format("[%s]", split[0]), //bid_array
-                        1,//num_of_partition
-                        split[1],//getSourceAccountId
-                        split[2],//getSourceBookEntryId
-                        split[3],//getTargetAccountId
-                        split[4],//getTargetBookEntryId
-                        100,  //getAccountTransfer
-                        100  //getBookEntryTransfer
-                );
-//                db.eventManager.put(input_event, Integer.parseInt(split[0]));
-
-                mybids[index] = Integer.parseInt(split[0]);
-                myevents[index++] = event;
-                if (index  == num_events_per_thread) {
-                    break;
-                }
-                if(index%batch_number_per_wm==0) {
-                    for (int j = 0; j < (totalEventsPerBatch+taskId-1-(taskId+(batch_number_per_wm-1)*tthread)); j++) {
-                        if (sc.hasNextLine())
-                            sc.nextLine();//skip un-related.
+        if(TransactionsHolder.transactions.size()==0){
+            File file = new File(filePath+"transactions.txt");
+            if (file.exists()) {
+                System.out.println(String.format("Reading transactions..."));
+                try {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+                    String txn = reader.readLine();
+                    int count = 0;
+                    while (txn!=null) {
+                        count++;
+                        if(count%100000==0)
+                            System.out.println(String.format("%d transactions read...", count));
+                        String[] split = txn.split(",");
+                        TransactionEvent event = new TransactionEvent(
+                                Integer.parseInt(split[0]), //bid
+                                0, //pid
+                                String.format("[%s]", split[0]), //bid_array
+                                1,//num_of_partition
+                                split[1],//getSourceAccountId
+                                split[2],//getSourceBookEntryId
+                                split[3],//getTargetAccountId
+                                split[4],//getTargetBookEntryId
+                                100,  //getAccountTransfer
+                                100  //getBookEntryTransfer
+                        );
+                        TransactionsHolder.transactions.add(event);
+                        txn = reader.readLine();
                     }
-                } else {
-                    for (int j = 0; j < (tthread - 1) * combo_bid_size; j++) {
-                        if (sc.hasNextLine())
-                            sc.nextLine();//skip un-related.
-                    }
-                }
+                    reader.close();
+                } catch (Exception e){}
 
+                System.out.println(String.format("Done reading transactions..."));
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        }
+        loadEvent();
+
+    }
+
+    private void loadEvent() {
+        int storageIndex = 0;
+        for(int index = taskId; index< TransactionsHolder.transactions.size();) {
+            TransactionEvent event = TransactionsHolder.transactions.get(index);
+            mybids[storageIndex] = event.getBid();
+            myevents[storageIndex++] = event;
+
+            if (storageIndex  == num_events_per_thread)
+                break;
+
+            if(storageIndex%batch_number_per_wm==0)
+                index = (((index/totalEventsPerBatch)+1)*totalEventsPerBatch)+taskId;
+            else
+                index+=tthread * combo_bid_size;
         }
         if (enable_debug)
             show_stats();

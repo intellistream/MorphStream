@@ -1,6 +1,8 @@
 package common.topology.transactional.initializer;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import datagenerator.DataGenerator;
+import datagenerator.DataOperationChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import state_engine.Database;
@@ -34,38 +36,115 @@ public class SLInitializer extends TableInitilizer {
         configure_store(scale_factor, theta, tthread, NUM_ACCOUNTS);
     }
 
+
+    public static long totalTimeStart = 0;
+    public static long totalTime = 0;
+    public static long insertTimeStart = 0;
+    public static long insertTime = 0;
+    public static long fileReadTimeStart = 0;
+    public static long fileReadTime = 0;
+    public static long memAllocTimeStart = 0;
+    public static long memAllocTime = 0;
+
     @Override
     public void loadDB(int thread_id, int NUM_TASK) {
         if(thread_id>0) // we are using single thread to load data.
             return;
-
         LOG.info("Thread:" + thread_id + " loading records...");
-        int startingBalance = 100000;
-        int records = 0;
         File file = new File(dataRootPath+"dependency_vertices.csv");
         System.out.println(String.format("SLinit folder path %s.", dataRootPath+"dependency_vertices.csv"));
         try {
+            int startingBalance = 100000;
+            int records = 0;
+            String actTableKey = "accounts";
+            String bookTableKey = "bookEntries";
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            String id = reader.readLine();
 
-            Scanner sc = new Scanner(file);
-            sc.nextLine(); // skipping csv column names
-            while(sc.hasNext()) {
-                String id = sc.nextLine();
+            while(id!=null) {
+                String _key = id.substring(4);
+
+                List<DataBox> values = new ArrayList<>();
+                values.add(new StringDataBox(_key, _key.length()));
+                values.add(new LongDataBox(startingBalance));
+                TableRecord record = new TableRecord(new SchemaRecord(values));
+
+                if(id.contains("act_"))
+                    db.InsertRecord(actTableKey, record);
+                else
+                    db.InsertRecord(bookTableKey, record);
+                id = reader.readLine();
+
                 records++;
                 if(records%100000==0)
                     LOG.info("Thread:" + records + " records loaded...");
-                String _key = id.split(",")[1].substring(4).trim();
-                if(id.contains("act_")) {
-                    insertAccountRecord(_key, startingBalance);
-                } else {
-                    insertAssetRecord(_key, startingBalance);
-                }
             }
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
         LOG.info("Thread:" + thread_id + " finished loading records...");
     }
+
+    // Aqif: Disk IOs are the biggest bootleneck to process large datasets. Thus generating and processing in-memory.
+//    @Override
+//    public void loadDB(int thread_id, int NUM_TASK) {
+//        if(thread_id>0) // we are using single thread to load data.
+//            return;
+//
+//        LOG.info("Thread:" + thread_id + " loading records...");
+//        int startingBalance = 100000;
+//        int records = 0;
+////        File file = new File(dataRootPath+"dependency_vertices.csv");
+////        System.out.println(String.format("SLinit folder path %s.", dataRootPath+"dependency_vertices.csv"));
+//
+//        String actTableKey = "accounts";
+//        String bookTableKey = "bookEntries";
+//
+//        String id = null;
+//
+//        for(ArrayList<DataOperationChain> operationChains: DataGenerator.mAccountOperationChainsByLevel.values()) {
+//            for(int lop=operationChains.size()-1; lop>=0; lop--) {
+//                records++;
+//                id = operationChains.get(lop).getStateId();
+//                String _key = id.substring(4);
+//                List<DataBox> values = new ArrayList<>();
+//                values.add(new StringDataBox(_key, _key.length()));
+//                values.add(new LongDataBox(startingBalance));
+//                TableRecord record = new TableRecord(new SchemaRecord(values));
+//                try {
+//                    db.InsertRecord(actTableKey, record);
+//                } catch (DatabaseException e) {
+//                    e.printStackTrace();
+//                }
+//                if(records%100000==0) {
+//                    LOG.info("Thread:" + records + " records loaded...");
+//                }
+//            }
+//        }
+//
+//
+//        for(ArrayList<DataOperationChain> operationChains: DataGenerator.mAssetsOperationChainsByLevel.values()) {
+//            for(int lop=operationChains.size()-1; lop>=0; lop--) {
+//                records++;
+//                id = operationChains.get(lop).getStateId();
+//                String _key = id.substring(4);
+//                List<DataBox> values = new ArrayList<>();
+//                values.add(new StringDataBox(_key, _key.length()));
+//                values.add(new LongDataBox(startingBalance));
+//                TableRecord record = new TableRecord(new SchemaRecord(values));
+//                try {
+//                    db.InsertRecord(actTableKey, record);
+//                } catch (DatabaseException e) {
+//                    e.printStackTrace();
+//                }
+//                if(records%100000==0) {
+//                    LOG.info("Thread:" + records + " records loaded...");
+//                }
+//            }
+//        }
+//
+//        LOG.info("Thread:" + thread_id + " finished loading records...");
+//    }
 
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
@@ -75,12 +154,16 @@ public class SLInitializer extends TableInitilizer {
      * initial account value_list is 0...?
      */
     private void insertAccountRecord(String key, long value) {
+        memAllocTimeStart = System.nanoTime();
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
         values.add(new LongDataBox(value));
         SchemaRecord schemaRecord = new SchemaRecord(values);
+        memAllocTime += System.nanoTime() - memAllocTimeStart;
         try {
+            insertTimeStart = System.nanoTime();
             db.InsertRecord("accounts", new TableRecord(schemaRecord));
+            insertTime += System.nanoTime() - insertTimeStart;
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -90,6 +173,7 @@ public class SLInitializer extends TableInitilizer {
         values.add(new StringDataBox(key, key.length()));
         values.add(new LongDataBox(value));
         SchemaRecord schemaRecord = new SchemaRecord(values);
+
         try {
             db.InsertRecord("accounts", new TableRecord(schemaRecord, pid, spinlock_));
         } catch (DatabaseException e) {
@@ -108,7 +192,12 @@ public class SLInitializer extends TableInitilizer {
      */
     private void insertAssetRecord(String key, long value) {
         try {
-            db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value)));
+            memAllocTimeStart = System.nanoTime();
+            TableRecord record = new TableRecord(AssetRecord(key, value));
+            memAllocTime += System.nanoTime() - memAllocTimeStart;
+            insertTimeStart = System.nanoTime();
+            db.InsertRecord("bookEntries", record);
+            insertTime += System.nanoTime() - insertTimeStart;
         } catch (DatabaseException e) {
             e.printStackTrace();
         }

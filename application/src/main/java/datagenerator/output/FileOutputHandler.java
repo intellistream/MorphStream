@@ -1,12 +1,16 @@
 package datagenerator.output;
 
 
+import common.collections.OsUtils;
 import datagenerator.DataTransaction;
 import datagenerator.DataOperationChain;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,14 +49,14 @@ public class FileOutputHandler implements IOutputHandler {
     @Override
     public void sinkTransactions(List<DataTransaction> dataTransactions) {
 
-        FileWriter fileWriter = null;
+        BufferedWriter fileWriter = null;
         try {
             File file = new File(mRootPath+mTransactionsFileName);
             System.out.println(String.format("Transactions path is %s", mRootPath+mTransactionsFileName));
             if (!file.exists())
                 file.createNewFile();
 
-            fileWriter = new FileWriter(file, true);
+            fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()));
             for(int lop = 0; lop< dataTransactions.size(); lop++)
                 fileWriter.write (dataTransactions.get(lop).toString()+"\n");
             fileWriter.close();
@@ -105,29 +109,40 @@ public class FileOutputHandler implements IOutputHandler {
     public void sinkDependenciesVertices(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetsOperationChains) {
          try {
              File file = new File(mRootPath+mDependencyVerticesFileName);
-             System.out.println(String.format("Vertices path is %s", mRootPath+mDependencyEdgesFileName));
+             System.out.println(String.format("Vertices path is %s", mRootPath+mDependencyVerticesFileName));
              if (!file.exists())
                  file.createNewFile();
 
-             FileWriter fileWriter = new FileWriter(file, true);
-             fileWriter.write("id,label\n");
+             File fileGephi = new File(mRootPath+OsUtils.osWrapperPostFix("gephi")+mDependencyVerticesFileName);
+             if (!fileGephi.exists()) {
+                new File(mRootPath+OsUtils.osWrapperPostFix("gephi")).mkdirs();
+                fileGephi.createNewFile();
+             }
+
+             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()));
+             BufferedWriter gephiFileWriter = Files.newBufferedWriter(Paths.get(fileGephi.getPath()));
+
+             gephiFileWriter.write("id,label\n");
 
              int vertexId = 0;
              for(ArrayList<DataOperationChain> operationChains: allAccountOperationChains.values()) {
                  for(DataOperationChain chain: operationChains) {
-                     fileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
+                     fileWriter.write(String.format("%s\n", chain.getStateId()));
+                     gephiFileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
                      vertexId++;
                  }
              }
 
              for(ArrayList<DataOperationChain> operationChains: allAssetsOperationChains.values()) {
                  for(DataOperationChain chain: operationChains) {
-                     fileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
+                     fileWriter.write(String.format("%s\n", chain.getStateId()));
+                     gephiFileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
                      vertexId++;
                  }
              }
 
              fileWriter.close();
+             gephiFileWriter.close();
 
         } catch (IOException e) {
             System.out.println("An error occurred while storing transactions.");
