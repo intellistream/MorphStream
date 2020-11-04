@@ -1,5 +1,6 @@
 package state_engine.profiler;
 import common.CONTROL;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
 import static state_engine.Meta.MetaTypes.kMaxThreadNum;
 public class MeasureTools {
@@ -9,6 +10,8 @@ public class MeasureTools {
     protected static Metrics metrics = Metrics.getInstance();
     static long[] total_start = new long[kMaxThreadNum];
     static long[] total = new long[kMaxThreadNum];
+
+    public static long[] number_of_ocs = new long[kMaxThreadNum];
 
     static long[] txn_wait_start = new long[kMaxThreadNum];
     static long[] txn_wait = new long[kMaxThreadNum];
@@ -44,6 +47,8 @@ public class MeasureTools {
     static long[] txn_processing_total = new long[kMaxThreadNum];//tp=tp_core + tp_submit
     static long[] calculate_levels_start = new long[kMaxThreadNum];
     static long[] calculate_levels_total = new long[kMaxThreadNum];
+    static long[] barriers_start = new long[kMaxThreadNum];
+    static long[] barriers_total = new long[kMaxThreadNum];
     static long[] iterative_processing_useful_start = new long[kMaxThreadNum];
     static long[] iterative_processing_useful_total = new long[kMaxThreadNum];
     static long[] access_start = new long[kMaxThreadNum];
@@ -65,10 +70,12 @@ public class MeasureTools {
             txn_lock[i] = 0;
             txn_wait[i] = 0;
 
+            number_of_ocs[i] = 0;
             pre_txn_total[i] = 0;
             create_oc_total[i] = 0;
             dependency_checking_total[i] = 0;
             dependency_outoforder_overhead_total[i] = 0;
+
 
         }
     }
@@ -244,6 +251,17 @@ public class MeasureTools {
         }
     }
 
+    public static void BEGIN_BARRIER_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            barriers_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_BARRIER_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id]) {
+            barriers_total[thread_id] += System.nanoTime() - barriers_start[thread_id];
+        }
+    }
+
     public static void BEGIN_TXN_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             txn_start[thread_id] = System.nanoTime();
@@ -284,7 +302,6 @@ public class MeasureTools {
             calculate_levels_total[thread_id] = System.nanoTime() - calculate_levels_start[thread_id];
     }
 
-
     public static void BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(int thread_id) { // transaction processing time
         if (profile_start[thread_id])
             iterative_processing_useful_start[thread_id] = System.nanoTime();
@@ -311,33 +328,45 @@ public class MeasureTools {
         }
     }
 
+    public static void REGISTER_NUMBER_OF_OC_PROCESSED(int thread, int noOfOcs){
+        number_of_ocs[thread] = noOfOcs;
+    }
+
     //compute per event time spent.
-    public static void END_TOTAL_TIME_MEASURE_TS(int thread_id, int txn_size) {
+    public static void END_TOTAL_TIME_MEASURE_TS(int thread_id, int numberOfTransactionalEvents) {
+
+
         if (profile_start[thread_id] && !Thread.currentThread().isInterrupted()) {
 
             total[thread_id] = System.nanoTime() - total_start[thread_id];//time from receiving first event to finish last event in the current batch.
 
-            metrics.overhead_total[thread_id].addValue((total[thread_id] - txn_total[thread_id]) / txn_size);
-            metrics.stream_total[thread_id].addValue((post_time[thread_id] + prepare_time[thread_id]) / txn_size);
+            metrics.numberOf_transactional_events_processed[thread_id].addValue(numberOfTransactionalEvents);
+            numberOfTransactionalEvents = 1; // Do not scale time to time per transaction.
 
-            metrics.total[thread_id].addValue(total[thread_id] / txn_size);
+            metrics.number_of_ocs_processed[thread_id].addValue(number_of_ocs[thread_id]);
 
-            metrics.txn_total[thread_id].addValue(txn_total[thread_id] / txn_size);
-            metrics.txn_processing_total[thread_id].addValue(txn_processing_total[thread_id] / txn_size);
-            metrics.state_access_total[thread_id].addValue(access_total[thread_id] / txn_size);
-            metrics.calculate_levels_total[thread_id].addValue(calculate_levels_total[thread_id] / txn_size);
-            metrics.iterative_processing_useful_total[thread_id].addValue(iterative_processing_useful_total[thread_id] / txn_size);
+            metrics.overhead_total[thread_id].addValue((total[thread_id] - txn_total[thread_id]) / numberOfTransactionalEvents);
+            metrics.stream_total[thread_id].addValue((post_time[thread_id] + prepare_time[thread_id]) / numberOfTransactionalEvents);
 
-            metrics.pre_txn_total[thread_id].addValue(pre_txn_total[thread_id] / txn_size);
-            metrics.create_oc_total[thread_id].addValue(create_oc_total[thread_id] / txn_size);
-            metrics.dependency_checking_total[thread_id].addValue(dependency_checking_total[thread_id] / txn_size);
-            metrics.dependency_outoforder_overhead_total[thread_id].addValue(dependency_outoforder_overhead_total[thread_id] / txn_size);
-            metrics.db_access_time[thread_id].addValue(db_access_time[thread_id] / txn_size);
+            metrics.total[thread_id].addValue(total[thread_id] / numberOfTransactionalEvents);
 
-//            metrics.average_tp_core[thread_id].addValue(tp_core[thread_id] / txn_size);
-//            metrics.average_tp_submit[thread_id].addValue(tp_submit[thread_id] / txn_size);
-//            metrics.average_txn_construct[thread_id].addValue((double) pre_txn_total[thread_id] / txn_size);
-//            metrics.average_tp_w_syn[thread_id].addValue((double) tp[thread_id] / txn_size);
+            metrics.txn_total[thread_id].addValue(txn_total[thread_id] / numberOfTransactionalEvents);
+            metrics.txn_processing_total[thread_id].addValue(txn_processing_total[thread_id] / numberOfTransactionalEvents);
+            metrics.state_access_total[thread_id].addValue(access_total[thread_id] / numberOfTransactionalEvents);
+            metrics.calculate_levels_total[thread_id].addValue(calculate_levels_total[thread_id] / numberOfTransactionalEvents);
+            metrics.barriers_total[thread_id].addValue(barriers_total[thread_id] / numberOfTransactionalEvents);
+            metrics.iterative_processing_useful_total[thread_id].addValue(iterative_processing_useful_total[thread_id] / numberOfTransactionalEvents);
+
+            metrics.pre_txn_total[thread_id].addValue(pre_txn_total[thread_id] / numberOfTransactionalEvents);
+            metrics.create_oc_total[thread_id].addValue(create_oc_total[thread_id] / numberOfTransactionalEvents);
+            metrics.dependency_checking_total[thread_id].addValue(dependency_checking_total[thread_id] / numberOfTransactionalEvents);
+            metrics.dependency_outoforder_overhead_total[thread_id].addValue(dependency_outoforder_overhead_total[thread_id] / numberOfTransactionalEvents);
+            metrics.db_access_time[thread_id].addValue(db_access_time[thread_id] / numberOfTransactionalEvents);
+
+//            metrics.average_tp_core[thread_id].addValue(tp_core[thread_id] / numberOfTransactionalEvents);
+//            metrics.average_tp_submit[thread_id].addValue(tp_submit[thread_id] / numberOfTransactionalEvents);
+//            metrics.average_txn_construct[thread_id].addValue((double) pre_txn_total[thread_id] / numberOfTransactionalEvents);
+//            metrics.average_tp_w_syn[thread_id].addValue((double) tp[thread_id] / numberOfTransactionalEvents);
             //clean;
 
             total_start[thread_id] = 0;
@@ -373,11 +402,11 @@ public class MeasureTools {
             txn_lock[thread_id] += rt - tp_core[thread_id] - index_time[thread_id];
         }
     }
-    //    public static void END_COMPUTE_TIME_MEASURE(int thread_id) {
-//        if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound) {
-//            access_total[thread_id] = System.nanoTime() - access_start[thread_id];
-//        }
-//    }
+        public static void END_COMPUTE_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound) {
+            access_total[thread_id] = System.nanoTime() - access_start[thread_id];
+        }
+    }
     public static void END_INDEX_TIME_MEASURE(int thread_id, boolean is_retry_) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound) {
             if (!is_retry_)

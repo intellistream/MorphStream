@@ -1,23 +1,19 @@
 package datagenerator;
 
-import common.collections.OsUtils;
 import datagenerator.output.GephiOutputHandler;
 import datagenerator.output.IOutputHandler;
-import sun.security.provider.MD5;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
-import java.lang.reflect.Array;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class DataGenerator {
 
-    private HashMap<Integer, Object> mGeneratedIds;
     private Random mRandomGenerator = new Random();
-    private int[] mPreGeneratedIds;
+    private Random mRandomGeneratorForAccIds = new Random(12345678);
+    private Random mRandomGeneratorForAstIds = new Random(123456789);
+    private int totalAccountRecords = 0;
+    private int totalAssetRecords = 0;
+    private int mTotalTuplesToGenerate;
 
     private DataGeneratorConfig dataConfig;
 
@@ -30,37 +26,32 @@ public class DataGenerator {
     private float[] mAccountLevelsDistribution;
     private float[] mAssetLevelsDistribution;
     private float[] mOcLevelsDistribution;
-    private boolean[] mPickAccountOrAssets;
+    private boolean[] mPickAccount;
 
-//    private int mNewIdIndex = 0;
-    private int mAccIdIndex = 0;
-    private int mAstIdIndex = 0;
     private int mTransactionId = 0;
-    private int mTotalTuplesToGenerate;
 
-    private int totalAccountRecords = 0;
-    private int totalAssetRecords = 0;
 
     private long totalTimeStart = 0;
     private long totalTime = 0;
-
     private long selectTuplesStart = 0;
     private long selectTuples = 0;
-
     private long updateDependencyStart = 0;
     private long updateDependency = 0;
 
     public DataGenerator(DataGeneratorConfig dataConfig) {
         this.dataConfig = dataConfig;
         this.mTotalTuplesToGenerate = dataConfig.tuplesPerBatch * dataConfig.totalBatches;
-        this.mGeneratedIds = new HashMap<>((mTotalTuplesToGenerate+2)*2);
         this.mDataTransactions = new ArrayList<>(mTotalTuplesToGenerate);
         this.mAccountOperationChainsByLevel = new HashMap<>();
         this.mAssetsOperationChainsByLevel = new HashMap<>();
         this.mAccountLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mAssetLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mOcLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
-        this.mPickAccountOrAssets = new boolean[dataConfig.dependenciesDistributionForLevels.length];
+        this.mPickAccount = new boolean[dataConfig.dependenciesDistributionForLevels.length];
+    }
+
+    public DataGeneratorConfig getDataConfig() {
+        return dataConfig;
     }
 
     public void GenerateData() {
@@ -73,7 +64,6 @@ public class DataGenerator {
 
         mDataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
 
-        preGeneratedIds();
         System.out.println(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
         for(int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate; tupleNumber++) {
             totalTimeStart = System.nanoTime();
@@ -95,53 +85,6 @@ public class DataGenerator {
         dumpGeneratedDataToFile();
         System.out.println("Date Generation is done...");
         clearDataStructures();
-    }
-
-    private void preGeneratedIds() {
-
-        int totalIdsNeeded = (mTotalTuplesToGenerate+1)*2;
-        mPreGeneratedIds = new int[totalIdsNeeded];
-
-        FileWriter fileWriter = null;
-        try {
-            File file = new File(dataConfig.idsPath + String.format("ids_%d.txt", totalIdsNeeded));
-            if (!file.exists()) {
-                new File(dataConfig.idsPath).mkdirs();
-                for(int index =0; index<totalIdsNeeded; index++) {
-                    if(index%100000==0)
-                        System.out.println(String.format("%d ids generated...", index));
-                    mPreGeneratedIds[index] = getNewId();
-                }
-                System.out.println(String.format("Writing %d ids to file...", totalIdsNeeded));
-
-                file.createNewFile();
-                fileWriter = new FileWriter(file, true);
-                for(int lop = 0; lop< mPreGeneratedIds.length; lop++)
-                    fileWriter.write (mPreGeneratedIds[lop]+"\n");
-                fileWriter.close();
-
-                System.out.println(String.format("Done writing ids..."));
-
-            } else {
-                System.out.println(String.format("Reading ids from file %s...", String.format("ids_%d.txt", totalIdsNeeded)));
-                BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-                for(int index = 0; index< mPreGeneratedIds.length; index++) {
-                    mPreGeneratedIds[index] = Integer.parseInt(reader.readLine());
-                    if(index%100000==0)
-                        System.out.println(String.format("%d ids read...%d", index,mPreGeneratedIds[index]));
-                }
-                reader.close();
-                System.out.println(String.format("Done reading ids..."));
-            }
-            mGeneratedIds.clear();
-            mGeneratedIds = null;
-        } catch (IOException e) {
-            System.out.println("An error occurred while storing transactions.");
-            e.printStackTrace();
-        }
-//        mNewIdIndex = 0;
-        mAccIdIndex = 0;
-        mAstIdIndex = 0;
     }
 
     private void GenerateTuple() {
@@ -173,7 +116,7 @@ public class DataGenerator {
                 }
             }
 
-            if(mPickAccountOrAssets[selectedLevel]) {
+            if(mPickAccount[selectedLevel]) {
 
                 srcAccOC = getRandomExistingOC(selectedLevel, mAccountOperationChainsByLevel);
                 if(srcAccOC==null)
@@ -306,38 +249,33 @@ public class DataGenerator {
             mAccountLevelsDistribution[lop] = accountLevelCount/totalAccountRecords;
             mAssetLevelsDistribution[lop] = assetLevelCount/totalAssetRecords;
             mOcLevelsDistribution[lop] = (accountLevelCount+assetLevelCount)/(totalAccountRecords+totalAssetRecords);
-            mPickAccountOrAssets[lop] = mAccountLevelsDistribution[lop] < mAssetLevelsDistribution[lop];
+            mPickAccount[lop] = mAccountLevelsDistribution[lop] < mAssetLevelsDistribution[lop];
         }
     }
 
     private DataOperationChain getRandomExistingDestOC(HashMap<Integer, ArrayList<DataOperationChain>> allOcs, DataOperationChain srcOC, DataOperationChain srcAst) {
 
-        int totalStates = totalAccountRecords+totalAssetRecords;
-        if(totalStates>(mTotalTuplesToGenerate * dataConfig.generatedTuplesBeforeAddingDependency)) {
-            ArrayList<DataOperationChain> independentOcs = allOcs.get(0);
-            if(independentOcs==null || independentOcs.size()==0)
-                return null;
-
-            DataOperationChain oc = null;
-            for(int lop=independentOcs.size()-1; lop>=0; lop--) {
-                oc = independentOcs.get(lop);
-                if(!oc.hasDependents() &&
-                        oc!=srcOC &&
-                        oc!=srcAst &&
-                        !srcOC.doesDependsUpon(oc)  &&
-                        !srcAst.doesDependsUpon(oc))
-                    break;
-                if(independentOcs.size()-lop > 100) {
-                    oc = null;
-                    break;
-                }
-                oc=null;
-            }
-            return oc;
-
-        } else {
+        ArrayList<DataOperationChain> independentOcs = allOcs.get(0);
+        if(independentOcs==null || independentOcs.size()==0)
             return null;
+
+        DataOperationChain oc = null;
+        for(int lop=independentOcs.size()-1; lop>=0; lop--) {
+            oc = independentOcs.get(lop);
+            if(!oc.hasDependents() &&
+                    oc!=srcOC &&
+                    oc!=srcAst &&
+                    !srcOC.doesDependsUpon(oc)  &&
+                    !srcAst.doesDependsUpon(oc))
+                break;
+            if(independentOcs.size()-lop > 100) {
+                oc = null;
+                break;
+            }
+            oc=null;
         }
+        return oc;
+
     }
 
     private DataOperationChain getRandomExistingOC(int selectionLevel, HashMap<Integer, ArrayList<DataOperationChain>> ocs) {
@@ -377,54 +315,42 @@ public class DataGenerator {
             e.printStackTrace();
         }
 
-        if(dataConfig.shufflingActive) {
-            System.out.println(String.format("Shuffling transactions..."));
-            for(int lop=0; lop<dataConfig.totalBatches; lop++)
-                Collections.shuffle(mDataTransactions.subList(lop*dataConfig.tuplesPerBatch, (lop+1)*dataConfig.tuplesPerBatch));
-        }
 
         System.out.println(String.format("Dumping transactions..."));
         mDataOutputHandler.sinkTransactions(mDataTransactions);
-
 //        System.out.println(String.format("Dumping Dependency Edges..."));
 //        mDataOutputHandler.sinkDependenciesEdges(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
-
-        System.out.println(String.format("Dumping Dependency Vertices..."));
-        mDataOutputHandler.sinkDependenciesVertices(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
+//        System.out.println(String.format("Dumping Dependency Vertices..."));
+//        mDataOutputHandler.sinkDependenciesVertices(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
+        System.out.println(String.format("Dumping Dependency Vertices ids range..."));
+        mDataOutputHandler.sinkDependenciesVerticesIdsRange(totalAccountRecords, totalAssetRecords);
     }
 
+    HashMap<Integer, Integer> mGeneratedAccountIds = new HashMap<>();
+    HashMap<Integer, Integer> mGeneratedAssetIds = new HashMap<>();
+
     private DataOperationChain getNewAccountOC() {
+
+        int id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
+        while(mGeneratedAccountIds.containsKey(id))
+            id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
+        mGeneratedAccountIds.put(id, null);
+        DataOperationChain oc = new DataOperationChain("act_"+id, (10 * mTotalTuplesToGenerate * 5) /dataConfig.numberOfDLevels, mAccountOperationChainsByLevel);
         totalAccountRecords++;
-        int accId = mPreGeneratedIds[mAccIdIndex];
-        DataOperationChain oc = new DataOperationChain("act_"+accId, mTotalTuplesToGenerate /dataConfig.numberOfDLevels, mAccountOperationChainsByLevel);
-        mAccIdIndex++;
         return  oc;
     }
 
     private DataOperationChain getNewAssetOC() {
-        totalAccountRecords++;
-        int astId = mPreGeneratedIds[mAstIdIndex];
-        DataOperationChain oc = new DataOperationChain("ast_"+astId, mTotalTuplesToGenerate /dataConfig.numberOfDLevels, mAssetsOperationChainsByLevel);
-        mAstIdIndex++;
+        int id = mRandomGeneratorForAstIds.nextInt(10 * mTotalTuplesToGenerate * 5);
+        while(mGeneratedAssetIds.containsKey(id))
+            id = mRandomGeneratorForAstIds.nextInt(10 * mTotalTuplesToGenerate * 5);
+        mGeneratedAssetIds.put(id, null);
+        DataOperationChain oc = new DataOperationChain("ast_"+id, (10 * mTotalTuplesToGenerate * 5) /dataConfig.numberOfDLevels, mAssetsOperationChainsByLevel);
+        totalAssetRecords++;
         return  oc;
     }
 
-    // Pre generate them.
-    private int getNewId() {
-        int id = mRandomGenerator.nextInt(10 * mTotalTuplesToGenerate * 5);
-        while(mGeneratedIds.containsKey(id)) {
-            id++;
-            if(id>=10 * mTotalTuplesToGenerate * 5)
-                id = 0;
-        }
-        mGeneratedIds.put(id, null);
-        return id;
-    }
-
     private void clearDataStructures() {
-
-        mAccIdIndex = 0;
-        mAstIdIndex = 0;
 
         if(mDataTransactions !=null) {
             mDataTransactions.clear();
@@ -444,6 +370,6 @@ public class DataGenerator {
         this.mAccountLevelsDistribution = new float[dataConfig.numberOfDLevels];
         this.mAssetLevelsDistribution = new float[dataConfig.numberOfDLevels];
         this.mOcLevelsDistribution = new float[dataConfig.numberOfDLevels];
-        this.mPickAccountOrAssets = new boolean[dataConfig.numberOfDLevels];
+        this.mPickAccount = new boolean[dataConfig.numberOfDLevels];
     }
 }

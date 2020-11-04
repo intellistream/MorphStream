@@ -147,8 +147,7 @@ public abstract class abstractRunner {
     public String application = "GrepSum";
     @Parameter(names = {"-t", "--Brisk.topology-name"}, required = false, description = "The name of the Brisk.topology")
     public String topologyName;
-    @Parameter(names = {
-            "--config-str"}, required = false, description = "Path to the configuration file for the application")
+    @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
     public String configStr;
     @Parameter(names = {"-mp"}, description = "Metric path", required = false)
     public String metric_path = "";
@@ -176,6 +175,10 @@ public abstract class abstractRunner {
     public int numberOfBatches = 1;
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
     public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
+    @Parameter(names = {"--numberOfDLevels"}, description = "Number of dependency levels.")
+    public Integer numberOfDLevels = 3;
+    @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
+    public Integer iterationNumber = 0;
 
     public abstractRunner() {
 //        if (OsUtils.isWindows()) {
@@ -185,11 +188,10 @@ public abstract class abstractRunner {
 //            CFG_PATH = "/config/%s.properties";
 //            metric_path = "/sesame/metric_output";
 //        }
-
         CFG_PATH = "/config/%s.properties";
         System.out.println(String.format("Metric folder path %s.", metric_path));
-
     }
+
     public Properties loadProperties(String filename) throws IOException {
         Properties properties = new Properties();
         InputStream is = abstractRunner.class.getResourceAsStream(filename);

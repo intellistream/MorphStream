@@ -74,6 +74,7 @@ public class spoutThread extends executorThread {
     @Override
     public void run() {
         try {
+
             Thread.currentThread().setName("Operator:" + executor.getOP() + "\tExecutor ID:" + executor.getExecutorID());
             initilize_queue(this.executor.getExecutorID());
             //do Loading
@@ -81,15 +82,14 @@ public class spoutThread extends executorThread {
             Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
             LOG.info("Operator:\t" + executor.getOP_full() + " is ready");
             this.Ready(LOG);//Tell executor thread to proceed.
-            System.gc();
             latch.countDown();          //tells others I'm really ready.
             try {
                 latch.await();
             } catch (InterruptedException ignored) {
             }
             routing();
-        } catch (InterruptedException | DatabaseException | BrokenBarrierException ignored) {
-//            e.printStackTrace();
+        } catch (InterruptedException | DatabaseException | BrokenBarrierException e) {
+            e.printStackTrace();
         } finally {
             this.executor.display();
             double expected_throughput = 0;
@@ -111,5 +111,6 @@ public class spoutThread extends executorThread {
                 //e.printStackTrace();
             }
         }
+
     }
 }

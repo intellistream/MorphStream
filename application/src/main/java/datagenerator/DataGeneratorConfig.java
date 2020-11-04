@@ -19,7 +19,10 @@ public class DataGeneratorConfig {
     public Integer numberOfDLevels = 3;
 
     @Parameter(names = {"--shufflingActive"}, description = "If transaction should be shuffled before dumping to a file.")
-    public Boolean shufflingActive = false;
+    public Boolean shufflingActive = true;
+
+    @Parameter(names = {"-tt"}, description = "Parallelism for tstream.")
+    public Integer totalThreads = 2;
 
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
     public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
@@ -28,6 +31,7 @@ public class DataGeneratorConfig {
     public float[] dependenciesDistributionForLevels;
 
     public void updateDependencyLevels() {
+
         dependenciesDistributionForLevels = new float[numberOfDLevels];
         for(int index=0; index<numberOfDLevels; index++) {
             dependenciesDistributionForLevels[index] = 1f / (numberOfDLevels*1.0f);

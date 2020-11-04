@@ -12,10 +12,13 @@ public class Metrics {
     private static Metrics ourInstance = new Metrics();
 
     public DescriptiveStatistics[] total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+    public DescriptiveStatistics[] number_of_ocs_processed = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+    public DescriptiveStatistics[] numberOf_transactional_events_processed = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
 
     public DescriptiveStatistics[] txn_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] txn_processing_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] state_access_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+    public DescriptiveStatistics[] barriers_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] calculate_levels_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] iterative_processing_useful_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
 
@@ -74,6 +77,8 @@ public class Metrics {
     public void initilize(int task) {
 
         total[task] = new DescriptiveStatistics();
+        number_of_ocs_processed[task] = new DescriptiveStatistics();
+        numberOf_transactional_events_processed[task] = new DescriptiveStatistics();
 
         txn_total[task] = new DescriptiveStatistics();
         txn_processing_total[task] = new DescriptiveStatistics();
@@ -81,10 +86,11 @@ public class Metrics {
         calculate_levels_total[task] = new DescriptiveStatistics();
         iterative_processing_useful_total[task] = new DescriptiveStatistics();
 
-
         pre_txn_total[task] = new DescriptiveStatistics();
         create_oc_total[task] = new DescriptiveStatistics();
         dependency_checking_total[task] = new DescriptiveStatistics();
+        barriers_total[task] = new DescriptiveStatistics();
+
         dependency_outoforder_overhead_total[task] = new DescriptiveStatistics();
         db_access_time[task] = new DescriptiveStatistics();
 

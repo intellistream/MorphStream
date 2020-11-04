@@ -1,21 +1,16 @@
 package combo;
 import common.bolts.transactional.sl.*;
 import common.collections.Configuration;
-import common.collections.OsUtils;
 import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import datagenerator.DataGenerator;
-import datagenerator.DataTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import runners.TransactionsHolder;
+import benchmark.DataHolder;
 import sesame.components.context.TopologyContext;
 import sesame.execution.ExecutionGraph;
 import sesame.execution.runtime.collector.OutputCollector;
 
-import java.io.*;
-import java.lang.reflect.Array;
 import java.util.*;
 
 import static common.CONTROL.*;
@@ -93,52 +88,11 @@ public class SLCombo extends SPOUTCombo {
         }
     }
 
-
     @Override
     public void loadEvent(String filePath, Configuration config, TopologyContext context, OutputCollector collector) {
-
-        if(TransactionsHolder.transactions.size()==0){
-            File file = new File(filePath+"transactions.txt");
-            if (file.exists()) {
-                System.out.println(String.format("Reading transactions..."));
-                try {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-                    String txn = reader.readLine();
-                    int count = 0;
-                    while (txn!=null) {
-                        count++;
-                        if(count%100000==0)
-                            System.out.println(String.format("%d transactions read...", count));
-                        String[] split = txn.split(",");
-                        TransactionEvent event = new TransactionEvent(
-                                Integer.parseInt(split[0]), //bid
-                                0, //pid
-                                String.format("[%s]", split[0]), //bid_array
-                                1,//num_of_partition
-                                split[1],//getSourceAccountId
-                                split[2],//getSourceBookEntryId
-                                split[3],//getTargetAccountId
-                                split[4],//getTargetBookEntryId
-                                100,  //getAccountTransfer
-                                100  //getBookEntryTransfer
-                        );
-                        TransactionsHolder.transactions.add(event);
-                        txn = reader.readLine();
-                    }
-                    reader.close();
-                } catch (Exception e){}
-
-                System.out.println(String.format("Done reading transactions..."));
-            }
-        }
-        loadEvent();
-
-    }
-
-    private void loadEvent() {
         int storageIndex = 0;
-        for(int index = taskId; index< TransactionsHolder.transactions.size();) {
-            TransactionEvent event = TransactionsHolder.transactions.get(index);
+        for(int index = taskId; index< DataHolder.events.length;) {
+            TransactionEvent event = DataHolder.events[index].cloneEvent();
             mybids[storageIndex] = event.getBid();
             myevents[storageIndex++] = event;
 

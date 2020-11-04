@@ -1,24 +1,27 @@
 package benchmark;
 
 import common.collections.OsUtils;
+import common.param.sl.TransactionEvent;
 import datagenerator.DataGeneratorConfig;
 import datagenerator.DataGenerator;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
 import runners.sesameRunner;
+import state_engine.storage.SchemaRecord;
+import state_engine.storage.TableRecord;
+import state_engine.storage.datatype.DataBox;
+import state_engine.storage.datatype.LongDataBox;
+import state_engine.storage.datatype.StringDataBox;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.File;
-import java.lang.reflect.Array;
+import java.io.*;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class BasicBenchmark implements IBenchmark {
 
+    private String[] args;
     private DataGenerator mDataGenerator;
     private sesameRunner sesameRunner;
 
@@ -48,8 +51,8 @@ public class BasicBenchmark implements IBenchmark {
         args = new String[argslist.size()];
         argslist.toArray(args);
 
+        this.args = args;
         createDataGenerator(args);
-        createSesameRunner(args);
     }
 
     protected void createDataGenerator(String[] args) {
@@ -65,6 +68,8 @@ public class BasicBenchmark implements IBenchmark {
         }
         dataConfig.updateDependencyLevels();
 
+        dataConfig.idsPath = dataConfig.rootPath;
+
         MessageDigest digest;
         String subFolder = null;
         try {
@@ -72,47 +77,142 @@ public class BasicBenchmark implements IBenchmark {
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(
                             digest.digest(
-                                    String.format("%d_%d_%s", dataConfig.tuplesPerBatch, dataConfig.totalBatches,
+                                    String.format("%d_%s", dataConfig.tuplesPerBatch*dataConfig.totalBatches,
                                             Arrays.toString(dataConfig.dependenciesDistributionForLevels))
                                             .getBytes("UTF-8"))));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        dataConfig.idsPath= dataConfig.rootPath;
-        dataConfig.rootPath+= subFolder;
+        dataConfig.rootPath += subFolder;
 
-        System.out.println("Updating root path...");
         for(int index=0; index<args.length; index+=2)
-            if(args[index].contains("rootFilePath")) {
+            if(args[index].contains("rootFilePath"))
                 args[index + 1] = dataConfig.rootPath;
-                System.out.println(String.format("Updating root path to %s...", args[index+1]));
-            }
-
-        System.out.println("Done updating root path...");
 
         mDataGenerator = new DataGenerator(dataConfig);
     }
 
-    protected void createSesameRunner(String[] args) {
+    protected void createSesameRunner(String[] args, int iteration) {
+
         sesameRunner = new sesameRunner();
+
+        List<String> argslist = new ArrayList<>(Arrays.asList(args)); // Allows to ommit few parameters.
+        if(!argslist.contains("--iterationNumber")) {
+            argslist.add("--iterationNumber");
+            argslist.add(String.format("%d", iteration));
+        }
+
+        String[] argsN = new String[argslist.size()];
+        argslist.toArray(argsN);
         JCommander cmd = new JCommander(sesameRunner);
         cmd.setAcceptUnknownOptions(true);
+
         try {
-            cmd.parse(Arrays.copyOf(args, args.length));
+            cmd.parse(Arrays.copyOf(argsN, argsN.length));
         } catch (ParameterException ex) {
             System.err.println("Argument error: " + ex.getMessage());
             cmd.usage();
         }
+    }
+
+    public void execute() {
+
+        int tuplesPerBatch = mDataGenerator.getDataConfig().tuplesPerBatch;
+        int totalBatches = mDataGenerator.getDataConfig().totalBatches;
+        int numberOfLevels = mDataGenerator.getDataConfig().numberOfDLevels;
+        int tt = mDataGenerator.getDataConfig().totalThreads;
+        boolean shufflingActive = mDataGenerator.getDataConfig().shufflingActive;
+        String folder = mDataGenerator.getDataConfig().rootPath;
+
+        String statsFolderPattern = mDataGenerator.getDataConfig().idsPath
+                +OsUtils.osWrapperPostFix("stats")
+                +OsUtils.osWrapperPostFix("depth = %d")
+                +OsUtils.osWrapperPostFix("threads = %d")
+                +OsUtils.osWrapperPostFix("total_batches = %d")
+                +OsUtils.osWrapperPostFix("events_per_batch = %d");
+
+        String statsFolderPath = String.format(statsFolderPattern, numberOfLevels, tt, totalBatches, tuplesPerBatch);
+        File file = new File(statsFolderPath+"iteration_9.csv");
+        if(file.exists()) {
+            System.out.println("Stats for following execution already exists at,");
+            System.out.println(statsFolderPath);
+            System.out.println("Please delete them to re-execute the benchmark.");
+            return;
+        }
+
+        mDataGenerator.GenerateData();
+        mDataGenerator = null;
+
+        loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
+
+        try {
+            for (int lop=0; lop<10; lop++) {
+                createSesameRunner(args, lop);
+                sesameRunner.run();
+            }
+        } catch (InterruptedException ex) {
+            System.out.println("Error in running topology locally"+ ex.toString());
+        }
 
     }
 
-    public void execute(){
+    protected void loadTransactionEvents(int tuplesPerBatch, int totalBatches, boolean shufflingActive, String folder) {
 
-        mDataGenerator.GenerateData();
-        try {
-            sesameRunner.run();
-        } catch (InterruptedException ex) {
-            System.out.println("Error in running topology locally"+ ex.toString());
+        if(DataHolder.events ==null) {
+
+            int numberOfEvents = tuplesPerBatch * totalBatches;
+            DataHolder.events = new TransactionEvent[numberOfEvents];
+            File file = new File(folder+"transactions.txt");
+            if (file.exists()) {
+                System.out.println(String.format("Reading transactions..."));
+                try {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+                    String txn = reader.readLine();
+                    int count = 0;
+                    while (txn!=null) {
+                        String[] split = txn.split(",");
+                        TransactionEvent event = new TransactionEvent(
+                                Integer.parseInt(split[0]), //bid
+                                0, //pid
+                                String.format("[%s]", split[0]), //bid_array
+                                1,//num_of_partition
+                                split[1],//getSourceAccountId
+                                split[2],//getSourceBookEntryId
+                                split[3],//getTargetAccountId
+                                split[4],//getTargetBookEntryId
+                                100,  //getAccountTransfer
+                                100  //getBookEntryTransfer
+                        );
+                        DataHolder.events[count] = event;
+                        count++;
+                        if(count%100000==0)
+                            System.out.println(String.format("%d transactions read...", count));
+                        txn = reader.readLine();
+                    }
+                    reader.close();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+                System.out.println(String.format("Done reading transactions..."));
+
+                if(shufflingActive) {
+                    Random random = new Random();
+                    int index;
+                    TransactionEvent temp;
+                    for(int lop=0; lop<totalBatches; lop++) {
+                        int start   = lop       * tuplesPerBatch;
+                        int end     = (lop+1)   * tuplesPerBatch;
+
+                        for (int i = end-1; i > start; i--) {
+                            index = start + random.nextInt(i - start + 1);
+                            temp = DataHolder.events[index];
+                            DataHolder.events[index] = DataHolder.events[i];
+                            DataHolder.events[i] = temp;
+                        }
+                    }
+                }
+                System.out.println("");
+            }
         }
     }
 

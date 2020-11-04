@@ -117,6 +117,7 @@ public class ExecutionManager {
     }
     private executorThread launchSpout_InCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                               int node, long[] cores, CountDownLatch latch) {
+
         spoutThread st;
         st = new spoutThread(e, context, conf, cores, node, latch, loadTargetHz, timeSliceLengthMs
                 , ThreadMap, clock);
@@ -148,6 +149,7 @@ public class ExecutionManager {
         } else {
             cpu = new long[1];
         }
+
 //		LOG.info("Launch spout on cpu:" + Arrays.show(cpu));
         return launchSpout_InCore(e, context, conf, node, cpu, latch);
     }

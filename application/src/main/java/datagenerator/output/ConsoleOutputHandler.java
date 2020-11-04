@@ -42,6 +42,11 @@ public class ConsoleOutputHandler implements IOutputHandler {
     }
 
     @Override
+    public void sinkDependenciesVerticesIdsRange(int accountsRange, int assetsRange) {
+        System.out.println("Account ids range: "+accountsRange+", Asset ids range: "+assetsRange);
+    }
+
+    @Override
     public void sinkDistributionOfDependencyLevels() {
 
     }

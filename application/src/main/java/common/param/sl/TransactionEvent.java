@@ -5,6 +5,7 @@ import state_engine.storage.SchemaRecordRef;
 import state_engine.storage.TableRecordRef;
 import state_engine.storage.datatype.DataBox;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static common.constants.StreamLedgerConstants.Constant.MIN_BALANCE;
@@ -96,6 +97,11 @@ public class TransactionEvent extends TxnEvent {
     public List<DataBox> getUpdatedTargetAsset_value() {
         return null;
     }
+
+    public TransactionEvent cloneEvent()  {
+        return new TransactionEvent((int) bid, pid, Arrays.toString(bid_array), number_of_partitions, sourceAccountId, sourceBookEntryId, targetAccountId, targetBookEntryId, accountTransfer, bookEntryTransfer);
+    }
+
     // ------------------------------------------------------------------------
     //  miscellaneous
     // ------------------------------------------------------------------------

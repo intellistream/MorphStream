@@ -14,6 +14,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class FileOutputHandler implements IOutputHandler {
 
@@ -48,7 +50,6 @@ public class FileOutputHandler implements IOutputHandler {
 
     @Override
     public void sinkTransactions(List<DataTransaction> dataTransactions) {
-
         BufferedWriter fileWriter = null;
         try {
             File file = new File(mRootPath+mTransactionsFileName);
@@ -143,6 +144,24 @@ public class FileOutputHandler implements IOutputHandler {
 
              fileWriter.close();
              gephiFileWriter.close();
+
+        } catch (IOException e) {
+            System.out.println("An error occurred while storing transactions.");
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void sinkDependenciesVerticesIdsRange(int accountsRange, int assetsRange) {
+        try {
+            File file = new File(mRootPath+"vertices_ids_range.txt");
+            System.out.println(String.format("Vertices ids range path is %s", mRootPath+"vertices_ids_range.txt"));
+            if (!file.exists())
+                file.createNewFile();
+
+            BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()));
+            fileWriter.write(String.format("accounts=%d,assets=%d",accountsRange, assetsRange));
+            fileWriter.close();
 
         } catch (IOException e) {
             System.out.println("An error occurred while storing transactions.");

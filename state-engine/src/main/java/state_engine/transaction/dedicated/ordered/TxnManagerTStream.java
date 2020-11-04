@@ -297,7 +297,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
                 dependency = new OperationChain(condition_sourceTable[index], condition_source[index]);
                 dependencyHolder.put(condition_source[index], dependency);
             }
-
+//            System.out.println("Checking dependencies...");
             // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is  enough.
             if(dependency.getOperations().isEmpty() || dependency.getOperations().first().bid >= bid) { // if dependencies first op's bid is >= current bid, then it has no operation that we depend upon, but it could be a potential dependency in case we have delayed transactions (events)
                 // if dependency has no operations on it or no operation with id < current operation id.
@@ -306,13 +306,16 @@ public class TxnManagerTStream extends TxnManagerDedicated {
             } else { // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
                 dependent.addDependency(dependency); // record dependency
             }
+//            System.out.println("Checking dependencies...done");
         }
         // check if current operation causes other operation chains to depend upon current one.
         // This may happen when a delayed event arrives.
 
+//        System.out.println("Checking other dependencies...");
         MeasureTools.BEGIN_DEPENDENCY_OUTOFORDER_OVERHEAD_TIME_MEASURE(thread_Id);
         dependent.checkOtherPotentialDependencies(bid);
         MeasureTools.END_DEPENDENCY_OUTOFORDER_OVERHEAD_TIME_MEASURE(thread_Id);
+//        System.out.println("Checking other dependencies...done");
 
     }
 
@@ -420,12 +423,17 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     @Override
     public void start_evaluate(int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
 
+        MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessThreadsSynchronization(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
 //        dumpDependenciesForThread(thread_Id);
 //        if(thread_Id==0)
 //            mergeDependencyFiles();
         instance.start_evaluation(thread_Id, mark_ID);
+
+        MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().postStateAccessThreadsSynchronization(thread_Id);//sync for all threads to come to this line.
+        MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
 
     }
 

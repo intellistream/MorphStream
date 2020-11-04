@@ -80,15 +80,19 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                     sink.start();
             }
             if (counter < num_events_per_thread) {
+
+                Object event = myevents[counter];
                 long bid = mybids[counter];
                 if (CONTROL.enable_latency_measurement)
-                    generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, myevents[counter % num_events_per_thread], System.nanoTime());
+                    generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
                 else {
-                    generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, myevents[counter % num_events_per_thread]);
+                    generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
                 }
+
                 tuple = new Tuple(bid, this.taskId, context, generalMsg);
                 bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
                 counter++;
+
                 if (ccOption == CCOption_TStream) {// This is only required by T-Stream.
                     if (!CONTROL.enable_app_combo) {
                         forward_checkpoint(this.taskId, bid, null);
@@ -109,6 +113,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
             //e.printStackTrace();
         }
     }
+
     @Override
     public Integer default_scale(Configuration conf) {
         return 1;//4 for 7 sockets
@@ -125,6 +130,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         LOG.info("spout initialize takes (ms):" + (end - start) / 1E6);
         ccOption = config.getInt("CCOption", 0);
         bid = 0;
+        counter = 0;
         tthread = config.getInt("tthread");
         totalEventsPerBatch = config.getInt("totalEventsPerBatch");
         numberOfBatches = config.getInt("numberOfBatches");
@@ -156,7 +162,6 @@ public abstract class SPOUTCombo extends TransactionalSpout {
             start_measure = CONTROL.MeasureStart;
         }
 
-        counter = 0;
         mybids = new long[num_events_per_thread];//5000 batches.
         myevents = new Object[num_events_per_thread];
         the_end = num_events_per_thread;

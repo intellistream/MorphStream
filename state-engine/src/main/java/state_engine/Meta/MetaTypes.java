@@ -2,7 +2,7 @@ package state_engine.Meta;
 public interface MetaTypes {
     int kEventsNum = 2;
     int kMaxProcedureNum = 10;
-    int kMaxThreadNum = 40;
+    int kMaxThreadNum = 50;
     int kMaxAccessNum = 1024;
     int kBatchTsNum = 16;
     int kLogBufferSize = 8388608 * 2;

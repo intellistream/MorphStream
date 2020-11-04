@@ -393,8 +393,10 @@ public final class TxnProcessingEngine {
         MeasureTools.END_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
 
         if(totalChainsToProcess==0) {
+            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
             SOURCE_CONTROL.getInstance().waitForEvaluation();
+            MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
         }
 
         while(totalChainsProcessed < totalChainsToProcess) {
@@ -404,25 +406,34 @@ public final class TxnProcessingEngine {
             MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
 
             dependencyLevelToProcess+=1;
-            if(totalChainsProcessed == totalChainsToProcess)
+            if(totalChainsProcessed == totalChainsToProcess) {
+                MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
                 SOURCE_CONTROL.getInstance().oneThreadCompleted();
+                MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
+            }
 
+            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
             SOURCE_CONTROL.getInstance().waitForEvaluation();
             SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(dependencyLevelToProcess);
+            MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
 
         }
 
-//        System.out.println(String.format("Processed %d chains for thread %d.", totalChainsToProcess, thread_Id));
+        if(thread_Id==0)
+            for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
+                tableHolderInRange.rangeMap.get(thread_Id).holder_v1.clear();
+            }
+
+        MeasureTools.REGISTER_NUMBER_OF_OC_PROCESSED(thread_Id, totalChainsProcessed);
     }
 
     private void updateDependencyLevels(int thread_Id) {
-
         Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
         for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
-            ConcurrentHashMap<String, OperationChain> accountsHolder = tableHolderInRange.rangeMap.get(thread_Id).holder_v1;
-            ConcurrentHashMap.KeySetView<String, OperationChain> keys = accountsHolder.keySet();
+            ConcurrentHashMap<String, OperationChain> ocsHolder = tableHolderInRange.rangeMap.get(thread_Id).holder_v1;
+            ConcurrentHashMap.KeySetView<String, OperationChain> keys = ocsHolder.keySet();
             for (String key : keys) {
-                accountsHolder.get(key).updateDependencyLevel();
+                ocsHolder.get(key).updateDependencyLevel();
             }
         }
     }
@@ -501,8 +512,8 @@ public final class TxnProcessingEngine {
                     }
                 }
             }
-
         }
+
         return processedChains;
     }
 

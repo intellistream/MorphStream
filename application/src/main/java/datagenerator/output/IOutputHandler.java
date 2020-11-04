@@ -11,5 +11,6 @@ public interface IOutputHandler {
     void sinkTransactions(List<DataTransaction> dataTransactions);
     void sinkDependenciesEdges(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetsOperationChains);
     void sinkDependenciesVertices(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetsOperationChains);
+    void sinkDependenciesVerticesIdsRange(int accountsRange, int assetsRange);
     void sinkDistributionOfDependencyLevels();
 }
