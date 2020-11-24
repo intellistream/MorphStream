@@ -124,11 +124,12 @@ public class FileOutputHandler implements IOutputHandler {
              BufferedWriter gephiFileWriter = Files.newBufferedWriter(Paths.get(fileGephi.getPath()));
 
              gephiFileWriter.write("id,label\n");
+             fileWriter.write("label,ops,dLevel\n");
 
              int vertexId = 0;
              for(ArrayList<DataOperationChain> operationChains: allAccountOperationChains.values()) {
                  for(DataOperationChain chain: operationChains) {
-                     fileWriter.write(String.format("%s\n", chain.getStateId()));
+                     fileWriter.write(String.format("%s,%d,%d\n", chain.getStateId(), chain.getOperationsCount(), chain.getDependencyLevel()));
                      gephiFileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
                      vertexId++;
                  }
@@ -136,7 +137,7 @@ public class FileOutputHandler implements IOutputHandler {
 
              for(ArrayList<DataOperationChain> operationChains: allAssetsOperationChains.values()) {
                  for(DataOperationChain chain: operationChains) {
-                     fileWriter.write(String.format("%s\n", chain.getStateId()));
+                     fileWriter.write(String.format("%s,%d,%d\n", chain.getStateId(), chain.getOperationsCount(), chain.getDependencyLevel()));
                      gephiFileWriter.write(String.format("%d,%s\n",vertexId, chain.getStateId()));
                      vertexId++;
                  }

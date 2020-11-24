@@ -16,7 +16,7 @@ public class DataGeneratorConfig {
     public Float generatedTuplesBeforeAddingDependency = 0.0f;
 
     @Parameter(names = {"--numberOfDLevels"}, description = "Number of dependency levels.")
-    public Integer numberOfDLevels = 3;
+    public Integer numberOfDLevels = 4;
 
     @Parameter(names = {"--shufflingActive"}, description = "If transaction should be shuffled before dumping to a file.")
     public Boolean shufflingActive = true;
@@ -33,13 +33,24 @@ public class DataGeneratorConfig {
     public void updateDependencyLevels() {
 
         dependenciesDistributionForLevels = new float[numberOfDLevels];
+
+//        for(int lop=0; lop<numberOfDLevels/2; lop++) {
+//            dependenciesDistributionForLevels[lop] = 0.6f/(numberOfDLevels/2.0f);
+//        }
+//
+//        for(int lop=numberOfDLevels/2; lop<numberOfDLevels; lop++) {
+//            dependenciesDistributionForLevels[lop] = 0.4f/(numberOfDLevels/2.0f);
+//        }
+
         for(int index=0; index<numberOfDLevels; index++) {
-            dependenciesDistributionForLevels[index] = 1f / (numberOfDLevels*1.0f);
+            dependenciesDistributionForLevels[index] = 1f / (numberOfDLevels * 1.0f);
         }
+
         System.out.println("Demanded distribution...");
         for(int index=0; index<numberOfDLevels; index++) {
             System.out.print(String.format("%.2f; ",dependenciesDistributionForLevels[index]));
         }
+
         System.out.println("");
         System.out.println(String.format("totalEventsPerBatch: %d", tuplesPerBatch));
         System.out.println(String.format("numberOfBatches: %d", totalBatches));

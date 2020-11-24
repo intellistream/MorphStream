@@ -369,6 +369,7 @@ public class MeasureTools {
 //            metrics.average_tp_w_syn[thread_id].addValue((double) tp[thread_id] / numberOfTransactionalEvents);
             //clean;
 
+            barriers_total[thread_id]=0;
             total_start[thread_id] = 0;
             total[thread_id] = 0;
             access_total[thread_id] = 0;

@@ -320,8 +320,8 @@ public class DataGenerator {
         mDataOutputHandler.sinkTransactions(mDataTransactions);
 //        System.out.println(String.format("Dumping Dependency Edges..."));
 //        mDataOutputHandler.sinkDependenciesEdges(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
-//        System.out.println(String.format("Dumping Dependency Vertices..."));
-//        mDataOutputHandler.sinkDependenciesVertices(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
+        System.out.println(String.format("Dumping Dependency Vertices..."));
+        mDataOutputHandler.sinkDependenciesVertices(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
         System.out.println(String.format("Dumping Dependency Vertices ids range..."));
         mDataOutputHandler.sinkDependenciesVerticesIdsRange(totalAccountRecords, totalAssetRecords);
     }
@@ -329,9 +329,16 @@ public class DataGenerator {
     HashMap<Integer, Integer> mGeneratedAccountIds = new HashMap<>();
     HashMap<Integer, Integer> mGeneratedAssetIds = new HashMap<>();
 
-    private DataOperationChain getNewAccountOC() {
 
-        int id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
+    private DataOperationChain getNewAccountOC() {
+//        int range = 10 * mTotalTuplesToGenerate * 5;
+//        int quatRange = range/4;
+
+//        int id = range/2 + ((int)(mRandomGeneratorForAccIds.nextGaussian()*(quatRange*1.0f)));
+//        while(mGeneratedAccountIds.containsKey(id) || id<=0 || id>=range)
+//            id = range/2 + ((int)(mRandomGeneratorForAccIds.nextGaussian()*(quatRange*1.0f)));
+
+        int id = mRandomGeneratorForAccIds.nextInt();
         while(mGeneratedAccountIds.containsKey(id))
             id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
         mGeneratedAccountIds.put(id, null);
@@ -341,6 +348,13 @@ public class DataGenerator {
     }
 
     private DataOperationChain getNewAssetOC() {
+//        int range = 10 * mTotalTuplesToGenerate * 5;
+//        int quatRange = range/4;
+
+//        int id = range/2 + ((int)(mRandomGeneratorForAstIds.nextGaussian()*(quatRange*1.0f)));
+//        while(mGeneratedAssetIds.containsKey(id) || id<=0 || id>=range)
+//            id = range/2 + ((int)(mRandomGeneratorForAstIds.nextGaussian()*(quatRange*1.0f)));
+
         int id = mRandomGeneratorForAstIds.nextInt(10 * mTotalTuplesToGenerate * 5);
         while(mGeneratedAssetIds.containsKey(id))
             id = mRandomGeneratorForAstIds.nextInt(10 * mTotalTuplesToGenerate * 5);
