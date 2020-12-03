@@ -133,26 +133,27 @@ public class BasicBenchmark implements IBenchmark {
 
         String statsFolderPath = String.format(statsFolderPattern, numberOfLevels, tt, totalBatches, tuplesPerBatch);
         File file = new File(statsFolderPath+"iteration_9.csv");
-        if(file.exists()) {
-            System.out.println("Stats for following execution already exists at,");
-            System.out.println(statsFolderPath);
-            System.out.println("Please delete them to re-execute the benchmark.");
-            return;
+        if(!file.exists()) {
+//            System.out.println("Stats for following execution already exists at,");
+//            System.out.println(statsFolderPath);
+//            System.out.println("Please delete them to re-execute the benchmark.");
+//            return;
+
+            mDataGenerator.GenerateData();
+            mDataGenerator = null;
         }
-
-        mDataGenerator.GenerateData();
-        mDataGenerator = null;
-
         loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
 
         try {
-            for (int lop=0; lop<10; lop++) {
+            for (int lop=0; lop<1; lop++) {
                 createSesameRunner(args, lop);
                 sesameRunner.run();
             }
         } catch (InterruptedException ex) {
             System.out.println("Error in running topology locally"+ ex.toString());
         }
+
+
 
     }
 

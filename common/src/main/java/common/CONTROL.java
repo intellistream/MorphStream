@@ -31,7 +31,7 @@ public interface CONTROL {
     boolean enable_engine = true;//1. enable TP_engine. Always enabled. There's no meaning if we disable engine for T-Stream.
     boolean enable_numa_placement = true;//thread placement. always on.
     //used for NUMA-aware partition engine
-    boolean enable_work_partition = true; // 2. this is a sub-option, only useful when engine is enabled.
+    boolean enable_work_partition = false; // 2. this is a sub-option, only useful when engine is enabled.
     int island = -1;//-1 stands for one engine per core; -2 stands for one engine per socket.
     int CORE_PER_SOCKET = 2;//configure this for NUMA placement please.
     int NUM_OF_SOCKETS = 1;//configure this for NUMA placement please.

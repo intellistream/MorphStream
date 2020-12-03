@@ -377,16 +377,16 @@ public final class TxnProcessingEngine {
      * @throws InterruptedException
      */
     public void start_evaluation(int thread_Id, long mark_ID) throws InterruptedException {
+
         int dependencyLevelToProcess = 0;
         int totalChainsToProcess = 0;
         int totalChainsProcessed = 0;
+        Collection<Callable<Object>> callables = new Vector<>();
 
         Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
         for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
             totalChainsToProcess += tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values().size();
         }
-
-//        System.out.println(String.format("Processing %d chains for thread %d.", totalChainsToProcess, thread_Id));
 
         MeasureTools.BEGIN_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
         updateDependencyLevels(thread_Id);
@@ -395,17 +395,26 @@ public final class TxnProcessingEngine {
         if(totalChainsToProcess==0) {
             MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
-            SOURCE_CONTROL.getInstance().waitForEvaluation();
+            SOURCE_CONTROL.getInstance().waitForTaskSubmission();
             MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
         }
 
         while(totalChainsProcessed < totalChainsToProcess) {
 
+            MeasureTools.BEGIN_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(thread_Id);
+            callables.clear();
+            submit(callables, thread_Id, dependencyLevelToProcess,previous_ID - kMaxThreadNum);
+            MeasureTools.END_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(thread_Id);
+
+            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
+            SOURCE_CONTROL.getInstance().waitForTaskSubmission();
+            MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
+
             MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
-            totalChainsProcessed += evaluation(thread_Id, dependencyLevelToProcess,previous_ID - kMaxThreadNum);
+            totalChainsProcessed += callables.size();
+            evaluate(callables, thread_Id);
             MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
 
-            dependencyLevelToProcess+=1;
             if(totalChainsProcessed == totalChainsToProcess) {
                 MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
                 SOURCE_CONTROL.getInstance().oneThreadCompleted();
@@ -413,10 +422,9 @@ public final class TxnProcessingEngine {
             }
 
             MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
-            SOURCE_CONTROL.getInstance().waitForEvaluation();
+            dependencyLevelToProcess+=1;
             SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(dependencyLevelToProcess);
             MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-
         }
 
         if(thread_Id==0)
@@ -438,17 +446,14 @@ public final class TxnProcessingEngine {
         }
     }
 
-
-    private int evaluation(int thread_Id, int dependencyLevelToProcess, long mark_ID) throws InterruptedException {
+    private void submit(Collection<Callable<Object>> callables, int thread_Id, int dependencyLevelToProcess, long mark_ID) throws InterruptedException {
 //        BEGIN_TP_SUBMIT_TIME_MEASURE(thread_Id);
         //LOG.DEBUG(thread_Id + "\tall source marked checkpoint, starts TP evaluation for watermark bid\t" + bid);
-        Collection<Callable<Object>> callables = new Vector<>();
 
-        int processedChains = 0;
         Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
         for (Holder_in_range holder_in_range : tablesHolderInRange) {
             Holder holder = holder_in_range.rangeMap.get(thread_Id);
-            processedChains += submit_task(dependencyLevelToProcess, holder, callables, mark_ID);
+            submit_task(dependencyLevelToProcess, holder, callables, mark_ID);
         }
 //        END_TP_SUBMIT_TIME_MEASURE(thread_Id, task);
 //
@@ -458,6 +463,10 @@ public final class TxnProcessingEngine {
 //
 //
 //        }
+    }
+
+    private void evaluate(Collection<Callable<Object>> callables, int thread_Id) throws InterruptedException {
+
         if (enable_engine) {
             if (enable_work_partition) {
                 multi_engine.get(ThreadToEngine(thread_Id)).executor.invokeAll(callables);
@@ -469,11 +478,9 @@ public final class TxnProcessingEngine {
 //        for (Holder_in_range holder_in_range : holder_by_stage.values())
 //            holder_in_range.rangeMap.clear();
 //        callables.clear();
-        return processedChains;
     }
 
-    private int submit_task(int dependencyLevelToProcess, Holder holder, Collection<Callable<Object>> callables, long mark_ID) {
-        int processedChains = 0;
+    private void submit_task(int dependencyLevelToProcess, Holder holder, Collection<Callable<Object>> callables, long mark_ID) {
 //        Instance instance = standalone_engine;//multi_engine.get(key);
 //        assert instance != null;
 //        for (Map.Entry<Range<Integer>, Holder> rangeHolderEntry : holder.entrySet()) {
@@ -484,7 +491,6 @@ public final class TxnProcessingEngine {
 
             if(operationChain.getDependencyLevel()!=dependencyLevelToProcess)
                 continue;
-            processedChains += 1;
             MyList<Operation> operation_chain = operationChain.getOperations();
 //        for (int i = 0; i < H2_SIZE; i++) {
 //            ConcurrentSkipListSet<Operation> operation_chain = holder.holder_v2[i];
@@ -514,7 +520,6 @@ public final class TxnProcessingEngine {
             }
         }
 
-        return processedChains;
     }
 
     /**

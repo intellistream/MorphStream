@@ -51,6 +51,8 @@ public class MeasureTools {
     static long[] barriers_total = new long[kMaxThreadNum];
     static long[] iterative_processing_useful_start = new long[kMaxThreadNum];
     static long[] iterative_processing_useful_total = new long[kMaxThreadNum];
+    static long[] iterative_ocs_submit_start = new long[kMaxThreadNum];
+    static long[] iterative_ocs_submit_total = new long[kMaxThreadNum];
     static long[] access_start = new long[kMaxThreadNum];
     static double[] access_total = new double[kMaxThreadNum];
 
@@ -300,6 +302,16 @@ public class MeasureTools {
     public static void END_CALCULATE_LEVELS_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             calculate_levels_total[thread_id] = System.nanoTime() - calculate_levels_start[thread_id];
+    }
+
+    public static void BEGIN_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(int thread_id) { // transaction processing time
+        if (profile_start[thread_id])
+            iterative_ocs_submit_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            iterative_ocs_submit_total[thread_id] += System.nanoTime() - iterative_ocs_submit_start[thread_id];
     }
 
     public static void BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(int thread_id) { // transaction processing time

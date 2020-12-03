@@ -338,7 +338,7 @@ public class DataGenerator {
 //        while(mGeneratedAccountIds.containsKey(id) || id<=0 || id>=range)
 //            id = range/2 + ((int)(mRandomGeneratorForAccIds.nextGaussian()*(quatRange*1.0f)));
 
-        int id = mRandomGeneratorForAccIds.nextInt();
+        int id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
         while(mGeneratedAccountIds.containsKey(id))
             id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
         mGeneratedAccountIds.put(id, null);
