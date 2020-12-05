@@ -142,6 +142,15 @@ public class OperationChain implements Comparable<OperationChain>{
             return -1;
     }
 
+    private boolean isProcessed;
+    public boolean isProcessed() {
+        return isProcessed;
+    }
+
+    public void setProcessed() {
+        isProcessed = true;
+    }
+
 //    private static class DependentInfo implements Comparable<DependentInfo> {
 //        public OperationChain dependent;
 //        public long bid;

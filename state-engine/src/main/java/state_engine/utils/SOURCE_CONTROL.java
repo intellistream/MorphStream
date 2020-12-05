@@ -92,7 +92,7 @@ public class SOURCE_CONTROL {
         }
     }
 
-    public void waitForTaskSubmission() {
+    public void waitForOtherThreads() {
         try {
             dLevelEndBarrier.await();
         } catch (Exception ex) {

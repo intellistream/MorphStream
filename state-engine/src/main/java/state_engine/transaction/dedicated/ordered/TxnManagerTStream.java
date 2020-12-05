@@ -18,9 +18,7 @@ import state_engine.utils.SOURCE_CONTROL;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -423,13 +421,19 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     @Override
     public void start_evaluate(int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
 
+        Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
+        for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
+            instance.getScheduler().submitOcs(thread_Id, tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
+        }
+
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessThreadsSynchronization(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-        MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-//        dumpDependenciesForThread(thread_Id);
-//        if(thread_Id==0)
-//            mergeDependencyFiles();
+
         instance.start_evaluation(thread_Id, mark_ID);
+
+        for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
+            tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values();
+        }
 
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().postStateAccessThreadsSynchronization(thread_Id);//sync for all threads to come to this line.

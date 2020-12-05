@@ -13,6 +13,9 @@ import state_engine.storage.datatype.DoubleDataBox;
 import state_engine.storage.datatype.IntDataBox;
 import state_engine.storage.datatype.ListDoubleDataBox;
 import state_engine.transaction.function.*;
+import state_engine.transaction.scheduler.RoundRobinScheduler;
+import state_engine.transaction.scheduler.IScheduler;
+import state_engine.transaction.scheduler.SharedWorkloadScheduler;
 import state_engine.utils.SOURCE_CONTROL;
 
 import java.io.Closeable;
@@ -40,8 +43,12 @@ public final class TxnProcessingEngine {
     private int app;
     private int TOTAL_CORES;
     private long previous_ID = 0;
+
+    private IScheduler scheduler;
+
     //    fast determine the corresponding instance. This design is for NUMA-awareness.
     private HashMap<Integer, Instance> multi_engine = new HashMap<>();//one island one engine.
+
     private TxnProcessingEngine() {
     }
 //    private int partition = 1;//NUMA-awareness. Hardware Island. If it is one, it is the default shared-everything.
@@ -53,6 +60,7 @@ public final class TxnProcessingEngine {
     public static TxnProcessingEngine getInstance() {
         return instance;
     }
+
     public void initilize(int size, int app) {
         num_op = size;
         this.app = app;
@@ -76,7 +84,17 @@ public final class TxnProcessingEngine {
     public Holder_in_range getHolder(String table_name) {
         return holder_by_stage.get(table_name);
     }
+    public ConcurrentHashMap<String, Holder_in_range> getHolder( ) {
+        return holder_by_stage;
+    }
+
+    public Collection<Holder_in_range> getHolderValues() {
+        return holder_by_stage.values();
+    }
     public void engine_init(Integer first_exe, Integer last_exe, Integer stage_size, int tp) {
+
+        scheduler  = new SharedWorkloadScheduler(tp);
+
         this.first_exe = first_exe;
         this.last_exe = last_exe;
         num_op = stage_size;
@@ -370,12 +388,30 @@ public final class TxnProcessingEngine {
         return rt;
     }
 
+    public IScheduler getScheduler( ) {
+        return this.scheduler;
+    }
+
     /**
-     * @param thread_Id
+     * @param threadId
      * @param mark_ID
      * @return time spend in tp evaluation.
      * @throws InterruptedException
      */
+
+//    private static HashMap<Integer, List<OperationChain>> ocsDLevel = new HashMap<>();
+
+//    public void start_evaluation(int threadId, long mark_ID) throws InterruptedException {
+//
+//        OperationChain oc = scheduler.next(threadId);
+//        while(oc!=null) {
+//            System.out.println(String.format("Thread %d processed %s oc", threadId, oc.getStringId()));
+//            MyList<Operation> operations = oc.getOperations();
+//            process(operations, mark_ID);//directly apply the computation.
+//            oc = scheduler.next(threadId);
+//        }
+//    }
+
     public void start_evaluation(int thread_Id, long mark_ID) throws InterruptedException {
 
         int dependencyLevelToProcess = 0;
@@ -395,7 +431,7 @@ public final class TxnProcessingEngine {
         if(totalChainsToProcess==0) {
             MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
-            SOURCE_CONTROL.getInstance().waitForTaskSubmission();
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
             MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
         }
 
@@ -407,7 +443,7 @@ public final class TxnProcessingEngine {
             MeasureTools.END_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(thread_Id);
 
             MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
-            SOURCE_CONTROL.getInstance().waitForTaskSubmission();
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
             MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
 
             MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
@@ -435,7 +471,8 @@ public final class TxnProcessingEngine {
         MeasureTools.REGISTER_NUMBER_OF_OC_PROCESSED(thread_Id, totalChainsProcessed);
     }
 
-    private void updateDependencyLevels(int thread_Id) {
+
+    public void updateDependencyLevels(int thread_Id) {
         Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
         for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
             ConcurrentHashMap<String, OperationChain> ocsHolder = tableHolderInRange.rangeMap.get(thread_Id).holder_v1;
