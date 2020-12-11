@@ -5,72 +5,75 @@ import state_engine.profiler.MeasureTools;
 import state_engine.utils.SOURCE_CONTROL;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class BaseLineScheduler implements IScheduler {
+public class NoBarrierSharedWorkload implements IScheduler {
+    private ConcurrentHashMap<Integer, List<OperationChain>> dLevelBasedOCBuckets;
 
-    private ConcurrentHashMap<Integer, HashMap<Integer, List<OperationChain>>> dLevelBasedOCBuckets;
-
-    private int[] scheduledOcsCount;
-    private int[] totalOcsToSchedule;
     private int[] currentDLevelToProcess;
 
-    public BaseLineScheduler(int tp) {
-        dLevelBasedOCBuckets = new ConcurrentHashMap();
-        scheduledOcsCount = new int[tp];
-        totalOcsToSchedule = new int[tp];
-        currentDLevelToProcess = new int[tp];
+    private int totalThreads;
+    private int maxDLevel;
 
-        for(int threadId=0; threadId<tp; threadId++) {
-            dLevelBasedOCBuckets.put(threadId, new HashMap<>());
-        }
+    public NoBarrierSharedWorkload(int tp) {
+        dLevelBasedOCBuckets = new ConcurrentHashMap();
+        currentDLevelToProcess = new int[tp];
+        totalThreads = tp;
     }
 
     @Override
     public void submitOcs(int threadId, Collection<OperationChain> ocs) {
 
-        HashMap<Integer, List<OperationChain>> currentThreadOCsBucket = dLevelBasedOCBuckets.get(threadId);
         for (OperationChain oc : ocs) {
             oc.updateDependencyLevel();
             int dLevel = oc.getDependencyLevel();
-            if(!currentThreadOCsBucket.containsKey(dLevel))
-                currentThreadOCsBucket.put(dLevel, new ArrayList<>());
-            currentThreadOCsBucket.get(dLevel).add(oc);
+
+            if(dLevel>maxDLevel)
+                maxDLevel = dLevel;
+
+            if(!dLevelBasedOCBuckets.containsKey(dLevel))
+                dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
+            dLevelBasedOCBuckets.get(dLevel).add(oc);
         }
 
-        totalOcsToSchedule[threadId] += ocs.size();
     }
 
 
     @Override
     public OperationChain next(int threadId) {
-        OperationChain oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
 
-        if(oc!=null) {
-            scheduledOcsCount[threadId] += 1;
-        } else if(!areAllOCsScheduled(threadId)){
-            while(oc==null){
+        OperationChain oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
+        if(oc!=null)
+            return oc;
+
+        if(!areAllOCsScheduled(threadId)) {
+            while(oc==null) {
+                if(areAllOCsScheduled(threadId))
+                    break;
                 currentDLevelToProcess[threadId]+=1;
                 oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
-
                 MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(currentDLevelToProcess[threadId]);
                 MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
             }
-            scheduledOcsCount[threadId] += 1;
-        } else {
+        }
+
+        if(areAllOCsScheduled(threadId)) {
             MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
             MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
         }
-        return oc; // if a null is returned, it means, we are done with level!
+
+        return oc;
     }
 
-    private OperationChain getOcForThreadAndDLevel(int threadId, int dLevel) {
-        List<OperationChain> ocs = dLevelBasedOCBuckets.get(threadId).get(dLevel);
+    private synchronized OperationChain getOcForThreadAndDLevel(int threadId, int dLevel) {
+        List<OperationChain> ocs = dLevelBasedOCBuckets.get(dLevel);
         OperationChain oc = null;
         if(ocs!=null && ocs.size()>0) {
             oc = ocs.remove(ocs.size()-1);
@@ -79,8 +82,9 @@ public class BaseLineScheduler implements IScheduler {
     }
 
     @Override
-    public boolean areAllOCsScheduled(int threadId){
-        return scheduledOcsCount[threadId] == totalOcsToSchedule[threadId];
+    public synchronized boolean areAllOCsScheduled(int threadId){
+        return currentDLevelToProcess[threadId] == maxDLevel &&
+                dLevelBasedOCBuckets.get(maxDLevel).size()==0;
     }
 
     @Override
@@ -95,11 +99,9 @@ public class BaseLineScheduler implements IScheduler {
 
     @Override
     public void reset() {
-        for(int lop = 0; lop< totalOcsToSchedule.length; lop++) {
-            totalOcsToSchedule[lop] = 0;
-            scheduledOcsCount[lop] = 0;
+        for(int lop=0; lop<currentDLevelToProcess.length; lop++) {
             currentDLevelToProcess[lop] = 0;
         }
+        maxDLevel = 0;
     }
-
 }

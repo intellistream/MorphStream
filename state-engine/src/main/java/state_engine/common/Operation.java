@@ -4,11 +4,16 @@ import state_engine.storage.SchemaRecordRef;
 import state_engine.storage.TableRecord;
 import state_engine.storage.TableRecordRef;
 import state_engine.storage.datatype.DataBox;
+import state_engine.transaction.dedicated.ordered.MyList;
 import state_engine.transaction.function.Condition;
 import state_engine.transaction.function.Function;
 import state_engine.transaction.impl.TxnContext;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+
 //contains the place-holder to fill, as well as timestamp (counter).
 public class Operation implements Comparable<Operation> {
     public final TableRecord d_record;
@@ -30,6 +35,8 @@ public class Operation implements Comparable<Operation> {
     public Condition condition;
     public boolean[] success;
     public String name;
+
+
     public Operation(String table_name, TxnContext txn_context, long bid, MetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref, Function function) {
         this.table_name = table_name;
         this.d_record = record;
@@ -163,4 +170,43 @@ public class Operation implements Comparable<Operation> {
         assert this.name == null;
         this.name = name;
     }
+
+    private ConcurrentSkipListSet<Operation> dependsUpon = new ConcurrentSkipListSet<>();
+    private ConcurrentSkipListSet<Operation> dependents = new ConcurrentSkipListSet<>();
+    private IOpDependenciesResolutionListener opDependencyResolutionListener;
+
+    public void addDependency(IOpDependenciesResolutionListener opDependencyResolutionListener, Operation dependencyOp) {
+        dependsUpon.add(dependencyOp);
+        this.opDependencyResolutionListener = opDependencyResolutionListener;
+    }
+
+    public void addDependent(Operation dependent) {
+        dependents.add(dependent);
+    }
+
+    public void resolveDependency(Operation dependencyOp) {
+        if(dependsUpon.contains(dependencyOp)) {
+            dependsUpon.remove(dependencyOp);
+        }
+
+        if(dependsUpon.size()==0 && opDependencyResolutionListener!=null) {
+            opDependencyResolutionListener.onDependenciesResolved(this);
+        }
+    }
+
+    public void notifyDependents() {
+        Iterator<Operation> dependentsIterator = dependents.iterator();
+        while(dependentsIterator.hasNext()) {
+            dependentsIterator.next().resolveDependency(this);
+        }
+    }
+
+    public boolean areDependenciesResolved() {
+        return dependsUpon.size()==0;
+    }
+
+    public interface IOpDependenciesResolutionListener {
+        void onDependenciesResolved(Operation op);
+    }
+
 }

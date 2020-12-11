@@ -9,14 +9,15 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class OperationChain implements Comparable<OperationChain>{
+public class OperationChain implements Comparable<OperationChain>, Operation.IOpDependenciesResolutionListener {
 
     private String tableName;
     private String primaryKey;
 
     private MyList<Operation> operations;
     private ArrayList<OperationChain> dependsUpon;
-    private HashMap<OperationChain, Long> potentialDependentsInfo;
+
+    private HashMap<OperationChain, Operation> potentialDependentsInfo;
 
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     public int dependencyLevel = -1;
@@ -38,20 +39,64 @@ public class OperationChain implements Comparable<OperationChain>{
         return operations;
     }
 
-    public synchronized void addDependency(OperationChain dependsUpon) {
+    public synchronized void addDependency(Operation forOp, OperationChain dependsUpon) {
         if(!this.dependsUpon.contains(dependsUpon))
             this.dependsUpon.add(dependsUpon);
+
+        Iterator<Operation> iterator = dependsUpon.getOperations().descendingIterator();
+        while (iterator.hasNext()) {
+            Operation dependencyOp = iterator.next();
+            if(dependencyOp.bid < forOp.bid) {
+                forOp.addDependency(this, dependencyOp);
+                dependencyOp.addDependent(forOp);
+                addOpDependency(dependencyOp, forOp);
+                dependsUpon.addOpDependent(dependencyOp, forOp);
+                break;
+            }
+        }
     }
 
-    public synchronized void addPotentialDependent(OperationChain potentialDependent, long bid) {
-        potentialDependentsInfo.put(potentialDependent, bid);
+    private ConcurrentSkipListMap<Operation, List<Operation>> opDependsUpon = new ConcurrentSkipListMap<>();
+    private ConcurrentSkipListMap<Operation, List<Operation>> opDependents = new ConcurrentSkipListMap<>();
+    private int minimumIndependentOpsCount = Integer.MAX_VALUE;
+
+    private void addOpDependency(Operation dependencyOp, Operation dependentOp) {
+        if(!opDependsUpon.containsKey(dependentOp))
+            opDependsUpon.put(dependentOp, new ArrayList<>());
+        opDependsUpon.get(dependentOp).add(dependencyOp); // we want to know about the dependency op.
     }
 
-    public synchronized void checkOtherPotentialDependencies(long dependencyBid) {
+    private void addOpDependent(Operation dependencyOp, Operation dependentOp) {
+        if(!opDependents.containsKey(dependencyOp))
+            opDependents.put(dependencyOp, new ArrayList<>());
+        opDependents.get(dependencyOp).add(dependentOp); // we want to know about the dependent of our dependency Op.
+    }
+
+    @Override
+    public void onDependenciesResolved(Operation opFor) {
+        opDependsUpon.remove(opFor);
+    }
+
+    public void getMinimumIndependentOpsCount() { // maintain an efficient map of position of dependent ops instead.
+        Iterator<Operation> opsItr = operations.iterator();
+        int independentOpsCount = 0;
+        while(opsItr.hasNext()) {
+            if (opDependsUpon.containsKey(opsItr.next()))
+                break;
+            independentOpsCount += 1;
+        }
+    }
+
+    public synchronized void addPotentialDependent(OperationChain potentialDependent, Operation op) {
+        potentialDependentsInfo.put(potentialDependent, op);
+    }
+
+    public synchronized void checkOtherPotentialDependencies(Operation dependencyOp) {
+
         List<OperationChain> processed = new ArrayList<>();
         for(OperationChain pDependent : potentialDependentsInfo.keySet()) {
-            if(dependencyBid < potentialDependentsInfo.get(pDependent)) { // if bid is < dependents bid, therefore, it depends upon this operation
-                pDependent.addDependency(this);
+            if(dependencyOp.bid < potentialDependentsInfo.get(pDependent).bid) { // if bid is < dependents bid, therefore, it depends upon this operation
+                pDependent.addDependency(potentialDependentsInfo.get(pDependent), this);
                 processed.add(pDependent);
             }
         }
@@ -150,6 +195,7 @@ public class OperationChain implements Comparable<OperationChain>{
     public void setProcessed() {
         isProcessed = true;
     }
+
 
 //    private static class DependentInfo implements Comparable<DependentInfo> {
 //        public OperationChain dependent;

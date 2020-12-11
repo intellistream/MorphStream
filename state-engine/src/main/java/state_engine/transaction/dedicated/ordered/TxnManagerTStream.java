@@ -225,7 +225,6 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        holder.get(primaryKey).add(new Operation(table_name, s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success));
         addOperationToChain(new Operation(table_name, s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
-        checkDataDependencies(txn_context.thread_Id, table_name, key, bid, condition_sourceTable, condition_source);
 
 //
 //        int taskId = getTaskId(d_record);
@@ -244,11 +243,12 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        holder.get(primaryKey).add(new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success));
         MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
-        addOperationToChain(new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
+        Operation op = new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success);
+        addOperationToChain(op, table_name, d_record.record_.GetPrimaryKey());
         MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
 
         MeasureTools.BEGIN_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
-        checkDataDependencies(txn_context.thread_Id, table_name, key, bid, condition_sourceTable, condition_source);
+        checkDataDependencies(op, txn_context.thread_Id, table_name, key, condition_sourceTable, condition_source);
         MeasureTools.END_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
 //        int taskId = getTaskId(d_record);
 //        int h2ID = getH2ID(taskId);
@@ -266,11 +266,12 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        holder.get(primaryKey).add(new Operation(table_name, d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success));
         MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
-        addOperationToChain(new Operation(table_name, d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
+        Operation op = new Operation(table_name, d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success);
+        addOperationToChain(op, table_name, d_record.record_.GetPrimaryKey());
         MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
 
         MeasureTools.BEGIN_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
-        checkDataDependencies(txn_context.thread_Id, table_name, key, bid, condition_sourceTable, condition_source);
+        checkDataDependencies(op, txn_context.thread_Id, table_name, key, condition_sourceTable, condition_source);
         MeasureTools.END_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
 //        int taskId = getTaskId(d_record);
 //        int h2ID = getH2ID(taskId);
@@ -280,7 +281,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.add(new Operation(d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success));
     }
 
-    private void checkDataDependencies(int thread_Id, String table_name, String key, long bid, String[] condition_sourceTable, String[] condition_source) {
+    private void checkDataDependencies(Operation op, int thread_Id, String table_name, String key, String[] condition_sourceTable, String[] condition_source) {
 
         OperationChain dependent = instance.getHolder(table_name).rangeMap.get(getTaskId(key)).holder_v1.get(key);
 
@@ -297,12 +298,12 @@ public class TxnManagerTStream extends TxnManagerDedicated {
             }
 //            System.out.println("Checking dependencies...");
             // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is  enough.
-            if(dependency.getOperations().isEmpty() || dependency.getOperations().first().bid >= bid) { // if dependencies first op's bid is >= current bid, then it has no operation that we depend upon, but it could be a potential dependency in case we have delayed transactions (events)
+            if(dependency.getOperations().isEmpty() || dependency.getOperations().first().bid >= op.bid) { // if dependencies first op's bid is >= current bid, then it has no operation that we depend upon, but it could be a potential dependency in case we have delayed transactions (events)
                 // if dependency has no operations on it or no operation with id < current operation id.
                 // we will like to record it as potential future dependency, if a delayed operation with id < current bid arrives
-                dependency.addPotentialDependent(dependent, bid);
+                dependency.addPotentialDependent(dependent, op);
             } else { // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
-                dependent.addDependency(dependency); // record dependency
+                dependent.addDependency(op, dependency); // record dependency
             }
 //            System.out.println("Checking dependencies...done");
         }
@@ -311,7 +312,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 
 //        System.out.println("Checking other dependencies...");
         MeasureTools.BEGIN_DEPENDENCY_OUTOFORDER_OVERHEAD_TIME_MEASURE(thread_Id);
-        dependent.checkOtherPotentialDependencies(bid);
+        dependent.checkOtherPotentialDependencies(op);
         MeasureTools.END_DEPENDENCY_OUTOFORDER_OVERHEAD_TIME_MEASURE(thread_Id);
 //        System.out.println("Checking other dependencies...done");
 

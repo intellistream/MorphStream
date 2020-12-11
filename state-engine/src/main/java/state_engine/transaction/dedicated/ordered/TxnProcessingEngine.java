@@ -13,6 +13,7 @@ import state_engine.storage.datatype.DoubleDataBox;
 import state_engine.storage.datatype.IntDataBox;
 import state_engine.storage.datatype.ListDoubleDataBox;
 import state_engine.transaction.function.*;
+import state_engine.transaction.scheduler.NoBarrierSharedWorkload;
 import state_engine.transaction.scheduler.RoundRobinScheduler;
 import state_engine.transaction.scheduler.IScheduler;
 import state_engine.transaction.scheduler.SharedWorkloadScheduler;
@@ -93,7 +94,7 @@ public final class TxnProcessingEngine {
     }
     public void engine_init(Integer first_exe, Integer last_exe, Integer stage_size, int tp) {
 
-        scheduler  = new SharedWorkloadScheduler(tp);
+        scheduler  = new NoBarrierSharedWorkload(tp);
 
         this.first_exe = first_exe;
         this.last_exe = last_exe;
@@ -399,77 +400,77 @@ public final class TxnProcessingEngine {
      * @throws InterruptedException
      */
 
-//    private static HashMap<Integer, List<OperationChain>> ocsDLevel = new HashMap<>();
+    private static HashMap<Integer, List<OperationChain>> ocsDLevel = new HashMap<>();
 
-//    public void start_evaluation(int threadId, long mark_ID) throws InterruptedException {
-//
-//        OperationChain oc = scheduler.next(threadId);
-//        while(oc!=null) {
-//            System.out.println(String.format("Thread %d processed %s oc", threadId, oc.getStringId()));
-//            MyList<Operation> operations = oc.getOperations();
-//            process(operations, mark_ID);//directly apply the computation.
-//            oc = scheduler.next(threadId);
-//        }
-//    }
+    public void start_evaluation(int threadId, long mark_ID) throws InterruptedException {
 
-    public void start_evaluation(int thread_Id, long mark_ID) throws InterruptedException {
-
-        int dependencyLevelToProcess = 0;
-        int totalChainsToProcess = 0;
-        int totalChainsProcessed = 0;
-        Collection<Callable<Object>> callables = new Vector<>();
-
-        Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
-        for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
-            totalChainsToProcess += tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values().size();
+        OperationChain oc = scheduler.next(threadId);
+        while(oc!=null) {
+            System.out.println(String.format("Thread %d processed %s oc", threadId, oc.getStringId()));
+            MyList<Operation> operations = oc.getOperations();
+            process(operations, mark_ID);//directly apply the computation.
+            oc = scheduler.next(threadId);
         }
-
-        MeasureTools.BEGIN_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
-        updateDependencyLevels(thread_Id);
-        MeasureTools.END_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
-
-        if(totalChainsToProcess==0) {
-            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
-            SOURCE_CONTROL.getInstance().oneThreadCompleted();
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-        }
-
-        while(totalChainsProcessed < totalChainsToProcess) {
-
-            MeasureTools.BEGIN_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(thread_Id);
-            callables.clear();
-            submit(callables, thread_Id, dependencyLevelToProcess,previous_ID - kMaxThreadNum);
-            MeasureTools.END_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(thread_Id);
-
-            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-
-            MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
-            totalChainsProcessed += callables.size();
-            evaluate(callables, thread_Id);
-            MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
-
-            if(totalChainsProcessed == totalChainsToProcess) {
-                MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
-                SOURCE_CONTROL.getInstance().oneThreadCompleted();
-                MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-            }
-
-            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
-            dependencyLevelToProcess+=1;
-            SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(dependencyLevelToProcess);
-            MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-        }
-
-        if(thread_Id==0)
-            for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
-                tableHolderInRange.rangeMap.get(thread_Id).holder_v1.clear();
-            }
-
-        MeasureTools.REGISTER_NUMBER_OF_OC_PROCESSED(thread_Id, totalChainsProcessed);
     }
+
+//    public void start_evaluation(int thread_Id, long mark_ID) throws InterruptedException {
+//
+//        int dependencyLevelToProcess = 0;
+//        int totalChainsToProcess = 0;
+//        int totalChainsProcessed = 0;
+//        Collection<Callable<Object>> callables = new Vector<>();
+//
+//        Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
+//        for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
+//            totalChainsToProcess += tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values().size();
+//        }
+//
+//        MeasureTools.BEGIN_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
+//        updateDependencyLevels(thread_Id);
+//        MeasureTools.END_CALCULATE_LEVELS_TIME_MEASURE(thread_Id);
+//
+//        if(totalChainsToProcess==0) {
+//            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
+//            SOURCE_CONTROL.getInstance().oneThreadCompleted();
+//            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+//            MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
+//        }
+//
+//        while(totalChainsProcessed < totalChainsToProcess) {
+//
+//            MeasureTools.BEGIN_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(thread_Id);
+//            callables.clear();
+//            submit(callables, thread_Id, dependencyLevelToProcess,previous_ID - kMaxThreadNum);
+//            MeasureTools.END_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(thread_Id);
+//
+//            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
+//            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+//            MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
+//
+//            MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
+//            totalChainsProcessed += callables.size();
+//            evaluate(callables, thread_Id);
+//            MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(thread_Id);
+//
+//            if(totalChainsProcessed == totalChainsToProcess) {
+//                MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
+//                SOURCE_CONTROL.getInstance().oneThreadCompleted();
+//                MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
+//            }
+//
+//            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
+//            dependencyLevelToProcess+=1;
+//            SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(dependencyLevelToProcess);
+//            MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
+//        }
+//
+//        if(thread_Id==0)
+//            for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
+//                tableHolderInRange.rangeMap.get(thread_Id).holder_v1.clear();
+//            }
+//
+//        MeasureTools.REGISTER_NUMBER_OF_OC_PROCESSED(thread_Id, totalChainsProcessed);
+//    }
 
 
     public void updateDependencyLevels(int thread_Id) {
