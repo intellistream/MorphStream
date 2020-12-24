@@ -4,15 +4,14 @@ import state_engine.storage.SchemaRecordRef;
 import state_engine.storage.TableRecord;
 import state_engine.storage.TableRecordRef;
 import state_engine.storage.datatype.DataBox;
-import state_engine.transaction.dedicated.ordered.MyList;
 import state_engine.transaction.function.Condition;
 import state_engine.transaction.function.Function;
 import state_engine.transaction.impl.TxnContext;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 //contains the place-holder to fill, as well as timestamp (counter).
 public class Operation implements Comparable<Operation> {
@@ -162,7 +161,7 @@ public class Operation implements Comparable<Operation> {
     @Override
     public int compareTo(Operation operation) {
         if (this.bid == (operation.bid)) {
-            return this.d_record.getID() - operation.d_record.getID();//different records, don't care about its counter.
+            return this.d_record.getID() - operation.d_record.getID();
         } else
             return Long.compare(this.bid, operation.bid);
     }
@@ -171,42 +170,53 @@ public class Operation implements Comparable<Operation> {
         this.name = name;
     }
 
-    private ConcurrentSkipListSet<Operation> dependsUpon = new ConcurrentSkipListSet<>();
-    private ConcurrentSkipListSet<Operation> dependents = new ConcurrentSkipListSet<>();
-    private IOpDependenciesResolutionListener opDependencyResolutionListener;
+    private Queue<Operation> dependsUpon;
+    private Queue<Operation> dependents;
+    private IOpConflictResolutionListener opConflictResolutionListener;
+    private OperationChain oc;
 
-    public void addDependency(IOpDependenciesResolutionListener opDependencyResolutionListener, Operation dependencyOp) {
-        dependsUpon.add(dependencyOp);
-        this.opDependencyResolutionListener = opDependencyResolutionListener;
+    public void setOc(OperationChain oc) {
+        this.oc = oc;
     }
 
-    public void addDependent(Operation dependent) {
-        dependents.add(dependent);
+    public OperationChain getOc() {
+        return oc;
     }
 
-    public void resolveDependency(Operation dependencyOp) {
-        if(dependsUpon.contains(dependencyOp)) {
-            dependsUpon.remove(dependencyOp);
-        }
-
-        if(dependsUpon.size()==0 && opDependencyResolutionListener!=null) {
-            opDependencyResolutionListener.onDependenciesResolved(this);
-        }
+    public void addDependency(IOpConflictResolutionListener opConflictResolutionListener, Operation dependencyOp) {
+        if(this.dependsUpon==null)
+            this.dependsUpon = new ConcurrentLinkedQueue<>();
+        this.dependsUpon.add(dependencyOp);
+        this.opConflictResolutionListener = opConflictResolutionListener; // this should always be the same.
     }
 
-    public void notifyDependents() {
+    public void addDependent(IOpConflictResolutionListener opConflictResolutionListener, Operation dependent) {
+        if(this.dependents==null)
+            this.dependents = new ConcurrentLinkedQueue<>();
+        this.dependents.add(dependent);
+        this.opConflictResolutionListener = opConflictResolutionListener; // this should always be the same.
+    }
+
+    private void onDependencyResolved(Operation dependencyOp) {
+        dependsUpon.remove(dependencyOp);
+        opConflictResolutionListener.onDependencyResolved(this, dependencyOp);
+    }
+
+    public void notifyOpProcessed() {
+        if(this.dependents==null)
+            return;
         Iterator<Operation> dependentsIterator = dependents.iterator();
         while(dependentsIterator.hasNext()) {
-            dependentsIterator.next().resolveDependency(this);
+            Operation op = dependentsIterator.next();
+            op.onDependencyResolved(this);
+            opConflictResolutionListener.onDependentResolved(op, this);
         }
+        dependents.clear();
     }
 
-    public boolean areDependenciesResolved() {
-        return dependsUpon.size()==0;
-    }
-
-    public interface IOpDependenciesResolutionListener {
-        void onDependenciesResolved(Operation op);
+    public interface IOpConflictResolutionListener {
+        void onDependencyResolved(Operation dependent, Operation dependency);
+        void onDependentResolved(Operation dependent, Operation dependency);
     }
 
 }

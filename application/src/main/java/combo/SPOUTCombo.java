@@ -104,7 +104,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                     }
                 }
                 if (counter == the_end) {
-                    SOURCE_CONTROL.getInstance().finalThreadsSynchronization(taskId);//sync for all threads to come to this line.
+                    SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                     if (taskId == 0)
                         sink.end(global_cnt);
                 }

@@ -54,15 +54,11 @@ public class SLBolt_ts extends SLBolt {
         // Aqif: For TStream taskId increases by 1 and executorId is always 0.
     }
 
-    int batchNumber = 0;
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         if (in.isMarker()) {
             int readSize = transactionEvents.size();
-            batchNumber+=1;
-            System.out.println(String.format("Transaction processing of batch %d.", batchNumber));
-
 
             MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
 

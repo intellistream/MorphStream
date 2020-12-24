@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import state_engine.common.Operation;
 import state_engine.common.OperationChain;
 import state_engine.content.T_StreamContent;
-import state_engine.profiler.MeasureTools;
 import state_engine.profiler.Metrics;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.DataBox;
@@ -13,11 +12,7 @@ import state_engine.storage.datatype.DoubleDataBox;
 import state_engine.storage.datatype.IntDataBox;
 import state_engine.storage.datatype.ListDoubleDataBox;
 import state_engine.transaction.function.*;
-import state_engine.transaction.scheduler.NoBarrierSharedWorkload;
-import state_engine.transaction.scheduler.RoundRobinScheduler;
-import state_engine.transaction.scheduler.IScheduler;
-import state_engine.transaction.scheduler.SharedWorkloadScheduler;
-import state_engine.utils.SOURCE_CONTROL;
+import state_engine.transaction.scheduler.*;
 
 import java.io.Closeable;
 import java.util.*;
@@ -94,7 +89,11 @@ public final class TxnProcessingEngine {
     }
     public void engine_init(Integer first_exe, Integer last_exe, Integer stage_size, int tp) {
 
-        scheduler  = new NoBarrierSharedWorkload(tp);
+//        scheduler  = new BaseLineScheduler(tp);
+//        scheduler  = new RoundRobinScheduler(tp);
+//        scheduler  = new NoBarrierSharedWorkload(tp);
+//        scheduler  = new SharedWorkloadScheduler(tp);
+        scheduler  = new SmartSharedWorkloadv1(tp);
 
         this.first_exe = first_exe;
         this.last_exe = last_exe;
@@ -189,6 +188,7 @@ public final class TxnProcessingEngine {
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             //Operation.d_record.content_.WriteAccess(Operation.bid, new SchemaRecord(values), wid);//does this even needed?
             operation.success[0] = true;
+            operation.notifyOpProcessed();
 //            if (operation.table_name.equalsIgnoreCase("accounts") && operation.d_record.record_.GetPrimaryKey().equalsIgnoreCase("11")) {
 //            LOG.info("key: " + operation.d_record.record_.GetPrimaryKey() + " BID: " + operation.bid + " set " + operation.success.hashCode() + " to true." + " sourceAccountBalance:" + sourceAccountBalance);
 //            }
@@ -406,7 +406,7 @@ public final class TxnProcessingEngine {
 
         OperationChain oc = scheduler.next(threadId);
         while(oc!=null) {
-            System.out.println(String.format("Thread %d processed %s oc", threadId, oc.getStringId()));
+//            System.out.println(String.format("Thread %d processed %s oc", threadId, oc.getStringId()));
             MyList<Operation> operations = oc.getOperations();
             process(operations, mark_ID);//directly apply the computation.
             oc = scheduler.next(threadId);

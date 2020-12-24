@@ -1,8 +1,6 @@
 package state_engine.transaction.scheduler;
 
 import state_engine.common.OperationChain;
-import state_engine.profiler.MeasureTools;
-import state_engine.utils.SOURCE_CONTROL;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
@@ -11,8 +9,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class NoBarrierSharedWorkload implements IScheduler {
-    private ConcurrentHashMap<Integer, List<OperationChain>> dLevelBasedOCBuckets;
 
+    private ConcurrentHashMap<Integer, List<OperationChain>> dLevelBasedOCBuckets;
     private int[] currentDLevelToProcess;
 
     private int totalThreads;
@@ -33,42 +31,24 @@ public class NoBarrierSharedWorkload implements IScheduler {
 
             if(dLevel>maxDLevel)
                 maxDLevel = dLevel;
-
-            if(!dLevelBasedOCBuckets.containsKey(dLevel))
-                dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
-            dLevelBasedOCBuckets.get(dLevel).add(oc);
+            synchronized (this) { // TODO: find an efficient way to merge ocs from all threads into a shared data structure.
+                if(!dLevelBasedOCBuckets.containsKey(dLevel))
+                    dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
+                dLevelBasedOCBuckets.get(dLevel).add(oc);
+            }
         }
-
     }
-
 
     @Override
     public OperationChain next(int threadId) {
-
         OperationChain oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
-        if(oc!=null)
-            return oc;
-
-        if(!areAllOCsScheduled(threadId)) {
-            while(oc==null) {
-                if(areAllOCsScheduled(threadId))
-                    break;
-                currentDLevelToProcess[threadId]+=1;
-                oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
-                MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(currentDLevelToProcess[threadId]);
-                MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
-            }
+        while(oc==null) {
+            if(areAllOCsScheduled(threadId))
+                break;
+            currentDLevelToProcess[threadId]+=1;
+            oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         }
-
-        if(areAllOCsScheduled(threadId)) {
-            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
-            SOURCE_CONTROL.getInstance().oneThreadCompleted();
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
-        }
-
+        while(oc!=null && oc.hasDependency());
         return oc;
     }
 

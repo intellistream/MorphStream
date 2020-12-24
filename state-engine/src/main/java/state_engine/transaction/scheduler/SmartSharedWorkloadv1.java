@@ -10,16 +10,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class SharedWorkloadScheduler implements IScheduler {
+public class SmartSharedWorkloadv1 implements IScheduler {
 
     private ConcurrentHashMap<Integer, List<OperationChain>> dLevelBasedOCBuckets;
-
     private int[] currentDLevelToProcess;
 
     private int totalThreads;
     private int maxDLevel;
 
-    public SharedWorkloadScheduler(int tp) {
+    public SmartSharedWorkloadv1(int tp) {
         dLevelBasedOCBuckets = new ConcurrentHashMap();
         currentDLevelToProcess = new int[tp];
         totalThreads = tp;
@@ -38,40 +37,62 @@ public class SharedWorkloadScheduler implements IScheduler {
             synchronized (this) { // TODO: find an efficient way to merge ocs from all threads into a shared data structure.
                 if(!dLevelBasedOCBuckets.containsKey(dLevel))
                     dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
-                dLevelBasedOCBuckets.get(dLevel).add(oc);
+                insertInOrder(oc, oc.getIndependentOpsCount(), dLevelBasedOCBuckets.get(dLevel));
             }
+
+        }
+    }
+
+    public synchronized void insertInOrder(OperationChain oc, int priority, List<OperationChain> operationChains) {
+        if(operationChains.size() == 0 || priority > operationChains.get(operationChains.size()-1).getPriority()) {
+            operationChains.add(oc);
+            return;
         }
 
+        int insertionIndex, center;
+        int start = 0;
+        int end = operationChains.size()-1;
+
+        while(true) {
+            center = (start+end)/2;
+            if(center==start || center == end) {
+                insertionIndex = start;
+                break;
+            }
+            if(priority <= operationChains.get(center).getPriority())
+                end = center;
+            else
+                start = center;
+        }
+
+        while(operationChains.get(insertionIndex).getPriority() < priority)
+            insertionIndex++;
+
+        while(operationChains.get(insertionIndex).getPriority() == priority &&
+                operationChains.get(insertionIndex).getIndependentOpsCount() > oc.getIndependentOpsCount()) {
+            insertionIndex++;
+            if(insertionIndex==operationChains.size())
+                break;
+        }
+
+        if(insertionIndex==operationChains.size())
+            operationChains.add(oc);
+        else
+            operationChains.add(insertionIndex, oc); // insert using second level priority
     }
+
 
 
     @Override
     public OperationChain next(int threadId) {
-
         OperationChain oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
-        if(oc!=null)
-            return oc;
-
-        if(!areAllOCsScheduled(threadId)) {
-            while(oc==null) {
-                if(areAllOCsScheduled(threadId))
-                    break;
-                currentDLevelToProcess[threadId]+=1;
-                oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
-                MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(currentDLevelToProcess[threadId]);
-                MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
-            }
+        while(oc==null) {
+            if(areAllOCsScheduled(threadId))
+                break;
+            currentDLevelToProcess[threadId]+=1;
+            oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         }
-
-        if(areAllOCsScheduled(threadId)) {
-            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
-            SOURCE_CONTROL.getInstance().oneThreadCompleted();
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
-        }
-
+        while(oc!=null && oc.hasDependency());
         return oc;
     }
 
@@ -107,5 +128,4 @@ public class SharedWorkloadScheduler implements IScheduler {
         }
         maxDLevel = 0;
     }
-
 }

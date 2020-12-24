@@ -64,7 +64,7 @@ public class SOURCE_CONTROL {
     private int min_iteration() {
         return Collections.min(iteration.values());
     }
-    public void preStateAccessThreadsSynchronization(int threadId) {
+    public void preStateAccessBarrier(int threadId) {
         try {
             if(threadId==0){
                 completedThreadsCount = 0;
@@ -72,11 +72,13 @@ public class SOURCE_CONTROL {
                 updateThreadBarrierOnDLevel(0);
             }
             startBarrier.await();
+            if(threadId==0)
+                startBarrier.reset();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    public void postStateAccessThreadsSynchronization(int threadId) {
+    public void postStateAccessBarrier(int threadId) {
         try {
             endBarrier.await();
         } catch (Exception e) {
@@ -84,7 +86,7 @@ public class SOURCE_CONTROL {
         }
     }
 
-    public void finalThreadsSynchronization(int threadId) {
+    public void finalBarrier(int threadId) {
         try {
             finalEndBarrier.await();
         } catch (Exception e) {

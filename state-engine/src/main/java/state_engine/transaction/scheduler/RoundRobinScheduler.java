@@ -41,9 +41,11 @@ public class RoundRobinScheduler implements IScheduler {
             if(dLevel>maxDLevel)
                 maxDLevel = dLevel;
 
-            if(!dLevelBasedOCBuckets.containsKey(dLevel))
-                dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
-            dLevelBasedOCBuckets.get(dLevel).add(oc);
+            synchronized (this) { // TODO: find an efficient way to merge ocs from all threads into a shared data structure.
+                if(!dLevelBasedOCBuckets.containsKey(dLevel))
+                    dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
+                dLevelBasedOCBuckets.get(dLevel).add(oc);
+            }
         }
 
     }

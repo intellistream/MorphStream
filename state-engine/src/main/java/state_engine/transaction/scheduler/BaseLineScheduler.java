@@ -27,21 +27,23 @@ public class BaseLineScheduler implements IScheduler {
         }
     }
 
+    int maxDependency = 0;
+
     @Override
     public void submitOcs(int threadId, Collection<OperationChain> ocs) {
 
+        totalOcsToSchedule[threadId] += ocs.size();
         HashMap<Integer, List<OperationChain>> currentThreadOCsBucket = dLevelBasedOCBuckets.get(threadId);
         for (OperationChain oc : ocs) {
             oc.updateDependencyLevel();
             int dLevel = oc.getDependencyLevel();
+
             if(!currentThreadOCsBucket.containsKey(dLevel))
                 currentThreadOCsBucket.put(dLevel, new ArrayList<>());
             currentThreadOCsBucket.get(dLevel).add(oc);
         }
 
-        totalOcsToSchedule[threadId] += ocs.size();
     }
-
 
     @Override
     public OperationChain next(int threadId) {
