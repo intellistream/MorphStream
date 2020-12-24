@@ -13,6 +13,7 @@ import state_engine.storage.datatype.IntDataBox;
 import state_engine.storage.datatype.ListDoubleDataBox;
 import state_engine.transaction.function.*;
 import state_engine.transaction.scheduler.*;
+import state_engine.transaction.scheduler.SchedulerFactory.SCHEDULER_TYPE;
 
 import java.io.Closeable;
 import java.util.*;
@@ -87,13 +88,9 @@ public final class TxnProcessingEngine {
     public Collection<Holder_in_range> getHolderValues() {
         return holder_by_stage.values();
     }
-    public void engine_init(Integer first_exe, Integer last_exe, Integer stage_size, int tp) {
+    public void engine_init(Integer first_exe, Integer last_exe, Integer stage_size, int tp, String schedulerType) {
 
-//        scheduler  = new BaseLineScheduler(tp);
-//        scheduler  = new RoundRobinScheduler(tp);
-//        scheduler  = new NoBarrierSharedWorkload(tp);
-//        scheduler  = new SharedWorkloadScheduler(tp);
-        scheduler  = new SmartSharedWorkloadv1(tp);
+        scheduler  = new SchedulerFactory(tp).CreateScheduler(SCHEDULER_TYPE.valueOf(schedulerType));
 
         this.first_exe = first_exe;
         this.last_exe = last_exe;

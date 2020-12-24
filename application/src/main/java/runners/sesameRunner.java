@@ -284,10 +284,10 @@ public class sesameRunner extends abstractRunner {
                     +OsUtils.osWrapperPostFix("depth = %d")
                     +OsUtils.osWrapperPostFix("threads = %d")
                     +OsUtils.osWrapperPostFix("total_batches = %d")
-                    +OsUtils.osWrapperPostFix("events_per_batch = %d");
+                    +OsUtils.osWrapperPostFix("events_per_batch = %d")
+                    +OsUtils.osWrapperPostFix("scheduler = %s");
 
-            String statsFolderPath = String.format(statsFolderPattern, numberOfDLevels, tthread, numberOfBatches, totalEventsPerBatch);
-
+            String statsFolderPath = String.format(statsFolderPattern, numberOfDLevels, tthread, numberOfBatches, totalEventsPerBatch, scheduler);
 
             try {
 
@@ -305,7 +305,7 @@ public class sesameRunner extends abstractRunner {
 
                 for (int threadId = 0; threadId < tthread; threadId++) {
                     long batches = metrics.total[threadId].getN();
-                    for(int batch=0; batch<batches; batch++) {;
+                    for(int batch=0; batch<batches; batch++) {
                         fileWriter.write(String.format("%d, %d, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f,\n"
                                 , threadId
                                 , batch

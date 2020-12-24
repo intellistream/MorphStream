@@ -44,6 +44,10 @@ public class BasicBenchmark implements IBenchmark {
             argslist.add("--machine");
             argslist.add("10");
         }
+        if(!argslist.contains("--scheduler")) {
+            argslist.add("--scheduler");
+            argslist.add("BL");
+        }
         if(!argslist.contains("--rootFilePath")) { // default path for our current benchmarks
             argslist.add("--rootFilePath");
             argslist.add("/home/hadoop/sesame/data/");
@@ -145,7 +149,7 @@ public class BasicBenchmark implements IBenchmark {
         loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
 
         try {
-            for (int lop=0; lop<1; lop++) {
+            for (int lop=0; lop<5; lop++) {
                 createSesameRunner(args, lop);
                 sesameRunner.run();
             }

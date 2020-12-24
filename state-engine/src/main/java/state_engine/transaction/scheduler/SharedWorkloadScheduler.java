@@ -7,43 +7,60 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SharedWorkloadScheduler implements IScheduler {
 
-    private ConcurrentHashMap<Integer, List<OperationChain>> dLevelBasedOCBuckets;
+    protected ConcurrentHashMap<Integer, List<OperationChain>> dLevelBasedOCBuckets;
 
-    private int[] currentDLevelToProcess;
-
-    private int totalThreads;
-    private int maxDLevel;
+    protected int[] currentDLevelToProcess;
+    protected int totalThreads;
+    protected Integer maxDLevel;
 
     public SharedWorkloadScheduler(int tp) {
         dLevelBasedOCBuckets = new ConcurrentHashMap();
         currentDLevelToProcess = new int[tp];
         totalThreads = tp;
+        maxDLevel = 0;
     }
 
     @Override
     public void submitOcs(int threadId, Collection<OperationChain> ocs) {
 
+        int localMaxDLevel = 0;
+        HashMap<Integer, List<OperationChain>> dLevelBasedOCBucketsPerThread = new HashMap<>();
+
         for (OperationChain oc : ocs) {
             oc.updateDependencyLevel();
             int dLevel = oc.getDependencyLevel();
 
-            if(dLevel>maxDLevel)
-                maxDLevel = dLevel;
+            if(localMaxDLevel < dLevel)
+                localMaxDLevel = dLevel;
 
-            synchronized (this) { // TODO: find an efficient way to merge ocs from all threads into a shared data structure.
-                if(!dLevelBasedOCBuckets.containsKey(dLevel))
-                    dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
-                dLevelBasedOCBuckets.get(dLevel).add(oc);
+            if(!dLevelBasedOCBucketsPerThread.containsKey(dLevel))
+                dLevelBasedOCBucketsPerThread.put(dLevel, new ArrayList<>());
+            dLevelBasedOCBucketsPerThread.get(dLevel).add(oc);
+        }
+
+        synchronized (maxDLevel) {
+            if(maxDLevel < localMaxDLevel)
+                maxDLevel = localMaxDLevel;
+        }
+
+        for(int dLevel : dLevelBasedOCBucketsPerThread.keySet())
+            dLevelBasedOCBuckets.putIfAbsent(dLevel, new ArrayList<>());
+
+        for(int dLevel : dLevelBasedOCBucketsPerThread.keySet()) {
+            List<OperationChain> dLevelList = dLevelBasedOCBuckets.get(dLevel);
+            synchronized (dLevelList) {
+                dLevelList.addAll(dLevelBasedOCBucketsPerThread.get(dLevel));
             }
+            dLevelBasedOCBucketsPerThread.get(dLevel).clear();
         }
 
     }
-
 
     @Override
     public OperationChain next(int threadId) {
@@ -75,12 +92,14 @@ public class SharedWorkloadScheduler implements IScheduler {
         return oc;
     }
 
-    private synchronized OperationChain getOcForThreadAndDLevel(int threadId, int dLevel) {
+    protected OperationChain getOcForThreadAndDLevel(int threadId, int dLevel) {
         List<OperationChain> ocs = dLevelBasedOCBuckets.get(dLevel);
         OperationChain oc = null;
-        if(ocs!=null && ocs.size()>0) {
-            oc = ocs.remove(ocs.size()-1);
-        }
+        if(ocs!=null)
+            synchronized (ocs) {
+                if(ocs.size()>0)
+                    oc = ocs.remove(ocs.size()-1); // TODO: This might be costly, maybe we should stop removing and using a counter or use a synchronized queue?
+            }
         return oc;
     }
 
@@ -102,6 +121,7 @@ public class SharedWorkloadScheduler implements IScheduler {
 
     @Override
     public void reset() {
+        dLevelBasedOCBuckets.clear();
         for(int lop=0; lop<currentDLevelToProcess.length; lop++) {
             currentDLevelToProcess[lop] = 0;
         }

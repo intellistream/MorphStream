@@ -179,6 +179,8 @@ public abstract class abstractRunner {
     public Integer numberOfDLevels = 3;
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
     public Integer iterationNumber = 0;
+    @Parameter(names = {"--scheduler"}, description = "Number of dependency levels.")
+    public String scheduler = "BL";
 
     public abstractRunner() {
 //        if (OsUtils.isWindows()) {
@@ -228,6 +230,7 @@ public abstract class abstractRunner {
         config.put("totalEventsPerBatch", totalEventsPerBatch);
         config.put("numberOfBatches", numberOfBatches);
         config.put("rootFilePath", rootPath);
+        config.put("scheduler", scheduler);
 
         if (num_socket != -1) {
             config.put("num_socket", num_socket);

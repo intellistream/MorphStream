@@ -423,21 +423,25 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     @Override
     public void start_evaluate(int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
 
+        MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
+        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
+
+        ArrayList<OperationChain> ocs = new ArrayList<>();
+        Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
+        for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
+            ocs.addAll(tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
+        }
+        instance.getScheduler().submitOcs(thread_Id, ocs);
 
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-
-        Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
-        for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
-            instance.getScheduler().submitOcs(thread_Id, tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
-        }
-
-        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
 
         instance.start_evaluation(thread_Id, mark_ID);
 
         for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
-            tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values();
+            tableHolderInRange.rangeMap.get(thread_Id).holder_v1.clear();
         }
 
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);

@@ -10,14 +10,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class BaseLineScheduler implements IScheduler {
 
-    private ConcurrentHashMap<Integer, HashMap<Integer, List<OperationChain>>> dLevelBasedOCBuckets;
+    protected ConcurrentHashMap<Integer, HashMap<Integer, List<OperationChain>>> dLevelBasedOCBuckets;
 
-    private int[] scheduledOcsCount;
-    private int[] totalOcsToSchedule;
-    private int[] currentDLevelToProcess;
+    protected int[] scheduledOcsCount;
+    protected int[] totalOcsToSchedule;
+    protected int[] currentDLevelToProcess;
 
     public BaseLineScheduler(int tp) {
-        dLevelBasedOCBuckets = new ConcurrentHashMap();
+        dLevelBasedOCBuckets = new ConcurrentHashMap(); // TODO: make sure this will not cause trouble with multithreaded access.
         scheduledOcsCount = new int[tp];
         totalOcsToSchedule = new int[tp];
         currentDLevelToProcess = new int[tp];
@@ -26,8 +26,6 @@ public class BaseLineScheduler implements IScheduler {
             dLevelBasedOCBuckets.put(threadId, new HashMap<>());
         }
     }
-
-    int maxDependency = 0;
 
     @Override
     public void submitOcs(int threadId, Collection<OperationChain> ocs) {
