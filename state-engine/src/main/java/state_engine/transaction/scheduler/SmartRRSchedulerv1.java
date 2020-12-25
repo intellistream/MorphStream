@@ -39,9 +39,9 @@ public class SmartRRSchedulerv1 extends RoundRobinScheduler {
             currentThreadOCsBucket.get(dLevel).add(oc);
         }
 
-        MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
+        MeasureTools.BEGIN_SUBMIT_BARRIER_TIME_MEASURE(threadId);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-        MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
+        MeasureTools.END_SUBMIT_BARRIER_TIME_MEASURE(threadId);
 
         for(int lop=0; lop<totalThreads; lop++) {
             if(maxDLevel < maxDLevelPerThread[lop])
@@ -53,8 +53,11 @@ public class SmartRRSchedulerv1 extends RoundRobinScheduler {
                 dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
             for(int localThreadId=0; localThreadId<totalThreads; localThreadId++) {
                 ocs = dLevelBasedOCBucketsPerThread.get(localThreadId).get(dLevel);
-                for(OperationChain oc: ocs)
+                for(OperationChain oc: ocs) {
+                    MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
                     insertInOrder(oc, oc.getIndependentOpsCount(), dLevelBasedOCBuckets.get(dLevel));
+                    MeasureTools.END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
+                }
             }
         }
     }

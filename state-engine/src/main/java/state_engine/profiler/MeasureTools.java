@@ -1,6 +1,5 @@
 package state_engine.profiler;
 import common.CONTROL;
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
 import static state_engine.Meta.MetaTypes.kMaxThreadNum;
 public class MeasureTools {
@@ -64,6 +63,34 @@ public class MeasureTools {
     static long[] tp_submit_start = new long[kMaxThreadNum];
     static double[] tp_submit = new double[kMaxThreadNum];
 
+
+    static long[] submit_time_start = new long[kMaxThreadNum];
+    static long[] submit_time_total = new long[kMaxThreadNum];
+    static long[] submit_time_barrier_start = new long[kMaxThreadNum];
+    static long[] submit_time_barrier_total = new long[kMaxThreadNum];
+    static long[] submit_time_overhead_start = new long[kMaxThreadNum];
+    static long[] submit_time_overhead_total = new long[kMaxThreadNum];
+    static long[] submit_time_extra_param_1_start = new long[kMaxThreadNum];
+    static long[] submit_time_extra_param_1_total = new long[kMaxThreadNum];
+    static long[] submit_time_extra_param_2_start = new long[kMaxThreadNum];
+    static long[] submit_time_extra_param_2_total = new long[kMaxThreadNum];
+    static long[] submit_time_extra_param_3_start = new long[kMaxThreadNum];
+    static long[] submit_time_extra_param_3_total = new long[kMaxThreadNum];
+
+    static long[] get_next_time_start = new long[kMaxThreadNum];
+    static long[] get_next_time_total = new long[kMaxThreadNum];
+    static long[] get_next_overhead_time_start = new long[kMaxThreadNum];
+    static long[] get_next_overhead_time_total = new long[kMaxThreadNum];
+    static long[] get_next_barrier_time_start = new long[kMaxThreadNum];
+    static long[] get_next_barrier_time_total = new long[kMaxThreadNum];
+    static long[] get_next_thread_wait_time_start = new long[kMaxThreadNum];
+    static long[] get_next_thread_wait_time_total = new long[kMaxThreadNum];
+    static long[] get_next_extra_param_1_start = new long[kMaxThreadNum];
+    static long[] get_next_extra_param_1_total = new long[kMaxThreadNum];
+    static long[] get_next_extra_param_2_start = new long[kMaxThreadNum];
+    static long[] get_next_extra_param_2_total = new long[kMaxThreadNum];
+    static long[] get_next_extra_param_3_start = new long[kMaxThreadNum];
+    static long[] get_next_extra_param_3_total = new long[kMaxThreadNum];
 
     public MeasureTools() {
         for (int i = 0; i < kMaxThreadNum; i++) {
@@ -277,9 +304,9 @@ public class MeasureTools {
             txn_total[thread_id] = ((System.nanoTime() - txn_start[thread_id]));
 
 //            metrics.index_ratio[thread_id].addValue(index_time[thread_id] / txn_total[thread_id]);
-            metrics.useful_ratio[thread_id].addValue((access_total[thread_id]) / txn_total[thread_id]);
-            metrics.lock_ratio[thread_id].addValue(0);
-            metrics.sync_ratio[thread_id].addValue((txn_processing_total[thread_id] - pushdown_usefultime) / txn_total[thread_id]);
+//            metrics.useful_ratio[thread_id].addValue((access_total[thread_id]) / txn_total[thread_id]);
+//            metrics.lock_ratio[thread_id].addValue(0);
+//            metrics.sync_ratio[thread_id].addValue((txn_processing_total[thread_id] - pushdown_usefultime) / txn_total[thread_id]);
         }
     }
 
@@ -293,26 +320,140 @@ public class MeasureTools {
             txn_processing_total[thread_id] = System.nanoTime() - txn_processing_start[thread_id];
     }
 
+//    public static void BEGIN_CALCULATE_LEVELS_TIME_MEASURE(int thread_id) { // transaction processing time
+//        if (profile_start[thread_id])
+//            calculate_levels_start[thread_id] = System.nanoTime();
+//    }
+//
+//    public static void END_CALCULATE_LEVELS_TIME_MEASURE(int thread_id) {
+//        if (profile_start[thread_id])
+//            calculate_levels_total[thread_id] = System.nanoTime() - calculate_levels_start[thread_id];
+//    }
 
-    public static void BEGIN_CALCULATE_LEVELS_TIME_MEASURE(int thread_id) { // transaction processing time
+
+    public static void BEGIN_SUBMIT_TOTAL_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
-            calculate_levels_start[thread_id] = System.nanoTime();
+            submit_time_start[thread_id] = System.nanoTime();
     }
 
-    public static void END_CALCULATE_LEVELS_TIME_MEASURE(int thread_id) {
+    public static void END_SUBMIT_TOTAL_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
-            calculate_levels_total[thread_id] = System.nanoTime() - calculate_levels_start[thread_id];
+            submit_time_total[thread_id] += System.nanoTime() - submit_time_start[thread_id];
+    }
+    public static void BEGIN_SUBMIT_BARRIER_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            submit_time_barrier_start[thread_id] = System.nanoTime();
     }
 
-    public static void BEGIN_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(int thread_id) { // transaction processing time
+    public static void END_SUBMIT_BARRIER_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
-            iterative_ocs_submit_start[thread_id] = System.nanoTime();
+            submit_time_barrier_total[thread_id] += System.nanoTime() - submit_time_barrier_start[thread_id];
+    }
+    public static void BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            submit_time_overhead_start[thread_id] = System.nanoTime();
     }
 
-    public static void END_ITERATIVE_OCS_SUBMIT_TIME_MEASURE(int thread_id) {
+    public static void END_SUBMIT_OVERHEAD_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
-            iterative_ocs_submit_total[thread_id] += System.nanoTime() - iterative_ocs_submit_start[thread_id];
+            submit_time_overhead_total[thread_id] += System.nanoTime() - submit_time_overhead_start[thread_id];
     }
+    public static void BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            submit_time_extra_param_1_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            submit_time_extra_param_1_total[thread_id] += System.nanoTime() - submit_time_extra_param_1_start[thread_id];
+    }
+    public static void BEGIN_SUBMIT_EXTRA_PARAM_2_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            submit_time_extra_param_2_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_SUBMIT_EXTRA_PARAM_2_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            submit_time_extra_param_2_total[thread_id] += System.nanoTime() - submit_time_extra_param_2_start[thread_id];
+    }
+    public static void BEGIN_SUBMIT_EXTRA_PARAM_3_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            submit_time_extra_param_3_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_SUBMIT_EXTRA_PARAM_3_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            submit_time_extra_param_3_total[thread_id] += System.nanoTime() - submit_time_extra_param_3_start[thread_id];
+    }
+
+    public static void BEGIN_GET_NEXT_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_time_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_GET_NEXT_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_time_total[thread_id] += System.nanoTime() - get_next_time_start[thread_id];
+    }
+    public static void BEGIN_GET_NEXT_OVERHEAD_TIME_MEASURE(int thread_id) { // transaction processing time
+        if (profile_start[thread_id])
+            get_next_overhead_time_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_GET_NEXT_OVERHEAD_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_overhead_time_total[thread_id] += System.nanoTime() - get_next_overhead_time_start[thread_id];
+    }
+    public static void BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_barrier_time_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_GET_NEXT_BARRIER_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_barrier_time_total[thread_id] += System.nanoTime() - get_next_barrier_time_start[thread_id];
+    }
+    public static void BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_thread_wait_time_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_thread_wait_time_total[thread_id] += System.nanoTime() - get_next_thread_wait_time_start[thread_id];
+    }
+    public static void BEGIN_GET_NEXT_EXTRA_PARAM_1_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_extra_param_1_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_GET_NEXT_EXTRA_PARAM_1_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_extra_param_1_total[thread_id] += System.nanoTime() - get_next_extra_param_1_start[thread_id];
+    }
+    public static void BEGIN_GET_NEXT_EXTRA_PARAM_2_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_extra_param_2_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_GET_NEXT_EXTRA_PARAM_2_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_extra_param_2_total[thread_id] += System.nanoTime() - get_next_extra_param_2_start[thread_id];
+    }
+
+    public static void BEGIN_GET_NEXT_EXTRA_PARAM_3_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_extra_param_3_start[thread_id] = System.nanoTime();
+    }
+
+    public static void END_GET_NEXT_EXTRA_PARAM_3_TIME_MEASURE(int thread_id) {
+        if (profile_start[thread_id])
+            get_next_extra_param_3_total[thread_id] += System.nanoTime() - get_next_extra_param_3_start[thread_id];
+    }
+
+
+
+
 
     public static void BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(int thread_id) { // transaction processing time
         if (profile_start[thread_id])
@@ -375,6 +516,22 @@ public class MeasureTools {
             metrics.dependency_outoforder_overhead_total[thread_id].addValue(dependency_outoforder_overhead_total[thread_id] / numberOfTransactionalEvents);
             metrics.db_access_time[thread_id].addValue(db_access_time[thread_id] / numberOfTransactionalEvents);
 
+
+            metrics.submit_time_total[thread_id].addValue(submit_time_total[thread_id] / numberOfTransactionalEvents);
+            metrics.submit_time_barrier_total[thread_id].addValue(submit_time_barrier_total[thread_id] / numberOfTransactionalEvents);
+            metrics.submit_time_overhead_total[thread_id].addValue(submit_time_overhead_total[thread_id] / numberOfTransactionalEvents);
+            metrics.submit_time_extra_param_1_total[thread_id].addValue(submit_time_extra_param_1_total[thread_id] / numberOfTransactionalEvents);
+            metrics.submit_time_extra_param_2_total[thread_id].addValue(submit_time_extra_param_2_total[thread_id] / numberOfTransactionalEvents);
+            metrics.submit_time_extra_param_3_total[thread_id].addValue(submit_time_extra_param_3_total[thread_id] / numberOfTransactionalEvents);
+
+            metrics.get_next_time_total[thread_id].addValue(get_next_time_total[thread_id] / numberOfTransactionalEvents);
+            metrics.get_next_overhead_time_total[thread_id].addValue(get_next_overhead_time_total[thread_id] / numberOfTransactionalEvents);
+            metrics.get_next_barrier_time_total[thread_id].addValue(get_next_barrier_time_total[thread_id] / numberOfTransactionalEvents);
+            metrics.get_next_thread_wait_time_total[thread_id].addValue(get_next_thread_wait_time_total[thread_id] / numberOfTransactionalEvents);
+            metrics.get_next_extra_param_1_total[thread_id].addValue(get_next_extra_param_1_total[thread_id] / numberOfTransactionalEvents);
+            metrics.get_next_extra_param_2_total[thread_id].addValue(get_next_extra_param_2_total[thread_id] / numberOfTransactionalEvents);
+            metrics.get_next_extra_param_3_total[thread_id].addValue(get_next_extra_param_3_total[thread_id] / numberOfTransactionalEvents);
+
 //            metrics.average_tp_core[thread_id].addValue(tp_core[thread_id] / numberOfTransactionalEvents);
 //            metrics.average_tp_submit[thread_id].addValue(tp_submit[thread_id] / numberOfTransactionalEvents);
 //            metrics.average_txn_construct[thread_id].addValue((double) pre_txn_total[thread_id] / numberOfTransactionalEvents);
@@ -392,6 +549,21 @@ public class MeasureTools {
             access_total[thread_id] = 0;
             calculate_levels_total[thread_id] = 0;
             iterative_processing_useful_total[thread_id] = 0;
+
+            submit_time_total[thread_id] = 0;
+            submit_time_barrier_total[thread_id] = 0;
+            submit_time_overhead_total[thread_id] = 0;
+            submit_time_extra_param_1_total[thread_id] = 0;
+            submit_time_extra_param_2_total[thread_id] = 0;
+            submit_time_extra_param_3_total[thread_id] = 0;
+
+            get_next_time_total[thread_id] = 0;
+            get_next_overhead_time_total[thread_id] = 0;
+            get_next_barrier_time_total[thread_id] = 0;
+            get_next_thread_wait_time_total[thread_id] = 0;
+            get_next_extra_param_1_total[thread_id] = 0;
+            get_next_extra_param_2_total[thread_id] = 0;
+            get_next_extra_param_3_total[thread_id] = 0;
 
             pre_txn_total[thread_id] = 0;
             create_oc_total[thread_id] = 0;

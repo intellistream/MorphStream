@@ -301,12 +301,12 @@ public class sesameRunner extends abstractRunner {
                 file.createNewFile();
 
                 BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()));
-                fileWriter.write("thread_id, batch_id, total_tm, pre_process_tm, oc_creation_tm, d_recording_tm, delayed_d_recording_tm, txn_tm, iterative_processing_tm, useful_iterative_processing_tm, level_calc_tm, barrier_tm, no_of_transactions, no_of_ocs,\n");
+                fileWriter.write("thread_id, batch_id, total_tm, pre_process_tm, oc_creation_tm, d_recording_tm, delayed_d_recording_tm, txn_tm, iterative_processing_tm, useful_iterative_processing_tm, level_calc_tm, barrier_tm, no_of_transactions, no_of_ocs, submit_ttl_tm, submit_barrier_tm, submit_overhead_tm, submit_prm_1_tm, submit_prm_2_tm, submit_prm_3_tm, get_next_ttl_tm, get_next_overhead_tm, get_next_barrier_tm, get_next_thread_wait_tm, get_next_prm_1_tm, get_next_prm_2_tm, get_next_prm_3_tm,\n");
 
                 for (int threadId = 0; threadId < tthread; threadId++) {
                     long batches = metrics.total[threadId].getN();
                     for(int batch=0; batch<batches; batch++) {
-                        fileWriter.write(String.format("%d, %d, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f,\n"
+                        fileWriter.write(String.format("%d, %d, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f,\n"
                                 , threadId
                                 , batch
                                 , metrics.total[threadId].getElement(batch)
@@ -320,7 +320,22 @@ public class sesameRunner extends abstractRunner {
                                 , metrics.calculate_levels_total[threadId].getElement(batch)
                                 , metrics.barriers_total[threadId].getElement(batch)
                                 , metrics.numberOf_transactional_events_processed[threadId].getElement(batch)
-                                , metrics.number_of_ocs_processed[threadId].getElement(batch) ));
+                                , metrics.number_of_ocs_processed[threadId].getElement(batch)
+
+                                , metrics.submit_time_total[threadId].getElement(batch)
+                                , metrics.submit_time_barrier_total[threadId].getElement(batch)
+                                , metrics.submit_time_overhead_total[threadId].getElement(batch)
+                                , metrics.submit_time_extra_param_1_total[threadId].getElement(batch)
+                                , metrics.submit_time_extra_param_2_total[threadId].getElement(batch)
+                                , metrics.submit_time_extra_param_3_total[threadId].getElement(batch)
+
+                                , metrics.get_next_time_total[threadId].getElement(batch)
+                                , metrics.get_next_overhead_time_total[threadId].getElement(batch)
+                                , metrics.get_next_barrier_time_total[threadId].getElement(batch)
+                                , metrics.get_next_thread_wait_time_total[threadId].getElement(batch)
+                                , metrics.get_next_extra_param_1_total[threadId].getElement(batch)
+                                , metrics.get_next_extra_param_2_total[threadId].getElement(batch)
+                                , metrics.get_next_extra_param_3_total[threadId].getElement(batch)));
                     }
                 }
                 fileWriter.close();

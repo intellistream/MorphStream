@@ -54,17 +54,17 @@ public class BaseLineScheduler implements IScheduler {
                 currentDLevelToProcess[threadId]+=1;
                 oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
 
-                MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
+                MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(currentDLevelToProcess[threadId]);
-                MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
+                MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
             }
             scheduledOcsCount[threadId] += 1;
         } else {
-            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
+            MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
+            MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
         }
         return oc; // if a null is returned, it means, we are done with level!
     }

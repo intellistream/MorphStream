@@ -27,7 +27,9 @@ public class NoBarrierRoundRobinScheduler extends RoundRobinScheduler {
             indexOfNextOCToProcess[threadId] = threadId;
             oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         }
+        MeasureTools.BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
         while(oc!=null && oc.hasDependency());
+        MeasureTools.END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
         return oc;
     }
 

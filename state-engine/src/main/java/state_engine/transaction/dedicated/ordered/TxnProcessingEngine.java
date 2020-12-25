@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import state_engine.common.Operation;
 import state_engine.common.OperationChain;
 import state_engine.content.T_StreamContent;
+import state_engine.profiler.MeasureTools;
 import state_engine.profiler.Metrics;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.DataBox;
@@ -401,12 +402,18 @@ public final class TxnProcessingEngine {
 
     public void start_evaluation(int threadId, long mark_ID) throws InterruptedException {
 
+        MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
         OperationChain oc = scheduler.next(threadId);
+        MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
         while(oc!=null) {
-//            System.out.println(String.format("Thread %d processed %s oc", threadId, oc.getStringId()));
+            MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
             MyList<Operation> operations = oc.getOperations();
             process(operations, mark_ID);//directly apply the computation.
+            MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
+
+            MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
             oc = scheduler.next(threadId);
+            MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
         }
     }
 
@@ -468,52 +475,6 @@ public final class TxnProcessingEngine {
 //
 //        MeasureTools.REGISTER_NUMBER_OF_OC_PROCESSED(thread_Id, totalChainsProcessed);
 //    }
-
-
-    public void updateDependencyLevels(int thread_Id) {
-        Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
-        for (Holder_in_range tableHolderInRange : tablesHolderInRange) {
-            ConcurrentHashMap<String, OperationChain> ocsHolder = tableHolderInRange.rangeMap.get(thread_Id).holder_v1;
-            ConcurrentHashMap.KeySetView<String, OperationChain> keys = ocsHolder.keySet();
-            for (String key : keys) {
-                ocsHolder.get(key).updateDependencyLevel();
-            }
-        }
-    }
-
-    private void submit(Collection<Callable<Object>> callables, int thread_Id, int dependencyLevelToProcess, long mark_ID) throws InterruptedException {
-//        BEGIN_TP_SUBMIT_TIME_MEASURE(thread_Id);
-        //LOG.DEBUG(thread_Id + "\tall source marked checkpoint, starts TP evaluation for watermark bid\t" + bid);
-
-        Collection<Holder_in_range> tablesHolderInRange = holder_by_stage.values();
-        for (Holder_in_range holder_in_range : tablesHolderInRange) {
-            Holder holder = holder_in_range.rangeMap.get(thread_Id);
-            submit_task(dependencyLevelToProcess, holder, callables, mark_ID);
-        }
-//        END_TP_SUBMIT_TIME_MEASURE(thread_Id, task);
-//
-//        for (Callable<Object> callable : callables) {
-//
-//            LOG.info("Thread:" + thread_Id + " is submitting:" + ((MyList<Operation>) ((Task) callable).operation_chain).getPrimaryKey());
-//
-//
-//        }
-    }
-
-    private void evaluate(Collection<Callable<Object>> callables, int thread_Id) throws InterruptedException {
-
-        if (enable_engine) {
-            if (enable_work_partition) {
-                multi_engine.get(ThreadToEngine(thread_Id)).executor.invokeAll(callables);
-            } else
-                standalone_engine.executor.invokeAll(callables);
-        }
-        //blocking sync_ratio for all operation_chain to complete.
-        //TODO: For now, we don't know the relationship between operation_chain and transaction, otherwise, we can asynchronously return.
-//        for (Holder_in_range holder_in_range : holder_by_stage.values())
-//            holder_in_range.rangeMap.clear();
-//        callables.clear();
-    }
 
     private void submit_task(int dependencyLevelToProcess, Holder holder, Collection<Callable<Object>> callables, long mark_ID) {
 //        Instance instance = standalone_engine;//multi_engine.get(key);

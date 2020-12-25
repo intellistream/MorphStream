@@ -149,7 +149,7 @@ public class BasicBenchmark implements IBenchmark {
         loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
 
         try {
-            for (int lop=0; lop<5; lop++) {
+            for (int lop=0; lop<3; lop++) {
                 createSesameRunner(args, lop);
                 sesameRunner.run();
             }

@@ -427,12 +427,14 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
 
+        MeasureTools.BEGIN_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
         ArrayList<OperationChain> ocs = new ArrayList<>();
         Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
         for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
             ocs.addAll(tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
         }
         instance.getScheduler().submitOcs(thread_Id, ocs);
+        MeasureTools.END_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
 
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.

@@ -36,6 +36,24 @@ public class Metrics {
     public DescriptiveStatistics[] useful_ratio = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
     public DescriptiveStatistics[] sync_ratio = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
     public DescriptiveStatistics[] lock_ratio = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+
+
+    public DescriptiveStatistics[] submit_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] submit_time_barrier_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] submit_time_overhead_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] submit_time_extra_param_1_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] submit_time_extra_param_2_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] submit_time_extra_param_3_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+
+    public DescriptiveStatistics[] get_next_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] get_next_overhead_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] get_next_barrier_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] get_next_thread_wait_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] get_next_extra_param_1_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] get_next_extra_param_2_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+    public DescriptiveStatistics[] get_next_extra_param_3_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+
+
     // Op id, descriptive
 //    public Map<String, DescriptiveStatistics> useful_ratio = new HashMap<>();//useful_work time.
 //    public Map<String, DescriptiveStatistics> abort_ratio = new HashMap<>();//abort
@@ -104,5 +122,21 @@ public class Metrics {
         average_txn_construct[task] = new DescriptiveStatistics();
         average_tp_submit[task] = new DescriptiveStatistics();
         average_tp_w_syn[task] = new DescriptiveStatistics();
+
+        submit_time_total[task] = new DescriptiveStatistics();
+        submit_time_barrier_total[task] = new DescriptiveStatistics();
+        submit_time_overhead_total[task] = new DescriptiveStatistics();
+        submit_time_extra_param_1_total[task] = new DescriptiveStatistics();
+        submit_time_extra_param_2_total[task] = new DescriptiveStatistics();
+        submit_time_extra_param_3_total[task] = new DescriptiveStatistics();
+
+        get_next_time_total[task] = new DescriptiveStatistics();
+        get_next_overhead_time_total[task] = new DescriptiveStatistics();
+        get_next_barrier_time_total[task] = new DescriptiveStatistics();
+        get_next_thread_wait_time_total[task] = new DescriptiveStatistics();
+        get_next_extra_param_1_total[task] = new DescriptiveStatistics();
+        get_next_extra_param_2_total[task] = new DescriptiveStatistics();
+        get_next_extra_param_3_total[task] = new DescriptiveStatistics();
+
     }
 }

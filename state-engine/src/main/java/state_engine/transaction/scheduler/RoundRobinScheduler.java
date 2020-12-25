@@ -50,7 +50,9 @@ public class RoundRobinScheduler implements IScheduler {
         }
 
         // These sync blocks might act like a barrier.
+        MeasureTools.BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
         synchronized (maxDLevel) {
+            MeasureTools.END_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
             if(maxDLevel < localMaxDLevel)
                 maxDLevel = localMaxDLevel;
         }
@@ -60,7 +62,9 @@ public class RoundRobinScheduler implements IScheduler {
 
         for(int dLevel : dLevelBasedOCBucketsPerThread.keySet()) {
             List<OperationChain> dLevelList = dLevelBasedOCBuckets.get(dLevel);
+            MeasureTools.BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
             synchronized (dLevelList) {
+                MeasureTools.END_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
                 dLevelList.addAll(dLevelBasedOCBucketsPerThread.get(dLevel));
             }
             dLevelBasedOCBucketsPerThread.get(dLevel).clear();
@@ -83,16 +87,16 @@ public class RoundRobinScheduler implements IScheduler {
                 indexOfNextOCToProcess[threadId] = threadId;
                 oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
 
-                MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
+                MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(currentDLevelToProcess[threadId]);
-                MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
+                MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
             }
         } else {
-            MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
+            MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
+            MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
         }
 
         return oc;

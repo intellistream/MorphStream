@@ -26,41 +26,38 @@ public class SmartNoBarrierSWSchedulerv1 extends NoBarrierSharedWorkload {
     @Override
     public void submitOcs(int threadId, Collection<OperationChain> ocs) {
 
-        int localMaxDLevel = 0;
         HashMap<Integer, List<OperationChain>> currentThreadOCsBucket = dLevelBasedOCBucketsPerThread.get(threadId);
         for (OperationChain oc : ocs) {
             oc.updateDependencyLevel();
             int dLevel = oc.getDependencyLevel();
 
-            if(localMaxDLevel < dLevel)
-                localMaxDLevel = dLevel;
+            if(maxDLevelPerThread[threadId] < dLevel)
+                maxDLevelPerThread[threadId] = dLevel;
 
             if(!currentThreadOCsBucket.containsKey(dLevel))
                 currentThreadOCsBucket.put(dLevel, new ArrayList<>());
             currentThreadOCsBucket.get(dLevel).add(oc);
         }
 
-//        for(int lop=0; lop<totalThreads; lop++) {
-//            if(maxDLevel < maxDLevelPerThread[lop])
-//                maxDLevel = maxDLevelPerThread[lop];
-//        }
-
-        synchronized (maxDLevel) {
-            if(maxDLevel < localMaxDLevel)
-                maxDLevel = localMaxDLevel;
-        }
-
-        MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
+        MeasureTools.BEGIN_SUBMIT_BARRIER_TIME_MEASURE(threadId);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-        MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
+        MeasureTools.END_SUBMIT_BARRIER_TIME_MEASURE(threadId);
+
+        for(int lop=0; lop<totalThreads; lop++) {
+            if(maxDLevel < maxDLevelPerThread[lop])
+                maxDLevel = maxDLevelPerThread[lop];
+        }
 
         for(int dLevel = threadId; dLevel<=maxDLevel; dLevel+=totalThreads) {
             if(!dLevelBasedOCBuckets.containsKey(dLevel))
                 dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
             for(int localThreadId=0; localThreadId<totalThreads; localThreadId++) {
                 ocs = dLevelBasedOCBucketsPerThread.get(localThreadId).get(dLevel);
-                for(OperationChain oc: ocs)
+                for(OperationChain oc: ocs) {
+                    MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
                     insertInOrder(oc, oc.getIndependentOpsCount(), dLevelBasedOCBuckets.get(dLevel));
+                    MeasureTools.END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
+                }
             }
         }
     }
