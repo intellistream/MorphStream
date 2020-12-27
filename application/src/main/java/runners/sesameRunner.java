@@ -281,13 +281,13 @@ public class sesameRunner extends abstractRunner {
             String statsFolderPattern = rootPath
                     +OsUtils.osWrapperPostFix("..")
                     +OsUtils.osWrapperPostFix("stats")
+                    +OsUtils.osWrapperPostFix("scheduler = %s")
                     +OsUtils.osWrapperPostFix("depth = %d")
                     +OsUtils.osWrapperPostFix("threads = %d")
                     +OsUtils.osWrapperPostFix("total_batches = %d")
-                    +OsUtils.osWrapperPostFix("events_per_batch = %d")
-                    +OsUtils.osWrapperPostFix("scheduler = %s");
+                    +OsUtils.osWrapperPostFix("events_per_batch = %d");
 
-            String statsFolderPath = String.format(statsFolderPattern, numberOfDLevels, tthread, numberOfBatches, totalEventsPerBatch, scheduler);
+            String statsFolderPath = String.format(statsFolderPattern, scheduler, numberOfDLevels, tthread, numberOfBatches, totalEventsPerBatch);
 
             try {
 
@@ -418,22 +418,22 @@ public class sesameRunner extends abstractRunner {
 //            System.out.println("**************************************");
             System.out.println("******* STATS BEGIN IN SECONDS *******");
 
-//            System.out.println(String.format("Total time                                                                : %.3f seconds", (total)/1000000.0f));
-//            System.out.println(String.format("Time spent in pre transaction                                             : %.3f seconds", (pre_txn_time/1000000.0f)));
-            System.out.println(String.format("Time spent in transaction processing                                      : %.3f seconds", (txn_total/1000000.0f)));
-//            System.out.println(String.format("Other time (read input, dump results to a file)                           : %.3f seconds", ((total-pre_txn_time-txn_total)/1000000.0f)));
+//            System.out.println(String.format("Total time                                                                : %.3f seconds", (total)/1000000000.0f));
+//            System.out.println(String.format("Time spent in pre transaction                                             : %.3f seconds", (pre_txn_time/1000000000.0f)));
+            System.out.println(String.format("Time spent in transaction processing                                      : %.3f seconds", (txn_total/1000000000.0f)));
+//            System.out.println(String.format("Other time (read input, dump results to a file)                           : %.3f seconds", ((total-pre_txn_time-txn_total)/1000000000.0f)));
 
 //            System.out.println("******* PRE_TXN BREAKDOWN *******");
-//            System.out.println(String.format("Time spent creating Operation Chains                                      : %.3f seconds", (create_oc_time/1000000.0f)));
-//            System.out.println(String.format("Time spent recording data dependencies                                    : %.3f seconds", (dependency_checking_time/1000000.0f)));
-//            System.out.println(String.format("Time spent of recording data dependencies for out of transaction checking : %.3f seconds", (dependency_outoforder_overhead_time/1000000.0f)));
+//            System.out.println(String.format("Time spent creating Operation Chains                                      : %.3f seconds", (create_oc_time/1000000000.0f)));
+//            System.out.println(String.format("Time spent recording data dependencies                                    : %.3f seconds", (dependency_checking_time/1000000000.0f)));
+//            System.out.println(String.format("Time spent of recording data dependencies for out of transaction checking : %.3f seconds", (dependency_outoforder_overhead_time/1000000000.0f)));
 //
 //            System.out.println("******* TRANSACTION PROCESSING BREAKDOWN *******");
-//            System.out.println(String.format("Time spent processing transactions                                        : %.3f seconds", (txn_processing/1000000.0f)));
-//            System.out.println(String.format("Time spent on state accessing                                             : %.3f seconds", (state_access/1000000.0f)));
-//            System.out.println(String.format("Time spent calculating levels                                             : %.3f seconds", (calculate_levels/1000000.0f)));
-//            System.out.println(String.format("Time spent on iterative processing                                        : %.3f seconds", (iterative_processing_useful/1000000.0f)));
-//            System.out.println(String.format("Threads wait time and other overhead                                      : %.3f seconds", ((txn_processing-calculate_levels-iterative_processing_useful)/1000000.0f)));
+//            System.out.println(String.format("Time spent processing transactions                                        : %.3f seconds", (txn_processing/1000000000.0f)));
+//            System.out.println(String.format("Time spent on state accessing                                             : %.3f seconds", (state_access/1000000000.0f)));
+//            System.out.println(String.format("Time spent calculating levels                                             : %.3f seconds", (calculate_levels/1000000000.0f)));
+//            System.out.println(String.format("Time spent on iterative processing                                        : %.3f seconds", (iterative_processing_useful/1000000000.0f)));
+//            System.out.println(String.format("Threads wait time and other overhead                                      : %.3f seconds", ((txn_processing-calculate_levels-iterative_processing_useful)/1000000000.0f)));
 
             System.out.println("******* STATS ENDS *******");
             //used in TSTREAM.

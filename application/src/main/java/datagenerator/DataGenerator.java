@@ -59,6 +59,7 @@ public class DataGenerator {
         File file = new File(dataConfig.rootPath);
         if(file.exists()) {
             System.out.println("Data already exists.. skipping data generation...");
+            System.out.println(dataConfig.rootPath);
             return;
         }
 

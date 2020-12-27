@@ -72,8 +72,6 @@ public class SOURCE_CONTROL {
                 updateThreadBarrierOnDLevel(0);
             }
             startBarrier.await();
-            if(threadId==0)
-                startBarrier.reset();
         } catch (Exception e) {
             e.printStackTrace();
         }

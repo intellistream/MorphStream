@@ -53,11 +53,12 @@ public class SmartNoBarrierRRSchedulerv1 extends NoBarrierRoundRobinScheduler {
                 dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
             for(int localThreadId=0; localThreadId<totalThreads; localThreadId++) {
                 ocs = dLevelBasedOCBucketsPerThread.get(localThreadId).get(dLevel);
-                for(OperationChain oc: ocs) {
-                    MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
-                    insertInOrder(oc, oc.getIndependentOpsCount(), dLevelBasedOCBuckets.get(dLevel));
-                    MeasureTools.END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
-                }
+                if(ocs!=null)
+                    for(OperationChain oc: ocs) {
+                        MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
+                        insertInOrder(oc, oc.getIndependentOpsCount(), dLevelBasedOCBuckets.get(dLevel));
+                        MeasureTools.END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
+                    }
             }
         }
     }

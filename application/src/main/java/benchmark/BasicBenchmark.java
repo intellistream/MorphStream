@@ -81,8 +81,8 @@ public class BasicBenchmark implements IBenchmark {
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(
                             digest.digest(
-                                    String.format("%d_%s", dataConfig.tuplesPerBatch*dataConfig.totalBatches,
-                                            Arrays.toString(dataConfig.dependenciesDistributionForLevels))
+                                    String.format("%d_%s_%s", dataConfig.tuplesPerBatch*dataConfig.totalBatches,
+                                            Arrays.toString(dataConfig.dependenciesDistributionForLevels), dataConfig.scheduler)
                                             .getBytes("UTF-8"))));
         } catch (Exception e) {
             e.printStackTrace();
@@ -136,7 +136,7 @@ public class BasicBenchmark implements IBenchmark {
                 +OsUtils.osWrapperPostFix("events_per_batch = %d");
 
         String statsFolderPath = String.format(statsFolderPattern, numberOfLevels, tt, totalBatches, tuplesPerBatch);
-        File file = new File(statsFolderPath+"iteration_9.csv");
+        File file = new File(statsFolderPath+"iteration_2.csv");
         if(!file.exists()) {
 //            System.out.println("Stats for following execution already exists at,");
 //            System.out.println(statsFolderPath);

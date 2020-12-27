@@ -5,15 +5,13 @@ import state_engine.profiler.MeasureTools;
 import state_engine.utils.SOURCE_CONTROL;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SharedWorkloadScheduler implements IScheduler {
 
-    protected ConcurrentHashMap<Integer, List<OperationChain>> dLevelBasedOCBuckets;
+    protected ConcurrentHashMap<Integer, Queue<OperationChain>> dLevelBasedOCBuckets;
 
     protected int[] currentDLevelToProcess;
     protected int totalThreads;
@@ -52,10 +50,11 @@ public class SharedWorkloadScheduler implements IScheduler {
         }
 
         for(int dLevel : dLevelBasedOCBucketsPerThread.keySet())
-            dLevelBasedOCBuckets.putIfAbsent(dLevel, new ArrayList<>());
+            if(!dLevelBasedOCBuckets.contains(dLevel))
+                dLevelBasedOCBuckets.putIfAbsent(dLevel, new ConcurrentLinkedQueue<>());
 
         for(int dLevel : dLevelBasedOCBucketsPerThread.keySet()) {
-            List<OperationChain> dLevelList = dLevelBasedOCBuckets.get(dLevel);
+            Queue<OperationChain> dLevelList = dLevelBasedOCBuckets.get(dLevel);
             MeasureTools.BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
             synchronized (dLevelList) {
                 MeasureTools.END_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
@@ -81,36 +80,25 @@ public class SharedWorkloadScheduler implements IScheduler {
                 oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
                 MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(currentDLevelToProcess[threadId]);
                 MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
             }
-        }
-
-        if(areAllOCsScheduled(threadId)) {
-            MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
-            SOURCE_CONTROL.getInstance().oneThreadCompleted();
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
         }
 
         return oc;
     }
 
     protected OperationChain getOcForThreadAndDLevel(int threadId, int dLevel) {
-        List<OperationChain> ocs = dLevelBasedOCBuckets.get(dLevel);
+        Queue<OperationChain> ocs = dLevelBasedOCBuckets.get(dLevel);
         OperationChain oc = null;
-        if(ocs!=null)
-            synchronized (ocs) {
-                if(ocs.size()>0)
-                    oc = ocs.remove(ocs.size()-1); // TODO: This might be costly, maybe we should stop removing and using a counter or use a synchronized queue?
-            }
+        if(ocs!=null && ocs.size()>0)
+            oc = ocs.poll(); // TODO: This might be costly, maybe we should stop removing and using a counter or use a synchronized queue?
         return oc;
     }
 
     @Override
     public synchronized boolean areAllOCsScheduled(int threadId){
         return currentDLevelToProcess[threadId] == maxDLevel &&
-                dLevelBasedOCBuckets.get(maxDLevel).size()==0;
+                dLevelBasedOCBuckets.get(maxDLevel).isEmpty();
     }
 
     @Override

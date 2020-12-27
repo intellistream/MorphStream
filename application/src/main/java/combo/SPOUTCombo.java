@@ -103,6 +103,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                         }
                     }
                 }
+
                 if (counter == the_end) {
                     SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                     if (taskId == 0)
@@ -110,7 +111,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 }
             }
         } catch (DatabaseException | BrokenBarrierException e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 

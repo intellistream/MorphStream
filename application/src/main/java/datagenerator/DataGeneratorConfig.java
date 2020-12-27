@@ -24,6 +24,10 @@ public class DataGeneratorConfig {
     @Parameter(names = {"-tt"}, description = "Parallelism for tstream.")
     public Integer totalThreads = 2;
 
+
+    @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
+    public String scheduler = "BL";
+
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
     public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
     public String idsPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
@@ -46,10 +50,10 @@ public class DataGeneratorConfig {
             dependenciesDistributionForLevels[index] = 1f / (numberOfDLevels * 1.0f);
         }
 
-        System.out.println("Demanded distribution...");
-        for(int index=0; index<numberOfDLevels; index++) {
-            System.out.print(String.format("%.2f; ",dependenciesDistributionForLevels[index]));
-        }
+//        System.out.println("Demanded distribution...");
+//        for(int index=0; index<numberOfDLevels; index++) {
+//            System.out.print(String.format("%.2f; ",dependenciesDistributionForLevels[index]));
+//        }
 
         System.out.println("");
         System.out.println(String.format("totalEventsPerBatch: %d", tuplesPerBatch));

@@ -4,10 +4,8 @@ import state_engine.common.OperationChain;
 import state_engine.profiler.MeasureTools;
 import state_engine.utils.SOURCE_CONTROL;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SmartNoBarrierSWSchedulerv1 extends NoBarrierSharedWorkload {
 
@@ -50,15 +48,19 @@ public class SmartNoBarrierSWSchedulerv1 extends NoBarrierSharedWorkload {
 
         for(int dLevel = threadId; dLevel<=maxDLevel; dLevel+=totalThreads) {
             if(!dLevelBasedOCBuckets.containsKey(dLevel))
-                dLevelBasedOCBuckets.put(dLevel, new ArrayList<>());
+                dLevelBasedOCBuckets.put(dLevel, new ConcurrentLinkedQueue<>());
+            ArrayList<OperationChain> orderedOcs = new ArrayList<>();
             for(int localThreadId=0; localThreadId<totalThreads; localThreadId++) {
                 ocs = dLevelBasedOCBucketsPerThread.get(localThreadId).get(dLevel);
-                for(OperationChain oc: ocs) {
-                    MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
-                    insertInOrder(oc, oc.getIndependentOpsCount(), dLevelBasedOCBuckets.get(dLevel));
-                    MeasureTools.END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
-                }
+                if(ocs!=null)
+                    for(OperationChain oc: ocs) {
+                        MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
+                        insertInOrder(oc, oc.getIndependentOpsCount(), orderedOcs);
+                        MeasureTools.END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
+                    }
             }
+            Collections.reverse(orderedOcs);
+            dLevelBasedOCBuckets.get(dLevel).addAll(orderedOcs);
         }
     }
 

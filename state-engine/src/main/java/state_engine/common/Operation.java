@@ -35,6 +35,10 @@ public class Operation implements Comparable<Operation> {
     public boolean[] success;
     public String name;
 
+    private Queue<Operation> dependsUpon = new ConcurrentLinkedQueue<>();
+    private Queue<Operation> dependents = new ConcurrentLinkedQueue<>();
+    private IOpConflictResolutionListener opConflictResolutionListener;
+    private OperationChain oc;
 
     public Operation(String table_name, TxnContext txn_context, long bid, MetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref, Function function) {
         this.table_name = table_name;
@@ -165,15 +169,11 @@ public class Operation implements Comparable<Operation> {
         } else
             return Long.compare(this.bid, operation.bid);
     }
+
     public void set_worker(String name) {
         assert this.name == null;
         this.name = name;
     }
-
-    private Queue<Operation> dependsUpon;
-    private Queue<Operation> dependents;
-    private IOpConflictResolutionListener opConflictResolutionListener;
-    private OperationChain oc;
 
     public void setOc(OperationChain oc) {
         this.oc = oc;
@@ -184,15 +184,11 @@ public class Operation implements Comparable<Operation> {
     }
 
     public void addDependency(IOpConflictResolutionListener opConflictResolutionListener, Operation dependencyOp) {
-        if(this.dependsUpon==null)
-            this.dependsUpon = new ConcurrentLinkedQueue<>();
         this.dependsUpon.add(dependencyOp);
         this.opConflictResolutionListener = opConflictResolutionListener; // this should always be the same.
     }
 
     public void addDependent(IOpConflictResolutionListener opConflictResolutionListener, Operation dependent) {
-        if(this.dependents==null)
-            this.dependents = new ConcurrentLinkedQueue<>();
         this.dependents.add(dependent);
         this.opConflictResolutionListener = opConflictResolutionListener; // this should always be the same.
     }
@@ -203,15 +199,11 @@ public class Operation implements Comparable<Operation> {
     }
 
     public void notifyOpProcessed() {
-        if(this.dependents==null)
-            return;
-        Iterator<Operation> dependentsIterator = dependents.iterator();
-        while(dependentsIterator.hasNext()) {
-            Operation op = dependentsIterator.next();
+        while(!dependents.isEmpty()) {
+            Operation op = dependents.poll();
             op.onDependencyResolved(this);
             opConflictResolutionListener.onDependentResolved(op, this);
         }
-        dependents.clear();
     }
 
     public interface IOpConflictResolutionListener {

@@ -328,8 +328,7 @@ public final class TxnProcessingEngine {
 
         Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
         while (operation!=null) {
-            if (operation != null)
-                process(operation, mark_ID, false);
+            process(operation, mark_ID, false);
             operation = operation_chain.pollFirst();
         }//loop.
 //        if (enable_work_stealing) {

@@ -423,6 +423,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     @Override
     public void start_evaluate(int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
 
+
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);

@@ -15,7 +15,7 @@ public class NoBarrierSharedWorkload extends SharedWorkloadScheduler {
         while(oc==null) {
             if(areAllOCsScheduled(threadId))
                 break;
-            currentDLevelToProcess[threadId]+=1;
+            currentDLevelToProcess[threadId] += 1;
             oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         }
         MeasureTools.BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
