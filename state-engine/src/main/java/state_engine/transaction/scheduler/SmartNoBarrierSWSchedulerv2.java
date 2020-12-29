@@ -4,7 +4,6 @@ import state_engine.common.OperationChain;
 import state_engine.profiler.MeasureTools;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -24,32 +23,15 @@ public class SmartNoBarrierSWSchedulerv2 implements IScheduler, OperationChain.I
         totalProcessed = new AtomicInteger(0);
     }
 
-//    @Override
-//    public void submitOcs(int threadId, Collection<OperationChain> ocs) {
-//        for (OperationChain oc : ocs) {
-//            oc.updateDependencyLevel();
-//            int dLevel = oc.getDependencyLevel();
-//            if(dLevel==0) {
-//                if(oc.hasDependents()) {
-//                    withDependents.add(oc);
-//                } else {
-//                    leftOvers.add(oc);
-//                }
-//            } else {
-//                oc.setOnOperationChainChangeListener(this);
-//            }
-//        }
-//        totalSubmitted.addAndGet(ocs.size());
-//    }
-
     @Override
     public void submitOcs(int threadId, Collection<OperationChain> ocs) {
+
         for (OperationChain oc : ocs) {
-            if(!oc.hasDependency() && oc.hasDependents()) {
+            if(!oc.hasDependency() && oc.hasDependents())
                 withDependents.add(oc);
-            } else if(!oc.hasDependency()) {
+            else if(!oc.hasDependency())
                 leftOvers.add(oc);
-            } else
+            else
                 oc.setOnOperationChainChangeListener(this);
         }
         totalSubmitted.addAndGet(ocs.size());

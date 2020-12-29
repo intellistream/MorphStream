@@ -12,7 +12,6 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     private String primaryKey;
 
     private MyList<Operation> operations;
-    private Queue<Operation> dependentOperations;
 
     private int totalOpsCount = 0;
     private int totalDependentsCount = 0;
@@ -31,7 +30,6 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         this.tableName = tableName;
         this.primaryKey = primaryKey;
         this.operations = new MyList<>(tableName, primaryKey);
-        this.dependentOperations = new ConcurrentLinkedQueue<>();
 
         this.dependsUpon = new ConcurrentHashMap<>();
         this.dependents = new ConcurrentHashMap<>();
@@ -63,7 +61,6 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         while (iterator.hasNext()) {
             Operation dependencyOp = iterator.next();
             if(dependencyOp.bid < forOp.bid) {
-                dependentOperations.add(forOp);
                 // record dependency
                 forOp.addDependency(this, dependencyOp); // I(oc) listen for my dependencies resolution.
                 addDependency(dependsUpon, dependencyOp);
@@ -109,7 +106,6 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         if(dependencyOps.isEmpty()) {
             dependsUpon.remove(dependency.getOc());
         }
-        dependentOperations.remove(dependent);
 
         if(dependsUpon.size()==0) {
             if(onDependencyResolvedListener!=null)
@@ -126,31 +122,6 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         }
     }
 
-    public int getIndependentOpsCount() {
-        Operation firstOp = operations.first();
-        if(dependentOperations.contains(firstOp))
-            return 0;
-        else if(dependentOperations.size()==0)
-            return operations.size();
-        else
-            return operations.subSet(firstOp, true, dependentOperations.poll(), false).size();
-    }
-
-    public int getImmediateResolvableDependenciesCount() {
-
-        int immediateResolvableDependenciesCount = 0;
-
-        for (OperationChain oc: dependents.keySet()) {
-            if(oc.getNumberOfDependencies()==0)
-                immediateResolvableDependenciesCount+=1;
-        }
-
-        return immediateResolvableDependenciesCount;
-    }
-
-    public int getNumberOfDependencies() {
-        return dependsUpon.size();
-    }
 
     public boolean hasDependency() {
         return dependsUpon.size()>0;
