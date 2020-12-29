@@ -121,6 +121,8 @@ public class BasicBenchmark implements IBenchmark {
 
     public void execute() {
 
+        int totalIterations = 3;
+
         int tuplesPerBatch = mDataGenerator.getDataConfig().tuplesPerBatch;
         int totalBatches = mDataGenerator.getDataConfig().totalBatches;
         int numberOfLevels = mDataGenerator.getDataConfig().numberOfDLevels;
@@ -130,13 +132,14 @@ public class BasicBenchmark implements IBenchmark {
 
         String statsFolderPattern = mDataGenerator.getDataConfig().idsPath
                 +OsUtils.osWrapperPostFix("stats")
+                +OsUtils.osWrapperPostFix("scheduler = %s")
                 +OsUtils.osWrapperPostFix("depth = %d")
                 +OsUtils.osWrapperPostFix("threads = %d")
                 +OsUtils.osWrapperPostFix("total_batches = %d")
                 +OsUtils.osWrapperPostFix("events_per_batch = %d");
 
-        String statsFolderPath = String.format(statsFolderPattern, numberOfLevels, tt, totalBatches, tuplesPerBatch);
-        File file = new File(statsFolderPath+"iteration_2.csv");
+        String statsFolderPath = String.format(statsFolderPattern, mDataGenerator.getDataConfig().scheduler, numberOfLevels, tt, totalBatches, tuplesPerBatch);
+        File file = new File(statsFolderPath+ String.format("iteration_%d.csv", (totalIterations-1)));
         if(!file.exists()) {
 //            System.out.println("Stats for following execution already exists at,");
 //            System.out.println(statsFolderPath);
@@ -149,7 +152,7 @@ public class BasicBenchmark implements IBenchmark {
         loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
 
         try {
-            for (int lop=0; lop<3; lop++) {
+            for (int lop=0; lop<totalIterations; lop++) {
                 createSesameRunner(args, lop);
                 sesameRunner.run();
             }

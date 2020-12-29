@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static state_engine.Meta.MetaTypes.AccessType.INSERT_ONLY;
 import static state_engine.transaction.impl.TxnAccess.Access;
@@ -319,12 +321,14 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 
     }
 
+    private ConcurrentHashMap<String, OperationChain> ocsRef = new ConcurrentHashMap<>();
+
     private void addOperationToChain(Operation operation, String table_name, String primaryKey){
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
+
         ConcurrentHashMap<String, OperationChain> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
         holder.putIfAbsent(primaryKey, new OperationChain(table_name, primaryKey));
         holder.get(primaryKey).addOperation(operation);
-
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        MyList<Operation> myList = holder.get(primaryKey);
 //        myList.add(operation);
@@ -432,8 +436,11 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         ArrayList<OperationChain> ocs = new ArrayList<>();
         Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
         for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
+//            instance.getScheduler().submitOcs(thread_Id, tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
             ocs.addAll(tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
         }
+
+
         instance.getScheduler().submitOcs(thread_Id, ocs);
         MeasureTools.END_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
 

@@ -90,7 +90,7 @@ public class SharedWorkloadScheduler implements IScheduler {
     protected OperationChain getOcForThreadAndDLevel(int threadId, int dLevel) {
         Queue<OperationChain> ocs = dLevelBasedOCBuckets.get(dLevel);
         OperationChain oc = null;
-        if(ocs!=null && ocs.size()>0)
+        if(ocs!=null)
             oc = ocs.poll(); // TODO: This might be costly, maybe we should stop removing and using a counter or use a synchronized queue?
         return oc;
     }

@@ -10,7 +10,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class SmartSharedWorkload implements IScheduler, OperationChain.IOnOperationChainChangeListener {
+public class SmartSharedWorkload implements IScheduler, OperationChain.IOnDependencyResolvedListener {
 
     private static int INDEPENDENT_OCS_WITH_DEPENDENTS = 0;
     private static int DEPENDENT_OCS_WITH_DEPENDENTS = 1;
@@ -116,10 +116,6 @@ public class SmartSharedWorkload implements IScheduler, OperationChain.IOnOperat
         operationChains.add(insertionIndex, oc); // insert using second level priority
     }
 
-    @Override
-    public void onDependencyLevelChanged(OperationChain oc) {
-
-    }
 
     @Override
     public OperationChain next(int threadId) {
@@ -172,6 +168,10 @@ public class SmartSharedWorkload implements IScheduler, OperationChain.IOnOperat
 //        maxDLevel = 0;
     }
 
+    @Override
+    public void onDependencyResolvedListener(OperationChain oc) {
+
+    }
 }
 
 

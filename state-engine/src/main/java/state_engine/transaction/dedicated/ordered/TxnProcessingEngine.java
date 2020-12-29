@@ -139,7 +139,7 @@ public final class TxnProcessingEngine {
     }
 
     // DD: Transfer event processing
-    private void CT_Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
+    private void CT_Transfer_Fun(int threadId, Operation operation, long previous_mark_ID, boolean clean) {
         // read
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
@@ -186,7 +186,9 @@ public final class TxnProcessingEngine {
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             //Operation.d_record.content_.WriteAccess(Operation.bid, new SchemaRecord(values), wid);//does this even needed?
             operation.success[0] = true;
+            MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
             operation.notifyOpProcessed();
+            MeasureTools.END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
 //            if (operation.table_name.equalsIgnoreCase("accounts") && operation.d_record.record_.GetPrimaryKey().equalsIgnoreCase("11")) {
 //            LOG.info("key: " + operation.d_record.record_.GetPrimaryKey() + " BID: " + operation.bid + " set " + operation.success.hashCode() + " to true." + " sourceAccountBalance:" + sourceAccountBalance);
 //            }
@@ -206,7 +208,7 @@ public final class TxnProcessingEngine {
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
     //TODO: the following are mostly hard-coded.
-    private void process(Operation operation, long mark_ID, boolean clean) {
+    private void process(int threadId, Operation operation, long mark_ID, boolean clean) {
         if (operation.accessType == READS_ONLY) {
             operation.records_ref.setRecord(operation.d_record);
         } else if (operation.accessType == READ_ONLY) {//used in MB.
@@ -249,7 +251,7 @@ public final class TxnProcessingEngine {
         } else if (operation.accessType == READ_WRITE_COND) {//read, modify (depends on condition), write( depends on condition).
             //TODO: pass function here in future instead of hard-code it. Seems not trivial in Java, consider callable interface?
             if (app == 1) {//used in SL
-                CT_Transfer_Fun(operation, mark_ID, clean);
+                CT_Transfer_Fun(threadId, operation, mark_ID, clean);
             } else if (app == 2) {//used in OB
                 //check if any item is not able to buy.
                 List<DataBox> d_record = operation.condition_records[0].content_
@@ -269,7 +271,7 @@ public final class TxnProcessingEngine {
         } else if (operation.accessType == READ_WRITE_COND_READ) {
             assert operation.record_ref != null;
             if (app == 1) {//used in SL
-                CT_Transfer_Fun(operation, mark_ID, clean);
+                CT_Transfer_Fun(threadId, operation, mark_ID, clean);
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             } else
                 throw new UnsupportedOperationException();
@@ -324,11 +326,11 @@ public final class TxnProcessingEngine {
         }
     }
     //TODO: actual evaluation on the operation_chain.
-    private void process(MyList<Operation> operation_chain, long mark_ID) {
+    private void process(int threadId, MyList<Operation> operation_chain, long mark_ID) {
 
         Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
         while (operation!=null) {
-            process(operation, mark_ID, false);
+            process(threadId, operation, mark_ID, false);
             operation = operation_chain.pollFirst();
         }//loop.
 //        if (enable_work_stealing) {
@@ -407,7 +409,7 @@ public final class TxnProcessingEngine {
         while(oc!=null) {
             MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
             MyList<Operation> operations = oc.getOperations();
-            process(operations, mark_ID);//directly apply the computation.
+            process(threadId, operations, mark_ID);//directly apply the computation.
             MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
 
             MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
@@ -509,7 +511,7 @@ public final class TxnProcessingEngine {
 //                        }
                         callables.add(task);
                     } else {
-                        process(operation_chain, mark_ID);//directly apply the computation.
+//                        process(operation_chain, mark_ID);//directly apply the computation.
                     }
                 }
             }
@@ -696,7 +698,7 @@ public final class TxnProcessingEngine {
 //        }
         @Override
         public Integer call() {
-            process((MyList<Operation>) operation_chain, -1);
+//            process((MyList<Operation>) operation_chain, -1);
 //            LOG.info("Working on chain:" + ((MyList<Operation>) operation_chain).getPrimaryKey() + " by:" + Thread.currentThread().getName());
 //
 //            if (enable_work_stealing || island == -1) {// if island is not -1, it may cooperatively work on the same chain, use mvcc to ensure correctness.

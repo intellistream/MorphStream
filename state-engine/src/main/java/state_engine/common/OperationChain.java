@@ -92,14 +92,29 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     }
 
 
+    private IOnDependencyResolvedListener onDependencyResolvedListener;
+    public void setOnOperationChainChangeListener(IOnDependencyResolvedListener onDependencyResolvedListener) {
+        this.onDependencyResolvedListener = onDependencyResolvedListener;
+    }
+
+    public IOnDependencyResolvedListener getOnDependencyResolvedListener() {
+        return onDependencyResolvedListener;
+    }
+
     @Override
     public void onDependencyResolved(Operation dependent, Operation dependency) {
+
         Queue<Operation> dependencyOps = dependsUpon.get(dependency.getOc());
         dependencyOps.remove(dependency);
         if(dependencyOps.isEmpty()) {
             dependsUpon.remove(dependency.getOc());
         }
         dependentOperations.remove(dependent);
+
+        if(dependsUpon.size()==0) {
+            if(onDependencyResolvedListener!=null)
+                onDependencyResolvedListener.onDependencyResolvedListener(this);
+        }
     }
 
     @Override
@@ -138,14 +153,6 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     }
 
     public boolean hasDependency() {
-//        int dependenciesCount = 0;
-//        for (Queue<Operation> oc: dependsUpon.values()) {
-//            if(!oc.isEmpty()) {
-//                dependenciesCount+=1;
-//                break;
-//            }
-//        }
-//        return dependenciesCount > 0;
         return dependsUpon.size()>0;
     }
 
@@ -200,14 +207,6 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         return dependencyLevel;
     }
 
-    public interface IOnOperationChainChangeListener {
-        void onDependencyLevelChanged(OperationChain oc);
-    }
-
-    private IOnOperationChainChangeListener onOperationChainChangeListener;
-    public void setOnOperationChainChangeListener(IOnOperationChainChangeListener onOperationChainChangeListener) {
-        this.onOperationChainChangeListener = onOperationChainChangeListener;
-    }
 
     @Override
     public String toString() {
@@ -272,4 +271,10 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         else
             return -1;
     }
+
+
+    public interface IOnDependencyResolvedListener {
+        void onDependencyResolvedListener(OperationChain oc);
+    }
+
 }
