@@ -1,23 +1,40 @@
 package state_engine.transaction.scheduler;
 
+import state_engine.common.Operation;
 import state_engine.common.OperationChain;
-import state_engine.profiler.MeasureTools;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SmartNoBarrierSWSchedulerv2 implements IScheduler, OperationChain.IOnDependencyResolvedListener {
+public class SmartNoBarrierSWSchedulerv21 implements IScheduler, OperationChain.IOnDependencyResolvedListener {
 
     private ConcurrentLinkedQueue<OperationChain> leftOvers;
     private ConcurrentLinkedQueue<OperationChain> withDependents;
 
+    ArrayList<OperationChain>[] withDependentsScheduled;
+    ArrayList<OperationChain>[] withLeftOversScheduled;
+
     private AtomicInteger totalSubmitted;
     private AtomicInteger totalProcessed;
+    private int threadCount = 0;
 
-    public SmartNoBarrierSWSchedulerv2(int tp) {
+    public SmartNoBarrierSWSchedulerv21(int tp) {
+
+        threadCount = tp;
+
         leftOvers = new ConcurrentLinkedQueue<>();
         withDependents = new ConcurrentLinkedQueue<>();
+        withDependentsScheduled = new ArrayList[tp];
+        withLeftOversScheduled = new ArrayList[tp];
+
+        for(int lop=0; lop<threadCount; lop++) {
+            withDependentsScheduled[lop] =  new ArrayList<>();
+            withLeftOversScheduled[lop] =  new ArrayList<>();
+        }
 
         totalSubmitted = new AtomicInteger(0);
         totalProcessed = new AtomicInteger(0);
@@ -27,7 +44,6 @@ public class SmartNoBarrierSWSchedulerv2 implements IScheduler, OperationChain.I
     public void submitOcs(int threadId, Collection<OperationChain> ocs) {
 
         for (OperationChain oc : ocs) {
-
             if(!oc.hasDependency() && oc.hasDependents())
                 withDependents.add(oc);
             else if(!oc.hasDependency())
@@ -41,21 +57,45 @@ public class SmartNoBarrierSWSchedulerv2 implements IScheduler, OperationChain.I
     @Override
     public void onDependencyResolvedListener(int threadId, OperationChain oc) {
         if(oc.hasDependents())
-            withDependents.add(oc);
+            withDependentsScheduled[threadId].add(oc);
         else
-            leftOvers.add(oc);
+            withLeftOversScheduled[threadId].add(oc);
+
+        if(withDependents.size() <= threadCount && !withDependentsScheduled[threadId].isEmpty()) {
+            withDependents.addAll(withDependentsScheduled[threadId]);
+            withDependentsScheduled[threadId].clear();
+        }
+
+        if(leftOvers.size() <= threadCount && !withLeftOversScheduled[threadId].isEmpty()) {
+            leftOvers.addAll(withLeftOversScheduled[threadId]);
+            withLeftOversScheduled[threadId].clear();
+        }
     }
 
     @Override
     public OperationChain next(int threadId) {
+
+        if(withDependents.isEmpty() && !withDependentsScheduled[threadId].isEmpty()) {
+            withDependents.addAll(withDependentsScheduled[threadId]);
+            withDependentsScheduled[threadId].clear();
+        }
+
+        if(leftOvers.isEmpty() && !withLeftOversScheduled[threadId].isEmpty()) {
+            leftOvers.addAll(withLeftOversScheduled[threadId]);
+            withLeftOversScheduled[threadId].clear();
+        }
+
         OperationChain oc = getOcForThreadAndDLevel(threadId);
         while(oc==null) {
             if(areAllOCsScheduled(threadId))
                 break;
             oc = getOcForThreadAndDLevel(threadId);
         }
+
         if(oc!=null)
             totalProcessed.incrementAndGet();
+
+
         return oc;
     }
 

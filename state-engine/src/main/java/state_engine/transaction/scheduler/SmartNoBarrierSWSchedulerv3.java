@@ -1,13 +1,12 @@
 package state_engine.transaction.scheduler;
 
 import state_engine.common.OperationChain;
-import state_engine.profiler.MeasureTools;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SmartNoBarrierSWSchedulerv2 implements IScheduler, OperationChain.IOnDependencyResolvedListener {
+public class SmartNoBarrierSWSchedulerv3 implements IScheduler, OperationChain.IOnDependencyResolvedListener {
 
     private ConcurrentLinkedQueue<OperationChain> leftOvers;
     private ConcurrentLinkedQueue<OperationChain> withDependents;
@@ -15,7 +14,7 @@ public class SmartNoBarrierSWSchedulerv2 implements IScheduler, OperationChain.I
     private AtomicInteger totalSubmitted;
     private AtomicInteger totalProcessed;
 
-    public SmartNoBarrierSWSchedulerv2(int tp) {
+    public SmartNoBarrierSWSchedulerv3(int tp) {
         leftOvers = new ConcurrentLinkedQueue<>();
         withDependents = new ConcurrentLinkedQueue<>();
 
@@ -27,7 +26,6 @@ public class SmartNoBarrierSWSchedulerv2 implements IScheduler, OperationChain.I
     public void submitOcs(int threadId, Collection<OperationChain> ocs) {
 
         for (OperationChain oc : ocs) {
-
             if(!oc.hasDependency() && oc.hasDependents())
                 withDependents.add(oc);
             else if(!oc.hasDependency())

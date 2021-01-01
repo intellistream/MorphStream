@@ -35,7 +35,6 @@ public class Operation implements Comparable<Operation> {
     public boolean[] success;
     public String name;
 
-    private Queue<Operation> dependsUpon = new ConcurrentLinkedQueue<>();
     private Queue<Operation> dependents = new ConcurrentLinkedQueue<>();
     private IOpConflictResolutionListener opConflictResolutionListener;
     private OperationChain oc;
@@ -176,38 +175,33 @@ public class Operation implements Comparable<Operation> {
     }
 
     public void setOc(OperationChain oc) {
-        this.oc = oc;
+//        this.oc = oc;
+        this.opConflictResolutionListener = oc;
     }
 
-    public OperationChain getOc() {
-        return oc;
-    }
-
-    public void addDependency(IOpConflictResolutionListener opConflictResolutionListener, Operation dependencyOp) {
-        this.dependsUpon.add(dependencyOp);
-        this.opConflictResolutionListener = opConflictResolutionListener; // this should always be the same.
-    }
+//    public OperationChain getOc() {
+//        return oc;
+//    }
 
     public void addDependent(IOpConflictResolutionListener opConflictResolutionListener, Operation dependent) {
         this.dependents.add(dependent);
         this.opConflictResolutionListener = opConflictResolutionListener; // this should always be the same.
     }
 
-    private void onDependencyResolved(Operation dependencyOp) {
-        dependsUpon.remove(dependencyOp);
-        opConflictResolutionListener.onDependencyResolved(this, dependencyOp);
+    private void onDependencyResolved(int threadId, Operation dependencyOp) {
+        opConflictResolutionListener.onDependencyResolved(threadId, this, dependencyOp);
     }
 
-    public void notifyOpProcessed() {
+    public void notifyOpProcessed(int threadId) {
         while(!dependents.isEmpty()) {
             Operation op = dependents.poll();
-            op.onDependencyResolved(this);
+            op.onDependencyResolved(threadId, this);
             opConflictResolutionListener.onDependentResolved(op, this);
         }
     }
 
     public interface IOpConflictResolutionListener {
-        void onDependencyResolved(Operation dependent, Operation dependency);
+        void onDependencyResolved( int threadId,Operation dependent, Operation dependency);
         void onDependentResolved(Operation dependent, Operation dependency);
     }
 

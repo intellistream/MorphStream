@@ -81,8 +81,8 @@ public class BasicBenchmark implements IBenchmark {
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(
                             digest.digest(
-                                    String.format("%d_%s_%s", dataConfig.tuplesPerBatch*dataConfig.totalBatches,
-                                            Arrays.toString(dataConfig.dependenciesDistributionForLevels), dataConfig.scheduler)
+                                    String.format("%d_%s", dataConfig.tuplesPerBatch*dataConfig.totalBatches,
+                                            Arrays.toString(dataConfig.dependenciesDistributionForLevels))
                                             .getBytes("UTF-8"))));
         } catch (Exception e) {
             e.printStackTrace();

@@ -4,6 +4,8 @@ import state_engine.transaction.dedicated.ordered.MyList;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 
 public class OperationChain implements Comparable<OperationChain>, Operation.IOpConflictResolutionListener {
@@ -13,13 +15,23 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
 
     private MyList<Operation> operations;
 
-    private int totalOpsCount = 0;
-    private int totalDependentsCount = 0;
-    private int totalDependenciesCount = 0;
 
-    private ConcurrentHashMap<OperationChain, Operation> potentialDependentsInfo;
-    private ConcurrentHashMap<OperationChain, Queue<Operation>> dependsUpon;
-    private ConcurrentHashMap<OperationChain, Queue<Operation>> dependents;
+    private AtomicInteger totalDependentsCount = new AtomicInteger();
+    private AtomicInteger totalDependenciesCount = new AtomicInteger();
+
+//    private ConcurrentHashMap<OperationChain, Operation> potentialDependentsInfo;
+
+    public class PotentialDependencyInfo {
+        public OperationChain oc;
+        public Operation op;
+        public PotentialDependencyInfo(OperationChain oc, Operation op) {
+            this.oc = oc;
+            this.op = op;
+        }
+    }
+
+//    private ConcurrentHashMap<OperationChain, Queue<Operation>> dependsUpon;
+//    private ConcurrentHashMap<OperationChain, Queue<Operation>> dependents;
 
     private int minimumIndependentOpsCount = Integer.MAX_VALUE;
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
@@ -31,16 +43,22 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         this.primaryKey = primaryKey;
         this.operations = new MyList<>(tableName, primaryKey);
 
-        this.dependsUpon = new ConcurrentHashMap<>();
-        this.dependents = new ConcurrentHashMap<>();
-        this.potentialDependentsInfo = new ConcurrentHashMap<>();
+//        this.dependsUpon = new ConcurrentHashMap<>();
+//        this.dependents = new ConcurrentHashMap<>();
+//        this.potentialDependentsInfo = new ConcurrentHashMap<>();
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public String getPrimaryKey() {
+        return primaryKey;
     }
 
     public void addOperation(Operation op) {
         op.setOc(this);
-        this.operations.add(op);
-        if(operations.size()>totalOpsCount)
-            totalOpsCount = operations.size();
+        operations.add(op);
     }
 
     public MyList<Operation> getOperations() {
@@ -62,8 +80,9 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
             Operation dependencyOp = iterator.next();
             if(dependencyOp.bid < forOp.bid) {
                 // record dependency
-                forOp.addDependency(this, dependencyOp); // I(oc) listen for my dependencies resolution.
-                addDependency(dependsUpon, dependencyOp);
+
+                totalDependenciesCount.incrementAndGet();
+//                addDependency(dependsUpon, dependencyOp);
                 // record dependents
                 dependencyOp.addDependent(dependsUpon, forOp);
                 dependsUpon.addDependent(this, forOp);
@@ -73,19 +92,22 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     }
 
     private void addDependency(OperationChain dependencyOc, Operation dependencyOp) {
-        if(!dependsUpon.contains(dependencyOc))
-            dependsUpon.putIfAbsent(dependencyOc, new ConcurrentLinkedQueue<>());
-        dependsUpon.get(dependencyOc).add(dependencyOp);
-        if(totalDependenciesCount<dependsUpon.size())
-            totalDependenciesCount = dependsUpon.size();
+//        if(!dependsUpon.contains(dependencyOc))
+//            dependsUpon.putIfAbsent(dependencyOc, new ConcurrentLinkedQueue<>());
+//        dependsUpon.get(dependencyOc).add(dependencyOp);
+//        if(totalDependenciesCount < dependsUpon.size())
+//            totalDependenciesCount = dependsUpon.size();
+        totalDependenciesCount.incrementAndGet();
     }
 
     private void addDependent(OperationChain dependentOc, Operation dependentOp) {
-        if(!dependents.contains(dependentOc))
-            dependents.putIfAbsent(dependentOc, new ConcurrentLinkedQueue<>());
-        dependents.get(dependentOc).add(dependentOp);
-        if(totalDependentsCount<dependents.size())
-            totalDependentsCount = dependents.size();
+//        if(!dependents.contains(dependentOc))
+//            dependents.putIfAbsent(dependentOc, new ConcurrentLinkedQueue<>());
+//        dependents.get(dependentOc).add(dependentOp);
+//        if(totalDependentsCount<dependents.size())
+//            totalDependentsCount = dependents.size();
+
+        totalDependentsCount.incrementAndGet();
     }
 
 
@@ -94,80 +116,82 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         this.onDependencyResolvedListener = onDependencyResolvedListener;
     }
 
-    public IOnDependencyResolvedListener getOnDependencyResolvedListener() {
-        return onDependencyResolvedListener;
-    }
-
     @Override
-    public void onDependencyResolved(Operation dependent, Operation dependency) {
+    public void onDependencyResolved(int threadId, Operation dependent, Operation dependency) {
 
-        Queue<Operation> dependencyOps = dependsUpon.get(dependency.getOc());
-        dependencyOps.remove(dependency);
-        if(dependencyOps.isEmpty()) {
-            dependsUpon.remove(dependency.getOc());
-        }
-
-        if(dependsUpon.size()==0) {
+        if(totalDependenciesCount.decrementAndGet()==0)
             if(onDependencyResolvedListener!=null)
-                onDependencyResolvedListener.onDependencyResolvedListener(this);
-        }
+                onDependencyResolvedListener.onDependencyResolvedListener(threadId, this);
+//        Queue<Operation> dependencyOps = dependsUpon.get(dependency.getOc());
+//        dependencyOps.remove(dependency);
+//        if(dependencyOps.isEmpty()) {
+//            dependsUpon.remove(dependency.getOc());
+//        }
+//
+//        if(dependsUpon.size()==0) {
+//            if(onDependencyResolvedListener!=null)
+//                onDependencyResolvedListener.onDependencyResolvedListener(threadId, this);
+//        }
     }
 
     @Override
     public void onDependentResolved(Operation dependent, Operation dependency) {
-        Queue<Operation> dependentOps = dependents.get(dependent.getOc());
-        dependentOps.remove(dependent);
-        if(dependentOps.isEmpty()) {
-            dependents.remove(dependent.getOc());
-        }
+        totalDependentsCount.decrementAndGet();
+//        Queue<Operation> dependentOps = dependents.get(dependent.getOc());
+//        dependentOps.remove(dependent);
+//        if(dependentOps.isEmpty()) {
+//            dependents.remove(dependent.getOc());
+//        }
     }
 
 
     public boolean hasDependency() {
-        return dependsUpon.size()>0;
+        return totalDependenciesCount.get()>0;
     }
 
     public boolean hasDependents() {
-        return dependents.size()>0;
+        return totalDependentsCount.get()>0;
     }
 
-    public synchronized void addPotentialDependent(OperationChain potentialDependent, Operation op) {
-        potentialDependentsInfo.put(potentialDependent, op);
+    private ConcurrentLinkedQueue<PotentialDependencyInfo> potentialDependentsInfo = new ConcurrentLinkedQueue<>();
+//    private ConcurrentSkipListSet<Long> pDependentsBids = new ConcurrentSkipListSet<>();
+
+    public void addPotentialDependent(OperationChain potentialDependent, Operation op) {
+        potentialDependentsInfo.add(new PotentialDependencyInfo(potentialDependent, op));
+//        pDependentsBids.add(op.bid);
     }
 
-    public synchronized void checkOtherPotentialDependencies(Operation dependencyOp) {
+    public void checkOtherPotentialDependencies(Operation dependencyOp) {
 
-        List<OperationChain> processed = new ArrayList<>();
-        ConcurrentHashMap.KeySetView<OperationChain, Operation> keys = potentialDependentsInfo.keySet();
-        for(OperationChain pDependent : keys) {
-            if(dependencyOp.bid < potentialDependentsInfo.get(pDependent).bid) { // if bid is < dependents bid, therefore, it depends upon this operation
-                pDependent.addDependency(potentialDependentsInfo.get(pDependent), this);
-                processed.add(pDependent);
+//        pDependentsBids.first();
+        List<PotentialDependencyInfo> processed = new ArrayList<>();
+
+        for(PotentialDependencyInfo pDependentInfo : potentialDependentsInfo) {
+            if(dependencyOp.bid < pDependentInfo.op.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
+                pDependentInfo.oc.addDependency(pDependentInfo.op, this);
+                processed.add(pDependentInfo);
             }
         }
-
-        for(OperationChain pDependent : processed)
-            potentialDependentsInfo.remove(pDependent);
-
+        potentialDependentsInfo.removeAll(processed);
         processed.clear();
     }
 
     public synchronized void updateDependencyLevel( ) {
 
-        if(isDependencyLevelCalculated)
-            return;
-
-        dependencyLevel = 0;
-        for (OperationChain oc: dependsUpon.keySet()) {
-
-            if(!oc.hasValidDependencyLevel())
-                oc.updateDependencyLevel();
-
-            if(oc.getDependencyLevel()>=dependencyLevel) {
-                dependencyLevel = oc.getDependencyLevel()+1;
-            }
-        }
-        isDependencyLevelCalculated = true;
+//        if(isDependencyLevelCalculated)
+//            return;
+//
+//        dependencyLevel = 0;
+//        for (OperationChain oc: dependsUpon.keySet()) {
+//
+//            if(!oc.hasValidDependencyLevel())
+//                oc.updateDependencyLevel();
+//
+//            if(oc.getDependencyLevel()>=dependencyLevel) {
+//                dependencyLevel = oc.getDependencyLevel()+1;
+//            }
+//        }
+//        isDependencyLevelCalculated = true;
     }
 
     public synchronized boolean hasValidDependencyLevel(){
@@ -181,36 +205,36 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
 
     @Override
     public String toString() {
-        return "{" + tableName + " " + primaryKey+ ": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
+        return "{" + tableName + " " + primaryKey+ "}";//": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
     }
 
     public void printDependencies() {
-        String string = "";
-        string += "Dependencies of "+toString()+" --> ";
-        for (OperationChain opChain: dependsUpon.keySet()) {
-            string += opChain.toString();
-        }
-        string += ",    Level: "+getDependencyLevel();
-        System.out.println(string);
+//        String string = "";
+//        string += "Dependencies of "+toString()+" --> ";
+//        for (OperationChain opChain: dependsUpon.keySet()) {
+//            string += opChain.toString();
+//        }
+//        string += ",    Level: "+getDependencyLevel();
+//        System.out.println(string);
     }
 
     public String getDependenciesStr() {
-        String str = "";
-        str += "Dependencies of "+toString()+" --> ";
-        for (OperationChain opChain: dependsUpon.keySet()) {
-            str += opChain.toString();
-        }
-        str += ",    Level: "+getDependencyLevel();
-        return str;
+//        String str = "";
+//        str += "Dependencies of "+toString()+" --> ";
+//        for (OperationChain opChain: dependsUpon.keySet()) {
+//            str += opChain.toString();
+//        }
+//        str += ",    Level: "+getDependencyLevel();
+        return "";
     }
 
     public void addAllDependencies(ArrayList<String> dependenciesContainer) {
-        for (OperationChain opChain: dependsUpon.keySet()) {
-            String dependency = String.format("%s, %s", getStringId(), opChain.getStringId());
-            if(!dependenciesContainer.contains(dependency)) {
-                dependenciesContainer.add(dependency);
-            }
-        }
+//        for (OperationChain opChain: dependsUpon.keySet()) {
+//            String dependency = String.format("%s, %s", getStringId(), opChain.getStringId());
+//            if(!dependenciesContainer.contains(dependency)) {
+//                dependenciesContainer.add(dependency);
+//            }
+//        }
     }
 
     public String getStringId() {
@@ -245,7 +269,7 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
 
 
     public interface IOnDependencyResolvedListener {
-        void onDependencyResolvedListener(OperationChain oc);
+        void onDependencyResolvedListener(int threadId, OperationChain oc);
     }
 
 }

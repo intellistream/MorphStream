@@ -45,9 +45,9 @@ public class SchedulerFactory {
 //            case S_SW:
 //                scheduler = new SmartSWSchedulerv1(totalThread);
 //                break;
-//            case S_NB_RR:
-//                scheduler = new SmartNoBarrierRRSchedulerv1(totalThread);
-//                break;
+            case S_NB_RR:
+                scheduler = new SmartNoBarrierRRSchedulerv2(totalThread);
+                break;
             case S_NB_SW:
                 scheduler = new SmartNoBarrierSWSchedulerv2(totalThread);
                 break;

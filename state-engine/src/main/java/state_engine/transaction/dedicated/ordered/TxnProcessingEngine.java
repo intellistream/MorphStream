@@ -86,6 +86,11 @@ public final class TxnProcessingEngine {
         return holder_by_stage;
     }
 
+
+    private static ConcurrentHashMap<Integer, ConcurrentHashMap<String, OperationChain>> ocs = new ConcurrentHashMap<>();
+
+
+
     public Collection<Holder_in_range> getHolderValues() {
         return holder_by_stage.values();
     }
@@ -187,7 +192,7 @@ public final class TxnProcessingEngine {
             //Operation.d_record.content_.WriteAccess(Operation.bid, new SchemaRecord(values), wid);//does this even needed?
             operation.success[0] = true;
             MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
-            operation.notifyOpProcessed();
+            operation.notifyOpProcessed(threadId);
             MeasureTools.END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
 //            if (operation.table_name.equalsIgnoreCase("accounts") && operation.d_record.record_.GetPrimaryKey().equalsIgnoreCase("11")) {
 //            LOG.info("key: " + operation.d_record.record_.GetPrimaryKey() + " BID: " + operation.bid + " set " + operation.success.hashCode() + " to true." + " sourceAccountBalance:" + sourceAccountBalance);
@@ -525,7 +530,7 @@ public final class TxnProcessingEngine {
     public class Holder {
         //version 1: single list Operation on one key
         //	ConcurrentSkipListSet holder_v1 = new ConcurrentSkipListSet();
-        public ConcurrentHashMap<String, OperationChain> holder_v1 = new ConcurrentHashMap<>();
+        public ConcurrentHashMap<String, OperationChain> holder_v1 = new ConcurrentHashMap<>(100000);
 //        public ConcurrentHashMap<String, MyList<Operation>> holder_v1 = new ConcurrentHashMap<>();
 //        public ConcurrentSkipListSet<Operation>[] holder_v2 = new ConcurrentSkipListSet[H2_SIZE];
     }
