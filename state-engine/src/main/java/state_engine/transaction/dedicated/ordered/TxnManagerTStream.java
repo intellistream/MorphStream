@@ -355,7 +355,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 
             // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is  enough.
 
-            if(dependency.getOperations().isEmpty() || dependency.getOperations().first().bid >= op.bid) { // if dependencies first op's bid is >= current bid, then it has no operation that we depend upon, but it could be a potential dependency in case we have delayed transactions (events)
+            if(dependency.getOperations().isEmpty() || dependency.getOperations().firstEntry().getKey() >= op.bid) { // if dependencies first op's bid is >= current bid, then it has no operation that we depend upon, but it could be a potential dependency in case we have delayed transactions (events)
                 // if dependency has no operations on it or no operation with id < current operation id.
                 // we will like to record it as potential future dependency, if a delayed operation with id < current bid arrives
 

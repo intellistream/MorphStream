@@ -331,12 +331,12 @@ public final class TxnProcessingEngine {
         }
     }
     //TODO: actual evaluation on the operation_chain.
-    private void process(int threadId, MyList<Operation> operation_chain, long mark_ID) {
+    private void process(int threadId, ConcurrentSkipListMap<Long, Operation> operation_chain, long mark_ID) {
 
-        Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
+        Map.Entry<Long, Operation> operation = operation_chain.pollFirstEntry();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
         while (operation!=null) {
-            process(threadId, operation, mark_ID, false);
-            operation = operation_chain.pollFirst();
+            process(threadId, operation.getValue(), mark_ID, false);
+            operation = operation_chain.pollFirstEntry();
         }//loop.
 //        if (enable_work_stealing) {
 //            while (true) {
@@ -413,7 +413,7 @@ public final class TxnProcessingEngine {
         MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
         while(oc!=null) {
             MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
-            MyList<Operation> operations = oc.getOperations();
+            ConcurrentSkipListMap<Long, Operation> operations = oc.getOperations();
             process(threadId, operations, mark_ID);//directly apply the computation.
             MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
 
@@ -493,7 +493,7 @@ public final class TxnProcessingEngine {
 
             if(operationChain.getDependencyLevel()!=dependencyLevelToProcess)
                 continue;
-            MyList<Operation> operation_chain = operationChain.getOperations();
+            ConcurrentSkipListMap<Long, Operation> operation_chain = operationChain.getOperations();
 //        for (int i = 0; i < H2_SIZE; i++) {
 //            ConcurrentSkipListSet<Operation> operation_chain = holder.holder_v2[i];
 //        Set<Operation> operation_chain = holder.holder_v3;
@@ -502,7 +502,7 @@ public final class TxnProcessingEngine {
 //                Instance instance = standalone_engine;//multi_engine.get(key);
                 if (!Thread.currentThread().isInterrupted()) {
                     if (enable_engine) {
-                        Task task = new Task(operation_chain);
+//                        Task task = new Task(operation_chain);
                         if (enable_debug)
                             LOG.trace("Submit operation_chain:" + OsUtils.Addresser.addressOf(operation_chain) + " with size:" + operation_chain.size());
 //                        if (enable_work_partition) {
@@ -514,7 +514,7 @@ public final class TxnProcessingEngine {
 //                        } else {
 ////                            standalone_engine.executor.submit(task);
 //                        }
-                        callables.add(task);
+//                        callables.add(task);
                     } else {
 //                        process(operation_chain, mark_ID);//directly apply the computation.
                     }

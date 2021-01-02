@@ -13,25 +13,9 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     private String tableName;
     private String primaryKey;
 
-    private MyList<Operation> operations;
-
-
+    private ConcurrentSkipListMap<Long, Operation> operations;
     private AtomicInteger totalDependentsCount = new AtomicInteger();
     private AtomicInteger totalDependenciesCount = new AtomicInteger();
-
-//    private ConcurrentHashMap<OperationChain, Operation> potentialDependentsInfo;
-
-    public class PotentialDependencyInfo {
-        public OperationChain oc;
-        public Operation op;
-        public PotentialDependencyInfo(OperationChain oc, Operation op) {
-            this.oc = oc;
-            this.op = op;
-        }
-    }
-
-//    private ConcurrentHashMap<OperationChain, Queue<Operation>> dependsUpon;
-//    private ConcurrentHashMap<OperationChain, Queue<Operation>> dependents;
 
     private int minimumIndependentOpsCount = Integer.MAX_VALUE;
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
@@ -41,11 +25,7 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
-        this.operations = new MyList<>(tableName, primaryKey);
-
-//        this.dependsUpon = new ConcurrentHashMap<>();
-//        this.dependents = new ConcurrentHashMap<>();
-//        this.potentialDependentsInfo = new ConcurrentHashMap<>();
+        this.operations = new ConcurrentSkipListMap<>();
     }
 
     public String getTableName() {
@@ -58,10 +38,10 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
 
     public void addOperation(Operation op) {
         op.setOc(this);
-        operations.add(op);
+        operations.put(op.bid, op);
     }
 
-    public MyList<Operation> getOperations() {
+    public ConcurrentSkipListMap<Long, Operation> getOperations() {
         return operations;
     }
 
@@ -73,40 +53,16 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         this.priority = priority;
     }
 
-    public synchronized void addDependency(Operation forOp, OperationChain dependsUpon) {
-
-        Iterator<Operation> iterator = dependsUpon.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than forOp bid
-        while (iterator.hasNext()) {
-            Operation dependencyOp = iterator.next();
-            if(dependencyOp.bid < forOp.bid) {
-                // record dependency
-
-                totalDependenciesCount.incrementAndGet();
-//                addDependency(dependsUpon, dependencyOp);
-                // record dependents
-                dependencyOp.addDependent(dependsUpon, forOp);
-                dependsUpon.addDependent(this, forOp);
-                break;
-            }
+    public void addDependency(Operation forOp, OperationChain dependsUpon) {
+        ConcurrentNavigableMap<Long, Operation> view = dependsUpon.getOperations().headMap(forOp.bid, false);
+        if(view.size()>0) {
+            totalDependenciesCount.incrementAndGet();
+            view.lastEntry().getValue().addDependent(dependsUpon, forOp);
+            dependsUpon.addDependent(this, forOp);
         }
     }
 
-    private void addDependency(OperationChain dependencyOc, Operation dependencyOp) {
-//        if(!dependsUpon.contains(dependencyOc))
-//            dependsUpon.putIfAbsent(dependencyOc, new ConcurrentLinkedQueue<>());
-//        dependsUpon.get(dependencyOc).add(dependencyOp);
-//        if(totalDependenciesCount < dependsUpon.size())
-//            totalDependenciesCount = dependsUpon.size();
-        totalDependenciesCount.incrementAndGet();
-    }
-
     private void addDependent(OperationChain dependentOc, Operation dependentOp) {
-//        if(!dependents.contains(dependentOc))
-//            dependents.putIfAbsent(dependentOc, new ConcurrentLinkedQueue<>());
-//        dependents.get(dependentOc).add(dependentOp);
-//        if(totalDependentsCount<dependents.size())
-//            totalDependentsCount = dependents.size();
-
         totalDependentsCount.incrementAndGet();
     }
 
@@ -122,28 +78,12 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         if(totalDependenciesCount.decrementAndGet()==0)
             if(onDependencyResolvedListener!=null)
                 onDependencyResolvedListener.onDependencyResolvedListener(threadId, this);
-//        Queue<Operation> dependencyOps = dependsUpon.get(dependency.getOc());
-//        dependencyOps.remove(dependency);
-//        if(dependencyOps.isEmpty()) {
-//            dependsUpon.remove(dependency.getOc());
-//        }
-//
-//        if(dependsUpon.size()==0) {
-//            if(onDependencyResolvedListener!=null)
-//                onDependencyResolvedListener.onDependencyResolvedListener(threadId, this);
-//        }
     }
 
     @Override
     public void onDependentResolved(Operation dependent, Operation dependency) {
         totalDependentsCount.decrementAndGet();
-//        Queue<Operation> dependentOps = dependents.get(dependent.getOc());
-//        dependentOps.remove(dependent);
-//        if(dependentOps.isEmpty()) {
-//            dependents.remove(dependent.getOc());
-//        }
     }
-
 
     public boolean hasDependency() {
         return totalDependenciesCount.get()>0;
@@ -153,17 +93,36 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         return totalDependentsCount.get()>0;
     }
 
+    public class PotentialDependencyInfo implements Comparable<PotentialDependencyInfo> {
+        public OperationChain oc;
+        public Operation op;
+        public PotentialDependencyInfo(OperationChain oc, Operation op) {
+            this.oc = oc;
+            this.op = op;
+        }
+
+        @Override
+        public int compareTo(PotentialDependencyInfo o) {
+            return Long.compare(this.op.bid, o.op.bid);
+        }
+    }
+
     private ConcurrentLinkedQueue<PotentialDependencyInfo> potentialDependentsInfo = new ConcurrentLinkedQueue<>();
-//    private ConcurrentSkipListSet<Long> pDependentsBids = new ConcurrentSkipListSet<>();
 
     public void addPotentialDependent(OperationChain potentialDependent, Operation op) {
         potentialDependentsInfo.add(new PotentialDependencyInfo(potentialDependent, op));
-//        pDependentsBids.add(op.bid);
+//        potentialDependentsInfo.put(op.bid, new PotentialDependencyInfo(potentialDependent, op)); // issue with duplicates....
     }
+//
+//    public void checkOtherPotentialDependencies(Operation dependencyOp) {
+//        ConcurrentNavigableMap<Long, PotentialDependencyInfo> view = potentialDependentsInfo.tailMap(dependencyOp.bid, false);
+//        for(PotentialDependencyInfo pDependentInfo : view.values())
+//            pDependentInfo.oc.addDependency(pDependentInfo.op, this);
+//        view.clear();
+//    }
 
     public void checkOtherPotentialDependencies(Operation dependencyOp) {
 
-//        pDependentsBids.first();
         List<PotentialDependencyInfo> processed = new ArrayList<>();
 
         for(PotentialDependencyInfo pDependentInfo : potentialDependentsInfo) {
