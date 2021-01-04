@@ -238,6 +238,24 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     }
 
 
+
+
+
+    private void addOperationToChain(Operation operation, String table_name, String primaryKey){
+        // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
+
+        OperationChain retOc = null;
+        OperationChain oc = new OperationChain(table_name, primaryKey);
+        ConcurrentHashMap<String, OperationChain> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
+        retOc = holder.putIfAbsent(primaryKey, oc);
+        if(retOc!=null)
+            oc = retOc;
+        holder.get(primaryKey).addOperation(operation);
+//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
+//        MyList<Operation> myList = holder.get(primaryKey);
+//        myList.add(operation);
+    }
+
     private OperationChain[] localCache = new OperationChain[4];
     private int cacheIndex = 0;
 
@@ -257,6 +275,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
             localCache[cacheIndex] = oc;
             cacheIndex++;
         }
+
         return oc;
     }
 
@@ -265,119 +284,47 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     private void operation_chain_construction_modify_only(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord d_record, Function function,
                                                           String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
 
-        MeasureTools.BEGIN_GET_NEXT_EXTRA_PARAM_1_TIME_MEASURE(txn_context.thread_Id);
+//        MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
         OperationChain oc = getCachedOcFor(table_name, d_record.record_.GetPrimaryKey());
-        MeasureTools.END_GET_NEXT_EXTRA_PARAM_1_TIME_MEASURE(txn_context.thread_Id);
-
-        MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
         Operation op = new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success);
         oc.addOperation(op);
-        MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
+//        MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
 
         MeasureTools.BEGIN_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
         checkDataDependencies(oc, op, txn_context.thread_Id, table_name, key, condition_sourceTable, condition_source);
         MeasureTools.END_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
-//        int taskId = getTaskId(d_record);
-//        int h2ID = getH2ID(taskId);
-////        LOG.debug("Submit read for record:" + d_record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
-//        MyList<Operation> holder = instance.getHolder(fid).rangeMap.get(taskId).holder_v2[h2ID];
-////        Set<Operation> holder = instance.getHolder(fid).rangeMap.get(getTaskId(d_record)).holder_v3;
-//        holder.add(new Operation(d_record, bid, accessType, function, condition_records, condition, txn_context, success));
     }
 
     //READ_WRITE_COND_READ // TRANSFER_ACT
     private void operation_chain_construction_modify_read(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord d_record, SchemaRecordRef record_ref, Function function,
                                                           String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
 
-
-
-        MeasureTools.BEGIN_GET_NEXT_EXTRA_PARAM_1_TIME_MEASURE(txn_context.thread_Id);
+//        MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
         OperationChain oc = getCachedOcFor(table_name, d_record.record_.GetPrimaryKey());
-        MeasureTools.END_GET_NEXT_EXTRA_PARAM_1_TIME_MEASURE(txn_context.thread_Id);
-        MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
         Operation op = new Operation(table_name, d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success);
-//        String ckey = String.format("%s_%s", table_name,  d_record.record_.GetPrimaryKey());
-//        OperationChain oc = localCache.get(ckey);
-//        if(oc == null) {
-//            oc = new OperationChain(table_name,  d_record.record_.GetPrimaryKey());
-//            OperationChain retOc = instance.getHolder(table_name).rangeMap.get(getTaskId(d_record.record_.GetPrimaryKey())).holder_v1.putIfAbsent(d_record.record_.GetPrimaryKey(), oc);
-//            if(retOc!=null) oc = retOc;
-//            if(localCache.size()==4)
-//                localCache.clear();
-//            localCache.put(ckey, oc);
-//        }
-
         oc.addOperation(op);
-//        oc.addOperation(op);
-//        addOperationToChain(op, table_name, d_record.record_.GetPrimaryKey());
-        MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
+//        MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
 
         MeasureTools.BEGIN_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
         checkDataDependencies(oc, op, txn_context.thread_Id, table_name, key, condition_sourceTable, condition_source);
         MeasureTools.END_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
-//        int taskId = getTaskId(d_record);
-//        int h2ID = getH2ID(taskId);
-//        LOG.debug("Submit read for record:" + d_record.record_.GetPrimaryKey() + " in H2ID:" + h2ID);
-//        MyList<Operation> holder = instance.getHolder(fid).rangeMap.get(taskId).holder_v2[h2ID];
-//        Set<Operation> holder = instance.getHolder(fid).rangeMap.get(getTaskId(d_record)).holder_v3;
-//        holder.add(new Operation(d_record, d_record, record_ref, bid, accessType, function, condition_records, condition, txn_context, success));
     }
 
-
-
-
-    private void addOperationToChain(Operation operation, String table_name, String primaryKey){
-        // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
-
-        OperationChain retOc = null;
-        OperationChain oc = new OperationChain(table_name, primaryKey);
-        ConcurrentHashMap<String, OperationChain> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
-        retOc = holder.putIfAbsent(primaryKey, oc);
-        if(retOc!=null)
-            oc = retOc;
-        holder.get(primaryKey).addOperation(operation);
-//        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
-//        MyList<Operation> myList = holder.get(primaryKey);
-//        myList.add(operation);
-    }
     private void checkDataDependencies(OperationChain dependent, Operation op, int thread_Id, String table_name, String key, String[] condition_sourceTable, String[] condition_source) {
-
-        for (int index=0; index<condition_source.length; index++) {
-
+        for (int index=0; index < condition_source.length; index++) {
             if(table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                 continue;
-
-            MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_2_TIME_MEASURE(thread_Id);
-
-//            String dKey = String.format("%s_%s", condition_sourceTable[index], condition_source[index]);
             OperationChain dependency = getCachedOcFor(condition_sourceTable[index], condition_source[index]);
-            MeasureTools.END_SUBMIT_EXTRA_PARAM_2_TIME_MEASURE(thread_Id);
-
             // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is  enough.
-
             if(dependency.getOperations().isEmpty() || dependency.getOperations().firstEntry().getKey() >= op.bid) { // if dependencies first op's bid is >= current bid, then it has no operation that we depend upon, but it could be a potential dependency in case we have delayed transactions (events)
                 // if dependency has no operations on it or no operation with id < current operation id.
                 // we will like to record it as potential future dependency, if a delayed operation with id < current bid arrives
-
-                MeasureTools.BEGIN_GET_NEXT_EXTRA_PARAM_2_TIME_MEASURE(thread_Id);
                 dependency.addPotentialDependent(dependent, op);
-                MeasureTools.END_GET_NEXT_EXTRA_PARAM_2_TIME_MEASURE(thread_Id);
             } else { // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
-                MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_3_TIME_MEASURE(thread_Id);
                 dependent.addDependency(op, dependency); // record dependency
-                MeasureTools.END_SUBMIT_EXTRA_PARAM_3_TIME_MEASURE(thread_Id);
-
             }
-//            System.out.println("Checking dependencies...done");
         }
-        // check if current operation causes other operation chains to depend upon current one.
-        // This may happen when a delayed event arrives.
-
-//        System.out.println("Checking other dependencies...");
-//        MeasureTools.BEGIN_DEPENDENCY_OUTOFORDER_OVERHEAD_TIME_MEASURE(thread_Id);
         dependent.checkOtherPotentialDependencies(op);
-//        MeasureTools.END_DEPENDENCY_OUTOFORDER_OVERHEAD_TIME_MEASURE(thread_Id);
-//        System.out.println("Checking other dependencies...done")=
         cacheIndex=cacheIndex%4;
     }
 
@@ -480,15 +427,10 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
 
         MeasureTools.BEGIN_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
-        ArrayList<OperationChain> ocs = new ArrayList<>();
         Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
         for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
             instance.getScheduler().submitOcs(thread_Id, tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
-//            ocs.addAll(tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
         }
-
-
-//        instance.getScheduler().submitOcs(thread_Id, ocs);
         MeasureTools.END_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
 
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);

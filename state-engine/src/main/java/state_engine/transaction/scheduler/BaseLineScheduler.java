@@ -17,6 +17,7 @@ public class BaseLineScheduler implements IScheduler {
     protected int[] currentDLevelToProcess;
 
     public BaseLineScheduler(int tp) {
+
         dLevelBasedOCBuckets = new ConcurrentHashMap(); // TODO: make sure this will not cause trouble with multithreaded access.
         scheduledOcsCount = new int[tp];
         totalOcsToSchedule = new int[tp];
@@ -29,6 +30,10 @@ public class BaseLineScheduler implements IScheduler {
 
     @Override
     public void submitOcs(int threadId, Collection<OperationChain> ocs) {
+
+        MeasureTools.BEGIN_BARRIER_TIME_MEASURE(threadId);
+        SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        MeasureTools.END_BARRIER_TIME_MEASURE(threadId);
 
         totalOcsToSchedule[threadId] += ocs.size();
         HashMap<Integer, List<OperationChain>> currentThreadOCsBucket = dLevelBasedOCBuckets.get(threadId);

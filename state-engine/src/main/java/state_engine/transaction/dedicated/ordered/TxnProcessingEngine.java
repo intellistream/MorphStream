@@ -87,10 +87,6 @@ public final class TxnProcessingEngine {
     }
 
 
-    private static ConcurrentHashMap<Integer, ConcurrentHashMap<String, OperationChain>> ocs = new ConcurrentHashMap<>();
-
-
-
     public Collection<Holder_in_range> getHolderValues() {
         return holder_by_stage.values();
     }

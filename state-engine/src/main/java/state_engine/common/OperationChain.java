@@ -1,12 +1,8 @@
 package state_engine.common;
 
-import state_engine.transaction.dedicated.ordered.MyList;
-
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiFunction;
 
 public class OperationChain implements Comparable<OperationChain>, Operation.IOpConflictResolutionListener {
 
@@ -14,11 +10,11 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     private String primaryKey;
 
     private ConcurrentSkipListMap<Long, Operation> operations;
+    private ConcurrentSkipListMap<OperationChain, Operation> dependsUpon;
     private AtomicInteger totalDependentsCount = new AtomicInteger();
     private AtomicInteger totalDependenciesCount = new AtomicInteger();
 
     private int minimumIndependentOpsCount = Integer.MAX_VALUE;
-    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
     private int priority = 0;
 
@@ -26,6 +22,7 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         this.tableName = tableName;
         this.primaryKey = primaryKey;
         this.operations = new ConcurrentSkipListMap<>();
+        this.dependsUpon = new ConcurrentSkipListMap<>();
     }
 
     public String getTableName() {
@@ -57,7 +54,11 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         ConcurrentNavigableMap<Long, Operation> view = dependsUpon.getOperations().headMap(forOp.bid, false);
         if(view.size()>0) {
             totalDependenciesCount.incrementAndGet();
-            view.lastEntry().getValue().addDependent(dependsUpon, forOp);
+
+            Operation dependency = view.lastEntry().getValue();
+            this.dependsUpon.putIfAbsent(dependsUpon, dependency);
+
+            dependency.addDependent(dependsUpon, forOp);
             dependsUpon.addDependent(this, forOp);
         }
     }
@@ -66,6 +67,28 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         totalDependentsCount.incrementAndGet();
     }
 
+    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
+    public synchronized void updateDependencyLevel( ) {
+
+        if(isDependencyLevelCalculated)
+            return;
+
+        dependencyLevel = 0;
+        for (OperationChain oc: dependsUpon.keySet()) {
+
+            if(!oc.hasValidDependencyLevel())
+                oc.updateDependencyLevel();
+
+            if(oc.getDependencyLevel()>=dependencyLevel) {
+                dependencyLevel = oc.getDependencyLevel()+1;
+            }
+        }
+        isDependencyLevelCalculated = true;
+    }
+
+    public synchronized boolean hasValidDependencyLevel(){
+        return isDependencyLevelCalculated;
+    }
 
     private IOnDependencyResolvedListener onDependencyResolvedListener;
     public void setOnOperationChainChangeListener(IOnDependencyResolvedListener onDependencyResolvedListener) {
@@ -111,15 +134,7 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
 
     public void addPotentialDependent(OperationChain potentialDependent, Operation op) {
         potentialDependentsInfo.add(new PotentialDependencyInfo(potentialDependent, op));
-//        potentialDependentsInfo.put(op.bid, new PotentialDependencyInfo(potentialDependent, op)); // issue with duplicates....
     }
-//
-//    public void checkOtherPotentialDependencies(Operation dependencyOp) {
-//        ConcurrentNavigableMap<Long, PotentialDependencyInfo> view = potentialDependentsInfo.tailMap(dependencyOp.bid, false);
-//        for(PotentialDependencyInfo pDependentInfo : view.values())
-//            pDependentInfo.oc.addDependency(pDependentInfo.op, this);
-//        view.clear();
-//    }
 
     public void checkOtherPotentialDependencies(Operation dependencyOp) {
 
@@ -135,27 +150,6 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         processed.clear();
     }
 
-    public synchronized void updateDependencyLevel( ) {
-
-//        if(isDependencyLevelCalculated)
-//            return;
-//
-//        dependencyLevel = 0;
-//        for (OperationChain oc: dependsUpon.keySet()) {
-//
-//            if(!oc.hasValidDependencyLevel())
-//                oc.updateDependencyLevel();
-//
-//            if(oc.getDependencyLevel()>=dependencyLevel) {
-//                dependencyLevel = oc.getDependencyLevel()+1;
-//            }
-//        }
-//        isDependencyLevelCalculated = true;
-    }
-
-    public synchronized boolean hasValidDependencyLevel(){
-        return isDependencyLevelCalculated;
-    }
 
     public int getDependencyLevel() {
         return dependencyLevel;
