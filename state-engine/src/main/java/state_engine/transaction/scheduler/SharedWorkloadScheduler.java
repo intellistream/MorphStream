@@ -50,7 +50,7 @@ public class SharedWorkloadScheduler implements IScheduler {
         }
 
         for(int dLevel : dLevelBasedOCBucketsPerThread.keySet())
-            if(!dLevelBasedOCBuckets.contains(dLevel))
+            if(!dLevelBasedOCBuckets.containsKey(dLevel))
                 dLevelBasedOCBuckets.putIfAbsent(dLevel, new ConcurrentLinkedQueue<>());
 
         for(int dLevel : dLevelBasedOCBucketsPerThread.keySet()) {

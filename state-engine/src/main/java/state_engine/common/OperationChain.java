@@ -1,5 +1,7 @@
 package state_engine.common;
 
+import state_engine.transaction.dedicated.ordered.MyList;
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -9,7 +11,7 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     private String tableName;
     private String primaryKey;
 
-    private ConcurrentSkipListMap<Long, Operation> operations;
+    private MyList<Operation> operations;
     private ConcurrentSkipListMap<OperationChain, Operation> dependsUpon;
     private AtomicInteger totalDependentsCount = new AtomicInteger();
     private AtomicInteger totalDependenciesCount = new AtomicInteger();
@@ -21,7 +23,7 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
-        this.operations = new ConcurrentSkipListMap<>();
+        this.operations = new MyList<>(tableName, primaryKey);
         this.dependsUpon = new ConcurrentSkipListMap<>();
     }
 
@@ -35,10 +37,10 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
 
     public void addOperation(Operation op) {
         op.setOc(this);
-        operations.put(op.bid, op);
+        operations.add(op);
     }
 
-    public ConcurrentSkipListMap<Long, Operation> getOperations() {
+    public MyList<Operation> getOperations() {
         return operations;
     }
 
@@ -50,16 +52,17 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         this.priority = priority;
     }
 
-    public void addDependency(Operation forOp, OperationChain dependsUpon) {
-        ConcurrentNavigableMap<Long, Operation> view = dependsUpon.getOperations().headMap(forOp.bid, false);
-        if(view.size()>0) {
-            totalDependenciesCount.incrementAndGet();
-
-            Operation dependency = view.lastEntry().getValue();
-            this.dependsUpon.putIfAbsent(dependsUpon, dependency);
-
-            dependency.addDependent(dependsUpon, forOp);
-            dependsUpon.addDependent(this, forOp);
+    public void addDependency(Operation forOp, OperationChain dependsUponOp) {
+        Iterator<Operation> iterator = dependsUponOp.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than forOp bid
+        while (iterator.hasNext()) {
+            Operation dependencyOp = iterator.next();
+            if(dependencyOp.bid < forOp.bid) {
+                totalDependenciesCount.incrementAndGet();
+                this.dependsUpon.putIfAbsent(dependsUponOp, dependencyOp);
+                dependencyOp.addDependent(dependsUponOp, forOp);
+                dependsUponOp.addDependent(this, forOp);
+                break;
+            }
         }
     }
 

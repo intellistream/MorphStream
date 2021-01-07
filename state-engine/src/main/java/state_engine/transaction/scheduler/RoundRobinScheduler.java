@@ -57,7 +57,7 @@ public class RoundRobinScheduler implements IScheduler {
         }
 
         for(int dLevel : dLevelBasedOCBucketsPerThread.keySet())
-            if(!dLevelBasedOCBuckets.contains(dLevel))
+            if(!dLevelBasedOCBuckets.containsKey(dLevel))
                 dLevelBasedOCBuckets.putIfAbsent(dLevel, new ArrayList<>());
 
         for(int dLevel : dLevelBasedOCBucketsPerThread.keySet()) {

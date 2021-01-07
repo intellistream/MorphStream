@@ -327,12 +327,12 @@ public final class TxnProcessingEngine {
         }
     }
     //TODO: actual evaluation on the operation_chain.
-    private void process(int threadId, ConcurrentSkipListMap<Long, Operation> operation_chain, long mark_ID) {
+    private void process(int threadId, MyList<Operation> operation_chain, long mark_ID) {
 
-        Map.Entry<Long, Operation> operation = operation_chain.pollFirstEntry();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
+        Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
         while (operation!=null) {
-            process(threadId, operation.getValue(), mark_ID, false);
-            operation = operation_chain.pollFirstEntry();
+            process(threadId, operation, mark_ID, false);
+            operation = operation_chain.pollFirst();
         }//loop.
 //        if (enable_work_stealing) {
 //            while (true) {
@@ -409,7 +409,7 @@ public final class TxnProcessingEngine {
         MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
         while(oc!=null) {
             MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
-            ConcurrentSkipListMap<Long, Operation> operations = oc.getOperations();
+            MyList<Operation> operations = oc.getOperations();
             process(threadId, operations, mark_ID);//directly apply the computation.
             MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
 
@@ -489,7 +489,7 @@ public final class TxnProcessingEngine {
 
             if(operationChain.getDependencyLevel()!=dependencyLevelToProcess)
                 continue;
-            ConcurrentSkipListMap<Long, Operation> operation_chain = operationChain.getOperations();
+            MyList<Operation> operation_chain = operationChain.getOperations();
 //        for (int i = 0; i < H2_SIZE; i++) {
 //            ConcurrentSkipListSet<Operation> operation_chain = holder.holder_v2[i];
 //        Set<Operation> operation_chain = holder.holder_v3;
