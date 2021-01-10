@@ -109,9 +109,8 @@ public class RoundRobinScheduler implements IScheduler {
     }
 
     @Override
-    public synchronized boolean areAllOCsScheduled(int threadId){
-        return currentDLevelToProcess[threadId] == maxDLevel &&
-                indexOfNextOCToProcess[threadId] >= dLevelBasedOCBuckets.get(maxDLevel).size();
+    public boolean areAllOCsScheduled(int threadId){
+        return currentDLevelToProcess[threadId] > maxDLevel;
     }
 
     @Override

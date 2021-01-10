@@ -332,13 +332,11 @@ public class DataGenerator {
 
 
     private DataOperationChain getNewAccountOC() {
+
 //        int range = 10 * mTotalTuplesToGenerate * 5;
-//        int quatRange = range/4;
-
-//        int id = range/2 + ((int)(mRandomGeneratorForAccIds.nextGaussian()*(quatRange*1.0f)));
-//        while(mGeneratedAccountIds.containsKey(id) || id<=0 || id>=range)
-//            id = range/2 + ((int)(mRandomGeneratorForAccIds.nextGaussian()*(quatRange*1.0f)));
-
+//        int id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
+//        while(mGeneratedAccountIds.containsKey(id))
+//            id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
         int id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
         while(mGeneratedAccountIds.containsKey(id))
             id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
@@ -349,13 +347,11 @@ public class DataGenerator {
     }
 
     private DataOperationChain getNewAssetOC() {
+
 //        int range = 10 * mTotalTuplesToGenerate * 5;
-//        int quatRange = range/4;
-
-//        int id = range/2 + ((int)(mRandomGeneratorForAstIds.nextGaussian()*(quatRange*1.0f)));
-//        while(mGeneratedAssetIds.containsKey(id) || id<=0 || id>=range)
-//            id = range/2 + ((int)(mRandomGeneratorForAstIds.nextGaussian()*(quatRange*1.0f)));
-
+//        int id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
+//        while(mGeneratedAssetIds.containsKey(id))
+//            id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
         int id = mRandomGeneratorForAstIds.nextInt(10 * mTotalTuplesToGenerate * 5);
         while(mGeneratedAssetIds.containsKey(id))
             id = mRandomGeneratorForAstIds.nextInt(10 * mTotalTuplesToGenerate * 5);

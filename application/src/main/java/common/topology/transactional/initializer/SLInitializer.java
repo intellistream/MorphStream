@@ -68,11 +68,10 @@ public class SLInitializer extends TableInitilizer {
             HashMap<Integer, Integer> mGeneratedAssetIds = new HashMap<>();
 
             int range = 10 * totalRecords * 5;
-            int quatRange = range/4;
             for(int lop=0; lop<accountIdsRange; lop++) {
-//                int id = range/2 + ((int)(mRandomGeneratorForAccIds.nextGaussian()*(quatRange*1.0f)));
-//                while(mGeneratedAccountIds.containsKey(id) || id<=0 || id>=range)
-//                    id = range/2 + ((int)(mRandomGeneratorForAccIds.nextGaussian()*(quatRange*1.0f)));
+//                int id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
+//                while(mGeneratedAccountIds.containsKey(id))
+//                    id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
                 int id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
                 while(mGeneratedAccountIds.containsKey(id))
                     id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
@@ -90,10 +89,9 @@ public class SLInitializer extends TableInitilizer {
             }
 
             for(int lop=0; lop<assetIdsRange; lop++) {
-//                int id = range/2 + ((int)(mRandomGeneratorForAstIds.nextGaussian()*(quatRange*1.0f)));
-//                while(mGeneratedAssetIds.containsKey(id) || id<=0 || id>=range)
-//                    id = range/2 + ((int)(mRandomGeneratorForAstIds.nextGaussian()*(quatRange*1.0f)));
-
+//                int id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
+//                while(mGeneratedAssetIds.containsKey(id))
+//                    id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
                 int id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);
                 while(mGeneratedAssetIds.containsKey(id))
                     id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);

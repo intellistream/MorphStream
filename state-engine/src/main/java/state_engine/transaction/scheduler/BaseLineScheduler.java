@@ -74,7 +74,7 @@ public class BaseLineScheduler implements IScheduler {
         return oc; // if a null is returned, it means, we are done with level!
     }
 
-    private OperationChain getOcForThreadAndDLevel(int threadId, int dLevel) {
+    protected OperationChain getOcForThreadAndDLevel(int threadId, int dLevel) {
         List<OperationChain> ocs = dLevelBasedOCBuckets.get(threadId).get(dLevel);
         OperationChain oc = null;
         if(ocs!=null && ocs.size()>0) {

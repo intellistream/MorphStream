@@ -5,7 +5,7 @@ import state_engine.common.OperationChain;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SmartNoBarrierSWSchedulerv3 implements IScheduler, OperationChain.IOnDependencyResolvedListener {
+public class SmartNoBarrierSWSchedulerv4 implements IScheduler, OperationChain.IOnDependencyResolvedListener {
 
 
     private Object leftOversLock = new Object();
@@ -21,9 +21,20 @@ public class SmartNoBarrierSWSchedulerv3 implements IScheduler, OperationChain.I
     private AtomicInteger totalSubmitted;
     private AtomicInteger totalProcessed;
 
-    public SmartNoBarrierSWSchedulerv3(int tp) {
+    private OperationChain[] leftOversLocalCacheHead;
+    private OperationChain[] leftOversLocalCacheTail;
+    private OperationChain[] withDependentsLocalCacheHead;
+    private OperationChain[] withDependentsLocalCacheTail;
+
+    public SmartNoBarrierSWSchedulerv4(int tp) {
         totalSubmitted = new AtomicInteger(0);
         totalProcessed = new AtomicInteger(0);
+
+        leftOversLocalCacheHead = new OperationChain[tp];
+        leftOversLocalCacheTail = new OperationChain[tp];
+
+        withDependentsLocalCacheHead = new OperationChain[tp];
+        withDependentsLocalCacheTail = new OperationChain[tp];
     }
 
     @Override
@@ -85,24 +96,29 @@ public class SmartNoBarrierSWSchedulerv3 implements IScheduler, OperationChain.I
         }
     }
 
+
     @Override
     public void onDependencyResolvedListener(int threadId, OperationChain oc) {
         if(oc.hasDependents())
-            synchronized (withDependentsLock) {
-                withDependentsTail.next = oc;
-                oc.prev = withDependentsTail;
-                withDependentsTail = oc;
-                if(withDependentsCurrent==null)
-                    withDependentsCurrent = oc;
+            if(withDependentsLocalCacheTail[threadId]!=null) {
+                withDependentsLocalCacheTail[threadId].next = oc;
+                oc.prev = withDependentsLocalCacheTail[threadId];
+                withDependentsLocalCacheTail[threadId] = oc;
+            } else {
+                withDependentsLocalCacheHead[threadId] = oc;
+                withDependentsLocalCacheTail[threadId] = oc;
             }
         else
-            synchronized (leftOversLock) {
-                leftOversTail.next = oc;
-                oc.prev = leftOversTail;
-                leftOversTail = oc;
-                if(leftOverCurrent==null)
-                    leftOverCurrent = oc;
+            if(leftOversLocalCacheTail[threadId] != null) {
+                leftOversLocalCacheTail[threadId].next = oc;
+                oc.prev = leftOversLocalCacheTail[threadId];
+                leftOversLocalCacheTail[threadId] = oc;
+            } else {
+                leftOversLocalCacheHead[threadId] = oc;
+                leftOversLocalCacheTail[threadId] = oc;
             }
+
+
     }
 
     @Override
@@ -115,28 +131,68 @@ public class SmartNoBarrierSWSchedulerv3 implements IScheduler, OperationChain.I
         }
         if(oc!=null)
             totalProcessed.incrementAndGet();
+
         return oc;
+
     }
 
     protected OperationChain getOcForThreadAndDLevel(int threadId) {
         OperationChain oc = null;
 
         synchronized (withDependentsLock) {
+
             if(withDependentsCurrent!=null) {
                 oc = withDependentsCurrent;
                 withDependentsCurrent = withDependentsCurrent.next;
             }
+
+            if(oc==null && withDependentsLocalCacheHead[threadId] != null) {
+
+                oc = withDependentsLocalCacheHead[threadId];
+                withDependentsLocalCacheHead[threadId] = withDependentsLocalCacheHead[threadId].next;
+
+                if(withDependentsLocalCacheHead[threadId] != null) {
+                    withDependentsTail.next = withDependentsLocalCacheHead[threadId];
+                    withDependentsLocalCacheHead[threadId].prev = withDependentsTail;
+                    withDependentsTail = withDependentsLocalCacheTail[threadId];
+
+                    if(withDependentsCurrent==null)
+                        withDependentsCurrent = withDependentsLocalCacheHead[threadId];
+                }
+
+                withDependentsLocalCacheHead[threadId] = null;
+                withDependentsLocalCacheTail[threadId] = null;
+            }
         }
 
-        if(oc==null) {
-            synchronized (leftOversLock) {
+
+        synchronized (leftOversLock) {
+
+            if(oc==null) {
                 if(leftOverCurrent!=null) {
                     oc = leftOverCurrent;
                     leftOverCurrent = leftOverCurrent.next;
                 }
             }
-        }
 
+            if(oc==null && leftOversLocalCacheHead[threadId] != null) {
+
+                oc = leftOversLocalCacheHead[threadId];
+                leftOversLocalCacheHead[threadId] = leftOversLocalCacheHead[threadId].next;
+
+                if(leftOversLocalCacheHead[threadId] != null) {
+                    leftOversTail.next = leftOversLocalCacheHead[threadId];
+                    leftOversLocalCacheHead[threadId].prev = leftOversTail;
+                    leftOversTail = leftOversLocalCacheTail[threadId];
+
+                    if(leftOverCurrent==null)
+                        leftOverCurrent = leftOversLocalCacheHead[threadId];
+                }
+
+                leftOversLocalCacheHead[threadId] = null;
+                leftOversLocalCacheTail[threadId] = null;
+            }
+        }
 
         return oc;
     }

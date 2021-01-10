@@ -11,6 +11,9 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     private String tableName;
     private String primaryKey;
 
+    public OperationChain next;
+    public OperationChain prev;
+
     private MyList<Operation> operations;
     private ConcurrentSkipListMap<OperationChain, Operation> dependsUpon;
     private AtomicInteger totalDependentsCount = new AtomicInteger();
