@@ -181,7 +181,10 @@ public abstract class abstractRunner {
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Number of dependency levels.")
     public String scheduler = "BL";
-
+    @Parameter(names = {"--fanoutDist"}, description = "Fanout scheme.")
+    public String fanoutDist = "uniform";
+    @Parameter(names = {"--idGenType"}, description = "Ids distribution scheme.")
+    public String idGenType = "uniform";
     public abstractRunner() {
 //        if (OsUtils.isWindows()) {
 //            CFG_PATH = "\\config\\%s.properties";
@@ -231,6 +234,8 @@ public abstract class abstractRunner {
         config.put("numberOfBatches", numberOfBatches);
         config.put("rootFilePath", rootPath);
         config.put("scheduler", scheduler);
+        config.put("fanoutDist", fanoutDist);
+        config.put("idGenType", idGenType);
 
         if (num_socket != -1) {
             config.put("num_socket", num_socket);

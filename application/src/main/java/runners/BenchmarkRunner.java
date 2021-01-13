@@ -21,7 +21,7 @@ public class BenchmarkRunner {
 //        Random mRandomGeneratorForAstIds = new Random(123456789);
 //        BufferedWriter fileWriter = null;
 //        try {
-//            File file = new File("C:\\Users\\Aqif\\sesame\\SYNTH_DATA\\testFolder\\dist.txt");
+//            File file = new File("C:\\Users\\Aqif\\IdeaProjects\\thesisdata_v4\\dist.txt");
 //            if (!file.exists())
 //                file.createNewFile();
 //

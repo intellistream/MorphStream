@@ -4,6 +4,9 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import datagenerator.DataGenerator;
 import datagenerator.DataOperationChain;
+import datagenerator.idsgenerator.IIdsGenerator;
+import datagenerator.idsgenerator.NormalIdsGenerator;
+import datagenerator.idsgenerator.UniformIdsGenerator;
 import org.apache.storm.shade.org.eclipse.jetty.util.BlockingArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,12 +38,16 @@ public class SLInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(SLInitializer.class);
     private String dataRootPath;
     private int totalRecords;
+    private String idsGenType;
 
     public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
         this.dataRootPath = dataRootPath;
         configure_store(scale_factor, theta, tthread, NUM_ACCOUNTS);
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
+        idsGenType = config.getString("idGenType");
+
+
     }
 
     @Override
@@ -68,13 +75,18 @@ public class SLInitializer extends TableInitilizer {
             HashMap<Integer, Integer> mGeneratedAssetIds = new HashMap<>();
 
             int range = 10 * totalRecords * 5;
+            int id = 0;
             for(int lop=0; lop<accountIdsRange; lop++) {
-//                int id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
-//                while(mGeneratedAccountIds.containsKey(id))
-//                    id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
-                int id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
-                while(mGeneratedAccountIds.containsKey(id))
+                if(idsGenType.equals("uniform")) {
                     id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
+                    while(mGeneratedAccountIds.containsKey(id))
+                        id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
+                } else if(idsGenType.equals("hgaussian")) {
+                    id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
+                    while(mGeneratedAccountIds.containsKey(id))
+                        id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
+                }
+
                 mGeneratedAccountIds.put(id, null);
 
                 String _key = String.format("%d", id);
@@ -89,12 +101,17 @@ public class SLInitializer extends TableInitilizer {
             }
 
             for(int lop=0; lop<assetIdsRange; lop++) {
-//                int id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
-//                while(mGeneratedAssetIds.containsKey(id))
-//                    id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
-                int id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);
-                while(mGeneratedAssetIds.containsKey(id))
+
+                if(idsGenType.equals("uniform")) {
                     id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);
+                    while(mGeneratedAssetIds.containsKey(id))
+                        id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);
+                } else if(idsGenType.equals("hgaussian")) {
+                    id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
+                    while(mGeneratedAssetIds.containsKey(id))
+                        id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
+                }
+
                 mGeneratedAssetIds.put(id, null);
 
                 String _key = String.format("%d", id);

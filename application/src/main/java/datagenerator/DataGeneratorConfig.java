@@ -3,6 +3,7 @@ package datagenerator;
 import com.beust.jcommander.Parameter;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import common.collections.OsUtils;
+import common.tools.ZipfGenerator;
 
 public class DataGeneratorConfig {
 
@@ -28,6 +29,12 @@ public class DataGeneratorConfig {
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
     public String scheduler = "BL";
 
+    @Parameter(names = {"--fanoutDist"}, description = "Fanout scheme.")
+    public String fanoutDist = "uniform";
+
+    @Parameter(names = {"--idGenType"}, description = "Ids distribution scheme.")
+    public String idGenType = "uniform";
+
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
     public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
     public String idsPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
@@ -37,17 +44,30 @@ public class DataGeneratorConfig {
     public void updateDependencyLevels() {
 
         dependenciesDistributionForLevels = new float[numberOfDLevels];
-
-//        for(int lop=0; lop<numberOfDLevels/2; lop++) {
-//            dependenciesDistributionForLevels[lop] = 0.6f/(numberOfDLevels/2.0f);
-//        }
-//
-//        for(int lop=numberOfDLevels/2; lop<numberOfDLevels; lop++) {
-//            dependenciesDistributionForLevels[lop] = 0.4f/(numberOfDLevels/2.0f);
-//        }
-
-        for(int index=0; index<numberOfDLevels; index++) {
-            dependenciesDistributionForLevels[index] = 1f / (numberOfDLevels * 1.0f);
+        if(fanoutDist.equals("uniform")) {
+            for(int index=0; index<numberOfDLevels; index++) {
+                dependenciesDistributionForLevels[index] = 1f / (numberOfDLevels * 1.0f);
+            }
+        } else if (fanoutDist.equals("zipfinv")) {
+            ZipfGenerator zipf = new ZipfGenerator(numberOfDLevels, 1);
+            for(int index=0; index<numberOfDLevels; index++) {
+                dependenciesDistributionForLevels[index] = (float) zipf.getProbability(numberOfDLevels-index);
+            }
+        } else if (fanoutDist.equals("zipf")) {
+            ZipfGenerator zipf = new ZipfGenerator(numberOfDLevels, 1);
+            for(int index=0; index<numberOfDLevels; index++) {
+                dependenciesDistributionForLevels[index] = (float) zipf.getProbability(index+1);
+            }
+        } else if (fanoutDist.equals("zipfcenter")) {
+            ZipfGenerator zipf = new ZipfGenerator(numberOfDLevels/2, 1);
+            for(int index=0; index<numberOfDLevels/2; index++) {
+                dependenciesDistributionForLevels[index] = (float) zipf.getProbability(index+1);
+            }
+            for(int index=numberOfDLevels/2; index<numberOfDLevels; index++) {
+                dependenciesDistributionForLevels[index] = (float) zipf.getProbability(numberOfDLevels-index);
+            }
+        }else {
+            throw new UnsupportedOperationException("Invalid fanout scheme.");
         }
 
 //        System.out.println("Demanded distribution...");

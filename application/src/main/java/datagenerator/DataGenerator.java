@@ -333,13 +333,18 @@ public class DataGenerator {
 
     private DataOperationChain getNewAccountOC() {
 
-//        int range = 10 * mTotalTuplesToGenerate * 5;
-//        int id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
-//        while(mGeneratedAccountIds.containsKey(id))
-//            id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
-        int id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
-        while(mGeneratedAccountIds.containsKey(id))
-            id = mRandomGeneratorForAccIds.nextInt(10 * mTotalTuplesToGenerate * 5);
+        int id = 0;
+        int range = 10 * mTotalTuplesToGenerate * 5;
+        if(dataConfig.idGenType.equals("uniform")) {
+            id = mRandomGeneratorForAccIds.nextInt(range);
+            while(mGeneratedAccountIds.containsKey(id))
+                id = mRandomGeneratorForAccIds.nextInt(range);
+        } else if(dataConfig.idGenType.equals("hgaussian")) {
+            id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
+            while(mGeneratedAccountIds.containsKey(id))
+                id = (int)Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian()/3.5)*range)%range;
+        }
+
         mGeneratedAccountIds.put(id, null);
         DataOperationChain oc = new DataOperationChain("act_"+id, (10 * mTotalTuplesToGenerate * 5) /dataConfig.numberOfDLevels, mAccountOperationChainsByLevel);
         totalAccountRecords++;
@@ -348,13 +353,17 @@ public class DataGenerator {
 
     private DataOperationChain getNewAssetOC() {
 
-//        int range = 10 * mTotalTuplesToGenerate * 5;
-//        int id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
-//        while(mGeneratedAssetIds.containsKey(id))
-//            id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
-        int id = mRandomGeneratorForAstIds.nextInt(10 * mTotalTuplesToGenerate * 5);
-        while(mGeneratedAssetIds.containsKey(id))
-            id = mRandomGeneratorForAstIds.nextInt(10 * mTotalTuplesToGenerate * 5);
+        int id = 0;
+        int range = 10 * mTotalTuplesToGenerate * 5;
+        if(dataConfig.idGenType.equals("uniform")) {
+            id = mRandomGeneratorForAstIds.nextInt(range);
+            while(mGeneratedAssetIds.containsKey(id))
+                id = mRandomGeneratorForAstIds.nextInt(range);
+        } else if(dataConfig.idGenType.equals("hgaussian")) {
+            id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
+            while(mGeneratedAssetIds.containsKey(id))
+                id = (int)Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian()/3.5)*range)%range;
+        }
         mGeneratedAssetIds.put(id, null);
         DataOperationChain oc = new DataOperationChain("ast_"+id, (10 * mTotalTuplesToGenerate * 5) /dataConfig.numberOfDLevels, mAssetsOperationChainsByLevel);
         totalAssetRecords++;
