@@ -22,10 +22,10 @@ public class NoBarrierBaseLineScheduler extends BaseLineScheduler {
         }
         MeasureTools.BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
         while(oc!=null && oc.hasDependency()); // Wait for dependency resolution
+        MeasureTools.END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
 
         if(oc!=null)
             scheduledOcsCount[threadId] += 1;
-        MeasureTools.END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
         return oc;
     }
 
