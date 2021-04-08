@@ -141,11 +141,6 @@ public class BasicBenchmark implements IBenchmark {
         String statsFolderPath = String.format(statsFolderPattern, mDataGenerator.getDataConfig().scheduler, numberOfLevels, tt, totalBatches, tuplesPerBatch);
         File file = new File(statsFolderPath+ String.format("iteration_%d.csv", (totalIterations-1)));
         if(!file.exists()) {
-//            System.out.println("Stats for following execution already exists at,");
-//            System.out.println(statsFolderPath);
-//            System.out.println("Please delete them to re-execute the benchmark.");
-//            return;
-
             mDataGenerator.GenerateData();
             mDataGenerator = null;
         }
@@ -159,8 +154,6 @@ public class BasicBenchmark implements IBenchmark {
         } catch (InterruptedException ex) {
             System.out.println("Error in running topology locally"+ ex.toString());
         }
-
-
 
     }
 

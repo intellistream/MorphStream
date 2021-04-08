@@ -5,7 +5,10 @@ import state_engine.profiler.MeasureTools;
 import state_engine.utils.SOURCE_CONTROL;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 // schedules Ocs in round robin fashion for each level.
@@ -84,7 +87,7 @@ public class RoundRobinScheduler implements IScheduler {
                 if(areAllOCsScheduled(threadId))
                     break;
                 currentDLevelToProcess[threadId] += 1;
-                indexOfNextOCToProcess[threadId] = threadId;
+//                indexOfNextOCToProcess[threadId] = threadId;
                 oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
 
                 MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
@@ -100,10 +103,15 @@ public class RoundRobinScheduler implements IScheduler {
         List<OperationChain> ocs = dLevelBasedOCBuckets.get(dLevel);
         OperationChain oc = null;
         int indexOfOC = indexOfNextOCToProcess[threadId];
-        if(ocs!=null && ocs.size()>indexOfOC) {
-            oc = ocs.get(indexOfOC);
+        if(ocs!=null) {
+            if(ocs.size()>indexOfOC) {
+                oc = ocs.get(indexOfOC);
+                indexOfNextOCToProcess[threadId] = indexOfOC + totalThreads;
+            } else {
+                indexOfNextOCToProcess[threadId] = indexOfOC - ocs.size();
+            }
+
         }
-        indexOfNextOCToProcess[threadId] = indexOfOC + totalThreads;
 
         return oc;
     }

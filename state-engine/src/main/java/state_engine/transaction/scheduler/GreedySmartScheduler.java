@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SmartNoBarrierSWSchedulerv5 implements IScheduler, OperationChain.IOnDependencyResolvedListener {
+public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDependencyResolvedListener {
 
     private ConcurrentLinkedQueue<OperationChain> leftOvers;
     private ConcurrentLinkedQueue<OperationChain> withDependents;
@@ -18,7 +18,7 @@ public class SmartNoBarrierSWSchedulerv5 implements IScheduler, OperationChain.I
     private AtomicInteger totalSubmitted;
     private AtomicInteger totalProcessed;
 
-    public SmartNoBarrierSWSchedulerv5(int tp) {
+    public GreedySmartScheduler(int tp) {
         leftOvers = new ConcurrentLinkedQueue<>();
         withDependents = new ConcurrentLinkedQueue<>();
 
