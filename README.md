@@ -1,4 +1,4 @@
-# sesame
+# TStreamPlus
 ![Java CI with Maven](https://github.com/ShuhaoZhangTony/TStreamPlus/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
 
 This project aims at building scalable concurrent stateful stream processing engine
