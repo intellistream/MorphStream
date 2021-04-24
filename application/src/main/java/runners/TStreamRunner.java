@@ -48,15 +48,15 @@ import static state_engine.content.T_StreamContentImpl.T_STREAMCONTENT;
 import static state_engine.content.ToContentImpl.TO_CONTENT;
 import static state_engine.content.common.ContentCommon.content_type;
 
-public class sesameRunner extends abstractRunner {
+public class TStreamRunner extends abstractRunner {
 
-    private static final Logger LOG = LoggerFactory.getLogger(sesameRunner.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TStreamRunner.class);
     private static Topology final_topology;
     private final AppDriver driver;
     private final Configuration config = new Configuration();
     private Platform platform;
 
-    public sesameRunner() {
+    public TStreamRunner() {
         driver = new AppDriver();
         //Transactional Application
         driver.addApp("GrepSum", GrepSum.class);//GS
@@ -66,7 +66,7 @@ public class sesameRunner extends abstractRunner {
     }
 
     public static void main(String[] args) {
-        sesameRunner runner = new sesameRunner();
+        TStreamRunner runner = new TStreamRunner();
         JCommander cmd = new JCommander(runner);
         try {
             cmd.parse(args);
