@@ -9,9 +9,9 @@ import org.slf4j.Logger;
 import components.operators.api.TransactionalBolt;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
-import state_engine.db.DatabaseException;
-import state_engine.storage.datatype.DataBox;
-import state_engine.transaction.impl.TxnContext;
+import db.DatabaseException;
+import storage.datatype.DataBox;
+import transaction.impl.TxnContext;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,9 +20,9 @@ import java.util.Map;
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static state_engine.Meta.MetaTypes.AccessType.READ_WRITE;
-import static state_engine.profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
-import static state_engine.profiler.MeasureTools.END_POST_TIME_MEASURE;
+import static common.meta.MetaTypes.AccessType.READ_WRITE;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 public abstract class TPBolt extends TransactionalBolt {
     /**
      * Maps each vehicle to its average speed value that corresponds to the current 'minute number' and specified segment.

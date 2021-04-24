@@ -17,7 +17,7 @@ import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
 
 import java.util.HashMap;
-//import static Brisk.state_engine.utils.Utils.printAddresses;
+//import static Brisk.utils.Utils.printAddresses;
 public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
     private static final Logger LOG = LoggerFactory.getLogger(SplitSentenceBolt_FT.class);
     private static final long serialVersionUID = -8704562309673923018L;

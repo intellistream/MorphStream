@@ -3,16 +3,16 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import state_engine.db.Database;
-import state_engine.db.DatabaseException;
-import state_engine.common.SpinLock;
-import state_engine.storage.SchemaRecord;
-import state_engine.storage.TableRecord;
-import state_engine.storage.datatype.DataBox;
-import state_engine.storage.datatype.LongDataBox;
-import state_engine.storage.datatype.StringDataBox;
-import state_engine.storage.table.RecordSchema;
-import state_engine.transaction.TableInitilizer;
+import db.Database;
+import db.DatabaseException;
+import common.SpinLock;
+import storage.SchemaRecord;
+import storage.TableRecord;
+import storage.datatype.DataBox;
+import storage.datatype.LongDataBox;
+import storage.datatype.StringDataBox;
+import storage.table.RecordSchema;
+import transaction.TableInitilizer;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -20,7 +20,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import static common.constants.StreamLedgerConstants.Constant.*;
-import static state_engine.transaction.State.*;
+import static transaction.State.*;
 //import static xerial.jnuma.Numa.setLocalAlloc;
 public class SLInitializer extends TableInitilizer {
 

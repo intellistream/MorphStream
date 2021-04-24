@@ -2,23 +2,23 @@ package common.topology.transactional.initializer;
 import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import state_engine.db.Database;
-import state_engine.db.DatabaseException;
-import state_engine.common.SpinLock;
-import state_engine.storage.SchemaRecord;
-import state_engine.storage.TableRecord;
-import state_engine.storage.datatype.DataBox;
-import state_engine.storage.datatype.DoubleDataBox;
-import state_engine.storage.datatype.HashSetDataBox;
-import state_engine.storage.datatype.StringDataBox;
-import state_engine.storage.table.RecordSchema;
-import state_engine.transaction.TableInitilizer;
+import db.Database;
+import db.DatabaseException;
+import common.SpinLock;
+import storage.SchemaRecord;
+import storage.TableRecord;
+import storage.datatype.DataBox;
+import storage.datatype.DoubleDataBox;
+import storage.datatype.HashSetDataBox;
+import storage.datatype.StringDataBox;
+import storage.table.RecordSchema;
+import transaction.TableInitilizer;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
-import static state_engine.utils.PartitionHelper.getPartition_interval;
+import static utils.PartitionHelper.getPartition_interval;
 public class TPInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(TPInitializer.class);
     public TPInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {

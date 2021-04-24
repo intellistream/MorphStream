@@ -1,8 +1,8 @@
 package common.param.sl;
 import common.param.TxnEvent;
-import state_engine.storage.SchemaRecordRef;
-import state_engine.storage.TableRecordRef;
-import state_engine.storage.datatype.DataBox;
+import storage.SchemaRecordRef;
+import storage.TableRecordRef;
+import storage.datatype.DataBox;
 
 import java.util.List;
 public class DepositEvent extends TxnEvent {

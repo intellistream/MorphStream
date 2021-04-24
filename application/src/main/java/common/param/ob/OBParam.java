@@ -1,5 +1,5 @@
 package common.param.ob;
-import state_engine.benchmark.TxnParam;
+import benchmark.TxnParam;
 public class OBParam extends TxnParam {
     int[] itemID;
     public OBParam(int numItems) {

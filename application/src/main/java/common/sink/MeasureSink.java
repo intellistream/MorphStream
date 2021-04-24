@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import components.operators.api.BaseSink;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
-import state_engine.utils.SINK_CONTROL;
+import utils.SINK_CONTROL;
 
 import java.io.*;
 import java.util.ArrayDeque;

@@ -13,9 +13,9 @@ import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
 import topology.TransactionTopology;
-import state_engine.common.PartitionedOrderLock;
-import state_engine.common.SpinLock;
-import state_engine.transaction.TableInitilizer;
+import common.PartitionedOrderLock;
+import common.SpinLock;
+import transaction.TableInitilizer;
 
 import java.util.Random;
 
@@ -23,7 +23,7 @@ import static common.CONTROL.enable_app_combo;
 import static common.constants.StreamLedgerConstants.Conf.SL_THREADS;
 import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
 import static common.constants.StreamLedgerConstants.PREFIX;
-import static state_engine.utils.PartitionHelper.setPartition_interval;
+import static utils.PartitionHelper.setPartition_interval;
 /**
  * Short term as SL.
  */

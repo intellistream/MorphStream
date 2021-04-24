@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import static common.CONTROL.*;
-import static state_engine.content.Content.*;
+import static content.Content.*;
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class TPCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(TPCombo.class);

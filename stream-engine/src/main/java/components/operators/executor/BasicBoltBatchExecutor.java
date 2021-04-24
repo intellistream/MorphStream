@@ -5,7 +5,7 @@ import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import state_engine.db.DatabaseException;
+import db.DatabaseException;
 
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;

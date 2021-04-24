@@ -82,7 +82,7 @@ public class ShufflePartitionController extends PartitionController {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
-//		int target = extendedTargetId.GetAndUpdate(meta.index++);
+//		int target = extendedTargetId.GetAndUpdate(common.meta.index++);
         offer(meta.src_id, extendedTargetId.get(meta.index++), streamId, bid, output);
         return 0;//target not in use anyway.
     }

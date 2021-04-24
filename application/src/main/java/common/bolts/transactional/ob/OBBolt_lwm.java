@@ -6,7 +6,7 @@ import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import faulttolerance.impl.ValueState;
-import state_engine.transaction.dedicated.ordered.TxnManagerLWM;
+import transaction.dedicated.ordered.TxnManagerLWM;
 
 import java.util.Map;
 public class OBBolt_lwm extends OBBolt_LA {

@@ -1,5 +1,5 @@
 package common.param;
-import state_engine.benchmark.TxnParam;
+import benchmark.TxnParam;
 public class MicroParam extends TxnParam {
     int[] keys;
     //    List<DataBox>[] value_list;//Note, it should be arraylist instead of linkedlist as there's no add/remove later.

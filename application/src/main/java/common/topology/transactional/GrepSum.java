@@ -10,16 +10,16 @@ import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
 import topology.TransactionTopology;
-import state_engine.common.PartitionedOrderLock;
-import state_engine.common.SpinLock;
-import state_engine.profiler.Metrics;
-import state_engine.transaction.TableInitilizer;
+import common.PartitionedOrderLock;
+import common.SpinLock;
+import profiler.Metrics;
+import transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
 import static common.constants.GrepSumConstants.Conf.Executor_Threads;
 import static common.constants.GrepSumConstants.PREFIX;
-import static state_engine.content.Content.*;
-import static state_engine.utils.PartitionHelper.setPartition_interval;
+import static content.Content.*;
+import static utils.PartitionHelper.setPartition_interval;
 public class GrepSum extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(GrepSum.class);
     public GrepSum(String topologyName, Configuration config) {

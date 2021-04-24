@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import components.TopologyComponent;
 import components.context.TopologyContext;
 import execution.ExecutionNode;
-import state_engine.db.DatabaseException;
+import db.DatabaseException;
 
 import java.util.HashMap;
 import java.util.Queue;

@@ -6,7 +6,7 @@ import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import faulttolerance.impl.ValueState;
-import state_engine.transaction.dedicated.ordered.TxnManagerOrderLockBlocking;
+import transaction.dedicated.ordered.TxnManagerOrderLockBlocking;
 
 import java.util.Map;
 public class OBBolt_olb extends OBBolt_LA {

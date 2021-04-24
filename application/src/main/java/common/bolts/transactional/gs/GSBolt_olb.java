@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import execution.ExecutionGraph;
 import faulttolerance.impl.ValueState;
-import state_engine.transaction.dedicated.ordered.TxnManagerOrderLockBlocking;
+import transaction.dedicated.ordered.TxnManagerOrderLockBlocking;
 public class GSBolt_olb extends GSBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_olb.class);
     private static final long serialVersionUID = -5968750340131744744L;

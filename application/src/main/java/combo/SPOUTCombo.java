@@ -14,17 +14,17 @@ import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import faulttolerance.impl.ValueState;
-import state_engine.db.DatabaseException;
-import state_engine.profiler.MeasureTools;
-import state_engine.profiler.Metrics;
-import state_engine.utils.SOURCE_CONTROL;
+import db.DatabaseException;
+import profiler.MeasureTools;
+import profiler.Metrics;
+import utils.SOURCE_CONTROL;
 
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.Constants.DEFAULT_STREAM_ID;
-import static state_engine.content.Content.CCOption_SStore;
-import static state_engine.content.Content.CCOption_TStream;
-import static state_engine.profiler.Metrics.NUM_ITEMS;
+import static content.Content.CCOption_SStore;
+import static content.Content.CCOption_TStream;
+import static profiler.Metrics.NUM_ITEMS;
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public abstract class SPOUTCombo extends TransactionalSpout {
     private static final long serialVersionUID = -2394340130331865581L;

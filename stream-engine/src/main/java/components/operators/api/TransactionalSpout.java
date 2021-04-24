@@ -10,7 +10,7 @@ import java.util.ArrayList;
 
 import static common.CONTROL.enable_debug;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static state_engine.profiler.Metrics.NUM_ACCESSES;
+import static profiler.Metrics.NUM_ACCESSES;
 public abstract class TransactionalSpout extends AbstractSpout implements Checkpointable {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalSpout.class);
     public transient FastZipfGenerator p_generator;

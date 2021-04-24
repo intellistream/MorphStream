@@ -327,7 +327,7 @@ public class MultiStreamOutputContoller extends OutputController {
 //			for (PartitionController p :
 //					PClist.GetAndUpdate(streamId).values()) {
 //                try {
-//                    p.create_marker_boardcast(meta.GetAndUpdate(p.childOP), streamId, timestamp, bid, myiteration);
+//                    p.create_marker_boardcast(common.meta.GetAndUpdate(p.childOP), streamId, timestamp, bid, myiteration);
 //                } catch (InterruptedException e) {
 ////                    e.printStackTrace();
 //                }

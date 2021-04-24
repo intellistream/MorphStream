@@ -9,14 +9,14 @@ import components.TopologyComponent;
 import components.exception.UnhandledCaseException;
 import execution.ExecutionGraph;
 import optimization.OptimizationManager;
-import state_engine.common.SpinLock;
-import state_engine.profiler.Metrics;
+import common.SpinLock;
+import profiler.Metrics;
 
 import java.util.Collection;
 
 import static common.CONTROL.enable_shared_state;
 import static controller.affinity.SequentialBinding.SequentialBindingInitilize;
-import static state_engine.profiler.Metrics.POST_COMPUTE_COMPLEXITY;
+import static profiler.Metrics.POST_COMPUTE_COMPLEXITY;
 
 public class TopologySubmitter {
     private final static Logger LOG = LoggerFactory.getLogger(TopologySubmitter.class);

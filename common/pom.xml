@@ -24,7 +24,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>common.state_engine.utils</mainClass>
+                            <mainClass>common.utils</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

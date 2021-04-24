@@ -3,7 +3,7 @@ import org.slf4j.Logger;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import state_engine.db.DatabaseException;
+import db.DatabaseException;
 
 import java.util.LinkedList;
 import java.util.Map;

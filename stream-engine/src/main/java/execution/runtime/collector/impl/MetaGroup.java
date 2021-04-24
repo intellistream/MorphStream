@@ -4,7 +4,7 @@ import components.TopologyComponent;
 import java.util.HashMap;
 public class MetaGroup {
     private final int taskId;
-    HashMap<TopologyComponent, Meta> map = new HashMap<>();//every children op corresponds to one meta.
+    HashMap<TopologyComponent, Meta> map = new HashMap<>();//every children op corresponds to one common.meta.
     public MetaGroup(int taskId) {
         this.taskId = taskId;
     }

@@ -1,6 +1,6 @@
 package common.param.lr;
 import common.datatype.PositionReport;
-import state_engine.storage.SchemaRecordRef;
+import storage.SchemaRecordRef;
 /**
  * Currently only consider position events.
  */
@@ -12,7 +12,7 @@ public class LREvent {
     public SchemaRecordRef speed_value;
     public SchemaRecordRef count_value;
     private long timestamp;
-    private PositionReport posreport;//input_event associated meta data.
+    private PositionReport posreport;//input_event associated common.meta data.
 //    private final AvgVehicleSpeedTuple vsreport;//intermediate input.
     /**
      * creating a new LREvent.

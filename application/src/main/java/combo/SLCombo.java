@@ -14,7 +14,7 @@ import execution.runtime.collector.OutputCollector;
 import java.util.*;
 
 import static common.CONTROL.*;
-import static state_engine.content.Content.*;
+import static content.Content.*;
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class SLCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(SLCombo.class);

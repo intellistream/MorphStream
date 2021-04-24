@@ -6,8 +6,8 @@ import components.context.TopologyContext;
 import components.operators.executor.BasicSpoutBatchExecutor;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
-import state_engine.common.Clock;
-import state_engine.db.DatabaseException;
+import common.Clock;
+import db.DatabaseException;
 
 import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
@@ -15,7 +15,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_app_combo;
-import static state_engine.content.Content.*;
+import static content.Content.*;
 /**
  * Task thread that hosts spout logic.
  */

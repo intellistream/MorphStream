@@ -13,15 +13,15 @@ import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
 import topology.TransactionTopology;
-import state_engine.common.PartitionedOrderLock;
-import state_engine.common.SpinLock;
-import state_engine.transaction.TableInitilizer;
+import common.PartitionedOrderLock;
+import common.SpinLock;
+import transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
 import static common.constants.OnlineBidingSystemConstants.Conf.OB_THREADS;
 import static common.constants.OnlineBidingSystemConstants.PREFIX;
-import static state_engine.profiler.Metrics.NUM_ITEMS;
-import static state_engine.utils.PartitionHelper.setPartition_interval;
+import static profiler.Metrics.NUM_ITEMS;
+import static utils.PartitionHelper.setPartition_interval;
 /**
  * Short term as OB.
  */

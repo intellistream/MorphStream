@@ -18,9 +18,9 @@ import java.util.Scanner;
 
 import static common.CONTROL.*;
 import static common.Constants.Event_Path;
-import static state_engine.content.Content.*;
-import static state_engine.profiler.Metrics.NUM_ACCESSES;
-import static state_engine.profiler.Metrics.NUM_ITEMS;
+import static content.Content.*;
+import static profiler.Metrics.NUM_ACCESSES;
+import static profiler.Metrics.NUM_ITEMS;
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class GSCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(GSCombo.class);

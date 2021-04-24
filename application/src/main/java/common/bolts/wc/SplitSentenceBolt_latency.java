@@ -12,7 +12,7 @@ import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.Tuple;
 
 import java.util.HashMap;
-//import static Brisk.state_engine.utils.Utils.printAddresses;
+//import static Brisk.utils.Utils.printAddresses;
 public class SplitSentenceBolt_latency extends splitBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SplitSentenceBolt_latency.class);
     private static final long serialVersionUID = 8089145995668583749L;

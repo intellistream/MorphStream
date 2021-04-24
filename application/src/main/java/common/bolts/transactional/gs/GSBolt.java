@@ -5,22 +5,22 @@ import org.slf4j.Logger;
 import components.operators.api.TransactionalBolt;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
-import state_engine.db.DatabaseException;
-import state_engine.Meta.MetaTypes;
-import state_engine.storage.SchemaRecord;
-import state_engine.storage.SchemaRecordRef;
-import state_engine.storage.datatype.DataBox;
-import state_engine.transaction.impl.TxnContext;
+import db.DatabaseException;
+import common.meta.MetaTypes;
+import storage.SchemaRecord;
+import storage.SchemaRecordRef;
+import storage.datatype.DataBox;
+import transaction.impl.TxnContext;
 
 import java.util.List;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
-import static state_engine.Meta.MetaTypes.AccessType.READ_ONLY;
-import static state_engine.Meta.MetaTypes.AccessType.READ_WRITE;
-import static state_engine.profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
-import static state_engine.profiler.MeasureTools.END_POST_TIME_MEASURE;
+import static common.meta.MetaTypes.AccessType.READ_ONLY;
+import static common.meta.MetaTypes.AccessType.READ_WRITE;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 public abstract class GSBolt extends TransactionalBolt {
     public SINKCombo sink;
     public GSBolt(Logger log, int fid, SINKCombo sink) {

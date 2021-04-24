@@ -1,9 +1,9 @@
 package common.param.sl;
 import common.bolts.transactional.sl.TransactionResult;
 import common.param.TxnEvent;
-import state_engine.storage.SchemaRecordRef;
-import state_engine.storage.TableRecordRef;
-import state_engine.storage.datatype.DataBox;
+import storage.SchemaRecordRef;
+import storage.TableRecordRef;
+import storage.datatype.DataBox;
 
 import java.util.Arrays;
 import java.util.List;
