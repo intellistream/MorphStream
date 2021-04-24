@@ -6,8 +6,8 @@ import components.context.TopologyContext;
 import components.operators.executor.BasicSpoutBatchExecutor;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
-import state_engine.Clock;
-import state_engine.DatabaseException;
+import state_engine.common.Clock;
+import state_engine.db.DatabaseException;
 
 import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
@@ -92,7 +92,6 @@ public class spoutThread extends executorThread {
             e.printStackTrace();
         } finally {
             this.executor.display();
-            double expected_throughput = 0;
             if (end_emit == 0) {
                 end_emit = System.nanoTime();
             }
@@ -100,7 +99,7 @@ public class spoutThread extends executorThread {
 
             LOG.info(this.executor.getOP_full()
                             + "\tfinished execution and exit with throughput (k input_event/s) of:\t"
-                            + actual_throughput + "(" + actual_throughput / expected_throughput + ")"
+                            + actual_throughput
                             + " on node: " + node
 //					+ " ( " + Arrays.show(cpu) + ")"
             );

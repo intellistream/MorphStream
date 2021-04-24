@@ -1,17 +1,10 @@
 package common.topology.transactional.initializer;
-import benchmark.DataHolder;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import datagenerator.DataGenerator;
-import datagenerator.DataOperationChain;
-import datagenerator.idsgenerator.IIdsGenerator;
-import datagenerator.idsgenerator.NormalIdsGenerator;
-import datagenerator.idsgenerator.UniformIdsGenerator;
-import org.apache.storm.shade.org.eclipse.jetty.util.BlockingArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import state_engine.Database;
-import state_engine.DatabaseException;
+import state_engine.db.Database;
+import state_engine.db.DatabaseException;
 import state_engine.common.SpinLock;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.TableRecord;
@@ -25,10 +18,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
 
 import static common.constants.StreamLedgerConstants.Constant.*;
 import static state_engine.transaction.State.*;

@@ -1,5 +1,5 @@
 package state_engine.query;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.table.RecordSchema;
 import state_engine.storage.table.stats.TableStats;

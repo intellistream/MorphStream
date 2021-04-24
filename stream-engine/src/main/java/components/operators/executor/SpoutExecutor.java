@@ -4,7 +4,7 @@ import components.operators.api.Operator;
 import execution.ExecutionNode;
 import execution.runtime.tuple.impl.Marker;
 import faulttolerance.Writer;
-import state_engine.Clock;
+import state_engine.common.Clock;
 import state_engine.common.OrderLock;
 import state_engine.common.OrderValidate;
 public abstract class SpoutExecutor implements IExecutor {

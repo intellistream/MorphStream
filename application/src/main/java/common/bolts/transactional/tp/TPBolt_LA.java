@@ -2,7 +2,7 @@ package common.bolts.transactional.tp;
 import common.param.lr.LREvent;
 import common.sink.SINKCombo;
 import org.slf4j.Logger;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.transaction.impl.TxnContext;
 
 import static state_engine.profiler.MeasureTools.*;

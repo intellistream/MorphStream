@@ -5,7 +5,7 @@ import components.operators.base.MapBolt;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.profiler.Metrics;
 import state_engine.transaction.TxnManager;
 import state_engine.transaction.impl.TxnContext;

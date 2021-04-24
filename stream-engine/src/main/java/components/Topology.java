@@ -2,7 +2,7 @@ package components;
 import common.platform.Platform;
 import controller.input.InputStreamController;
 import topology.TransactionTopology;
-import state_engine.Database;
+import state_engine.db.Database;
 import state_engine.common.SpinLock;
 import state_engine.transaction.TableInitilizer;
 

@@ -2,7 +2,7 @@ package topology;
 import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import state_engine.CavaliaDatabase;
+import state_engine.db.CavaliaDatabase;
 import state_engine.common.SpinLock;
 import state_engine.transaction.TableInitilizer;
 

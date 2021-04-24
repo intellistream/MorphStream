@@ -1,5 +1,5 @@
 package state_engine.transaction.shared;
-import state_engine.Database;
+import state_engine.db.Database;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.OrderLock;
 import state_engine.storage.SchemaRecord;

@@ -1,5 +1,5 @@
 package state_engine.storage;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.storage.datatype.DataBox;
 import state_engine.storage.table.BaseTable;
 import state_engine.storage.table.RecordSchema;

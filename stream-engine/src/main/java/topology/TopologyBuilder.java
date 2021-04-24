@@ -17,7 +17,7 @@ import components.streaminfo;
 import controller.input.InputStreamController;
 import controller.input.scheduler.SequentialScheduler;
 import execution.runtime.tuple.impl.OutputFieldsDeclarer;
-import state_engine.Database;
+import state_engine.db.Database;
 
 import java.util.ArrayList;
 import java.util.HashMap;

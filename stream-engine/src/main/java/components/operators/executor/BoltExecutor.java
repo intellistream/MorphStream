@@ -9,8 +9,8 @@ import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.Writer;
-import state_engine.Clock;
-import state_engine.DatabaseException;
+import state_engine.common.Clock;
+import state_engine.db.DatabaseException;
 import state_engine.common.OrderLock;
 import state_engine.common.OrderValidate;
 

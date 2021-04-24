@@ -1,7 +1,7 @@
 package state_engine.transaction.dedicated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.Meta.MetaTypes;
 import state_engine.content.Content;
 import state_engine.storage.SchemaRecord;

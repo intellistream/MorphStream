@@ -1,4 +1,4 @@
-package state_engine;
+package state_engine.common;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

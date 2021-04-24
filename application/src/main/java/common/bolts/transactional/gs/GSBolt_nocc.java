@@ -4,7 +4,7 @@ import common.sink.SINKCombo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import execution.ExecutionGraph;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.transaction.dedicated.TxnManagerNoLock;
 
 import static state_engine.profiler.MeasureTools.BEGIN_ACCESS_TIME_MEASURE;

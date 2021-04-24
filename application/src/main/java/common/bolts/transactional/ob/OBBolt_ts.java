@@ -12,7 +12,7 @@ import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.transaction.dedicated.ordered.TxnManagerTStream;
 import state_engine.transaction.function.Condition;
 import state_engine.transaction.function.DEC;

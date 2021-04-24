@@ -1,6 +1,6 @@
 package state_engine.query;
-import state_engine.DatabaseException;
-import state_engine.SimpleDatabase;
+import state_engine.db.DatabaseException;
+import state_engine.db.SimpleDatabase;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.DataBox;
 

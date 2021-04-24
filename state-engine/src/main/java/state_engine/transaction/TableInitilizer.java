@@ -3,7 +3,7 @@ import common.collections.Configuration;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import state_engine.Database;
+import state_engine.db.Database;
 import state_engine.benchmark.TxnParam;
 import state_engine.common.SpinLock;
 

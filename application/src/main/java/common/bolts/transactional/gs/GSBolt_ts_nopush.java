@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.transaction.impl.TxnContext;
 
 import java.util.ArrayDeque;

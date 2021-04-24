@@ -1,4 +1,4 @@
-package state_engine;
+package state_engine.db;
 import state_engine.benchmark.TxnParam;
 import state_engine.query.QueryPlan;
 import state_engine.storage.SchemaRecord;

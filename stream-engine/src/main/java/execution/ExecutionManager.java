@@ -12,8 +12,8 @@ import execution.runtime.executorThread;
 import execution.runtime.spoutThread;
 import faulttolerance.Writer;
 import optimization.OptimizationManager;
-import state_engine.Clock;
-import state_engine.Database;
+import state_engine.common.Clock;
+import state_engine.db.Database;
 import state_engine.transaction.dedicated.ordered.TxnProcessingEngine;
 
 import java.util.HashMap;

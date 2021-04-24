@@ -1,8 +1,7 @@
 package state_engine.transaction.dedicated.ordered;
-import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.Meta.MetaTypes;
 import state_engine.common.Operation;
 import state_engine.common.OperationChain;
@@ -15,9 +14,6 @@ import state_engine.transaction.function.Function;
 import state_engine.transaction.impl.TxnContext;
 import state_engine.utils.SOURCE_CONTROL;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;

@@ -1,4 +1,4 @@
-package state_engine;
+package state_engine.db;
 /**
  * The LockManager provides a basic locking implementation that ensures that only one transaction runs at a time.
  */

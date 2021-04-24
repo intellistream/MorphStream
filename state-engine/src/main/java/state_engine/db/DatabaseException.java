@@ -1,4 +1,4 @@
-package state_engine;
+package state_engine.db;
 public class DatabaseException extends Exception {
     private static final long serialVersionUID = -5696965345839589596L;
     private String message;

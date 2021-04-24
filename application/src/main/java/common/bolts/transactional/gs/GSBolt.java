@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import components.operators.api.TransactionalBolt;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.Meta.MetaTypes;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.SchemaRecordRef;

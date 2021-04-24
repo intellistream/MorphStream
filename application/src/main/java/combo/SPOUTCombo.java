@@ -14,7 +14,7 @@ import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import faulttolerance.impl.ValueState;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.profiler.MeasureTools;
 import state_engine.profiler.Metrics;
 import state_engine.utils.SOURCE_CONTROL;

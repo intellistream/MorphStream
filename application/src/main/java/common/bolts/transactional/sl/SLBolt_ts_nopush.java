@@ -8,7 +8,7 @@ import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Tuple;
-import state_engine.DatabaseException;
+import state_engine.db.DatabaseException;
 import state_engine.content.T_StreamContent;
 import state_engine.storage.SchemaRecord;
 import state_engine.storage.datatype.DataBox;
