@@ -2,8 +2,8 @@ package benchmark;
 
 import common.collections.OsUtils;
 import common.param.sl.TransactionEvent;
-import datagenerator.DataGeneratorConfig;
-import datagenerator.DataGenerator;
+import benchmark.datagenerator.DataGeneratorConfig;
+import benchmark.datagenerator.DataGenerator;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 

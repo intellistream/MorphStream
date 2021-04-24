@@ -7,7 +7,7 @@ public interface CONTROL {
     //application related.
     int NUM_EVENTS = 10000; //different input events.. TODO: It must be kept small as GC pressure increases rapidly. Fix this in future work.
     int TEST_NUM_EVENST = 10000;//total runs per thread.
-    //combo optimization
+    //common.combo optimization
     boolean enable_app_combo = true;//compose all operators into one.
     int combo_bid_size = 1;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
     int sink_combo_bid_size = 200;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
