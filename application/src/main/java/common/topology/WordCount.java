@@ -8,13 +8,13 @@ import common.constants.WordCountConstants.Component;
 import common.constants.WordCountConstants.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.Topology;
-import sesame.components.exception.InvalidIDException;
-import sesame.components.grouping.FieldsGrouping;
-import sesame.components.grouping.ShuffleGrouping;
-import sesame.controller.input.scheduler.SequentialScheduler;
-import sesame.execution.runtime.tuple.impl.Fields;
-import sesame.topology.BasicTopology;
+import components.Topology;
+import components.exception.InvalidIDException;
+import components.grouping.FieldsGrouping;
+import components.grouping.ShuffleGrouping;
+import controller.input.scheduler.SequentialScheduler;
+import execution.runtime.tuple.impl.Fields;
+import topology.BasicTopology;
 
 import static common.constants.WordCountConstants.PREFIX;
 public class WordCount extends BasicTopology {

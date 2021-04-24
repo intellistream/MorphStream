@@ -5,11 +5,11 @@ import common.param.sl.TransactionEvent;
 import common.sink.SINKCombo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.context.TopologyContext;
-import sesame.execution.ExecutionGraph;
-import sesame.execution.runtime.collector.OutputCollector;
-import sesame.execution.runtime.tuple.impl.Tuple;
-import sesame.faulttolerance.impl.ValueState;
+import components.context.TopologyContext;
+import execution.ExecutionGraph;
+import execution.runtime.collector.OutputCollector;
+import execution.runtime.tuple.impl.Tuple;
+import faulttolerance.impl.ValueState;
 import state_engine.DatabaseException;
 import state_engine.transaction.dedicated.ordered.TxnManagerTStream;
 import state_engine.transaction.function.Condition;
@@ -24,7 +24,6 @@ import java.util.concurrent.BrokenBarrierException;
 import state_engine.profiler.MeasureTools;
 
 import static common.CONTROL.*;
-import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
 
 public class SLBolt_ts extends SLBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_ts.class);

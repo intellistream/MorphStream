@@ -5,11 +5,11 @@ import common.constants.BaseConstants;
 import common.constants.WordCountConstants.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.base.splitBolt;
-import sesame.execution.ExecutionGraph;
-import sesame.execution.runtime.tuple.JumboTuple;
-import sesame.execution.runtime.tuple.impl.Fields;
-import sesame.execution.runtime.tuple.impl.Tuple;
+import components.operators.base.splitBolt;
+import execution.ExecutionGraph;
+import execution.runtime.tuple.JumboTuple;
+import execution.runtime.tuple.impl.Fields;
+import execution.runtime.tuple.impl.Tuple;
 
 import java.util.HashMap;
 //import static Brisk.state_engine.utils.Utils.printAddresses;

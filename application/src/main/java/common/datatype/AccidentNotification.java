@@ -18,7 +18,7 @@
  */
 package common.datatype;
 import common.datatype.util.LRTopologyControl;
-import sesame.execution.runtime.tuple.impl.Fields;
+import execution.runtime.tuple.impl.Fields;
 
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;

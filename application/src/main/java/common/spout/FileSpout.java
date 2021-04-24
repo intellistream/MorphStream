@@ -5,8 +5,8 @@ import common.helper.parser.Parser;
 import common.util.datatypes.StreamValues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.api.AbstractSpout;
-import sesame.execution.ExecutionGraph;
+import components.operators.api.AbstractSpout;
+import execution.ExecutionGraph;
 
 import java.io.File;
 import java.io.FileNotFoundException;

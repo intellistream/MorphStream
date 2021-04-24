@@ -4,9 +4,9 @@ import common.constants.GrepSumConstants;
 import common.helper.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.api.AbstractSpout;
-import sesame.execution.ExecutionGraph;
-import sesame.execution.runtime.tuple.impl.Fields;
+import components.operators.api.AbstractSpout;
+import execution.ExecutionGraph;
+import execution.runtime.tuple.impl.Fields;
 public class LocalStateSpout extends AbstractSpout {
     private static final Logger LOG = LoggerFactory.getLogger(LocalStateSpout.class);
     private static final long serialVersionUID = -8358880222505243596L;

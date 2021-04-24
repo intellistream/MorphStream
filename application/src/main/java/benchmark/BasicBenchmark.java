@@ -7,12 +7,7 @@ import datagenerator.DataGenerator;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
-import runners.sesameRunner;
-import state_engine.storage.SchemaRecord;
-import state_engine.storage.TableRecord;
-import state_engine.storage.datatype.DataBox;
-import state_engine.storage.datatype.LongDataBox;
-import state_engine.storage.datatype.StringDataBox;
+import runners.TStreamRunner;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -23,7 +18,7 @@ public class BasicBenchmark implements IBenchmark {
 
     private String[] args;
     private DataGenerator mDataGenerator;
-    private sesameRunner sesameRunner;
+    private TStreamRunner TStreamRunner;
 
     public BasicBenchmark(String[] args) {
 
@@ -96,9 +91,9 @@ public class BasicBenchmark implements IBenchmark {
         mDataGenerator = new DataGenerator(dataConfig);
     }
 
-    protected void createSesameRunner(String[] args, int iteration) {
+    protected void createTStreamRunner(String[] args, int iteration) {
 
-        sesameRunner = new sesameRunner();
+        TStreamRunner = new TStreamRunner();
 
         List<String> argslist = new ArrayList<>(Arrays.asList(args)); // Allows to ommit few parameters.
         if(!argslist.contains("--iterationNumber")) {
@@ -108,7 +103,7 @@ public class BasicBenchmark implements IBenchmark {
 
         String[] argsN = new String[argslist.size()];
         argslist.toArray(argsN);
-        JCommander cmd = new JCommander(sesameRunner);
+        JCommander cmd = new JCommander(TStreamRunner);
         cmd.setAcceptUnknownOptions(true);
 
         try {
@@ -148,8 +143,8 @@ public class BasicBenchmark implements IBenchmark {
 
         try {
             for (int lop=0; lop<totalIterations; lop++) {
-                createSesameRunner(args, lop);
-                sesameRunner.run();
+                createTStreamRunner(args, lop);
+                TStreamRunner.run();
             }
         } catch (InterruptedException ex) {
             System.out.println("Error in running topology locally"+ ex.toString());

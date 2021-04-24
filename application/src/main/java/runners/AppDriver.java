@@ -3,8 +3,8 @@ package runners;
 import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.Topology;
-import sesame.topology.AbstractTopology;
+import components.Topology;
+import topology.AbstractTopology;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

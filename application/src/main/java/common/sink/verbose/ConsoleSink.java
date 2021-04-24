@@ -2,10 +2,10 @@ package common.sink.verbose;
 import common.sink.helper.stable_sink_helper_verbose;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.api.BaseSink;
-import sesame.execution.ExecutionGraph;
-import sesame.execution.runtime.tuple.JumboTuple;
-import sesame.execution.runtime.tuple.impl.Tuple;
+import components.operators.api.BaseSink;
+import execution.ExecutionGraph;
+import execution.runtime.tuple.JumboTuple;
+import execution.runtime.tuple.impl.Tuple;
 
 import static common.helper.Event.null_expression;
 import static common.helper.Event.split_expression;

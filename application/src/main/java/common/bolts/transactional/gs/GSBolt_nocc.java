@@ -3,7 +3,7 @@ import common.param.mb.MicroEvent;
 import common.sink.SINKCombo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.execution.ExecutionGraph;
+import execution.ExecutionGraph;
 import state_engine.DatabaseException;
 import state_engine.transaction.dedicated.TxnManagerNoLock;
 

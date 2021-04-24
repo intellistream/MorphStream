@@ -174,7 +174,7 @@ public abstract class abstractRunner {
     @Parameter(names = {"--numberOfBatches"}, description = "Batch Count")
     public int numberOfBatches = 1;
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("TStream") + OsUtils.OS_wrapper("SYNTH_DATA");
     @Parameter(names = {"--numberOfDLevels"}, description = "Number of dependency levels.")
     public Integer numberOfDLevels = 3;
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")

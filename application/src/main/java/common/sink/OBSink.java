@@ -2,7 +2,7 @@ package common.sink;
 import common.bolts.transactional.ob.BidingResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.execution.runtime.tuple.impl.Tuple;
+import execution.runtime.tuple.impl.Tuple;
 public class OBSink extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(OBSink.class);
     private static final long serialVersionUID = 5481794109405775823L;

@@ -1,8 +1,8 @@
 package common.spout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.api.AbstractSpout;
-import sesame.execution.ExecutionGraph;
+import components.operators.api.AbstractSpout;
+import execution.ExecutionGraph;
 
 import static common.Constants.DEFAULT_STREAM_ID;
 public class GeneratorSpout extends AbstractSpout {

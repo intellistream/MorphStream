@@ -3,10 +3,10 @@ import common.collections.Configuration;
 import common.helper.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.base.MapBolt;
-import sesame.execution.runtime.tuple.JumboTuple;
-import sesame.execution.runtime.tuple.impl.Fields;
-import sesame.execution.runtime.tuple.impl.Tuple;
+import components.operators.base.MapBolt;
+import execution.runtime.tuple.JumboTuple;
+import execution.runtime.tuple.impl.Fields;
+import execution.runtime.tuple.impl.Tuple;
 /**
  * Created by tony on 5/5/2017.
  */

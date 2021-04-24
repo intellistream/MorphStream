@@ -17,7 +17,7 @@
  * #_
  */
 package common.datatype.util;
-import sesame.execution.runtime.tuple.impl.Fields;
+import execution.runtime.tuple.impl.Fields;
 /**
  * {@link SegmentIdentifier} represent an express way, segment, and direction.
  *

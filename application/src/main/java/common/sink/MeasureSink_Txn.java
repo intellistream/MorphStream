@@ -1,7 +1,7 @@
 package common.sink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.execution.runtime.tuple.impl.Tuple;
+import execution.runtime.tuple.impl.Tuple;
 
 import static common.CONTROL.enable_latency_measurement;
 public class MeasureSink_Txn extends MeasureSink {

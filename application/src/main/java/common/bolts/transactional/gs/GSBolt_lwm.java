@@ -2,8 +2,8 @@ package common.bolts.transactional.gs;
 import common.sink.SINKCombo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.execution.ExecutionGraph;
-import sesame.faulttolerance.impl.ValueState;
+import execution.ExecutionGraph;
+import faulttolerance.impl.ValueState;
 import state_engine.transaction.dedicated.ordered.TxnManagerLWM;
 public class GSBolt_lwm extends GSBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_lwm.class);

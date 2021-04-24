@@ -21,7 +21,7 @@ import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
 import common.util.datatypes.StreamValues;
-import sesame.execution.runtime.tuple.impl.Fields;
+import execution.runtime.tuple.impl.Fields;
 /**
  * {@link AvgSpeedTuple} represents an intermediate result tuple; the average speed of all vehicle in a segment within a
  * 'minute number' time frame (see {@link Time#getMinute(long)}).<br />

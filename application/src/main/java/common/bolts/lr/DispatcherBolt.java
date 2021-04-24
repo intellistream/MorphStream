@@ -21,12 +21,12 @@ import common.datatype.*;
 import common.datatype.util.LRTopologyControl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.api.Checkpointable;
-import sesame.components.operators.base.filterBolt;
-import sesame.execution.runtime.tuple.impl.Marker;
-import sesame.execution.runtime.tuple.impl.OutputFieldsDeclarer;
-import sesame.execution.runtime.tuple.impl.Tuple;
-import sesame.faulttolerance.impl.ValueState;
+import components.operators.api.Checkpointable;
+import components.operators.base.filterBolt;
+import execution.runtime.tuple.impl.Marker;
+import execution.runtime.tuple.impl.OutputFieldsDeclarer;
+import execution.runtime.tuple.impl.Tuple;
+import faulttolerance.impl.ValueState;
 
 import java.util.HashMap;
 

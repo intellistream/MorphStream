@@ -5,8 +5,8 @@ import common.constants.BaseConstants;
 import common.helper.wrapper.StringStatesWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.api.AbstractSpout;
-import sesame.execution.ExecutionGraph;
+import components.operators.api.AbstractSpout;
+import execution.ExecutionGraph;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;

@@ -7,10 +7,10 @@ import common.sink.helper.stable_sink_helper;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.api.BaseSink;
-import sesame.execution.ExecutionGraph;
-import sesame.execution.runtime.tuple.JumboTuple;
-import sesame.execution.runtime.tuple.impl.Tuple;
+import components.operators.api.BaseSink;
+import execution.ExecutionGraph;
+import execution.runtime.tuple.JumboTuple;
+import execution.runtime.tuple.impl.Tuple;
 
 import java.io.*;
 import java.util.HashMap;

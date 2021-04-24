@@ -18,7 +18,7 @@
  */
 package common.datatype;
 import common.datatype.util.LRTopologyControl;
-import sesame.execution.runtime.tuple.impl.Fields;
+import execution.runtime.tuple.impl.Fields;
 /**
  * A {@link AccountBalanceRequest} from the LRB data generator.<br />
  * <br />

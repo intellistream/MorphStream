@@ -3,9 +3,9 @@ import common.param.mb.MicroEvent;
 import common.sink.SINKCombo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.execution.ExecutionGraph;
-import sesame.execution.runtime.tuple.impl.Marker;
-import sesame.execution.runtime.tuple.impl.Tuple;
+import execution.ExecutionGraph;
+import execution.runtime.tuple.impl.Marker;
+import execution.runtime.tuple.impl.Tuple;
 import state_engine.DatabaseException;
 import state_engine.transaction.impl.TxnContext;
 

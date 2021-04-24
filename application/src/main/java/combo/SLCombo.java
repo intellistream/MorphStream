@@ -7,9 +7,9 @@ import common.param.sl.TransactionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import benchmark.DataHolder;
-import sesame.components.context.TopologyContext;
-import sesame.execution.ExecutionGraph;
-import sesame.execution.runtime.collector.OutputCollector;
+import components.context.TopologyContext;
+import execution.ExecutionGraph;
+import execution.runtime.collector.OutputCollector;
 
 import java.util.*;
 

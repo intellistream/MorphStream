@@ -3,8 +3,8 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sesame.components.operators.api.AbstractSpout;
-import sesame.execution.ExecutionGraph;
+import components.operators.api.AbstractSpout;
+import execution.ExecutionGraph;
 
 import java.io.BufferedWriter;
 import java.io.File;
