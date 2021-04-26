@@ -38,6 +38,7 @@ public class TxnManagerSStore extends TxnManagerDedicated {
     public PartitionedOrderLock.LOCK getOrderLock(int p_id) {
         return orderLock.get(p_id);
     }
+
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
             throws DatabaseException {
@@ -59,6 +60,7 @@ public class TxnManagerSStore extends TxnManagerDedicated {
             return true;
         }
     }
+
     @Override
     protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
 //        record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
@@ -66,6 +68,7 @@ public class TxnManagerSStore extends TxnManagerDedicated {
         t_record.content_.LockPartitions();//it should always success.
         return true;
     }
+
     @Override
     public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
