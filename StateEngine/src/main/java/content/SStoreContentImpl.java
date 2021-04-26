@@ -1,8 +1,8 @@
 package content;
+import common.SpinLock;
+import common.meta.MetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import common.meta.MetaTypes;
-import common.SpinLock;
 import storage.SchemaRecord;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -10,7 +10,7 @@ public class SStoreContentImpl extends SStoreContent {
     public final static String SSTORE_CONTENT = "SSTORE_CONTENT";
     private static final Logger LOG = LoggerFactory.getLogger(SStoreContentImpl.class);
     public final int pid;
-    final SpinLock spinlock_;//Each partition has a spin lock_ratio.
+    final SpinLock spinlock_;//Each partition has a spin lock.
     AtomicLong timestamp_ = new AtomicLong(0);
     public SStoreContentImpl(SpinLock[] spinlock_, int pid) {
         this.pid = pid;
