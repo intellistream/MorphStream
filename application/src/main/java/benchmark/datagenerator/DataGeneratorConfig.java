@@ -34,8 +34,8 @@ public class DataGeneratorConfig {
     public String idGenType = "uniform";
 
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
-    public String idsPath = System.getProperty("user.home") + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("SYNTH_DATA");
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
+    public String idsPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
 
     public float[] dependenciesDistributionForLevels;
 

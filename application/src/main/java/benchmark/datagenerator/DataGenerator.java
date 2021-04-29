@@ -290,7 +290,8 @@ public class DataGenerator {
         }
         file.mkdirs();
 
-        File versionFile = new File(dataConfig.rootPath.substring(0, dataConfig.rootPath.length() - 1) + String.format("_%d_%d_%d.txt", dataConfig.tuplesPerBatch, dataConfig.totalBatches, dataConfig.numberOfDLevels));
+        File versionFile = new File(dataConfig.rootPath.substring(0, dataConfig.rootPath.length() - 1)
+                + String.format("_%d_%d_%d.txt", dataConfig.tuplesPerBatch, dataConfig.totalBatches, dataConfig.numberOfDLevels));
         try {
             versionFile.createNewFile();
             FileWriter fileWriter = new FileWriter(versionFile);

@@ -12,6 +12,7 @@ import common.constants.GrepSumConstants;
 import common.platform.HP_Machine;
 import common.platform.HUAWEI_Machine;
 import common.platform.Platform;
+import common.topology.WordCount;
 import common.topology.transactional.GrepSum;
 import common.topology.transactional.OnlineBiding;
 import common.topology.transactional.StreamLedger;
@@ -58,6 +59,10 @@ public class TStreamRunner extends abstractRunner {
 
     public TStreamRunner() {
         driver = new AppDriver();
+
+        //Ordinary Application
+        driver.addApp("WordCount", WordCount.class);//WC
+
         //Transactional Application
         driver.addApp("GrepSum", GrepSum.class);//GS
         driver.addApp("StreamLedger", StreamLedger.class);//SL

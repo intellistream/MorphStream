@@ -45,7 +45,7 @@ public class BasicBenchmark implements IBenchmark {
         }
         if (!argslist.contains("--rootFilePath")) { // default path for our current benchmarks
             argslist.add("--rootFilePath");
-            argslist.add("/home/hadoop/sesame/data/");
+            argslist.add(System.getProperty("user.home") + OsUtils.OS_wrapper("data"));
         }
         args = new String[argslist.size()];
         argslist.toArray(args);
@@ -82,7 +82,7 @@ public class BasicBenchmark implements IBenchmark {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        dataConfig.rootPath += subFolder;
+        dataConfig.rootPath += OsUtils.OS_wrapper(subFolder);
 
         for (int index = 0; index < args.length; index += 2)
             if (args[index].contains("rootFilePath"))

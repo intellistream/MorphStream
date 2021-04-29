@@ -49,7 +49,7 @@ public class SLInitializer extends TableInitilizer {
         String actTableKey = "accounts";
         String bookTableKey = "bookEntries";
 
-        File file = new File(dataRootPath + "vertices_ids_range.txt");
+        File file = new File(dataRootPath  + OsUtils.OS_wrapper( "vertices_ids_range.txt"));
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));

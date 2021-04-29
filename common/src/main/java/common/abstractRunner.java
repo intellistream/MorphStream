@@ -3,11 +3,11 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.internal.Lists;
 import common.collections.Constants;
 import common.collections.OsUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
@@ -144,7 +144,7 @@ public abstract class abstractRunner {
     @Parameter(names = {"-m", "--mode"}, description = "Mode for running the topology")
     public String mode = RUN_LOCAL;
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed", required = false)
-    public String application = "GrepSum";
+    public String application = "TollProcessing";
     @Parameter(names = {"-t", "--Brisk.topology-name"}, required = false, description = "The name of the Brisk.topology")
     public String topologyName;
     @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
@@ -174,7 +174,7 @@ public abstract class abstractRunner {
     @Parameter(names = {"--numberOfBatches"}, description = "Batch Count")
     public int numberOfBatches = 1;
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("TStream") + OsUtils.OS_wrapper("SYNTH_DATA");
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("DATA");
     @Parameter(names = {"--numberOfDLevels"}, description = "Number of dependency levels.")
     public Integer numberOfDLevels = 3;
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
