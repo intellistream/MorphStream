@@ -6,7 +6,7 @@
     <groupId>org.tony</groupId>
     <artifactId>TStreamPlus</artifactId>
     <packaging>pom</packaging>
-    <version>0.0.1</version>
+    <version>${tstream.version}</version>
     <modules>
         <module>common</module>
         <module>state-engine</module>
@@ -16,7 +16,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <sesame.version>0.0.1</sesame.version>
+        <tstream.version>0.0.2</tstream.version>
         <kafka.version>0.8.2.1</kafka.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.1</scala.version>
