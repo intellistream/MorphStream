@@ -321,7 +321,7 @@ public class DataGenerator {
             id = mRandomGeneratorForAccIds.nextInt(range);
             while (mGeneratedAccountIds.containsKey(id))
                 id = mRandomGeneratorForAccIds.nextInt(range);
-        } else if (dataConfig.idGenType.equals("hgaussian")) {
+        } else if (dataConfig.idGenType.equals("normal")) {
             id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
             while (mGeneratedAccountIds.containsKey(id))
                 id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
@@ -341,7 +341,7 @@ public class DataGenerator {
             id = mRandomGeneratorForAstIds.nextInt(range);
             while (mGeneratedAssetIds.containsKey(id))
                 id = mRandomGeneratorForAstIds.nextInt(range);
-        } else if (dataConfig.idGenType.equals("hgaussian")) {
+        } else if (dataConfig.idGenType.equals("normal")) {
             id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
             while (mGeneratedAssetIds.containsKey(id))
                 id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;

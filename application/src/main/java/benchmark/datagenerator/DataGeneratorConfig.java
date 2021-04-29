@@ -1,43 +1,40 @@
 package benchmark.datagenerator;
 
 import com.beust.jcommander.Parameter;
+import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.tools.ZipfGenerator;
 
 public class DataGeneratorConfig {
 
-    @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
-    public Integer tuplesPerBatch = 10;
+    public Integer tuplesPerBatch;
+    public Integer totalBatches;
+    public Integer numberOfDLevels;
+    public Boolean shufflingActive;
+    public Integer totalThreads;
+    public String scheduler;
+    public String fanoutDist;
+    public String idGenType;
 
-    @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
-    public Integer totalBatches = 5;
-
-    @Parameter(names = {"--tuplesBeforeAddingD"}, description = "Tuples to created before starting to add dependencies.")
-    public Float generatedTuplesBeforeAddingDependency = 0.0f;
-
-    @Parameter(names = {"--numberOfDLevels"}, description = "Number of dependency levels.")
-    public Integer numberOfDLevels = 4;
-
-    @Parameter(names = {"--shufflingActive"}, description = "If transaction should be shuffled before dumping to a file.")
-    public Boolean shufflingActive = true;
-
-    @Parameter(names = {"-tt"}, description = "Parallelism for tstream.")
-    public Integer totalThreads = 2;
-
-    @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BL";
-
-    @Parameter(names = {"--fanoutDist"}, description = "Fanout scheme.")
-    public String fanoutDist = "uniform";
-
-    @Parameter(names = {"--idGenType"}, description = "Ids distribution scheme.")
-    public String idGenType = "uniform";
-
-    @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
-    public String idsPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
+    public String rootPath;
+    public String idsPath;
 
     public float[] dependenciesDistributionForLevels;
+
+    public void initialize(Configuration config) {
+        this.tuplesPerBatch = config.getInt("totalEventsPerBatch");
+        this.totalBatches = config.getInt("numberOfBatches");
+        this.numberOfDLevels = config.getInt("numberOfDLevels");
+        this.shufflingActive = false;
+        this.totalThreads = config.getInt("tthread");
+        this.scheduler = config.getString("scheduler");
+        this.fanoutDist = config.getString("fanoutDist");
+        this.idGenType = config.getString("idGenType");
+        this.rootPath = config.getString("rootFilePath");
+
+        this.idsPath = this.rootPath;
+        this.updateDependencyLevels();
+    }
 
     public void updateDependencyLevels() {
 
@@ -67,11 +64,6 @@ public class DataGeneratorConfig {
         } else {
             throw new UnsupportedOperationException("Invalid fanout scheme.");
         }
-
-//        System.out.println("Demanded distribution...");
-//        for(int index=0; index<numberOfDLevels; index++) {
-//            System.out.print(String.format("%.2f; ",dependenciesDistributionForLevels[index]));
-//        }
 
         System.out.println("");
         System.out.println(String.format("totalEventsPerBatch: %d", tuplesPerBatch));

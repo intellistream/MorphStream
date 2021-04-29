@@ -1,6 +1,13 @@
 package common.topology.transactional.initializer;
+import benchmark.DataHolder;
+import benchmark.datagenerator.DataGenerator;
+import benchmark.datagenerator.DataGeneratorConfig;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.param.sl.TransactionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import db.Database;
@@ -14,9 +21,11 @@ import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.*;
 
 import static common.constants.StreamLedgerConstants.Constant.*;
@@ -28,6 +37,7 @@ public class SLInitializer extends TableInitilizer {
     private String dataRootPath;
     private int totalRecords;
     private String idsGenType;
+    private DataGenerator mDataGenerator;
 
     public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
@@ -36,6 +46,32 @@ public class SLInitializer extends TableInitilizer {
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         idsGenType = config.getString("idGenType");
 
+        createDataGenerator(config);
+
+    }
+
+    protected void createDataGenerator(Configuration config) {
+
+        DataGeneratorConfig dataConfig = new DataGeneratorConfig();
+        dataConfig.initialize(config);
+
+        MessageDigest digest;
+        String subFolder = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+            subFolder = OsUtils.osWrapperPostFix(
+                    DatatypeConverter.printHexBinary(
+                            digest.digest(
+                                    String.format("%d_%s", dataConfig.tuplesPerBatch * dataConfig.totalBatches,
+                                            Arrays.toString(dataConfig.dependenciesDistributionForLevels))
+                                            .getBytes("UTF-8"))));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        dataConfig.rootPath += OsUtils.OS_wrapper(subFolder);
+        this.dataRootPath += OsUtils.OS_wrapper(subFolder);
+
+        mDataGenerator = new DataGenerator(dataConfig);
     }
 
     @Override
@@ -69,7 +105,7 @@ public class SLInitializer extends TableInitilizer {
                     id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
                     while (mGeneratedAccountIds.containsKey(id))
                         id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
-                } else if (idsGenType.equals("hgaussian")) {
+                } else if (idsGenType.equals("normal")) {
                     id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
                     while (mGeneratedAccountIds.containsKey(id))
                         id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
@@ -94,7 +130,7 @@ public class SLInitializer extends TableInitilizer {
                     id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);
                     while (mGeneratedAssetIds.containsKey(id))
                         id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);
-                } else if (idsGenType.equals("hgaussian")) {
+                } else if (idsGenType.equals("normal")) {
                     id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
                     while (mGeneratedAssetIds.containsKey(id))
                         id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
@@ -241,13 +277,100 @@ public class SLInitializer extends TableInitilizer {
     }
 
     @Override
-    public boolean Prepared(String file) throws IOException {
-        return Files.exists(Paths.get(dataRootPath));
+    public boolean Prepared(String fileN) throws IOException {
+        // User Data Generator here,
+        int totalIterations = 3;
+
+        int tuplesPerBatch = mDataGenerator.getDataConfig().tuplesPerBatch;
+        int totalBatches = mDataGenerator.getDataConfig().totalBatches;
+        int numberOfLevels = mDataGenerator.getDataConfig().numberOfDLevels;
+        int tt = mDataGenerator.getDataConfig().totalThreads;
+        boolean shufflingActive = mDataGenerator.getDataConfig().shufflingActive;
+        String folder = mDataGenerator.getDataConfig().rootPath;
+
+        String statsFolderPattern = mDataGenerator.getDataConfig().idsPath
+                + OsUtils.osWrapperPostFix("stats")
+                + OsUtils.osWrapperPostFix("scheduler = %s")
+                + OsUtils.osWrapperPostFix("depth = %d")
+                + OsUtils.osWrapperPostFix("threads = %d")
+                + OsUtils.osWrapperPostFix("total_batches = %d")
+                + OsUtils.osWrapperPostFix("events_per_batch = %d");
+
+        String statsFolderPath = String.format(statsFolderPattern, mDataGenerator.getDataConfig().scheduler, numberOfLevels, tt, totalBatches, tuplesPerBatch);
+        File file = new File(statsFolderPath + String.format("iteration_%d.csv", (totalIterations - 1)));
+        if (!file.exists()) {
+            mDataGenerator.GenerateData();
+            mDataGenerator = null;
+        }
+        loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
+        return true;
     }
 
     @Override
     public void store(String file_name) throws IOException {
-        // User Data Generator here,
+
+    }
+
+
+
+    protected void loadTransactionEvents(int tuplesPerBatch, int totalBatches, boolean shufflingActive, String folder) {
+
+        if (DataHolder.events == null) {
+
+            int numberOfEvents = tuplesPerBatch * totalBatches;
+            DataHolder.events = new TransactionEvent[numberOfEvents];
+            File file = new File(folder + "transactions.txt");
+            if (file.exists()) {
+                System.out.println(String.format("Reading transactions..."));
+                try {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+                    String txn = reader.readLine();
+                    int count = 0;
+                    while (txn != null) {
+                        String[] split = txn.split(",");
+                        TransactionEvent event = new TransactionEvent(
+                                Integer.parseInt(split[0]), //bid
+                                0, //pid
+                                String.format("[%s]", split[0]), //bid_array
+                                1,//num_of_partition
+                                split[1],//getSourceAccountId
+                                split[2],//getSourceBookEntryId
+                                split[3],//getTargetAccountId
+                                split[4],//getTargetBookEntryId
+                                100,  //getAccountTransfer
+                                100  //getBookEntryTransfer
+                        );
+                        DataHolder.events[count] = event;
+                        count++;
+                        if (count % 100000 == 0)
+                            System.out.println(String.format("%d transactions read...", count));
+                        txn = reader.readLine();
+                    }
+                    reader.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                System.out.println(String.format("Done reading transactions..."));
+
+                if (shufflingActive) {
+                    Random random = new Random();
+                    int index;
+                    TransactionEvent temp;
+                    for (int lop = 0; lop < totalBatches; lop++) {
+                        int start = lop * tuplesPerBatch;
+                        int end = (lop + 1) * tuplesPerBatch;
+
+                        for (int i = end - 1; i > start; i--) {
+                            index = start + random.nextInt(i - start + 1);
+                            temp = DataHolder.events[index];
+                            DataHolder.events[index] = DataHolder.events[i];
+                            DataHolder.events[i] = temp;
+                        }
+                    }
+                }
+                System.out.println("");
+            }
+        }
     }
 
     @Override

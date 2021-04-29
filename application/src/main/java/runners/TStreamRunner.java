@@ -283,7 +283,7 @@ public class TStreamRunner extends abstractRunner {
             double dependency_outoforder_overhead_time = 0;
             double db_access_time = 0;
 
-            String statsFolderPattern = rootPath
+            String statsFolderPattern = OsUtils.osWrapperPostFix(rootPath)
                     + OsUtils.osWrapperPostFix("..")
                     + OsUtils.osWrapperPostFix("stats")
                     + OsUtils.osWrapperPostFix("scheduler = %s")

@@ -140,31 +140,31 @@ public abstract class TableInitilizer {
         //try to read from file.
         if (!Prepared(file_path + tthread)) {
             //if failed, create new one.
-            Object event;
-            for (int i = 0; i < totalEvents; i++) {
-                boolean multi_parition_txn_flag = multi_partion_decision[j];
-                j++;
-                if (j == 8)
-                    j = 0;
-                p = key_to_partition(p_generator.next());//randomly pick a starting point.
-                if (multi_parition_txn_flag) {//multi-partition
-                    event = create_new_event(_number_partitions, i);
-                    _number_partitions = Math.min(number_partitions, 2);
-                    for (int k = 0; k < _number_partitions; k++) {//depo input_event only allows 2 partition
-                        p_bid[p]++;
-                        p++;
-                        if (p == tthread)
-                            p = 0;
-                    }
-                } else {
-                    event = create_new_event(1, i);
-                    p_bid[p]++;
-                    p++;
-                    if (p == tthread)
-                        p = 0;
-                }
-                db.getEventManager().put(event, i);
-            }
+//            Object event;
+//            for (int i = 0; i < totalEvents; i++) {
+//                boolean multi_parition_txn_flag = multi_partion_decision[j];
+//                j++;
+//                if (j == 8)
+//                    j = 0;
+//                p = key_to_partition(p_generator.next());//randomly pick a starting point.
+//                if (multi_parition_txn_flag) {//multi-partition
+//                    event = create_new_event(_number_partitions, i);
+//                    _number_partitions = Math.min(number_partitions, 2);
+//                    for (int k = 0; k < _number_partitions; k++) {//depo input_event only allows 2 partition
+//                        p_bid[p]++;
+//                        p++;
+//                        if (p == tthread)
+//                            p = 0;
+//                    }
+//                } else {
+//                    event = create_new_event(1, i);
+//                    p_bid[p]++;
+//                    p++;
+//                    if (p == tthread)
+//                        p = 0;
+//                }
+//                db.getEventManager().put(event, i);
+//            }
             store(file_path + tthread);
         }
         db.getEventManager().clear();
