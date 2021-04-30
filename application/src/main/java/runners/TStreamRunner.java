@@ -284,7 +284,6 @@ public class TStreamRunner extends abstractRunner {
             double db_access_time = 0;
 
             String statsFolderPattern = OsUtils.osWrapperPostFix(rootPath)
-                    + OsUtils.osWrapperPostFix("..")
                     + OsUtils.osWrapperPostFix("stats")
                     + OsUtils.osWrapperPostFix("scheduler = %s")
                     + OsUtils.osWrapperPostFix("depth = %d")

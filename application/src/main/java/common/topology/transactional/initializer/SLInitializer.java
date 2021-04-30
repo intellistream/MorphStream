@@ -69,6 +69,7 @@ public class SLInitializer extends TableInitilizer {
             e.printStackTrace();
         }
         dataConfig.rootPath += OsUtils.OS_wrapper(subFolder);
+        dataConfig.idsPath += OsUtils.OS_wrapper(subFolder);
         this.dataRootPath += OsUtils.OS_wrapper(subFolder);
 
         mDataGenerator = new DataGenerator(dataConfig);
@@ -278,8 +279,6 @@ public class SLInitializer extends TableInitilizer {
 
     @Override
     public boolean Prepared(String fileN) throws IOException {
-        // User Data Generator here,
-        int totalIterations = 3;
 
         int tuplesPerBatch = mDataGenerator.getDataConfig().tuplesPerBatch;
         int totalBatches = mDataGenerator.getDataConfig().totalBatches;
@@ -297,7 +296,7 @@ public class SLInitializer extends TableInitilizer {
                 + OsUtils.osWrapperPostFix("events_per_batch = %d");
 
         String statsFolderPath = String.format(statsFolderPattern, mDataGenerator.getDataConfig().scheduler, numberOfLevels, tt, totalBatches, tuplesPerBatch);
-        File file = new File(statsFolderPath + String.format("iteration_%d.csv", (totalIterations - 1)));
+        File file = new File(statsFolderPath + String.format("iteration_0.csv"));
         if (!file.exists()) {
             mDataGenerator.GenerateData();
             mDataGenerator = null;
