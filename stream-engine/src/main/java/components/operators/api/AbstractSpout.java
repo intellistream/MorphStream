@@ -2,8 +2,8 @@ package components.operators.api;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.helper.wrapper.StringStatesWrapper;
-import org.slf4j.Logger;
 import execution.runtime.tuple.impl.Marker;
+import org.slf4j.Logger;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -139,7 +139,7 @@ public abstract class AbstractSpout extends Operator {
         } else {
             path = config.getString(getConfigKey(OS_prefix.concat(BaseConstants.BaseConf.SPOUT_PATH)));
         }
-        String s = System.getProperty("user.home").concat("/data/app/").concat(path);
+        String s = System.getProperty("user.home") + OsUtils.OS_wrapper("data/app/") + OsUtils.OS_wrapper(path);
         array = new ArrayList<>();
         try {
             openFile(s);
