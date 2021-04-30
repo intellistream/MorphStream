@@ -3,7 +3,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.internal.Lists;
 import common.collections.Constants;
 import common.collections.OsUtils;
-import common.tools.ZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +68,7 @@ public abstract class abstractRunner {
     @Parameter(names = {"--gc_factor"}, description = "gc_factor")
     public double gc_factor = 1; //<=1
     @Parameter(names = {"--machine"}, description = "which machine to use? 0:NUS machine, 1: HPI machine, you may add more..")
-    public int machine = 10;
+    public int machine = 0;
     @Parameter(names = {"--plan"}, description = "benchmarking the corresponding plan")
     public int plan = 0;
     @Parameter(names = {"--benchmark"}, description = "benchmarking the throughput of all applications")
@@ -91,7 +90,7 @@ public abstract class abstractRunner {
     @Parameter(names = {"--DO"}, description = "dynamic optimization")
     public boolean DO = false;
     @Parameter(names = {"--native"}, description = "native execution")
-    public boolean NAV = false;
+    public boolean NAV = true;
     @Parameter(names = {"--random"}, description = "random plan")
     public boolean random = false;
     @Parameter(names = {"--roundrobin", "-RR"}, description = "roundrobin plan")
@@ -170,23 +169,22 @@ public abstract class abstractRunner {
     public int parallelism = 10;
     @Parameter(names = {"--compressRatio"}, description = "compressRatio")
     public int compressRatio = 1;
-    @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
+    @Parameter(names = {"--totalEventsPerBatch"}, description = "Total Events Count")
     public int totalEventsPerBatch = 1;
-    @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
+    @Parameter(names = {"--numberOfBatches"}, description = "Batch Count")
     public int numberOfBatches = 1;
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
-    @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
-    public Integer numberOfDLevels = 4;
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("DATA");
+    @Parameter(names = {"--numberOfDLevels"}, description = "Number of dependency levels.")
+    public Integer numberOfDLevels = 3;
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
     public Integer iterationNumber = 0;
-    @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
+    @Parameter(names = {"--scheduler"}, description = "Number of dependency levels.")
     public String scheduler = "BL";
-    @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
+    @Parameter(names = {"--fanoutDist"}, description = "Fanout scheme.")
     public String fanoutDist = "uniform";
-    @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
+    @Parameter(names = {"--idGenType"}, description = "Ids distribution scheme.")
     public String idGenType = "uniform";
-
     public abstractRunner() {
 //        if (OsUtils.isWindows()) {
 //            CFG_PATH = "\\config\\%s.properties";
@@ -238,7 +236,6 @@ public abstract class abstractRunner {
         config.put("scheduler", scheduler);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
-        config.put("numberOfDLevels", numberOfDLevels);
 
         if (num_socket != -1) {
             config.put("num_socket", num_socket);
