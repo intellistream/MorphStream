@@ -171,7 +171,7 @@ public abstract class abstractRunner {
     @Parameter(names = {"--compressRatio"}, description = "compressRatio")
     public int compressRatio = 1;
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
-    public int totalEventsPerBatch = 1;
+    public int totalEventsPerBatch = 1000;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
     public int numberOfBatches = 1;
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
@@ -181,7 +181,7 @@ public abstract class abstractRunner {
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BL";
+    public String scheduler = "G_S";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")

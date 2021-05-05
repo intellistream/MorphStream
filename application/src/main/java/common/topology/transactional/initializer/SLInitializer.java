@@ -38,13 +38,14 @@ public class SLInitializer extends TableInitilizer {
     private int totalRecords;
     private String idsGenType;
     private DataGenerator mDataGenerator;
-
+    private int mPartitionOffset;
     public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
         this.dataRootPath = dataRootPath;
         configure_store(scale_factor, theta, tthread, NUM_ACCOUNTS);
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         idsGenType = config.getString("idGenType");
+        this.mPartitionOffset = (totalRecords * 5)/tthread;
 
         createDataGenerator(config);
 
@@ -78,8 +79,6 @@ public class SLInitializer extends TableInitilizer {
     @Override
     public void loadDB(int thread_id, int NUM_TASK) {
 
-        if (thread_id > 0) // we are using single thread to load data.
-            return;
         LOG.info("Thread:" + thread_id + " loading records...");
 
         int startingBalance = 1000000;
@@ -96,59 +95,61 @@ public class SLInitializer extends TableInitilizer {
 
             Random mRandomGeneratorForAccIds = new Random(12345678);
             Random mRandomGeneratorForAstIds = new Random(123456789);
-            HashMap<Integer, Integer> mGeneratedAccountIds = new HashMap<>();
-            HashMap<Integer, Integer> mGeneratedAssetIds = new HashMap<>();
+            HashMap<Long, Integer> mGeneratedAccountIds = new HashMap<>();
+            HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
 
-            int range = 10 * totalRecords * 5;
-            int id = 0;
-            for (int lop = 0; lop < accountIdsRange; lop++) {
+            int range = mPartitionOffset;
+            long id = 0;
+            for (int lop = 0; lop <= accountIdsRange; lop++) {
                 if (idsGenType.equals("uniform")) {
-                    id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
-                    while (mGeneratedAccountIds.containsKey(id))
-                        id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
+                    id = mRandomGeneratorForAccIds.nextInt(range);
                 } else if (idsGenType.equals("normal")) {
                     id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
-                    while (mGeneratedAccountIds.containsKey(id))
-                        id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
                 }
 
-                mGeneratedAccountIds.put(id, null);
 
-                String _key = String.format("%d", id);
-                List<DataBox> values = new ArrayList<>();
-                values.add(new StringDataBox(_key, _key.length()));
-                values.add(new LongDataBox(startingBalance));
-                TableRecord record = new TableRecord(new SchemaRecord(values));
-                db.InsertRecord(actTableKey, record);
+                    long tid = id + (thread_id*mPartitionOffset);
+                    tid *= 10;
 
-                if (lop % 100000 == 0)
-                    System.out.println(String.format("%d account records loaded...", lop));
-            }
+                    for(int iter = 0; iter<10; iter++) {
+                        if(mGeneratedAccountIds.containsKey(tid + iter))
+                            continue;
+                        mGeneratedAccountIds.put(tid + iter, null);
 
-            for (int lop = 0; lop < assetIdsRange; lop++) {
+                        String _key = String.format("%d", tid + iter);
+                        List<DataBox> values = new ArrayList<>();
+                        values.add(new StringDataBox(_key, _key.length()));
+                        values.add(new LongDataBox(startingBalance));
+                        TableRecord record = new TableRecord(new SchemaRecord(values));
+                        db.InsertRecord(actTableKey, record);
+                    }
+                }
 
-                if (idsGenType.equals("uniform")) {
-                    id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);
-                    while (mGeneratedAssetIds.containsKey(id))
-                        id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);
-                } else if (idsGenType.equals("normal")) {
-                    id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
-                    while (mGeneratedAssetIds.containsKey(id))
+                for (int lop = 0; lop <= assetIdsRange; lop++) {
+
+                    if (idsGenType.equals("uniform")) {
+                        id = mRandomGeneratorForAstIds.nextInt(range);
+                    } else if (idsGenType.equals("normal")) {
                         id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
-                }
+                    }
 
-                mGeneratedAssetIds.put(id, null);
+                            long tid = id + (thread_id*mPartitionOffset);
+                            tid *= 10;
 
-                String _key = String.format("%d", id);
-                List<DataBox> values = new ArrayList<>();
-                values.add(new StringDataBox(_key, _key.length()));
-                values.add(new LongDataBox(startingBalance));
-                TableRecord record = new TableRecord(new SchemaRecord(values));
-                db.InsertRecord(bookTableKey, record);
+                            for(int iter = 0; iter<10; iter++) {
+                                if(mGeneratedAssetIds.containsKey(tid + iter))
+                                    continue;
+                                mGeneratedAssetIds.put(tid + iter, null);
 
-                if (lop % 100000 == 0)
-                    System.out.println(String.format("%d asset records loaded...", lop));
-            }
+                                String _key = String.format("%d", tid + iter);
+                                List<DataBox> values = new ArrayList<>();
+                                values.add(new StringDataBox(_key, _key.length()));
+                                values.add(new LongDataBox(startingBalance));
+                                TableRecord record = new TableRecord(new SchemaRecord(values));
+                                db.InsertRecord(bookTableKey, record);
+
+                            }
+                        }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -160,7 +161,88 @@ public class SLInitializer extends TableInitilizer {
 
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
+
+        LOG.info("Thread:" + thread_id + " loading records...");
+
+        int startingBalance = 1000000;
+        String actTableKey = "accounts";
+        String bookTableKey = "bookEntries";
+
+        File file = new File(dataRootPath  + OsUtils.OS_wrapper( "vertices_ids_range.txt"));
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            String[] idsRangeInfo = reader.readLine().split(",");
+            int accountIdsRange = Integer.parseInt(idsRangeInfo[0].split("=")[1]);
+            int assetIdsRange = Integer.parseInt(idsRangeInfo[1].split("=")[1]);
+
+            Random mRandomGeneratorForAccIds = new Random(12345678);
+            Random mRandomGeneratorForAstIds = new Random(123456789);
+            HashMap<Long, Integer> mGeneratedAccountIds = new HashMap<>();
+            HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
+
+            int range = mPartitionOffset;
+            long id = 0;
+            for (int lop = 0; lop <= accountIdsRange; lop++) {
+                if (idsGenType.equals("uniform")) {
+                    id = mRandomGeneratorForAccIds.nextInt(range);
+                } else if (idsGenType.equals("normal")) {
+                    id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
+                }
+
+
+                long tid = id + (thread_id*mPartitionOffset);
+                tid *= 10;
+
+                for(int iter = 0; iter<10; iter++) {
+                    if(mGeneratedAccountIds.containsKey(tid + iter))
+                        continue;
+                    mGeneratedAccountIds.put(tid + iter, null);
+
+                    String _key = String.format("%d", tid + iter);
+                    List<DataBox> values = new ArrayList<>();
+                    values.add(new StringDataBox(_key, _key.length()));
+                    values.add(new LongDataBox(startingBalance));
+                    TableRecord record = new TableRecord(new SchemaRecord(values), thread_id, spinlock);
+                    db.InsertRecord(actTableKey, record);
+                }
+            }
+
+            for (int lop = 0; lop <= assetIdsRange; lop++) {
+
+                if (idsGenType.equals("uniform")) {
+                    id = mRandomGeneratorForAstIds.nextInt(range);
+                } else if (idsGenType.equals("normal")) {
+                    id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
+                }
+
+                long tid = id + (thread_id*mPartitionOffset);
+                tid *= 10;
+
+                for(int iter = 0; iter<10; iter++) {
+                    if(mGeneratedAssetIds.containsKey(tid + iter))
+                        continue;
+                    mGeneratedAssetIds.put(tid + iter, null);
+
+                    String _key = String.format("%d", tid + iter);
+                    List<DataBox> values = new ArrayList<>();
+                    values.add(new StringDataBox(_key, _key.length()));
+                    values.add(new LongDataBox(startingBalance));
+                    TableRecord record = new TableRecord(new SchemaRecord(values), thread_id, spinlock);
+                    db.InsertRecord(bookTableKey, record);
+
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        LOG.info("Thread:" + thread_id + " finished loading records...");
+        System.gc();
     }
+
+
     /**
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
      * initial account value_list is 0...?
@@ -310,13 +392,11 @@ public class SLInitializer extends TableInitilizer {
 
     }
 
-
-
     protected void loadTransactionEvents(int tuplesPerBatch, int totalBatches, boolean shufflingActive, String folder) {
 
         if (DataHolder.events == null) {
-
             int numberOfEvents = tuplesPerBatch * totalBatches;
+            int mPartitionOffset = (10 * numberOfEvents * 5)/tthread;
             DataHolder.events = new TransactionEvent[numberOfEvents];
             File file = new File(folder + "transactions.txt");
             if (file.exists()) {
@@ -325,13 +405,15 @@ public class SLInitializer extends TableInitilizer {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
                     String txn = reader.readLine();
                     int count = 0;
+                    int p_bids[] = new int[tthread];
                     while (txn != null) {
                         String[] split = txn.split(",");
+                        int npid = (int) (Long.valueOf(split[1])/mPartitionOffset);
                         TransactionEvent event = new TransactionEvent(
                                 Integer.parseInt(split[0]), //bid
-                                0, //pid
-                                String.format("[%s]", split[0]), //bid_array
-                                1,//num_of_partition
+                                npid, //pid
+                                Arrays.toString(p_bids), //bid_array
+                                4,//num_of_partition
                                 split[1],//getSourceAccountId
                                 split[2],//getSourceBookEntryId
                                 split[3],//getTargetAccountId
@@ -339,6 +421,8 @@ public class SLInitializer extends TableInitilizer {
                                 100,  //getAccountTransfer
                                 100  //getBookEntryTransfer
                         );
+                        for(int x = 0; x<4; x++)
+                            p_bids[(npid+x)%tthread]++;
                         DataHolder.events[count] = event;
                         count++;
                         if (count % 100000 == 0)

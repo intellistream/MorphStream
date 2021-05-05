@@ -106,24 +106,28 @@ public class MeasureTools {
     }
     public static void BEGIN_TOTAL_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile) {
-            if (measure_counts[thread_id] >= CONTROL.MeasureStart && measure_counts[thread_id] < CONTROL.MeasureBound) {
+//            if (measure_counts[thread_id] >= CONTROL.MeasureStart && measure_counts[thread_id] < CONTROL.MeasureBound) {
                 profile_start[thread_id] = true;
                 prepare_start[thread_id] = System.nanoTime();
-                total_start[thread_id] = prepare_start[thread_id];
-            } else
-                profile_start[thread_id] = false;
+                if (total_start[thread_id] == 0)
+                    total_start[thread_id] = prepare_start[thread_id];
+//            } else
+//                profile_start[thread_id] = false;
         }
     }
 
     //compute per event time spent.
     public static void END_TOTAL_TIME_MEASURE(int thread_id, int combo_bid_size) {
         if (profile_start[thread_id] && !Thread.currentThread().isInterrupted()) {
-            long overall_processing_time_per_batch = System.nanoTime() - total_start[thread_id];
-            metrics.overhead_total[thread_id].addValue((overall_processing_time_per_batch - txn_total[thread_id]
-                    - post_time[thread_id] - prepare_time[thread_id]) / combo_bid_size);
-            metrics.stream_total[thread_id].addValue((post_time[thread_id] + prepare_time[thread_id]) / combo_bid_size);
-            metrics.txn_total[thread_id].addValue(txn_total[thread_id] / combo_bid_size);
+//            long overall_processing_time_per_batch = System.nanoTime() - total_start[thread_id];
+//            metrics.overhead_total[thread_id].addValue((overall_processing_time_per_batch - txn_total[thread_id]
+//                    - post_time[thread_id] - prepare_time[thread_id]) / combo_bid_size);
+//            metrics.stream_total[thread_id].addValue((post_time[thread_id] + prepare_time[thread_id]) / combo_bid_size);
+
+//            total[thread_id] = System.nanoTime() - total_start[thread_id];//time from receiving first event to finish last event in the current batch.
+            metrics.total[thread_id].addValue(System.nanoTime() - total_start[thread_id]);
             //clean.
+
             access_total[thread_id] = 0;
             index_time[thread_id] = 0;
             tp_core[thread_id] = 0;

@@ -116,4 +116,12 @@ public class DataTransaction {
                 destinationAccountId + "," +
                 destinationAssetId;
     }
+
+    public String toString(int iterationNumber, int totalTransaction) {
+        return (id+(iterationNumber*totalTransaction)) + "," +
+                (sourceAccountId+iterationNumber) + "," +
+                (sourceAssetId+iterationNumber) + "," +
+                (destinationAccountId+iterationNumber) + "," +
+                (destinationAssetId+iterationNumber);
+    }
 }

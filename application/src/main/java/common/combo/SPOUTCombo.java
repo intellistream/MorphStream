@@ -101,6 +101,8 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 }
 
                 if (counter == the_end) {
+                    if (ccOption == CCOption_SStore)
+                        MeasureTools.END_TOTAL_TIME_MEASURE(taskId, 1);//otherwise deadlock.
                     SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                     if (taskId == 0)
                         sink.end(global_cnt);

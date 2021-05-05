@@ -8,8 +8,8 @@ import java.util.*;
 
 public class DataGenerator {
 
-    HashMap<Integer, Integer> mGeneratedAccountIds = new HashMap<>();
-    HashMap<Integer, Integer> mGeneratedAssetIds = new HashMap<>();
+    HashMap<Long, Integer> mGeneratedAccountIds = new HashMap<>();
+    HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
     private Random mRandomGenerator = new Random();
     private Random mRandomGeneratorForAccIds = new Random(12345678);
     private Random mRandomGeneratorForAstIds = new Random(123456789);
@@ -33,6 +33,10 @@ public class DataGenerator {
     private long updateDependencyStart = 0;
     private long updateDependency = 0;
 
+    private long mPartitionOffset = 0;
+    private int mPId = 0;
+
+
     public DataGenerator(DataGeneratorConfig dataConfig) {
         this.dataConfig = dataConfig;
         this.mTotalTuplesToGenerate = dataConfig.tuplesPerBatch * dataConfig.totalBatches;
@@ -43,6 +47,7 @@ public class DataGenerator {
         this.mAssetLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mOcLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mPickAccount = new boolean[dataConfig.dependenciesDistributionForLevels.length];
+        this.mPartitionOffset = (mTotalTuplesToGenerate * 5)/dataConfig.totalThreads;
     }
     public DataGeneratorConfig getDataConfig() {
         return dataConfig;
@@ -59,7 +64,7 @@ public class DataGenerator {
         mDataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
 
         System.out.println(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
-        for (int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate; tupleNumber++) {
+        for (int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate/10; tupleNumber++) {
             totalTimeStart = System.nanoTime();
             GenerateTuple();
             totalTime += System.nanoTime() - totalTimeStart;
@@ -80,6 +85,8 @@ public class DataGenerator {
         System.out.println("Date Generation is done...");
         clearDataStructures();
     }
+
+
     private void GenerateTuple() {
 
         DataOperationChain srcAccOC = null;
@@ -109,17 +116,25 @@ public class DataGenerator {
                 }
             }
 
+            mPId = mRandomGenerator.nextInt(dataConfig.totalThreads);
+
             if (mPickAccount[selectedLevel]) {
 
                 srcAccOC = getRandomExistingOC(selectedLevel, mAccountOperationChainsByLevel);
                 if (srcAccOC == null)
                     srcAccOC = getNewAccountOC();
+                mPId+=1;
+                mPId = mPId%dataConfig.totalThreads;
 
                 srcAstOC = getNewAssetOC();
+                mPId+=1;
+                mPId = mPId%dataConfig.totalThreads;
 
                 dstAccOC = getRandomExistingDestOC(mAccountOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAccOC == null)
                     dstAccOC = getNewAccountOC();
+                mPId+=1;
+                mPId = mPId%dataConfig.totalThreads;
 
                 dstAstOC = getRandomExistingDestOC(mAssetsOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAstOC == null)
@@ -128,14 +143,20 @@ public class DataGenerator {
             } else {
 
                 srcAccOC = getNewAccountOC();
+                mPId+=1;
+                mPId = mPId%dataConfig.totalThreads;
 
                 srcAstOC = getRandomExistingOC(selectedLevel, mAssetsOperationChainsByLevel);
                 if (srcAstOC == null)
                     srcAstOC = getNewAssetOC();
+                mPId+=1;
+                mPId = mPId%dataConfig.totalThreads;
 
                 dstAccOC = getRandomExistingDestOC(mAccountOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAccOC == null)
                     dstAccOC = getNewAccountOC();
+                mPId+=1;
+                mPId = mPId%dataConfig.totalThreads;
 
                 dstAstOC = getRandomExistingDestOC(mAssetsOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAstOC == null)
@@ -223,7 +244,6 @@ public class DataGenerator {
         mTransactionId++;
         if (mTransactionId % 100000 == 0)
             System.out.println(mTransactionId);
-
     }
     private void UpdateStats() {
 
@@ -256,7 +276,8 @@ public class DataGenerator {
                     oc != srcOC &&
                     oc != srcAst &&
                     !srcOC.doesDependsUpon(oc) &&
-                    !srcAst.doesDependsUpon(oc))
+                    !srcAst.doesDependsUpon(oc)
+                    && (oc.getId()%mPartitionOffset)==mPId)
                 break;
             if (independentOcs.size() - lop > 100) {
                 oc = null;
@@ -279,6 +300,8 @@ public class DataGenerator {
         } else {
             oc = null;
         }
+        if(oc!=null  && (oc.getId()%mPartitionOffset)==mPId)
+            oc = null;
         return oc;
     }
     private void dumpGeneratedDataToFile() {
@@ -315,40 +338,69 @@ public class DataGenerator {
     }
     private DataOperationChain getNewAccountOC() {
 
-        int id = 0;
-        int range = 10 * mTotalTuplesToGenerate * 5;
+        long id = 0;
+//        int range = 10 * mTotalTuplesToGenerate * 5;
+        int range = (int) mPartitionOffset;
         if (dataConfig.idGenType.equals("uniform")) {
             id = mRandomGeneratorForAccIds.nextInt(range);
-            while (mGeneratedAccountIds.containsKey(id))
+            id += mPartitionOffset*mPId;
+            id *= 10;
+            totalAccountRecords++;
+            while (mGeneratedAccountIds.containsKey(id)) {
                 id = mRandomGeneratorForAccIds.nextInt(range);
+                id += mPartitionOffset*mPId;
+                id *= 10;
+                totalAccountRecords++;
+            }
         } else if (dataConfig.idGenType.equals("normal")) {
             id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
-            while (mGeneratedAccountIds.containsKey(id))
+            id += mPartitionOffset*mPId;
+            id *= 10;
+            totalAccountRecords++;
+            while (mGeneratedAccountIds.containsKey(id)) {
                 id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
+                id += mPartitionOffset*mPId;
+                id *= 10;
+                totalAccountRecords++;
+            }
         }
 
         mGeneratedAccountIds.put(id, null);
         DataOperationChain oc = new DataOperationChain("act_" + id, (10 * mTotalTuplesToGenerate * 5) / dataConfig.numberOfDLevels, mAccountOperationChainsByLevel);
-        totalAccountRecords++;
+
         return oc;
     }
 
     private DataOperationChain getNewAssetOC() {
 
-        int id = 0;
-        int range = 10 * mTotalTuplesToGenerate * 5;
+        long id = 0;
+//        int range = 10 * mTotalTuplesToGenerate * 5;
+        int range = (int) mPartitionOffset;
         if (dataConfig.idGenType.equals("uniform")) {
             id = mRandomGeneratorForAstIds.nextInt(range);
-            while (mGeneratedAssetIds.containsKey(id))
+            id += mPartitionOffset*mPId;
+            id *= 10;
+            totalAssetRecords++;
+            while (mGeneratedAssetIds.containsKey(id)) {
                 id = mRandomGeneratorForAstIds.nextInt(range);
+                id += mPartitionOffset*mPId;
+                id *= 10;
+                totalAssetRecords++;
+            }
         } else if (dataConfig.idGenType.equals("normal")) {
             id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
-            while (mGeneratedAssetIds.containsKey(id))
+            id += mPartitionOffset*mPId;
+            id *= 10;
+            totalAssetRecords++;
+            while (mGeneratedAssetIds.containsKey(id)) {
                 id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
+                id += mPartitionOffset*mPId;
+                id *= 10;
+                totalAssetRecords++;
+            }
         }
         mGeneratedAssetIds.put(id, null);
         DataOperationChain oc = new DataOperationChain("ast_" + id, (10 * mTotalTuplesToGenerate * 5) / dataConfig.numberOfDLevels, mAssetsOperationChainsByLevel);
-        totalAssetRecords++;
         return oc;
     }
 

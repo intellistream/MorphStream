@@ -81,7 +81,6 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
         //end transaction processing.
         MeasureTools.END_TRANSACTION_TIME_MEASURE(thread_Id);
         POST_PROCESS(_bid, timestamp, combo_bid_size);
-        MeasureTools.END_TOTAL_TIME_MEASURE(thread_Id, combo_bid_size);
     }
     /**
      * This is used for all LAL based schemes including LOCK and MVLK.

@@ -55,8 +55,9 @@ public class FileOutputHandler implements IOutputHandler {
                 file.createNewFile();
 
             fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()));
-            for (int lop = 0; lop < dataTransactions.size(); lop++)
-                fileWriter.write(dataTransactions.get(lop).toString() + "\n");
+            for (int iter = 0; iter < 10; iter++)
+                for (int lop = 0; lop < dataTransactions.size(); lop++)
+                    fileWriter.write(dataTransactions.get(lop).toString(iter, dataTransactions.size()) + "\n");
             fileWriter.close();
 
         } catch (IOException e) {
