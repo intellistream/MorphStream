@@ -199,46 +199,43 @@ public class TStreamRunner extends Runner {
                     file.createNewFile();
 
                     BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()));
-                    fileWriter.write("thread_id, batch_id, total_tm"
-//                        +
-//                        ", pre_process_tm, oc_creation_tm, d_recording_tm, delayed_d_recording_tm, txn_tm, iterative_processing_tm, useful_iterative_processing_tm, level_calc_tm, barrier_tm, no_of_transactions, no_of_ocs, submit_ttl_tm, submit_barrier_tm, submit_overhead_tm, submit_prm_1_tm, submit_prm_2_tm, submit_prm_3_tm, get_next_ttl_tm, get_next_overhead_tm, get_next_barrier_tm, get_next_thread_wait_tm, get_next_prm_1_tm, get_next_prm_2_tm, get_next_prm_3_tm,\n"
-                    );
+                    fileWriter.write("thread_id, batch_id, total_tm, pre_process_tm, oc_creation_tm, d_recording_tm, delayed_d_recording_tm, txn_tm, iterative_processing_tm, useful_iterative_processing_tm, level_calc_tm, barrier_tm, no_of_transactions, no_of_ocs, submit_ttl_tm, submit_barrier_tm, submit_overhead_tm, submit_prm_1_tm, submit_prm_2_tm, submit_prm_3_tm, get_next_ttl_tm, get_next_overhead_tm, get_next_barrier_tm, get_next_thread_wait_tm, get_next_prm_1_tm, get_next_prm_2_tm, get_next_prm_3_tm,\n");
 
                     for (int threadId = 0; threadId < tthread; threadId++) {
                         long batches = metrics.total[threadId].getN();
                         for (int batch = 0; batch < batches; batch++) {
-                            fileWriter.write(String.format("%d, %d, %.2f"
-//                                        +
-//                                        ", %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f,\n"
+                            fileWriter.write(String.format("%d, %d, %.2f,\n"
+//                                            ", %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f,\n"
                                     , threadId
                                     , batch
-                                    , metrics.total[threadId].getElement(batch)));
-//                                , metrics.pre_txn_total[threadId].getElement(batch)
-//                                , metrics.create_oc_total[threadId].getElement(batch)
-//                                , metrics.dependency_checking_total[threadId].getElement(batch)
-//                                , metrics.dependency_outoforder_overhead_total[threadId].getElement(batch)
-//                                , metrics.txn_total[threadId].getElement(batch) // total time for transaction processing step,
-//                                , metrics.txn_processing_total[threadId].getElement(batch)  // time for transaction processing.
-//                                , metrics.iterative_processing_useful_total[threadId].getElement(batch)  // time for transaction processing.
-//                                , metrics.calculate_levels_total[threadId].getElement(batch)
-//                                , metrics.barriers_total[threadId].getElement(batch)
-//                                , metrics.numberOf_transactional_events_processed[threadId].getElement(batch)
-//                                , metrics.number_of_ocs_processed[threadId].getElement(batch)
+                                    , metrics.total[threadId].getElement(batch)
+//                                    , metrics.pre_txn_total[threadId].getElement(batch)
+//                                    , metrics.create_oc_total[threadId].getElement(batch)
+//                                    , metrics.dependency_checking_total[threadId].getElement(batch)
+//                                    , metrics.dependency_outoforder_overhead_total[threadId].getElement(batch)
+//                                    , metrics.txn_total[threadId].getElement(batch) // total time for transaction processing step,
+//                                    , metrics.txn_processing_total[threadId].getElement(batch)  // time for transaction processing.
+//                                    , metrics.iterative_processing_useful_total[threadId].getElement(batch)  // time for transaction processing.
+//                                    , metrics.calculate_levels_total[threadId].getElement(batch)
+//                                    , metrics.barriers_total[threadId].getElement(batch)
+//                                    , metrics.numberOf_transactional_events_processed[threadId].getElement(batch)
+//                                    , metrics.number_of_ocs_processed[threadId].getElement(batch)
 //
-//                                , metrics.submit_time_total[threadId].getElement(batch)
-//                                , metrics.submit_time_barrier_total[threadId].getElement(batch)
-//                                , metrics.submit_time_overhead_total[threadId].getElement(batch)
-//                                , metrics.submit_time_extra_param_1_total[threadId].getElement(batch)
-//                                , metrics.submit_time_extra_param_2_total[threadId].getElement(batch)
-//                                , metrics.submit_time_extra_param_3_total[threadId].getElement(batch)
+//                                    , metrics.submit_time_total[threadId].getElement(batch)
+//                                    , metrics.submit_time_barrier_total[threadId].getElement(batch)
+//                                    , metrics.submit_time_overhead_total[threadId].getElement(batch)
+//                                    , metrics.submit_time_extra_param_1_total[threadId].getElement(batch)
+//                                    , metrics.submit_time_extra_param_2_total[threadId].getElement(batch)
+//                                    , metrics.submit_time_extra_param_3_total[threadId].getElement(batch)
 //
-//                                , metrics.get_next_time_total[threadId].getElement(batch)
-//                                , metrics.get_next_overhead_time_total[threadId].getElement(batch)
-//                                , metrics.get_next_barrier_time_total[threadId].getElement(batch)
-//                                , metrics.get_next_thread_wait_time_total[threadId].getElement(batch)
-//                                , metrics.get_next_extra_param_1_total[threadId].getElement(batch)
-//                                , metrics.get_next_extra_param_2_total[threadId].getElement(batch)
-//                                , metrics.get_next_extra_param_3_total[threadId].getElement(batch)));
+//                                    , metrics.get_next_time_total[threadId].getElement(batch)
+//                                    , metrics.get_next_overhead_time_total[threadId].getElement(batch)
+//                                    , metrics.get_next_barrier_time_total[threadId].getElement(batch)
+//                                    , metrics.get_next_thread_wait_time_total[threadId].getElement(batch)
+//                                    , metrics.get_next_extra_param_1_total[threadId].getElement(batch)
+//                                    , metrics.get_next_extra_param_2_total[threadId].getElement(batch)
+//                                    , metrics.get_next_extra_param_3_total[threadId].getElement(batch)
+                                    ));
                         }
                     }
                     fileWriter.close();
@@ -296,9 +293,10 @@ public class TStreamRunner extends Runner {
                 dependency_outoforder_overhead_time = dependency_outoforder_overhead_time / tthread;
                 db_access_time = db_access_time / tthread;
 
-                LOG.info("******* STATS BEGIN IN SECONDS *******");
+//                if (CCOption == CCOption_TStream) {
+                    LOG.info("******* STATS BEGIN IN SECONDS *******");
 
-                LOG.info(String.format("Total (batch) processing time                                                       : %.3f seconds", (total) / 1000000000.0f));
+                    LOG.info(String.format("Total (batch) processing time                                                       : %.3f seconds", (total) / 1000000000.0f));
 //                LOG.info(String.format("Time spent in pre transaction                                                       : %.3f seconds", (pre_txn_time / 1000000000.0f)));
 //                LOG.info(String.format("Time spent in transaction processing                                                : %.3f seconds", (txn_total / 1000000000.0f)));
 //                LOG.info(String.format("Other time (read input, dump results to a file)                                     : %.3f seconds", ((total - pre_txn_time - txn_total) / 1000000000.0f)));
@@ -315,8 +313,9 @@ public class TStreamRunner extends Runner {
 //                LOG.info(String.format("Time spent on iterative processing                                        : %.3f seconds", (iterative_processing_useful / 1000000000.0f)));
 //                LOG.info(String.format("Threads wait time and other overhead                                      : %.3f seconds", ((txn_processing - calculate_levels - iterative_processing_useful) / 1000000000.0f)));
 
-                LOG.info("******* STATS ENDS *******");
-                //used in TSTREAM.
+                    LOG.info("******* STATS ENDS *******");
+                    //used in TSTREAM.
+//                }
                 String directory = metric_path
                         + OsUtils.OS_wrapper("TStreamPlus")
                         + OsUtils.OS_wrapper(topology.getPrefix())
@@ -380,6 +379,23 @@ public class TStreamRunner extends Runner {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                LOG.info("===OVERALL===");
+
+                LOG.info("Overhead on one input_event:" + String.format("%.2f", overhead));
+                LOG.info("Stream Processing on one input_event:" + String.format("%.2f", stream_processing));
+                LOG.info("TXN Processing on one input_event:" + String.format("%.2f", txn_processing));
+
+                LOG.warn("Due to NUMA, useful ratio of TStream may be very inaccurate. It is currently an estimation. Fix it later.");
+                LOG.info("===BREAKDOWN TXN===");
+                LOG.info("Useful ratio:\t" + String.format("%.2f", useful_ratio));
+                LOG.info("Index ratio:\t" + String.format("%.2f", index_ratio));
+                LOG.info("Wait ratio:\t" + String.format("%.2f", wait_ratio));
+                LOG.info("lock ratio:\t" + String.format("%.2f", lock_ratio));
+
+                LOG.info("====Details ====");
+                LOG.info("\n" + sb.toString());
+
             }//end of profile.
 
         }

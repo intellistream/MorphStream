@@ -24,8 +24,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 
-import static common.constants.StreamLedgerConstants.Constant.*;
+import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
 import static transaction.State.configure_store;
+import static utils.PartitionHelper.getPartition_interval;
 //import static xerial.jnuma.Numa.setLocalAlloc;
 public class SLInitializer extends TableInitilizer {
 
@@ -99,7 +100,7 @@ public class SLInitializer extends TableInitilizer {
                 if(mGeneratedAccountIds.containsKey(id + iter))
                     continue;
                 mGeneratedAccountIds.put(id + iter, null);
-                insertAccountRecord(id + iter, thread_id, spinlock);
+                insertAccountRecord(String.format("%d", id + iter), startingBalance, thread_id, spinlock);
             }
         }
 
@@ -115,7 +116,7 @@ public class SLInitializer extends TableInitilizer {
                 if(mGeneratedAssetIds.containsKey(id + iter))
                     continue;
                 mGeneratedAssetIds.put(id + iter, null);
-                insertAssetRecord(id + iter, thread_id, spinlock);
+                insertAssetRecord(String.format("%d", id + iter), startingBalance, thread_id, spinlock);
             }
         }
 
@@ -153,90 +154,49 @@ public class SLInitializer extends TableInitilizer {
         return id;
     }
 
-    private void insertAccountRecord(long id, int thread_id, SpinLock[] spinlock) {
-        String _key = String.format("%d", id);
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(_key, _key.length()));
-        values.add(new LongDataBox(startingBalance));
-        TableRecord record = null;
-        if(spinlock!=null)
-            record = new TableRecord(new SchemaRecord(values), thread_id, spinlock);
-        else
-            record = new TableRecord(new SchemaRecord(values));
-        try {
-            db.InsertRecord(actTableKey, record);
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
-    }
 
-    private void insertAssetRecord(long id, int thread_id, SpinLock[] spinlock) {
-        String _key = String.format("%d", id);
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(_key, _key.length()));
-        values.add(new LongDataBox(startingBalance));
-        TableRecord record = null;
-        if(spinlock!=null)
-            record = new TableRecord(new SchemaRecord(values), thread_id, spinlock);
-        else
-            record = new TableRecord(new SchemaRecord(values));
-        try {
-            db.InsertRecord(bookTableKey, record);
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
-    }
     /**
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
      * initial account value_list is 0...?
      */
-    private void insertAccountRecord(String key, long value) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(key, key.length()));
-        values.add(new LongDataBox(value));
-        SchemaRecord schemaRecord = new SchemaRecord(values);
-        try {
-            db.InsertRecord("accounts", new TableRecord(schemaRecord));
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
-    }
     private void insertAccountRecord(String key, long value, int pid, SpinLock[] spinlock_) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(key, key.length()));
-        values.add(new LongDataBox(value));
-        SchemaRecord schemaRecord = new SchemaRecord(values);
-
         try {
-            db.InsertRecord("accounts", new TableRecord(schemaRecord, pid, spinlock_));
+            if(spinlock_!=null)
+                db.InsertRecord("accounts", new TableRecord(AccountRecord(key, value), pid, spinlock_));
+            else
+                db.InsertRecord("accounts", new TableRecord(AccountRecord(key, value)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
-    private SchemaRecord AssetRecord(String key, long value) {
+
+    /**
+     * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
+     * initial asset value_list is 0...?
+     */
+    private void insertAssetRecord(String key, long value, int pid, SpinLock[] spinlock_) {
+        try {
+            if(spinlock_!=null)
+                db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value), pid, spinlock_));
+            else
+                db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value)));
+        } catch (DatabaseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private SchemaRecord AccountRecord(String key, long value) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
         values.add(new LongDataBox(value));
         return new SchemaRecord(values);
     }
-    /**
-     * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
-     * initial account value_list is 0...?
-     */
-    private void insertAssetRecord(String key, long value) {
-        try {
-            TableRecord record = new TableRecord(AssetRecord(key, value));
-            db.InsertRecord("bookEntries", record);
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
-    }
-    private void insertAssetRecord(String key, long value, int pid, SpinLock[] spinlock_) {
-        try {
-            db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value), pid, spinlock_));
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
+
+    private SchemaRecord AssetRecord(String key, long value) {
+        List<DataBox> values = new ArrayList<>();
+        values.add(new StringDataBox(key, key.length()));
+        values.add(new LongDataBox(value));
+        return new SchemaRecord(values);
     }
     //    private String rightpad(String text, int length) {
 //        return String.format("%-" + length + "." + length + "s", text);
@@ -245,45 +205,6 @@ public class SLInitializer extends TableInitilizer {
     private String GenerateKey(String prefix, int key) {
 //        return rightpad(prefix + String.valueOf(key), VALUE_LEN);
         return prefix + key;
-    }
-    /**
-     * TODO: be aware, scale_factor is not in use now.
-     *
-     * @param scale_factor
-     * @param theta
-     * @param partition_interval
-     * @param spinlock_
-     */
-    public void loadData_Central(double scale_factor, double theta, int partition_interval, SpinLock[] spinlock_) {
-        int elements = (int) (NUM_ACCOUNTS * scale_factor);
-        int elements_per_socket;
-//        setLocalAlloc();
-        if (OsUtils.isMac())
-            elements_per_socket = elements;
-        else
-            elements_per_socket = elements / 4;
-        int i = 0;
-        for (int key = 0; key < elements; key++) {
-            int pid = get_pid(partition_interval, key);
-            String _key = GenerateKey(ACCOUNT_ID_PREFIX, key);
-            insertAccountRecord(_key, 0, pid, spinlock_);
-            _key = GenerateKey(BOOK_ENTRY_ID_PREFIX, key);
-            insertAssetRecord(_key, 0, pid, spinlock_);
-            i++;
-        }
-    }
-    @Override
-    public void loadData_Central(double scale_factor, double theta) {
-        int elements = (int) (NUM_ACCOUNTS * scale_factor);
-//        setLocalAlloc();
-        int i = 0;
-        for (int key = 0; key < elements; key++) {
-            String _key = GenerateKey(ACCOUNT_ID_PREFIX, key);
-            insertAccountRecord(_key, 0);
-            _key = GenerateKey(BOOK_ENTRY_ID_PREFIX, key);
-            insertAssetRecord(_key, 0);
-            i++;
-        }
     }
 
     private RecordSchema getRecordSchema() {

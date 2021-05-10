@@ -49,7 +49,7 @@ public class ExecutionManager {
                                 CountDownLatch latch, Database db) throws UnhandledCaseException {
         g.build_inputScheduler();
         clock = new Clock(conf.getDouble("checkpoint", 1));
-        if (conf.getBoolean("Fault_tolerance", false)) {
+        if (conf.getBoolean("enable_fault_tolerance", false)) {
             Writer writer = null;
             for (ExecutionNode e : g.getExecutionNodeArrayList()) {
                 if (e.isFirst_executor()) {

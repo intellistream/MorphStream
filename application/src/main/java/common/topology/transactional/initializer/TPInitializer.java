@@ -103,19 +103,6 @@ public class TPInitializer extends TableInitilizer {
             e.printStackTrace();
         }
     }
-    /**
-     * not in use.
-     *
-     * @param scale_factor
-     * @param theta
-     * @param partition_interval
-     * @param spinlock_
-     */
-    public void loadData_Central(double scale_factor, double theta, int partition_interval, SpinLock[] spinlock_) {
-    }
-    @Override
-    public void loadData_Central(double scale_factor, double theta) {
-    }
     private RecordSchema SpeedScheme() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();

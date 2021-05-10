@@ -74,44 +74,6 @@ public class OBInitializer extends TableInitilizer {
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
     /**
-     * TODO: be aware, scale_factor is not in use now.
-     *
-     * @param scale_factor
-     * @param theta
-     * @param partition_interval
-     * @param spinlock_
-     */
-    public void loadData_Central(double scale_factor, double theta, int partition_interval, SpinLock[] spinlock_) {
-        int elements = (int) (NUM_ITEMS * scale_factor);
-        int elements_per_socket;
-//        setLocalAlloc();
-        if (OsUtils.isMac())
-            elements_per_socket = elements;
-        else
-            elements_per_socket = elements / 4;
-        int i = 0;
-        for (int key = 0; key < elements; key++) {
-            int pid = get_pid(partition_interval, key);
-            insertItemRecords(key, 100, pid, spinlock_);
-            i++;
-        }
-    }
-    @Override
-    public void loadData_Central(double scale_factor, double theta) {
-        int elements = (int) (NUM_ITEMS * scale_factor);
-        int elements_per_socket;
-//        setLocalAlloc();
-        if (OsUtils.isMac())
-            elements_per_socket = elements;
-        else
-            elements_per_socket = elements / 4;
-        int i = 0;
-        for (int key = 0; key < elements; key++) {
-            insertItemRecords(key, 100);
-            i++;
-        }
-    }
-    /**
      * 4 + 8 + 8
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
      * initial account value_list is 0...?
