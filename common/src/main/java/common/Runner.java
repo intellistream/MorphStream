@@ -14,6 +14,34 @@ public abstract class Runner implements IRunner {
     protected static String CFG_PATH = null;
 
     /**
+     * Workload Specific Parameters.
+     */
+    @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
+    public String application = "StreamLedger";
+    @Parameter(names = {"-t", "--Brisk.topology-name"}, required = false, description = "The name of the Brisk.topology")
+    public String topologyName;
+    @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
+    public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
+    @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
+    public int POST_COMPUTE = 0;// 1, 10, 100
+    @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
+    public int NUM_ITEMS = 100_000;//
+    @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
+    public int NUM_ACCESS = 10;//
+    @Parameter(names = {"--scale_factor"}, description = "scale_factor")
+    public double scale_factor = 1; //<=1
+    @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
+    public double ratio_of_read = 0.0; //<=1
+    @Parameter(names = {"--ratio_of_multi_partition"}, description = "ratio_of_multi_partition")
+    public double ratio_of_multi_partition = 0; //<=1
+    @Parameter(names = {"--number_partitions"}, description = "number_partitions")
+    public int number_partitions = 3;
+    @Parameter(names = {"--theta"}, description = "theta")
+    public double theta = 0.6; //0.6==medium contention
+    @Parameter(names = {"--size_tuple"}, description = "size_tuple (number of elements in state)")
+    public int size_tuple = 0;
+
+    /**
      * Functional Parameters.
      */
     @Parameter(names = {"--fault_tolerance"}, description = "Enable or disable fault tolerance, it is disabled by default.")
@@ -81,36 +109,16 @@ public abstract class Runner implements IRunner {
     public boolean verbose = false;
 
     /**
-     * Workload Specific Parameters.
-     */
-    @Parameter(names = {"-t", "--Brisk.topology-name"}, required = false, description = "The name of the Brisk.topology")
-    public String topologyName;
-    @Parameter(names = {"-a", "--app"}, description = "The application to be executed", required = false)
-    public String application = "WordCount";
-    @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
-    public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
-    @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
-    public int POST_COMPUTE = 0;// 1, 10, 100
-    @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 100_000;//
-    @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
-    public int NUM_ACCESS = 10;//
-    @Parameter(names = {"--scale_factor"}, description = "scale_factor")
-    public double scale_factor = 1; //<=1
-    @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
-    public double ratio_of_read = 0.0; //<=1
-    @Parameter(names = {"--ratio_of_multi_partition"}, description = "ratio_of_multi_partition")
-    public double ratio_of_multi_partition = 0; //<=1
-    @Parameter(names = {"--number_partitions"}, description = "number_partitions")
-    public int number_partitions = 3;
-    @Parameter(names = {"--theta"}, description = "theta")
-    public double theta = 0.6; //0.6==medium contention
-    @Parameter(names = {"--size_tuple"}, description = "size_tuple (number of elements in state)")
-    public int size_tuple = 0;
-
-    /**
      * @author: Aqif
      * Input Dependency Benchmark. Bundled with StreamingLedger Application.
+     * Scheduler Types:
+     * BL,
+     * RR,
+     * SW,
+     * NB_BL,
+     * NB_RR,
+     * NB_SW,
+     * G_S,
      */
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
     public int totalEventsPerBatch = 100;
@@ -121,7 +129,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BL";
+    public String scheduler = "G_S";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
@@ -142,7 +150,7 @@ public abstract class Runner implements IRunner {
 
     public void initializeCfg(HashMap<String, Object> config) {
         config.put("Fault_tolerance", enable_fault_tolerance);
-        config.put("queue_size",queue_size);
+        config.put("queue_size", queue_size);
         config.put("disable_pushdown", disable_pushdown);
         config.put("common", application);
         config.put("ratio_of_multi_partition", ratio_of_multi_partition);

@@ -33,14 +33,14 @@ import static profiler.Metrics.NUM_ACCESSES;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
 import static utils.PartitionHelper.getPartition_interval;
-//import static xerial.jnuma.Numa.setLocalAlloc;
-public class MBInitializer extends TableInitilizer {
-    private static final Logger LOG = LoggerFactory.getLogger(MBInitializer.class);
+
+public class GSInitializer extends TableInitilizer {
+    private static final Logger LOG = LoggerFactory.getLogger(GSInitializer.class);
     //different R-W ratio.
     //just enable one of the decision array
     protected transient boolean[] read_decision;
     int i = 0;
-    public MBInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
+    public GSInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
         floor_interval = (int) Math.floor(NUM_ITEMS / (double) tthread);//NUM_ITEMS / tthread;
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
@@ -273,7 +273,7 @@ public class MBInitializer extends TableInitilizer {
         RecordSchema s = MicroTableSchema();
         db.createTable(s, "MicroTable");
         try {
-            prepare_input_events("MB_Events", false);
+            prepare_input_events("GS_Events");
         } catch (IOException e) {
             e.printStackTrace();
         }

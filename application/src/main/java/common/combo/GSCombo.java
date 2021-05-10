@@ -3,11 +3,11 @@ import common.bolts.transactional.gs.*;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.mb.MicroEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,7 +33,7 @@ public class GSCombo extends SPOUTCombo {
     public GSCombo() {
         super(LOG, 0);
     }
-    public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) {
+    public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) throws FileNotFoundException {
         double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
         int number_partitions = Math.min(tthread, config.getInt("number_partitions"));
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
@@ -47,7 +47,7 @@ public class GSCombo extends SPOUTCombo {
                 + OsUtils.OS_wrapper("theta=" + config.getDouble("theta", 1))
                 + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
         if (Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file_name))))
-            throw new UnsupportedOperationException();
+            throw new FileNotFoundException();
         long start = System.nanoTime();
         Scanner sc;
         try {
@@ -124,6 +124,8 @@ public class GSCombo extends SPOUTCombo {
     }
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+        assert enable_shared_state;//This application requires enable_shared_state.
+
         super.initialize(thread_Id, thisTaskId, graph);
         sink.configPrefix = this.getConfigPrefix();
         sink.prepare(config, context, collector);
@@ -160,9 +162,12 @@ public class GSCombo extends SPOUTCombo {
         }
         //do preparation.
         bolt.prepare(config, context, collector);
-        if (enable_shared_state)
-            bolt.loadDB(config, context, collector);
-        loadEvent("MB_Events" + tthread, config, context, collector);
+        bolt.loadDB(config, context, collector);
+        try {
+            loadEvent("GS_Events" + tthread, config, context, collector);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 //        bolt.sink.batch_number_per_wm = batch_number_per_wm;
     }
 }

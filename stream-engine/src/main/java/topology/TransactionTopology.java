@@ -1,14 +1,16 @@
 package topology;
+import common.SpinLock;
 import common.collections.Configuration;
+import db.CavaliaDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import db.CavaliaDatabase;
-import common.SpinLock;
 import transaction.TableInitilizer;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import static common.CONTROL.enable_shared_state;
 /**
  * The basic topology has only one spout and one sink, configured by the default
  * configuration keys.
@@ -18,6 +20,7 @@ public abstract class TransactionTopology extends BasicTopology {
     public final transient CavaliaDatabase db;
     protected TransactionTopology(String topologyName, Configuration config) {
         super(topologyName, config);
+        assert enable_shared_state;
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
         LOG.info(dateFormat.format(date)); //2016/11/16 12:08:43

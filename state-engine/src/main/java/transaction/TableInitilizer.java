@@ -1,11 +1,11 @@
 package transaction;
-import common.collections.Configuration;
-import common.tools.FastZipfGenerator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import db.Database;
 import benchmark.TxnParam;
 import common.SpinLock;
+import common.collections.Configuration;
+import common.tools.FastZipfGenerator;
+import db.Database;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -130,45 +130,51 @@ public abstract class TableInitilizer {
         }
     }
     public abstract boolean Prepared(String file) throws IOException;
-    public void prepare_input_events(String file_path, boolean fixed) throws IOException {
-        prepare_input_events(file_path, NUM_EVENTS, fixed);
-    }
+    public void prepare_input_events(String file_path, int total_events) throws IOException {
 
-    public void prepare_input_events(String file_path, int totalEvents, boolean fixed) throws IOException {
-        db.getEventManager().ini(totalEvents);
+        db.getEventManager().ini(total_events);
         int _number_partitions = number_partitions;
+
         //try to read from file.
         if (!Prepared(file_path + tthread)) {
             //if failed, create new one.
-//            Object event;
-//            for (int i = 0; i < totalEvents; i++) {
-//                boolean multi_parition_txn_flag = multi_partion_decision[j];
-//                j++;
-//                if (j == 8)
-//                    j = 0;
-//                p = key_to_partition(p_generator.next());//randomly pick a starting point.
-//                if (multi_parition_txn_flag) {//multi-partition
-//                    event = create_new_event(_number_partitions, i);
-//                    _number_partitions = Math.min(number_partitions, 2);
-//                    for (int k = 0; k < _number_partitions; k++) {//depo input_event only allows 2 partition
-//                        p_bid[p]++;
-//                        p++;
-//                        if (p == tthread)
-//                            p = 0;
-//                    }
-//                } else {
-//                    event = create_new_event(1, i);
-//                    p_bid[p]++;
-//                    p++;
-//                    if (p == tthread)
-//                        p = 0;
-//                }
-//                db.getEventManager().put(event, i);
-//            }
+            Object event;
+            for (int i = 0; i < total_events; i++) {
+                boolean multi_parition_txn_flag = multi_partion_decision[j];
+                j++;
+                if (j == 8)
+                    j = 0;
+
+                p = key_to_partition(p_generator.next());//randomly pick a starting point.
+                if (multi_parition_txn_flag) {//multi-partition
+                    event = create_new_event(_number_partitions, i);
+                    _number_partitions = Math.min(number_partitions, 2);
+                    for (int k = 0; k < _number_partitions; k++) {//depo input_event only allows 2 partition
+                        p_bid[p]++;
+                        p++;
+                        if (p == tthread)
+                            p = 0;
+                    }
+
+                } else {
+                    event = create_new_event(1, i);
+                    p_bid[p]++;
+                    p++;
+                    if (p == tthread)
+                        p = 0;
+                }
+                db.getEventManager().put(event, i);
+            }
             store(file_path + tthread);
         }
         db.getEventManager().clear();
+
     }
+
+    public void prepare_input_events(String file_path) throws IOException {
+        prepare_input_events(file_path, NUM_EVENTS);
+    }
+
     public abstract void store(String file_path) throws IOException;
     public Object create_new_event(String record, int bid) {
         throw new UnsupportedOperationException();

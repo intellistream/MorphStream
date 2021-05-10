@@ -1,6 +1,4 @@
 package common;
-import com.beust.jcommander.Parameter;
-import common.collections.OsUtils;
 public interface IRunner {
     String RUN_LOCAL = "local";
     String RUN_REMOTE = "remote";

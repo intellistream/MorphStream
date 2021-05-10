@@ -369,7 +369,7 @@ public class SLInitializer extends TableInitilizer {
         RecordSchema b = BookEntryScheme();
         db.createTable(b, "bookEntries");
         try {
-            prepare_input_events("SL_Events", config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"), false);
+            prepare_input_events("SL_Events", config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
         } catch (IOException e) {
             e.printStackTrace();
         }

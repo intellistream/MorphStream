@@ -1,12 +1,12 @@
 package optimization;
 import common.collections.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.exception.UnhandledCaseException;
+import db.Database;
 import execution.ExecutionGraph;
 import execution.ExecutionManager;
 import execution.runtime.executorThread;
-import db.Database;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CountDownLatch;
 /**
@@ -36,9 +36,7 @@ public class OptimizationManager extends executorThread {
      */
     public void lanuch(Database db) throws UnhandledCaseException {
         EM = new ExecutionManager(g, conf, this);
-        //Prepared only
         latch = new CountDownLatch(g.getExecutionNodeArrayList().size() + 1 - 1);//+1:OM -1:virtual
-        LOG.info("Native execution");
         EM.distributeTasks(conf, latch, db);
     }
     /**
@@ -53,8 +51,7 @@ public class OptimizationManager extends executorThread {
             e.printStackTrace();
         }
         //TODO: add optimization module here.
-
-        LOG.info("Optimization manager exists");
+        //LOG.info("Optimization manager exists");
     }
     @Override
     protected void _execute_noControl() {

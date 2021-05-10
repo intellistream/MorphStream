@@ -190,8 +190,8 @@ public class TStreamRunner extends Runner {
                 try {
 
                     File file = new File(statsFolderPath + String.format("iteration_%d.csv", iterationNumber));
-                    System.out.println("Dumping stats to...");
-                    System.out.println(file.getAbsoluteFile());
+                    LOG.info("Dumping stats to...");
+                    LOG.info(String.valueOf(file.getAbsoluteFile()));
                     file.mkdirs();
 
                     if (file.exists())
@@ -291,47 +291,45 @@ public class TStreamRunner extends Runner {
                 dependency_outoforder_overhead_time = dependency_outoforder_overhead_time / tthread;
                 db_access_time = db_access_time / tthread;
 
-//            System.out.println("******* STATS BEGIN *******");
+//            LOG.info("******* STATS BEGIN *******");
 //
-//            System.out.println(String.format("Time spent in pre transaction                                             : %.3f%%", (pre_txn_time/total)*100.0f));
-//            System.out.println(String.format("Time spent in transaction processing                                      : %.3f%%", (txn_total/total)*100.0f));
-//            System.out.println(String.format("Other time (read input, dump results to a file)                           : %.3f%%", ((total-pre_txn_time-txn_total)/total)*100.0f));
+//            LOG.info(String.format("Time spent in pre transaction                                             : %.3f%%", (pre_txn_time/total)*100.0f));
+//            LOG.info(String.format("Time spent in transaction processing                                      : %.3f%%", (txn_total/total)*100.0f));
+//            LOG.info(String.format("Other time (read input, dump results to a file)                           : %.3f%%", ((total-pre_txn_time-txn_total)/total)*100.0f));
 //
-//            System.out.println("******* PRE_TXN BREAKDOWN *******");
-//            System.out.println(String.format("Time spent creating Operation Chains                                      : %.3f%%", (create_oc_time/total)*100.0f));
-//            System.out.println(String.format("Time spent recording data dependencies                                    : %.3f%%", (dependency_checking_time/total)*100.0f));
-//            System.out.println(String.format("Time spent to access DB                                                   : %.3f%%", (db_access_time/total)*100.0f));
-//            System.out.println(String.format("Not accounting for                                                        : %.3f%%", ((pre_txn_time-create_oc_time-dependency_checking_time-db_access_time)/total)*100.0f));
+//            LOG.info("******* PRE_TXN BREAKDOWN *******");
+//            LOG.info(String.format("Time spent creating Operation Chains                                      : %.3f%%", (create_oc_time/total)*100.0f));
+//            LOG.info(String.format("Time spent recording data dependencies                                    : %.3f%%", (dependency_checking_time/total)*100.0f));
+//            LOG.info(String.format("Time spent to access DB                                                   : %.3f%%", (db_access_time/total)*100.0f));
+//            LOG.info(String.format("Not accounting for                                                        : %.3f%%", ((pre_txn_time-create_oc_time-dependency_checking_time-db_access_time)/total)*100.0f));
 //
-//            System.out.println("******* TRANSACTION PROCESSING BREAKDOWN *******");
-//            System.out.println(String.format("Time spent processing transactions                                        : %.3f%%", (txn_processing/total)*100.0f));
-//            System.out.println(String.format("Time spent on state accessing                                             : %.3f%%", (state_access/total)*100.0f));
-//            System.out.println(String.format("Time spent calculating levels                                             : %.3f%%", (calculate_levels/total)*100.0f));
-//            System.out.println(String.format("Time spent on iterative processing                                        : %.3f%%", (iterative_processing_useful/total)*100.0f));
-//            System.out.println(String.format("Threads wait time and other overhead                                      : %.3f%%", ((txn_processing-calculate_levels-iterative_processing_useful)/total)*100.0f));
-//            System.out.println(" ");
-//            System.out.println(" ");
-//            System.out.println("**************************************");
-                System.out.println("******* STATS BEGIN IN SECONDS *******");
+//            LOG.info("******* TRANSACTION PROCESSING BREAKDOWN *******");
+//            LOG.info(String.format("Time spent processing transactions                                        : %.3f%%", (txn_processing/total)*100.0f));
+//            LOG.info(String.format("Time spent on state accessing                                             : %.3f%%", (state_access/total)*100.0f));
+//            LOG.info(String.format("Time spent calculating levels                                             : %.3f%%", (calculate_levels/total)*100.0f));
+//            LOG.info(String.format("Time spent on iterative processing                                        : %.3f%%", (iterative_processing_useful/total)*100.0f));
+//            LOG.info(String.format("Threads wait time and other overhead                                      : %.3f%%", ((txn_processing-calculate_levels-iterative_processing_useful)/total)*100.0f));
+//            LOG.info("**************************************");
+                LOG.info("******* STATS BEGIN IN SECONDS *******");
 
-//            System.out.println(String.format("Total time                                                                : %.3f seconds", (total)/1000000000.0f));
-//            System.out.println(String.format("Time spent in pre transaction                                             : %.3f seconds", (pre_txn_time/1000000000.0f)));
-                System.out.println(String.format("Time spent in transaction processing                                      : %.3f seconds", (txn_total / 1000000000.0f)));
-//            System.out.println(String.format("Other time (read input, dump results to a file)                           : %.3f seconds", ((total-pre_txn_time-txn_total)/1000000000.0f)));
+                LOG.info(String.format("Total time  (per tuple)                                                              : %.3f seconds", (total) / 1000000000.0f));
+                LOG.info(String.format("Time spent in pre transaction           (per tuple)                                     : %.3f seconds", (pre_txn_time / 1000000000.0f)));
+                LOG.info(String.format("Time spent in transaction processing      (per tuple)                                 : %.3f seconds", (txn_total / 1000000000.0f)));
+                LOG.info(String.format("Other time (read input, dump results to a file)        (per tuple)                      : %.3f seconds", ((total - pre_txn_time - txn_total) / 1000000000.0f)));
 
-//            System.out.println("******* PRE_TXN BREAKDOWN *******");
-//            System.out.println(String.format("Time spent creating Operation Chains                                      : %.3f seconds", (create_oc_time/1000000000.0f)));
-//            System.out.println(String.format("Time spent recording data dependencies                                    : %.3f seconds", (dependency_checking_time/1000000000.0f)));
-//            System.out.println(String.format("Time spent of recording data dependencies for out of transaction checking : %.3f seconds", (dependency_outoforder_overhead_time/1000000000.0f)));
-//
-//            System.out.println("******* TRANSACTION PROCESSING BREAKDOWN *******");
-//            System.out.println(String.format("Time spent processing transactions                                        : %.3f seconds", (txn_processing/1000000000.0f)));
-//            System.out.println(String.format("Time spent on state accessing                                             : %.3f seconds", (state_access/1000000000.0f)));
-//            System.out.println(String.format("Time spent calculating levels                                             : %.3f seconds", (calculate_levels/1000000000.0f)));
-//            System.out.println(String.format("Time spent on iterative processing                                        : %.3f seconds", (iterative_processing_useful/1000000000.0f)));
-//            System.out.println(String.format("Threads wait time and other overhead                                      : %.3f seconds", ((txn_processing-calculate_levels-iterative_processing_useful)/1000000000.0f)));
+                LOG.info("******* PRE_TXN BREAKDOWN *******");
+                LOG.info(String.format("Time spent creating Operation Chains                                      : %.3f seconds", (create_oc_time / 1000000000.0f)));
+                LOG.info(String.format("Time spent recording data dependencies                                    : %.3f seconds", (dependency_checking_time / 1000000000.0f)));
+                LOG.info(String.format("Time spent of recording data dependencies for out of transaction checking : %.3f seconds", (dependency_outoforder_overhead_time / 1000000000.0f)));
 
-                System.out.println("******* STATS ENDS *******");
+                LOG.info("******* TRANSACTION PROCESSING BREAKDOWN *******");
+                LOG.info(String.format("Time spent processing transactions                                        : %.3f seconds", (txn_processing / 1000000000.0f)));
+                LOG.info(String.format("Time spent on state accessing                                             : %.3f seconds", (state_access / 1000000000.0f)));
+                LOG.info(String.format("Time spent calculating levels                                             : %.3f seconds", (calculate_levels / 1000000000.0f)));
+                LOG.info(String.format("Time spent on iterative processing                                        : %.3f seconds", (iterative_processing_useful / 1000000000.0f)));
+                LOG.info(String.format("Threads wait time and other overhead                                      : %.3f seconds", ((txn_processing - calculate_levels - iterative_processing_useful) / 1000000000.0f)));
+
+                LOG.info("******* STATS ENDS *******");
                 //used in TSTREAM.
                 String directory = metric_path
                         + OsUtils.OS_wrapper("TStreamPlus")
@@ -397,6 +395,7 @@ public class TStreamRunner extends Runner {
                     e.printStackTrace();
                 }
             }//end of profile.
+
         }
     }
 

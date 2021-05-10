@@ -294,7 +294,7 @@ public class OBInitializer extends TableInitilizer {
         RecordSchema s = Goods();
         db.createTable(s, "goods");
         try {
-            prepare_input_events("OB_Events", false);
+            prepare_input_events("OB_Events");
         } catch (IOException e) {
             e.printStackTrace();
         }

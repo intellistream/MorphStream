@@ -21,10 +21,6 @@ public class WordCount extends BasicTopology {
     private static final Logger LOG = LoggerFactory.getLogger(WordCount.class);
     public WordCount(String topologyName, Configuration config) {
         super(topologyName, config);
-//        initilize_parser();
-    }
-    public static String getPrefix() {
-        return PREFIX;
     }
     public void initialize() {
         super.initialize();
@@ -45,11 +41,9 @@ public class WordCount extends BasicTopology {
             builder.setBolt(Component.COUNTER, new WordCountBolt()
                     , config.getInt(WordCountConstants.Conf.COUNTER_THREADS, 1)
                     , new FieldsGrouping(Component.SPLITTER, new Fields(Field.WORD))
-//					, new ShuffleGrouping(Component.SPOUT)//workaround to ensure balanced scheduling.
             );
             builder.setSink(Component.SINK, sink, sinkThreads
                     , new ShuffleGrouping(Component.COUNTER));
-//                    , new ShuffleGrouping(Component.SPOUT));
         } catch (InvalidIDException e) {
             e.printStackTrace();
         }
