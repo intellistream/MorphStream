@@ -152,6 +152,10 @@ public class OutputCollector<T> {
         assert data != null && sc != null;
         sc.emitOnStream(meta, streamId, -1, data);
     }
+    public void emit(String data)throws InterruptedException {
+        assert data != null && sc != null;
+        sc.emitOnStream(meta, DEFAULT_STREAM_ID, -1, data);
+    }
     public void emit(StreamValues data) throws InterruptedException {
         assert data != null && sc != null;
         sc.emitOnStream(meta, DEFAULT_STREAM_ID, -1, data);
@@ -473,6 +477,7 @@ public class OutputCollector<T> {
     public void create_marker_single(long boardcast_time, String streamId, long bid, int myiteration) {
         sc.create_marker_single(meta, boardcast_time, streamId, bid, myiteration);
     }
+
 //	public void increaseGap(String streamId) {
 //		sc.increaseGap(streamId);
 //	}

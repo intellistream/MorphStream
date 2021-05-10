@@ -1,11 +1,11 @@
 package execution.runtime;
 import common.collections.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.TopologyComponent;
 import components.context.TopologyContext;
-import execution.ExecutionNode;
 import db.DatabaseException;
+import execution.ExecutionNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Queue;
@@ -113,22 +113,8 @@ public abstract class executorThread extends Thread {
             }
         }
     }
-    public void migrate(long[] cpu) {
-        migrating = true;//sync_ratio to be scheduled.
-//        LOG.info("Old CPU:" + Arrays.show(this.cpu));
-        this.cpu = cpu;
-//        LOG.info("New CPU:" + Arrays.show(this.cpu));
-    }
-    public void migrate(int node) {
-        migrating = true;//sync_ratio to be scheduled.
-        this.node = node;
-    }
     private void allocate_OutputQueue() {
-//        if (enable_latency_measurement) {
-//            executor.allocate_OutputQueue(conf.getBoolean("linked", false), 2);//no queueing delay.
-//        } else {
-        executor.allocate_OutputQueue(conf.getBoolean("linked", false), (int) (conf.getInt("targetHz") * conf.getDouble("checkpoint")));
-//        }
+        executor.allocate_OutputQueue(conf.getBoolean("linked", false), conf.getInt("queue_size"));
     }
     private void assign_InputQueue(String streamId) {
         executor.setReceive_queueOfChildren(streamId);
@@ -156,10 +142,6 @@ public abstract class executorThread extends Thread {
         }
         while (running) {
             _execute();
-//			_migrate(LOG);//even if this thread is not under measurement, it may still need to be re-scheduled.
-//            if (s++ % 10000 == 0)
-//                this.executor.op.display();
-//            Thread.yield();
         }
         end_emit = System.nanoTime();
     }

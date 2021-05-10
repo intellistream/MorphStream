@@ -116,7 +116,7 @@ public abstract class helper {
             LOG.warn("Not able to create metrics directories");
         }
         try {
-            fw = new FileWriter(new File(String.format(sink_path, pid)));
+            fw = new FileWriter(String.format(sink_path, pid));
             writer = new BufferedWriter(fw);
         } catch (IOException e) {
             // TODO Auto-generated catch block

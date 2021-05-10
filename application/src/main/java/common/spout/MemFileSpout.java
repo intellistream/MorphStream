@@ -1,10 +1,10 @@
 package common.spout;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.AbstractSpout;
 import execution.ExecutionGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -68,37 +68,20 @@ public class MemFileSpout extends AbstractSpout {
             e.printStackTrace();
         }
     }
-    //	protected void reset_index() {
-//		if (timestamp_counter == array.length) {
-//			timestamp_counter = 0;
-//		}
-//	}
-//	int control = 1;
-//	volatile String emit;
+
     @Override
     public void nextTuple() throws InterruptedException {
-//        String[] value_list = new String[batch];
-//        for (int i = 0; i < batch; i++) {
-//            value_list[i] = array[timestamp_counter];
-//        }
-//
-//		emit = array[timestamp_counter]+"";
-//		if (control > 0) {
-        collector.emit(array_array[counter]);//Arrays.copyOf(array_array[timestamp_counter], array_array[timestamp_counter].length) a workaround to ensure char array instead of string is used in transmission.
-//		collector.emit_nowait(new StreamValues(array[timestamp_counter]));
+        collector.emit(0, array.get(counter));
         counter++;
-        if (counter == array_array.length) {
+        if (counter == array.size()) {
             counter = 0;
         }
-//		reset_index();
-//			control--;
     }
     @Override
     public void nextTuple_nonblocking() throws InterruptedException {
-//		collector.emit(array[timestamp_counter]);//Arrays.copyOf(array[timestamp_counter], array[timestamp_counter].length) a workaround to ensure char array instead of string is used in transmission.
-        collector.emit_nowait(array_array[counter]);
+        collector.emit_nowait(array.get(counter));
         counter++;
-        if (counter == array_array.length) {
+        if (counter == array.size()) {
             counter = 0;
         }
     }

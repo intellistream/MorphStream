@@ -1,6 +1,5 @@
 package common;
 public interface CONTROL {
-    //global settings.
     int kMaxThreadNum = 40;
     int MeasureStart = 0;//10_000;//server needs at least 10,000 to compile, so skip them.
     int MeasureBound = 1_000;
@@ -15,7 +14,7 @@ public interface CONTROL {
     //order related.
     boolean enable_force_ordering = true;
     //db related.
-    boolean enable_shared_state = true;//this is for transactional state mgmt.
+    boolean enable_shared_state = false;//this is for transactional state mgmt.
     boolean enable_states_partition = true;//must be enabled for PAT/SSTORE.
     boolean enable_TSTREAM = true;
     //pre- and post -compute

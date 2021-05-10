@@ -1,19 +1,17 @@
 package execution;
-import common.CONTROL;
+import common.Clock;
 import common.collections.Configuration;
-import common.platform.Platform;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
 import components.exception.UnhandledCaseException;
 import controller.affinity.AffinityController;
+import db.Database;
 import execution.runtime.boltThread;
 import execution.runtime.executorThread;
 import execution.runtime.spoutThread;
 import faulttolerance.Writer;
 import optimization.OptimizationManager;
-import common.Clock;
-import db.Database;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import transaction.dedicated.ordered.TxnProcessingEngine;
 
 import java.util.HashMap;
@@ -21,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import static common.CONTROL.enable_shared_state;
 import static common.Constants.*;
 /**
  * Created by shuhaozhang on 19/8/16.
@@ -32,12 +31,10 @@ public class ExecutionManager {
     public final AffinityController AC;
     private final OptimizationManager optimizationManager;
     TxnProcessingEngine tp_engine;
-    private int loadTargetHz;
-    private int timeSliceLengthMs;
     private final ExecutionGraph g;
-    public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager, Database db, Platform p) {
+    public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager) {
         this.g = g;
-        AC = new AffinityController(conf, p);
+        AC = new AffinityController(conf);
         this.optimizationManager = optimizationManager;
 
     }
@@ -49,11 +46,7 @@ public class ExecutionManager {
      * All executors have to sync_ratio for OM to start, so it's safe to do initialization here. E.g., initialize database.
      */
     public void distributeTasks(Configuration conf,
-                                CountDownLatch latch, Database db, Platform p) throws UnhandledCaseException {
-        loadTargetHz = (int) conf.getDouble("targetHz", 10000000);
-        LOG.info("Finally, targetHZ set to:" + loadTargetHz);
-        timeSliceLengthMs = conf.getInt("timeSliceLengthMs");
-
+                                CountDownLatch latch, Database db) throws UnhandledCaseException {
         g.build_inputScheduler();
         clock = new Clock(conf.getDouble("checkpoint", 1));
         if (conf.getBoolean("Fault_tolerance", false)) {
@@ -66,7 +59,7 @@ public class ExecutionManager {
             }
         }
         //TODO: support multi-stages later.
-        if (conf.getBoolean("transaction", false)) {
+        if (enable_shared_state) {
             HashMap<Integer, List<Integer>> stage_map = new HashMap<>();//Stages --> Executors.
             for (ExecutionNode e : g.getExecutionNodeArrayList()) {
                 stage_map.putIfAbsent(e.op.getStage(), new LinkedList<>());
@@ -119,8 +112,8 @@ public class ExecutionManager {
                                               int node, long[] cores, CountDownLatch latch) {
 
         spoutThread st;
-        st = new spoutThread(e, context, conf, cores, node, latch, loadTargetHz, timeSliceLengthMs
-                , ThreadMap, clock);
+        st = new spoutThread(e, context, conf, cores, node, latch,
+                ThreadMap, clock);
         st.setDaemon(true);
         if (!(conf.getBoolean("monte", false) || conf.getBoolean("simulation", false))) {
             st.start();
@@ -142,7 +135,7 @@ public class ExecutionManager {
     }
     private executorThread launchSpout_SingleCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                                   int node, CountDownLatch latch) {
-        spoutThread st;
+        LOG.info("Launch Spout:" + e.getOP() + " on node:" + node);
         long[] cpu;
         if (!conf.getBoolean("NAV", true)) {
             cpu = AC.requirePerCore(node);
@@ -155,7 +148,7 @@ public class ExecutionManager {
     }
     private executorThread launchBolt_SingleCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                                  int node, CountDownLatch latch) {
-//		LOG.info("Launch bolt:" + e.getOP() + " on node:" + node);
+        LOG.info("Launch bolt:" + e.getOP() + " on node:" + node);
         long[] cpu;
         if (!conf.getBoolean("NAV", true)) {
             cpu = AC.requirePerCore(node);
@@ -174,7 +167,7 @@ public class ExecutionManager {
             clock.close();
         }
         this.getSinkThread().getContext().Sequential_stopAll();
-        if (CONTROL.enable_shared_state && tp_engine != null)
+        if (enable_shared_state && tp_engine != null)
             tp_engine.engine_shutdown();
     }
     public executorThread getSinkThread() {

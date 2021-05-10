@@ -104,10 +104,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             controller = new SPSCController(downExecutor_list);
         }
         PartitionController.profile = profile;
-        int queue_size_per_core;
-
-        queue_size_per_core = (int) (conf.getInt("targetHz") * conf.getDouble("checkpoint"));
-        threashold = queue_size_per_core - 1;//leave one space for watermark filling!
+        threashold = conf.getInt("queue_size") - 1;//leave one space for watermark filling!
     }
     public String toString() {
         StringBuilder sb = new StringBuilder();

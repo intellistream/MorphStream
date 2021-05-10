@@ -1,12 +1,12 @@
 package benchmark.datagenerator;
 
-import com.beust.jcommander.Parameter;
 import common.collections.Configuration;
-import common.collections.OsUtils;
 import common.tools.ZipfGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DataGeneratorConfig {
-
+    private static final Logger LOG = LoggerFactory.getLogger(DataGeneratorConfig.class);
     public Integer tuplesPerBatch;
     public Integer totalBatches;
     public Integer numberOfDLevels;
@@ -65,11 +65,10 @@ public class DataGeneratorConfig {
             throw new UnsupportedOperationException("Invalid fanout scheme.");
         }
 
-        System.out.println();
-        System.out.println(String.format("totalEventsPerBatch: %d", tuplesPerBatch));
-        System.out.println(String.format("numberOfBatches: %d", totalBatches));
-        System.out.println(String.format("numberOfDLevels: %d", numberOfDLevels));
-        System.out.println(String.format("rootFilePath: %s", rootPath));
+        LOG.info(String.format("totalEventsPerBatch: %d", tuplesPerBatch));
+        LOG.info(String.format("numberOfBatches: %d", totalBatches));
+        LOG.info(String.format("numberOfDLevels: %d", numberOfDLevels));
+        LOG.info(String.format("rootFilePath: %s", rootPath));
     }
 
 }

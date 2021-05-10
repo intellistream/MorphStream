@@ -1,6 +1,5 @@
 package optimization;
 import common.collections.Configuration;
-import common.platform.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import components.exception.UnhandledCaseException;
@@ -32,16 +31,15 @@ public class OptimizationManager extends executorThread {
     /**
      * Only naive distribute is supported in TStreamPlus.
      *
-     * @param p
      * @param db
      * @throws UnhandledCaseException
      */
-    public void lanuch(Platform p, Database db) throws UnhandledCaseException {
-        EM = new ExecutionManager(g, conf, this, db, p);
+    public void lanuch(Database db) throws UnhandledCaseException {
+        EM = new ExecutionManager(g, conf, this);
         //Prepared only
         latch = new CountDownLatch(g.getExecutionNodeArrayList().size() + 1 - 1);//+1:OM -1:virtual
         LOG.info("Native execution");
-        EM.distributeTasks(conf, latch, db, p);
+        EM.distributeTasks(conf, latch, db);
     }
     /**
      * creates new txn and routing plan continuously.

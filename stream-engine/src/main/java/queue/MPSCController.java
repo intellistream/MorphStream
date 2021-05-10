@@ -43,33 +43,18 @@ public class MPSCController extends QueueController {
      */
     public void allocate_queue(boolean linked, int desired_elements_epoch_per_core) {
         outputQueue = new HashMap<>();
-//		PerfectHashMap.Builder<Object, Object> builder = PerfectHashMap.newBuilder();
-        //= new ConcurrentHashMap();
-//		serializer = new Serializer();
         for (int executor : downExecutor_list.keySet()) {
-            //clean_executorInformation the queue if it exist
-//			Queue queue = outputQueue.GetAndUpdate(executor);
-//			if (queue != null) {
-////                if(queue instanceof P1C1Queue)
-//				LOG.info("relax_reset the old queue");
-//				queue.clear();
-//				System.gc();
-//			}
-//			builder.add(executor, new MpscArrayQueue((int) Math.pow(2, 17)));
-//
+
             if (OsUtils.isWindows() || OsUtils.isMac()) {//local debug
                 outputQueue.put(executor, new MpscArrayQueue(desired_elements_epoch_per_core));
             } else {
                 if (linked) {
                     outputQueue.put(executor, new MpscLinkedQueue8<>());
                 } else {
-//                    int queue_size = (int) (desired_elements_epoch/2);//* 1.2
-//                    LOG.info("finally, set queue size to be:" + queue_size);
                     outputQueue.put(executor, new MpscArrayQueue(desired_elements_epoch_per_core));//(int) Math.pow(2, 17)= 131072 160000
                 }
             }
         }
-//		outputQueue = builder.build();
     }
     public Queue get_queue(int executor) {
         return outputQueue.get(executor);

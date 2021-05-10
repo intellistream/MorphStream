@@ -23,9 +23,9 @@ public class MeasureSink extends BaseSink {
     private static final DescriptiveStatistics latency = new DescriptiveStatistics();
     private static final long serialVersionUID = 6249684803036342603L;
     protected static String directory;
-    protected static String algorithm;
-    protected static boolean profile = false;
-    //    int _combo_bid_size;
+
+
+
     protected final ArrayDeque<Long> latency_map = new ArrayDeque();
     public int batch_number_per_wm;
     protected stable_sink_helper helper;
@@ -33,17 +33,12 @@ public class MeasureSink extends BaseSink {
     protected int tthread;
     int cnt = 0;
     long start;
-    private boolean LAST = false;
-    //    private int batch_number_per_wm;
+
     private int exe;
     public MeasureSink() {
         super(new HashMap<>());
         this.input_selectivity.put(Constants.DEFAULT_STREAM_ID, 1.0);
         this.input_selectivity.put(LRTopologyControl.TOLL_NOTIFICATIONS_STREAM_ID, 1.0);
-//		this.input_selectivity.put(LRTopologyControl.ACCIDENTS_NOIT_STREAM_ID, 1.0);
-//		this.input_selectivity.put(LRTopologyControl.ACCOUNT_BALANCE_OUTPUT_STREAM_ID, 1.0);
-//		this.input_selectivity.put(LRTopologyControl.DAILY_EXPEDITURE_OUTPUT_STREAM_ID, 1.0);
-//		this.input_selectivity.put(LRTopologyControl.ACCIDENTS_STREAM_ID, 1.0);
     }
     @Override
     public Integer default_scale(Configuration conf) {
@@ -62,55 +57,21 @@ public class MeasureSink extends BaseSink {
                 , size
                 , thisTaskId
                 , config.getBoolean("measure", false));
-//        applications.sink.helper.helper helper2 = new stable_sink_helper(LOG
-//                , config.getInt("runtimeInSeconds")
-//                , metric_path, config.getDouble("predict", 0), size, thisTaskId);
-        profile = config.getBoolean("profile");
+
         directory = STAT_Path + OsUtils.OS_wrapper("TstreamPlus")
                 + OsUtils.OS_wrapper(configPrefix)
-                + OsUtils.OS_wrapper(String.valueOf(config.getDouble("checkpoint")))
-//                + OsUtils.OS_wrapper(String.valueOf(config.getInt("num_socket")))
-//                + OsUtils.OS_wrapper(String.valueOf(ccOption))
-//                + OsUtils.OS_wrapper(String.valueOf(config.getDouble("checkpoint")))
-//                + OsUtils.OS_wrapper(String.valueOf(config.getDouble("theta")))
-        ;
+                + OsUtils.OS_wrapper(String.valueOf(config.getDouble("checkpoint")));
         File file = new File(directory);
         if (!file.mkdirs()) {
         }
-        if (config.getBoolean("random", false)) {
-            algorithm = "random";
-        } else if (config.getBoolean("toff", false)) {
-            algorithm = "toff";
-        } else if (config.getBoolean("roundrobin", false)) {
-            algorithm = "roundrobin";
-        } else if (config.getBoolean("worst", false)) {
-            algorithm = "worst";
-        } else {
-            algorithm = "opt";
-        }
-//		store = new ArrayDeque<>((int) 1E11);
-        LAST = thisTaskId == graph.getSink().getExecutorID();
-//
-//        switch (config.getInt("CCOption", 0)) {
-//            case CCOption_OrderLOCK://Ordered lock_ratio
-//            case CCOption_LWM://LWM
-//            case CCOption_SStore://SStore
-//                _combo_bid_size = 1;
-//                break;
-//            default:
-//                _combo_bid_size = combo_bid_size;
-//        }
         SINK_CONTROL.getInstance().config();
         tthread = this.config.getInt("tthread");
-        double checkpoint = config.getDouble("checkpoint", 1);
-//        batch_number_per_wm = (int) (10000 * checkpoint);//10K, 1K, 100.
         exe = NUM_EVENTS;
         LOG.info("expected last events = " + exe);
     }
     @Override
     public void execute(Tuple input) throws InterruptedException {
         check(cnt, input);
-//        LOG.info("CNT:" + cnt);
         cnt++;
     }
     protected void latency_measure(Tuple input) {
@@ -151,12 +112,9 @@ public class MeasureSink extends BaseSink {
         if (enable_latency_measurement) {
             StringBuilder sb = new StringBuilder();
             for (Long entry : latency_map) {
-//                LOG.info("=====Process latency of msg====");
-                //LOG.DEBUG("SpoutID:" + (int) (entry.getKey() / 1E9) + " and msgID:" + entry.getKey() % 1E9 + " is at:\t" + entry.getValue() / 1E6 + "\tms");
                 latency.addValue((entry / 1E6));
             }
             try {
-//                Collections.sort(col_value);
                 FileWriter f = null;
                 f = new FileWriter(new File(directory
                         + OsUtils.OS_wrapper(ccOption + ".latency")));
@@ -178,7 +136,6 @@ public class MeasureSink extends BaseSink {
         }
         SINK_CONTROL.getInstance().throughput = results;
         LOG.info("Thread:" + thisTaskId + " is going to stop all threads sequentially");
-//			context.stop_runningALL();
         context.Sequential_stopAll();
         SINK_CONTROL.getInstance().unlock();
     }

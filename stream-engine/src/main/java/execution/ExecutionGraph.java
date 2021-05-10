@@ -243,9 +243,6 @@ public class ExecutionGraph extends RawExecutionGraph {
             }
             if (i == 0) {
                 vertex.setFirst_executor(true);
-                if (conf.getBoolean("profile", false)) {
-                    vertex.setNeedsProfile();//use the first executor as the profiling target.
-                }
             }
             addExecutor(vertex);
             operator.link_to_executor(vertex);//creates Operator->executor link.

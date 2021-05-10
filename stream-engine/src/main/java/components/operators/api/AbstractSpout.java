@@ -2,8 +2,8 @@ package components.operators.api;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.helper.wrapper.StringStatesWrapper;
-import org.slf4j.Logger;
 import execution.runtime.tuple.impl.Marker;
+import org.slf4j.Logger;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -17,9 +17,7 @@ public abstract class AbstractSpout extends Operator {
     protected int myiteration = 0;//start from 1st iteration.
     protected boolean success = true;
     protected long boardcast_time;
-    protected ArrayList<char[]> array;
-    //	String[] array_array;
-    protected char[][] array_array;
+    protected ArrayList<String> array;
     protected int counter = 0;
     protected int taskId;
     protected int cnt;
@@ -40,7 +38,7 @@ public abstract class AbstractSpout extends Operator {
         for (String word : words) {
             sb.append(word).append(wrapper.getTuple_states()).append(splitregex);
         }
-        array.add(sb.toString().toCharArray());
+        array.add(sb.toString());
     }
     private void splitRead(String fileName) throws FileNotFoundException {
         int numSpout = this.getContext().getComponent(taskId).getNumTasks();
@@ -60,42 +58,21 @@ public abstract class AbstractSpout extends Operator {
         Scanner scanner = new Scanner(new File((prefix + i) + "." + postfix), "UTF-8");
         build(scanner);
     }
-    private void build(Scanner scanner) {
+    protected void build(Scanner scanner) {
         cnt = 100;
-        if (config.getInt("batch") == -1) {
-            while (scanner.hasNext()) {
-                array.add(scanner.next().toCharArray());//for micro-benchmark only
+        //&& cnt-- > 0
+        if (OsUtils.isWindows()) {
+            while (scanner.hasNextLine() && cnt-- > 0) { //dummy test purpose..
+                array.add(scanner.nextLine());
             }
         } else {
-            if (!config.getBoolean("microbenchmark")) {//normal case..
-                //&& cnt-- > 0
-                if (OsUtils.isMac()) {
-                    while (scanner.hasNextLine() && cnt-- > 0) { //dummy test purpose..
-                        array.add(scanner.nextLine().toCharArray());
-                    }
-                } else {
-                    while (scanner.hasNextLine()) {
-                        array.add(scanner.nextLine().toCharArray()); //normal..
-                    }
-                }
-            } else {
-                int tuple_size = config.getInt("size_tuple");
-                LOG.info("Additional tuple size to emit:" + tuple_size);
-                StringStatesWrapper wrapper = new StringStatesWrapper(tuple_size);
-//                        (StateWrapper<List<StreamValues>>) ClassLoaderUtils.newInstance(parserClass, "wrapper", LOG, tuple_size);
-                if (OsUtils.isWindows()) {
-                    while (scanner.hasNextLine() && cnt-- > 0) { //dummy test purpose..
-                        construction(scanner, wrapper);
-                    }
-                } else {
-                    while (scanner.hasNextLine()) {
-                        construction(scanner, wrapper);
-                    }
-                }
+            while (scanner.hasNextLine()) {
+                array.add(scanner.nextLine()); //normal..
             }
         }
         scanner.close();
     }
+
     private void openFile(String fileName) throws FileNotFoundException {
         boolean split;
         split = !OsUtils.isMac() && config.getBoolean("split", true);
@@ -105,24 +82,7 @@ public abstract class AbstractSpout extends Operator {
             Scanner scanner = new Scanner(new File(fileName), "UTF-8");
             build(scanner);
         }
-        array_array = array.toArray(new char[array.size()][]);
         counter = 0;
-//		int bound = 0;
-////		if (OsUtils.isMac()) {
-////			bound = 805872;
-////		} else {
-////			bound = str_l.size();
-////		}
-//
-//		bound = 100;
-//
-//		array = new char[bound][];//str_l.toArray(new String[str_l.size()]);
-//
-//
-//		for (int i = 0; i < bound; i++) {
-//			array[i] = str_l.GetAndUpdate(i).toCharArray();
-//		}
-//
     }
     protected void load_input() {
         long start = System.nanoTime();
@@ -176,7 +136,7 @@ public abstract class AbstractSpout extends Operator {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        int end_index = array_array.length * config.getInt("count_number", 1);
+        int end_index = array.size() * config.getInt("count_number", 1);
         LOG.info("spout:" + this.taskId + " elements:" + end_index);
         long end = System.nanoTime();
         LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);

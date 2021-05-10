@@ -2,17 +2,14 @@ package common.topology.transactional.initializer;
 import benchmark.DataHolder;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
+import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.sl.TransactionEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import db.Database;
 import db.DatabaseException;
-import common.SpinLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -24,13 +21,11 @@ import transaction.TableInitilizer;
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.*;
 
 import static common.constants.StreamLedgerConstants.Constant.*;
-import static transaction.State.*;
+import static transaction.State.configure_store;
 //import static xerial.jnuma.Numa.setLocalAlloc;
 public class SLInitializer extends TableInitilizer {
 
@@ -87,7 +82,7 @@ public class SLInitializer extends TableInitilizer {
         String actTableKey = "accounts";
         String bookTableKey = "bookEntries";
 
-        File file = new File(dataRootPath  + OsUtils.OS_wrapper( "vertices_ids_range.txt"));
+        File file = new File(dataRootPath + OsUtils.OS_wrapper("vertices_ids_range.txt"));
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
@@ -102,7 +97,8 @@ public class SLInitializer extends TableInitilizer {
 
             int range = 10 * totalRecords * 5;
             int id = 0;
-            for (int lop = 0; lop < accountIdsRange; lop++) {
+            int lop = 0;
+            for (lop = 0; lop < accountIdsRange; lop++) {
                 if (idsGenType.equals("uniform")) {
                     id = mRandomGeneratorForAccIds.nextInt(10 * totalRecords * 5);
                     while (mGeneratedAccountIds.containsKey(id))
@@ -112,21 +108,18 @@ public class SLInitializer extends TableInitilizer {
                     while (mGeneratedAccountIds.containsKey(id))
                         id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
                 }
-
                 mGeneratedAccountIds.put(id, null);
-
                 String _key = String.format("%d", id);
                 List<DataBox> values = new ArrayList<>();
                 values.add(new StringDataBox(_key, _key.length()));
                 values.add(new LongDataBox(startingBalance));
                 TableRecord record = new TableRecord(new SchemaRecord(values));
                 db.InsertRecord(actTableKey, record);
-
-                if (lop % 100000 == 0)
-                    System.out.println(String.format("%d account records loaded...", lop));
             }
 
-            for (int lop = 0; lop < assetIdsRange; lop++) {
+            LOG.info(String.format("%d account records loaded...", lop));
+
+            for (lop = 0; lop < assetIdsRange; lop++) {
 
                 if (idsGenType.equals("uniform")) {
                     id = mRandomGeneratorForAstIds.nextInt(10 * totalRecords * 5);
@@ -137,20 +130,15 @@ public class SLInitializer extends TableInitilizer {
                     while (mGeneratedAssetIds.containsKey(id))
                         id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
                 }
-
                 mGeneratedAssetIds.put(id, null);
-
                 String _key = String.format("%d", id);
                 List<DataBox> values = new ArrayList<>();
                 values.add(new StringDataBox(_key, _key.length()));
                 values.add(new LongDataBox(startingBalance));
                 TableRecord record = new TableRecord(new SchemaRecord(values));
                 db.InsertRecord(bookTableKey, record);
-
-                if (lop % 100000 == 0)
-                    System.out.println(String.format("%d asset records loaded...", lop));
             }
-
+            LOG.info(String.format("%d asset records loaded...", lop));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -311,8 +299,6 @@ public class SLInitializer extends TableInitilizer {
 
     }
 
-
-
     protected void loadTransactionEvents(int tuplesPerBatch, int totalBatches, boolean shufflingActive, String folder) {
 
         if (DataHolder.events == null) {
@@ -321,7 +307,7 @@ public class SLInitializer extends TableInitilizer {
             DataHolder.events = new TransactionEvent[numberOfEvents];
             File file = new File(folder + "transactions.txt");
             if (file.exists()) {
-                System.out.println(String.format("Reading transactions..."));
+                LOG.info(String.format("Reading transactions..."));
                 try {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
                     String txn = reader.readLine();
@@ -343,14 +329,14 @@ public class SLInitializer extends TableInitilizer {
                         DataHolder.events[count] = event;
                         count++;
                         if (count % 100000 == 0)
-                            System.out.println(String.format("%d transactions read...", count));
+                            LOG.info(String.format("%d transactions read...", count));
                         txn = reader.readLine();
                     }
                     reader.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                System.out.println(String.format("Done reading transactions..."));
+                LOG.info(String.format("Done reading transactions..."));
 
                 if (shufflingActive) {
                     Random random = new Random();
@@ -368,7 +354,6 @@ public class SLInitializer extends TableInitilizer {
                         }
                     }
                 }
-                System.out.println();
             }
         }
     }

@@ -95,15 +95,12 @@ public class JumboTuple implements Comparable<JumboTuple> {
         return msg[index_msg].getValue(fieldIndex(field, index_msg));
     }
     /**
-     * Implicit assumption that String is passed as char array.
-     *
      * @param index_field
      * @param index_msg
      * @return
      */
     public String getString(int index_field, int index_msg) {
-        return new String(getCharArray(index_field, index_msg));
-//		return new String((String) msg[index_msg].getValue(index_field));
+        return (String) msg[index_msg].getValue(index_field);
     }
     public char[] getCharArray(int index_field, int index_msg) {
         return (char[]) msg[index_msg].getValue(index_field);
@@ -139,7 +136,4 @@ public class JumboTuple implements Comparable<JumboTuple> {
     public int compareTo(JumboTuple o) {
         return Long.compare(this.bid, o.bid);
     }
-//	public int getTargetId() {
-//		return targetTasks;
-//	}
 }

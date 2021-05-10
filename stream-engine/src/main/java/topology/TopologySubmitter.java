@@ -49,9 +49,9 @@ public class TopologySubmitter {
             g.topology.tableinitilizer = topology.txnTopology.initializeDB(g.topology.spinlock); //For simplicity, assume all table shares the same partition mapping.
             long end = System.nanoTime();
             LOG.info("DB initialize takes:" + (end - start) / 1E6 + " ms");
-            OM.lanuch(topology.getPlatform(), topology.db);
+            OM.lanuch(topology.db);
         } else
-            OM.lanuch(topology.getPlatform(), topology.db);
+            OM.lanuch(topology.db);
         OM.start();
         return g.topology;
     }

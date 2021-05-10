@@ -1,5 +1,6 @@
 package benchmark;
 
+import common.Runner;
 import common.collections.OsUtils;
 import common.param.sl.TransactionEvent;
 import benchmark.datagenerator.DataGeneratorConfig;
@@ -7,6 +8,8 @@ import benchmark.datagenerator.DataGenerator;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import runners.TStreamRunner;
 
 import javax.xml.bind.DatatypeConverter;
@@ -16,7 +19,7 @@ import java.security.MessageDigest;
 import java.util.*;
 
 public class BasicBenchmark implements IBenchmark {
-
+    private static final Logger LOG = LoggerFactory.getLogger(BasicBenchmark.class);
     private final String[] args;
     private DataGenerator mDataGenerator;
     private TStreamRunner TStreamRunner;
@@ -148,7 +151,7 @@ public class BasicBenchmark implements IBenchmark {
                 TStreamRunner.run();
             }
         } catch (InterruptedException ex) {
-            System.out.println("Error in running topology locally" + ex.toString());
+             LOG.info("Error in running topology locally" + ex.toString());
         }
 
     }
@@ -161,7 +164,7 @@ public class BasicBenchmark implements IBenchmark {
             DataHolder.events = new TransactionEvent[numberOfEvents];
             File file = new File(folder + "transactions.txt");
             if (file.exists()) {
-                System.out.println(String.format("Reading transactions..."));
+                 LOG.info(String.format("Reading transactions..."));
                 try {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
                     String txn = reader.readLine();
@@ -183,14 +186,14 @@ public class BasicBenchmark implements IBenchmark {
                         DataHolder.events[count] = event;
                         count++;
                         if (count % 100000 == 0)
-                            System.out.println(String.format("%d transactions read...", count));
+                             LOG.info(String.format("%d transactions read...", count));
                         txn = reader.readLine();
                     }
                     reader.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                System.out.println(String.format("Done reading transactions..."));
+                 LOG.info(String.format("Done reading transactions..."));
 
                 if (shufflingActive) {
                     Random random = new Random();
@@ -208,7 +211,6 @@ public class BasicBenchmark implements IBenchmark {
                         }
                     }
                 }
-                System.out.println();
             }
         }
     }
