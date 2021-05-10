@@ -3,8 +3,8 @@ import java.util.NavigableMap;
 import java.util.Random;
 import java.util.TreeMap;
 public class FastZipfGenerator {
-    private Random random = new Random(0);
-    private NavigableMap<Double, Integer> map = new TreeMap<>();
+    private final Random random = new Random(0);
+    private final NavigableMap<Double, Integer> map = new TreeMap<>();
     public FastZipfGenerator(int size, double skew, int offset) {
         computeMap(size, skew, offset);
     }

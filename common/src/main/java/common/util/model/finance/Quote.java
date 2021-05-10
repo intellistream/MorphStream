@@ -5,14 +5,14 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 public class Quote implements Serializable {
     private static final long serialVersionUID = 22L;
-    private String symbol;
-    private DateTime openDate;
-    private int interval;
-    private BigDecimal open;
-    private BigDecimal high;
-    private BigDecimal low;
-    private BigDecimal close;
-    private int volume;
+    private final String symbol;
+    private final DateTime openDate;
+    private final int interval;
+    private final BigDecimal open;
+    private final BigDecimal high;
+    private final BigDecimal low;
+    private final BigDecimal close;
+    private final int volume;
     public Quote(String symbol, DateTime openDate, int interval, BigDecimal open, BigDecimal high, BigDecimal low, BigDecimal close, int volume) {
         this.symbol = symbol;
         this.openDate = openDate;

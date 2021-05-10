@@ -13,7 +13,7 @@ public class fully_stateful_task extends stateful_task {
     private static final long serialVersionUID = 3072579886348914507L;
     final private int size_state;
     protected ArrayList<KB_object> list = new ArrayList<>();
-    private int in_core_complexity;
+    private final int in_core_complexity;
     public fully_stateful_task(int in_core_complexity, int size_state) {
         this.in_core_complexity = in_core_complexity;
         this.size_state = size_state;

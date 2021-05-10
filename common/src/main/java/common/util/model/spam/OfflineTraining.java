@@ -41,7 +41,7 @@ public class OfflineTraining {
                         + "  check <wordmap-path>\n"
         );
     }
-    public static void main(String args[]) throws IOException {
+    public static void main(String[] args) throws IOException {
         System.out.println(Arrays.toString(args));
         if (args.length == 0) {
             printUsage();

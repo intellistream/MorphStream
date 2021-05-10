@@ -7,16 +7,16 @@ import java.util.Random;
  * Date: 11/22/14
  */
 public class SlidingWindow {
-    private ArrayDeque<SlidingWindowEntry> window = new ArrayDeque<>();
+    private final ArrayDeque<SlidingWindowEntry> window = new ArrayDeque<>();
     private long tsStart;
     private long tsEnd;
-    private long length;
+    private final long length;
     public SlidingWindow(long length) {
         this.length = length;
     }
     public static void main(String[] args) {
         class SlidingWindowEntryImpl implements SlidingWindowEntry {
-            private long time;
+            private final long time;
             SlidingWindowEntryImpl(long time) {
                 this.time = time;
             }

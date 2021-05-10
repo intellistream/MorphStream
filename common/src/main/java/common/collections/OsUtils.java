@@ -10,7 +10,7 @@ import java.lang.reflect.Field;
  * Created by I309939 on 5/3/2016.
  */
 public final class OsUtils {
-    private static String OS = System.getProperty("os.name").toLowerCase();
+    private static final String OS = System.getProperty("os.name").toLowerCase();
     public static long getJVMID() {
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         String jvmName = runtimeBean.getName();

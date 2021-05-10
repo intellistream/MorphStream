@@ -1,6 +1,5 @@
 package common;
 public interface CONTROL {
-    //global settings.
     int kMaxThreadNum = 40;
     int MeasureStart = 0;//10_000;//server needs at least 10,000 to compile, so skip them.
     int MeasureBound = 1_000;
@@ -12,8 +11,6 @@ public interface CONTROL {
     int combo_bid_size = 1;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
     int sink_combo_bid_size = 200;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
     int MIN_EVENTS_PER_THREAD = NUM_EVENTS / combo_bid_size / kMaxThreadNum;
-    //order related.
-    boolean enable_force_ordering = true;
     //db related.
     boolean enable_shared_state = true;//this is for transactional state mgmt.
     boolean enable_states_partition = true;//must be enabled for PAT/SSTORE.

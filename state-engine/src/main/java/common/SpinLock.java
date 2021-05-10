@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class SpinLock {
     public int count = 0;
     //    public int count = 0;
-    private AtomicReference<Thread> owner = new AtomicReference<>();
+    private final AtomicReference<Thread> owner = new AtomicReference<>();
     public void lock() {
         Thread thread = Thread.currentThread();
         if (!Test_Ownership(thread))

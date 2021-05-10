@@ -1,12 +1,12 @@
 package controller.output.partition;
 import common.collections.Configuration;
 import common.util.datatypes.StreamValues;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.TopologyComponent;
 import controller.output.PartitionController;
 import execution.ExecutionNode;
 import execution.runtime.collector.impl.Meta;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,10 +19,11 @@ import java.util.Set;
  */
 public class GlobalPartitionController extends PartitionController {
     private static final long serialVersionUID = -8130612976775054066L;
-    private static Logger LOG = LoggerFactory.getLogger(GlobalPartitionController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GlobalPartitionController.class);
     /*Global partition must have only one downstream executor*/
-    public GlobalPartitionController(TopologyComponent operator, TopologyComponent childOP, HashMap<Integer, ExecutionNode> executionNodeHashMap, int batch, ExecutionNode executor, boolean common, boolean profile, Configuration conf) {
-        super(operator, childOP, executionNodeHashMap, batch, executor, common, LOG, profile, conf);
+    public GlobalPartitionController(TopologyComponent operator, TopologyComponent childOP,
+                                     HashMap<Integer, ExecutionNode> executionNodeHashMap, int batch, ExecutionNode executor, boolean profile, Configuration conf) {
+        super(operator, childOP, executionNodeHashMap, batch, executor, LOG, profile, conf);
         Set<Integer> setID = super.getDownExecutor_list().keySet();
         targetTasks = setID.toArray(new Integer[setID.size()]);
     }

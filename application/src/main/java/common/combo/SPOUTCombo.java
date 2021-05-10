@@ -19,6 +19,7 @@ import profiler.MeasureTools;
 import profiler.Metrics;
 import utils.SOURCE_CONTROL;
 
+import java.io.FileNotFoundException;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.Constants.DEFAULT_STREAM_ID;
@@ -67,7 +68,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         state = new ValueState();
 
     }
-    public abstract void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector);
+    public abstract void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) throws FileNotFoundException;
     @Override
     public void nextTuple() throws InterruptedException {
         try {

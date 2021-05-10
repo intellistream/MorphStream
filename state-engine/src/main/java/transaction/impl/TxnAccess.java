@@ -16,7 +16,7 @@ public interface TxnAccess {
     class AccessList {
         private final int N;
         volatile public int access_count_;
-        private Access[] accesses_;
+        private final Access[] accesses_;
         public AccessList(int N) {
             access_count_ = 0;
             accesses_ = new Access[N];

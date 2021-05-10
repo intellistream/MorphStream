@@ -3,7 +3,7 @@ public class STREAM {
     static final Object lock2 = new Object();
     static Object lock = new Object();
     static volatile int _barrier;
-    static double total_bandwidth[] = new double[4];
+    static double[] total_bandwidth = new double[4];
     static String[] label = {"Copy: ", "Scale: ", "Add: ", "Triad: "};
     int N;
     int M;
@@ -25,7 +25,7 @@ public class STREAM {
             _barrier++;
         }
     }
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         //int num_threads = 64;//Integer.parseInt(args[0]);
         int num_threads = Integer.parseInt(args[0]);
         System.out.println("=== Warmup 0");
@@ -38,7 +38,7 @@ public class STREAM {
         new STREAM().run(3);
         _barrier = 0;               // Reset barrier
         for (int i = 0; i < 4; i++) total_bandwidth[i] = 0.0;
-        Thread ts[] = new Thread[num_threads];
+        Thread[] ts = new Thread[num_threads];
         synchronized (lock) {
             for (int i = 0; i < ts.length; i++) {
                 final int num = i;

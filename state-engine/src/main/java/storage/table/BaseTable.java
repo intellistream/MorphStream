@@ -23,9 +23,9 @@ public abstract class BaseTable implements ITable {
     public static final String FILENAME_PREFIX = "db";
     final AtomicInteger numRecords = new AtomicInteger();
     final int secondary_count_;
-    private RecordSchema schema;
-    private TableStats stats;
-    private String table_Id;
+    private final RecordSchema schema;
+    private final TableStats stats;
+    private final String table_Id;
     //TODO: move index structure here.
     //A table may or may not have index associated. The index structure should not be maintained outside.
     public BaseTable(RecordSchema schema, String table_Id) {

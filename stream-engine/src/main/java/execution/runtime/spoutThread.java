@@ -22,8 +22,6 @@ import static content.Content.*;
 public class spoutThread extends executorThread {
     private static final Logger LOG = LoggerFactory.getLogger(spoutThread.class);
     private final BasicSpoutBatchExecutor sp;
-    private final int loadTargetHz;
-    private final int timeSliceLengthMs;
     private final OutputCollector collector;
     int _combo_bid_size = 1;
     /**
@@ -32,18 +30,14 @@ public class spoutThread extends executorThread {
      * @param cpu
      * @param node
      * @param latch
-     * @param loadTargetHz
-     * @param timeSliceLengthMs
      * @param threadMap
      * @param clock
      */
     public spoutThread(ExecutionNode e, TopologyContext context, Configuration conf, long[] cpu,
-                       int node, CountDownLatch latch, int loadTargetHz, int timeSliceLengthMs,
+                       int node, CountDownLatch latch,
                        HashMap<Integer, executorThread> threadMap, Clock clock) {
         super(e, conf, context, cpu, node, latch, threadMap);
         this.sp = (BasicSpoutBatchExecutor) e.op;
-        this.loadTargetHz = loadTargetHz;
-        this.timeSliceLengthMs = timeSliceLengthMs;
         this.collector = new OutputCollector(e, context);
         batch = conf.getInt("batch", 100);
         sp.setExecutionNode(e);
@@ -101,9 +95,7 @@ public class spoutThread extends executorThread {
                             + "\tfinished execution and exit with throughput (k input_event/s) of:\t"
                             + actual_throughput
                             + " on node: " + node
-//					+ " ( " + Arrays.show(cpu) + ")"
             );
-//            LOG.info("== Spout Busy time: " + busy_time + "\t Sleep time: " + sleep_time +" ==");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {

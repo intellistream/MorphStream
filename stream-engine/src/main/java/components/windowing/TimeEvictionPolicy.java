@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
  * Eviction policy that evicts events based on time duration.
  */
 public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext> {
-    private static final Logger LOG = LoggerFactory.getLogger(org.apache.storm.windowing.TimeEvictionPolicy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TimeEvictionPolicy.class);
     private final int windowLength;
     private volatile EvictionContext evictionContext;
     private long delta;

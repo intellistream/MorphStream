@@ -6,8 +6,8 @@ import java.util.Set;
  * Date: 12/6/14
  */
 public class OutlierTracker {
-    private Set<String> completeSet = new HashSet<>();
-    private Set<String> outlierSet = new HashSet<>();
+    private final Set<String> completeSet = new HashSet<>();
+    private final Set<String> outlierSet = new HashSet<>();
     public void addMember(String key) {
         completeSet.add(key);
     }

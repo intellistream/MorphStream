@@ -243,9 +243,6 @@ public class ExecutionGraph extends RawExecutionGraph {
             }
             if (i == 0) {
                 vertex.setFirst_executor(true);
-                if (conf.getBoolean("profile", false)) {
-                    vertex.setNeedsProfile();//use the first executor as the profiling target.
-                }
             }
             addExecutor(vertex);
             operator.link_to_executor(vertex);//creates Operator->executor link.
@@ -296,19 +293,19 @@ public class ExecutionGraph extends RawExecutionGraph {
                     , downExecutor_list, batch, executor, common, conf.getBoolean("profile", false), conf);
         } else if (g.isShuffle()) {
             return new ShufflePartitionController(srcOP, childOP
-                    , downExecutor_list, batch, executor, common, conf.getBoolean("profile", false), conf);
+                    , downExecutor_list, batch, executor, conf.getBoolean("profile", false), conf);
         } else if (g.isFields()) {
             return new FieldsPartitionController(srcOP, childOP
-                    , downExecutor_list, srcOP.get_output_fields(streamId), g.getFields(), batch, executor, common, conf.getBoolean("profile", false), conf);
+                    , downExecutor_list, srcOP.get_output_fields(streamId), g.getFields(), batch, executor, conf.getBoolean("profile", false), conf);
         } else if (g.isGlobal()) {
             return new GlobalPartitionController(srcOP, childOP
-                    , downExecutor_list, batch, executor, common, conf.getBoolean("profile", false), conf);
+                    , downExecutor_list, batch, executor, conf.getBoolean("profile", false), conf);
         } else if (g.isAll()) {
             return new AllPartitionController(srcOP, childOP
-                    , downExecutor_list, batch, executor, common, conf.getBoolean("profile", false), conf);
+                    , downExecutor_list, batch, executor, conf.getBoolean("profile", false), conf);
         } else if (g.isPartial()) {
             return new PartialKeyGroupingController(srcOP, childOP
-                    , downExecutor_list, srcOP.get_output_fields(streamId), g.getFields(), batch, executor, common, conf.getBoolean("profile", false), conf);
+                    , downExecutor_list, srcOP.get_output_fields(streamId), g.getFields(), batch, executor, conf.getBoolean("profile", false), conf);
         } else {
             LOG.info("Create partition controller error: not supported yet!");
             return null;

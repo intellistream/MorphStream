@@ -4,18 +4,17 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.datatype.util.LRTopologyControl;
 import common.sink.helper.stable_sink_helper;
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.BaseSink;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.HashMap;
 
-import static common.Constants.System_Plan_Path;
 public class MeasureSink_latency extends BaseSink {
     protected static final Logger LOG = LoggerFactory.getLogger(MeasureSink_latency.class);
     protected static final DescriptiveStatistics latency = new DescriptiveStatistics();
@@ -49,38 +48,17 @@ public class MeasureSink_latency extends BaseSink {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         int size = graph.getSink().operator.getExecutorList().size();
-        metric_path = config.getString("metrics.output")
-//				+ "/"
-//				+ config.getInt("num_socket")
-//				+ "_" + String.valueOf(config.getInt("tthread"))
-        ;
+        metric_path = config.getString("metrics.output");
         helper = new stable_sink_helper(LOG
                 , config.getInt("runtimeInSeconds")
                 , metric_path, config.getDouble("predict", 0), size, thread_Id, false);
-        common.sink.helper.helper helper2 = new stable_sink_helper(LOG
-                , config.getInt("runtimeInSeconds")
-                , metric_path, config.getDouble("predict", 0), size, thread_Id, false);
         profile = config.getBoolean("profile");
-        directory = System_Plan_Path + OsUtils.OS_wrapper("sesame")
+        directory = metric_path + OsUtils.OS_wrapper("TStreamPlus")
                 + OsUtils.OS_wrapper(configPrefix)
-                + OsUtils.OS_wrapper(String.valueOf(config.getInt("num_socket")))
-                + OsUtils.OS_wrapper(String.valueOf(config.getDouble("gc_factor")))
-        ;
+                + OsUtils.OS_wrapper(String.valueOf(config.getInt("num_socket")));
         File file = new File(directory);
         if (!file.mkdirs()) {
         }
-        if (config.getBoolean("random", false)) {
-            algorithm = "random";
-        } else if (config.getBoolean("toff", false)) {
-            algorithm = "toff";
-        } else if (config.getBoolean("roundrobin", false)) {
-            algorithm = "roundrobin";
-        } else if (config.getBoolean("worst", false)) {
-            algorithm = "worst";
-        } else {
-            algorithm = "opt";
-        }
-//		store = new ArrayDeque<>((int) 1E11);
         sink_ID = graph.getSink().getExecutorID();
         if (thisTaskId == sink_ID) {
             isSINK = true;
@@ -135,36 +113,11 @@ public class MeasureSink_latency extends BaseSink {
                 latency.addValue((latency_map[key] / 1E6));
             }
             try {
-//                Collections.sort(col_value);
                 FileWriter f = null;
-                switch (algorithm) {
-                    case "random": {
-                        f = new FileWriter(new File(directory + OsUtils.OS_wrapper("random.latency")));
-                        break;
-                    }
-                    case "toff": {
-                        f = new FileWriter(new File(directory + OsUtils.OS_wrapper("toff.latency")));
-                        break;
-                    }
-                    case "roundrobin": {
-                        f = new FileWriter(new File(directory + OsUtils.OS_wrapper("roundrobin.latency")));
-                        break;
-                    }
-                    case "worst": {
-                        f = new FileWriter(new File(directory + OsUtils.OS_wrapper("worst.latency")));
-                        break;
-                    }
-                    case "opt": {
-                        f = new FileWriter(new File(directory + OsUtils.OS_wrapper("opt.latency")));
-                        break;
-                    }
-                    default:
-                        f = new FileWriter(new File(directory + OsUtils.OS_wrapper("latency")));
-                        break;
-                }
+                f = new FileWriter(directory + OsUtils.OS_wrapper("latency"));
                 Writer w = new BufferedWriter(f);
                 for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
-                    w.write(String.valueOf(latency.getPercentile(percentile) + "\n"));
+                    w.write(latency.getPercentile(percentile) + "\n");
                 }
                 w.write("=======Details=======");
                 w.write(latency.toString() + "\n");
@@ -174,21 +127,7 @@ public class MeasureSink_latency extends BaseSink {
                 e.printStackTrace();
             }
             LOG.info("Stop all threads sequentially");
-//			context.stop_runningALL();
             context.Sequential_stopAll();
-//			try {
-//				//Thread.sleep(10000);
-//				context.wait_for_all();
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//			context.force_existALL();
-//			context.stop_running();
-//			try {
-//				Thread.sleep(10000);//sync_ratio for all sink threads stop.
-//			} catch (InterruptedException e) {
-//				//e.printStackTrace();
-//			}
         }
     }
     @Override

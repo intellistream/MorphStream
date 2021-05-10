@@ -7,8 +7,8 @@ import java.util.List;
  * Date: 11/1/14
  */
 public class SummaryArchive {
-    private List<Double> archive = new ArrayList<>();
-    private Long sliceLength;
+    private final List<Double> archive = new ArrayList<>();
+    private final Long sliceLength;
     public SummaryArchive(Long sliceLength) {
         this.sliceLength = sliceLength;
     }

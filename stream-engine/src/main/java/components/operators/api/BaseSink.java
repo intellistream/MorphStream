@@ -24,7 +24,7 @@ public abstract class BaseSink extends unionBolt {
         super(log);
     }
     BaseSink(Map<String, Double> input_selectivity, double read_selectivity) {
-        super(LOG, input_selectivity, null, (double) 1, read_selectivity);
+        super(LOG, input_selectivity, null, 1, read_selectivity);
     }
     protected BaseSink(Map<String, Double> input_selectivity) {
         this(input_selectivity, 0);

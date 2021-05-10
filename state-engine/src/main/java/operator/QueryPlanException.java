@@ -1,7 +1,7 @@
 package operator;
 public class QueryPlanException extends Exception {
     private static final long serialVersionUID = -1980270696814984096L;
-    private String message;
+    private final String message;
     public QueryPlanException(String message) {
         this.message = message;
     }

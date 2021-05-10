@@ -16,7 +16,7 @@ import java.util.*;
 public class SimpleDatabase {
     public TxnParam param;
     public Map<String, SimpleTable> tables;
-    private LockManager lockMan;
+    private final LockManager lockMan;
     private long numTransactions;
     /**
      * Creates a new database.

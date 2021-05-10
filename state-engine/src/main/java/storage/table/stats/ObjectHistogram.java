@@ -40,7 +40,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
     protected boolean keep_zero_entries = false;
     private transient boolean dirty = false;
     private transient Map<Object, String> debug_names;
-    private transient boolean debug_percentages = false;
+    private final transient boolean debug_percentages = false;
     /**
      * The Min/Max values are the smallest/greatest values we have seen based
      * on some natural ordering

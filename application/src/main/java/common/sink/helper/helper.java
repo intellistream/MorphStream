@@ -39,11 +39,11 @@ public abstract class helper {
     int checkPoint;
     boolean need_warm_up;
     boolean print_pid;
-    private int thisTaskId;
-    private long predict_sum = 0;
-    private long actual_sum = 0;
+    private final int thisTaskId;
+    private final long predict_sum = 0;
+    private final long actual_sum = 0;
     private long previous_bid = 0;
-    private long current_bid = 0;
+    private final long current_bid = 0;
     private int local_index_e;
     public helper(int runtime, double predict, int size, String metric_path, int thisTaskId, boolean measure) {
         this.runtimeInSEC = runtime;
@@ -116,7 +116,7 @@ public abstract class helper {
             LOG.warn("Not able to create metrics directories");
         }
         try {
-            fw = new FileWriter(new File(String.format(sink_path, pid)));
+            fw = new FileWriter(String.format(sink_path, pid));
             writer = new BufferedWriter(fw);
         } catch (IOException e) {
             // TODO Auto-generated catch block

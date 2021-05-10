@@ -4,8 +4,8 @@ import org.joda.time.DateTime;
  * User: warrenhenning Date: 9/20/12 Time: 4:11 AM
  */
 public class IndicatorParameter {
-    private DateTime time;
-    private int period;
+    private final DateTime time;
+    private final int period;
     public IndicatorParameter(DateTime time, int period) {
         this.time = time;
         this.period = period;

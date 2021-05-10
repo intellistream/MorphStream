@@ -7,8 +7,8 @@ import storage.table.stats.TableStats;
 
 import java.util.Iterator;
 public class SequentialScanOperator extends QueryOperator {
-    private SimpleDatabase.Transaction transaction;
-    private String tableName;
+    private final SimpleDatabase.Transaction transaction;
+    private final String tableName;
     /**
      * Creates a new SequentialScanOperator that provides an iterator on all tuples in a table.
      * <p>

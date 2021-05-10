@@ -10,9 +10,9 @@ import java.nio.channels.FileChannel;
  */
 public class Page {
     public static final int pageSize = 4096;
-    private MappedByteBuffer pageData;
-    private int pageNum;
-    private boolean durable;
+    private final MappedByteBuffer pageData;
+    private final int pageNum;
+    private final boolean durable;
     /**
      * Create a new page using fc with at offset blockNum with virtual page number pageNum
      *

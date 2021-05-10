@@ -13,10 +13,10 @@ import java.util.Collection;
 public class Tuple {
     private final int sourceId;
     //context is not going to be serialized.
-    private TopologyContext context;
+    private final TopologyContext context;
     //	private boolean tickerMark = false;
-    private long bid;
-    private Message message;
+    private final long bid;
+    private final Message message;
     private long[] partition_bid;
     public Tuple(long bid, int sourceId, TopologyContext context, Message message) {
         this.bid = bid;

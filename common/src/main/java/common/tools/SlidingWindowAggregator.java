@@ -6,10 +6,10 @@ import java.util.Map;
  */
 public class SlidingWindowAggregator<T> implements Serializable {
     private static final long serialVersionUID = -2645063988768785810L;
-    private SlotBasedCounter<T> objCounter;
+    private final SlotBasedCounter<T> objCounter;
     private int headSlot;
     private int tailSlot;
-    private int windowLengthInSlots;
+    private final int windowLengthInSlots;
     public SlidingWindowAggregator(int windowLengthInSlots) {
         if (windowLengthInSlots < 2) {
             throw new IllegalArgumentException(

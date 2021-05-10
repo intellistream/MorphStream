@@ -119,7 +119,7 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) event.src_account_values.getRecord().content_).versions.entrySet()) {
                 LOG.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + event.getBid());
             }
-            LOG.info("TRY reading:" + ((T_StreamContent) event.src_account_values.getRecord().content_).readPreValues(event.getBid()));//not modified in last round);
+            LOG.info("TRY reading:" + event.src_account_values.getRecord().content_.readPreValues(event.getBid()));//not modified in last round);
         }
         if (preValues1 == null) {
             LOG.info("Failed to read condition records[1]" + event.src_asset_values.getRecord().getID());

@@ -1,13 +1,12 @@
 package optimization;
 import common.collections.Configuration;
-import common.platform.Platform;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.exception.UnhandledCaseException;
+import db.Database;
 import execution.ExecutionGraph;
 import execution.ExecutionManager;
 import execution.runtime.executorThread;
-import db.Database;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CountDownLatch;
 /**
@@ -30,18 +29,15 @@ public class OptimizationManager extends executorThread {
     }
 
     /**
-     * Only naive distribute is supported in sesame.
+     * Only naive distribute is supported in TStreamPlus.
      *
-     * @param p
      * @param db
      * @throws UnhandledCaseException
      */
-    public void lanuch(Platform p, Database db) throws UnhandledCaseException {
-        EM = new ExecutionManager(g, conf, this, db, p);
-        //Prepared only
+    public void lanuch(Database db) throws UnhandledCaseException {
+        EM = new ExecutionManager(g, conf, this);
         latch = new CountDownLatch(g.getExecutionNodeArrayList().size() + 1 - 1);//+1:OM -1:virtual
-        LOG.info("Native execution");
-        EM.distributeTasks(conf, latch, db, p);
+        EM.distributeTasks(conf, latch, db);
     }
     /**
      * creates new txn and routing plan continuously.
@@ -55,8 +51,7 @@ public class OptimizationManager extends executorThread {
             e.printStackTrace();
         }
         //TODO: add optimization module here.
-
-        LOG.info("Optimization manager exists");
+        //LOG.info("Optimization manager exists");
     }
     @Override
     protected void _execute_noControl() {

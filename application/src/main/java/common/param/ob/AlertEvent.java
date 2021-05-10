@@ -11,7 +11,7 @@ public class AlertEvent extends TxnEvent {
     public boolean alert_result;
     //place-rangeMap.
     public SchemaRecordRef[] record_refs;
-    private int[] itemId;//keys.
+    private final int[] itemId;//keys.
     private long[] ask_price;//new ask price
     /**
      * Creates a new AlertEvent.

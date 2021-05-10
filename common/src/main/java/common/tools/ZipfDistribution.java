@@ -3,8 +3,8 @@ package common.tools;
  * Created by I309939 on 7/29/2016.
  */
 public class ZipfDistribution {
-    private int N; // number
-    private int s; // screw
+    private final int N; // number
+    private final int s; // screw
     public ZipfDistribution(int size, int skew) {
         this.N = size;
         this.s = skew;

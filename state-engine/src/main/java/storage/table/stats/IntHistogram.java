@@ -13,9 +13,9 @@ import java.util.List;
  * rangeMax, and numDistinct.
  */
 public class IntHistogram implements Histogram<Integer> {
-    private static int NUM_BUCKETS = 10;
-    private static int DEFAULT_BUCKET_SIZE = 10;
-    private boolean estimate;
+    private static final int NUM_BUCKETS = 10;
+    private static final int DEFAULT_BUCKET_SIZE = 10;
+    private final boolean estimate;
     private int rangeMin;
     private int rangeMax;
     private int numDistinct;

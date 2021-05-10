@@ -9,8 +9,8 @@ import java.util.Random;
 public class ValueStatesWrapper extends StateWrapper {
     public static final String split_expression = ",";
     private static final long serialVersionUID = 5362340617763107581L;
-    private int N = 20000;
-    private String[] values = new String[N];
+    private final int N = 20000;
+    private final String[] values = new String[N];
     private int count = 0;
     public ValueStatesWrapper(int tuple_size) {
         super(0);

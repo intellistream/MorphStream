@@ -32,7 +32,7 @@ public class OutputCollector<T> {
     private final ExecutionNode executor;
     private final MetaGroup meta;
     private boolean no_wait = true;
-    private long last_emit = 0;
+    private final long last_emit = 0;
     private long bid_counter;
     public OutputCollector(ExecutionNode executor, TopologyContext context) {
         int taskId = context.getThisTaskIndex();
@@ -151,6 +151,10 @@ public class OutputCollector<T> {
     public void emit(String streamId, StreamValues data) throws InterruptedException {
         assert data != null && sc != null;
         sc.emitOnStream(meta, streamId, -1, data);
+    }
+    public void emit(String data)throws InterruptedException {
+        assert data != null && sc != null;
+        sc.emitOnStream(meta, DEFAULT_STREAM_ID, -1, data);
     }
     public void emit(StreamValues data) throws InterruptedException {
         assert data != null && sc != null;
@@ -473,6 +477,7 @@ public class OutputCollector<T> {
     public void create_marker_single(long boardcast_time, String streamId, long bid, int myiteration) {
         sc.create_marker_single(meta, boardcast_time, streamId, bid, myiteration);
     }
+
 //	public void increaseGap(String streamId) {
 //		sc.increaseGap(streamId);
 //	}

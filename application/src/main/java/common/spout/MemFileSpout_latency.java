@@ -3,10 +3,10 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.helper.wrapper.StringStatesWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.AbstractSpout;
 import execution.ExecutionGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
@@ -88,51 +88,7 @@ public class MemFileSpout_latency extends AbstractSpout {
     @Override
     public void cleanup() {
     }
-    private void build(Scanner scanner) {
-        cnt = 100;
-        if (config.getInt("batch") == -1) {
-            while (scanner.hasNext()) {
-                array.add(scanner.next().toCharArray());//for micro-benchmark only
-            }
-        } else {
-            if (!config.getBoolean("microbenchmark")) {//normal case..
-                //&& cnt-- > 0
-                if (OsUtils.isWindows()) {
-                    while (scanner.hasNextLine() && cnt-- > 0) { //dummy test purpose..
-                        array.add(scanner.nextLine().toCharArray());
-                    }
-                } else {
-                    while (scanner.hasNextLine()) {
-                        array.add(scanner.nextLine().toCharArray()); //normal..
-                    }
-                }
-            } else {
-                int tuple_size = config.getInt("size_tuple");
-                LOG.info("Additional tuple size to emit:" + tuple_size);
-                StringStatesWrapper wrapper = new StringStatesWrapper(tuple_size);
-//                        (StateWrapper<List<StreamValues>>) ClassLoaderUtils.newInstance(parserClass, "wrapper", LOG, tuple_size);
-                if (OsUtils.isWindows()) {
-                    while (scanner.hasNextLine() && cnt-- > 0) { //dummy test purpose..
-                        construction(scanner, wrapper);
-                    }
-                } else {
-                    while (scanner.hasNextLine()) {
-                        construction(scanner, wrapper);
-                    }
-                }
-            }
-        }
-        scanner.close();
-    }
-    private void construction(Scanner scanner, StringStatesWrapper wrapper) {
-        String splitregex = ",";
-        String[] words = scanner.nextLine().split(splitregex);
-        StringBuilder sb = new StringBuilder();
-        for (String word : words) {
-            sb.append(word).append(wrapper.getTuple_states()).append(splitregex);
-        }
-        array.add(sb.toString().toCharArray());
-    }
+
     private void read(String prefix, int i, String postfix) throws FileNotFoundException {
         Scanner scanner = new Scanner(new File((prefix + i) + "." + postfix), "UTF-8");
         build(scanner);

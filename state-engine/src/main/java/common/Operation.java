@@ -34,7 +34,7 @@ public class Operation implements Comparable<Operation> {
     public boolean[] success;
     public String name;
 
-    private Queue<Operation> dependents = new ConcurrentLinkedQueue<>();
+    private final Queue<Operation> dependents = new ConcurrentLinkedQueue<>();
     private IOpConflictResolutionListener opConflictResolutionListener;
     private OperationChain oc;
 

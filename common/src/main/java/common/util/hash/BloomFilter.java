@@ -1,6 +1,7 @@
 package common.util.hash;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.BitSet;
@@ -21,7 +22,7 @@ import java.util.Collection;
  * @author Magnus Skjegstad <magnus@skjegstad.com>
  */
 public class BloomFilter<E> implements Serializable {
-    static final Charset charset = Charset.forName("UTF-8"); // encoding used for storing hash values as strings
+    static final Charset charset = StandardCharsets.UTF_8; // encoding used for storing hash values as strings
     static final String hashName = "MD5"; // MD5 gives good enough accuracy in most circumstances. Change to SHA1 if it's needed
     static final MessageDigest digestFunction;
     private static final long serialVersionUID = 14L;
@@ -35,11 +36,11 @@ public class BloomFilter<E> implements Serializable {
         digestFunction = tmp;
     }
     private BitSet bitset;
-    private int bitSetSize;
-    private double bitsPerElement;
-    private int expectedNumberOfFilterElements; // expected (maximum) number of elements to be added
+    private final int bitSetSize;
+    private final double bitsPerElement;
+    private final int expectedNumberOfFilterElements; // expected (maximum) number of elements to be added
     private int numberOfAddedElements; // number of elements actually added to the Bloom filter
-    private int k; // number of hash functions
+    private final int k; // number of hash functions
     private int numNonZero;
     /**
      * Constructs an empty Bloom filter. The total length of the Bloom filter will be

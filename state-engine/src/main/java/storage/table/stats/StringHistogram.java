@@ -8,9 +8,9 @@ import java.util.HashSet;
 import java.util.List;
 public class StringHistogram implements Histogram<String> {
     public static String alphaNumeric = "abcdefghijklmnopqrstuvwxyz0123456789";
-    private boolean estimate;
+    private final boolean estimate;
     private int numDistinct;
-    private List<Bucket<String>> buckets;
+    private final List<Bucket<String>> buckets;
     private HashSet<String> entrySet;
     public StringHistogram() {
         this.estimate = false;

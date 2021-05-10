@@ -18,7 +18,8 @@
  */
 package common.datatype;
 import common.datatype.util.LRTopologyControl;
-import org.apache.storm.tuple.Fields;
+import execution.runtime.tuple.impl.Fields;
+
 /**
  * A {@link TravelTimeRequest} from the LRB data generator.<br />
  * <br />

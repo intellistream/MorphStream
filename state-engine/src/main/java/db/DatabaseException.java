@@ -1,7 +1,7 @@
 package db;
 public class DatabaseException extends Exception {
     private static final long serialVersionUID = -5696965345839589596L;
-    private String message;
+    private final String message;
     public DatabaseException(String message) {
         this.message = message;
     }

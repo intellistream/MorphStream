@@ -145,7 +145,7 @@ public class ConcurrentAutoTable implements Serializable {
         private volatile long _sum_cache;
         private volatile long _fuzzy_sum_cache;
         private volatile long _fuzzy_time;
-        private long[] _t;            // Power-of-2 array of longs
+        private final long[] _t;            // Power-of-2 array of longs
         CAT(CAT next, int sz, long init) {
             _next = next;
             _sum_cache = Long.MIN_VALUE;

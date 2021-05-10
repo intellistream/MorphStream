@@ -14,13 +14,13 @@ import execution.runtime.tuple.impl.Tuple;
  * It's possible to make each Brisk.execution.runtime.tuple intelligent!!
  */
 public class JumboTuple implements Comparable<JumboTuple> {
-    private static Logger LOG = LoggerFactory.getLogger(JumboTuple.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JumboTuple.class);
     public final Message[] msg;
     protected final int sourceId;
     private final TopologyContext context;//context given by producer
     //	private final int targetTasks;//this is no longer required as we avoid the usage of multi-consumer based implementation.
     public int length;//length of batch
-    private long bid;
+    private final long bid;
     //context is not going to be serialized.
     public JumboTuple(JumboTuple clone) {
         this.bid = clone.bid;
@@ -95,15 +95,12 @@ public class JumboTuple implements Comparable<JumboTuple> {
         return msg[index_msg].getValue(fieldIndex(field, index_msg));
     }
     /**
-     * Implicit assumption that String is passed as char array.
-     *
      * @param index_field
      * @param index_msg
      * @return
      */
     public String getString(int index_field, int index_msg) {
-        return new String(getCharArray(index_field, index_msg));
-//		return new String((String) msg[index_msg].getValue(index_field));
+        return (String) msg[index_msg].getValue(index_field);
     }
     public char[] getCharArray(int index_field, int index_msg) {
         return (char[]) msg[index_msg].getValue(index_field);
@@ -139,7 +136,4 @@ public class JumboTuple implements Comparable<JumboTuple> {
     public int compareTo(JumboTuple o) {
         return Long.compare(this.bid, o.bid);
     }
-//	public int getTargetId() {
-//		return targetTasks;
-//	}
 }

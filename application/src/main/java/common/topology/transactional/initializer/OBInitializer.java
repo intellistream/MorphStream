@@ -224,15 +224,13 @@ public class OBInitializer extends TableInitilizer {
     @Override
     public boolean Prepared(String file) throws IOException {
         String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + String.valueOf(enable_states_partition));
-        if (Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file))))
-            return false;
-        return true;
+                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition);
+        return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
     }
     @Override
     public void store(String file_name) throws IOException {
         String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + String.valueOf(enable_states_partition));
+                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition);
         File file = new File(event_path);
         file.mkdirs(); // If the directory containing the file and/or its parent(s) does not exist
         BufferedWriter w;
@@ -296,7 +294,7 @@ public class OBInitializer extends TableInitilizer {
         RecordSchema s = Goods();
         db.createTable(s, "goods");
         try {
-            prepare_input_events("OB_Events", false);
+            prepare_input_events("OB_Events");
         } catch (IOException e) {
             e.printStackTrace();
         }

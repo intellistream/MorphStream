@@ -10,19 +10,19 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
 
     public OperationChain next;
     public OperationChain prev;
-    private String tableName;
-    private String primaryKey;
-    private MyList<Operation> operations;
-    private ConcurrentSkipListMap<OperationChain, Operation> dependsUpon;
-    private AtomicInteger totalDependentsCount = new AtomicInteger();
-    private AtomicInteger totalDependenciesCount = new AtomicInteger();
+    private final String tableName;
+    private final String primaryKey;
+    private final MyList<Operation> operations;
+    private final ConcurrentSkipListMap<OperationChain, Operation> dependsUpon;
+    private final AtomicInteger totalDependentsCount = new AtomicInteger();
+    private final AtomicInteger totalDependenciesCount = new AtomicInteger();
 
-    private int minimumIndependentOpsCount = Integer.MAX_VALUE;
+    private final int minimumIndependentOpsCount = Integer.MAX_VALUE;
     private int dependencyLevel = -1;
     private int priority = 0;
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private IOnDependencyResolvedListener onDependencyResolvedListener;
-    private ConcurrentLinkedQueue<PotentialDependencyInfo> potentialDependentsInfo = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialDependentsInfo = new ConcurrentLinkedQueue<>();
 
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;

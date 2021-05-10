@@ -17,15 +17,16 @@ import java.util.LinkedList;
  */
 public class PartialKeyGroupingController extends FieldsPartitionController {
     private static final long serialVersionUID = -7938271195232530840L;
-    private static Logger LOG = LoggerFactory.getLogger(PartialKeyGroupingController.class);
-    private HashFunction h1 = Hashing.murmur3_128(13);
-    private HashFunction h2 = Hashing.murmur3_128(17);
+    private static final Logger LOG = LoggerFactory.getLogger(PartialKeyGroupingController.class);
+    private final HashFunction h1 = Hashing.murmur3_128(13);
+    private final HashFunction h2 = Hashing.murmur3_128(17);
     //	private Set<Integer> targetTasks;
-    private long[] targetTaskStats;
+    private final long[] targetTaskStats;
     public PartialKeyGroupingController(
-            TopologyComponent operator, TopologyComponent childOP, HashMap<Integer, ExecutionNode> executionNodeHashMap,
-            Fields output_fields, Fields input_fields, int batch_size, ExecutionNode executor, boolean common, boolean profile, Configuration conf) {
-        super(operator, childOP, executionNodeHashMap, output_fields, input_fields, batch_size, executor, common, profile, conf);
+            TopologyComponent operator, TopologyComponent childOP, HashMap<Integer,
+            ExecutionNode> executionNodeHashMap,
+            Fields output_fields, Fields input_fields, int batch_size, ExecutionNode executor, boolean profile, Configuration conf) {
+        super(operator, childOP, executionNodeHashMap, output_fields, input_fields, batch_size, executor, profile, conf);
         targetTaskStats = new long[this.targetTasks.length];
     }
     public void initilize() {

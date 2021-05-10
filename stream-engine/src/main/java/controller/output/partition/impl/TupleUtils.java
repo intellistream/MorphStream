@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.List;
 public final class TupleUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(org.apache.storm.utils.TupleUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TupleUtils.class);
     private TupleUtils() {
         // No instantiation
     }

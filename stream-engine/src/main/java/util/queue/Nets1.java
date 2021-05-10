@@ -23,7 +23,7 @@ class Nets1 extends Frame {
     private static int customers_dropped = 0;
     public Nets1() {
     }
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         if (args.length <= 3 && args.length >= 2) {
             alpha = Double.parseDouble(args[0]);
             beta = Double.parseDouble(args[1]);

@@ -16,7 +16,7 @@ public class Event extends LinkedList<String> {
     public Event() {//this is required by kryo, not sure why..
     }
     public Event(Long timeStamp, String key, String value) {
-        String sb = String.valueOf(timeStamp) +
+        String sb = timeStamp +
                 split_expression +
                 key +
                 split_expression +
@@ -38,7 +38,7 @@ public class Event extends LinkedList<String> {
      * @param flag
      */
     public Event(Long timeStamp, String key, String value, String flag) {
-        String sb = String.valueOf(timeStamp) +
+        String sb = timeStamp +
                 split_expression +
                 key +
                 split_expression +

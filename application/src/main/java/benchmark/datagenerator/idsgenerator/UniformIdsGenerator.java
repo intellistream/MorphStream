@@ -5,10 +5,10 @@ import java.util.Random;
 
 public class UniformIdsGenerator implements IIdsGenerator {
 
-    private Random mRandomGenerator;
-    private HashMap<Integer, Integer> mGeneratedIds;
-    private int range;
-    private int seed;
+    private final Random mRandomGenerator;
+    private final HashMap<Integer, Integer> mGeneratedIds;
+    private final int range;
+    private final int seed;
 
     public UniformIdsGenerator(int seed, int range) {
         mRandomGenerator = new Random(seed);

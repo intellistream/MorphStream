@@ -34,8 +34,8 @@ public abstract class TPBolt extends TransactionalBolt {
     /**
      * The currently processed 'minute number'.
      */
-    private short currentMinute = 1;
-    private short time = -1;//not in use.
+    private final short currentMinute = 1;
+    private final short time = -1;//not in use.
     public TPBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;

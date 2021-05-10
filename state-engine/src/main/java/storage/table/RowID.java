@@ -6,7 +6,7 @@ import java.util.Objects;
  * d_record lives within that page.
  */
 public class RowID {
-    private int id;
+    private final int id;
     public RowID(int id) {
         this.id = id;
     }

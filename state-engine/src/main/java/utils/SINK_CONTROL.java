@@ -6,7 +6,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static common.CONTROL.sink_combo_bid_size;
 public class SINK_CONTROL {
     static ReentrantLock counterLock = new ReentrantLock(true); // enable fairness policy
-    private static SINK_CONTROL ourInstance = new SINK_CONTROL();
+    private static final SINK_CONTROL ourInstance = new SINK_CONTROL();
     public double throughput = 0;
     SpinLock lock = new SpinLock();
     private volatile int counter = 0;

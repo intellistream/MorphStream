@@ -36,13 +36,13 @@ public class ExecutionNode implements Serializable {
     private OutputController controller;//TODO: it should be initialized during Brisk.topology compile, which is after current Brisk.execution SimExecutionNode being initialized, so it can't be made final.
     private InputStreamController inputStreamController;//inputStreamController is initialized even after partition.
     private boolean last_executor = false;//if this executor is the last executor of operator
-    private boolean activate = true;
+    private final boolean activate = true;
     private HashMap<TopologyComponent, ArrayList<ExecutionNode>> parents = new HashMap();
     private HashMap<TopologyComponent, ArrayList<ExecutionNode>> children = new HashMap();
     //private boolean _allocated = false;
     private boolean _statistics;
     private boolean first_executor;
-    private boolean needsProfile;
+
     public ExecutionNode(TopologyComponent rec, int i, Platform p, int compressRatio) {
         this.operator = rec;
         this.executorID = i;
@@ -57,7 +57,7 @@ public class ExecutionNode implements Serializable {
         }
         parents = new HashMap();
         children = new HashMap();
-        needsProfile = false;
+
     }
     public ExecutionNode(ExecutionNode e, TopologyComponent topo, Platform p) {
         compressRatio = e.compressRatio;
@@ -78,7 +78,7 @@ public class ExecutionNode implements Serializable {
         }
         parents = new HashMap();
         children = new HashMap();
-        needsProfile = e.needsProfile;
+
     }
     public ExecutionNode(TopologyComponent rec, int i, Platform p) {
         this.operator = rec;
@@ -95,7 +95,7 @@ public class ExecutionNode implements Serializable {
         } else {
             this.op = null;
         }
-        needsProfile = false;
+
     }
     public boolean isFirst_executor() {
         return first_executor;
@@ -103,9 +103,7 @@ public class ExecutionNode implements Serializable {
     public void setFirst_executor(boolean first_executor) {
         this.first_executor = first_executor;
     }
-    public void setNeedsProfile() {
-        this.needsProfile = true;
-    }
+
     public String toString() {
         return this.getOP();
     }
@@ -237,9 +235,7 @@ public class ExecutionNode implements Serializable {
     public void display() {
         op.display();
     }
-    public boolean needsProfile() {
-        return needsProfile;
-    }
+
     public void configureWriter(Writer writer) {
         op.configureWriter(writer);
     }

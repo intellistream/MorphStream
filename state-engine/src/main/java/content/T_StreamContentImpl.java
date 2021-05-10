@@ -6,7 +6,7 @@ import storage.SchemaRecord;
 import transaction.impl.TxnContext;
 public class T_StreamContentImpl extends T_StreamContent {
     private static final Logger LOG = LoggerFactory.getLogger(T_StreamContentImpl.class);
-    private long pwid = Long.MAX_VALUE;//previous watermark id.
+    private final long pwid = Long.MAX_VALUE;//previous watermark id.
     @Override
     public SchemaRecord ReadAccess(TxnContext context, MetaTypes.AccessType accessType) {
         return readValues(context.getBID(), -1, false);

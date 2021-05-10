@@ -19,7 +19,7 @@ public class AffinityController {
     private final int cores;
     private final int sockets;
     int offset = 0;
-    public AffinityController(Configuration conf, Platform p) {
+    public AffinityController(Configuration conf) {
         this.conf = conf;
         this.sockets = conf.getInt("num_socket", 8);
         this.cores = conf.getInt("num_cpu", 35);

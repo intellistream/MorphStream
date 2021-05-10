@@ -4,7 +4,7 @@ import java.util.HashSet;
  * Integer data type which serializes to 4 bytes
  */
 public class HashSetDataBox extends DataBox {
-    private volatile HashSet set;
+    private final HashSet set;
     /**
      * Construct an empty IntDataBox with value_list 0.
      */

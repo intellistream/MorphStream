@@ -33,8 +33,8 @@ public class LogEntry {
     };
     private String source;
     private String type;
-    private List<String> tags = new ArrayList<>();
-    private Map<String, String> fields = new HashMap<>();
+    private final List<String> tags = new ArrayList<>();
+    private final Map<String, String> fields = new HashMap<>();
     private Date timestamp;
     private String sourceHost;
     private String sourcePath;

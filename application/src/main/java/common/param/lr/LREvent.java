@@ -12,7 +12,7 @@ public class LREvent {
     public SchemaRecordRef speed_value;
     public SchemaRecordRef count_value;
     private long timestamp;
-    private PositionReport posreport;//input_event associated common.meta data.
+    private final PositionReport posreport;//input_event associated common.meta data.
 //    private final AvgVehicleSpeedTuple vsreport;//intermediate input.
     /**
      * creating a new LREvent.

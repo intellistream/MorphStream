@@ -120,7 +120,7 @@ public enum VoltType {
      * Size in bytes of the maximum length for a VoltDB field value_list, presumably a string or blob
      */
     public static final int MAX_VALUE_LENGTH = 1048576;
-    public static final String MAX_VALUE_LENGTH_STR = String.valueOf(MAX_VALUE_LENGTH / 1024) + "k";
+    public static final String MAX_VALUE_LENGTH_STR = MAX_VALUE_LENGTH / 1024 + "k";
     public static final int NULL_STRING_LENGTH = -1;
     public static final byte NULL_TINYINT = Byte.MIN_VALUE;
     public static final short NULL_SMALLINT = Short.MIN_VALUE;
@@ -136,9 +136,9 @@ public enum VoltType {
      * Null value_list for <code>STRING</code> or <code>VARBINARY</code>.
      */
     public static final NullStringOrVarbinarySigil NULL_STRING_OR_VARBINARY = new NullStringOrVarbinarySigil();
-    protected static final VoltType idx_lookup[] = new VoltType[VoltType.BOOLEAN.m_val + 1];
+    protected static final VoltType[] idx_lookup = new VoltType[VoltType.BOOLEAN.m_val + 1];
     protected static final Map<String, VoltType> name_lookup = new HashMap<>();
-    private static Map<Class<?>, VoltType> s_classes;
+    private static final Map<Class<?>, VoltType> s_classes;
     static {
         s_classes = new HashMap<>();
         for (VoltType type : values()) {

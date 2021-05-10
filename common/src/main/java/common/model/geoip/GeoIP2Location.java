@@ -13,7 +13,7 @@ import java.net.InetAddress;
  */
 public class GeoIP2Location implements IPLocation {
     private static final Logger LOG = LoggerFactory.getLogger(GeoIP2Location.class);
-    private DatabaseReader reader;
+    private final DatabaseReader reader;
     public GeoIP2Location(String dbPath) {
         try {
             File database = new File(System.getProperty("user.home").concat("/Documents/data/app/").concat(dbPath));

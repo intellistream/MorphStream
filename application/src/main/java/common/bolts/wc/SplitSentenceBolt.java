@@ -3,24 +3,20 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.constants.WordCountConstants.Field;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.base.splitBolt;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 //import static Brisk.utils.Utils.printAddresses;
 public class SplitSentenceBolt extends splitBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SplitSentenceBolt.class);
     private static final long serialVersionUID = 8089145995668583749L;
-    //	long end = 0;
-//	boolean GetAndUpdate = false;
-//	int loop = 1;
-//	private int curr = 0, precurr = 0;
-//	private int dummy = 0;
+    String regex = "[\\s,]+";
     public SplitSentenceBolt() {
         super(LOG, new HashMap<>());
         this.output_selectivity.put(BaseConstants.BaseStream.DEFAULT, 10.0);
@@ -45,44 +41,21 @@ public class SplitSentenceBolt extends splitBolt {
     }
     @Override
     public void execute(Tuple in) throws InterruptedException {
-//		String value_list = in.getString(0);
-//		String[] split = value_list.split(",");
-//		for (String word : split) {
-//			collector.force_emit(word);
-//		}
-        char[] value = in.getCharArray(0);
-        int index = 0;
-        int length = value.length;
-        for (int c = 0; c < length; c++) {
-            if (value[c] == ',' || c == length - 1) {//double measure_end.
-                int len = c - index;
-                char[] word = new char[len];
-                System.arraycopy(value, index, word, 0, len);
-                collector.force_emit(word);
-                index = c + 1;
-            }
+        String value = in.getString(0);
+        String[] split = value.split(regex);
+        for (String word : split) {
+            collector.emit(0, word);
         }
     }
     public void execute(JumboTuple in) throws InterruptedException {
-//		final long bid = in.getBID();
         int bound = in.length;
         for (int i = 0; i < bound; i++) {
-//			char[] value_list = in.getCharArray(0, i);
-//			int index = 0;
-//			int length = value_list.length;
-//			for (int c = 0; c < length; c++) {
-//				if (value_list[c] == ',' || c == length - 1) {//double measure_end.
-//					int len = c - index;
-//					char[] word = new char[len];
-//					System.arraycopy(value_list, index, word, 0, len);
-//					collector.emit(word);
-//					index = c + 1;
-//				}
-//			}
-            char[] value = in.getCharArray(0, i);
-            String[] split = new String(value).split(",");
-            for (String word : split) {
-                collector.emit(-1, word.toCharArray());
+            String value = in.getString(0, i);
+            if (value != null) {
+                String[] split = value.split(regex);
+                for (String word : split) {
+                    collector.emit(0, word);
+                }
             }
         }
     }
@@ -90,20 +63,8 @@ public class SplitSentenceBolt extends splitBolt {
 //		final long bid = in.getBID();
         int bound = in.length;
         for (int i = 0; i < bound; i++) {
-//			char[] value_list = in.getCharArray(0, i);
-//			int index = 0;
-//			int length = value_list.length;
-//			for (int c = 0; c < length; c++) {
-//				if (value_list[c] == ',' || c == length - 1) {//double measure_end.
-//					int len = c - index;
-//					char[] word = new char[len];
-//					System.arraycopy(value_list, index, word, 0, len);
-//					collector.emit_nowait(word);
-//					index = c + 1;
-//				}
-//			}
-            char[] value = in.getCharArray(0, i);
-            String[] split = new String(value).split(",");
+            String value = in.getString(0, i);
+            String[] split = value.split(regex);
             for (String word : split) {
                 collector.emit_nowait(word.toCharArray());
             }

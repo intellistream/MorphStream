@@ -49,7 +49,7 @@ public class Writer {
     }
     private synchronized File create_dir(long msgId) {
         String directory = System.getProperty("user.home")
-                + OsUtils.OS_wrapper("sesame") + OsUtils.OS_wrapper("checkpoints")
+                + OsUtils.OS_wrapper("TStreamPlus") + OsUtils.OS_wrapper("checkpoints")
                 + OsUtils.OS_wrapper(String.valueOf(msgId));
         File file = new File(directory);
         if (!file.mkdirs()) {

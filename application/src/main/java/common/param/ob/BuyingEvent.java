@@ -16,7 +16,7 @@ public class BuyingEvent extends TxnEvent {
     //expected state.
     //long Item_value=0;
     //long asset_value=0;
-    private int[] itemId;
+    private final int[] itemId;
     private long[] bid_price;
     private long[] bid_qty;
     /**

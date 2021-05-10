@@ -12,7 +12,7 @@ public abstract class QueryOperator {
     private QueryOperator source;
     private QueryOperator destination;
     private RecordSchema operatorSchema;
-    private OperatorType type;
+    private final OperatorType type;
     public QueryOperator(OperatorType type) {
         this.type = type;
         this.source = null;

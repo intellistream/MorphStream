@@ -29,7 +29,7 @@ import static common.meta.MetaTypes.AccessType.*;
  */
 public final class TxnProcessingEngine {
     private static final Logger LOG = LoggerFactory.getLogger(TxnProcessingEngine.class);
-    private static TxnProcessingEngine instance = new TxnProcessingEngine();
+    private static final TxnProcessingEngine instance = new TxnProcessingEngine();
     /**
      * @param threadId
      * @param mark_ID
@@ -37,7 +37,7 @@ public final class TxnProcessingEngine {
      * @throws InterruptedException
      */
 
-    private static HashMap<Integer, List<OperationChain>> ocsDLevel = new HashMap<>();
+    private static final HashMap<Integer, List<OperationChain>> ocsDLevel = new HashMap<>();
     Metrics metrics;
     private Integer num_op = -1;
     private Integer first_exe;
@@ -47,10 +47,10 @@ public final class TxnProcessingEngine {
     private ConcurrentHashMap<String, Holder_in_range> holder_by_stage;//multi table support.
     private int app;
     private int TOTAL_CORES;
-    private long previous_ID = 0;
+    private final long previous_ID = 0;
     private IScheduler scheduler;
     //    fast determine the corresponding instance. This design is for NUMA-awareness.
-    private HashMap<Integer, Instance> multi_engine = new HashMap<>();//one island one engine.
+    private final HashMap<Integer, Instance> multi_engine = new HashMap<>();//one island one engine.
 //    private int partition = 1;//NUMA-awareness. Hardware Island. If it is one, it is the default shared-everything.
 //    private int range_min = 0;
 //    private int range_max = 1_000_000;//change this for different application.
@@ -150,7 +150,7 @@ public final class TxnProcessingEngine {
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
                 LOG.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
             }
-            LOG.info("TRY reading:" + ((T_StreamContent) operation.condition_records[0].content_).readPreValues(operation.bid));//not modified in last round);
+            LOG.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
         }
         if (preValues1 == null) {
             LOG.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());

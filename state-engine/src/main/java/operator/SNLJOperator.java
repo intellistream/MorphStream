@@ -9,13 +9,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 public class SNLJOperator extends JoinOperator {
-    private QueryOperator leftSource;
-    private QueryOperator rightSource;
-    private int leftColumnIndex;
-    private int rightColumnIndex;
-    private String leftColumnName;
-    private String rightColumnName;
-    private SimpleDatabase.Transaction transaction;
+    private final QueryOperator leftSource;
+    private final QueryOperator rightSource;
+    private final int leftColumnIndex;
+    private final int rightColumnIndex;
+    private final String leftColumnName;
+    private final String rightColumnName;
+    private final SimpleDatabase.Transaction transaction;
     public SNLJOperator(QueryOperator leftSource,
                         QueryOperator rightSource,
                         String leftColumnName,
@@ -55,7 +55,7 @@ public class SNLJOperator extends JoinOperator {
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
     private class SNLJIterator implements Iterator<SchemaRecord> {
-        private Iterator<SchemaRecord> leftIterator;
+        private final Iterator<SchemaRecord> leftIterator;
         private Iterator<SchemaRecord> rightIterator;
         private SchemaRecord leftRecord;
         private SchemaRecord nextRecord;

@@ -17,7 +17,8 @@
  * #_
  */
 package common.datatype.util;
-import org.apache.storm.tuple.Fields;
+
+import execution.runtime.tuple.impl.Fields;
 /**
  * PositionIdentifier represent an express way, lane, position, and direction.
  *

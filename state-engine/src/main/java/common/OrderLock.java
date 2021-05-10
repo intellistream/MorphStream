@@ -13,7 +13,7 @@ import static common.CONTROL.enable_debug;
 public class OrderLock implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(OrderLock.class);
     private static final long serialVersionUID = 1347267778748318967L;
-    private static OrderLock ourInstance = new OrderLock();
+    private static final OrderLock ourInstance = new OrderLock();
     //	SpinLock spinlock_ = new SpinLock();
 //	volatile int fid = 0;
     AtomicLong counter = new AtomicLong(0);// it is already volatiled.

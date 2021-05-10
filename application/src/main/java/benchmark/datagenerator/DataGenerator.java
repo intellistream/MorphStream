@@ -2,12 +2,15 @@ package benchmark.datagenerator;
 
 import benchmark.datagenerator.output.GephiOutputHandler;
 import benchmark.datagenerator.output.IOutputHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
 
 public class DataGenerator {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DataGenerator.class);
     HashMap<Long, Integer> mGeneratedAccountIds = new HashMap<>();
     HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
     private Random mRandomGenerator = new Random();
@@ -56,14 +59,14 @@ public class DataGenerator {
 
         File file = new File(dataConfig.rootPath);
         if (file.exists()) {
-            System.out.println("Data already exists.. skipping data generation...");
-            System.out.println(dataConfig.rootPath);
+            LOG.info("Data already exists.. skipping data generation...");
+            LOG.info(dataConfig.rootPath);
             return;
         }
 
         mDataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
 
-        System.out.println(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
+         LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
         for (int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate/10; tupleNumber++) {
             totalTimeStart = System.nanoTime();
             GenerateTuple();
@@ -73,17 +76,18 @@ public class DataGenerator {
             if (mTransactionId % 100000 == 0) {
                 float selectTuplesPer = (selectTuples * 1.0f) / (totalTime * 1.0f) * 100.0f;
                 float updateDependencyPer = (updateDependency * 1.0f) / (totalTime * 1.0f) * 100.0f;
-                System.out.println(String.format("Dependency Distribution...select tuple time: %.3f%%, update dependency time: %.3f%%", selectTuplesPer, updateDependencyPer));
+                 LOG.info(String.format("Dependency Distribution...select tuple time: %.3f%%, update dependency time: %.3f%%", selectTuplesPer, updateDependencyPer));
 
                 for (int lop = 0; lop < mOcLevelsDistribution.length; lop++) {
                     System.out.print(lop + ": " + mOcLevelsDistribution[lop] + "; ");
                 }
-                System.out.println(" ");
+                 LOG.info(" ");
             }
         }
         dumpGeneratedDataToFile();
-        System.out.println("Date Generation is done...");
+        LOG.info("Date Generation is done...");
         clearDataStructures();
+        this.dataConfig = null;
     }
 
 
@@ -243,7 +247,7 @@ public class DataGenerator {
         mDataTransactions.add(t);
         mTransactionId++;
         if (mTransactionId % 100000 == 0)
-            System.out.println(mTransactionId);
+             LOG.info(String.valueOf(mTransactionId));
     }
     private void UpdateStats() {
 
@@ -308,7 +312,7 @@ public class DataGenerator {
 
         File file = new File(dataConfig.rootPath);
         if (file.exists()) {
-            System.out.println("Data already exists.. skipping data generation...");
+             LOG.info("Data already exists.. skipping data generation...");
             return;
         }
         file.mkdirs();
@@ -327,13 +331,13 @@ public class DataGenerator {
             e.printStackTrace();
         }
 
-        System.out.println(String.format("Dumping transactions..."));
+         LOG.info(String.format("Dumping transactions..."));
         mDataOutputHandler.sinkTransactions(mDataTransactions);
-//        System.out.println(String.format("Dumping Dependency Edges..."));
+//         LOG.info(String.format("Dumping Dependency Edges..."));
 //        mDataOutputHandler.sinkDependenciesEdges(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
-        System.out.println(String.format("Dumping Dependency Vertices..."));
+         LOG.info(String.format("Dumping Dependency Vertices..."));
         mDataOutputHandler.sinkDependenciesVertices(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
-        System.out.println(String.format("Dumping Dependency Vertices ids range..."));
+         LOG.info(String.format("Dumping Dependency Vertices ids range..."));
         mDataOutputHandler.sinkDependenciesVerticesIdsRange(totalAccountRecords, totalAssetRecords);
     }
     private DataOperationChain getNewAccountOC() {

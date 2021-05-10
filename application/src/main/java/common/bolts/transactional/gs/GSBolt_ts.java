@@ -23,7 +23,7 @@ public class GSBolt_ts extends GSBolt {
     private static final long serialVersionUID = -5968750340131744744L;
     Collection<MicroEvent> EventsHolder;
     private int writeEvents;
-    private double write_useful_time = 556;//write-compute time pre-measured.
+    private final double write_useful_time = 556;//write-compute time pre-measured.
     public GSBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
         state = new ValueState();

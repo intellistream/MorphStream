@@ -18,12 +18,12 @@ import java.util.Arrays;
  */
 public class ODTDBloomFilter {
     private static final MurmurHash hasher = new MurmurHash();
-    private int bucketsPerWord;
-    private int hashCount;
-    private int numBuckets;
-    private double[][] buckets;
-    private long[] timers;
-    private double beta;
+    private final int bucketsPerWord;
+    private final int hashCount;
+    private final int numBuckets;
+    private final double[][] buckets;
+    private final long[] timers;
+    private final double beta;
     /**
      * Constructor with default number of buckets per word (16).
      *

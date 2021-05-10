@@ -15,9 +15,9 @@ import java.util.List;
  * YOU SHOULD NOT NEED TO CHANGE ANY OF THE CODE IN THIS CLASS.
  */
 public class TableStats {
-    private boolean estimate;
+    private final boolean estimate;
     private int numRecords;
-    private RecordSchema tableSchema;
+    private final RecordSchema tableSchema;
     private List<Histogram> histograms;
     /**
      * Creates a new TableStats with a given RecordSchema.

@@ -1,7 +1,7 @@
 package storage.table;
 public class SchemaException extends Exception {
     private static final long serialVersionUID = -4581159206803128556L;
-    private String message;
+    private final String message;
     public SchemaException(String message) {
         this.message = message;
     }

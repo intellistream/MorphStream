@@ -5,9 +5,9 @@ import java.util.Random;
 
 public class NormalIdsGenerator implements IIdsGenerator {
 
-    private Random mRandomGenerator;
-    private HashMap<Integer, Integer> mGeneratedIds;
-    private int range;
+    private final Random mRandomGenerator;
+    private final HashMap<Integer, Integer> mGeneratedIds;
+    private final int range;
 
     public NormalIdsGenerator(int seed, int range) {
         mRandomGenerator = new Random(seed);

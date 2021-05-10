@@ -12,9 +12,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 public class GroupByOperator extends QueryOperator {
-    private int groupByColumnIndex;
-    private String groupByColumn;
-    private SimpleDatabase.Transaction transaction;
+    private final int groupByColumnIndex;
+    private final String groupByColumn;
+    private final SimpleDatabase.Transaction transaction;
     /**
      * Create a new GroupByOperator that pulls from source and groups by groupByColumn.
      *
@@ -59,11 +59,11 @@ public class GroupByOperator extends QueryOperator {
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
     private class GroupByIterator implements Iterator<SchemaRecord> {
-        private Iterator<SchemaRecord> sourceIterator;
-        private MarkerRecord markerRecord;
-        private Map<String, String> hashGroupTempTables;
+        private final Iterator<SchemaRecord> sourceIterator;
+        private final MarkerRecord markerRecord;
+        private final Map<String, String> hashGroupTempTables;
         private int currCount;
-        private Iterator<String> keyIter;
+        private final Iterator<String> keyIter;
         private Iterator<SchemaRecord> rIter;
         public GroupByIterator() throws QueryPlanException, DatabaseException {
             this.sourceIterator = GroupByOperator.this.getSource().iterator();
