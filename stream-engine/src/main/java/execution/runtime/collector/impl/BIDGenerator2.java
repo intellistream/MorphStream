@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * A singleton class
  */
 public class BIDGenerator2 {
-    private static BIDGenerator2 ourInstance = new BIDGenerator2();
+    private static final BIDGenerator2 ourInstance = new BIDGenerator2();
     private final AtomicLong bid = new AtomicLong();
     private BIDGenerator2() {
         bid.set(0);

@@ -2,7 +2,7 @@ package transaction.scheduler;
 
 public class SchedulerFactory {
 
-    private int totalThread;
+    private final int totalThread;
 
     public SchedulerFactory(int tp) {
         totalThread = tp;

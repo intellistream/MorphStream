@@ -12,7 +12,7 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     private final transient Map<String, Object> windowConfiguration;
     private TimestampExtractor timestampExtractor;
     protected BaseWindowedBolt(double w) {
-        super((double) 0, w);
+        super(0, w);
         windowConfiguration = new HashMap<>();
     }
     public BaseWindowedBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity, double branch_selectivity, double read_selectivity, boolean byP, double event_frequency, double w) {

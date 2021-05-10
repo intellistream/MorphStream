@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 public class BoolHistogram implements Histogram<Boolean> {
-    private boolean estimate;
+    private final boolean estimate;
     private int numDistinct;
-    private List<Bucket<Boolean>> buckets;
+    private final List<Bucket<Boolean>> buckets;
     public BoolHistogram() {
         this.estimate = false;
         this.buckets = new ArrayList<>();

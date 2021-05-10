@@ -36,7 +36,7 @@ public class ExecutionNode implements Serializable {
     private OutputController controller;//TODO: it should be initialized during Brisk.topology compile, which is after current Brisk.execution SimExecutionNode being initialized, so it can't be made final.
     private InputStreamController inputStreamController;//inputStreamController is initialized even after partition.
     private boolean last_executor = false;//if this executor is the last executor of operator
-    private boolean activate = true;
+    private final boolean activate = true;
     private HashMap<TopologyComponent, ArrayList<ExecutionNode>> parents = new HashMap();
     private HashMap<TopologyComponent, ArrayList<ExecutionNode>> children = new HashMap();
     //private boolean _allocated = false;

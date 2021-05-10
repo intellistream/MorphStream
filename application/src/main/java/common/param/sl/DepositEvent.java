@@ -15,13 +15,13 @@ public class DepositEvent extends TxnEvent {
     //used in no-push.
     public TableRecordRef account_values = new TableRecordRef();
     public TableRecordRef asset_values = new TableRecordRef();
-    private String accountId; //32 bytes
+    private final String accountId; //32 bytes
     //expected state.
     //long Item_value=0;
     //long asset_value=0;
-    private String bookEntryId; //32 bytes
-    private long accountTransfer; //64 bytes
-    private long bookEntryTransfer;//64 bytes
+    private final String bookEntryId; //32 bytes
+    private final long accountTransfer; //64 bytes
+    private final long bookEntryTransfer;//64 bytes
     /**
      * Creates a new DepositEvent.
      */

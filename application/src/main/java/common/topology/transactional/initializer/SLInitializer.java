@@ -23,6 +23,7 @@ import transaction.TableInitilizer;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -35,8 +36,8 @@ public class SLInitializer extends TableInitilizer {
 
     private static final Logger LOG = LoggerFactory.getLogger(SLInitializer.class);
     private String dataRootPath;
-    private int totalRecords;
-    private String idsGenType;
+    private final int totalRecords;
+    private final String idsGenType;
     private DataGenerator mDataGenerator;
 
     public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
@@ -64,7 +65,7 @@ public class SLInitializer extends TableInitilizer {
                             digest.digest(
                                     String.format("%d_%s", dataConfig.tuplesPerBatch * dataConfig.totalBatches,
                                             Arrays.toString(dataConfig.dependenciesDistributionForLevels))
-                                            .getBytes("UTF-8"))));
+                                            .getBytes(StandardCharsets.UTF_8))));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -219,7 +220,7 @@ public class SLInitializer extends TableInitilizer {
 //
     private String GenerateKey(String prefix, int key) {
 //        return rightpad(prefix + String.valueOf(key), VALUE_LEN);
-        return prefix + String.valueOf(key);
+        return prefix + key;
     }
     /**
      * TODO: be aware, scale_factor is not in use now.
@@ -367,7 +368,7 @@ public class SLInitializer extends TableInitilizer {
                         }
                     }
                 }
-                System.out.println("");
+                System.out.println();
             }
         }
     }

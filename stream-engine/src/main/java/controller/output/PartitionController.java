@@ -556,7 +556,7 @@ public abstract class PartitionController implements IPartitionController, Seria
         final int batch_size;
         final int src_Id;
         final int[] pointer;
-        private volatile JumboTuple[] buffers;//maintains a list of JumboTuple for each consumer
+        private final JumboTuple[] buffers;//maintains a list of JumboTuple for each consumer
         private int base = Integer.MAX_VALUE;
         Collections(int src_Id, HashMap<Integer, ExecutionNode> DownExecutor_list, int batch_size) {
             this.batch_size = batch_size;

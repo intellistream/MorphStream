@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 public class QuoteCollection {
-    private static Logger logger = LoggerFactory.getLogger(QuoteCollection.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(QuoteCollection.class.getName());
     private Map<String, TimeSeries> quotes;
     public void QuoteCollection() {
     }

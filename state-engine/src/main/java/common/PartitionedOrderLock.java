@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PartitionedOrderLock implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(PartitionedOrderLock.class);
     private static final long serialVersionUID = 1347267778748318967L;
-    private static PartitionedOrderLock ourInstance = new PartitionedOrderLock();
+    private static final PartitionedOrderLock ourInstance = new PartitionedOrderLock();
     HashMap<Integer, LOCK> locks = new HashMap<>();
     boolean initilize = false;
     private PartitionedOrderLock() {

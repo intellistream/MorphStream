@@ -30,7 +30,7 @@ public class OptimizationManager extends executorThread {
     }
 
     /**
-     * Only naive distribute is supported in sesame.
+     * Only naive distribute is supported in TStreamPlus.
      *
      * @param p
      * @param db

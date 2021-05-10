@@ -23,10 +23,10 @@ import java.util.NoSuchElementException;
  */
 public class SimpleTable {
     public static final String FILENAME_PREFIX = "db";
-    private RecordSchema schema;
-    private Store store;
-    private TableStats stats;
-    private String tableName;
+    private final RecordSchema schema;
+    private final Store store;
+    private final TableStats stats;
+    private final String tableName;
     private int numRecords;
     //TODO: move index structure here.
     //A table may or may not have index associated. The index structure should not be maintained outside.
@@ -132,7 +132,7 @@ public class SimpleTable {
      * of the records in this table.
      */
     private class TableIterator implements Iterator<SchemaRecord> {
-        private Iterator<SchemaRecord> rowIter;
+        private final Iterator<SchemaRecord> rowIter;
         private long recordCount;
         public TableIterator() {
             this.rowIter = store.getRowIterator();

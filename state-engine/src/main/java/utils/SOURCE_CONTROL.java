@@ -8,10 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SOURCE_CONTROL {
     //    static ReentrantLock counterLock = new ReentrantLock(true); // enable fairness policy
     static SpinLock counterLock = new SpinLock();
-    private static SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
+    private static final SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
     volatile boolean success = false;
-    private volatile long counter = 0;
-    private AtomicInteger wm = new AtomicInteger(0);// it is already volatiled.
+    private final long counter = 0;
+    private final AtomicInteger wm = new AtomicInteger(0);// it is already volatiled.
 
     private int totalThreads;
     private CyclicBarrier startBarrier;

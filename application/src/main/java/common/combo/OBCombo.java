@@ -94,7 +94,7 @@ public class OBCombo extends SPOUTCombo {
     @Override
     public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) {
         String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + String.valueOf(enable_states_partition));
+                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition);
         if (Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file_name))))
             throw new UnsupportedOperationException();
         Scanner sc;

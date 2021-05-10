@@ -4,7 +4,7 @@ import java.util.Random;
  * @author maycon
  */
 public class RandomUtil {
-    private static Random rand = new Random();
+    private static final Random rand = new Random();
     /**
      * Returns a pseudo-random number between min and max, inclusive.
      * The difference between min and max can be at most

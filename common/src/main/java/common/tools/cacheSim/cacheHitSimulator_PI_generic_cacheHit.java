@@ -13,7 +13,7 @@ public class cacheHitSimulator_PI_generic_cacheHit {
     private static int start = 0;
     private static int cnt = 0;
     private static int app;
-    private static int policy = 1;
+    private static final int policy = 1;
     private static double nextTime(double rateParameter) {
         return -Math.log(1.0 - Math.random()) / rateParameter;
     }

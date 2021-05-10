@@ -3,7 +3,7 @@ import java.util.LinkedList;
 import java.util.List;
 public class ListDoubleDataBox extends DataBox {
     private final int movingAverageWindow;
-    private volatile LinkedList<Double> list;
+    private final LinkedList<Double> list;
     /**
      * Construct an empty StringDataBox.
      *

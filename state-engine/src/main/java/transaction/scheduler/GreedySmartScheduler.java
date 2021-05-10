@@ -12,8 +12,8 @@ public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDepen
     private ConcurrentLinkedQueue<OperationChain> leftOvers;
     private ConcurrentLinkedQueue<OperationChain> withDependents;
 
-    private ArrayList<OperationChain>[] leftOversLocal;
-    private ArrayList<OperationChain>[] withDependentsLocal;
+    private final ArrayList<OperationChain>[] leftOversLocal;
+    private final ArrayList<OperationChain>[] withDependentsLocal;
 
     private AtomicInteger totalSubmitted;
     private AtomicInteger totalProcessed;

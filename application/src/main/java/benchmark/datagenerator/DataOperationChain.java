@@ -6,18 +6,18 @@ import java.util.Objects;
 
 public class DataOperationChain {
 
-    private String stateId;
+    private final String stateId;
     private int operationsCount = 0;
     private int dependencyLevel;
 
     private boolean isDependencyLevelDirty = false;
     private boolean readForTraversal = false;
 
-    private ArrayList<DataOperationChain> dependsUpon = new ArrayList<>();
-    private ArrayList<DataOperationChain> dependents = new ArrayList<>();
+    private final ArrayList<DataOperationChain> dependsUpon = new ArrayList<>();
+    private final ArrayList<DataOperationChain> dependents = new ArrayList<>();
 
-    private HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel;
-    private int averageRecordsPerDeLevel;
+    private final HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel;
+    private final int averageRecordsPerDeLevel;
 
     public DataOperationChain(String stateId, int averageRecordsPerDeLevel, HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel) {
         this.stateId = stateId;

@@ -9,8 +9,8 @@ import java.util.*;
  * email: gh.chen@siat.ac.cn
  */
 public class FixedSizeQueue<E> implements Queue<E> {
-    private Object[] elements;
-    private int capacity;
+    private final Object[] elements;
+    private final int capacity;
     private int head;
     private int tail;
     private int size;

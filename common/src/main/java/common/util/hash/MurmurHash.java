@@ -64,7 +64,7 @@ public class MurmurHash {
                 h ^= (int) data[length - 2] << 8;
             }
             if (left >= 1) {
-                h ^= (int) data[length - 1];
+                h ^= data[length - 1];
             }
             h *= m;
         }
@@ -163,7 +163,7 @@ public class MurmurHash {
             case 2:
                 h ^= (long) (data[(length & ~7) + 1] & 0xff) << 8;
             case 1:
-                h ^= (long) (data[length & ~7] & 0xff);
+                h ^= data[length & ~7] & 0xff;
                 h *= m;
         }
         h ^= h >>> r;

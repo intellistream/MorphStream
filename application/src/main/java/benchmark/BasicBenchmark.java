@@ -11,12 +11,13 @@ import runners.TStreamRunner;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 
 public class BasicBenchmark implements IBenchmark {
 
-    private String[] args;
+    private final String[] args;
     private DataGenerator mDataGenerator;
     private TStreamRunner TStreamRunner;
 
@@ -78,7 +79,7 @@ public class BasicBenchmark implements IBenchmark {
                             digest.digest(
                                     String.format("%d_%s", dataConfig.tuplesPerBatch * dataConfig.totalBatches,
                                             Arrays.toString(dataConfig.dependenciesDistributionForLevels))
-                                            .getBytes("UTF-8"))));
+                                            .getBytes(StandardCharsets.UTF_8))));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -207,7 +208,7 @@ public class BasicBenchmark implements IBenchmark {
                         }
                     }
                 }
-                System.out.println("");
+                System.out.println();
             }
         }
     }

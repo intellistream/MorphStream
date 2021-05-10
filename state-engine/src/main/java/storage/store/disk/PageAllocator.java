@@ -18,15 +18,15 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PageAllocator implements Iterable<Page>, Closeable {
     private static final int numHeaderPages = 1024;
     private static final int cacheSize = 1024;
-    private static AtomicInteger pACounter = new AtomicInteger(0);
-    private static LRUCache<Long, Page> pageLRU = new LRUCache<>(cacheSize);
-    private static AtomicLong numIOs = new AtomicLong(0);
-    private static AtomicLong cacheMisses = new AtomicLong(0);
+    private static final AtomicInteger pACounter = new AtomicInteger(0);
+    private static final LRUCache<Long, Page> pageLRU = new LRUCache<>(cacheSize);
+    private static final AtomicLong numIOs = new AtomicLong(0);
+    private static final AtomicLong cacheMisses = new AtomicLong(0);
     private Page masterPage;
-    private FileChannel fc;
+    private final FileChannel fc;
     private int numPages;
-    private int allocID;
-    private boolean durable;
+    private final int allocID;
+    private final boolean durable;
     /**
      * Create a new PageAllocator that writes its bytes into a file named fName. If wipe is true, the
      * data in the page is completely removed.

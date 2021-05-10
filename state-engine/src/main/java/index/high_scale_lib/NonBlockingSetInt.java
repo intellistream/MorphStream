@@ -194,7 +194,7 @@ public class NonBlockingSetInt extends AbstractSet<Integer> implements Serializa
         // Used to count elements: a high-performance counter.
         private transient final Counter _size;
         // The Bits
-        private final long _bits[];
+        private final long[] _bits;
         private transient final AtomicInteger _copyIdx;   // Used to count bits started copying
         private transient final AtomicInteger _copyDone;  // Used to count words copied in a resize Operation
         private transient final int _sum_bits_length; // Sum of all nested _bits.lengths

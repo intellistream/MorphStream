@@ -10,13 +10,13 @@ public class DataGenerator {
 
     HashMap<Integer, Integer> mGeneratedAccountIds = new HashMap<>();
     HashMap<Integer, Integer> mGeneratedAssetIds = new HashMap<>();
-    private Random mRandomGenerator = new Random();
-    private Random mRandomGeneratorForAccIds = new Random(12345678);
-    private Random mRandomGeneratorForAstIds = new Random(123456789);
+    private final Random mRandomGenerator = new Random();
+    private final Random mRandomGeneratorForAccIds = new Random(12345678);
+    private final Random mRandomGeneratorForAstIds = new Random(123456789);
     private int totalAccountRecords = 0;
     private int totalAssetRecords = 0;
-    private int mTotalTuplesToGenerate;
-    private DataGeneratorConfig dataConfig;
+    private final int mTotalTuplesToGenerate;
+    private final DataGeneratorConfig dataConfig;
     private ArrayList<DataTransaction> mDataTransactions;
     private HashMap<Integer, ArrayList<DataOperationChain>> mAccountOperationChainsByLevel;
     private HashMap<Integer, ArrayList<DataOperationChain>> mAssetsOperationChainsByLevel;

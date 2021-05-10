@@ -9,12 +9,12 @@ import storage.table.stats.TableStats;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 public class IndexScanOperator extends QueryOperator {
-    private SimpleDatabase.Transaction transaction;
-    private String tableName;
-    private String columnName;
-    private QueryPlan.PredicateOperator predicate;
-    private DataBox value;
-    private int columnIndex;
+    private final SimpleDatabase.Transaction transaction;
+    private final String tableName;
+    private final String columnName;
+    private final QueryPlan.PredicateOperator predicate;
+    private final DataBox value;
+    private final int columnIndex;
     /**
      * An index scan operator.
      *

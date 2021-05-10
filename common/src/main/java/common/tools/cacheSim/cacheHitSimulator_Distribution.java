@@ -16,14 +16,14 @@ public class cacheHitSimulator_Distribution {
 //    private static double total_execution_cycles;//total Brisk.execution cycles.
 //    private static double[] num_cycles_per_function;//Brisk.execution cycles per function.
     private static int[] generate_funcTrace(int num_functionTypes, Object[] num_cycles_per_function, int total_execution_cycles) {
-        double rate[] = new double[num_functionTypes];
+        double[] rate = new double[num_functionTypes];
         for (int i = 0; i < num_functionTypes; i++) {
             rate[i] = (double) num_cycles_per_function[i] / total_execution_cycles;
         }
-        int pos_[][] = new int[num_functionTypes][total_execution_cycles];
-        int new_pos_[] = new int[num_functionTypes];
-        int old_pos_[] = new int[num_functionTypes];
-        int count_[] = new int[num_functionTypes];
+        int[][] pos_ = new int[num_functionTypes][total_execution_cycles];
+        int[] new_pos_ = new int[num_functionTypes];
+        int[] old_pos_ = new int[num_functionTypes];
+        int[] count_ = new int[num_functionTypes];
         for (int i = 0; i < num_functionTypes; i++) {
             count_[i] = (int) (total_execution_cycles * rate[i]);
         }

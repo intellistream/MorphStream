@@ -32,7 +32,7 @@ public class OutputCollector<T> {
     private final ExecutionNode executor;
     private final MetaGroup meta;
     private boolean no_wait = true;
-    private long last_emit = 0;
+    private final long last_emit = 0;
     private long bid_counter;
     public OutputCollector(ExecutionNode executor, TopologyContext context) {
         int taskId = context.getThisTaskIndex();

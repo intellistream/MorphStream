@@ -48,10 +48,10 @@ import java.util.Map;
  */
 public final class SlidingWindowCounter<T> implements Serializable {
     private static final long serialVersionUID = -2645063988768785810L;
-    private SlotBasedCounter<T> objCounter;
+    private final SlotBasedCounter<T> objCounter;
     private int headSlot;
     private int tailSlot;
-    private int windowLengthInSlots;
+    private final int windowLengthInSlots;
     public SlidingWindowCounter(int windowLengthInSlots) {
         if (windowLengthInSlots < 2) {
             throw new IllegalArgumentException(

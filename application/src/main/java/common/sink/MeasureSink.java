@@ -66,7 +66,7 @@ public class MeasureSink extends BaseSink {
 //                , config.getInt("runtimeInSeconds")
 //                , metric_path, config.getDouble("predict", 0), size, thisTaskId);
         profile = config.getBoolean("profile");
-        directory = STAT_Path + OsUtils.OS_wrapper("sesame")
+        directory = STAT_Path + OsUtils.OS_wrapper("TstreamPlus")
                 + OsUtils.OS_wrapper(configPrefix)
                 + OsUtils.OS_wrapper(String.valueOf(config.getDouble("checkpoint")))
 //                + OsUtils.OS_wrapper(String.valueOf(config.getInt("num_socket")))
@@ -159,15 +159,15 @@ public class MeasureSink extends BaseSink {
 //                Collections.sort(col_value);
                 FileWriter f = null;
                 f = new FileWriter(new File(directory
-                        + OsUtils.OS_wrapper(String.valueOf(ccOption + ".latency"))));
+                        + OsUtils.OS_wrapper(ccOption + ".latency")));
                 Writer w = new BufferedWriter(f);
                 for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
-                    w.write(String.valueOf(latency.getPercentile(percentile) + "\n"));
+                    w.write(latency.getPercentile(percentile) + "\n");
                 }
                 sb.append("=======Details=======");
                 sb.append("\n" + latency.toString() + "\n");
                 sb.append("===99th===" + "\n");
-                sb.append(String.valueOf(latency.getPercentile(99) + "\n"));
+                sb.append(latency.getPercentile(99) + "\n");
                 w.write(sb.toString());
                 w.close();
                 f.close();

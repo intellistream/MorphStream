@@ -11,14 +11,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 public abstract class JoinOperator extends QueryOperator {
-    private JoinType joinType;
+    private final JoinType joinType;
     private QueryOperator leftSource;
     private QueryOperator rightSource;
     private int leftColumnIndex;
     private int rightColumnIndex;
     private String leftColumnName;
     private String rightColumnName;
-    private SimpleDatabase.Transaction transaction;
+    private final SimpleDatabase.Transaction transaction;
     /**
      * Create a join operator that pulls tuples from leftSource and rightSource. Returns tuples for which
      * leftColumnName and rightColumnName are equal.

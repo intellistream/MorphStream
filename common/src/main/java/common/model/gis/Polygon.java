@@ -2,13 +2,13 @@ package common.model.gis;
 import java.util.ArrayList;
 public class Polygon {
     private static final int EARTH_RADIUS = 6378137;
-    private ArrayList<Point> points;
+    private final ArrayList<Point> points;
     private double xmin;
     private double xmax;
     private double ymin;
     private double ymax;
-    private int count;
-    private double distance_min = 10 / 111.2 * 1000;
+    private final int count;
+    private final double distance_min = 10 / 111.2 * 1000;
     public Polygon(ArrayList<Point> points) {
         this.points = points;
         this.count = points.size();

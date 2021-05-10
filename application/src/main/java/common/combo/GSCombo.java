@@ -38,14 +38,14 @@ public class GSCombo extends SPOUTCombo {
         int number_partitions = Math.min(tthread, config.getInt("number_partitions"));
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + String.valueOf(enable_states_partition))
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + String.valueOf(NUM_EVENTS))
-                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + String.valueOf(ratio_of_multi_partition))
-                + OsUtils.OS_wrapper("number_partitions=" + String.valueOf(number_partitions))
-                + OsUtils.OS_wrapper("ratio_of_read=" + String.valueOf(ratio_of_read))
-                + OsUtils.OS_wrapper("NUM_ACCESSES=" + String.valueOf(NUM_ACCESSES))
-                + OsUtils.OS_wrapper("theta=" + String.valueOf(config.getDouble("theta", 1)))
-                + OsUtils.OS_wrapper("NUM_ITEMS=" + String.valueOf(NUM_ITEMS));
+                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
+                + OsUtils.OS_wrapper("NUM_EVENTS=" + NUM_EVENTS)
+                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
+                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
+                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
+                + OsUtils.OS_wrapper("NUM_ACCESSES=" + NUM_ACCESSES)
+                + OsUtils.OS_wrapper("theta=" + config.getDouble("theta", 1))
+                + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
         if (Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file_name))))
             throw new UnsupportedOperationException();
         long start = System.nanoTime();

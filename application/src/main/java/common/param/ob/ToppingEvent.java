@@ -11,7 +11,7 @@ public class ToppingEvent extends TxnEvent {
     //place-rangeMap.
     public SchemaRecordRef[] record_refs;
     public boolean topping_result;
-    private int[] itemId;
+    private final int[] itemId;
     private long[] itemTopUp;
     /**
      * Creates a new ToppingEvent.

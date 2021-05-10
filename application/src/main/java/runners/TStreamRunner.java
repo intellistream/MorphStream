@@ -441,16 +441,16 @@ public class TStreamRunner extends Runner {
             System.out.println("******* STATS ENDS *******");
             //used in TSTREAM.
             String directory = System_Plan_Path
-                    + OsUtils.OS_wrapper("sesame")
+                    + OsUtils.OS_wrapper("TStreamPlus")
                     + OsUtils.OS_wrapper(topology.getPrefix())
-                    + OsUtils.OS_wrapper("CCOption=" + String.valueOf(config.getInt("CCOption", 0)));
+                    + OsUtils.OS_wrapper("CCOption=" + config.getInt("CCOption", 0));
             File file = new File(directory);
             if (!file.mkdirs()) {
             }
             FileWriter f = null;
             StringBuilder sb = new StringBuilder();
             try {
-                f = new FileWriter(new File(directory + OsUtils.OS_wrapper("breakdown(" + String.valueOf(checkpoint_interval)) + ").txt"), true);
+                f = new FileWriter(new File(directory + OsUtils.OS_wrapper("breakdown(" + checkpoint_interval) + ").txt"), true);
                 Writer w = new BufferedWriter(f);
                 w.write(String.valueOf(tthread));
                 w.write(",");
@@ -480,10 +480,10 @@ public class TStreamRunner extends Runner {
                 f.close();
                 if (config.getInt("CCOption", 0) == CCOption_TStream) {//extra info
                     f = new FileWriter(new File(directory
-                            + OsUtils.OS_wrapper("details(" + String.valueOf(tthread) + "," + String.valueOf(checkpoint_interval)) + ").txt"), true);
+                            + OsUtils.OS_wrapper("details(" + tthread + "," + checkpoint_interval) + ").txt"), true);
                     w = new BufferedWriter(f);
                     for (int i = 0; i < tthread; i++) {
-                        sb.append(String.valueOf(i));//which thread.
+                        sb.append(i);//which thread.
                         sb.append(",");
                         sb.append(String.format("%d", metrics.useful_ratio[i].getN()));//number of txns processed by the thread.
                         sb.append(",");

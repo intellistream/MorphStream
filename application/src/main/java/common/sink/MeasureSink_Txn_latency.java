@@ -44,7 +44,7 @@ public class MeasureSink_Txn_latency extends MeasureSink_latency {
                 f = new FileWriter(new File(metric_path + OsUtils.OS_wrapper("latency")));
                 Writer w = new BufferedWriter(f);
                 for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
-                    w.write(String.valueOf(latency.getPercentile(percentile) + "\n"));
+                    w.write(latency.getPercentile(percentile) + "\n");
                 }
                 w.write("=======Details=======");
                 w.write(latency.toString() + "\n");

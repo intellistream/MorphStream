@@ -9,10 +9,10 @@ import storage.table.stats.TableStats;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 public class SelectOperator extends QueryOperator {
-    private int columnIndex;
-    private String columnName;
-    private QueryPlan.PredicateOperator operator;
-    private DataBox value;
+    private final int columnIndex;
+    private final String columnName;
+    private final QueryPlan.PredicateOperator operator;
+    private final DataBox value;
     /**
      * Creates a new SelectOperator that pulls from source and only returns tuples for which the
      * predicate is satisfied.
@@ -65,8 +65,8 @@ public class SelectOperator extends QueryOperator {
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
     private class SelectIterator implements Iterator<SchemaRecord> {
-        private Iterator<SchemaRecord> sourceIterator;
-        private MarkerRecord markerRecord;
+        private final Iterator<SchemaRecord> sourceIterator;
+        private final MarkerRecord markerRecord;
         private SchemaRecord nextRecord;
         public SelectIterator() throws QueryPlanException, DatabaseException {
             this.sourceIterator = SelectOperator.this.getSource().iterator();

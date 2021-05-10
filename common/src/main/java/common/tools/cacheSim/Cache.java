@@ -8,7 +8,7 @@ import java.util.Scanner;
  * @author Nick Gilbert
  */
 public class Cache {
-    private Set[] sets;
+    private final Set[] sets;
     private int setAssoc, hitCount, missCount, totalCount;
     private double hitRate, missRate;
     public Cache(int passedNumSets, int passedSetAssoc) {

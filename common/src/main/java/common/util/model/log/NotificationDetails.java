@@ -1,8 +1,8 @@
 package common.util.model.log;
 public class NotificationDetails {
-    private String to;
-    private Severity severity;
-    private String message;
+    private final String to;
+    private final Severity severity;
+    private final String message;
     public NotificationDetails(String to, Severity severity, String message) {
         this.to = to;
         this.severity = severity;

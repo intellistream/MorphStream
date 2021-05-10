@@ -5,8 +5,8 @@ package storage.table.stats;
  * @param <T> the type of values in this bucket
  */
 public class Bucket<T> {
-    private T start;
-    private T end;
+    private final T start;
+    private final T end;
     private int count;
     public Bucket(T start) {
         this.start = start;

@@ -34,7 +34,7 @@ public class ExecutionManager {
     TxnProcessingEngine tp_engine;
     private int loadTargetHz;
     private int timeSliceLengthMs;
-    private ExecutionGraph g;
+    private final ExecutionGraph g;
     public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager, Database db, Platform p) {
         this.g = g;
         AC = new AffinityController(conf, p);

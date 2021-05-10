@@ -11,15 +11,15 @@ import java.util.*;
  * a QueryPlan DAG.
  */
 public class QueryPlan {
-    private SimpleDatabase.Transaction transaction;
+    private final SimpleDatabase.Transaction transaction;
     private QueryOperator finalOperator;
-    private String startTableName;
-    private List<String> joinTableNames;
-    private List<String> joinLeftColumnNames;
-    private List<String> joinRightColumnNames;
-    private List<String> selectColumnNames;
-    private List<PredicateOperator> selectOperators;
-    private List<DataBox> selectDataBoxes;
+    private final String startTableName;
+    private final List<String> joinTableNames;
+    private final List<String> joinLeftColumnNames;
+    private final List<String> joinRightColumnNames;
+    private final List<String> selectColumnNames;
+    private final List<PredicateOperator> selectOperators;
+    private final List<DataBox> selectDataBoxes;
     private List<String> projectColumns;
     private String groupByColumn;
     private String orderByColumn;

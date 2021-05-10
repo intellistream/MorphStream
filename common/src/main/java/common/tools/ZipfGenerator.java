@@ -2,9 +2,9 @@ package common.tools;
 import java.util.Random;
 // Based on http://diveintodata.org/tag/zipf/
 public class ZipfGenerator {
-    private Random rnd = new Random(0);
-    private int size;
-    private double skew;
+    private final Random rnd = new Random(0);
+    private final int size;
+    private final double skew;
     private double bottom = 0;
     public ZipfGenerator(int size, double skew) {
         this.size = size;

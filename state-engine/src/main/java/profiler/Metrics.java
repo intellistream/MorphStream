@@ -9,7 +9,7 @@ public class Metrics {
     public static int NUM_ACCESSES = 3;//10 as default setting. 2 for short transaction, 10 for long transaction.? --> this is the setting used in YingJun's work. 16 is the default value_list used in 1000core machine.
     public static int NUM_ITEMS = 1_000_000;//1. 1_000_000; 2. ? ; 3. 1_000  //1_000_000 YCSB has 16 million records, Ledger use 200 million records.
     public static int H2_SIZE;
-    private static Metrics ourInstance = new Metrics();
+    private static final Metrics ourInstance = new Metrics();
 
     public DescriptiveStatistics[] total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] number_of_ocs_processed = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.

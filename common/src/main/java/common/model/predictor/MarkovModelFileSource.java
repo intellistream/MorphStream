@@ -8,7 +8,7 @@ import java.nio.file.Paths;
  * @author maycon
  */
 public class MarkovModelFileSource implements IMarkovModelSource {
-    private Charset charset;
+    private final Charset charset;
     public MarkovModelFileSource() {
         charset = Charset.defaultCharset();
     }

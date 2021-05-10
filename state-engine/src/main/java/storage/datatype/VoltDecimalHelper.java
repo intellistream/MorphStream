@@ -54,7 +54,7 @@ public class VoltDecimalHelper {
      * Array of scale factors used to scale up <code>BigInteger</code>s retrieved from
      * <code>BigDecimal</code>s
      */
-    private static final BigInteger scaleFactors[] = new BigInteger[]{
+    private static final BigInteger[] scaleFactors = new BigInteger[]{
             BigInteger.ONE,
             BigInteger.TEN,
             BigInteger.TEN.pow(2),
@@ -129,11 +129,11 @@ public class VoltDecimalHelper {
      * @param isNegative  Determines whether the sign bit is set
      * @return
      */
-    private static byte[] expandToLength16(byte scaledValue[], final boolean isNegative) {
+    private static byte[] expandToLength16(byte[] scaledValue, final boolean isNegative) {
         if (scaledValue.length == 16) {
             return scaledValue;
         }
-        byte replacement[] = new byte[16];
+        byte[] replacement = new byte[16];
         if (isNegative) {
             java.util.Arrays.fill(replacement, (byte) -1);
         }
@@ -224,7 +224,7 @@ public class VoltDecimalHelper {
      * @param buffer {@link ByteBuffer ByteBuffer} to read from
      */
     public static BigDecimal deserializeBigDecimal(ByteBuffer buffer) {
-        byte decimalBytes[] = new byte[16];
+        byte[] decimalBytes = new byte[16];
         buffer.get(decimalBytes);
         if (java.util.Arrays.equals(decimalBytes, NULL_INDICATOR)) {
             return null;
@@ -237,7 +237,7 @@ public class VoltDecimalHelper {
         }
         return bd;
     }
-    public static void main(String args[]) {
+    public static void main(String[] args) {
 //        ByteBuffer buffer = ByteBuffer.allocate(16);
 //        BigDecimal bd = new BigDecimal("-23325.23425");
 //       VoltDecimalHelper.serializeBigDecimal(bd, buffer);

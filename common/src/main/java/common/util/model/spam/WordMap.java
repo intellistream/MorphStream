@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class WordMap implements Serializable {
     private static final long serialVersionUID = -4598301402074863687L;
-    private Map<String, Word> words;
+    private final Map<String, Word> words;
     private long spamTotal = 0;
     private long hamTotal = 0;
     public WordMap() {

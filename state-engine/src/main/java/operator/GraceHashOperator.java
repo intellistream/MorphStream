@@ -42,8 +42,8 @@ public class GraceHashOperator extends JoinOperator {
         private Iterator<SchemaRecord> rightIterator;
         private SchemaRecord rightRecord;
         private SchemaRecord nextRecord;
-        private String[] leftPartitions;
-        private String[] rightPartitions;
+        private final String[] leftPartitions;
+        private final String[] rightPartitions;
         private int currentPartition;
         private Map<DataBox, ArrayList<SchemaRecord>> inMemoryHashTable;
         private int currIndexInList;
@@ -59,8 +59,8 @@ public class GraceHashOperator extends JoinOperator {
             String leftTableName;
             String rightTableName;
             for (int i = 0; i < numBuffers - 1; i++) {
-                leftTableName = "Temp HashJoin Left Partition " + Integer.toString(i);
-                rightTableName = "Temp HashJoin Right Partition " + Integer.toString(i);
+                leftTableName = "Temp HashJoin Left Partition " + i;
+                rightTableName = "Temp HashJoin Right Partition " + i;
                 GraceHashOperator.this.createTempTable(getLeftSource().getOutputSchema(), leftTableName);
                 GraceHashOperator.this.createTempTable(getRightSource().getOutputSchema(), rightTableName);
                 leftPartitions[i] = leftTableName;

@@ -16,8 +16,8 @@ import java.util.List;
  */
 public class RecordSchema {
     private final int secondary_num_;
-    private List<String> fields;
-    private List<DataBox> fieldTypes;
+    private final List<String> fields;
+    private final List<DataBox> fieldTypes;
     private int size;
     public RecordSchema(List<String> fields, List<DataBox> fieldTypes) {
         assert (fields.size() == fieldTypes.size());

@@ -45,6 +45,11 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (seconds)")
     public double checkpoint_interval = 500;// default checkpoint interval.
 
+    @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
+    public boolean linked = false;
+    @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
+    public boolean shared = true;
+
     /**
      * Benchmarking Specific Parameters.
      */
@@ -53,9 +58,12 @@ public abstract class Runner implements IRunner {
 
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
     public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("tstreamplus") + OsUtils.OS_wrapper("data");
+
     @Parameter(names = {"-mp"}, description = "Metric path", required = false)
     public String metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
-    ;
+
+    @Parameter(names = {"--machine"}, description = "which machine to use? 0:NUS machine, 1: HPI machine, you may add more..")
+    public int machine = 10;
 
     /**
      * Workload Specific Parameters.
@@ -70,11 +78,6 @@ public abstract class Runner implements IRunner {
     public int NUM_ITEMS = 100_000;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
-
-    @Parameter(names = {"--linked"}, description = "linked")
-    public boolean linked = false;
-    @Parameter(names = {"--shared"}, description = "shared by multi producers")
-    public boolean shared = true;
     @Parameter(names = {"--scale_factor"}, description = "scale_factor")
     public double scale_factor = 1; //<=1
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -85,10 +88,8 @@ public abstract class Runner implements IRunner {
     public int number_partitions = 3;
     @Parameter(names = {"--theta"}, description = "theta")
     public double theta = 0.6; //0.6==medium contention
-    @Parameter(names = {"--gc_factor"}, description = "gc_factor")
-    public double gc_factor = 1; //<=1
-    @Parameter(names = {"--machine"}, description = "which machine to use? 0:NUS machine, 1: HPI machine, you may add more..")
-    public int machine = 10;
+
+
     @Parameter(names = {"--plan"}, description = "benchmarking the corresponding plan")
     public int plan = 0;
     @Parameter(names = {"--benchmark"}, description = "benchmarking the throughput of all applications")
@@ -238,7 +239,6 @@ public abstract class Runner implements IRunner {
         config.put("profile", profile);
         config.put("profile_start", profile_start);
         config.put("profile_end", profile_end);
-        config.put("gc_factor", gc_factor);
         config.put("totalEventsPerBatch", totalEventsPerBatch);
         config.put("numberOfBatches", numberOfBatches);
         config.put("rootFilePath", rootPath);

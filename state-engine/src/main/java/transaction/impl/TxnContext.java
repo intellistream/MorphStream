@@ -14,9 +14,9 @@ public class TxnContext {
     public int pid;
     private double[] index_time_;
     private int txn_type_;
-    private boolean is_read_only_;
-    private boolean is_dependent_;
-    private boolean is_adhoc_;
+    private final boolean is_read_only_;
+    private final boolean is_dependent_;
+    private final boolean is_adhoc_;
     private SchemaRecordRef record_ref;
     public TxnContext(int thread_Id, int fid, long bid) {
         this.thread_Id = thread_Id;

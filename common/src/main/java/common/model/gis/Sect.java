@@ -1,7 +1,7 @@
 package common.model.gis;
 import java.util.ArrayList;
 public class Sect extends Polygon {
-    private int id;
+    private final int id;
     private int roadWidth;
     private String mapID;
     public Sect(ArrayList<Point> points, int id) {

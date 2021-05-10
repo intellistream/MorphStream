@@ -65,7 +65,7 @@ public class DataGeneratorConfig {
             throw new UnsupportedOperationException("Invalid fanout scheme.");
         }
 
-        System.out.println("");
+        System.out.println();
         System.out.println(String.format("totalEventsPerBatch: %d", tuplesPerBatch));
         System.out.println(String.format("numberOfBatches: %d", totalBatches));
         System.out.println(String.format("numberOfDLevels: %d", numberOfDLevels));

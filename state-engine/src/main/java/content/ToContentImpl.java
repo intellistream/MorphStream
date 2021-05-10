@@ -34,7 +34,7 @@ public class ToContentImpl extends ToContent {
     private RequestEntry write_requests_head_;
     // commit request queue.
     private RequestEntry commit_requests_head_;
-    private SpinLock spinlock_ = new SpinLock();
+    private final SpinLock spinlock_ = new SpinLock();
     public ToContentImpl() {
         read_ts_ = 0;
         write_ts_ = 0;

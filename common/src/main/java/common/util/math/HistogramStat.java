@@ -22,8 +22,8 @@ import java.util.Map;
  * @author pranab
  */
 public class HistogramStat {
-    private int binWidth;
-    private Map<Integer, Bin> binMap = new HashMap<>();
+    private final int binWidth;
+    private final Map<Integer, Bin> binMap = new HashMap<>();
     private int count;
     private double sum = 0.0;
     /**
@@ -118,7 +118,7 @@ public class HistogramStat {
      * @author pranab
      */
     private static class Bin implements Comparable<Bin> {
-        private int index;
+        private final int index;
         private int count;
         public Bin(int index) {
             super();

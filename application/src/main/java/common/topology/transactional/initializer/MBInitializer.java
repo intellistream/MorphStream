@@ -170,17 +170,15 @@ public class MBInitializer extends TableInitilizer {
         this.number_partitions = Math.min(tthread, config.getInt("number_partitions"));
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + String.valueOf(enable_states_partition))
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + String.valueOf(NUM_EVENTS))
-                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + String.valueOf(ratio_of_multi_partition))
-                + OsUtils.OS_wrapper("number_partitions=" + String.valueOf(number_partitions))
-                + OsUtils.OS_wrapper("ratio_of_read=" + String.valueOf(ratio_of_read))
-                + OsUtils.OS_wrapper("NUM_ACCESSES=" + String.valueOf(NUM_ACCESSES))
-                + OsUtils.OS_wrapper("theta=" + String.valueOf(theta))
-                + OsUtils.OS_wrapper("NUM_ITEMS=" + String.valueOf(NUM_ITEMS));
-        if (Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file))))
-            return false;
-        return true;
+                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
+                + OsUtils.OS_wrapper("NUM_EVENTS=" + NUM_EVENTS)
+                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
+                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
+                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
+                + OsUtils.OS_wrapper("NUM_ACCESSES=" + NUM_ACCESSES)
+                + OsUtils.OS_wrapper("theta=" + theta)
+                + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
+        return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
     }
     @Override
     public void store(String file_name) throws IOException {
@@ -188,14 +186,14 @@ public class MBInitializer extends TableInitilizer {
         this.number_partitions = Math.min(tthread, config.getInt("number_partitions"));
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + String.valueOf(enable_states_partition))
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + String.valueOf(NUM_EVENTS))
-                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + String.valueOf(ratio_of_multi_partition))
-                + OsUtils.OS_wrapper("number_partitions=" + String.valueOf(number_partitions))
-                + OsUtils.OS_wrapper("ratio_of_read=" + String.valueOf(ratio_of_read))
-                + OsUtils.OS_wrapper("NUM_ACCESSES=" + String.valueOf(NUM_ACCESSES))
-                + OsUtils.OS_wrapper("theta=" + String.valueOf(theta))
-                + OsUtils.OS_wrapper("NUM_ITEMS=" + String.valueOf(NUM_ITEMS));
+                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
+                + OsUtils.OS_wrapper("NUM_EVENTS=" + NUM_EVENTS)
+                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
+                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
+                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
+                + OsUtils.OS_wrapper("NUM_ACCESSES=" + NUM_ACCESSES)
+                + OsUtils.OS_wrapper("theta=" + theta)
+                + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
         File file = new File(event_path);
         file.mkdirs(); // If the directory containing the file and/or its parent(s) does not exist
         BufferedWriter w;
@@ -203,7 +201,7 @@ public class MBInitializer extends TableInitilizer {
         for (Object event : db.getEventManager().input_events) {
             MicroEvent microEvent = (MicroEvent) event;
             String sb =
-                    String.valueOf(microEvent.getBid()) +//0 -- bid
+                    microEvent.getBid() +//0 -- bid
                             split_exp +
                             microEvent.getPid() +//1
                             split_exp +

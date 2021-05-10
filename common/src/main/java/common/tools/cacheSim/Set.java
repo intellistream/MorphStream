@@ -8,8 +8,8 @@ import java.util.Queue;
  * @author Nick Gilbert
  */
 public class Set {
-    private Queue<Integer> blocks; //Data contained in the set
-    private int setLength; //Set associativity
+    private final Queue<Integer> blocks; //Data contained in the set
+    private final int setLength; //Set associativity
     /**
      * Constructor
      */

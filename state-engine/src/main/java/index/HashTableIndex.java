@@ -4,7 +4,7 @@ import storage.TableRecord;
 import java.util.HashMap;
 import java.util.Iterator;
 public class HashTableIndex extends BaseUnorderedIndex {
-    private HashMap<String, TableRecord> hash_index_ = new HashMap<>();
+    private final HashMap<String, TableRecord> hash_index_ = new HashMap<>();
     @Override
     public TableRecord SearchRecord(String primary_key) {
         return hash_index_.get(primary_key);

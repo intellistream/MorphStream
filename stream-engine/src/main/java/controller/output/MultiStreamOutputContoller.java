@@ -20,8 +20,8 @@ public class MultiStreamOutputContoller extends OutputController {
      * multiple stream map. < StreamId, DownOpId, PC >
      */
     private final HashMap<String, HashMap<String, PartitionController>> PClist;
-    private HashMap<String, PartitionController[]> collections;
-    private HashMap<String, Integer> counter;
+    private final HashMap<String, PartitionController[]> collections;
+    private final HashMap<String, Integer> counter;
     public MultiStreamOutputContoller(
             MultiStreamComponent op,
             HashMap<String, HashMap<String, PartitionController>> PClist) {

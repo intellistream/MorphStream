@@ -26,7 +26,7 @@ import static transaction.impl.TxnAccess.Access;
 public class TxnManagerTStream extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerTStream.class);
     TxnProcessingEngine instance;
-    private OperationChain[] localCache = new OperationChain[4];
+    private final OperationChain[] localCache = new OperationChain[4];
     private int cacheIndex = 0;
     public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw) {
         super(storageManager, thisComponentId, thisTaskId, thread_countw);

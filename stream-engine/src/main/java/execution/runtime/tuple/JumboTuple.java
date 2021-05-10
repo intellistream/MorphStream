@@ -14,13 +14,13 @@ import execution.runtime.tuple.impl.Tuple;
  * It's possible to make each Brisk.execution.runtime.tuple intelligent!!
  */
 public class JumboTuple implements Comparable<JumboTuple> {
-    private static Logger LOG = LoggerFactory.getLogger(JumboTuple.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JumboTuple.class);
     public final Message[] msg;
     protected final int sourceId;
     private final TopologyContext context;//context given by producer
     //	private final int targetTasks;//this is no longer required as we avoid the usage of multi-consumer based implementation.
     public int length;//length of batch
-    private long bid;
+    private final long bid;
     //context is not going to be serialized.
     public JumboTuple(JumboTuple clone) {
         this.bid = clone.bid;

@@ -17,7 +17,7 @@ import java.util.Set;
  */
 public class ShufflePartitionController extends PartitionController {
     private static final long serialVersionUID = 3586145026071955192L;
-    private static Logger LOG = LoggerFactory.getLogger(ShufflePartitionController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ShufflePartitionController.class);
     public ShufflePartitionController(TopologyComponent operator, TopologyComponent childOP, HashMap<Integer
             , ExecutionNode> downExecutor_list, int batch, ExecutionNode executor, Logger LOG, boolean profile, Configuration conf) {
         super(operator, childOP, downExecutor_list, batch, executor, LOG, profile, conf);

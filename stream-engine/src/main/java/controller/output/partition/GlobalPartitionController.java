@@ -19,7 +19,7 @@ import java.util.Set;
  */
 public class GlobalPartitionController extends PartitionController {
     private static final long serialVersionUID = -8130612976775054066L;
-    private static Logger LOG = LoggerFactory.getLogger(GlobalPartitionController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GlobalPartitionController.class);
     /*Global partition must have only one downstream executor*/
     public GlobalPartitionController(TopologyComponent operator, TopologyComponent childOP,
                                      HashMap<Integer, ExecutionNode> executionNodeHashMap, int batch, ExecutionNode executor, boolean profile, Configuration conf) {

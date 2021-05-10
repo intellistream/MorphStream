@@ -26,7 +26,7 @@ import static transaction.impl.TxnAccess.Access;
  */
 public class TxnManagerLock extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerLock.class);
-    private Metrics metrics = Metrics.getInstance();
+    private final Metrics metrics = Metrics.getInstance();
     public TxnManagerLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
     }

@@ -17,7 +17,7 @@ import java.util.Set;
  */
 public class MarkerShufflePartitionController extends ShufflePartitionController {
     private static final long serialVersionUID = 8345435833774292214L;
-    private static Logger LOG = LoggerFactory.getLogger(MarkerShufflePartitionController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MarkerShufflePartitionController.class);
     private final int marker_sink;//the last sink.
     ArrayList<Integer> extendedTargetId = new ArrayList<>();
     public MarkerShufflePartitionController(

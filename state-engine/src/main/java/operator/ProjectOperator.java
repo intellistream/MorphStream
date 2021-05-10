@@ -13,9 +13,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 public class ProjectOperator extends QueryOperator {
-    private List<String> columns;
-    private List<Integer> indices;
-    private boolean hasCount;
+    private final List<String> columns;
+    private final List<Integer> indices;
+    private final boolean hasCount;
     private int averageColumnIndex;
     private int sumColumnIndex;
     private boolean hasAggregate = false;
@@ -168,9 +168,9 @@ public class ProjectOperator extends QueryOperator {
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
     private class ProjectIterator implements Iterator<SchemaRecord> {
-        private Iterator<SchemaRecord> sourceIterator;
-        private MarkerRecord markerRecord;
-        private SchemaRecord nextRecord;
+        private final Iterator<SchemaRecord> sourceIterator;
+        private final MarkerRecord markerRecord;
+        private final SchemaRecord nextRecord;
         private boolean prevWasMarker;
         private List<DataBox> baseValues;
         public ProjectIterator() throws QueryPlanException, DatabaseException {

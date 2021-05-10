@@ -61,11 +61,9 @@ public class MeasureSink_latency extends BaseSink {
                 , config.getInt("runtimeInSeconds")
                 , metric_path, config.getDouble("predict", 0), size, thread_Id, false);
         profile = config.getBoolean("profile");
-        directory = System_Plan_Path + OsUtils.OS_wrapper("sesame")
+        directory = System_Plan_Path + OsUtils.OS_wrapper("TStreamPlus")
                 + OsUtils.OS_wrapper(configPrefix)
-                + OsUtils.OS_wrapper(String.valueOf(config.getInt("num_socket")))
-                + OsUtils.OS_wrapper(String.valueOf(config.getDouble("gc_factor")))
-        ;
+                + OsUtils.OS_wrapper(String.valueOf(config.getInt("num_socket")));
         File file = new File(directory);
         if (!file.mkdirs()) {
         }
@@ -164,7 +162,7 @@ public class MeasureSink_latency extends BaseSink {
                 }
                 Writer w = new BufferedWriter(f);
                 for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
-                    w.write(String.valueOf(latency.getPercentile(percentile) + "\n"));
+                    w.write(latency.getPercentile(percentile) + "\n");
                 }
                 w.write("=======Details=======");
                 w.write(latency.toString() + "\n");

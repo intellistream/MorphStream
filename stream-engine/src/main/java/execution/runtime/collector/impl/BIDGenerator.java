@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A singleton class
  */
 public class BIDGenerator {
-    private static BIDGenerator ourInstance = new BIDGenerator();
+    private static final BIDGenerator ourInstance = new BIDGenerator();
     private final AtomicInteger bid = new AtomicInteger();
     private BIDGenerator() {
         bid.set(0);

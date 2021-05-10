@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class LRUCache<k extends Long, v extends Page> extends LinkedHashMap<k, v> {
     private static final long serialVersionUID = 5742689647490393408L;
-    private int cacheSize;
+    private final int cacheSize;
     public LRUCache(int cacheSize) {
         super(16, 0.75f, true);
         this.cacheSize = cacheSize;

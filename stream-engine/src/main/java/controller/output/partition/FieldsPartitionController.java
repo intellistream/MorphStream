@@ -19,7 +19,7 @@ import java.util.Set;
  */
 public class FieldsPartitionController extends PartitionController {
     private static final long serialVersionUID = -6238113480852616028L;
-    private static Logger LOG = LoggerFactory.getLogger(FieldsPartitionController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FieldsPartitionController.class);
     protected final Fields input_fields;
     final Fields output_fields;
     private final int targetTasksize;

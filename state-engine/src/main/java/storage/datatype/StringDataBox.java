@@ -2,6 +2,7 @@ package storage.datatype;
 import org.apache.commons.lang.StringUtils;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 /**
  * Fixed-length String data type which serializes to UTF-8 bytes.
  */
@@ -35,7 +36,7 @@ public class StringDataBox extends DataBox {
      * @param buf the byte buffer source
      */
     public StringDataBox(byte[] buf) {
-        this.s = new String(buf, Charset.forName("UTF-8"));
+        this.s = new String(buf, StandardCharsets.UTF_8);
     }
     public StringDataBox(int len) {
         this.s = "";
@@ -87,11 +88,11 @@ public class StringDataBox extends DataBox {
     }
     @Override
     public byte[] getBytes() {
-        return this.s.getBytes(Charset.forName("UTF-8"));
+        return this.s.getBytes(StandardCharsets.UTF_8);
     }
     @Override
     public int getSize() {
-        return s.getBytes(Charset.forName("UTF-8")).length;
+        return s.getBytes(StandardCharsets.UTF_8).length;
     }
     @Override
     public String toString() {

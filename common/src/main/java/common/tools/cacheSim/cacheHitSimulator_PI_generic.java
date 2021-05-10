@@ -12,7 +12,7 @@ public class cacheHitSimulator_PI_generic {
     private static int start = 0;
     private static int cnt = 100;
     private static int app = 4;
-    private static boolean spilit_method = true;
+    private static final boolean spilit_method = true;
     private static int method = 0;//method 0: system method+user method. 1: user method only.
     private static LinkedList<record> clean_InTrace_results(int app) throws IOException {
         Scanner sc = null;

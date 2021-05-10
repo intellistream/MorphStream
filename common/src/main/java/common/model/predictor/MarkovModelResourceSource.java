@@ -11,7 +11,7 @@ import java.nio.charset.Charset;
  */
 public class MarkovModelResourceSource implements IMarkovModelSource {
     private static final Logger LOG = LoggerFactory.getLogger(MarkovModelResourceSource.class);
-    private Charset charset;
+    private final Charset charset;
     public MarkovModelResourceSource() {
         charset = Charset.defaultCharset();
     }

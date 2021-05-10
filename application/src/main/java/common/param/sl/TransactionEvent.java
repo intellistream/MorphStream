@@ -20,13 +20,13 @@ public class TransactionEvent extends TxnEvent {
     public volatile TableRecordRef src_asset_values = new TableRecordRef();
     public volatile TableRecordRef dst_asset_values = new TableRecordRef();
     public TransactionResult transaction_result;
-    private String sourceAccountId;
-    private String targetAccountId;
-    private String sourceBookEntryId;
-    private String targetBookEntryId;
-    private long accountTransfer;
-    private long bookEntryTransfer;
-    private long minAccountBalance;
+    private final String sourceAccountId;
+    private final String targetAccountId;
+    private final String sourceBookEntryId;
+    private final String targetBookEntryId;
+    private final long accountTransfer;
+    private final long bookEntryTransfer;
+    private final long minAccountBalance;
     /**
      * Creates a new TransactionEvent for the given accounts and book entries.
      */
