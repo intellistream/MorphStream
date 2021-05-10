@@ -3,7 +3,7 @@ package runners;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import common.CONTROL;
-import common.abstractRunner;
+import common.Runner;
 import common.collections.Configuration;
 import common.collections.Constants;
 import common.collections.OsUtils;
@@ -49,7 +49,7 @@ import static content.T_StreamContentImpl.T_STREAMCONTENT;
 import static content.ToContentImpl.TO_CONTENT;
 import static content.common.ContentCommon.content_type;
 
-public class TStreamRunner extends abstractRunner {
+public class TStreamRunner extends Runner {
 
     private static final Logger LOG = LoggerFactory.getLogger(TStreamRunner.class);
     private static Topology final_topology;
@@ -71,6 +71,7 @@ public class TStreamRunner extends abstractRunner {
     }
 
     public static void main(String[] args) {
+        LOG.info("Program Starts..");
         TStreamRunner runner = new TStreamRunner();
         JCommander cmd = new JCommander(runner);
         try {
@@ -449,7 +450,7 @@ public class TStreamRunner extends abstractRunner {
             FileWriter f = null;
             StringBuilder sb = new StringBuilder();
             try {
-                f = new FileWriter(new File(directory + OsUtils.OS_wrapper("breakdown(" + String.valueOf(checkpoint)) + ").txt"), true);
+                f = new FileWriter(new File(directory + OsUtils.OS_wrapper("breakdown(" + String.valueOf(checkpoint_interval)) + ").txt"), true);
                 Writer w = new BufferedWriter(f);
                 w.write(String.valueOf(tthread));
                 w.write(",");
@@ -479,7 +480,7 @@ public class TStreamRunner extends abstractRunner {
                 f.close();
                 if (config.getInt("CCOption", 0) == CCOption_TStream) {//extra info
                     f = new FileWriter(new File(directory
-                            + OsUtils.OS_wrapper("details(" + String.valueOf(tthread) + "," + String.valueOf(checkpoint)) + ").txt"), true);
+                            + OsUtils.OS_wrapper("details(" + String.valueOf(tthread) + "," + String.valueOf(checkpoint_interval)) + ").txt"), true);
                     w = new BufferedWriter(f);
                     for (int i = 0; i < tthread; i++) {
                         sb.append(String.valueOf(i));//which thread.

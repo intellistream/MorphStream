@@ -8,7 +8,7 @@ import java.util.concurrent.*;
  * Invokes {@link TriggerHandler#onTrigger()} after the duration.
  */
 public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
-    private static final Logger LOG = LoggerFactory.getLogger(org.apache.storm.windowing.TimeTriggerPolicy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TimeTriggerPolicy.class);
     private final TriggerHandler handler;
     private final ScheduledExecutorService executor;
     private final EvictionPolicy<T, ?> evictionPolicy;

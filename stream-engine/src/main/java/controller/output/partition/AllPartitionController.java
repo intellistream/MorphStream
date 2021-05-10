@@ -21,8 +21,8 @@ public class AllPartitionController extends PartitionController {
     private final int downExecutor_size;
     private Fields fields;
     public AllPartitionController(TopologyComponent operator, TopologyComponent childOP, HashMap<Integer, ExecutionNode> executionNodeHashMap
-            , int batch, ExecutionNode executor, boolean common, boolean profile, Configuration conf) {
-        super(operator, childOP, executionNodeHashMap, batch, executor, common, LOG, profile, conf);
+            , int batch, ExecutionNode executor, boolean profile, Configuration conf) {
+        super(operator, childOP, executionNodeHashMap, batch, executor, LOG, profile, conf);
         Set<Integer> setID = super.getDownExecutor_list().keySet();
         downExecutor_size = setID.size();
         targetTasks = setID.toArray(new Integer[setID.size()]);

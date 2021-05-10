@@ -17,8 +17,8 @@
  * #_
  */
 package common.datatype.util;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
+
+import execution.runtime.tuple.impl.Tuple;
 
 import java.io.Serializable;
 /**

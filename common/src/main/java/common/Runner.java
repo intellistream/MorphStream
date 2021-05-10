@@ -3,7 +3,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.internal.Lists;
 import common.collections.Constants;
 import common.collections.OsUtils;
-import common.tools.ZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,43 +14,63 @@ import java.util.Properties;
 /**
  * Created by I309939 on 7/30/2016.
  */
-public abstract class abstractRunner {
-    protected static final String RUN_LOCAL = "local";
-    protected static final String RUN_REMOTE = "remote";
-    private static final Logger LOG = LoggerFactory.getLogger(abstractRunner.class);
+public abstract class Runner implements IRunner {
+    private static final Logger LOG = LoggerFactory.getLogger(Runner.class);
     protected static String CFG_PATH = null;
-    @Parameter(names = {"--Fault_tolerance"}, description = "Fault_tolerance enable")
-    public boolean Fault_tolerance = false;
-    @Parameter(names = {"--disable_pushdown"}, description = "disable_pushdown, default is on")
+
+    /**
+     * Functional Parameters.
+     */
+    @Parameter(names = {"--fault_tolerance"}, description = "Enable or disable fault tolerance, it is disabled by default.")
+    boolean enable_fault_tolerance = false;
+
+    @Parameter(names = {"--transaction"}, description = "Enable or disable transactional state management, it is enabled by default.")
+    boolean enable_transaction = true;
+
+    /**
+     * System Tuning Parameters.
+     */
+    @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
+    public int CCOption = CCOption_TStream;
+
+    @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
+    public boolean enable_partition = false;
+
+    /**
+     * TStream Specific Parameters.
+     */
+    @Parameter(names = {"--disable_pushdown"}, description = "Push down write operations to engine, it is enabled by default.")
     public boolean disable_pushdown = false;
-    @Parameter(names = {"--partition"}, description = "partition database enable")
-    public boolean partition = false;
-    @Parameter(names = {"--transaction"}, description = "transaction enable")
-    public boolean transaction = true;
-    @Parameter(names = {"--measure"}, description = "measure enable")
-    public boolean measure = false;
-    @Parameter(names = {"--checkpoint"}, description = "checkpoint interval")
-    public double checkpoint = 500;// default checkpoint interval.
-    @Parameter(names = {"--NUM_ACCESS"}, description = "NUM_ACCESS per transaction")
-    public int NUM_ACCESS = 10;//
+
+    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (seconds)")
+    public double checkpoint_interval = 500;// default checkpoint interval.
+
+    /**
+     * Benchmarking Specific Parameters.
+     */
+    @Parameter(names = {"--measure"}, description = "enable measurement")
+    public boolean enable_measurement = false;
+
+    @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("tstreamplus") + OsUtils.OS_wrapper("data");
+    @Parameter(names = {"-mp"}, description = "Metric path", required = false)
+    public String metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
+    ;
+
+    /**
+     * Workload Specific Parameters.
+     */
+    @Parameter(names = {"-a", "--app"}, description = "The application to be executed", required = false)
+    public String application = "StreamLedger";
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 100_000;//
-    @Parameter(names = {"--CCOption"}, description = "CC options")
-    public int CCOption = 3;
-    //  int CCOption_LOCK = 0;
-    //  int CCOption_OrderLOCK = 1;
-    //  int CCOption_LWM = 2;
-    //  int CCOption_TStream = 3;
-    //  int CCOption_SStore = 4;
-    //  int CCOption_OTS = 5;//ordered timestamp not possible.
-    @Parameter(names = {"--backPressure"}, description = "backPressure")
-    public boolean backPressure = false;
-    @Parameter(names = {"--common"}, description = "common shared by consumers")
-    public boolean common = false;
+    @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
+    public int NUM_ACCESS = 10;//
+
     @Parameter(names = {"--linked"}, description = "linked")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "shared by multi producers")
@@ -144,14 +163,11 @@ public abstract class abstractRunner {
     public List<String> parameters = Lists.newArrayList();
     @Parameter(names = {"-m", "--mode"}, description = "Mode for running the topology")
     public String mode = RUN_LOCAL;
-    @Parameter(names = {"-a", "--app"}, description = "The application to be executed", required = false)
-    public String application = "StreamLedger";
     @Parameter(names = {"-t", "--Brisk.topology-name"}, required = false, description = "The name of the Brisk.topology")
     public String topologyName;
     @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
     public String configStr;
-    @Parameter(names = {"-mp"}, description = "Metric path", required = false)
-    public String metric_path = "";
+
     @Parameter(names = {"-bt"}, description = "fixed batch", required = false)
     public int batch = 100;
     @Parameter(names = {"--upperlimit"}, description = "Test upperlimit throughput")
@@ -174,8 +190,7 @@ public abstract class abstractRunner {
     public int totalEventsPerBatch = 1;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
     public int numberOfBatches = 1;
-    @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("tstreamplus") + OsUtils.OS_wrapper("data");
+
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 4;
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
@@ -187,29 +202,21 @@ public abstract class abstractRunner {
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
     public String idGenType = "uniform";
 
-    public abstractRunner() {
-//        if (OsUtils.isWindows()) {
-//            CFG_PATH = "\\config\\%s.properties";
-//            metric_path = "\\Documents\\sesame\\metric_output";
-//        } else {
-//            CFG_PATH = "/config/%s.properties";
-//            metric_path = "/sesame/metric_output";
-//        }
+    public Runner() {
         CFG_PATH = "/config/%s.properties";
-        System.out.println(String.format("Metric folder path %s.", metric_path));
+        LOG.info(String.format("Metric folder path %s.", metric_path));
     }
 
     public Properties loadProperties(String filename) throws IOException {
         Properties properties = new Properties();
-        InputStream is = abstractRunner.class.getResourceAsStream(filename);
+        InputStream is = Runner.class.getResourceAsStream(filename);
         properties.load(is);
         is.close();
         return properties;
     }
 
     public void configuration(HashMap<String, Object> config) {
-        metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
-
+        config.put("Fault_tolerance", enable_fault_tolerance);
         config.put("disable_pushdown", disable_pushdown);
         config.put("common", application);
         config.put("ratio_of_multi_partition", ratio_of_multi_partition);
@@ -252,14 +259,14 @@ public abstract class abstractRunner {
 //            config.put("num_cpu", OsUtils.TotalCores() / OsUtils.totalSockets());
             config.put("num_cpu", OsUtils.TotalCores() / 1);
         }
-        config.put("transaction", transaction);
-        config.put("Fault_tolerance", Fault_tolerance);
+        config.put("transaction", enable_transaction);
+
         if (CCOption == 4)//S-Store enabled.
             config.put("partition", true);
         else
-            config.put("partition", partition);
-        config.put("measure", measure);
-        config.put("checkpoint", checkpoint);
+            config.put("partition", enable_partition);
+        config.put("measure", enable_measurement);
+        config.put("checkpoint", checkpoint_interval);
         if (TP != -1)
             config.put("TP", TP);
         else
@@ -269,8 +276,6 @@ public abstract class abstractRunner {
         config.put("NUM_ACCESS", NUM_ACCESS);
         config.put("NUM_ITEMS", NUM_ITEMS);
         config.put("CCOption", CCOption);
-        config.put("backPressure", backPressure);
-        config.put("common", common);
         config.put("linked", linked);
         config.put("shared", shared);
         config.put("scale_factor", scale_factor);

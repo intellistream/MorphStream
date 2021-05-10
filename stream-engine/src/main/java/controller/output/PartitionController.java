@@ -1,9 +1,6 @@
 package controller.output;
 import common.collections.Configuration;
 import common.util.datatypes.StreamValues;
-import org.jctools.queues.MpscArrayQueue;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
 import components.TopologyComponent;
 import components.context.TopologyContext;
 import execution.ExecutionNode;
@@ -17,6 +14,9 @@ import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import execution.runtime.tuple.impl.msgs.IntDoubleDoubleMsg;
 import execution.runtime.tuple.impl.msgs.StringLongMsg;
 import execution.runtime.tuple.impl.msgs.StringMsg;
+import org.jctools.queues.MpscArrayQueue;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
 import queue.MPSCController;
 import queue.QueueController;
 import queue.SPSCController;
@@ -58,14 +58,13 @@ public abstract class PartitionController implements IPartitionController, Seria
      * @param downExecutor_list
      * @param batch_size
      * @param executionNode     if this is null, it is a shared PC, otherwise, it's unique to each executor.
-     * @param common
      * @param log
      * @param profile
      * @param conf
      */
     protected PartitionController(TopologyComponent operator,
                                   TopologyComponent childOP, HashMap<Integer, ExecutionNode> downExecutor_list
-            , int batch_size, ExecutionNode executionNode, boolean common, Logger log, boolean profile, Configuration conf) {
+            , int batch_size, ExecutionNode executionNode, Logger log, boolean profile, Configuration conf) {
         this.childOP = childOP;
         this.downExecutor_list = downExecutor_list;
         this.batch = batch_size;
@@ -93,10 +92,6 @@ public abstract class PartitionController implements IPartitionController, Seria
             for (ExecutionNode src : operator.getExecutorList()) {
                 collections[(src.getExecutorID() - firt_executor_Id)] = new Collections(src.getExecutorID(), downExecutor_list, batch_size);
             }
-            //			if (common) {
-//				LOG.info("MPMC implementation -- Queue is shared among producers and consumers.");
-//				controller = new MPMCController(downExecutor_list);
-//			} else {
             LOG.trace("MPSC implementation -- Queue is shared among multiple executors of the same producer.");
             controller = new MPSCController(downExecutor_list);
         } else {
@@ -104,20 +99,14 @@ public abstract class PartitionController implements IPartitionController, Seria
             collections = new Collections[1];
             context = new TopologyContext[1];
             collections[0] = new Collections(firt_executor_Id, downExecutor_list, batch_size);
-//			if (common) {
-//				LOG.info("SPMC implementation -- Queue is shared among multiple consumers");
-//				controller = new SPMCController(downExecutor_list);
-//			} else {
+
             LOG.trace("SPSC implementation -- Queue is unique to each producer and consumer");
             controller = new SPSCController(downExecutor_list);
         }
         PartitionController.profile = profile;
         int queue_size_per_core;
-//        if (enable_latency_measurement) {
-//            queue_size_per_core = 2;
-//        } else {
+
         queue_size_per_core = (int) (conf.getInt("targetHz") * conf.getDouble("checkpoint"));
-//        }
         threashold = queue_size_per_core - 1;//leave one space for watermark filling!
     }
     public String toString() {

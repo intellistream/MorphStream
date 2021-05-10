@@ -22,7 +22,7 @@ public class MarkerShufflePartitionController extends ShufflePartitionController
     ArrayList<Integer> extendedTargetId = new ArrayList<>();
     public MarkerShufflePartitionController(
             TopologyComponent operator, TopologyComponent childOP, int sinkID, HashMap<Integer, ExecutionNode> downExecutor_list, int batch, ExecutionNode executor, boolean common, boolean profile, Configuration conf) {
-        super(operator, childOP, downExecutor_list, batch, executor, common, LOG, profile, conf);
+        super(operator, childOP, downExecutor_list, batch, executor, LOG, profile, conf);
         Set<Integer> setID = super.getDownExecutor_list().keySet();
         targetTasks = setID.toArray(new Integer[setID.size()]);
         updateExtendedTargetId();

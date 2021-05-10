@@ -19,13 +19,13 @@ public class ShufflePartitionController extends PartitionController {
     private static final long serialVersionUID = 3586145026071955192L;
     private static Logger LOG = LoggerFactory.getLogger(ShufflePartitionController.class);
     public ShufflePartitionController(TopologyComponent operator, TopologyComponent childOP, HashMap<Integer
-            , ExecutionNode> downExecutor_list, int batch, ExecutionNode executor, boolean common, Logger LOG, boolean profile, Configuration conf) {
-        super(operator, childOP, downExecutor_list, batch, executor, common, LOG, profile, conf);
+            , ExecutionNode> downExecutor_list, int batch, ExecutionNode executor, Logger LOG, boolean profile, Configuration conf) {
+        super(operator, childOP, downExecutor_list, batch, executor, LOG, profile, conf);
         initilize();
     }
     public ShufflePartitionController(TopologyComponent operator, TopologyComponent childOP, HashMap<Integer
-            , ExecutionNode> downExecutor_list, int batch, ExecutionNode executor, boolean common, boolean profile, Configuration conf) {
-        super(operator, childOP, downExecutor_list, batch, executor, common, LOG, profile, conf);
+            , ExecutionNode> downExecutor_list, int batch, ExecutionNode executor, boolean profile, Configuration conf) {
+        super(operator, childOP, downExecutor_list, batch, executor, LOG, profile, conf);
         initilize();
     }
     public void initilize() {

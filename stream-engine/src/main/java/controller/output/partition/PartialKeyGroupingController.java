@@ -23,9 +23,10 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
     //	private Set<Integer> targetTasks;
     private long[] targetTaskStats;
     public PartialKeyGroupingController(
-            TopologyComponent operator, TopologyComponent childOP, HashMap<Integer, ExecutionNode> executionNodeHashMap,
-            Fields output_fields, Fields input_fields, int batch_size, ExecutionNode executor, boolean common, boolean profile, Configuration conf) {
-        super(operator, childOP, executionNodeHashMap, output_fields, input_fields, batch_size, executor, common, profile, conf);
+            TopologyComponent operator, TopologyComponent childOP, HashMap<Integer,
+            ExecutionNode> executionNodeHashMap,
+            Fields output_fields, Fields input_fields, int batch_size, ExecutionNode executor, boolean profile, Configuration conf) {
+        super(operator, childOP, executionNodeHashMap, output_fields, input_fields, batch_size, executor, profile, conf);
         targetTaskStats = new long[this.targetTasks.length];
     }
     public void initilize() {

@@ -23,9 +23,10 @@ public class FieldsPartitionController extends PartitionController {
     protected final Fields input_fields;
     final Fields output_fields;
     private final int targetTasksize;
-    public FieldsPartitionController(TopologyComponent operator, TopologyComponent childOP, HashMap<Integer, ExecutionNode> executionNodeHashMap,
-                                     Fields output_fields, Fields input_fields, int batch_size, ExecutionNode executor, boolean common, boolean profile, Configuration conf) {
-        super(operator, childOP, executionNodeHashMap, batch_size, executor, common, LOG, profile, conf);
+    public FieldsPartitionController(TopologyComponent operator, TopologyComponent childOP,
+                                     HashMap<Integer, ExecutionNode> executionNodeHashMap,
+                                     Fields output_fields, Fields input_fields, int batch_size, ExecutionNode executor, boolean profile, Configuration conf) {
+        super(operator, childOP, executionNodeHashMap, batch_size, executor, LOG, profile, conf);
         Set<Integer> setID = super.getDownExecutor_list().keySet();
         targetTasksize = setID.size();
         targetTasks = setID.toArray(new Integer[setID.size()]);
