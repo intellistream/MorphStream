@@ -29,16 +29,5 @@ public class SchemaRecordRef {
         this.record = record;
         cnt++;
     }
-    /**
-     * Read how many times.
-     * @param name
-     */
-//    public void inc(String name) {
-//        cnt++;
-//
-//        if (cnt != 1) {
-//            System.nanoTime();
-//        }
-//        this.name = name;
-//    }
+
 }

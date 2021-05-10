@@ -79,7 +79,7 @@ public abstract class Runner implements IRunner {
     public int tthread = 4;// default total execution threads
 
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
-    public int CCOption = CCOption_TStream;
+    public int CCOption = CCOption_SStore;
 
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
@@ -121,7 +121,7 @@ public abstract class Runner implements IRunner {
      * G_S,
      */
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
-    public int totalEventsPerBatch = 100;
+    public int totalEventsPerBatch = 100000;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
     public int numberOfBatches = 1;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
@@ -149,7 +149,7 @@ public abstract class Runner implements IRunner {
     }
 
     public void initializeCfg(HashMap<String, Object> config) {
-        config.put("Fault_tolerance", enable_fault_tolerance);
+        config.put("enable_fault_tolerance", enable_fault_tolerance);
         config.put("queue_size", queue_size);
         config.put("disable_pushdown", disable_pushdown);
         config.put("common", application);

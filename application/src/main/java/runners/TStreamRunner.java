@@ -291,6 +291,7 @@ public class TStreamRunner extends Runner {
                 dependency_outoforder_overhead_time = dependency_outoforder_overhead_time / tthread;
                 db_access_time = db_access_time / tthread;
 
+                if (CCOption == CCOption_TStream) {
 //            LOG.info("******* STATS BEGIN *******");
 //
 //            LOG.info(String.format("Time spent in pre transaction                                             : %.3f%%", (pre_txn_time/total)*100.0f));
@@ -310,27 +311,30 @@ public class TStreamRunner extends Runner {
 //            LOG.info(String.format("Time spent on iterative processing                                        : %.3f%%", (iterative_processing_useful/total)*100.0f));
 //            LOG.info(String.format("Threads wait time and other overhead                                      : %.3f%%", ((txn_processing-calculate_levels-iterative_processing_useful)/total)*100.0f));
 //            LOG.info("**************************************");
-                LOG.info("******* STATS BEGIN IN SECONDS *******");
 
-                LOG.info(String.format("Total time  (per tuple)                                                              : %.3f seconds", (total) / 1000000000.0f));
-                LOG.info(String.format("Time spent in pre transaction           (per tuple)                                     : %.3f seconds", (pre_txn_time / 1000000000.0f)));
-                LOG.info(String.format("Time spent in transaction processing      (per tuple)                                 : %.3f seconds", (txn_total / 1000000000.0f)));
-                LOG.info(String.format("Other time (read input, dump results to a file)        (per tuple)                      : %.3f seconds", ((total - pre_txn_time - txn_total) / 1000000000.0f)));
+                    LOG.info("******* STATS BEGIN IN SECONDS *******");
 
-                LOG.info("******* PRE_TXN BREAKDOWN *******");
-                LOG.info(String.format("Time spent creating Operation Chains                                      : %.3f seconds", (create_oc_time / 1000000000.0f)));
-                LOG.info(String.format("Time spent recording data dependencies                                    : %.3f seconds", (dependency_checking_time / 1000000000.0f)));
-                LOG.info(String.format("Time spent of recording data dependencies for out of transaction checking : %.3f seconds", (dependency_outoforder_overhead_time / 1000000000.0f)));
+                    LOG.info(String.format("Total time  (per tuple)                                                              : %.3f seconds", (total) / 1000000000.0f));
+                    LOG.info(String.format("Time spent in pre transaction           (per tuple)                                     : %.3f seconds", (pre_txn_time / 1000000000.0f)));
+                    LOG.info(String.format("Time spent in transaction processing      (per tuple)                                 : %.3f seconds", (txn_total / 1000000000.0f)));
+                    LOG.info(String.format("Other time (read input, dump results to a file)        (per tuple)                      : %.3f seconds", ((total - pre_txn_time - txn_total) / 1000000000.0f)));
 
-                LOG.info("******* TRANSACTION PROCESSING BREAKDOWN *******");
-                LOG.info(String.format("Time spent processing transactions                                        : %.3f seconds", (txn_processing / 1000000000.0f)));
-                LOG.info(String.format("Time spent on state accessing                                             : %.3f seconds", (state_access / 1000000000.0f)));
-                LOG.info(String.format("Time spent calculating levels                                             : %.3f seconds", (calculate_levels / 1000000000.0f)));
-                LOG.info(String.format("Time spent on iterative processing                                        : %.3f seconds", (iterative_processing_useful / 1000000000.0f)));
-                LOG.info(String.format("Threads wait time and other overhead                                      : %.3f seconds", ((txn_processing - calculate_levels - iterative_processing_useful) / 1000000000.0f)));
+                    LOG.info("******* PRE_TXN BREAKDOWN *******");
+                    LOG.info(String.format("Time spent creating Operation Chains                                      : %.3f seconds", (create_oc_time / 1000000000.0f)));
+                    LOG.info(String.format("Time spent recording data dependencies                                    : %.3f seconds", (dependency_checking_time / 1000000000.0f)));
+                    LOG.info(String.format("Time spent of recording data dependencies for out of transaction checking : %.3f seconds", (dependency_outoforder_overhead_time / 1000000000.0f)));
 
-                LOG.info("******* STATS ENDS *******");
-                //used in TSTREAM.
+                    LOG.info("******* TRANSACTION PROCESSING BREAKDOWN *******");
+                    LOG.info(String.format("Time spent processing transactions                                        : %.3f seconds", (txn_processing / 1000000000.0f)));
+                    LOG.info(String.format("Time spent on state accessing                                             : %.3f seconds", (state_access / 1000000000.0f)));
+                    LOG.info(String.format("Time spent calculating levels                                             : %.3f seconds", (calculate_levels / 1000000000.0f)));
+                    LOG.info(String.format("Time spent on iterative processing                                        : %.3f seconds", (iterative_processing_useful / 1000000000.0f)));
+                    LOG.info(String.format("Threads wait time and other overhead                                      : %.3f seconds", ((txn_processing - calculate_levels - iterative_processing_useful) / 1000000000.0f)));
+
+                    LOG.info("******* STATS ENDS *******");
+                    //used in TSTREAM.
+                }
+
                 String directory = metric_path
                         + OsUtils.OS_wrapper("TStreamPlus")
                         + OsUtils.OS_wrapper(topology.getPrefix())
@@ -394,6 +398,23 @@ public class TStreamRunner extends Runner {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                LOG.info("===OVERALL===");
+
+                LOG.info("Overhead on one input_event:" + String.format("%.2f", overhead));
+                LOG.info("Stream Processing on one input_event:" + String.format("%.2f", stream_processing));
+                LOG.info("TXN Processing on one input_event:" + String.format("%.2f", txn_processing));
+
+                LOG.warn("Due to NUMA, useful ratio of TStream may be very inaccurate. It is currently an estimation. Fix it later.");
+                LOG.info("===BREAKDOWN TXN===");
+                LOG.info("Useful ratio:\t" + String.format("%.2f", useful_ratio));
+                LOG.info("Index ratio:\t" + String.format("%.2f", index_ratio));
+                LOG.info("Wait ratio:\t" + String.format("%.2f", wait_ratio));
+                LOG.info("lock ratio:\t" + String.format("%.2f", lock_ratio));
+
+                LOG.info("====Details ====");
+                LOG.info("\n" + sb.toString());
+
             }//end of profile.
 
         }

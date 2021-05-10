@@ -84,8 +84,6 @@ public abstract class TableInitilizer {
     public abstract void creates_Table(Configuration config);
     public abstract void loadDB(int thread_id, int NUMTasks);
     public abstract void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks);
-    public abstract void loadData_Central(double scale_factor, double theta, int partition_interval, SpinLock[] spinlock_);
-    public abstract void loadData_Central(double scale_factor, double theta);
     public int get_pid(int partition_interval, int key) {
         return (int) Math.floor(key / (double) partition_interval);//NUM_ITEMS / tthread;
     }

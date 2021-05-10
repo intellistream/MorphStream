@@ -120,50 +120,6 @@ public class GSInitializer extends TableInitilizer {
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
-    /**
-     * Centrally Prepared data.
-     *
-     * @param scale_factor
-     * @param theta
-     * @param partition_interval
-     * @param spinlock_
-     */
-    public void loadData_Central(double scale_factor, double theta, int partition_interval, SpinLock[] spinlock_) {
-        int elements = (int) (NUM_ITEMS * scale_factor);
-        int elements_per_socket;
-//        setLocalAlloc();
-        if (OsUtils.isMac())
-            elements_per_socket = elements;
-        else
-            elements_per_socket = elements / 4;
-        int i = 0;
-        for (int key = 0; key < elements; key++) {
-            int pid = get_pid(partition_interval, key);
-            String value = GenerateValue(key);
-            assert value.length() == VALUE_LEN;
-            insertMicroRecord(key, value, pid, spinlock_);
-            i++;
-        }
-    }
-    /**
-     * Centrally Prepared data.
-     *
-     * @param scale_factor
-     * @param theta
-     */
-    public void loadData_Central(double scale_factor, double theta) {
-        int elements = (int) (NUM_ITEMS * scale_factor);
-        int elements_per_socket;
-//        setLocalAlloc();
-        elements_per_socket = elements / 4;
-        int i = 0;
-        for (int key = 0; key < elements; key++) {
-            String value = GenerateValue(key);
-            assert value.length() == VALUE_LEN;
-            insertMicroRecord(key, value);
-            i++;
-        }
-    }
     @Override
     public boolean Prepared(String file) throws IOException {
         double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
