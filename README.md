@@ -1,10 +1,6 @@
-# TStreamPlus
+# TStream
 
 ![Java CI with Maven](https://github.com/ShuhaoZhangTony/TStreamPlus/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
 
-This project aims at building scalable concurrent stateful stream processing engine on modern hardware with rich
-functionalities including
+This project aims at building scalable transactional stream processing engine on modern hardware
 
-- deterministic stream processing.
-- streaming graph processing.
-- real time machine learning.
