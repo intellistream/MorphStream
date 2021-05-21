@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.SplittableRandom;
 
-import static common.CONTROL.NUM_EVENTS;
 import static common.CONTROL.enable_states_partition;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.partioned_store;
@@ -170,7 +169,7 @@ public abstract class TableInitilizer {
     }
 
     public void prepare_input_events(String file_path) throws IOException {
-        prepare_input_events(file_path, NUM_EVENTS);
+        prepare_input_events(file_path, config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
     }
 
     public abstract void store(String file_path) throws IOException;

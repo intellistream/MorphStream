@@ -18,7 +18,7 @@ import execution.runtime.tuple.impl.Tuple;
 import java.util.LinkedList;
 import java.util.Set;
 
-import static common.CONTROL.NUM_EVENTS;
+
 import static common.CONTROL.enable_debug;
 import static common.Constants.DEFAULT_STREAM_ID;
 /**
@@ -31,10 +31,12 @@ public class OutputCollector<T> {
     public final OutputController sc;
     private final ExecutionNode executor;
     private final MetaGroup meta;
+    private final int totalEvents;
     private boolean no_wait = true;
     private final long last_emit = 0;
     private long bid_counter;
-    public OutputCollector(ExecutionNode executor, TopologyContext context) {
+    public OutputCollector(ExecutionNode executor, TopologyContext context, int TotalEvents) {
+        totalEvents = TotalEvents;
         int taskId = context.getThisTaskIndex();
         this.executor = executor;
         this.sc = executor.getController();
@@ -50,6 +52,8 @@ public class OutputCollector<T> {
         } else {
             LogManager.getLogger(LOG.getName()).setLevel(Level.INFO);
         }
+
+
     }
     public boolean isNo_wait() {
         return no_wait;
@@ -439,7 +443,7 @@ public class OutputCollector<T> {
         if (enable_debug)
             LOG.info(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " to " + input.getSourceComponent());
         final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
-        if (input.getBID() != NUM_EVENTS)
+        if (input.getBID() != totalEvents)
             src.op.callback(executorID, marker);
         //non-blocking ack.
 //		Runnable r = () -> {

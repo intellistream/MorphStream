@@ -33,13 +33,14 @@ public class GSCombo extends SPOUTCombo {
     public GSCombo() {
         super(LOG, 0);
     }
+
     public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) throws FileNotFoundException {
         double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
         int number_partitions = Math.min(tthread, config.getInt("number_partitions"));
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         String event_path = Event_Path
                 + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + NUM_EVENTS)
+                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"))
                 + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
                 + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
                 + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
@@ -50,9 +51,9 @@ public class GSCombo extends SPOUTCombo {
             throw new FileNotFoundException();
         long start = System.nanoTime();
         Scanner sc;
+        int i = 0;
         try {
             sc = new Scanner(new File(event_path + OsUtils.OS_wrapper(file_name)));
-            int i = 0;
             Object event = null;
             for (int j = 0; j < taskId; j++) {
                 sc.nextLine();

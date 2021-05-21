@@ -49,7 +49,7 @@ public class boltThread extends executorThread {
         super(e, conf, context, cpu, node, latch, threadMap);
         bolt = (BoltExecutor) e.op;
         scheduler = e.getInputStreamController();
-        this.collector = new OutputCollector(e, context);
+        this.collector = new OutputCollector(e, context,conf.getInt("totalEventsPerBatch") * conf.getInt("numberOfBatches"));
         batch = conf.getInt("batch", 100);
         bolt.setExecutionNode(e);
         bolt.setclock(clock);
