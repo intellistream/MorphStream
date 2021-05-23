@@ -376,9 +376,7 @@ public class TStreamRunner extends Runner {
                         w.close();
                         f.close();
 
-
                         LOG.info("===OVERALL===");
-
                         LOG.info("Overhead on one input_event:" + String.format("%.2f", overhead));
                         LOG.info("Stream Processing on one input_event:" + String.format("%.2f", stream_processing));
                         LOG.info("TXN Processing on one input_event:" + String.format("%.2f", txn_processing));
