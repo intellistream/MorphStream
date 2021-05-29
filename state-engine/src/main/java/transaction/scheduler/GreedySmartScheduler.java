@@ -34,7 +34,7 @@ public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDepen
     }
 
     @Override
-    public void submitOcs(int threadId, Collection<OperationChain> ocs) {
+    public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
 
         for (OperationChain oc : ocs) {
 

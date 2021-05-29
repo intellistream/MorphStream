@@ -29,7 +29,7 @@ public class BaseLineScheduler implements IScheduler {
     }
 
     @Override
-    public void submitOcs(int threadId, Collection<OperationChain> ocs) {
+    public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
 
         totalOcsToSchedule[threadId] += ocs.size();
         HashMap<Integer, List<OperationChain>> currentThreadOCsBucket = dLevelBasedOCBuckets.get(threadId);

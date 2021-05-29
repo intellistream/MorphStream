@@ -25,7 +25,7 @@ public class SharedWorkloadScheduler implements IScheduler {
     }
 
     @Override
-    public void submitOcs(int threadId, Collection<OperationChain> ocs) {
+    public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
 
         int localMaxDLevel = 0;
         HashMap<Integer, List<OperationChain>> dLevelBasedOCBucketsPerThread = new HashMap<>();
