@@ -66,15 +66,15 @@ public class SharedWorkloadScheduler implements IScheduler {
     }
 
     @Override
-    public OperationChain next(int threadId) {
+    public OperationChain nextOperationChain(int threadId) {
 
         OperationChain oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         if (oc != null)
             return oc;
 
-        if (!areAllOCsScheduled(threadId)) {
+        if (!finishedScheduling(threadId)) {
             while (oc == null) {
-                if (areAllOCsScheduled(threadId))
+                if (finishedScheduling(threadId))
                     break;
                 currentDLevelToProcess[threadId] += 1;
                 oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
@@ -96,7 +96,7 @@ public class SharedWorkloadScheduler implements IScheduler {
     }
 
     @Override
-    public boolean areAllOCsScheduled(int threadId) {
+    public boolean finishedScheduling(int threadId) {
         return currentDLevelToProcess[threadId] == maxDLevel &&
                 dLevelBasedOCBuckets.get(maxDLevel).isEmpty();
     }

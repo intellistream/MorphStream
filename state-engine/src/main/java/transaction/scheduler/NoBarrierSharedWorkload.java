@@ -10,10 +10,10 @@ public class NoBarrierSharedWorkload extends SharedWorkloadScheduler {
     }
 
     @Override
-    public OperationChain next(int threadId) {
+    public OperationChain nextOperationChain(int threadId) {
         OperationChain oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         while (oc == null) {
-            if (areAllOCsScheduled(threadId))
+            if (finishedScheduling(threadId))
                 break;
             currentDLevelToProcess[threadId] += 1;
             oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);

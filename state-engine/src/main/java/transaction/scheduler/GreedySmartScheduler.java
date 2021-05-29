@@ -37,7 +37,6 @@ public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDepen
     public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
 
         for (OperationChain oc : ocs) {
-
             if (!oc.hasDependency() && oc.hasDependents())
                 withDependents.add(oc);
             else if (!oc.hasDependency())
@@ -57,10 +56,10 @@ public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDepen
     }
 
     @Override
-    public OperationChain next(int threadId) {
+    public OperationChain nextOperationChain(int threadId) {
         OperationChain oc = getOcForThreadAndDLevel(threadId);
         while (oc == null) {
-            if (areAllOCsScheduled(threadId))
+            if (finishedScheduling(threadId))
                 break;
             oc = getOcForThreadAndDLevel(threadId);
         }
@@ -93,7 +92,7 @@ public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDepen
     }
 
     @Override
-    public boolean areAllOCsScheduled(int threadId) {
+    public boolean finishedScheduling(int threadId) {
         return totalProcessed.get() == totalSubmitted.get();
     }
 

@@ -10,10 +10,10 @@ public class NoBarrierRoundRobinScheduler extends RoundRobinScheduler {
     }
 
     @Override
-    public OperationChain next(int threadId) {
+    public OperationChain nextOperationChain(int threadId) {
         OperationChain oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         while (oc == null) {
-            if (areAllOCsScheduled(threadId))
+            if (finishedScheduling(threadId))
                 break;
             currentDLevelToProcess[threadId] += 1;
 //                indexOfNextOCToProcess[threadId] = threadId;

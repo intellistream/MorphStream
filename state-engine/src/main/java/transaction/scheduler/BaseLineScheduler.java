@@ -45,12 +45,12 @@ public class BaseLineScheduler implements IScheduler {
     }
 
     @Override
-    public OperationChain next(int threadId) {
+    public OperationChain nextOperationChain(int threadId) {
         OperationChain oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
 
         if (oc != null) {
             scheduledOcsCount[threadId] += 1;
-        } else if (!areAllOCsScheduled(threadId)) {
+        } else if (!finishedScheduling(threadId)) {
             while (oc == null) {
                 currentDLevelToProcess[threadId] += 1;
                 oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
@@ -80,7 +80,7 @@ public class BaseLineScheduler implements IScheduler {
     }
 
     @Override
-    public boolean areAllOCsScheduled(int threadId) {
+    public boolean finishedScheduling(int threadId) {
         return scheduledOcsCount[threadId] == totalOcsToSchedule[threadId];
     }
 
