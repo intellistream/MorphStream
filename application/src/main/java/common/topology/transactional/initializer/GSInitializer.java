@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static common.CONTROL.NUM_EVENTS;
 import static common.CONTROL.enable_states_partition;
 import static common.Constants.Event_Path;
 import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
@@ -127,7 +126,7 @@ public class GSInitializer extends TableInitilizer {
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         String event_path = Event_Path
                 + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + NUM_EVENTS)
+                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"))
                 + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
                 + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
                 + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
@@ -143,7 +142,7 @@ public class GSInitializer extends TableInitilizer {
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         String event_path = Event_Path
                 + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + NUM_EVENTS)
+                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"))
                 + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
                 + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
                 + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)

@@ -375,17 +375,16 @@ public class TStreamRunner extends Runner {
                         w.write(sb.toString());
                         w.close();
                         f.close();
+
+                        LOG.info("===OVERALL===");
+                        LOG.info("Overhead on one input_event:" + String.format("%.2f", overhead));
+                        LOG.info("Stream Processing on one input_event:" + String.format("%.2f", stream_processing));
+                        LOG.info("TXN Processing on one input_event:" + String.format("%.2f", txn_processing));
+
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
-                LOG.info("===OVERALL===");
-
-                LOG.info("Overhead on one input_event:" + String.format("%.2f", overhead));
-                LOG.info("Stream Processing on one input_event:" + String.format("%.2f", stream_processing));
-                LOG.info("TXN Processing on one input_event:" + String.format("%.2f", txn_processing));
-
                 LOG.warn("Due to NUMA, useful ratio of TStream may be very inaccurate. It is currently an estimation. Fix it later.");
                 LOG.info("===BREAKDOWN TXN===");
                 LOG.info("Useful ratio:\t" + String.format("%.2f", useful_ratio));

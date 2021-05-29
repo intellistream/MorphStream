@@ -66,7 +66,7 @@ public class MeasureSink extends BaseSink {
         }
         SINK_CONTROL.getInstance().config();
         tthread = this.config.getInt("tthread");
-        exe = NUM_EVENTS;
+        exe = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         LOG.info("expected last events = " + exe);
     }
     @Override

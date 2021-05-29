@@ -135,7 +135,7 @@ public class ExecutionManager {
     }
     private executorThread launchSpout_SingleCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                                   int node, CountDownLatch latch) {
-        LOG.info("Launch Spout:" + e.getOP() + " on node:" + node);
+        LOG.info("Launch" + e.getOP() + " on node:" + node);
         long[] cpu;
         if (!conf.getBoolean("NAV", true)) {
             cpu = AC.requirePerCore(node);

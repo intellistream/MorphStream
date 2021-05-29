@@ -38,7 +38,7 @@ public class spoutThread extends executorThread {
                        HashMap<Integer, executorThread> threadMap, Clock clock) {
         super(e, conf, context, cpu, node, latch, threadMap);
         this.sp = (BasicSpoutBatchExecutor) e.op;
-        this.collector = new OutputCollector(e, context);
+        this.collector = new OutputCollector(e, context, conf.getInt("totalEventsPerBatch") * conf.getInt("numberOfBatches"));
         batch = conf.getInt("batch", 100);
         sp.setExecutionNode(e);
         sp.setclock(clock);

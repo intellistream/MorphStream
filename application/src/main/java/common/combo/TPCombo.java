@@ -116,7 +116,7 @@ public class TPCombo extends SPOUTCombo {
             for (int j = 0; j < taskId; j++) {
                 sc.nextLine();
             }
-            while (sc.hasNextLine() && bid < NUM_EVENTS) {
+            while (sc.hasNextLine() && bid < config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches")) {
                 String record = sc.nextLine();
                 Object event = create_new_event(record, bid);
                 if (event == null) {

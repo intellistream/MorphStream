@@ -12,13 +12,18 @@ import java.util.Properties;
 public abstract class Runner implements IRunner {
     private static final Logger LOG = LoggerFactory.getLogger(Runner.class);
     protected static String CFG_PATH = null;
+    /**
+     * Functional Parameters.
+     */
+    @Parameter(names = {"--fault_tolerance"}, description = "Enable or disable fault tolerance, it is disabled by default.")
+    boolean enable_fault_tolerance = false;
 
     /**
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "StreamLedger";
-    @Parameter(names = {"-t", "--Brisk.topology-name"}, required = false, description = "The name of the Brisk.topology")
+    public String application = "GrepSum";
+    @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
@@ -42,12 +47,6 @@ public abstract class Runner implements IRunner {
     public int size_tuple = 0;
 
     /**
-     * Functional Parameters.
-     */
-    @Parameter(names = {"--fault_tolerance"}, description = "Enable or disable fault tolerance, it is disabled by default.")
-    boolean enable_fault_tolerance = false;
-
-    /**
      * System Tuning Parameters.
      */
 
@@ -58,7 +57,7 @@ public abstract class Runner implements IRunner {
     public boolean shared = true;
 
     @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
-    public int batch = 100;
+    public int batch = 1;
 
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)
     public int queue_size = 10000;
@@ -76,7 +75,7 @@ public abstract class Runner implements IRunner {
     public int TP = 4;// default TP threads
 
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 4;// default total execution threads
+    public int tthread = 1;// default total execution threads
 
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_SStore;
