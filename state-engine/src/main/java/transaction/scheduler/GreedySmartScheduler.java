@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-
+/**
+ * Author: Aqif Hamid
+ * Concrete impl of greedy smart scheduler
+ */
 public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDependencyResolvedListener {
 
     private ConcurrentLinkedQueue<OperationChain> leftOvers;
@@ -68,7 +71,7 @@ public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDepen
         return oc;
     }
 
-    // Best one so far
+
     protected OperationChain getOcForThreadAndDLevel(int threadId) {
 
         OperationChain oc = withDependents.poll();

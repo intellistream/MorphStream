@@ -2,7 +2,10 @@ package transaction.scheduler;
 
 import common.OperationChain;
 import profiler.MeasureTools;
-
+/**
+ * Author: Aqif Hamid
+ * Concrete impl of greedy hashed scheduler
+ */
 public class NoBarrierBaseLineScheduler extends BaseLineScheduler {
 
     public NoBarrierBaseLineScheduler(int tp) {

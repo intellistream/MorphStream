@@ -1,5 +1,9 @@
 package transaction.scheduler;
 
+/**
+ * Author: Aqif Hamid
+ * A single point schedulers creation factory.
+ */
 public class SchedulerFactory {
 
     private final int totalThread;

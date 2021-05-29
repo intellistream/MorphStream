@@ -2,7 +2,10 @@ package transaction.scheduler;
 
 import common.OperationChain;
 import profiler.MeasureTools;
-
+/**
+ * Author: Aqif Hamid
+ * Concrete impl of greedy round robin scheduler
+ */
 public class NoBarrierRoundRobinScheduler extends RoundRobinScheduler {
 
     public NoBarrierRoundRobinScheduler(int tp) {
