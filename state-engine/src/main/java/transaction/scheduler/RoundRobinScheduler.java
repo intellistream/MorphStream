@@ -11,7 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-// schedules Ocs in round robin fashion for each level.
+/**
+ * Author: Aqif Hamid
+ * Concrete impl of barriered round robin scheduler
+ */
 public class RoundRobinScheduler implements IScheduler {
 
     protected ConcurrentHashMap<Integer, List<OperationChain>> dLevelBasedOCBuckets;

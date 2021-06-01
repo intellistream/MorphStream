@@ -2,7 +2,10 @@ package transaction.scheduler;
 
 import common.OperationChain;
 import profiler.MeasureTools;
-
+/**
+ * Author: Aqif Hamid
+ * Concrete impl of barriered shared workload scheduler
+ */
 public class NoBarrierSharedWorkload extends SharedWorkloadScheduler {
 
     public NoBarrierSharedWorkload(int tp) {

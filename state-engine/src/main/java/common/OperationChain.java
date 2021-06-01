@@ -6,6 +6,10 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Author: Aqif Hamid
+ * An Operation Chain represents a single set of operations executed by a thread.
+ */
 public class OperationChain implements Comparable<OperationChain>, Operation.IOpConflictResolutionListener {
 
     public OperationChain next;

@@ -4,7 +4,7 @@ import java.util.Collection;
 
 /**
  * Author: Aqif Hamid
- * The customized execution scheduler.
+ * The customized execution scheduler abstraction.
  */
 public interface IScheduler {
     void submitOperationChains(int threadId, Collection<OperationChain> ocs);

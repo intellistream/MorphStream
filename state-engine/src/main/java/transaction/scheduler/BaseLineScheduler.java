@@ -8,6 +8,10 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Author: Aqif Hamid
+ * Concrete impl of barriered hashed scheduler
+ */
 public class BaseLineScheduler implements IScheduler {
 
     protected ConcurrentHashMap<Integer, HashMap<Integer, List<OperationChain>>> dLevelBasedOCBuckets;

@@ -8,7 +8,10 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
+/**
+ * Author: Aqif Hamid
+ * Concrete impl of barriered shared workload scheduler
+ */
 public class SharedWorkloadScheduler implements IScheduler {
 
     protected ConcurrentHashMap<Integer, Queue<OperationChain>> dLevelBasedOCBuckets;
