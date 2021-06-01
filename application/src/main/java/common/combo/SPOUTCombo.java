@@ -79,9 +79,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
             if (counter < num_events_per_thread) {
 
                 Object event = myevents[counter];
-                if(event==null){
-                    LOG.error("?");
-                }
+//                if(event==null){
+//                    LOG.error("?");
+//                }
                 long bid = mybids[counter];
                 if (CONTROL.enable_latency_measurement)
                     generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());

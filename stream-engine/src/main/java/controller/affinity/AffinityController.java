@@ -24,18 +24,15 @@ public class AffinityController {
         this.sockets = conf.getInt("num_socket", 8);
         this.cores = conf.getInt("num_cpu", 35);
         mapping_node = Platform.getNodes(conf.getInt("machine"));
-//		Integer[] sockets_usage = new Integer[8];
         cpu_pnt.put(0, 1);
-        for (int i = 1; i < 8; i++) { //TODO: Aqif: What is cpu_pnt and why we are looping upto 8
-            cpu_pnt.put(i, 0);
-//			sockets_usage[i] = 0;
+        for (int i = 1; i < this.sockets; i++) {
+            cpu_pnt.put(i, 0);//zero number of threads on i socket.
         }
-        //LOG.info("NUM of Sockets:" + sockets + "\tNUM of Cores:" + cores);
     }
     //depends on the server..
     public void clear() {
         cpu_pnt.put(0, 1);
-        for (int i = 1; i < 8; i++) {
+        for (int i = 1; i < this.sockets; i++) {
             cpu_pnt.put(i, 0);
         }
     }
