@@ -7,13 +7,14 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
 /**
- * Created by I309939 on 11/8/2016.
+ * This class is used for set up affinity of each thread in the system.
+ * By default, one thread is pin to one CPU core.
  */
 public class AffinityController {
     private final static Logger LOG = LoggerFactory.getLogger(AffinityController.class);
     private final Configuration conf;
-    //(socket, core pointer)
     private final ArrayList<Integer>[] mapping_node;
     private final Map<Integer, Integer> cpu_pnt = new HashMap<>();
     private final int cores;
@@ -45,11 +46,6 @@ public class AffinityController {
     public long[] require(int node) {
         if (node != -1) {
             return requirePerSocket(node);
-//            sockets_usage[node]++;
-//            if (sockets_usage[node] > cores) {
-//                return requirePerSocket(node);
-//            } else
-//                return requirePerCore(node);
         }
         return requirePerSocket(node);
     }
@@ -66,9 +62,7 @@ public class AffinityController {
             for (int i = 0; i < num_cpu; i++) {
                 int cnt = cpu_pnt.get(node) % num_cpu;//make sure less than configurable cpus per socket.
                 try {
-//                    LOG.info("cnt:" + cnt);
                     ArrayList<Integer> list = this.mapping_node[node];
-//                    LOG.info("cores on this node:" + list);
                     cpus[i] = (list.get(cnt));
                 } catch (Exception e) {
                     LOG.info("Not available CPUs...?" + e.getMessage());
@@ -91,7 +85,6 @@ public class AffinityController {
             return require();
         } else {
             long[] cpus = new long[1];
-            //LOG.DEBUG("request a core from Node:" + node);
             int cnt = cpu_pnt.get(node);
             try {
                 cpus[0] = (this.mapping_node[node].get(cnt));
@@ -99,14 +92,11 @@ public class AffinityController {
                 LOG.info("No available CPUs");
                 System.exit(-1);
             }
-//			LOG.info("cnt:" + cnt + " pick CPU" + cpus[0] + " from nodes: " + node);
             if ((conf.getBoolean("profile", false) || conf.getBoolean("NAV", false)) && cnt == 17) {
                 offset++;
-//				LOG.info("offset ++");
             } else {
                 cpu_pnt.put(node, (cnt + 1));//select the next core at next time.
             }
-            //LOG.DEBUG("Got CPU:" + Arrays.toString(cpus));
             return cpus;
         }
     }
