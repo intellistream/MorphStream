@@ -93,14 +93,13 @@ public class ExecutionManager {
                 default:
                     throw new UnhandledCaseException("type not recognized");
             }
-//                if (previous_op == null || e.operator != previous_op) {
             if (!(conf.getBoolean("monte", false) || conf.getBoolean("simulation", false))) {
                 assert thread != null;
                 while (!thread.isReady()) {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException ex) {
-//                            ex.printStackTrace();
+                            ex.printStackTrace();
                     }
                 }
             }
@@ -143,7 +142,6 @@ public class ExecutionManager {
             cpu = new long[1];
         }
 
-//		LOG.info("Launch spout on cpu:" + Arrays.show(cpu));
         return launchSpout_InCore(e, context, conf, node, cpu, latch);
     }
     private executorThread launchBolt_SingleCore(ExecutionNode e, TopologyContext context, Configuration conf,

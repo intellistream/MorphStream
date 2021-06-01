@@ -82,23 +82,6 @@ public class WordCountBolt extends MapBolt {
             collector.emit(objects);
         }
     }
-    @Override
-    public void profile_execute(JumboTuple in) {
-        int bound = in.length;
-        for (int i = 0; i < bound; i++) {
-            char[] word = in.getCharArray(0, i);
-            int key = Arrays.hashCode(word);
-            long v = counts.getOrDefault(key, 0L);
-            if (v == 0) {
-                counts.put(key, 1L);
-                collector.emit_nowait(word, 1L);
-            } else {
-                long value = v + 1L;
-                counts.put(key, value);
-                collector.emit_nowait(word, value);
-            }
-        }
-    }
     public void display() {
         double size_state;
 //		if (OsUtils.isUnix()) {

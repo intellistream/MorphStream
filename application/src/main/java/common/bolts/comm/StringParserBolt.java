@@ -52,13 +52,4 @@ public class StringParserBolt extends MapBolt {
             collector.emit(0, streamValues);
         }
     }
-    @Override
-    public void profile_execute(JumboTuple in) throws InterruptedException {
-        int bound = in.length;
-        for (int i = 0; i < bound; i++) {
-            String string = in.getString(0, i);
-            String emit = parser.parse(string);
-            collector.emit_nowait(emit);
-        }
-    }
 }

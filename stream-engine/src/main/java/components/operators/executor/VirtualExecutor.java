@@ -1,5 +1,4 @@
 package components.operators.executor;
-import common.collections.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
@@ -9,8 +8,6 @@ import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Marker;
 import faulttolerance.Writer;
 import topology.TopologyBuilder;
-import common.OrderLock;
-import common.OrderValidate;
 
 import java.util.Map;
 public class VirtualExecutor implements IExecutor {
@@ -28,22 +25,6 @@ public class VirtualExecutor implements IExecutor {
         return -1;
     }
     @Override
-    public double get_read_selectivity() {
-        return 0;
-    }
-    @Override
-    public Map<String, Double> get_input_selectivity() {
-        return null;
-    }
-    @Override
-    public Map<String, Double> get_output_selectivity() {
-        return null;
-    }
-    @Override
-    public double get_branch_selectivity() {
-        return 0;
-    }
-    @Override
     public String getConfigPrefix() {
         return null;
     }
@@ -59,21 +40,7 @@ public class VirtualExecutor implements IExecutor {
         return 0;
     }
     @Override
-    public double getLoops() {
-        return 0;
-    }
-    @Override
-    public boolean isScalable() {
-        return false;
-    }
-    @Override
-    public Integer default_scale(Configuration conf) {
-        return 1;
-    }
-    @Override
     public void configureWriter(Writer writer) {
-    }
-    public void configureLocker(OrderLock lock, OrderValidate orderValidate) {
     }
     @Override
     public void clean_state(Marker marker) {
@@ -81,9 +48,6 @@ public class VirtualExecutor implements IExecutor {
     @Override
     public int getStage() {
         return -1;
-    }
-    @Override
-    public void earlier_clean_state(Marker marker) {
     }
     @Override
     public void cleanup() {
@@ -96,11 +60,6 @@ public class VirtualExecutor implements IExecutor {
     }
     public void execute(JumboTuple in) throws InterruptedException {
         LOG.info("Should not being called.");
-    }
-    public boolean IsStateful() {
-        return false;
-    }
-    public void forceStop() {
     }
     public boolean isStateful() {
         return false;

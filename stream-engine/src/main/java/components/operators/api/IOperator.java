@@ -16,7 +16,17 @@ public interface IOperator extends Serializable {
      */
     void declareOutputFields(OutputFieldsDeclarer declarer);
     void prepare(Map stormConf, TopologyContext context, OutputCollector collector);
+
+    /**
+     * This is the API to client application code.
+     * This can be overwrite by specific operator to do some initialization work.
+     *
+     * @param thread_Id
+     * @param thisTaskId
+     * @param graph
+     */
     void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph);
+
     void cleanup();
     void callback(int callee, Marker marker);
 }

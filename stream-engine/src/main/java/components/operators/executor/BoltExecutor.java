@@ -11,8 +11,6 @@ import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.Writer;
 import common.Clock;
 import db.DatabaseException;
-import common.OrderLock;
-import common.OrderValidate;
 
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
@@ -24,7 +22,6 @@ public abstract class BoltExecutor implements IExecutor {
     }
     public abstract void execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException;
     public abstract void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException;
-    public abstract void profile_execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException;
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         op.prepare(stormConf, context, collector);
@@ -35,22 +32,6 @@ public abstract class BoltExecutor implements IExecutor {
     @Override
     public int getID() {
         return op.getId();
-    }
-    @Override
-    public double get_read_selectivity() {
-        return op.read_selectivity;
-    }
-    @Override
-    public Map<String, Double> get_input_selectivity() {
-        return op.input_selectivity;
-    }
-    @Override
-    public Map<String, Double> get_output_selectivity() {
-        return op.output_selectivity;
-    }
-    @Override
-    public double get_branch_selectivity() {
-        return op.branch_selectivity;
     }
     @Override
     public String getConfigPrefix() {
@@ -68,18 +49,6 @@ public abstract class BoltExecutor implements IExecutor {
     public double getResults() {
         return op.getResults();
     }
-    @Override
-    public double getLoops() {
-        return op.loops;
-    }
-    @Override
-    public boolean isScalable() {
-        return op.scalable;
-    }
-    @Override
-    public Integer default_scale(Configuration conf) {
-        return op.default_scale(conf);
-    }
     public void setExecutionNode(ExecutionNode e) {
         op.setExecutionNode(e);
     }
@@ -88,25 +57,12 @@ public abstract class BoltExecutor implements IExecutor {
             op.state.writer = writer;
         }
     }
-    public void configureLocker(OrderLock lock, OrderValidate orderValidate) {
-        op.lock = lock;
-        op.orderValidate = orderValidate;
-    }
-    @Override
-    public void earlier_clean_state(Marker marker) {
-    }
     @Override
     public void clean_state(Marker marker) {
         ((Checkpointable) op).ack_checkpoint(marker);
     }
     public int getStage() {
         return op.getFid();
-    }
-    public boolean IsStateful() {
-        return op.IsStateful();
-    }
-    public void forceStop() {
-        op.forceStop();
     }
     public void setclock(Clock clock) {
         this.op.clock = clock;

@@ -59,15 +59,4 @@ public class SplitSentenceBolt extends splitBolt {
             }
         }
     }
-    public void profile_execute(JumboTuple in) throws InterruptedException {
-//		final long bid = in.getBID();
-        int bound = in.length;
-        for (int i = 0; i < bound; i++) {
-            String value = in.getString(0, i);
-            String[] split = value.split(regex);
-            for (String word : split) {
-                collector.emit_nowait(word.toCharArray());
-            }
-        }
-    }
 }

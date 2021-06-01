@@ -65,8 +65,6 @@ public abstract class Operator implements IOperator {
     protected Configuration config;
     protected ExecutionNode executor;//who owns this Spout
     Logger LOG;
-    int partition_count_;
-    int partition_id_;
     boolean Stateful = false;
     private double window = 1;//by default window fieldSize is 1, means per-tuple execution
     private double results = 0;
@@ -114,9 +112,6 @@ public abstract class Operator implements IOperator {
         Event_frequency = event_frequency;
         window = w;
         fields = new HashMap<>();
-    }
-    public Map<String, Fields> getOutputFields() {
-        return fields;
     }
     public void setStateful() {
         Stateful = true;
@@ -178,9 +173,6 @@ public abstract class Operator implements IOperator {
     public void setWindow(double window) {
         this.window = window;
     }
-    public double getLoops() {
-        return loops;
-    }
     public double getResults() {
         return results;
     }
@@ -199,13 +191,15 @@ public abstract class Operator implements IOperator {
         setContext(context);
         this.collector = collector;
         base_initialize(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
-//		txn_context = new TxnContext(thisTaskId, fid, bid);
     }
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
     }
     public void loadDB(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         graph.topology.tableinitilizer.loadDB(thread_Id, this.context.getNUMTasks());
+    }
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph){
+        LOG.info("The operator" + executor.getOP() + "does not require initialization");
     }
     /**
      * Base init will always be called.
@@ -228,7 +222,6 @@ public abstract class Operator implements IOperator {
             if (state == null) {
                 LOG.info("The operator" + executor.getOP() + " is declared as checkpointable " +
                         "but no state is initialized");
-//				System.exit(-1);
             } else {
                 if (!enable_app_combo) {
                     state.source_state_ini(executor);
@@ -237,19 +230,9 @@ public abstract class Operator implements IOperator {
             }
         }
         db = getContext().getDb();
-//		TxnManagerLWM txnManagerLWM = new TxnManagerLWM(db.getStorageManager());
         initialize(thread_Id, thisTaskId, graph);
     }
-    /**
-     * This is the API to client application code.
-     * This can be overwrite by specific operator to do some initialization work.
-     *
-     * @param thread_Id
-     * @param thisTaskId
-     * @param graph
-     */
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-    }
+
     public void setExecutionNode(ExecutionNode e) {
         this.executor = e;
     }
@@ -279,12 +262,6 @@ public abstract class Operator implements IOperator {
     }
     public int getFid() {
         return fid;
-    }
-    public boolean IsStateful() {
-        return Stateful;
-    }
-    public void forceStop() {
-        forceStop = true;
     }
     public double getEmpty() {
         return 0;

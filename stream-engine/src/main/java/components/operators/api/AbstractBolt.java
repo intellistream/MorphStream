@@ -5,7 +5,6 @@ import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import db.DatabaseException;
 
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 /**
@@ -13,9 +12,6 @@ import java.util.concurrent.BrokenBarrierException;
  */
 public abstract class AbstractBolt extends Operator {
     private static final long serialVersionUID = 7108855719083101853L;
-    private AbstractBolt(Logger log, boolean byP, double event_frequency, double w) {
-        super(log, byP, event_frequency, w);
-    }
     AbstractBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity, double branch_selectivity
             , double read_selectivity, double event_frequency, double w) {
         super(log, input_selectivity, output_selectivity, branch_selectivity, read_selectivity, false, event_frequency, w);
@@ -43,36 +39,5 @@ public abstract class AbstractBolt extends Operator {
      */
     public void callback(int callee, Marker marker) {
         state.callback_bolt(callee, marker, executor);
-    }
-    /**
-     * used for ordered execution.
-     *
-     * @param in
-     */
-    public void _execute(Tuple in) {
-    }
-    /**
-     * used for ordered execution.
-     *
-     * @param in
-     */
-    public void _execute(JumboTuple in) {
-    }
-    /**
-     * not sure if this is still required if we force emit one tuple by one tuple.
-     *
-     * @param gap
-     */
-    protected void clean_gap(LinkedList<Long> gap) {
-//		for (int i = 0; i < gap.size(); i++) {
-//			Long g = gap.remove(i);
-//			if (this.collector.getBID(POSITION_REPORTS_STREAM_ID) <= g) {
-//				gap.add(i, g);
-//				return;
-//			}
-//		}
-    }
-    public void profile_execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
-        execute(in);
     }
 }

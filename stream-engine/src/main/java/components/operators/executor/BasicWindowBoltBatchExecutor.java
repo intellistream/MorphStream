@@ -141,10 +141,6 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
     public void execute(Tuple in) throws InterruptedException {
         //not supported yet.
     }
-    @Override
-    public void profile_execute(JumboTuple in) {
-        //not suppported yet.
-    }
     private Long getWindowStartTs(Long endTs) {
         Long res = null;
         if (endTs != null && windowLengthDuration != null) {

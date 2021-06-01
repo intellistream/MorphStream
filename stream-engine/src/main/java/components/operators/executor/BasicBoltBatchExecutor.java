@@ -33,7 +33,4 @@ public class BasicBoltBatchExecutor extends BoltExecutor {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         _op.execute(in);
     }
-    public void profile_execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
-        _op.profile_execute(in);
-    }
 }
