@@ -45,7 +45,6 @@ public class BaseLineScheduler implements IScheduler {
                 currentThreadOCsBucket.put(dLevel, new ArrayList<>());
             currentThreadOCsBucket.get(dLevel).add(oc);
         }
-
     }
 
     @Override

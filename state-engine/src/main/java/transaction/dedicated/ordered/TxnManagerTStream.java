@@ -1,10 +1,10 @@
 package transaction.dedicated.ordered;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import db.DatabaseException;
-import common.meta.MetaTypes;
 import common.Operation;
 import common.OperationChain;
+import common.meta.MetaTypes;
+import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import storage.*;
 import storage.datatype.DataBox;
@@ -14,7 +14,9 @@ import transaction.function.Function;
 import transaction.impl.TxnContext;
 import utils.SOURCE_CONTROL;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -238,17 +240,22 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         MeasureTools.END_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
     }
 
-    private void checkDataDependencies(OperationChain dependent, Operation op, int thread_Id, String table_name, String key, String[] condition_sourceTable, String[] condition_source) {
+    private void checkDataDependencies(OperationChain dependent, Operation op, int thread_Id, String table_name,
+                                       String key, String[] condition_sourceTable, String[] condition_source) {
         for (int index = 0; index < condition_source.length; index++) {
             if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
-                continue;
+                continue;// no need to check data dependency on a key itself.
             OperationChain dependency = getCachedOcFor(condition_sourceTable[index], condition_source[index]);
-            // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is  enough.
-            if (dependency.getOperations().isEmpty() || dependency.getOperations().first().bid >= op.bid) { // if dependencies first op's bid is >= current bid, then it has no operation that we depend upon, but it could be a potential dependency in case we have delayed transactions (events)
+            // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
+            if (dependency.getOperations().isEmpty() || dependency.getOperations().first().bid >= op.bid) {
+                // if dependencies first op's bid is >= current bid, then it has no operation that we depend upon,
+                // but it could be a potential dependency in case we have delayed transactions (events)
                 // if dependency has no operations on it or no operation with id < current operation id.
-                // we will like to record it as potential future dependency, if a delayed operation with id < current bid arrives
+                // we will like to record it as potential future dependency, if a delayed operation with id < current bid
+                // arrives
                 dependency.addPotentialDependent(dependent, op);
-            } else { // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
+            } else {
+                // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
                 dependent.addDependency(op, dependency); // record dependency
             }
         }
