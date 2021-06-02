@@ -6,7 +6,7 @@ import profiler.MeasureTools;
  * Author: Aqif Hamid
  * Concrete impl of greedy hashed scheduler
  */
-public class NoBarrierBaseLineScheduler extends BaseLineScheduler {
+public class NoBarrierBaseLineScheduler extends LayeredHashScheduler {
 
     public NoBarrierBaseLineScheduler(int tp) {
         super(tp);

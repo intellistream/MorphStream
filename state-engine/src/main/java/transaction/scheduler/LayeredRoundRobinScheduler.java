@@ -5,31 +5,22 @@ import profiler.MeasureTools;
 import utils.SOURCE_CONTROL;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Author: Aqif Hamid
- * Concrete impl of barriered round robin scheduler
+ * Concrete impl of Layered round robin scheduler
  */
-public class RoundRobinScheduler implements IScheduler {
+public class LayeredRoundRobinScheduler extends LayeredScheduler<List<OperationChain>> implements IScheduler {
 
-    protected ConcurrentHashMap<Integer, List<OperationChain>> dLevelBasedOCBuckets;
-
-    protected int[] currentDLevelToProcess;
     protected int[] indexOfNextOCToProcess;
-
     protected int totalThreads;
     protected Integer maxDLevel;
 
-    public RoundRobinScheduler(int tp) {
-        dLevelBasedOCBuckets = new ConcurrentHashMap();
-        currentDLevelToProcess = new int[tp];
+    public LayeredRoundRobinScheduler(int tp) {
+        super(tp);
         indexOfNextOCToProcess = new int[tp];
-
         totalThreads = tp;
         for (int threadId = 0; threadId < tp; threadId++) {
             indexOfNextOCToProcess[threadId] = threadId;

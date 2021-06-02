@@ -12,17 +12,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Author: Aqif Hamid
  * Concrete impl of barriered shared workload scheduler
  */
-public class SharedWorkloadScheduler implements IScheduler {
+public class SharedWorkloadScheduler extends LayeredScheduler<Queue<OperationChain>> implements IScheduler {
 
-    protected ConcurrentHashMap<Integer, Queue<OperationChain>> dLevelBasedOCBuckets;
-
-    protected int[] currentDLevelToProcess;
     protected int totalThreads;
     protected Integer maxDLevel;
 
     public SharedWorkloadScheduler(int tp) {
-        dLevelBasedOCBuckets = new ConcurrentHashMap();
-        currentDLevelToProcess = new int[tp];
+        super(tp);
         totalThreads = tp;
         maxDLevel = 0;
     }

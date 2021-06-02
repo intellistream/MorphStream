@@ -6,7 +6,7 @@ import profiler.MeasureTools;
  * Author: Aqif Hamid
  * Concrete impl of greedy round robin scheduler
  */
-public class NoBarrierRoundRobinScheduler extends RoundRobinScheduler {
+public class NoBarrierRoundRobinScheduler extends LayeredRoundRobinScheduler {
 
     public NoBarrierRoundRobinScheduler(int tp) {
         super(tp);

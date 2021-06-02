@@ -2,30 +2,28 @@ package transaction.scheduler;
 
 import common.OperationChain;
 import profiler.MeasureTools;
-import utils.SOURCE_CONTROL;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import utils.SOURCE_CONTROL;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Author: Aqif Hamid
- * Concrete impl of barriered hashed scheduler
+ * Concrete impl of Layered hashed scheduler
  */
-public class BaseLineScheduler implements IScheduler {
-
-    protected ConcurrentHashMap<Integer, HashMap<Integer, List<OperationChain>>> dLevelBasedOCBuckets;
+public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, List<OperationChain>>> implements IScheduler {
 
     protected int[] scheduledOcsCount;
     protected int[] totalOcsToSchedule;
-    protected int[] currentDLevelToProcess;
 
-    public BaseLineScheduler(int tp) {
-
-        dLevelBasedOCBuckets = new ConcurrentHashMap(); // TODO: make sure this will not cause trouble with multithreaded access.
+    public LayeredHashScheduler(int tp) {
+        super(tp);
         scheduledOcsCount = new int[tp];
         totalOcsToSchedule = new int[tp];
-        currentDLevelToProcess = new int[tp];
 
         for (int threadId = 0; threadId < tp; threadId++) {
             dLevelBasedOCBuckets.put(threadId, new HashMap<>());
@@ -40,7 +38,6 @@ public class BaseLineScheduler implements IScheduler {
         for (OperationChain oc : ocs) {
             oc.updateDependencyLevel();
             int dLevel = oc.getDependencyLevel();
-
             if (!currentThreadOCsBucket.containsKey(dLevel))
                 currentThreadOCsBucket.put(dLevel, new ArrayList<>());
             currentThreadOCsBucket.get(dLevel).add(oc);
@@ -57,7 +54,6 @@ public class BaseLineScheduler implements IScheduler {
             while (oc == null) {
                 currentDLevelToProcess[threadId] += 1;
                 oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
-
                 MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(currentDLevelToProcess[threadId]);

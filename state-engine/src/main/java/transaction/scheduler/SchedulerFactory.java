@@ -17,10 +17,10 @@ public class SchedulerFactory {
         switch (schedulerType) {
 
             case BL:
-                scheduler = new BaseLineScheduler(totalThread);
+                scheduler = new LayeredHashScheduler(totalThread);
                 break;
             case RR:
-                scheduler = new RoundRobinScheduler(totalThread);
+                scheduler = new LayeredRoundRobinScheduler(totalThread);
                 break;
             case SW:
                 scheduler = new SharedWorkloadScheduler(totalThread);
