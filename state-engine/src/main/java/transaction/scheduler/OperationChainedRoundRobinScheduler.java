@@ -4,11 +4,12 @@ import common.OperationChain;
 import profiler.MeasureTools;
 /**
  * Author: Aqif Hamid
- * Concrete impl of barriered shared workload scheduler
+ * Concrete impl of Operation Chained round robin scheduler
+ * Share the same submit logic of LayeredRR.
  */
-public class NoBarrierSharedWorkload extends SharedWorkloadScheduler {
+public class OperationChainedRoundRobinScheduler extends LayeredRoundRobinScheduler {
 
-    public NoBarrierSharedWorkload(int tp) {
+    public OperationChainedRoundRobinScheduler(int tp) {
         super(tp);
     }
 
@@ -22,7 +23,7 @@ public class NoBarrierSharedWorkload extends SharedWorkloadScheduler {
             oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         }
         MeasureTools.BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
-        while (oc != null && oc.hasDependency()) ; // wait for dependency resolution
+        while (oc != null && oc.hasDependency()) ;
         MeasureTools.END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
         return oc;
     }

@@ -1,6 +1,7 @@
 package common;
 
 import transaction.dedicated.ordered.MyList;
+import transaction.scheduler.IOnDependencyResolvedListener;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -185,9 +186,6 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
             return -1;
     }
 
-    public interface IOnDependencyResolvedListener {
-        void onDependencyResolvedListener(int threadId, OperationChain oc);
-    }
     public class PotentialDependencyInfo implements Comparable<PotentialDependencyInfo> {
         public OperationChain oc;
         public Operation op;

@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Author: Aqif Hamid
  * Concrete impl of greedy smart scheduler
  */
-public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDependencyResolvedListener {
+public class GreedySmartScheduler implements IScheduler, IOnDependencyResolvedListener {
 
     private ConcurrentLinkedQueue<OperationChain> leftOvers;
     private ConcurrentLinkedQueue<OperationChain> withDependents;
@@ -70,7 +70,6 @@ public class GreedySmartScheduler implements IScheduler, OperationChain.IOnDepen
             totalProcessed.incrementAndGet();
         return oc;
     }
-
 
     protected OperationChain getOcForThreadAndDLevel(int threadId) {
 

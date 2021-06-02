@@ -26,13 +26,13 @@ public class SchedulerFactory {
                 scheduler = new SharedWorkloadScheduler(totalThread);
                 break;
             case NB_RR:
-                scheduler = new NoBarrierRoundRobinScheduler(totalThread);
+                scheduler = new OperationChainedRoundRobinScheduler(totalThread);
                 break;
             case NB_BL:
-                scheduler = new NoBarrierBaseLineScheduler(totalThread);
+                scheduler = new OperationChainedHashScheduler(totalThread);
                 break;
             case NB_SW:
-                scheduler = new NoBarrierSharedWorkload(totalThread);
+                scheduler = new OperationChainedSharedWorkload(totalThread);
                 break;
             case G_S:
                 scheduler = new GreedySmartScheduler(totalThread);
