@@ -352,28 +352,21 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-
         MeasureTools.BEGIN_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
         Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
         for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
             instance.getScheduler().submitOperationChains(thread_Id, tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
         }
         MeasureTools.END_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
-
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-
         instance.start_evaluation(thread_Id, mark_ID);
-
         for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
             tableHolderInRange.rangeMap.get(thread_Id).holder_v1.clear();
         }
-
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
         MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-
     }
-
 }
