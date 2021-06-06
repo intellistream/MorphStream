@@ -1,20 +1,21 @@
-package transaction.scheduler;
+package transaction.scheduler.obsolete;
 
 import common.OperationChain;
 import profiler.MeasureTools;
 /**
  * Author: Aqif Hamid
- * Concrete impl of Operation Chained shared workload scheduler
- * Share the same submit logic of LayeredWorkload.
+ * Concrete impl of Operation Chained hashed scheduler
+ * Share the same submit logic of LayeredHash.
  */
-public class OperationChainedSharedWorkload extends SharedWorkloadScheduler {
+public class OperationChainedHashScheduler extends LayeredHashScheduler {
 
-    public OperationChainedSharedWorkload(int tp) {
+    public OperationChainedHashScheduler(int tp) {
         super(tp);
     }
 
     @Override
     public OperationChain nextOperationChain(int threadId) {
+
         OperationChain oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         while (oc == null) {
             if (finishedScheduling(threadId))
@@ -23,8 +24,11 @@ public class OperationChainedSharedWorkload extends SharedWorkloadScheduler {
             oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         }
         MeasureTools.BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
-        while (oc != null && oc.hasDependency()) ; // wait for dependency resolution
+        while (oc != null && oc.hasDependency()) ; // Wait for dependency resolution
         MeasureTools.END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
+
+        if (oc != null)
+            scheduledOcsCount[threadId] += 1;
         return oc;
     }
 

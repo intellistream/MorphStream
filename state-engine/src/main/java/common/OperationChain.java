@@ -1,7 +1,7 @@
 package common;
 
 import transaction.dedicated.ordered.MyList;
-import transaction.scheduler.IOnDependencyResolvedListener;
+import transaction.scheduler.obsolete.IOnDependencyResolvedListener;
 
 import java.util.*;
 import java.util.concurrent.*;

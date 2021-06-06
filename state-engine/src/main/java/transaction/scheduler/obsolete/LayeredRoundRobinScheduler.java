@@ -1,25 +1,30 @@
-package transaction.scheduler;
+package transaction.scheduler.obsolete;
 
 import common.OperationChain;
 import profiler.MeasureTools;
+import transaction.scheduler.IScheduler;
 import utils.SOURCE_CONTROL;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+
 /**
  * Author: Aqif Hamid
- * Concrete impl of barriered shared workload scheduler
+ * Concrete impl of Layered round robin scheduler
  */
-public class SharedWorkloadScheduler extends LayeredScheduler<Queue<OperationChain>> implements IScheduler {
+public class LayeredRoundRobinScheduler extends LayeredScheduler<List<OperationChain>> implements IScheduler {
 
+    protected int[] indexOfNextOCToProcess;
     protected int totalThreads;
     protected Integer maxDLevel;
 
-    public SharedWorkloadScheduler(int tp) {
+    public LayeredRoundRobinScheduler(int tp) {
         super(tp);
+        indexOfNextOCToProcess = new int[tp];
         totalThreads = tp;
+        for (int threadId = 0; threadId < tp; threadId++) {
+            indexOfNextOCToProcess[threadId] = threadId;
+        }
         maxDLevel = 0;
     }
 
@@ -50,10 +55,10 @@ public class SharedWorkloadScheduler extends LayeredScheduler<Queue<OperationCha
 
         for (int dLevel : dLevelBasedOCBucketsPerThread.keySet())
             if (!dLevelBasedOCBuckets.containsKey(dLevel))
-                dLevelBasedOCBuckets.putIfAbsent(dLevel, new ConcurrentLinkedQueue<>());
+                dLevelBasedOCBuckets.putIfAbsent(dLevel, new ArrayList<>());
 
         for (int dLevel : dLevelBasedOCBucketsPerThread.keySet()) {
-            Queue<OperationChain> dLevelList = dLevelBasedOCBuckets.get(dLevel);
+            List<OperationChain> dLevelList = dLevelBasedOCBuckets.get(dLevel);
             MeasureTools.BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
             synchronized (dLevelList) {
                 MeasureTools.END_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
@@ -76,7 +81,9 @@ public class SharedWorkloadScheduler extends LayeredScheduler<Queue<OperationCha
                 if (finishedScheduling(threadId))
                     break;
                 currentDLevelToProcess[threadId] += 1;
+//                indexOfNextOCToProcess[threadId] = threadId;
                 oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
+
                 MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
@@ -87,17 +94,25 @@ public class SharedWorkloadScheduler extends LayeredScheduler<Queue<OperationCha
     }
 
     protected OperationChain getOcForThreadAndDLevel(int threadId, int dLevel) {
-        Queue<OperationChain> ocs = dLevelBasedOCBuckets.get(dLevel);
+        List<OperationChain> ocs = dLevelBasedOCBuckets.get(dLevel);
         OperationChain oc = null;
-        if (ocs != null)
-            oc = ocs.poll(); // TODO: This might be costly, maybe we should stop removing and using a counter or use a synchronized queue?
+        int indexOfOC = indexOfNextOCToProcess[threadId];
+        if (ocs != null) {
+            if (ocs.size() > indexOfOC) {
+                oc = ocs.get(indexOfOC);
+                indexOfNextOCToProcess[threadId] = indexOfOC + totalThreads;
+            } else {
+                indexOfNextOCToProcess[threadId] = indexOfOC - ocs.size();
+            }
+
+        }
+
         return oc;
     }
 
     @Override
     public boolean finishedScheduling(int threadId) {
-        return currentDLevelToProcess[threadId] == maxDLevel &&
-                dLevelBasedOCBuckets.get(maxDLevel).isEmpty();
+        return currentDLevelToProcess[threadId] > maxDLevel;
     }
 
     @Override
@@ -112,10 +127,14 @@ public class SharedWorkloadScheduler extends LayeredScheduler<Queue<OperationCha
 
     @Override
     public void reset() {
+
         dLevelBasedOCBuckets.clear();
-        for (int lop = 0; lop < currentDLevelToProcess.length; lop++) {
-            currentDLevelToProcess[lop] = 0;
+
+        for (int threadId = 0; threadId < totalThreads; threadId++) {
+            indexOfNextOCToProcess[threadId] = threadId;
+            currentDLevelToProcess[threadId] = 0;
         }
+
         maxDLevel = 0;
     }
 

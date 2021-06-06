@@ -1,15 +1,15 @@
-package transaction.scheduler;
+package transaction.scheduler.obsolete;
 
 import common.OperationChain;
 import profiler.MeasureTools;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import transaction.scheduler.IScheduler;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Author: Aqif Hamid

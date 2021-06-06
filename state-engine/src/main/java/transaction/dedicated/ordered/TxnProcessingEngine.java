@@ -13,7 +13,8 @@ import storage.datatype.IntDataBox;
 import storage.datatype.ListDoubleDataBox;
 import transaction.function.*;
 import transaction.scheduler.*;
-import transaction.scheduler.SchedulerFactory.SCHEDULER_TYPE;
+import transaction.scheduler.obsolete.SchedulerFactory;
+import transaction.scheduler.obsolete.SchedulerFactory.SCHEDULER_TYPE;
 
 import java.io.Closeable;
 import java.util.*;
@@ -93,7 +94,7 @@ public final class TxnProcessingEngine {
     }
     public void engine_init(Integer first_exe, Integer last_exe, Integer stage_size, int tp, String schedulerType) {
 
-        scheduler = new SchedulerFactory(tp).CreateScheduler(SCHEDULER_TYPE.valueOf(schedulerType));
+        scheduler = new SchedulerFactory(tp).CreateScheduler(SchedulerFactory.SCHEDULER_TYPE.valueOf(schedulerType));
 
         this.first_exe = first_exe;
         this.last_exe = last_exe;
@@ -376,7 +377,7 @@ public final class TxnProcessingEngine {
     public void start_evaluation(int threadId, long mark_ID) throws InterruptedException {
 
         MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
-        OperationChain oc = scheduler.nextOperationChain(threadId);
+        OperationChain oc = scheduler.pickUp(threadId);
         MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
         while (oc != null) {
             MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
@@ -385,7 +386,7 @@ public final class TxnProcessingEngine {
             MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
 
             MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
-            oc = scheduler.nextOperationChain(threadId);
+            oc = scheduler.pickUp(threadId);
             MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
         }
     }

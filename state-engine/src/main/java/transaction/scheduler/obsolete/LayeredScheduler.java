@@ -1,4 +1,6 @@
-package transaction.scheduler;
+package transaction.scheduler.obsolete;
+import transaction.scheduler.IScheduler;
+
 import java.util.concurrent.ConcurrentHashMap;
 public abstract class LayeredScheduler<V> implements IScheduler {
 

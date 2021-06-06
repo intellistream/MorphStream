@@ -362,7 +362,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         MeasureTools.BEGIN_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
         Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
         for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
-            instance.getScheduler().submitOperationChains(thread_Id, tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
+            instance.getScheduler().construction(thread_Id, tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
         }
         MeasureTools.END_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
         MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);

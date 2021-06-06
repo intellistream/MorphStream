@@ -1,6 +1,7 @@
-package transaction.scheduler;
+package transaction.scheduler.obsolete;
 
 import common.OperationChain;
+import transaction.scheduler.IScheduler;
 
 import java.util.ArrayList;
 import java.util.Collection;

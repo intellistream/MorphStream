@@ -1,4 +1,4 @@
-package transaction.scheduler;
+package transaction.scheduler.obsolete;
 
 import common.OperationChain;
 import profiler.MeasureTools;
