@@ -24,7 +24,7 @@ public class OperationChainedHashScheduler extends LayeredHashScheduler {
             oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         }
         MeasureTools.BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
-        while (oc != null && oc.hasDependency()) ; // Wait for dependency resolution
+        while (oc != null && oc.hasParents()) ; // Wait for dependency resolution
         MeasureTools.END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
 
         if (oc != null)

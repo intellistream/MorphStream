@@ -23,7 +23,7 @@ public class OperationChainedRoundRobinScheduler extends LayeredRoundRobinSchedu
             oc = getOcForThreadAndDLevel(threadId, currentDLevelToProcess[threadId]);
         }
         MeasureTools.BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
-        while (oc != null && oc.hasDependency()) ;
+        while (oc != null && oc.hasParents()) ;
         MeasureTools.END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
         return oc;
     }

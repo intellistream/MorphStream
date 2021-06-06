@@ -3,10 +3,8 @@ package transaction.scheduler;
 import common.OperationChain;
 import profiler.MeasureTools;
 import utils.SOURCE_CONTROL;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Author: Aqif Hamid
@@ -113,16 +111,6 @@ public class LayeredRoundRobinScheduler extends LayeredScheduler<List<OperationC
     @Override
     public boolean finishedScheduling(int threadId) {
         return currentDLevelToProcess[threadId] > maxDLevel;
-    }
-
-    @Override
-    public void reSchedule(int threadId, OperationChain oc) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public boolean isReSchedulingEnabled() {
-        return false;
     }
 
     @Override

@@ -16,7 +16,7 @@ public class Listener implements IOnDependencyResolvedListener{
 
     @Override
     public void onDependencyResolvedListener(int threadId, OperationChain oc) {
-        if (oc.hasDependents())
+        if (oc.hasChildren())
             withDependentsLocal[threadId].add(oc);
         else
             leftOversLocal[threadId].add(oc);

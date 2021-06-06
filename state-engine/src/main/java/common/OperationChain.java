@@ -90,7 +90,7 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     public synchronized boolean hasValidDependencyLevel() {
         return isDependencyLevelCalculated;
     }
-    public void setOnOperationChainChangeListener(IOnDependencyResolvedListener onDependencyResolvedListener) {
+    public void Listen(IOnDependencyResolvedListener onDependencyResolvedListener) {
         this.onDependencyResolvedListener = onDependencyResolvedListener;
     }
     @Override
@@ -104,10 +104,10 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     public void onDependentResolved(Operation dependent, Operation dependency) {
         totalDependentsCount.decrementAndGet();
     }
-    public boolean hasDependency() {
+    public boolean hasParents() {
         return totalDependenciesCount.get() > 0;
     }
-    public boolean hasDependents() {
+    public boolean hasChildren() {
         return totalDependentsCount.get() > 0;
     }
     public void addPotentialDependent(OperationChain potentialDependent, Operation op) {

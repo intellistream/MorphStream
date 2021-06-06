@@ -10,8 +10,6 @@ public interface IScheduler {
     void submitOperationChains(int threadId, Collection<OperationChain> ocs);
     OperationChain nextOperationChain(int threadId);
     boolean finishedScheduling(int threadId);
-    void reSchedule(int threadId, OperationChain oc);
-    boolean isReSchedulingEnabled();
     void reset();
 }
 

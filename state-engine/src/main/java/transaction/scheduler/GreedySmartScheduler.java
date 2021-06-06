@@ -12,11 +12,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class GreedySmartScheduler implements IScheduler {
 
-    private ConcurrentLinkedQueue<OperationChain> leftOvers;
-    private ConcurrentLinkedQueue<OperationChain> withDependents;
+    private ConcurrentLinkedQueue<OperationChain> IsolatedOC;
+    private ConcurrentLinkedQueue<OperationChain> OCwithChildren;
 
-    private final ArrayList<OperationChain>[] leftOversLocal;
-    private final ArrayList<OperationChain>[] withDependentsLocal;
+    private final ArrayList<OperationChain>[] IsolatedOCLocal;
+    private final ArrayList<OperationChain>[] OCwithChildrenLocal;
 
     private AtomicInteger totalSubmitted;
     private AtomicInteger totalProcessed;
@@ -24,32 +24,32 @@ public class GreedySmartScheduler implements IScheduler {
     Listener listener;
 
     public GreedySmartScheduler(int tp) {
-        leftOvers = new ConcurrentLinkedQueue<>();
-        withDependents = new ConcurrentLinkedQueue<>();
+        IsolatedOC = new ConcurrentLinkedQueue<>();
+        OCwithChildren = new ConcurrentLinkedQueue<>();
 
-        leftOversLocal = new ArrayList[tp];
-        withDependentsLocal = new ArrayList[tp];
+        IsolatedOCLocal = new ArrayList[tp];
+        OCwithChildrenLocal = new ArrayList[tp];
         for (int tId = 0; tId < tp; tId++) {
-            leftOversLocal[tId] = new ArrayList<>();
-            withDependentsLocal[tId] = new ArrayList<>();
+            IsolatedOCLocal[tId] = new ArrayList<>();
+            OCwithChildrenLocal[tId] = new ArrayList<>();
         }
 
         totalSubmitted = new AtomicInteger(0);
         totalProcessed = new AtomicInteger(0);
 
-        listener=new Listener(leftOversLocal, withDependentsLocal);
+        listener=new Listener(IsolatedOCLocal, OCwithChildrenLocal);
     }
 
     @Override
     public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
 
         for (OperationChain oc : ocs) {
-            if (!oc.hasDependency() && oc.hasDependents())
-                withDependents.add(oc);
-            else if (!oc.hasDependency())
-                leftOvers.add(oc);
+            if (!oc.hasParents() && oc.hasChildren())
+                OCwithChildren.add(oc);//operation chains with children
+            else if (!oc.hasParents())
+                IsolatedOC.add(oc);//isolated operation chains: no parents no children.
             else
-                oc.setOnOperationChainChangeListener(listener);
+                oc.Listen(listener);//operation chains with parents listen to listener.
         }
         totalSubmitted.addAndGet(ocs.size());
     }
@@ -69,22 +69,22 @@ public class GreedySmartScheduler implements IScheduler {
 
     protected OperationChain getOcForThreadAndDLevel(int threadId) {
 
-        OperationChain oc = withDependents.poll();
-        if (oc == null && withDependentsLocal[threadId].size() > 0) {
-            oc = withDependentsLocal[threadId].remove(withDependentsLocal[threadId].size() - 1);
-            if (withDependentsLocal[threadId].size() > 0)
-                withDependents.addAll(withDependentsLocal[threadId]);
-            withDependentsLocal[threadId].clear();
+        OperationChain oc = OCwithChildren.poll();
+        if (oc == null && OCwithChildrenLocal[threadId].size() > 0) {
+            oc = OCwithChildrenLocal[threadId].remove(OCwithChildrenLocal[threadId].size() - 1);
+            if (OCwithChildrenLocal[threadId].size() > 0)
+                OCwithChildren.addAll(OCwithChildrenLocal[threadId]);
+            OCwithChildrenLocal[threadId].clear();
         }
 
         if (oc == null)
-            oc = leftOvers.poll();
+            oc = IsolatedOC.poll();
 
-        if (oc == null && leftOversLocal[threadId].size() > 0) {
-            oc = leftOversLocal[threadId].remove(leftOversLocal[threadId].size() - 1);
-            if (leftOversLocal[threadId].size() > 0)
-                leftOvers.addAll(leftOversLocal[threadId]);
-            leftOversLocal[threadId].clear();
+        if (oc == null && IsolatedOCLocal[threadId].size() > 0) {
+            oc = IsolatedOCLocal[threadId].remove(IsolatedOCLocal[threadId].size() - 1);
+            if (IsolatedOCLocal[threadId].size() > 0)
+                IsolatedOC.addAll(IsolatedOCLocal[threadId]);
+            IsolatedOCLocal[threadId].clear();
         }
         return oc;
     }
@@ -95,19 +95,9 @@ public class GreedySmartScheduler implements IScheduler {
     }
 
     @Override
-    public void reSchedule(int threadId, OperationChain oc) {
-
-    }
-
-    @Override
-    public boolean isReSchedulingEnabled() {
-        return false;
-    }
-
-    @Override
     public void reset() {
-        leftOvers = new ConcurrentLinkedQueue<>();
-        withDependents = new ConcurrentLinkedQueue<>();
+        IsolatedOC = new ConcurrentLinkedQueue<>();
+        OCwithChildren = new ConcurrentLinkedQueue<>();
         totalSubmitted = new AtomicInteger(0);
         totalProcessed = new AtomicInteger(0);
     }

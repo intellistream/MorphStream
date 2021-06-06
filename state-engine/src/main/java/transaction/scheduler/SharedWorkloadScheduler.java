@@ -3,10 +3,8 @@ package transaction.scheduler;
 import common.OperationChain;
 import profiler.MeasureTools;
 import utils.SOURCE_CONTROL;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Author: Aqif Hamid
@@ -98,16 +96,6 @@ public class SharedWorkloadScheduler extends LayeredScheduler<Queue<OperationCha
     public boolean finishedScheduling(int threadId) {
         return currentDLevelToProcess[threadId] == maxDLevel &&
                 dLevelBasedOCBuckets.get(maxDLevel).isEmpty();
-    }
-
-    @Override
-    public void reSchedule(int threadId, OperationChain oc) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public boolean isReSchedulingEnabled() {
-        return false;
     }
 
     @Override

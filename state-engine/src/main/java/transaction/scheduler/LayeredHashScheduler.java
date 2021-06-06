@@ -2,14 +2,12 @@ package transaction.scheduler;
 
 import common.OperationChain;
 import profiler.MeasureTools;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Author: Aqif Hamid
@@ -81,16 +79,6 @@ public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, List
     @Override
     public boolean finishedScheduling(int threadId) {
         return scheduledOcsCount[threadId] == totalOcsToSchedule[threadId];
-    }
-
-    @Override
-    public void reSchedule(int threadId, OperationChain oc) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public boolean isReSchedulingEnabled() {
-        return false;
     }
 
     @Override
