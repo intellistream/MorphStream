@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Author: Aqif Hamid
  * Concrete impl of greedy smart scheduler
  */
-public class GreedySmartScheduler implements IScheduler, IOnDependencyResolvedListener {
+public class GreedySmartScheduler implements IScheduler {
 
     private ConcurrentLinkedQueue<OperationChain> leftOvers;
     private ConcurrentLinkedQueue<OperationChain> withDependents;
@@ -20,6 +20,8 @@ public class GreedySmartScheduler implements IScheduler, IOnDependencyResolvedLi
 
     private AtomicInteger totalSubmitted;
     private AtomicInteger totalProcessed;
+
+    Listener listener;
 
     public GreedySmartScheduler(int tp) {
         leftOvers = new ConcurrentLinkedQueue<>();
@@ -34,6 +36,8 @@ public class GreedySmartScheduler implements IScheduler, IOnDependencyResolvedLi
 
         totalSubmitted = new AtomicInteger(0);
         totalProcessed = new AtomicInteger(0);
+
+        listener=new Listener(leftOversLocal, withDependentsLocal);
     }
 
     @Override
@@ -45,17 +49,9 @@ public class GreedySmartScheduler implements IScheduler, IOnDependencyResolvedLi
             else if (!oc.hasDependency())
                 leftOvers.add(oc);
             else
-                oc.setOnOperationChainChangeListener(this);
+                oc.setOnOperationChainChangeListener(listener);
         }
         totalSubmitted.addAndGet(ocs.size());
-    }
-
-    @Override
-    public void onDependencyResolvedListener(int threadId, OperationChain oc) {
-        if (oc.hasDependents())
-            withDependentsLocal[threadId].add(oc);
-        else
-            leftOversLocal[threadId].add(oc);
     }
 
     @Override
