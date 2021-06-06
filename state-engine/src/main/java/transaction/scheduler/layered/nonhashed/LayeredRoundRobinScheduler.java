@@ -2,13 +2,9 @@ package transaction.scheduler.layered.nonhashed;
 
 import common.OperationChain;
 import profiler.MeasureTools;
-import transaction.scheduler.layered.nonhashed.LayeredNonHashScheduler;
 import utils.SOURCE_CONTROL;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Author: Aqif Hamid
@@ -27,10 +23,9 @@ public class LayeredRoundRobinScheduler extends LayeredNonHashScheduler<List<Ope
         }
     }
 
-
     @Override
     public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
-        HashMap<Integer, List<OperationChain>> layeredOCBucketThread = buildTempBucketPerThread(threadId, ocs);
+        HashMap<Integer, ArrayDeque<OperationChain>> layeredOCBucketThread = buildTempBucketPerThread(threadId, ocs);
 
         for (int dLevel : layeredOCBucketThread.keySet())
             if (!layeredOCBucketGlobal.containsKey(dLevel))
@@ -47,29 +42,11 @@ public class LayeredRoundRobinScheduler extends LayeredNonHashScheduler<List<Ope
         }
     }
 
-    @Override
-    public OperationChain nextOperationChain(int threadId) {
-
-        OperationChain oc = getOC(threadId, currentLevel[threadId]);
-        if (oc != null)
-            return oc;
-
-        if (!finishedScheduling(threadId)) {
-            while (oc == null) {
-                if (finishedScheduling(threadId))
-                    break;
-                currentLevel[threadId] += 1;
-//                indexOfNextOCToProcess[threadId] = threadId;
-                oc = getOC(threadId, currentLevel[threadId]);
-
-                MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
-            }
-        }
-        return oc;
-    }
-
+    /**
+     * @param threadId
+     * @param dLevel
+     * @return
+     */
     protected OperationChain getOC(int threadId, int dLevel) {
         List<OperationChain> ocs = layeredOCBucketGlobal.get(dLevel);
         OperationChain oc = null;
@@ -92,14 +69,11 @@ public class LayeredRoundRobinScheduler extends LayeredNonHashScheduler<List<Ope
 
     @Override
     public void reset() {
-
         layeredOCBucketGlobal.clear();
-
         for (int threadId = 0; threadId < totalThreads; threadId++) {
             indexOfNextOCToProcess[threadId] = threadId;
             currentLevel[threadId] = 0;
         }
-
         maxDLevel = 0;
     }
 

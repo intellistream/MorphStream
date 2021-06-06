@@ -1,12 +1,13 @@
 package transaction.scheduler.layered;
 
 import common.OperationChain;
+import profiler.MeasureTools;
 import transaction.scheduler.IScheduler;
+import utils.SOURCE_CONTROL;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class LayeredScheduler<V> implements IScheduler {
@@ -30,7 +31,7 @@ public abstract class LayeredScheduler<V> implements IScheduler {
      * @param ocs
      * @return
      */
-    public int buildBucketPerThread(HashMap<Integer, List<OperationChain>> OCBucketThread,
+    public int buildBucketPerThread(HashMap<Integer, ArrayDeque<OperationChain>> OCBucketThread,
                                     Collection<OperationChain> ocs) {
         int localMaxDLevel = 0;
         for (OperationChain oc : ocs) {
@@ -39,9 +40,32 @@ public abstract class LayeredScheduler<V> implements IScheduler {
             if (localMaxDLevel < dependencyLevel)
                 localMaxDLevel = dependencyLevel;
             if (!OCBucketThread.containsKey(dependencyLevel))
-                OCBucketThread.put(dependencyLevel, new ArrayList<>());
+                OCBucketThread.put(dependencyLevel, new ArrayDeque<>());
             OCBucketThread.get(dependencyLevel).add(oc);
         }
         return localMaxDLevel;
     }
+
+    public OperationChain nextOperationChain(int threadId) {
+        OperationChain oc = getOC(threadId, currentLevel[threadId]);
+        if (oc != null) {
+            return oc;//successfully get the next operation chain of the current level.
+        } else {
+            if (!finishedScheduling(threadId)) {
+                while (oc == null) {
+                    if (finishedScheduling(threadId))
+                        break;
+                    currentLevel[threadId] += 1;//current level is done, process the next level.
+                    oc = getOC(threadId, currentLevel[threadId]);
+                    MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
+                    SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                    MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
+                }
+            }
+        }
+        return oc;
+    }
+
+    protected abstract OperationChain getOC(int threadId, int dLevel);
+
 }

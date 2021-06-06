@@ -5,9 +5,9 @@ import profiler.MeasureTools;
 import transaction.scheduler.IScheduler;
 import transaction.scheduler.layered.LayeredScheduler;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 
 public abstract class LayeredNonHashScheduler<V> extends LayeredScheduler<V> implements IScheduler {
     protected Integer maxDLevel;
@@ -19,10 +19,10 @@ public abstract class LayeredNonHashScheduler<V> extends LayeredScheduler<V> imp
         maxDLevel = 0;
     }
 
-    public HashMap<Integer, List<OperationChain>> buildTempBucketPerThread(int threadId,
-                                                                           Collection<OperationChain> ocs) {
+    public HashMap<Integer, ArrayDeque<OperationChain>> buildTempBucketPerThread(int threadId,
+                                                                                 Collection<OperationChain> ocs) {
         MeasureTools.BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
-        HashMap<Integer, List<OperationChain>> layeredOCBucketThread = new HashMap<>();
+        HashMap<Integer, ArrayDeque<OperationChain>> layeredOCBucketThread = new HashMap<>();
         int localMaxDLevel = buildBucketPerThread(layeredOCBucketThread, ocs);
 
         synchronized (maxDLevel) {

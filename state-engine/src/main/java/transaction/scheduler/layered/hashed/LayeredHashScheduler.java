@@ -6,11 +6,11 @@ import transaction.scheduler.IScheduler;
 import transaction.scheduler.layered.LayeredScheduler;
 import utils.SOURCE_CONTROL;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 
-public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, List<OperationChain>>> implements IScheduler {
+public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, ArrayDeque<OperationChain>>> implements IScheduler {
 
     protected int[] scheduledOcsCount;//current number of operation chains processed per thread.
     protected int[] totalOcsToSchedule;//total number of operation chains to process per thread.
@@ -37,13 +37,13 @@ public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, List
     public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
         MeasureTools.BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
         totalOcsToSchedule[threadId] += ocs.size();
-        HashMap<Integer, List<OperationChain>> layeredOCBucketThread = layeredOCBucketGlobal.get(threadId);
+        HashMap<Integer, ArrayDeque<OperationChain>> layeredOCBucketThread = layeredOCBucketGlobal.get(threadId);
         buildBucketPerThread(layeredOCBucketThread, ocs);
         MeasureTools.END_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
     }
 
     /**
-     * process all operation chains of one layer until another layer.
+     * Process all operation chains of one layer until another layer.
      * It's more like a breath-first-search.
      *
      * @param threadId
@@ -51,36 +51,32 @@ public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, List
      */
     @Override
     public OperationChain nextOperationChain(int threadId) {
-        OperationChain oc = getOC(threadId, currentLevel[threadId]);
+        OperationChain oc = super.nextOperationChain(threadId);
+        if (oc != null)
+            scheduledOcsCount[threadId] += 1;
 
-        if (oc != null) {
-            scheduledOcsCount[threadId] += 1;
-        } else if (!finishedScheduling(threadId)) {
-            while (oc == null) {
-                currentLevel[threadId] += 1;
-                oc = getOC(threadId, currentLevel[threadId]);
-                MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(currentLevel[threadId]);
-                MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
-            }
-            scheduledOcsCount[threadId] += 1;
-        } else {
+        if (finishedScheduling(threadId)) {//finished scheduling already. This is needed because hash-scheduler can be workload unbalanced.
             MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
             MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
         }
+
         return oc; // if a null is returned, it means, we are done with level!
     }
 
+    /**
+     * Return the last operation chain of threadId at dLevel.
+     *
+     * @param threadId
+     * @param dLevel
+     * @return
+     */
     protected OperationChain getOC(int threadId, int dLevel) {
-        List<OperationChain> ocs = layeredOCBucketGlobal.get(threadId).get(dLevel);
-        OperationChain oc = null;
-        if (ocs != null && ocs.size() > 0) {
-            oc = ocs.remove(ocs.size() - 1);
-        }
-        return oc;
+        ArrayDeque<OperationChain> ocs = layeredOCBucketGlobal.get(threadId).get(dLevel);
+        if (ocs.size() > 0)
+            return ocs.removeLast();
+        else return null;
     }
 
     @Override

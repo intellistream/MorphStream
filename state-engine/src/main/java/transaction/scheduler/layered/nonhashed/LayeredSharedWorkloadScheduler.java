@@ -2,13 +2,9 @@ package transaction.scheduler.layered.nonhashed;
 
 import common.OperationChain;
 import profiler.MeasureTools;
-import transaction.scheduler.layered.nonhashed.LayeredNonHashScheduler;
 import utils.SOURCE_CONTROL;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class LayeredSharedWorkloadScheduler extends LayeredNonHashScheduler<Queue<OperationChain>> {
@@ -19,7 +15,7 @@ public class LayeredSharedWorkloadScheduler extends LayeredNonHashScheduler<Queu
 
     @Override
     public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
-        HashMap<Integer, List<OperationChain>> layeredOCBucketThread = buildTempBucketPerThread(threadId, ocs);
+        HashMap<Integer, ArrayDeque<OperationChain>> layeredOCBucketThread = buildTempBucketPerThread(threadId, ocs);
 
         for (int dLevel : layeredOCBucketThread.keySet())
             if (!layeredOCBucketGlobal.containsKey(dLevel))
@@ -34,28 +30,6 @@ public class LayeredSharedWorkloadScheduler extends LayeredNonHashScheduler<Queu
             }
             layeredOCBucketThread.get(dLevel).clear();
         }
-    }
-
-    @Override
-    public OperationChain nextOperationChain(int threadId) {
-
-        OperationChain oc = getOC(threadId, currentLevel[threadId]);
-        if (oc != null)
-            return oc;
-
-        if (!finishedScheduling(threadId)) {
-            while (oc == null) {
-                if (finishedScheduling(threadId))
-                    break;
-                currentLevel[threadId] += 1;
-                oc = getOC(threadId, currentLevel[threadId]);
-                MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
-            }
-        }
-
-        return oc;
     }
 
     protected OperationChain getOC(int threadId, int dLevel) {
