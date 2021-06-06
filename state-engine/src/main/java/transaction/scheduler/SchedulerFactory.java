@@ -1,5 +1,12 @@
 package transaction.scheduler;
 
+import transaction.scheduler.layered.hashed.DFSLayeredHashScheduler;
+import transaction.scheduler.layered.hashed.LayeredHashScheduler;
+import transaction.scheduler.layered.nonhashed.DFSLayeredRoundRobinScheduler;
+import transaction.scheduler.layered.nonhashed.DFSLayeredSharedWorkloadScheduler;
+import transaction.scheduler.layered.nonhashed.LayeredRoundRobinScheduler;
+import transaction.scheduler.layered.nonhashed.LayeredSharedWorkloadScheduler;
+
 /**
  * Author: Aqif Hamid
  * A single point schedulers creation factory.
@@ -23,16 +30,16 @@ public class SchedulerFactory {
                 scheduler = new LayeredRoundRobinScheduler(totalThread);
                 break;
             case SW:
-                scheduler = new SharedWorkloadScheduler(totalThread);
+                scheduler = new LayeredSharedWorkloadScheduler(totalThread);
                 break;
             case NB_RR:
-                scheduler = new OperationChainedRoundRobinScheduler(totalThread);
+                scheduler = new DFSLayeredRoundRobinScheduler(totalThread);
                 break;
             case NB_BL:
-                scheduler = new OperationChainedHashScheduler(totalThread);
+                scheduler = new DFSLayeredHashScheduler(totalThread);
                 break;
             case NB_SW:
-                scheduler = new OperationChainedSharedWorkload(totalThread);
+                scheduler = new DFSLayeredSharedWorkloadScheduler(totalThread);
                 break;
             case G_S:
                 scheduler = new GreedySmartScheduler(totalThread);
