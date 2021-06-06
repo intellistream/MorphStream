@@ -16,7 +16,6 @@ public abstract class Scheduler<C extends Constructor, P extends Picker, D exten
     D distributor;
 
     public Scheduler(int totalThread) {
-
         this.totalThread = totalThread;
     }
 
