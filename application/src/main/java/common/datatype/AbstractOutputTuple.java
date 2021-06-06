@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype;
+
 /**
  * The comm class for all LRB output tuples (including intermediate result tuples).<br />
  * <br />
@@ -36,9 +37,11 @@ public abstract class AbstractOutputTuple extends AbstractLRBTuple {
     private final static int EMIT_IDX = 2;
     // attribute indexes
     private static final long serialVersionUID = 6525749728643815820L;
+
     protected AbstractOutputTuple() {
         super();
     }
+
     protected AbstractOutputTuple(Short type, Short time, Short emit) {
         super(type, time);
         assert (emit != null);
@@ -46,6 +49,7 @@ public abstract class AbstractOutputTuple extends AbstractLRBTuple {
         super.add(EMIT_IDX, emit);
         assert (super.size() == 3);
     }
+
     /**
      * Returns the emit timestamp (in LRB seconds) of this {@link AbstractOutputTuple}.
      *

@@ -1,4 +1,5 @@
 package common.combo;
+
 import common.bolts.transactional.tp.*;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -6,12 +7,12 @@ import common.constants.BaseConstants;
 import common.datatype.AbstractLRBTuple;
 import common.datatype.PositionReport;
 import common.param.lr.LREvent;
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -22,6 +23,7 @@ import java.util.Scanner;
 
 import static common.CONTROL.*;
 import static content.Content.*;
+
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class TPCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(TPCombo.class);
@@ -33,14 +35,17 @@ public class TPCombo extends SPOUTCombo {
     int[] concerned_length = new int[]{1, 10, 50, 100, 250, 500, 750, 1000};
     int cnt = 0;
     ArrayDeque<LREvent> prevents = new ArrayDeque<>();
+
     public TPCombo() {
         super(LOG, 0);
     }
+
     private boolean check_conflict(LREvent pre_event, LREvent event) {
         Short pre_segment = pre_event.getPOSReport().getSegment();
         Short current_segment = event.getPOSReport().getSegment();
         return pre_segment.equals(current_segment);
     }
+
     private boolean conflict(LREvent event) {
         for (LREvent prevent : prevents) {
             if (check_conflict(prevent, event))
@@ -48,6 +53,7 @@ public class TPCombo extends SPOUTCombo {
         }
         return false;
     }
+
     protected void show_stats() {
         for (Object myevent : myevents) {
             Short segment = ((LREvent) myevent).getPOSReport().getSegment();
@@ -82,6 +88,7 @@ public class TPCombo extends SPOUTCombo {
             cnt++;
         }
     }
+
     protected Object create_new_event(String record, int bid) {
         String[] token = record.split(" ");
         short type = Short.parseShort(token[0]);
@@ -106,6 +113,7 @@ public class TPCombo extends SPOUTCombo {
             return null;
         }
     }
+
     @Override
     public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) {
         int i = 0;
@@ -136,6 +144,7 @@ public class TPCombo extends SPOUTCombo {
             e.printStackTrace();
         }
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);

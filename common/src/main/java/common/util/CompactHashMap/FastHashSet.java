@@ -1,9 +1,11 @@
 package common.util.CompactHashMap;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.*;
+
 /**
  * This class implements the <tt>Set</tt> interface, backed by a hash table
  * (actually a <tt>HashMap</tt> instance).  It makes no guarantees as to the
@@ -67,6 +69,7 @@ public class FastHashSet<E>
         implements Set<E>, Cloneable, Serializable {
     static final long serialVersionUID = -5024744406713321676L;
     private transient QuickHashMap<E, Object> map;
+
     /**
      * Constructs a new, empty set; the backing <tt>HashMap</tt> instance has
      * default set_executor_ready capacity (16) and load factor (0.75).
@@ -74,6 +77,7 @@ public class FastHashSet<E>
     public FastHashSet() {
         map = new QuickHashMap<>(false);
     }
+
     /**
      * Constructs a new set containing the elements in the specified
      * collection.  The <tt>HashMap</tt> is created with default load factor
@@ -90,6 +94,7 @@ public class FastHashSet<E>
                 false);
         addAll(c);
     }
+
     /**
      * Constructs a new, empty set; the backing <tt>HashMap</tt> instance has
      * the specified set_executor_ready capacity and the specified load factor.
@@ -102,6 +107,7 @@ public class FastHashSet<E>
     public FastHashSet(int initialCapacity, float loadFactor) {
         map = new QuickHashMap<>(initialCapacity, loadFactor, false);
     }
+
     /**
      * Constructs a new, empty set; the backing <tt>HashMap</tt> instance has
      * the specified set_executor_ready capacity and default load factor (0.75).
@@ -113,6 +119,7 @@ public class FastHashSet<E>
     public FastHashSet(int initialCapacity) {
         map = new QuickHashMap<>(initialCapacity, false);
     }
+
     /**
      * Constructs a new, empty linked hash set.  (This package private
      * constructor is only used by LinkedHashSet.) The backing
@@ -129,6 +136,7 @@ public class FastHashSet<E>
     FastHashSet(int initialCapacity, float loadFactor, boolean dummy) {
         map = new FastLinkedHashMap<>(initialCapacity, loadFactor, false, false);
     }
+
     /**
      * Returns an iterator over the elements in this set.  The elements
      * are returned in no particular order.
@@ -139,6 +147,7 @@ public class FastHashSet<E>
     public Iterator<E> iterator() {
         return map.keySet().iterator();
     }
+
     /**
      * Returns the number of elements in this set (its cardinality).
      *
@@ -147,6 +156,7 @@ public class FastHashSet<E>
     public int size() {
         return map.size();
     }
+
     /**
      * Returns <tt>true</tt> if this set contains no elements.
      *
@@ -155,6 +165,7 @@ public class FastHashSet<E>
     public boolean isEmpty() {
         return map.isEmpty();
     }
+
     /**
      * Returns <tt>true</tt> if this set contains the specified element.
      * More formally, returns <tt>true</tt> if and only if this set
@@ -167,6 +178,7 @@ public class FastHashSet<E>
     public boolean contains(Object o) {
         return map.containsKey(o);
     }
+
     /**
      * Adds the specified element to this set if it is not already present.
      * More formally, adds the specified element <tt>e</tt> to this set if
@@ -182,6 +194,7 @@ public class FastHashSet<E>
     public boolean add(E e) {
         return map.put(e, null) == null;
     }
+
     /**
      * Removes the specified element from this set if it is present.
      * More formally, removes an element <tt>e</tt> such that
@@ -197,6 +210,7 @@ public class FastHashSet<E>
     public boolean remove(Object o) {
         return map.remove(o) == QuickHashMap.DUMMY_VALUE;
     }
+
     /**
      * Removes all of the elements from this set.
      * The set will be empty after this call returns.
@@ -204,6 +218,7 @@ public class FastHashSet<E>
     public void clear() {
         map.clear();
     }
+
     /**
      * Returns a shallow copy of this <tt>HashSet</tt> instance:
      * the elements themselves are not cloned.
@@ -220,6 +235,7 @@ public class FastHashSet<E>
         newSet.map = map.clone();
         return newSet;
     }
+
     /**
      * Save the state of this <tt>HashSet</tt> instance to a stream (that is,
      * serialize it).
@@ -244,6 +260,7 @@ public class FastHashSet<E>
             s.writeObject(e);
         }
     }
+
     /**
      * Reconstitute the <tt>HashSet</tt> instance from a stream
      * (that is, deserialize it).

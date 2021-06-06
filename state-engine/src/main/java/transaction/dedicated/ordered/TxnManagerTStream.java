@@ -1,4 +1,5 @@
 package transaction.dedicated.ordered;
+
 import common.Operation;
 import common.OperationChain;
 import common.meta.MetaTypes;
@@ -22,14 +23,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static common.meta.MetaTypes.AccessType.INSERT_ONLY;
 import static transaction.impl.TxnAccess.Access;
+
 /**
  * conventional two-phase locking with no-sync_ratio strategy from Cavalia.
  */
 public class TxnManagerTStream extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerTStream.class);
-    TxnProcessingEngine instance;
     private final OperationChain[] localCache = new OperationChain[4];
+    TxnProcessingEngine instance;
     private int cacheIndex = 0;
+
     public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw) {
         super(storageManager, thisComponentId, thisTaskId, thread_countw);
         instance = TxnProcessingEngine.getInstance();
@@ -62,6 +65,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //            }
 //        }
     }
+
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException {
 //		BEGIN_PHASE_MEASURE(thread_id_, INSERT_PHASE);
@@ -88,20 +92,24 @@ public class TxnManagerTStream extends TxnManagerDedicated {
             return true;
         }
     }
+
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
         //not in use.
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean CommitTransaction(TxnContext txnContext) {
         //not in use.
         throw new UnsupportedOperationException();
     }
+
     @Override
     public void AbortTransaction() {
         throw new UnsupportedOperationException();
     }
+
     private int getTaskId(String key) {
         Integer _key = Integer.valueOf(key);
         //DD: Number of accounts / threads (tasks) gives us delta and record key is probably incremental upto number of accounts.
@@ -109,6 +117,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         return _key / delta;
 //        return _key % 12;
     }
+
     /**
      * build the Operation chain.. concurrently..
      *
@@ -135,6 +144,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        Set<Operation> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(record)).holder_v3;
 //        holder.add(new Operation(txn_context, bid, accessType, record, record_ref));
     }
+
     public void operation_chain_construction_read_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, TableRecordRef record_ref, TxnContext txn_context) {
 //        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
@@ -150,6 +160,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        Set<Operation> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(record)).holder_v3;
 //        holder.add(new Operation(txn_context, bid, accessType, record, record_ref));
     }
+
     /**
      * @param record
      * @param primaryKey
@@ -163,22 +174,27 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 
         addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, value), table_name, primaryKey);
     }
+
     private void operation_chain_construction_write_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, long value, int column_id, TxnContext txn_context) {
         addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, value, column_id), table_name, primaryKey);
     }
+
     private void operation_chain_construction_modify_read(TableRecord record, String table_name, long bid,
                                                           MetaTypes.AccessType accessType, SchemaRecordRef record_ref, Function function, TxnContext txn_context) {
         addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, record_ref, function), table_name, record.record_.GetPrimaryKey());
     }
+
     //READ_WRITE
     private void operation_chain_construction_modify_only(TableRecord s_record, String table_name, long bid, MetaTypes.AccessType accessType, TableRecord d_record, Function function, TxnContext txn_context, int column_id) {
         addOperationToChain(new Operation(table_name, s_record, d_record, bid, accessType, function, txn_context, column_id), table_name, d_record.record_.GetPrimaryKey());
     }
+
     private void operation_chain_construction_modify_only(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, Function function,
                                                           String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
         addOperationToChain(new Operation(table_name, s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
 
     }
+
     private void addOperationToChain(Operation operation, String table_name, String primaryKey) {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
 
@@ -190,6 +206,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
             oc = retOc;
         holder.get(primaryKey).addOperation(operation);
     }
+
     private OperationChain getCachedOcFor(String tableName, String pKey) {
 
         OperationChain oc = null;
@@ -281,6 +298,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         operation_chain_construction_read_only(t_record, primary_key, table_name, bid, accessType, record_ref, txn_context);
         return true;//it should be always success.
     }
+
     /**
      * Build Operation chains during SP execution.
      *
@@ -299,24 +317,28 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         operation_chain_construction_read_only(t_record, primary_key, table_name, bid, accessType, record_ref, txn_context);
         return true;//it should be always success.
     }
+
     @Override
     protected boolean Asy_WriteRecordCC(TxnContext txn_context, String primary_key, String table_name, TableRecord t_record, long value, int column_id, MetaTypes.AccessType access_type) {
         long bid = txn_context.getBID();
         operation_chain_construction_write_only(t_record, primary_key, table_name, bid, access_type, value, column_id, txn_context);
         return true;//it should be always success.
     }
+
     @Override
     protected boolean Asy_WriteRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, String primary_key, List<DataBox> value, double[] enqueue_time, MetaTypes.AccessType access_type) {
         long bid = txn_context.getBID();
         operation_chain_construction_write_only(t_record, primary_key, table_name, bid, access_type, value, txn_context);
         return true;//it should be always success.
     }
+
     @Override
     protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, TableRecord t_record, TableRecord d_record, Function function, MetaTypes.AccessType accessType, int column_id) {
         long bid = txn_context.getBID();
         operation_chain_construction_modify_only(t_record, srcTable, bid, accessType, d_record, function, txn_context, column_id);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
+
     protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, TableRecord t_record,
                                               SchemaRecordRef record_ref, Function function, MetaTypes.AccessType accessType) {
         long bid = txn_context.getBID();
@@ -332,6 +354,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
                 s_record, record_ref, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
+
     @Override
     protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, TableRecord d_record, Function function,
                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
@@ -339,6 +362,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         operation_chain_construction_modify_only(srcTable, key, bid, accessType, s_record, d_record, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
+
     // TRANSFER_AST
     protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, Function function,
                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
@@ -346,6 +370,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         operation_chain_construction_modify_only(srcTable, key, bid, accessType, s_record, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
+
     /**
      * This is the API: SP-Layer inform the arrival of checkpoint, which informs the TP-Layer to start evaluation.
      *

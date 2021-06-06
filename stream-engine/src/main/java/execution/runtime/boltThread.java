@@ -1,17 +1,18 @@
 package execution.runtime;
+
+import common.Clock;
 import common.collections.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
 import components.operators.executor.BoltExecutor;
 import controller.input.InputStreamController;
+import db.DatabaseException;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
 import optimization.OptimizationManager;
-import common.Clock;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -21,6 +22,7 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
 import static common.CONTROL.enable_shared_state;
+
 /**
  * Task thread that hosts bolt logic. Receives input Brisk.execution.runtime.tuple,
  * processes it using bolt logic, forwards to next bolts in
@@ -32,6 +34,7 @@ public class boltThread extends executorThread {
     private final OutputCollector collector;
     private final InputStreamController scheduler;
     private int miss = 0;
+
     /**
      * @param e
      * @param context
@@ -49,11 +52,12 @@ public class boltThread extends executorThread {
         super(e, conf, context, cpu, node, latch, threadMap);
         bolt = (BoltExecutor) e.op;
         scheduler = e.getInputStreamController();
-        this.collector = new OutputCollector(e, context,conf.getInt("totalEventsPerBatch") * conf.getInt("numberOfBatches"));
+        this.collector = new OutputCollector(e, context, conf.getInt("totalEventsPerBatch") * conf.getInt("numberOfBatches"));
         batch = conf.getInt("batch", 100);
         bolt.setExecutionNode(e);
         bolt.setclock(clock);
     }
+
     /**
      * @author Crunchify.com
      */
@@ -77,6 +81,7 @@ public class boltThread extends executorThread {
         }
         return dump.toString();
     }
+
     /**
      * Be very careful for this method..
      *
@@ -101,9 +106,11 @@ public class boltThread extends executorThread {
             }
         }
     }
+
     protected void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException {
         _execute_noControl();
     }
+
     @Override
     public void run() {
         try {
@@ -147,6 +154,7 @@ public class boltThread extends executorThread {
             }
         }
     }
+
     /**
      * Get input from upstream bolts, this is a unique function of bolt thread.
      * TODO: need a txn module to determine the fetch sequence.

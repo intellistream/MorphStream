@@ -1,11 +1,14 @@
 package common.tools;
+
 import java.util.Random;
+
 // Based on http://diveintodata.org/tag/zipf/
 public class ZipfGenerator {
     private final Random rnd = new Random(0);
     private final int size;
     private final double skew;
     private double bottom = 0;
+
     public ZipfGenerator(int size, double skew) {
         this.size = size;
         this.skew = skew;
@@ -13,6 +16,7 @@ public class ZipfGenerator {
             this.bottom += (1 / Math.pow(i, this.skew));
         }
     }
+
     // the next() method returns an random rank id.
     // The frequency of returned rank ids are follows Zipf distribution.
     public int next() {
@@ -29,6 +33,7 @@ public class ZipfGenerator {
         }
         return rank;
     }
+
     // This method returns a probability that the given rank occurs.
     public double getProbability(int rank) {
         return (1.0d / Math.pow(rank, this.skew)) / this.bottom;

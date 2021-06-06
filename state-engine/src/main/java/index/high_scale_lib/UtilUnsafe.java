@@ -1,7 +1,9 @@
 package index.high_scale_lib;
+
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
+
 /**
  * Simple class to obtain access to the {@link Unsafe} object.  {@link Unsafe}
  * is required to allow efficient CAS operations on arrays.  Note that the
@@ -13,6 +15,7 @@ import java.lang.reflect.Field;
 class UtilUnsafe {
     private UtilUnsafe() {
     } // dummy private constructor
+
     /**
      * Fetch the Unsafe.  Use With Caution.
      */

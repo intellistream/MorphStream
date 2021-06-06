@@ -17,7 +17,9 @@
  * #_
  */
 package common.datatype.util;
+
 import java.io.Serializable;
+
 /**
  * Each type that contains the three position identifier attributes XWAY, LANE, POSITION, DIR must implement this
  * interface.
@@ -26,7 +28,10 @@ import java.io.Serializable;
  */
 public interface IPositionIdentifier extends Serializable {
     Integer getXWay();
+
     Short getLane();
+
     Integer getPosition();
+
     Short getDirection();
 }

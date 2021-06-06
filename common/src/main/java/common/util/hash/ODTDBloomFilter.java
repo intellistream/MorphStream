@@ -1,8 +1,10 @@
 package common.util.hash;
+
 import org.apache.hadoop.util.bloom.CountingBloomFilter;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+
 /**
  * Implementation of the On-demand Time-decaying Bloom Filter. It is similar to a
  * time decaying bloom filter, except for the fact that only the counters that are
@@ -24,6 +26,7 @@ public class ODTDBloomFilter {
     private final double[][] buckets;
     private final long[] timers;
     private final double beta;
+
     /**
      * Constructor with default number of buckets per word (16).
      *
@@ -34,6 +37,7 @@ public class ODTDBloomFilter {
     public ODTDBloomFilter(int numElements, int bucketsPerElement, double beta) {
         this(numElements, bucketsPerElement, beta, 16);
     }
+
     /**
      * Creates a new filter with k hash functions accordingly with {@link BloomCalculations#computeBestK(int)}.
      * Each bucket will have bucketsPerWord counters, but since this implementation
@@ -52,6 +56,7 @@ public class ODTDBloomFilter {
         buckets = new double[numBuckets][bucketsPerWord];
         timers = new long[numBuckets];
     }
+
     // murmur is faster than a sha-based approach and provides as-good collision
     // resistance.  the combinatorial generation approach described in
     // http://www.eecs.harvard.edu/~kirsch/pubs/bbbf/esa06.pdf
@@ -68,9 +73,11 @@ public class ODTDBloomFilter {
         }
         return result;
     }
+
     private static long time() {
         return System.currentTimeMillis() / 1000;
     }
+
     /**
      * Checks if the item is stored in the data structure.
      *
@@ -85,6 +92,7 @@ public class ODTDBloomFilter {
         }
         return true;
     }
+
     /**
      * Add the item to the data structure with quantity's value one.
      *
@@ -93,9 +101,11 @@ public class ODTDBloomFilter {
     public void add(String item) {
         add(item, 1, time());
     }
+
     public void add(String item, int q) {
         add(item, q, time());
     }
+
     /**
      * Add an item to the data structure.
      *
@@ -111,6 +121,7 @@ public class ODTDBloomFilter {
                 setBucket(bucketIndex, count);
         }
     }
+
     /**
      * Delete an item from the data structure, subtracting q to the counters.
      *
@@ -127,9 +138,11 @@ public class ODTDBloomFilter {
             }
         }
     }
+
     public double estimateCount(String item) {
         return estimateCount(item, time());
     }
+
     /**
      * Estimate the count for an item.
      *
@@ -150,6 +163,7 @@ public class ODTDBloomFilter {
         }
         return (res != Double.MAX_VALUE) ? res : 0;
     }
+
     /**
      * Resets the data structure
      */
@@ -159,12 +173,14 @@ public class ODTDBloomFilter {
         }
         Arrays.fill(timers, 0L);
     }
+
     /**
      * @return Return the total number of counters in the data structure
      */
     private int buckets() {
         return buckets.length * bucketsPerWord;
     }
+
     /**
      * Get a list of hashes for an item
      *
@@ -174,18 +190,23 @@ public class ODTDBloomFilter {
     private int[] getHashBuckets(String item) {
         return getHashBuckets(item, hashCount, buckets());
     }
+
     private double getBucket(int bucketIndex) {
         return buckets[bucketIndex / bucketsPerWord][bucketIndex % bucketsPerWord];
     }
+
     private void addToBucket(int bucketIndex, double value) {
         buckets[bucketIndex / bucketsPerWord][bucketIndex % bucketsPerWord] += value;
     }
+
     private void setBucket(int bucketIndex, double value) {
         buckets[bucketIndex / bucketsPerWord][bucketIndex % bucketsPerWord] = value;
     }
+
     private long getTimer(int bucketIndex) {
         return timers[bucketIndex / bucketsPerWord];
     }
+
     private void setTimer(int bucketIndex, long value) {
         timers[bucketIndex / bucketsPerWord] = value;
     }

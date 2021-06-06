@@ -1,13 +1,14 @@
 package common.bolts.transactional.tp;
+
 import common.param.lr.LREvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import faulttolerance.impl.ValueState;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import transaction.dedicated.ordered.TxnManagerSStore;
 import transaction.impl.TxnContext;
 
@@ -15,30 +16,36 @@ import java.util.Map;
 
 import static common.CONTROL.enable_debug;
 import static profiler.MeasureTools.*;
+
 /**
  * Combine Read-Write for TStream.
  */
 public class TPBolt_SSTORE extends TPBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(TPBolt_SSTORE.class);
     private static final long serialVersionUID = -5968750340131744744L;
+
     public TPBolt_SSTORE(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
         state = new ValueState();
     }
+
     public TPBolt_SSTORE(int fid) {
         super(LOG, fid, null);
         state = new ValueState();
     }
+
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         context.getGraph().topology.tableinitilizer.loadDB(thread_Id, context.getGraph().topology.spinlock,
                 this.context.getNUMTasks());
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerSStore(db.getStorageManager(),
                 this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
     }
+
     @Override
     protected void LAL_PROCESS(long _bid) throws DatabaseException {
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);

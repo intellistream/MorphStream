@@ -1,14 +1,17 @@
 package common.tools;
+
 /**
  * Created by I309939 on 7/29/2016.
  */
 public class ZipfDistribution {
     private final int N; // number
     private final int s; // screw
+
     public ZipfDistribution(int size, int skew) {
         this.N = size;
         this.s = skew;
     }
+
     public static void main(String[] args) {
 //        if(args.length != 2) {
 //            System.out.println("usage: ./zipf N s");
@@ -23,6 +26,7 @@ public class ZipfDistribution {
         }
         System.out.println(output);
     }
+
     public double H(int n, int s) { // Harmonic number
         if (n == 1) {
             return 1.0 / Math.pow(n, s);
@@ -30,9 +34,11 @@ public class ZipfDistribution {
             return (1.0 / Math.pow(n, s)) + H(n - 1, s);
         }
     }
+
     public double f(int k) {
         return (1 / Math.pow(k, this.s)) / H(this.N, this.s);
     }
+
     public double cdf(int k) {
         return H(k, this.s) / H(this.N, this.s);
     }

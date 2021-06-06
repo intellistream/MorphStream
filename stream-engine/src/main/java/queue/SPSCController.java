@@ -1,13 +1,15 @@
 package queue;
+
 import common.collections.OsUtils;
+import execution.ExecutionNode;
 import org.jctools.queues.SpscArrayQueue;
 import org.jctools.queues.SpscLinkedQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import execution.ExecutionNode;
 
 import java.util.HashMap;
 import java.util.Queue;
+
 /**
  * Created by shuhaozhang on 11/7/16.
  * There's one PC per pair of "downstream, downstream operator".
@@ -17,6 +19,7 @@ public class SPSCController extends QueueController {
     private static final Logger LOG = LoggerFactory.getLogger(SPSCController.class);
     private static final long serialVersionUID = -5079796097938215439L;
     private final HashMap<Integer, Queue> outputQueue = new HashMap<>();//<Downstream executor ID, corresponding output queue>
+
     /**
      * This is where partition ratio is being updated.
      *
@@ -25,6 +28,7 @@ public class SPSCController extends QueueController {
     public SPSCController(HashMap<Integer, ExecutionNode> downExecutor_list) {
         super(downExecutor_list);
     }
+
     public boolean isEmpty() {
         for (int executor : downExecutor_list.keySet()) {
             Queue queue = outputQueue.get(executor);
@@ -34,6 +38,7 @@ public class SPSCController extends QueueController {
         }
         return true;
     }
+
     /**
      * Allocate memory for queue structure here.
      *
@@ -62,6 +67,7 @@ public class SPSCController extends QueueController {
             }
         }
     }
+
     public Queue get_queue(int executor) {
         return outputQueue.get(executor);
     }

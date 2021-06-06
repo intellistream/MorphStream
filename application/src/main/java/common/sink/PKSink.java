@@ -1,12 +1,15 @@
 package common.sink;
+
+import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import execution.runtime.tuple.impl.Tuple;
+
 public class PKSink extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(PKSink.class);
     private static final long serialVersionUID = 5481794109405775823L;
     double success = 0;
     double failure = 0;
+
     @Override
     public void execute(Tuple input) {
         boolean result = input.getBoolean(0);
@@ -24,6 +27,7 @@ public class PKSink extends MeasureSink {
             }
         }
     }
+
     public void display() {
         LOG.info("Spikes: " + success + "(" + (success / (success + failure)) + ")");
     }

@@ -1,4 +1,5 @@
 package common.tools;
+
 import common.tools.cacheSim.ZipfGenerator;
 
 import java.io.BufferedWriter;
@@ -9,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
+
 public class zipf {
     public static void main(String[] args) throws IOException {
         int size = 99171;
@@ -46,6 +48,7 @@ public class zipf {
             e.printStackTrace();
         }
     }
+
     private static Map<Integer, Integer> computeCounts(
             ZipfGenerator z, int size, int n) {
         Map<Integer, Integer> counts = new LinkedHashMap<>();
@@ -58,6 +61,7 @@ public class zipf {
         }
         return counts;
     }
+
     private static Map<Integer, Integer> computeCounts(
             FastZipfGenerator z, int size, int n) {
         Map<Integer, Integer> counts = new LinkedHashMap<>();

@@ -1,8 +1,10 @@
 package storage.table.stats;
+
 import operator.QueryPlan.PredicateOperator;
 import storage.datatype.DataBox;
 
 import java.util.Collection;
+
 /**
  * A parametrized type that stores histograms for a given value_list.
  *
@@ -17,26 +19,31 @@ public interface Histogram<T> {
      * @return
      */
     Long get(T value);
+
     /**
      * Return all the values stored in the histogram
      *
      * @return
      */
     Collection<T> values();
+
     /**
      * Add a new value_list to the Histogram.
      *
      * @param value the value_list to add
      */
     void add(T value);
+
     /**
      * Removes a value_list from the Histogram
      *
      * @param value the value_list to remove
      */
     void removeValue(T value);
+
     float computeReductionFactor(PredicateOperator predicate,
                                  DataBox value);
+
     /**
      * Get the number of values within a given range, including start and up to but not including end.
      *
@@ -45,21 +52,29 @@ public interface Histogram<T> {
      * @return the number of values in this range
      */
     int getEntriesInRange(T start, T end);
+
     /**
      * @return index of bucket of the min value_list.
      */
     int getMinValueIndex();
+
     /**
      * @return index of bucket of the max value_list.
      */
     int getMaxValueIndex();
+
     @SuppressWarnings("unchecked")
     T getMinValue();
+
     @SuppressWarnings("unchecked")
     T getMaxValue();
+
     int getNumDistinct();
+
     Histogram<T> copyWithReduction(float reductionFactor);
+
     Histogram<T> copyWithPredicate(PredicateOperator predicate,
                                    DataBox value);
+
     int getSampleCount();
 }

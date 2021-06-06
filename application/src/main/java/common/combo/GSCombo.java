@@ -1,4 +1,5 @@
 package common.combo;
+
 import common.bolts.transactional.gs.*;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -21,6 +22,7 @@ import static common.Constants.Event_Path;
 import static content.Content.*;
 import static profiler.Metrics.NUM_ACCESSES;
 import static profiler.Metrics.NUM_ITEMS;
+
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class GSCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(GSCombo.class);
@@ -30,6 +32,7 @@ public class GSCombo extends SPOUTCombo {
     int[] concerned_length = new int[]{40};
     int cnt = 0;
     ArrayDeque<MicroEvent> prevents = new ArrayDeque<>();
+
     public GSCombo() {
         super(LOG, 0);
     }
@@ -84,9 +87,11 @@ public class GSCombo extends SPOUTCombo {
         if (enable_debug)
             show_stats();
     }
+
     private boolean key_conflict(int pre_key, int key) {
         return pre_key == key;
     }
+
     private int check_conflict(MicroEvent pre_event, MicroEvent event) {
         int conf = 0;//in case no conflict at all.
         for (int key : event.getKeys()) {
@@ -98,6 +103,7 @@ public class GSCombo extends SPOUTCombo {
         }
         return conf;
     }
+
     private int conflict(MicroEvent event) {
         int conc = 1;//in case no conflict at all.
         for (MicroEvent prevent : prevents) {
@@ -105,6 +111,7 @@ public class GSCombo extends SPOUTCombo {
         }
         return Math.max(0, conc);
     }
+
     protected void show_stats() {
         while (cnt < 8) {
             for (Object myevent : myevents) {
@@ -123,6 +130,7 @@ public class GSCombo extends SPOUTCombo {
             cnt++;
         }
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         assert enable_shared_state;//This application requires enable_shared_state.

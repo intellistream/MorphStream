@@ -1,5 +1,7 @@
 package common.util.window;
+
 import java.util.List;
+
 /**
  * Author: Thilina
  * Date: 11/22/14

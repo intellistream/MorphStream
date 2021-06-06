@@ -1,4 +1,5 @@
 package common.sink;
+
 import common.Constants;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -31,6 +32,7 @@ public class MeasureSink_latency extends BaseSink {
     protected stable_sink_helper helper;
     protected int cnt = 0;
     int sink_ID;
+
     public MeasureSink_latency() {
         super(new HashMap<>());
         this.input_selectivity.put(Constants.DEFAULT_STREAM_ID, 1.0);
@@ -40,11 +42,13 @@ public class MeasureSink_latency extends BaseSink {
 //		this.input_selectivity.put(LRTopologyControl.DAILY_EXPEDITURE_OUTPUT_STREAM_ID, 1.0);
 //		this.input_selectivity.put(LRTopologyControl.ACCIDENTS_STREAM_ID, 1.0);
     }
+
     @Override
     public Integer default_scale(Configuration conf) {
         int numNodes = conf.getInt("num_socket", 1);
         return 1;
     }
+
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         int size = graph.getSink().operator.getExecutorList().size();
@@ -64,6 +68,7 @@ public class MeasureSink_latency extends BaseSink {
             isSINK = true;
         }
     }
+
     @Override
     public void execute(Tuple input) {
         double results = helper.execute(input.getBID());
@@ -73,6 +78,7 @@ public class MeasureSink_latency extends BaseSink {
             check();
         }
     }
+
     @Override
     public void execute(JumboTuple input) {
         //	store.add(input);
@@ -103,6 +109,7 @@ public class MeasureSink_latency extends BaseSink {
             }
         }
     }
+
     /**
      * Only one sink will do the measure_end.
      */
@@ -130,6 +137,7 @@ public class MeasureSink_latency extends BaseSink {
             context.Sequential_stopAll();
         }
     }
+
     @Override
     protected Logger getLogger() {
         return LOG;

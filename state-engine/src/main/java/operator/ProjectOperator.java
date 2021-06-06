@@ -1,4 +1,5 @@
 package operator;
+
 import db.DatabaseException;
 import storage.MarkerRecord;
 import storage.SchemaRecord;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+
 public class ProjectOperator extends QueryOperator {
     private final List<String> columns;
     private final List<Integer> indices;
@@ -26,6 +28,7 @@ public class ProjectOperator extends QueryOperator {
     private String sumColumn;
     private String averageColumn;
     private boolean sumIsFloat;
+
     /**
      * Creates a new ProjectOperator that reads tuples from source and filters out columns. Optionally
      * computers an aggregate if it is specified.
@@ -61,6 +64,7 @@ public class ProjectOperator extends QueryOperator {
         this.stats = this.estimateStats();
         this.cost = this.estimateIOCost();
     }
+
     protected RecordSchema computeSchema() throws QueryPlanException {
         // check to make sure that the source operator is giving us columns that we project
         RecordSchema sourceSchema = this.getSource().getOutputSchema();
@@ -113,17 +117,21 @@ public class ProjectOperator extends QueryOperator {
         }
         return new RecordSchema(this.columns, columnTypes);
     }
+
     public Iterator<SchemaRecord> iterator() throws QueryPlanException, DatabaseException {
         return new ProjectIterator();
     }
+
     private void addToCount() {
         this.countValue++;
     }
+
     private int getAndResetCount() {
         int result = this.countValue;
         this.countValue = 0;
         return result;
     }
+
     private void addToSum(SchemaRecord record) {
         if (this.sumIsFloat) {
             this.sumValue += record.getValues().get(this.sumColumnIndex).getFloat();
@@ -131,15 +139,18 @@ public class ProjectOperator extends QueryOperator {
             this.sumValue += record.getValues().get(this.sumColumnIndex).getInt();
         }
     }
+
     private double getAndResetSum() {
         double result = this.sumValue;
         this.sumValue = 0;
         return result;
     }
+
     private void addToAverage(SchemaRecord record) {
         this.averageCountValue++;
         this.averageSumValue += record.getValues().get(this.averageColumnIndex).getInt();
     }
+
     private double getAndResetAverage() {
         if (this.averageCountValue == 0) {
             return 0f;
@@ -149,10 +160,12 @@ public class ProjectOperator extends QueryOperator {
         this.averageCountValue = 0;
         return result;
     }
+
     public String str() {
         return "type: " + this.getType() +
                 "\ncolumns: " + this.columns;
     }
+
     /**
      * Estimates the table statistics for the result of executing this query operator.
      *
@@ -161,9 +174,11 @@ public class ProjectOperator extends QueryOperator {
     public TableStats estimateStats() throws QueryPlanException {
         return this.getSource().getStats();
     }
+
     public int estimateIOCost() throws QueryPlanException {
         return this.getSource().getIOCost();
     }
+
     /**
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
@@ -173,6 +188,7 @@ public class ProjectOperator extends QueryOperator {
         private final SchemaRecord nextRecord;
         private boolean prevWasMarker;
         private List<DataBox> baseValues;
+
         public ProjectIterator() throws QueryPlanException, DatabaseException {
             this.sourceIterator = ProjectOperator.this.getSource().iterator();
             this.markerRecord = MarkerRecord.getMarker();
@@ -180,6 +196,7 @@ public class ProjectOperator extends QueryOperator {
             this.prevWasMarker = true;
             this.baseValues = new ArrayList<>();
         }
+
         /**
          * Checks if there are more d_record(s) to yield
          *
@@ -188,6 +205,7 @@ public class ProjectOperator extends QueryOperator {
         public boolean hasNext() {
             return this.sourceIterator.hasNext();
         }
+
         /**
          * Yields the next d_record of this iterator.
          *
@@ -280,6 +298,7 @@ public class ProjectOperator extends QueryOperator {
             }
             throw new NoSuchElementException();
         }
+
         public void remove() {
             throw new UnsupportedOperationException();
         }

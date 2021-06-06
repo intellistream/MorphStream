@@ -1,16 +1,17 @@
 package profiler;
+
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
 import static common.meta.MetaTypes.kMaxThreadNum;
+
 public class Metrics {
+    private static final Metrics ourInstance = new Metrics();
     public static int COMPUTE_COMPLEXITY = 10;//default setting. 1, 10, 100
     public static int POST_COMPUTE_COMPLEXITY = 1;
     //change to 3 for S_STORE testing.
     public static int NUM_ACCESSES = 3;//10 as default setting. 2 for short transaction, 10 for long transaction.? --> this is the setting used in YingJun's work. 16 is the default value_list used in 1000core machine.
     public static int NUM_ITEMS = 1_000_000;//1. 1_000_000; 2. ? ; 3. 1_000  //1_000_000 YCSB has 16 million records, Ledger use 200 million records.
     public static int H2_SIZE;
-    private static final Metrics ourInstance = new Metrics();
-
     public DescriptiveStatistics[] total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] number_of_ocs_processed = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
     public DescriptiveStatistics[] numberOf_transactional_events_processed = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
@@ -71,11 +72,14 @@ public class Metrics {
      * Specially for T-Stream..
      */
     public DescriptiveStatistics[] enqueue_time = new DescriptiveStatistics[kMaxThreadNum];//event enqueue
+
     private Metrics() {
     }
+
     public static Metrics getInstance() {
         return ourInstance;
     }
+
     /**
      * Initilize all metric counters.
      */
@@ -89,6 +93,7 @@ public class Metrics {
 //        enqueue_time.put(ID, new DescriptiveStatistics());
         NUM_ACCESSES = num_access;
     }
+
     public void initilize(int task) {
 
         total[task] = new DescriptiveStatistics();

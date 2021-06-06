@@ -1,6 +1,8 @@
 package components.formatter;
+
 import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.Tuple;
+
 /**
  * @author Maycon Viana Bordin <mayconbordin@gmail.com>
  */

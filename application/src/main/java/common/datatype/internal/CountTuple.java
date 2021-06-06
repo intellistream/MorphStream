@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype.internal;
+
 import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
@@ -24,6 +25,7 @@ import execution.runtime.tuple.impl.Fields;
 
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
+
 /**
  * {@link CountTuple} represents an intermediate result tuple; the number of vehicles in a segment within a 'minute
  * number' time frame (see {@link Time#getMinute(short)}).<br />
@@ -63,8 +65,10 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
      */
     private final static int CNT_IDX = 4;
     private static final long serialVersionUID = 2521804330216975272L;
+
     public CountTuple() {
     }
+
     /**
      * Instantiates a new <em>dummy</em> {@link CountTuple} for the given minute. This dummy tuple does not report an
      * count value_list but is used as a "time progress tuple" to unblock downstream operators.
@@ -79,6 +83,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
         super.add(DIR_IDX, null);
         super.add(CNT_IDX, null);
     }
+
     /**
      * Instantiates a new {@link CountTuple} for the given attributes.
      *
@@ -102,6 +107,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
         super.add(CNT_IDX, count);
         super.add(TIME_IDX, time);
     }
+
     public CountTuple(Short minute, Integer xway, Short segment, Short diretion, Integer count, long msgID, long timeStamp) {
         assert (minute != null);
         assert (xway != null);
@@ -116,6 +122,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
         super.add(msgID);//5
         super.add(timeStamp);//6
     }
+
     public CountTuple(short minute, long msgID, long timeStamp) {
         super.add(MINUTE_IDX, minute);
         super.add(XWAY_IDX, null);
@@ -125,6 +132,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
         super.add(msgID);//5
         super.add(timeStamp);//6
     }
+
     /**
      * Returns the schema of a {@link CountTuple}..
      *
@@ -137,9 +145,11 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
                 LRTopologyControl.TIME_FIELD_NAME
         );
     }
+
     public static Fields getLatencySchema() {
         return new Fields(LRTopologyControl.CAR_COUNT_FIELD_NAME, MSG_ID, SYSTEMTIMESTAMP);
     }
+
     /**
      * Returns the 'minute number' of this {@link CountTuple}.
      *
@@ -148,6 +158,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
     public final Short getMinuteNumber() {
         return (Short) super.get(MINUTE_IDX);
     }
+
     /**
      * Returns the expressway ID of this {@link CountTuple}.
      *
@@ -157,6 +168,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
     public final Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
+
     /**
      * Returns the segment of this {@link CountTuple}.
      *
@@ -166,6 +178,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
     public final Short getSegment() {
         return (Short) super.get(SEG_IDX);
     }
+
     /**
      * Returns the vehicle's direction of this {@link CountTuple}.
      *
@@ -175,6 +188,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
     public final Short getDirection() {
         return (Short) super.get(DIR_IDX);
     }
+
     /**
      * Returns the number of vehicles of this {@link CountTuple}.
      *
@@ -183,6 +197,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
     public final Integer getCount() {
         return (Integer) super.get(CNT_IDX);
     }
+
     /**
      * Returns {@code true} if this tuple does not report a count value_list but only carries the next 'minute number'.
      *
@@ -192,6 +207,7 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
     public final boolean isProgressTuple() {
         return super.get(XWAY_IDX) == null;
     }
+
     public long getTime() {
         return (long) super.get(TIME_IDX);
     }

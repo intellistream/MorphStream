@@ -1,6 +1,8 @@
 package common.util.math;
+
 import java.util.HashSet;
 import java.util.Set;
+
 /**
  * Author: Thilina
  * Date: 12/6/14
@@ -8,21 +10,27 @@ import java.util.Set;
 public class OutlierTracker {
     private final Set<String> completeSet = new HashSet<>();
     private final Set<String> outlierSet = new HashSet<>();
+
     public void addMember(String key) {
         completeSet.add(key);
     }
+
     public void addOutlier(String key) {
         outlierSet.add(key);
     }
+
     public void removeOutlier(String key) {
         outlierSet.remove(key);
     }
+
     public boolean isOutlier(String key) {
         return outlierSet.contains(key);
     }
+
     public boolean isMember(String key) {
         return completeSet.contains(key);
     }
+
     public double getCurrentPercentage() {
         return (outlierSet.size() * 1.0) / (completeSet.size());
     }

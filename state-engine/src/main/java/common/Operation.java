@@ -1,4 +1,5 @@
 package common;
+
 import common.meta.MetaTypes;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
@@ -21,6 +22,7 @@ public class Operation implements Comparable<Operation> {
     //required by READ_WRITE_and Condition.
     public final Function function;
     public final String table_name;
+    private final Queue<Operation> dependents = new ConcurrentLinkedQueue<>();
     public volatile TableRecordRef records_ref;//for cross-record dependency.
     public volatile SchemaRecordRef record_ref;//required by read-only: the place holder of the reading d_record.
     public List<DataBox> value_list;//required by write-only: the value_list to be used to update the d_record.
@@ -33,8 +35,6 @@ public class Operation implements Comparable<Operation> {
     public Condition condition;
     public boolean[] success;
     public String name;
-
-    private final Queue<Operation> dependents = new ConcurrentLinkedQueue<>();
     private IOpConflictResolutionListener opConflictResolutionListener;
     private OperationChain oc;
 
@@ -48,6 +48,7 @@ public class Operation implements Comparable<Operation> {
         this.s_record = d_record;
         this.record_ref = record_ref;//this holds events' record_ref.
     }
+
     public Operation(String table_name, TxnContext txn_context, long bid, MetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
         this.table_name = table_name;
         this.d_record = record;
@@ -58,6 +59,7 @@ public class Operation implements Comparable<Operation> {
         this.function = null;
         this.record_ref = record_ref;//this holds events' record_ref.
     }
+
     public Operation(String table_name, TxnContext txn_context, long bid, MetaTypes.AccessType accessType, TableRecord record, TableRecordRef record_ref) {
         this.table_name = table_name;
         this.d_record = record;
@@ -68,6 +70,7 @@ public class Operation implements Comparable<Operation> {
         this.function = null;
         this.records_ref = record_ref;//this holds events' record_ref.
     }
+
     public Operation(String table_name, TxnContext txn_context, long bid, MetaTypes.AccessType accessType, TableRecord record, List<DataBox> value_list) {
         this.table_name = table_name;
         this.d_record = record;
@@ -79,6 +82,7 @@ public class Operation implements Comparable<Operation> {
         this.function = null;
         this.record_ref = null;
     }
+
     public Operation(String table_name, TxnContext txn_context, long bid, MetaTypes.AccessType accessType, TableRecord record, long value, int column_id) {
         this.table_name = table_name;
         this.d_record = record;
@@ -91,6 +95,7 @@ public class Operation implements Comparable<Operation> {
         this.function = null;
         this.record_ref = null;
     }
+
     /**
      * Update dest d_record by applying function of s_record.. It relys on MVCC to guarantee correctness.
      *
@@ -114,6 +119,7 @@ public class Operation implements Comparable<Operation> {
         this.record_ref = null;
         this.column_id = column_id;
     }
+
     /**
      * @param table_name
      * @param s_record
@@ -140,6 +146,7 @@ public class Operation implements Comparable<Operation> {
         this.success = success;
         this.record_ref = record_ref;
     }
+
     public Operation(String table_name, TableRecord d_record, long bid, MetaTypes.AccessType accessType, Function function, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
         this.table_name = table_name;
         this.d_record = d_record;
@@ -153,6 +160,7 @@ public class Operation implements Comparable<Operation> {
         this.s_record = d_record;
         this.record_ref = null;
     }
+
     /**
      * TODO: make it better.
      * It has an assumption that no duplicate keys for the same BID. --> This helps a lot!
@@ -201,6 +209,7 @@ public class Operation implements Comparable<Operation> {
 
     public interface IOpConflictResolutionListener {
         void onDependencyResolved(int threadId, Operation dependent, Operation dependency);
+
         void onDependentResolved(Operation dependent, Operation dependency);
     }
 

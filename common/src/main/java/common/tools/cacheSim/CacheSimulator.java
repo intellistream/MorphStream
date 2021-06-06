@@ -1,6 +1,8 @@
 package common.tools.cacheSim;
+
 import java.io.IOException;
 import java.util.Scanner;
+
 /**
  * A program to simulate different types of caches for statistical analysis
  * on how different cache setups compare to each other

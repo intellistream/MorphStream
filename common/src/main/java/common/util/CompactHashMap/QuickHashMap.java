@@ -1,9 +1,11 @@
 package common.util.CompactHashMap;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.*;
+
 /**
  * Hash table based implementation of the <tt>Map</tt> interface.  This
  * implementation provides all of the optional map operations, and permits
@@ -253,6 +255,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
     private transient volatile Set<K> keySet = null;
     private transient volatile Collection<V> values = null;
     private transient volatile Set<Map.Entry<K, V>> entrySet = null;
+
     /**
      * Constructs an empty <tt>HashMap</tt> with the default set_executor_ready capacity
      * (16) and the default load factor (0.75).
@@ -260,6 +263,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
     public QuickHashMap() {
         this(true);
     }
+
     /**
      * Constructor to be used in HashSet
      * containing only keys without values
@@ -272,6 +276,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         keyIndexShift = withValues ? 1 : 0;
         init();
     }
+
     /**
      * Constructs an empty <tt>HashMap</tt> with the specified set_executor_ready
      * capacity and load factor.
@@ -284,6 +289,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
     QuickHashMap(int initialCapacity, float loadFactor) {
         this(initialCapacity, loadFactor, true);
     }
+
     /**
      * Constructor to be used in HashSet
      * containing only keys without values
@@ -308,6 +314,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         keyIndexShift = withValues ? 1 : 0;
         init();
     }
+
     /**
      * Constructs an empty <tt>HashMap</tt> with the specified set_executor_ready
      * capacity and the default load factor (0.75).
@@ -318,6 +325,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
     QuickHashMap(int initialCapacity) {
         this(initialCapacity, DEFAULT_LOAD_FACTOR, true);
     }
+
     /**
      * Constructor to be used in HashSet
      * containing only keys without values
@@ -326,6 +334,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
     QuickHashMap(int initialCapacity, boolean withValues) {
         this(initialCapacity, DEFAULT_LOAD_FACTOR, withValues);
     }
+
     /**
      * Constructs a new <tt>HashMap</tt> with the same mappings as the
      * specified <tt>Map</tt>.  The <tt>HashMap</tt> is created with
@@ -341,6 +350,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
             put(e.getKey(), e.getValue(), false);
     }
+
     /**
      * Applies a supplemental hash function to a given object's hashCode,
      * which defends against poor quality hash functions. This is critical
@@ -355,9 +365,11 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         h ^= (h >>> 20) ^ (h >>> 12);
         return h ^ (h >>> 7) ^ (h >>> 4);
     }
+
     public V peak() {
         return (V) this.values().toArray()[0];
     }
+
     /**
      * Initialization hook for subclasses. This method is called
      * in all constructors and pseudo-constructors (clone, readObject)
@@ -367,6 +379,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
      */
     void init() {
     }
+
     /**
      * Increase fieldSize of internal arrays.
      *
@@ -465,6 +478,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         indexTable = newIndices;
         // validate("Resize");
     }
+
     /**
      * Returns the index of key in internal arrays if it is present.
      *
@@ -511,6 +525,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             control = index & CONTROL_BITS;
         }
     }
+
     /**
      * Returns the value to which the specified key is mapped,
      * or {@code null} if this map contains no mapping for the key.
@@ -571,6 +586,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             control = index & CONTROL_BITS;
         }
     }
+
     /**
      * Returns <tt>true</tt> if i-th array position
      * is not occupied (is in deleted elements list).
@@ -583,6 +599,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
                 firstDeletedIndex >= 0 &&
                         keyValueTable[(i << keyIndexShift) + 1] == null;
     }
+
     /**
      * Associates the specified value with the specified key in this map.
      * If the map previously contained a mapping for the key, the old
@@ -598,12 +615,14 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
     public V put(K key, V value) {
         return put(key, value, true);
     }
+
     @Override
     public V putIfAbsent(K key, V value) {
         if (get(key) == null)
             return put(key, value);
         return value;
     }
+
     /**
      * Create a new key/value mapping without looking
      * if such key is already present in this map
@@ -787,6 +806,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         // validate("Put "+key+" "+value);
         return null;
     }
+
     /**
      * Removes the mapping for the specified key from this map if present.
      *
@@ -800,6 +820,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         V result = removeKey(key, NO_INDEX);
         return result == NOT_FOUND ? null : result;
     }
+
     /**
      * Removes the mapping for the specified key from this map if present.
      *
@@ -914,6 +935,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         }
         return (V) NOT_FOUND;
     }
+
     /**
      * Removes all of the mappings from this map.
      * The map will be empty after this call returns.
@@ -929,6 +951,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         modCount++;
         nullKeyPresent = false;
     }
+
     /**
      * Returns a shallow copy of this <tt>HashMap</tt> instance:
      * the keys and values themselves are not cloned.
@@ -949,6 +972,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         that.modCount = 0;
         return that;
     }
+
     /**
      * Returns the number of key-value mappings in this map.
      *
@@ -957,6 +981,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
     public int size() {
         return size;
     }
+
     /**
      * Returns <tt>true</tt> if this map contains no key-value mappings.
      *
@@ -965,6 +990,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
     public boolean isEmpty() {
         return size == 0;
     }
+
     /**
      * Returns <tt>true</tt> if this map contains a mapping for the
      * specified key.
@@ -976,6 +1002,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
     public boolean containsKey(Object key) {
         return positionOf(key) != NO_INDEX;
     }
+
     /**
      * Copies all of the mappings from the specified map to this map.
      * These mappings will replace any mappings that this map had for
@@ -1014,6 +1041,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
                 put(e.getKey(), e.getValue());
         }
     }
+
     /**
      * Returns <tt>true</tt> if this map maps one or more keys to the
      * specified value.
@@ -1038,6 +1066,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             }
         return false;
     }
+
     /**
      * Returns a {@link Set} view of the keys contained in this map.
      * The set is backed by the map, so changes to the map are
@@ -1055,6 +1084,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         Set<K> ks = keySet;
         return (ks != null ? ks : (keySet = new KeySet()));
     }
+
     /**
      * This method defines this map iteration order.
      * This order can be changed in subclasses like LinkedHashMap.
@@ -1068,6 +1098,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         while (isEmpty(i)) i++;
         return i;
     }
+
     /**
      * This method defines this map iteration order.
      * This order can be changed in subclasses like LinkedHashMap.
@@ -1079,6 +1110,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         do i++; while (i < firstUnusedIndex && isEmpty(i));
         return i < firstUnusedIndex ? i : NO_INDEX;
     }
+
     /**
      * Returns a {@link Set} view of the mappings contained in this map.
      * The set is backed by the map, so changes to the map are
@@ -1099,6 +1131,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         Set<Map.Entry<K, V>> es = entrySet;
         return es != null ? es : (entrySet = new EntrySet());
     }
+
     /**
      * Returns a {@link Collection} view of the values contained in this map.
      * The collection is backed by the map, so changes to the map are
@@ -1116,6 +1149,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         Collection<V> vs = values;
         return (vs != null ? vs : (values = new Values()));
     }
+
     /**
      * Save the state of the <tt>HashMap</tt> instance
      * to a stream (i.e., serialize it).
@@ -1143,6 +1177,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
                     keyValueTable[(i << keyIndexShift) + 2] : null);
         }
     }
+
     /**
      * Reconstitute the <tt>HashMap</tt> instance
      * from a stream (i.e., deserialize it).
@@ -1169,22 +1204,29 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             put(key, value, false);
         }
     }
+
     // These methods are used when serializing HashSets
     int capacity() {
         return hashLen;
     }
+
     float loadFactor() {
         return loadFactor;
     }
+
     // These hooks are needed for LinkedHashMap
     void addHook(int i) {
     }
+
     void updateHook(int i) {
     }
+
     void removeHook(int i) {
     }
+
     void relocateHook(int newIndex, int oldIndex) {
     }
+
     /**
      * Returns the hash code value for this map.  The hash code of a map is
      * defined to be the sum of the hash codes of each entry in the map's
@@ -1216,6 +1258,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             }
         return h;
     }
+
     /**
      * Returns a string representation of this map.  The string representation
      * consists of a list of key-value mappings in the order returned by the
@@ -1249,6 +1292,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         }
         return sb.append('}').toString();
     }
+
     /**
      * Compares the specified object with this map for equality.  Returns
      * <tt>true</tt> if the given object is also a map and the two maps
@@ -1296,6 +1340,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             }
         return true;
     }
+
     /**
      * Generic iterator over this map.
      * value() method should return the real elements.
@@ -1306,12 +1351,15 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
         int nextIndex = iterateFirst();
         int lastIndex = NO_INDEX;
         int expectedModCount = modCount; // For fast-fail
+
         HashIterator(int iteratorType) {
             this.iteratorType = iteratorType;
         }
+
         public final boolean hasNext() {
             return nextIndex != NO_INDEX && nextIndex < firstUnusedIndex;
         }
+
         @SuppressWarnings("unchecked")
         public final E next() {
             if (modCount != expectedModCount)
@@ -1336,6 +1384,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
                     return (E) keyValueTable[(lastIndex << 1) + 2];
             }
         }
+
         public final void remove() {
             if (lastIndex == NO_INDEX)
                 throw new IllegalStateException();
@@ -1347,15 +1396,18 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             expectedModCount = modCount;
         }
     }
+
     // For Server VM with -XX:+DoEscapeAnalysis
     final class EntryIterator implements Iterator<Map.Entry<K, V>> {
         final boolean simpleOrder = !(QuickHashMap.this instanceof FastLinkedHashMap<?, ?>);
         int nextIndex = iterateFirst();
         int lastIndex = NO_INDEX;
         int expectedModCount = modCount; // For fast-fail
+
         public final boolean hasNext() {
             return nextIndex != NO_INDEX && nextIndex < firstUnusedIndex;
         }
+
         public final Map.Entry<K, V> next() {
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
@@ -1370,6 +1422,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
                 nextIndex = iterateNext(nextIndex);
             return new Entry(lastIndex);
         }
+
         public final void remove() {
             if (lastIndex == NO_INDEX)
                 throw new IllegalStateException();
@@ -1381,26 +1434,33 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             expectedModCount = modCount;
         }
     }
+
     private final class KeySet extends AbstractSet<K> {
         public Iterator<K> iterator() {
             return new HashIterator<>(KEY_ITERATOR);
         }
+
         public int size() {
             return size;
         }
+
         public boolean isEmpty() {
             return size == 0;
         }
+
         public boolean contains(Object o) {
             return containsKey(o);
         }
+
         public boolean remove(Object o) {
             return QuickHashMap.this.removeKey(o, NO_INDEX) != NOT_FOUND;
         }
+
         public void clear() {
             QuickHashMap.this.clear();
         }
     }
+
     /**
      * Internal self-test.
      * void validate(String s) {
@@ -1507,6 +1567,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             // return new HashIterator<Map.Entry<K,V>>(ENTRY_ITERATOR);
             return new EntryIterator();
         }
+
         public boolean contains(Object o) {
             if (!(o instanceof Map.Entry<?, ?>))
                 return false;
@@ -1519,6 +1580,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             Object v2 = e.getValue();
             return v1 == v2 || v1 != null && v1.equals(v2);
         }
+
         public boolean remove(Object o) {
             if (!(o instanceof Map.Entry<?, ?>))
                 return false;
@@ -1534,37 +1596,47 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             removeKey(key, i);
             return true;
         }
+
         public int size() {
             return size;
         }
+
         public boolean isEmpty() {
             return size == 0;
         }
+
         public void clear() {
             QuickHashMap.this.clear();
         }
     }
+
     private final class Values extends AbstractCollection<V> {
         public Iterator<V> iterator() {
             return new HashIterator<>(VALUE_ITERATOR);
         }
+
         public int size() {
             return size;
         }
+
         public boolean isEmpty() {
             return size == 0;
         }
+
         public boolean contains(Object o) {
             return containsValue(o);
         }
+
         public void clear() {
             QuickHashMap.this.clear();
         }
     }
+
     final class Entry implements Map.Entry<K, V> {
         final int index;
         final K key;
         V value;
+
         @SuppressWarnings("unchecked")
         Entry(int index) {
             this.index = index;
@@ -1573,9 +1645,11 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             this.value = (V) (keyIndexShift == 0 ? DUMMY_VALUE :
                     keyValueTable[(index << keyIndexShift) + 2]);
         }
+
         public final K getKey() {
             return key;
         }
+
         @SuppressWarnings("unchecked")
         public final V getValue() {
             // HashSet (keyIndexShift == 0) does not use getValue
@@ -1584,6 +1658,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
                 value = (V) keyValueTable[(index << 1) + 2];
             return value;
         }
+
         public final V setValue(V newValue) {
             // HashSet (keyIndexShift == 0) does not use setValue
             if (index == NULL_INDEX ? nullKeyPresent :
@@ -1597,6 +1672,7 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             value = newValue;
             return oldValue;
         }
+
         public boolean equals(Object o) {
             if (!(o instanceof Map.Entry<?, ?>))
                 return false;
@@ -1609,10 +1685,12 @@ public class QuickHashMap<K, V> extends HashMap<K, V>
             }
             return false;
         }
+
         public int hashCode() {
             return (key == null ? 0 : key.hashCode()) ^
                     (getValue() == null ? 0 : value.hashCode());
         }
+
         public String toString() {
             return key + "=" + getValue();
         }

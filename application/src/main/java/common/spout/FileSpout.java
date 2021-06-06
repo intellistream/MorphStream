@@ -1,12 +1,13 @@
 package common.spout;
+
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.helper.parser.Parser;
 import common.util.datatypes.StreamValues;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.AbstractSpout;
 import execution.ExecutionGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Scanner;
 
 import static common.Constants.DEFAULT_STREAM_ID;
+
 /**
  * @author Maycon Viana Bordin <mayconbordin@gmail.com>
  */
@@ -31,9 +33,11 @@ public class FileSpout extends AbstractSpout {
     private Scanner scanner;
     private int cnt = 10240;
     private String file_path;
+
     private FileSpout() {
         super(LOG);
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
@@ -54,9 +58,11 @@ public class FileSpout extends AbstractSpout {
             e.printStackTrace();
         }
     }
+
     @Override
     public void cleanup() {
     }
+
     @Override
     public void nextTuple() throws InterruptedException {
         if (cnt-- > 0) {//make sure no gc due to queue full.
@@ -78,6 +84,7 @@ public class FileSpout extends AbstractSpout {
             }
         }
     }
+
     private String readFile() {
         String record = null;
         if (scanner.hasNextLine()) {
@@ -85,6 +92,7 @@ public class FileSpout extends AbstractSpout {
         }
         return record;
     }
+
     /**
      * Read one line from the currently open file. If there's only one file, each
      * instance of the spout will read only a portion of the file.
@@ -100,6 +108,7 @@ public class FileSpout extends AbstractSpout {
         else
             return null;
     }
+
     /**
      * Opens the next file from the index. If there's multiple instances of the
      * spout, it will read only a portion of the files.

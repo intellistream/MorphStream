@@ -1,4 +1,5 @@
 package operator;
+
 import db.DatabaseException;
 import db.SimpleDatabase;
 import storage.MarkerRecord;
@@ -11,10 +12,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
 public class OrderByOperator extends QueryOperator {
     private final int groupByColumnIndex;
     private final String groupByColumn;
     private final SimpleDatabase.Transaction transaction;
+
     /**
      * Create a new GroupByOperator that pulls from source and groups by groupByColumn.
      *
@@ -34,16 +37,20 @@ public class OrderByOperator extends QueryOperator {
         this.stats = this.estimateStats();
         this.cost = this.estimateIOCost();
     }
+
     public Iterator<SchemaRecord> iterator() throws QueryPlanException, DatabaseException {
         return new GroupByIterator();
     }
+
     protected RecordSchema computeSchema() throws QueryPlanException {
         return this.getSource().getOutputSchema();
     }
+
     public String str() {
         return "type: " + this.getType() +
                 "\ncolumn: " + this.groupByColumn;
     }
+
     /**
      * Estimates the table statistics for the result of executing this query operator.
      *
@@ -52,9 +59,11 @@ public class OrderByOperator extends QueryOperator {
     public TableStats estimateStats() throws QueryPlanException {
         return this.getSource().getStats();
     }
+
     public int estimateIOCost() throws QueryPlanException {
         return this.getSource().getIOCost();
     }
+
     /**
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
@@ -62,9 +71,10 @@ public class OrderByOperator extends QueryOperator {
         private final Iterator<SchemaRecord> sourceIterator;
         private final MarkerRecord markerRecord;
         private final Map<String, String> hashGroupTempTables;
-        private int currCount;
         private final Iterator<String> keyIter;
+        private int currCount;
         private Iterator<SchemaRecord> rIter;
+
         public GroupByIterator() throws QueryPlanException, DatabaseException {
             this.sourceIterator = OrderByOperator.this.getSource().iterator();
             this.markerRecord = MarkerRecord.getMarker();
@@ -86,6 +96,7 @@ public class OrderByOperator extends QueryOperator {
             }
             this.keyIter = hashGroupTempTables.keySet().iterator();
         }
+
         /**
          * Checks if there are more d_record(s) to yield
          *
@@ -94,6 +105,7 @@ public class OrderByOperator extends QueryOperator {
         public boolean hasNext() {
             return this.keyIter.hasNext() || (this.rIter != null && this.rIter.hasNext());
         }
+
         /**
          * Yields the next d_record of this iterator.
          *
@@ -120,6 +132,7 @@ public class OrderByOperator extends QueryOperator {
             }
             throw new NoSuchElementException();
         }
+
         public void remove() {
             throw new UnsupportedOperationException();
         }

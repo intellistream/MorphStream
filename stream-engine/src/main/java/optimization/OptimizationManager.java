@@ -1,4 +1,5 @@
 package optimization;
+
 import common.collections.Configuration;
 import components.exception.UnhandledCaseException;
 import db.Database;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CountDownLatch;
+
 /**
  * Created by I309939 on 11/8/2016.
  */
@@ -18,12 +20,14 @@ public class OptimizationManager extends executorThread {
     public ExecutionGraph g;
     public CountDownLatch latch;
     private ExecutionManager EM;
+
     public OptimizationManager(ExecutionGraph g, Configuration conf) {
         super(null, conf, null, null, 0, null, null);
         this.g = g;
         this.conf = conf;
 
     }
+
     public ExecutionManager getEM() {
         return EM;
     }
@@ -39,6 +43,7 @@ public class OptimizationManager extends executorThread {
         latch = new CountDownLatch(g.getExecutionNodeArrayList().size() + 1 - 1);//+1:OM -1:virtual
         EM.distributeTasks(conf, latch, db);
     }
+
     /**
      * creates new txn and routing plan continuously.
      */
@@ -53,9 +58,11 @@ public class OptimizationManager extends executorThread {
         //TODO: add optimization module here.
         //LOG.info("Optimization manager exists");
     }
+
     @Override
     protected void _execute_noControl() {
     }
+
     @Override
     protected void _execute() {
     }

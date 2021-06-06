@@ -17,7 +17,9 @@
  * #_
  */
 package common.datatype.util;
+
 import java.io.Serializable;
+
 /**
  * Each type that contains the three segment identifier attributes XWAY, SEGMENT, DIR must implement this interface.
  *
@@ -25,6 +27,8 @@ import java.io.Serializable;
  */
 public interface ISegmentIdentifier extends Serializable {
     Integer getXWay();
+
     Short getSegment();
+
     Short getDirection();
 }

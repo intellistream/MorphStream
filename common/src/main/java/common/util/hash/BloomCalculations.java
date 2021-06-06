@@ -1,4 +1,5 @@
 package common.util.hash;
+
 /**
  * The following calculations are taken from:
  * http://www.cs.wisc.edu/~cao/papers/summary-cache/node8.html
@@ -43,6 +44,7 @@ public class BloomCalculations {
             {1.0, 0.0689, 0.0177, 0.00718, 0.00381, 0.00244, 0.00179, 0.00146, 0.00129},
             {1.0, 0.0645, 0.0156, 0.00596, 0.003, 0.00183, 0.00128, 0.001, 0.000852} // 15
     };  // the first column is a dummy column representing K=0.
+
     /**
      * Given the number of buckets that can be used per element, return the optimal
      * number of hash functions in order to minimize the false positive rate.
@@ -56,6 +58,7 @@ public class BloomCalculations {
             return optKPerBuckets[optKPerBuckets.length - 1];
         return optKPerBuckets[bucketsPerElement];
     }
+
     /**
      * Given a maximum tolerable false positive probability, compute a Bloom
      * specification which will give less than the specified false positive rate,
@@ -90,6 +93,7 @@ public class BloomCalculations {
         }
         return new BloomSpecification(K, bucketsPerElement);
     }
+
     /**
      * A wrapper class that holds two key parameters for a Bloom Filter: the
      * number of hash functions used, and the number of buckets per element used.
@@ -97,6 +101,7 @@ public class BloomCalculations {
     public static final class BloomSpecification {
         final int K; // number of hash functions.
         final int bucketsPerElement;
+
         public BloomSpecification(int k, int bucketsPerElement) {
             K = k;
             this.bucketsPerElement = bucketsPerElement;

@@ -8,10 +8,11 @@ public class Constructor {
 
     /**
      * Implement the common construction methods here.
+     *
      * @param threadId
      * @param ocs
      */
-    public void construction(int threadId, Collection<OperationChain> ocs){
+    public void construction(int threadId, Collection<OperationChain> ocs) {
 
     }
 

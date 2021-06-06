@@ -1,7 +1,9 @@
 package topology;
+
 import common.collections.Configuration;
 import components.Topology;
 import execution.ExecutionGraph;
+
 /**
  * Created by shuhaozhang on 11/7/16.
  */

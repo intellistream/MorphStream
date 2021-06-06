@@ -1,7 +1,9 @@
 package common.model.predictor;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+
 /**
  * @author maycon
  */
@@ -9,6 +11,7 @@ public class MarkovModel {
     private List<String> states;
     private double[][] stateTransitionProb;
     private int numStates;
+
     public MarkovModel(String model) {
         Scanner scanner = new Scanner(model);
         int lineCount = 0;
@@ -30,6 +33,7 @@ public class MarkovModel {
         }
         scanner.close();
     }
+
     /**
      * @param table
      * @param data
@@ -46,12 +50,15 @@ public class MarkovModel {
             table[row][c] = Double.parseDouble(items[c]);
         }
     }
+
     public List<String> getStates() {
         return states;
     }
+
     public double[][] getStateTransitionProb() {
         return stateTransitionProb;
     }
+
     public int getNumStates() {
         return numStates;
     }

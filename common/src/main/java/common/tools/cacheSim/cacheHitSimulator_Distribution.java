@@ -1,10 +1,12 @@
 package common.tools.cacheSim;
+
 import com.vividsolutions.jts.math.Vector2D;
 
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
+
 /**
  * Created by szhang026 on 4/23/2016.
  */
@@ -12,6 +14,7 @@ public class cacheHitSimulator_Distribution {
     private static double nextTime(double rateParameter) {
         return -Math.log(1.0 - Math.random()) / rateParameter;
     }
+
     //    static int num_functionTypes;//number of types of functions.
 //    private static double total_execution_cycles;//total Brisk.execution cycles.
 //    private static double[] num_cycles_per_function;//Brisk.execution cycles per function.
@@ -62,6 +65,7 @@ public class cacheHitSimulator_Distribution {
         //System.out.println("Write finished");
         return event_trace;
     }
+
     private static int getsum(Collection<Integer> l, Map<Integer, Integer> instruction_per_function) {
         int sum = 0;
         for (int i : l) {
@@ -69,6 +73,7 @@ public class cacheHitSimulator_Distribution {
         }
         return sum;
     }
+
     private static Vector2D cacheHit(int[] event_trace, Map<Integer, Integer> instruction_per_function, int policy) {
         final int cache_size = 32000;
         int cache_used = 0;
@@ -133,6 +138,7 @@ public class cacheHitSimulator_Distribution {
         }
         return new Vector2D(compulsory_miss, access_miss);
     }
+
     public static void main(String[] arg) throws IOException {
         Map<Integer, String> function_name = new HashMap<>();
         LinkedList<Double> num_cycles_per_function = new LinkedList<>();

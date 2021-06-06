@@ -1,16 +1,18 @@
 package components.context;
+
 import components.TopologyComponent;
 import components.grouping.Grouping;
 import controller.input.InputStreamController;
+import db.Database;
 import execution.ExecutionGraph;
 import execution.ExecutionNode;
 import execution.runtime.executorThread;
 import execution.runtime.tuple.impl.Fields;
-import db.Database;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
 /**
  * A TopologyContext is created for each executor.
  * It is given to bolts and spouts in their "Loading" and "open"
@@ -24,6 +26,7 @@ public class TopologyContext {
     private static Database db;
     private static HashMap<Integer, executorThread> threadMap;
     private final int _taskId;
+
     /**
      * Instead of Store Brisk.topology, we Store Brisk.execution graph directly!
      * This is a global access memory structure,
@@ -35,21 +38,27 @@ public class TopologyContext {
         TopologyContext.threadMap = threadMap;
         this._taskId = executor.getExecutorID();
     }
+
     public Database getDb() {
         return db;
     }
+
     public HashMap<String, Map<TopologyComponent, Grouping>> getThisSources() {
         return this.getComponent(this.getThisComponentId()).getParents();
     }
+
     public Map<TopologyComponent, Grouping> getSources(String componentId, String StreamId) {
         return this.getComponent(componentId).getParentsOfStream(StreamId);
     }
+
     public String getThisComponentId() {
         return this.getComponentId(this._taskId);
     }
+
     public TopologyComponent getThisComponent() {
         return this.getComponent(this._taskId);
     }
+
     private String getComponentId(int taskId) {
         return getComponent(taskId).getId();
     }
@@ -57,6 +66,7 @@ public class TopologyContext {
     public ExecutionGraph getGraph() {
         return graph;
     }
+
     /**
      * Gets the component for the specified Task id. The component maps
      * to a component specified for a AbstractSpout or GeneralParserBolt in the Brisk.topology definition.
@@ -67,15 +77,19 @@ public class TopologyContext {
     public TopologyComponent getComponent(int taskId) {
         return graph.getExecutionNodeArrayList().get(taskId).operator;
     }
+
     public ExecutionNode getExecutor(int taskId) {
         return graph.getExecutionNode(taskId);
     }
+
     public ArrayList<Integer> getComponentTasks(TopologyComponent component) {
         return component.getExecutorIDList();
     }
+
     private TopologyComponent getComponent(String component) {
         return graph.topology.getComponent(component);
     }
+
     /**
      * Gets the declared output fields for the specified component.
      * TODO: Add multiple stream support in future.
@@ -86,6 +100,7 @@ public class TopologyContext {
         TopologyComponent op = graph.topology.getComponent(componentId);
         return op.get_output_fields(sourceStreamId);
     }
+
     /**
      * Gets the Task id of this Task.
      *
@@ -94,12 +109,15 @@ public class TopologyContext {
     public int getThisTaskId() {
         return _taskId;
     }
+
     public InputStreamController getScheduler() {
         return graph.getGlobal_tuple_scheduler();
     }
+
     public int getThisTaskIndex() {
         return getThisTaskId();
     }
+
     public void wait_for_all() throws InterruptedException {
         for (int id : threadMap.keySet()) {
             if (id != getThisTaskId()) {
@@ -107,14 +125,17 @@ public class TopologyContext {
             }
         }
     }
+
     public void stop_running() {
         threadMap.get(getThisTaskId()).running = false;
         threadMap.get(getThisTaskId()).interrupt();
     }
+
     public void force_exist() {
         threadMap.get(getThisTaskId()).running = false;
         threadMap.get(getThisTaskId()).interrupt();
     }
+
     public void stop_runningALL() {
         for (int id : threadMap.keySet()) {
             if (id != getThisTaskId()) {
@@ -123,6 +144,7 @@ public class TopologyContext {
             }
         }
     }
+
     public void force_existALL() {
         for (int id : threadMap.keySet()) {
             if (id != getThisTaskId()) {
@@ -134,6 +156,7 @@ public class TopologyContext {
             }
         }
     }
+
     public void Sequential_stopAll() {
         //interrupt everyone.
         for (int id : threadMap.keySet()) {
@@ -147,9 +170,11 @@ public class TopologyContext {
         threadMap.get(getThisTaskId()).running = false;
         threadMap.get(getThisTaskId()).interrupt();
     }
+
     public int getNUMTasks() {
         return this.getComponent(_taskId).getNumTasks();
     }
+
     public void join() throws InterruptedException {
         threadMap.get(this.getGraph().getSinkThread()).join();
     }

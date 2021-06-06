@@ -6,10 +6,10 @@ import transaction.scheduler.distributor.Distributor;
 import transaction.scheduler.picker.Picker;
 
 import java.util.Collection;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 public abstract class Scheduler<C extends Constructor, P extends Picker, D extends Distributor> implements IScheduler {
+    private final int totalThread;
 
     C constructor;
     P picker;
@@ -17,10 +17,13 @@ public abstract class Scheduler<C extends Constructor, P extends Picker, D exten
 
     public Scheduler(int totalThread) {
 
+        this.totalThread = totalThread;
     }
 
-    public void initialize(Supplier<C> factory) {
-        constructor = factory.get();
+    public void initialize(Supplier<C> ConstructorFactor, Supplier<P> PickerFactor, Supplier<D> DistributorFactor) {
+        constructor = ConstructorFactor.get();
+        picker = PickerFactor.get();
+        distributor = DistributorFactor.get();
     }
 
 

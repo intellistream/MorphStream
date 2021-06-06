@@ -1,9 +1,12 @@
 package common.util.math;
+
 import java.util.List;
 import java.util.Map;
+
 public class MaximumLikelihoodNormalDistribution {
     private double mu;
     private double sigma;
+
     public MaximumLikelihoodNormalDistribution(int totalCount, Map<Double, List<String>> histogram) {
         mu = 0;
         sigma = 0;
@@ -23,9 +26,11 @@ public class MaximumLikelihoodNormalDistribution {
         // sigma = totalCount / (totalCount - 1) * sigma;
         sigma = Math.sqrt(sigma);
     }
+
     public double getMu() {
         return mu;
     }
+
     public double getSigma() {
         return sigma;
     }

@@ -1,4 +1,5 @@
 package storage.table.stats;
+
 import operator.QueryPlan.PredicateOperator;
 import storage.datatype.DataBox;
 
@@ -6,12 +7,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+
 public class StringHistogram implements Histogram<String> {
     public static String alphaNumeric = "abcdefghijklmnopqrstuvwxyz0123456789";
     private final boolean estimate;
-    private int numDistinct;
     private final List<Bucket<String>> buckets;
+    private int numDistinct;
     private HashSet<String> entrySet;
+
     public StringHistogram() {
         this.estimate = false;
         this.buckets = new ArrayList<>();
@@ -20,11 +23,13 @@ public class StringHistogram implements Histogram<String> {
             this.buckets.add(new Bucket<>(alphaNumeric.substring(i, i + 1)));
         }
     }
+
     public StringHistogram(List<Bucket<String>> buckets, int numDistinct) {
         this.estimate = true;
         this.numDistinct = numDistinct;
         this.buckets = buckets;
     }
+
     public StringHistogram copyWithReduction(float reductionFactor) {
         List<Bucket<String>> copyBuckets = new ArrayList<>();
         for (int i = 0; i < this.buckets.size(); i++) {
@@ -37,6 +42,7 @@ public class StringHistogram implements Histogram<String> {
         int copyNumDistinct = (int) Math.ceil(this.getNumDistinct() * reductionFactor);
         return new StringHistogram(copyBuckets, copyNumDistinct);
     }
+
     public StringHistogram copyWithPredicate(PredicateOperator predicate,
                                              DataBox value) {
         List<Bucket<String>> copyBuckets = new ArrayList<>();
@@ -66,10 +72,12 @@ public class StringHistogram implements Histogram<String> {
         int copyNumDistinct = (int) (this.getNumDistinct() * reductionFactor);
         return new StringHistogram(copyBuckets, copyNumDistinct);
     }
+
     @Override
     public int getSampleCount() {
         return 0;
     }
+
     public float computeReductionFactor(PredicateOperator predicate,
                                         DataBox value) {
         float reductionFactor = 1;
@@ -90,28 +98,34 @@ public class StringHistogram implements Histogram<String> {
         }
         return reductionFactor;
     }
+
     public List<Bucket<String>> getAllBuckets() {
         return this.buckets;
     }
+
     @Override
     public Long get(String value) {
         return null;
     }
+
     @Override
     public Collection<String> values() {
         return null;
     }
+
     public void add(String value) {
         value = value.toLowerCase();
         int index = alphaNumeric.indexOf(value.charAt(0));
         buckets.get(index).increment();
         this.entrySet.add(value);
     }
+
     public void removeValue(String value) {
         value = value.toLowerCase();
         int index = alphaNumeric.indexOf(value.charAt(0));
         buckets.get(index).decrement();
     }
+
     public int getEntriesInRange(String start, String end) {
         // Inclusive of both start and end.
         start = start.toLowerCase();
@@ -124,6 +138,7 @@ public class StringHistogram implements Histogram<String> {
         }
         return result;
     }
+
     public int getMinValueIndex() {
         int minValue = 0;
         for (int i = 0; i < this.buckets.size(); i++) {
@@ -135,6 +150,7 @@ public class StringHistogram implements Histogram<String> {
         }
         return minValue;
     }
+
     public int getMaxValueIndex() {
         int maxValue = this.buckets.size() - 1;
         for (int i = this.buckets.size() - 1; i >= 0; i--) {
@@ -146,14 +162,17 @@ public class StringHistogram implements Histogram<String> {
         }
         return maxValue;
     }
+
     @Override
     public String getMinValue() {
         return null;
     }
+
     @Override
     public String getMaxValue() {
         return null;
     }
+
     public int getNumDistinct() {
         if (this.estimate) {
             return this.numDistinct;

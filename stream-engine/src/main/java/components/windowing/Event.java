@@ -1,4 +1,5 @@
 package components.windowing;
+
 /**
  * An input_event is a wrapper object that gets stored in the window.
  *
@@ -13,12 +14,14 @@ public interface Event<T> {
      * @return the input_event timestamp in milliseconds.
      */
     long getTimestamp();
+
     /**
      * Returns the wrapped object, E.g. a tuple
      *
      * @return the wrapped object.
      */
     T get();
+
     /**
      * If this is a watermark input_event or not. Watermark events are used
      * for tracking time while processing input_event based ts.

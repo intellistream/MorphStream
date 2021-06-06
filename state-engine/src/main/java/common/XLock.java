@@ -1,10 +1,12 @@
 package common;
+
 public class XLock {
     final static int NO_LOCK = 0, READ_LOCK = 1, WRITE_LOCK = 2;//enum LockType : size_t{ NO_LOCK, READ_LOCK, WRITE_LOCK };
     public long ts;//timestamp
     SpinLock spinlock_ = new SpinLock();
     volatile int reader_count_ = 0;
     volatile int lock_type_ = NO_LOCK;
+
     public void AcquireReadLock() {
         while (lock_type_ == WRITE_LOCK) {
             //spin sync_ratio.
@@ -24,6 +26,7 @@ public class XLock {
             return;
         }
     }
+
     public void AcquireWriteLock() {
         while (true) {
             while (lock_type_ != NO_LOCK) {
@@ -39,6 +42,7 @@ public class XLock {
             }
         }
     }
+
     public void ReleaseReadLock() {
         spinlock_.lock();
         --reader_count_;
@@ -47,6 +51,7 @@ public class XLock {
         }
         spinlock_.unlock();
     }
+
     public boolean TryReadLock() {
         boolean rt = false;
         spinlock_.lock();
@@ -63,6 +68,7 @@ public class XLock {
         spinlock_.unlock();
         return rt;
     }
+
     public boolean TryWriteLock() {
         boolean rt = false;
         spinlock_.lock();
@@ -75,6 +81,7 @@ public class XLock {
         spinlock_.unlock();
         return rt;
     }
+
     public void ReleaseWriteLock() {
         spinlock_.lock();
         lock_type_ = NO_LOCK;

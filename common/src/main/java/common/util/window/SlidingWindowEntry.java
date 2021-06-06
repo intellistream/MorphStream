@@ -1,4 +1,5 @@
 package common.util.window;
+
 /**
  * Author: Thilina
  * Date: 11/22/14

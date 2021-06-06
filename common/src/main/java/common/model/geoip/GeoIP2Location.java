@@ -1,4 +1,5 @@
 package common.model.geoip;
+
 import com.maxmind.geoip2.DatabaseReader;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
@@ -8,12 +9,14 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+
 /**
  * @author mayconbordin
  */
 public class GeoIP2Location implements IPLocation {
     private static final Logger LOG = LoggerFactory.getLogger(GeoIP2Location.class);
     private final DatabaseReader reader;
+
     public GeoIP2Location(String dbPath) {
         try {
             File database = new File(System.getProperty("user.home").concat("/Documents/data/app/").concat(dbPath));
@@ -23,6 +26,7 @@ public class GeoIP2Location implements IPLocation {
             throw new RuntimeException("Unable to load MaxMind database");
         }
     }
+
     @Override
     public Location resolve(String ip) {
         try {

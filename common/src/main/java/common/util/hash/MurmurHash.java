@@ -1,4 +1,5 @@
 package common.util.hash;
+
 /**
  * This is a very fast, non-cryptographic hash suitable for general hash-based
  * lookup. See http://murmurhash.googlepages.com/ for more details.
@@ -33,6 +34,7 @@ public class MurmurHash {
         }
         return hash(o.toString());
     }
+
     public int hash(byte[] data, int length, int seed) {
         int m = 0x5bd1e995;
         int r = 24;
@@ -73,6 +75,7 @@ public class MurmurHash {
         h ^= h >>> 15;
         return h;
     }
+
     public int hashLong(long data) {
         int m = 0x5bd1e995;
         int r = 24;
@@ -89,6 +92,7 @@ public class MurmurHash {
         h ^= h >>> 15;
         return h;
     }
+
     public long hash64(Object o) {
         if (o == null) {
             return 0l;
@@ -101,6 +105,7 @@ public class MurmurHash {
         }
         return hash64(o.toString());
     }
+
     public long hash64(Object o, int seed) {
         if (o == null) {
             return 0l;
@@ -114,6 +119,7 @@ public class MurmurHash {
         return hash64(o.toString(), seed);
     }
     // 64 bit implementation copied from here:  https://github.com/tnm/murmurhash-java
+
     /**
      * Generates 64 bit hash from byte array with default seed value.
      *
@@ -124,6 +130,7 @@ public class MurmurHash {
     public long hash64(final byte[] data, int length) {
         return hash64(data, length, 0xe17a1465);
     }
+
     /**
      * Generates 64 bit hash from byte array of the given length and seed.
      *

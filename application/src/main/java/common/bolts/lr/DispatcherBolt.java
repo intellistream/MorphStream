@@ -17,22 +17,24 @@
  * #_
  */
 package common.bolts.lr;
+
 import common.datatype.*;
 import common.datatype.util.LRTopologyControl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.Checkpointable;
 import components.operators.base.filterBolt;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.OutputFieldsDeclarer;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 
 import static common.CONTROL.enable_TSTREAM;
 import static common.CONTROL.enable_shared_state;
 import static common.datatype.util.LRTopologyControl.POSITION_REPORTS_STREAM_ID;
+
 /**
  * {@link DispatcherBolt} retrieves a stream of {@code <ts,string>} tuples, parses the second CSV attribute and emits an
  * appropriate LRB tuple. The LRB input CSV schema is:
@@ -54,6 +56,7 @@ public class DispatcherBolt extends filterBolt implements Checkpointable {
     long cnt = 0, de = 0, pr = 0, ab = 0;
     //     10215332
 //    private double pr = 98.85696197046802%, ab = 0.57618584512478315%, de = 0.11689623684645518%;
+
     /**
      * outputFieldsDeclarer.declareStream(LRTopologyControl.POSITION_REPORTS_STREAM_ID, PositionReport.getSchema());
      * outputFieldsDeclarer.declareStream(LRTopologyControl.ACCOUNT_BALANCE_REQUESTS_STREAM_ID, AccountBalanceRequest.getSchema());
@@ -64,6 +67,7 @@ public class DispatcherBolt extends filterBolt implements Checkpointable {
         this.output_selectivity.put(POSITION_REPORTS_STREAM_ID, 0.9885696197046802);
         state = new ValueState();
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException {
         long bid = in.getBID();
@@ -123,27 +127,34 @@ public class DispatcherBolt extends filterBolt implements Checkpointable {
             }
         }
     }
+
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
         outputFieldsDeclarer.declareStream(POSITION_REPORTS_STREAM_ID, PositionReport.getSchema());
     }
+
     @Override
     public boolean checkpoint(int counter) {
         return false;
     }
+
     @Override
     public void forward_checkpoint(int sourceId, long bid, Marker marker) throws InterruptedException {
         this.collector.broadcast_marker(bid, marker);
     }
+
     @Override
     public void forward_checkpoint_single(int sourceId, long bid, Marker marker) {
     }
+
     @Override
     public void forward_checkpoint_single(int sourceTask, String streamId, long bid, Marker marker) {
     }
+
     @Override
     public void forward_checkpoint(int sourceTask, String streamId, long bid, Marker marker) {
     }
+
     @Override
     public void ack_checkpoint(Marker marker) {
 //		//LOG.DEBUG(this.getContext().getThisTaskId() + " received ack from all consumers.");
@@ -151,6 +162,7 @@ public class DispatcherBolt extends filterBolt implements Checkpointable {
 //		//LOG.DEBUG(this.getContext().getThisTaskId() + " broadcast ack to all producers.");
         this.collector.broadcast_ack(marker);//bolt needs to broadcast_ack
     }
+
     @Override
     public void earlier_ack_checkpoint(Marker marker) {
     }

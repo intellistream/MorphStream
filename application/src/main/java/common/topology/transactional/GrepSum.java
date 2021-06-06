@@ -1,18 +1,19 @@
 package common.topology.transactional;
+
+import common.PartitionedOrderLock;
+import common.SpinLock;
 import common.bolts.transactional.gs.*;
 import common.collections.Configuration;
 import common.constants.GrepSumConstants.Component;
 import common.topology.transactional.initializer.GSInitializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.Topology;
 import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
-import topology.TransactionTopology;
-import common.PartitionedOrderLock;
-import common.SpinLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.Metrics;
+import topology.TransactionTopology;
 import transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
@@ -20,14 +21,18 @@ import static common.constants.GrepSumConstants.Conf.Executor_Threads;
 import static common.constants.GrepSumConstants.PREFIX;
 import static content.Content.*;
 import static utils.PartitionHelper.setPartition_interval;
+
 public class GrepSum extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(GrepSum.class);
+
     public GrepSum(String topologyName, Configuration config) {
         super(topologyName, config);
     }
+
     public static String getPrefix() {
         return PREFIX;
     }
+
     /**
      * Load Data Later by Executors.
      *
@@ -49,6 +54,7 @@ public class GrepSum extends TransactionTopology {
         }
         return ini;
     }
+
     @Override
     public Topology buildTopology() {
         try {
@@ -98,10 +104,12 @@ public class GrepSum extends TransactionTopology {
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology(db, this);
     }
+
     @Override
     public Logger getLogger() {
         return LOG;
     }
+
     @Override
     public String getConfigPrefix() {
         return PREFIX;

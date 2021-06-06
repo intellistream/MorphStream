@@ -6,10 +6,11 @@ public abstract class Picker {
 
     /**
      * Implement the common pickUp methods here.
+     *
      * @param threadId
      */
-    public OperationChain pickUp(int threadId){
-       return null;
+    public OperationChain pickUp(int threadId) {
+        return null;
     }
 
 

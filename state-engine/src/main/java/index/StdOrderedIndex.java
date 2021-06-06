@@ -1,15 +1,19 @@
 package index;
+
 import storage.TableRecord;
 import storage.TableRecords;
 
 import java.util.SortedMap;
 import java.util.TreeMap;
+
 public class StdOrderedIndex extends BaseOrderedIndex {
     SortedMap<String, TableRecord> index_ = new TreeMap<>();
+
     @Override
     public TableRecord SearchRecord(String key) {
         return index_.get(key);
     }
+
     /**
      * equal_range: Returns the bounds of the subrange that includes all the elements of the range [first,last) with values equivalent to val.
      *
@@ -23,6 +27,7 @@ public class StdOrderedIndex extends BaseOrderedIndex {
             records.InsertRecord(tableRecord);
         }
     }
+
     @Override
     public void InsertRecord(String key, TableRecord record) {
         index_.put(key, record);

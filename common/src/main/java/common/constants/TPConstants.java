@@ -1,4 +1,5 @@
 package common.constants;
+
 /**
  * @author mayconbordin
  */
@@ -21,9 +22,11 @@ public interface TPConstants extends BaseConstants {
     int HISTORY_LOADING_NOTIFIER_PORT = 2233;
     String CLEAN_START = "clean-start";
     String HISTORY_COMPONENT_HOST = "localhost";
+
     interface Constant {
         int NUM_SEGMENTS = 100;
     }
+
     interface Field extends BaseField {
         String TIMESTAMP = "timestamp";
         String VEHICLE_ID = "vehicleId";
@@ -34,6 +37,7 @@ public interface TPConstants extends BaseConstants {
         String SEGMENT = "segment";
         String POSITION = "position";
     }
+
     //get the correct location of the history loading component.
     interface Conf extends BaseConf {
         String segstatBoltThreads = "tp.segstat.threads";
@@ -52,6 +56,7 @@ public interface TPConstants extends BaseConstants {
         String AverageSpeedThreads = "tp.average.threads";
         String COUNT_VEHICLES_Threads = "tp.count.threads";
     }
+
     interface Component extends BaseComponent {
         String EXECUTOR = "executor";
     }

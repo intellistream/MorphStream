@@ -1,4 +1,5 @@
 package operator;
+
 import db.DatabaseException;
 import db.SimpleDatabase;
 import storage.SchemaRecord;
@@ -8,6 +9,7 @@ import storage.table.stats.TableStats;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
 public class IndexScanOperator extends QueryOperator {
     private final SimpleDatabase.Transaction transaction;
     private final String tableName;
@@ -15,6 +17,7 @@ public class IndexScanOperator extends QueryOperator {
     private final QueryPlan.PredicateOperator predicate;
     private final DataBox value;
     private final int columnIndex;
+
     /**
      * An index scan operator.
      *
@@ -41,6 +44,7 @@ public class IndexScanOperator extends QueryOperator {
         this.stats = this.estimateStats();
         this.cost = this.estimateIOCost();
     }
+
     public String str() {
         return "type: " + this.getType() +
                 "\ntable: " + this.tableName +
@@ -48,6 +52,7 @@ public class IndexScanOperator extends QueryOperator {
                 "\noperator: " + this.predicate +
                 "\nvalue_list: " + this.value;
     }
+
     /**
      * Estimates the table statistics for the result of executing this query operator.
      *
@@ -64,6 +69,7 @@ public class IndexScanOperator extends QueryOperator {
                 this.predicate,
                 this.value);
     }
+
     /**
      * Estimates the IO cost of executing this query operator.
      * You should calculate this estimate cost with the formula
@@ -95,9 +101,11 @@ public class IndexScanOperator extends QueryOperator {
 //		}
 //		return io;
     }
+
     public Iterator<SchemaRecord> iterator() {
         return new IndexScanIterator();
     }
+
     public RecordSchema computeSchema() throws QueryPlanException {
         try {
             return this.transaction.getFullyQualifiedSchema(this.tableName);
@@ -105,12 +113,14 @@ public class IndexScanOperator extends QueryOperator {
             throw new QueryPlanException(de);
         }
     }
+
     /**
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
     private class IndexScanIterator implements Iterator<SchemaRecord> {
         private Iterator<SchemaRecord> sourceIterator;
         private SchemaRecord nextRecord;
+
         public IndexScanIterator() {
             this.nextRecord = null;
 //			if (IndexScanOperator.this.predicate == QueryPlan.PredicateOperator.EQUALS) {
@@ -144,6 +154,7 @@ public class IndexScanOperator extends QueryOperator {
 //						IndexScanOperator.this.value_list);
 //			}
         }
+
         /**
          * Checks if there are more d_record(s) to yield
          *
@@ -182,6 +193,7 @@ public class IndexScanOperator extends QueryOperator {
             }
             return false;
         }
+
         /**
          * Yields the next d_record of this iterator.
          *
@@ -196,6 +208,7 @@ public class IndexScanOperator extends QueryOperator {
             }
             throw new NoSuchElementException();
         }
+
         public void remove() {
             throw new UnsupportedOperationException();
         }

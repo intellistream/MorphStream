@@ -1,7 +1,9 @@
 package common.bolts.transactional.sl;
+
 import common.param.sl.TransactionEvent;
 
 import static java.util.Objects.requireNonNull;
+
 /**
  * Data type describing the result of a processed transaction.
  * It describes whether the transaction was successful as well as the resulting account balances.
@@ -11,6 +13,7 @@ public class TransactionResult {
     private boolean success;
     private long newSourceAccountBalance;
     private long newTargetAccountBalance;
+
     /**
      * Creates a new transaction result.
      *
@@ -29,35 +32,45 @@ public class TransactionResult {
         this.newSourceAccountBalance = newSourceAccountBalance;
         this.newTargetAccountBalance = newTargetAccountBalance;
     }
+
     public TransactionResult() {
     }
+
     // ------------------------------------------------------------------------
     //  Properties
     // ------------------------------------------------------------------------
     public TransactionEvent getTransaction() {
         return transaction;
     }
+
     public void setTransaction(TransactionEvent transaction) {
         this.transaction = transaction;
     }
+
     public boolean isSuccess() {
         return success;
     }
+
     public void setSuccess(boolean success) {
         this.success = success;
     }
+
     public long getNewSourceAccountBalance() {
         return newSourceAccountBalance;
     }
+
     public void setNewSourceAccountBalance(long newSourceAccountBalance) {
         this.newSourceAccountBalance = newSourceAccountBalance;
     }
+
     public long getNewTargetAccountBalance() {
         return newTargetAccountBalance;
     }
+
     public void setNewTargetAccountBalance(long newTargetAccountBalance) {
         this.newTargetAccountBalance = newTargetAccountBalance;
     }
+
     // ------------------------------------------------------------------------
     //  Miscellaneous
     // ------------------------------------------------------------------------

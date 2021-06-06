@@ -17,6 +17,7 @@
  * #_
  */
 package common.param.lr;
+
 /**
  * Constants related to the benchmark constraints. (See page 483 "Linear Road: A Streaming Data Management Benchmark")
  *
@@ -53,6 +54,7 @@ public final class Constants {
     public static final int TOLL_LAV_THRESHOLD = 40;
     /* "[...], or if the number of vehicles [...] was 50 or less [...], no toll is assessed." */
     public static final int TOLL_NUM_CARS_THRESHOLD = 50;
+
     private Constants() {
     }
 }

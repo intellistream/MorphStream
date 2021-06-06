@@ -17,7 +17,9 @@
  * #_
  */
 package common.datatype.util;
+
 import execution.runtime.tuple.impl.Fields;
+
 /**
  * {@link SegmentIdentifier} represent an express way, segment, and direction.
  *
@@ -38,8 +40,10 @@ public class SegmentIdentifier implements ISegmentIdentifier {
      * Dir (0,1) indicates the direction (0 for Eastbound and 1 for Westbound).
      */
     private Short direction;
+
     public SegmentIdentifier() {
     }
+
     /**
      * Instantiates a new {@link SegmentIdentifier}.
      *
@@ -55,6 +59,7 @@ public class SegmentIdentifier implements ISegmentIdentifier {
         this.segment = segment;
         this.direction = direction;
     }
+
     /**
      * Instantiates a new {@link SegmentIdentifier}.
      *
@@ -66,6 +71,7 @@ public class SegmentIdentifier implements ISegmentIdentifier {
         this.segment = record.getSegment();
         this.direction = record.getDirection();
     }
+
     /**
      * Returns the schema of a {@link SegmentIdentifier}.
      *
@@ -77,6 +83,7 @@ public class SegmentIdentifier implements ISegmentIdentifier {
                 LRTopologyControl.SEGMENT_FIELD_NAME,
                 LRTopologyControl.DIRECTION_FIELD_NAME);
     }
+
     /**
      * Returns the express way ID.
      *
@@ -86,12 +93,14 @@ public class SegmentIdentifier implements ISegmentIdentifier {
     public Integer getXWay() {
         return this.xway;
     }
+
     /**
      * Sets the express way ID.
      */
     public void setXWay(Integer xway) {
         this.xway = xway;
     }
+
     /**
      * Returns the segment number.
      *
@@ -101,12 +110,14 @@ public class SegmentIdentifier implements ISegmentIdentifier {
     public Short getSegment() {
         return this.segment;
     }
+
     /**
      * Sets the segment number.
      */
     public void setSegment(Short segment) {
         this.segment = segment;
     }
+
     /**
      * Returns the direction.
      *
@@ -116,12 +127,14 @@ public class SegmentIdentifier implements ISegmentIdentifier {
     public Short getDirection() {
         return this.direction;
     }
+
     /**
      * Sets the direction.
      */
     public void setDirection(Short direction) {
         this.direction = direction;
     }
+
     /**
      * Set express way ID, segment number, and direction from the given d_record.
      *
@@ -133,6 +146,7 @@ public class SegmentIdentifier implements ISegmentIdentifier {
         this.segment = record.getSegment();
         this.direction = record.getDirection();
     }
+
     /**
      * Return a copy of this {@link SegmentIdentifier}.
      *
@@ -145,6 +159,7 @@ public class SegmentIdentifier implements ISegmentIdentifier {
         sid.direction = this.direction;
         return sid;
     }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -154,6 +169,7 @@ public class SegmentIdentifier implements ISegmentIdentifier {
         result = prime * result + ((this.xway == null) ? 0 : this.xway.hashCode());
         return result;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

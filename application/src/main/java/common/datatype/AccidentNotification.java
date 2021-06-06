@@ -17,11 +17,13 @@
  * #_
  */
 package common.datatype;
+
 import common.datatype.util.LRTopologyControl;
 import execution.runtime.tuple.impl.Fields;
 
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
+
 /**
  * An {@link AccidentNotification} represent an alert that must be sent to vehicle approaching an accident.
  * <p/>
@@ -50,9 +52,11 @@ public class AccidentNotification extends AbstractOutputTuple {
      */
     private final static int VID_IDX = 4;
     private static final long serialVersionUID = -2731071679224249483L;
+
     public AccidentNotification() {
         super();
     }
+
     /**
      * Instantiates a new accident notification for the given attributes.
      *
@@ -68,6 +72,7 @@ public class AccidentNotification extends AbstractOutputTuple {
         super.add(VID_IDX, vid);
         assert (super.size() == 5);
     }
+
     /**
      * Returns the schema of an {@link AccidentNotification}.
      *
@@ -77,10 +82,12 @@ public class AccidentNotification extends AbstractOutputTuple {
         return new Fields(LRTopologyControl.TYPE_FIELD_NAME, LRTopologyControl.TIME_FIELD_NAME,
                 LRTopologyControl.EMIT_FIELD_NAME, LRTopologyControl.SEGMENT_FIELD_NAME, LRTopologyControl.VEHICLE_ID_FIELD_NAME);
     }
+
     public static Fields getLatencySchema() {
         return new Fields(LRTopologyControl.ACCIDENT_NOTIFICATION_FIELD_NAME
                 , MSG_ID, SYSTEMTIMESTAMP);
     }
+
     /**
      * Returns the segment of this {@link AccidentNotification}.
      *
@@ -89,6 +96,7 @@ public class AccidentNotification extends AbstractOutputTuple {
     private Short getSegment() {
         return (Short) super.get(SEG_IDX);
     }
+
     /**
      * Returns the vehicle ID of this {@link AccidentNotification}.
      *
@@ -97,6 +105,7 @@ public class AccidentNotification extends AbstractOutputTuple {
     private Integer getVid() {
         return (Integer) super.get(VID_IDX);
     }
+
     /**
      * Compares the specified object with this {@link AccidentNotification} object for equality. Returns true if and
      * only if the specified object is also a {@link AccidentNotification} and their TIME, SEGMENT, and VID attributes

@@ -1,14 +1,16 @@
 package common.sink.verbose;
+
 import common.sink.helper.stable_sink_helper_verbose;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.BaseSink;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static common.helper.Event.null_expression;
 import static common.helper.Event.split_expression;
+
 public class ConsoleSink extends BaseSink {
     private static final Logger LOG = LoggerFactory.getLogger(ConsoleSink.class);
     private static final long serialVersionUID = -4353933265932894154L;
@@ -16,15 +18,18 @@ public class ConsoleSink extends BaseSink {
     private stable_sink_helper_verbose helper;
     private long end;
     private long start;
+
     private ConsoleSink() {
         super(LOG);
     }
+
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         helper = new stable_sink_helper_verbose(LOG
                 , config.getInt("runtimeInSeconds")
                 , config.getString("metrics.output"), getContext().getThisTaskId());
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException {
         final String flag = in.getString(3);
@@ -41,6 +46,7 @@ public class ConsoleSink extends BaseSink {
             }
         }
     }
+
     @Override
     public void execute(JumboTuple in) throws InterruptedException {
         int bound = in.length;
@@ -60,6 +66,7 @@ public class ConsoleSink extends BaseSink {
             }
         }
     }
+
     @Override
     protected Logger getLogger() {
         return LOG;

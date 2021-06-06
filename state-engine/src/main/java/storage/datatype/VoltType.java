@@ -15,6 +15,7 @@
  * along with VoltDB.  If not, see <http://www.gnu.org/licenses/>.
  */
 package storage.datatype;
+
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.EnumSet;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Represents a type in a VoltDB.
  * Note that types in the database don't map 1-1 with types in the
@@ -139,6 +141,7 @@ public enum VoltType {
     protected static final VoltType[] idx_lookup = new VoltType[VoltType.BOOLEAN.m_val + 1];
     protected static final Map<String, VoltType> name_lookup = new HashMap<>();
     private static final Map<Class<?>, VoltType> s_classes;
+
     static {
         s_classes = new HashMap<>();
         for (VoltType type : values()) {
@@ -147,12 +150,14 @@ public enum VoltType {
             }
         }
     }
+
     static {
         for (VoltType vt : EnumSet.allOf(VoltType.class)) {
             VoltType.idx_lookup[vt.m_val] = vt;
             VoltType.name_lookup.put(vt.name().toLowerCase().intern(), vt);
         }
     }
+
     /**
      * Fixed precision 8-byte value_list with 4 decimal places of precision.
      * Stored as an 8-byte long value_list representing 10,000x the actual value_list.
@@ -186,6 +191,7 @@ public enum VoltType {
     // This is the type that will be returned by ResultSet.getObject(), which
     // boils down to VoltTable.get(), with a special case for timestamps
     private final String m_jdbcClass;
+
     VoltType(byte val, int lengthInBytes,
              String sqlString, Class<?>[] classes) {
         m_val = val;
@@ -207,6 +213,7 @@ public enum VoltType {
         m_maximumScale = null;
         m_jdbcClass = null;
     }
+
     // Constructor for JDBC-visible types.  Only types constructed in this way will
     // appear in the JDBC getTypeInfo() metadata.
     VoltType(byte val, int lengthInBytes, String sqlString,
@@ -235,6 +242,7 @@ public enum VoltType {
                 maximumScale,
                 jdbcClass);
     }
+
     VoltType(byte val, int lengthInBytes, String sqlString,
              Class<?>[] classes, Class<?> vectorClass, char signatureChar,
              boolean jdbcVisible,
@@ -268,6 +276,7 @@ public enum VoltType {
         m_maximumScale = maximumScale;
         m_jdbcClass = jdbcClass;
     }
+
     /**
      * Statically create an enum value_list from the corresponding byte.
      *
@@ -286,6 +295,7 @@ public enum VoltType {
         assert (type != null) : "Unknown type: " + val;
         return (type);
     }
+
     /**
      * Converts string representations to an enum value_list.
      *
@@ -310,6 +320,7 @@ public enum VoltType {
         }
         throw new RuntimeException("Can't find type: " + str);
     }
+
     /**
      * Ascertain the most appropriate <tt>VoltType</tt> given a
      * java object.
@@ -323,6 +334,7 @@ public enum VoltType {
         Class<?> cls = obj.getClass();
         return typeFromClass(cls);
     }
+
     /**
      * Ascertain the most appropriate <tt>VoltType</tt> given a
      * java class.
@@ -339,6 +351,7 @@ public enum VoltType {
         }
         return type;
     }
+
     static boolean isNullVoltType(Object obj) {
         boolean retval = false;
         if (obj == null) {
@@ -383,9 +396,11 @@ public enum VoltType {
         }
         return retval;
     }
+
     public String getJdbcClass() {
         return m_jdbcClass;
     }
+
     /**
      * Get the java.sql.Types type of this type.
      *
@@ -394,21 +409,26 @@ public enum VoltType {
     public int getJdbcSqlType() {
         return m_dataType;
     }
+
     // XXX I feel like it should be possible to jam this into the enum
     // constructor somehow but java hates me when I move constant definitions
     // above the enum constructors, so, meh
     public Integer getMinimumScale() {
         return m_minimumScale;
     }
+
     public Integer getMaximumScale() {
         return m_maximumScale;
     }
+
     public boolean isCaseSensitive() {
         return m_caseSensitive;
     }
+
     public Boolean isUnsigned() {
         return m_unsignedAttribute;
     }
+
     // Integer[0] is the column size and Integer[1] is the radix
     // I'd love to get this magic into the type construction, but
     // not happening this go-round.  --izzy
@@ -444,6 +464,7 @@ public enum VoltType {
         }
         return col_size_radix;
     }
+
     /**
      * Gets the byte that corresponds to the enum value_list (for serialization).
      *
@@ -452,6 +473,7 @@ public enum VoltType {
     public byte getValue() {
         return m_val;
     }
+
     /**
      * Return the java class that is matched to a given <tt>VoltType</tt>.
      *
@@ -466,9 +488,11 @@ public enum VoltType {
         }
         return m_classes[0];
     }
+
     private boolean matchesString(String str) {
         return str.endsWith(name());
     }
+
     /**
      * Return the string representation of this type. Note that
      * <tt>VoltType.typeFromString(voltTypeInstance.toString) == true</tt>.
@@ -479,6 +503,7 @@ public enum VoltType {
     public String toString() {
         return "VoltType." + name();
     }
+
     public int getLengthInBytesForFixedTypes() {
         if (m_lengthInBytes == -1) {
             throw new RuntimeException(
@@ -486,6 +511,7 @@ public enum VoltType {
         }
         return m_lengthInBytes;
     }
+
     /**
      * Get the corresponding SQL type as for a given <tt>VoltType</tt> enum.
      * For example, {@link #STRING} will probably convert to "VARCHAR".
@@ -495,6 +521,7 @@ public enum VoltType {
     public String toSQLString() {
         return m_sqlString;
     }
+
     // Really hacky cast overflow detection for primitive types
     // Comparison to MIN_VALUEs are <= to avoid collisions with the NULL
     // bit pattern
@@ -543,6 +570,7 @@ public enum VoltType {
         }
         return retval;
     }
+
     /**
      * Get a value_list representing whichever null value_list is appropriate for
      * the current <tt>VoltType</tt> enum. For example, if this type is
@@ -575,6 +603,7 @@ public enum VoltType {
                 throw new VoltTypeException("No NULL value_list for " + toString());
         }
     }
+
     /**
      * Is the type a number and is it an exact value_list (no rounding errors)?
      *
@@ -593,13 +622,17 @@ public enum VoltType {
                 return false;
         }
     }
+
     // for consistency at the API level, provide symbolic nulls for these types, too
     private static final class NullTimestampSigil {
     }
+
     private static final class NullStringSigil {
     }
+
     private static final class NullDecimalSigil {
     }
+
     private static final class NullStringOrVarbinarySigil {
     }
 }

@@ -3,6 +3,7 @@
  * http://creativecommons.org/licenses/publicdomain
  */
 package index.high_scale_lib;
+
 /**
  * A simple high-performance counter.  Merely renames the extended {@link
  * org.cliffc.high_scale_lib.ConcurrentAutoTable} class to be more obvious.

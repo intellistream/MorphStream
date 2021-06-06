@@ -1,25 +1,30 @@
 package storage.table.stats;
+
 import operator.QueryPlan.PredicateOperator;
 import storage.datatype.DataBox;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 public class BoolHistogram implements Histogram<Boolean> {
     private final boolean estimate;
-    private int numDistinct;
     private final List<Bucket<Boolean>> buckets;
+    private int numDistinct;
+
     public BoolHistogram() {
         this.estimate = false;
         this.buckets = new ArrayList<>();
         this.buckets.add(new Bucket<>(true));
         this.buckets.add(new Bucket<>(false));
     }
+
     public BoolHistogram(List<Bucket<Boolean>> buckets, int numDistinct) {
         this.numDistinct = numDistinct;
         this.estimate = true;
         this.buckets = buckets;
     }
+
     public BoolHistogram copyWithReduction(float reductionFactor) {
         List<Bucket<Boolean>> copyBuckets = new ArrayList<>();
         int trueCount = (int) (this.buckets.get(0).getCount() * reductionFactor);
@@ -30,6 +35,7 @@ public class BoolHistogram implements Histogram<Boolean> {
         copyBuckets.get(1).increment(falseCount);
         return new BoolHistogram(copyBuckets, this.getNumDistinct());
     }
+
     public BoolHistogram copyWithPredicate(PredicateOperator predicate,
                                            DataBox value) {
         List<Bucket<Boolean>> copyBuckets = new ArrayList<>();
@@ -65,10 +71,12 @@ public class BoolHistogram implements Histogram<Boolean> {
         }
         return new BoolHistogram(copyBuckets, numDistinct);
     }
+
     @Override
     public int getSampleCount() {
         return 0;
     }
+
     public float computeReductionFactor(PredicateOperator predicate,
                                         DataBox value) {
         float reductionFactor = 1;
@@ -96,9 +104,11 @@ public class BoolHistogram implements Histogram<Boolean> {
         }
         return reductionFactor;
     }
+
     public List<Bucket<Boolean>> getAllBuckets() {
         return this.buckets;
     }
+
     public void removeValue(Boolean value) {
         if (value) {
             this.buckets.get(0).decrement();
@@ -106,14 +116,17 @@ public class BoolHistogram implements Histogram<Boolean> {
             this.buckets.get(1).decrement();
         }
     }
+
     @Override
     public Long get(Boolean value) {
         return null;
     }
+
     @Override
     public Collection<Boolean> values() {
         return null;
     }
+
     public void add(Boolean value) {
         if (value) {
             this.buckets.get(0).increment();
@@ -121,6 +134,7 @@ public class BoolHistogram implements Histogram<Boolean> {
             this.buckets.get(1).increment();
         }
     }
+
     public int getEntriesInRange(Boolean start, Boolean end) {
         int entries = 0;
         if (start) {
@@ -133,20 +147,25 @@ public class BoolHistogram implements Histogram<Boolean> {
         }
         return entries;
     }
+
     public int getMinValueIndex() {
         throw new UnsupportedOperationException();
     }
+
     public int getMaxValueIndex() {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public Boolean getMinValue() {
         return null;
     }
+
     @Override
     public Boolean getMaxValue() {
         return null;
     }
+
     public int getNumDistinct() {
         int numDistinct = 0;
         if (this.buckets.get(0).getCount() > 0) {

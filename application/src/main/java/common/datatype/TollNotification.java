@@ -17,11 +17,13 @@
  * #_
  */
 package common.datatype;
+
 import common.datatype.util.LRTopologyControl;
 import execution.runtime.tuple.impl.Fields;
 
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
+
 /**
  * An {@link TollNotification} represent an toll information that must be sent to vehicles entering a new segment.<br />
  * <br />
@@ -58,9 +60,11 @@ public class TollNotification extends AbstractOutputTuple {
      */
     private final static int POS_IDX = 6;
     private static final long serialVersionUID = -6980996098837847843L;
+
     public TollNotification() {
         super();
     }
+
     /**
      * Instantiates a new accident notification for the given attributes.
      *
@@ -80,6 +84,7 @@ public class TollNotification extends AbstractOutputTuple {
         super.add(TOLL_IDX, toll);
         assert (super.size() == 6);
     }
+
     /**
      * Instantiates a new accident notification for the given attributes.
      *
@@ -100,6 +105,7 @@ public class TollNotification extends AbstractOutputTuple {
         super.add(pos);
         assert (super.size() == 7);
     }
+
     /**
      * Returns the schema of an {@link TollNotification}.
      *
@@ -110,9 +116,11 @@ public class TollNotification extends AbstractOutputTuple {
                 LRTopologyControl.EMIT_FIELD_NAME, LRTopologyControl.VEHICLE_ID_FIELD_NAME, LRTopologyControl.SPEED_FIELD_NAME,
                 LRTopologyControl.TOLL_FIELD_NAME, LRTopologyControl.POS_REPORT_FIELD_NAME);
     }
+
     public static Fields getLatencySchema() {
         return new Fields(MSG_ID, SYSTEMTIMESTAMP);
     }
+
     /**
      * Returns the vehicle ID of this {@link TollNotification}.
      *
@@ -121,6 +129,7 @@ public class TollNotification extends AbstractOutputTuple {
     public Integer getVid() {
         return (Integer) super.get(VID_IDX);
     }
+
     /**
      * Returns the 5-minute average speed of the segment of this {@link TollNotification}.
      *
@@ -129,6 +138,7 @@ public class TollNotification extends AbstractOutputTuple {
     public Double getSpeed() {
         return (Double) super.get(SPEED_IDX);
     }
+
     /**
      * Returns the toll of this {@link TollNotification}.
      *
@@ -137,6 +147,7 @@ public class TollNotification extends AbstractOutputTuple {
     public Integer getToll() {
         return (Integer) super.get(TOLL_IDX);
     }
+
     /**
      * Returns the toll of this {@link TollNotification}.
      *
@@ -145,6 +156,7 @@ public class TollNotification extends AbstractOutputTuple {
     public final PositionReport getPos() {
         return (PositionReport) super.get(POS_IDX);
     }
+
     /**
      * Compares the specified object with this {@link TollNotification} object for equality. Returns true if and only if
      * the specified object is also a {@link TollNotification} and their TIME, VID, SPEED, and TOLL attributes are

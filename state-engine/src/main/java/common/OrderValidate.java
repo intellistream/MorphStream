@@ -1,10 +1,12 @@
 package common;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * used in Occ, but its performance is very bad.
  */
@@ -20,14 +22,17 @@ public class OrderValidate implements Serializable {
     final AtomicLong bid = new AtomicLong();
     //	private transient HashMap<Integer, HashMap<Integer, Boolean>> executors_ready;//<FID, ExecutorID, true/false>
     private int end_fid;
+
     public OrderValidate() {
     }
+
     //	public int getFID() {
 //		return fid;
 //	}
     public long getBID() {
         return bid.get();
     }
+
     //	public synchronized void advanceFID() {
 //		fid++;
 //	}
@@ -38,6 +43,7 @@ public class OrderValidate implements Serializable {
     public void setBID(long bid) {
         this.bid.set(bid);
     }
+
     protected void fill_gap(LinkedList<Long> gap) {
 //		while (!gap.isEmpty()) {
 //			try_fill_gap(gap.);
@@ -50,6 +56,7 @@ public class OrderValidate implements Serializable {
             }
         }
     }
+
     /**
      * fill the gap.
      *
@@ -63,6 +70,7 @@ public class OrderValidate implements Serializable {
         }
         return false;
     }
+
     public boolean validate(final long bid) {
         if (!this.bid.compareAndSet(bid, bid)) {
             //not ready for this batch to proceed! Wait for previous batch to finish execution.
@@ -71,6 +79,7 @@ public class OrderValidate implements Serializable {
         }
         return true;
     }
+
     public void advance() {
 //		try_fill_gap();
         bid.incrementAndGet();//allow next batch to proceed.

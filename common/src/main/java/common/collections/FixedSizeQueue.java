@@ -1,6 +1,8 @@
 package common.collections;
+
 import java.lang.reflect.Array;
 import java.util.*;
+
 /**
  * real-time-traf compatibility.realTraffic.gis FixedSizeQueue.java
  * <p/>
@@ -15,6 +17,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
     private int tail;
     private int size;
     private int modCount;
+
     public FixedSizeQueue(int capacity) {
         if (capacity < 0)
             throw new IllegalArgumentException("Illegal Capacity: " + capacity);
@@ -24,6 +27,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         tail = (head - 1) % capacity;
         size = 0;
     }
+
     @Override
     public boolean add(E e) {
         modCount++;
@@ -33,6 +37,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         head = (tail + 1 + capacity - size) % capacity;
         return true;
     }
+
     @Override
     public E element() {
         if (size == 0)
@@ -40,10 +45,12 @@ public class FixedSizeQueue<E> implements Queue<E> {
         E element = (E) elements[head];
         return element;
     }
+
     @Override
     public boolean offer(E e) {
         return add(e);
     }
+
     @Override
     public E peek() {
         if (size == 0)
@@ -51,6 +58,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         E element = (E) elements[head];
         return element;
     }
+
     @Override
     public E poll() {
         modCount++;
@@ -61,6 +69,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         size--;
         return element;
     }
+
     @Override
     public E remove() {
         modCount++;
@@ -71,6 +80,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         size--;
         return element;
     }
+
     @Override
     public boolean addAll(Collection<? extends E> c) {
         for (E e : c) {
@@ -78,11 +88,13 @@ public class FixedSizeQueue<E> implements Queue<E> {
         }
         return true;
     }
+
     @Override
     public void clear() {
         modCount++;
         size = 0;
     }
+
     @Override
     public boolean contains(Object o) {
         if (o == null) {
@@ -100,6 +112,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         }
         return false;
     }
+
     @Override
     public boolean containsAll(Collection<?> c) {
         if (c.size() > size) {
@@ -112,14 +125,17 @@ public class FixedSizeQueue<E> implements Queue<E> {
         }
         return true;
     }
+
     @Override
     public boolean isEmpty() {
         return size == 0;
     }
+
     @Override
     public Iterator<E> iterator() {
         return new Iter();
     }
+
     @Override
     public boolean remove(Object o) {
         modCount++;
@@ -162,6 +178,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         }
         return false;
     }
+
     @Override
     public boolean removeAll(Collection<?> c) {
         int count = 0;
@@ -175,6 +192,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         modCount += count;
         return count != 0;
     }
+
     @Override
     public boolean retainAll(Collection<?> c) {
         int count = 0;
@@ -188,10 +206,12 @@ public class FixedSizeQueue<E> implements Queue<E> {
         modCount += count;
         return count != 0;
     }
+
     @Override
     public int size() {
         return size;
     }
+
     @Override
     public Object[] toArray() {
         Object[] arr = new Object[size];
@@ -200,6 +220,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         }
         return arr;
     }
+
     @Override
     public <T> T[] toArray(T[] a) {
         if (a.length < size) {
@@ -218,6 +239,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
         }
         return a;
     }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -230,14 +252,17 @@ public class FixedSizeQueue<E> implements Queue<E> {
         sb.append(']');
         return sb.toString();
     }
+
     private class Iter implements Iterator<E> {
         int cursor = 0;
         int lastRet = -1;
         int expectedModCount = modCount;
+
         @Override
         public boolean hasNext() {
             return cursor != size();
         }
+
         @Override
         public E next() {
             checkForComodification();
@@ -245,6 +270,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
             lastRet = cursor++;
             return next;
         }
+
         @Override
         public void remove() {
             if (lastRet == -1)
@@ -266,6 +292,7 @@ public class FixedSizeQueue<E> implements Queue<E> {
                 cursor--;
             lastRet = -1;
         }
+
         final void checkForComodification() {
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();

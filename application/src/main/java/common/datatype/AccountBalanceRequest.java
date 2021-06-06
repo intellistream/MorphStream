@@ -17,8 +17,10 @@
  * #_
  */
 package common.datatype;
+
 import common.datatype.util.LRTopologyControl;
 import execution.runtime.tuple.impl.Fields;
+
 /**
  * A {@link AccountBalanceRequest} from the LRB data generator.<br />
  * <br />
@@ -40,6 +42,7 @@ public class AccountBalanceRequest extends AbstractInputTuple {
     private final static int QID_IDX = 3;
     // attribute indexes
     private static final long serialVersionUID = -7472179619183838842L;
+
     public AccountBalanceRequest(Short time, Integer vid, Integer qid, PositionReport objects) {
         super(ACCOUNT_BALANCE_REQUEST, time, vid);
         assert (qid != null);
@@ -47,6 +50,7 @@ public class AccountBalanceRequest extends AbstractInputTuple {
         super.add(objects);
         assert (super.size() == 5);
     }
+
     /**
      * Instantiates a new account balance request for the given attributes.
      *
@@ -60,6 +64,7 @@ public class AccountBalanceRequest extends AbstractInputTuple {
         super.add(QID_IDX, qid);
         assert (super.size() == 4);
     }
+
     /**
      * Returns the schema of a {@link AccountBalanceRequest}.
      *
@@ -71,6 +76,7 @@ public class AccountBalanceRequest extends AbstractInputTuple {
 //                , LRTopologyControl.POS_REPORT_FIELD_NAME
         );
     }
+
     /**
      * Returns the query ID of this {@link AccountBalanceRequest}.
      *

@@ -124,6 +124,7 @@ public class TStreamRunner extends Runner {
             }
         }
     }
+
     public void run() throws InterruptedException {
         LoadConfiguration();
 
@@ -235,7 +236,7 @@ public class TStreamRunner extends Runner {
 //                                    , metrics.get_next_extra_param_1_total[threadId].getElement(batch)
 //                                    , metrics.get_next_extra_param_2_total[threadId].getElement(batch)
 //                                    , metrics.get_next_extra_param_3_total[threadId].getElement(batch)
-                                    ));
+                            ));
                         }
                     }
                     fileWriter.close();
@@ -294,9 +295,9 @@ public class TStreamRunner extends Runner {
                 db_access_time = db_access_time / tthread;
 
 //                if (CCOption == CCOption_TStream) {
-                    LOG.info("******* STATS BEGIN IN SECONDS *******");
+                LOG.info("******* STATS BEGIN IN SECONDS *******");
 
-                    LOG.info(String.format("Total (batch) processing time                                                       : %.3f seconds", (total) / 1000000000.0f));
+                LOG.info(String.format("Total (batch) processing time                                                       : %.3f seconds", (total) / 1000000000.0f));
 //                LOG.info(String.format("Time spent in pre transaction                                                       : %.3f seconds", (pre_txn_time / 1000000000.0f)));
 //                LOG.info(String.format("Time spent in transaction processing                                                : %.3f seconds", (txn_total / 1000000000.0f)));
 //                LOG.info(String.format("Other time (read input, dump results to a file)                                     : %.3f seconds", ((total - pre_txn_time - txn_total) / 1000000000.0f)));
@@ -313,8 +314,8 @@ public class TStreamRunner extends Runner {
 //                LOG.info(String.format("Time spent on iterative processing                                        : %.3f seconds", (iterative_processing_useful / 1000000000.0f)));
 //                LOG.info(String.format("Threads wait time and other overhead                                      : %.3f seconds", ((txn_processing - calculate_levels - iterative_processing_useful) / 1000000000.0f)));
 
-                    LOG.info("******* STATS ENDS *******");
-                    //used in TSTREAM.
+                LOG.info("******* STATS ENDS *******");
+                //used in TSTREAM.
 //                }
                 String directory = metric_path
                         + OsUtils.OS_wrapper("TStreamPlus")

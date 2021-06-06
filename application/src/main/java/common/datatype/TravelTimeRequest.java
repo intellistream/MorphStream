@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype;
+
 import common.datatype.util.LRTopologyControl;
 import execution.runtime.tuple.impl.Fields;
 
@@ -66,9 +67,11 @@ public class TravelTimeRequest extends AbstractInputTuple {
      */
     private final static int TOD_IDX = 8;
     private static final long serialVersionUID = -7993444129202648467L;
+
     public TravelTimeRequest() {
         super();
     }
+
     /**
      * Instantiates a new travel time request for the given attributes.
      *
@@ -98,6 +101,7 @@ public class TravelTimeRequest extends AbstractInputTuple {
         super.add(TOD_IDX, tod);
         assert (super.size() == 9);
     }
+
     /**
      * Returns the schema of a {@link TravelTimeRequest}.
      *
@@ -110,6 +114,7 @@ public class TravelTimeRequest extends AbstractInputTuple {
                 LRTopologyControl.END_SEGMENT_FIELD_NAME, LRTopologyControl.DAY_OF_WEEK_FIELD_NAME,
                 LRTopologyControl.TIME_OF_DAY_FIELD_NAME);
     }
+
     /**
      * Returns the expressway ID of this {@link TravelTimeRequest}.
      *
@@ -118,6 +123,7 @@ public class TravelTimeRequest extends AbstractInputTuple {
     public final Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
+
     /**
      * Returns the query ID of this {@link TravelTimeRequest}.
      *
@@ -126,6 +132,7 @@ public class TravelTimeRequest extends AbstractInputTuple {
     public final Integer getQid() {
         return (Integer) super.get(QID_IDX);
     }
+
     /**
      * Returns the start segment of this {@link TravelTimeRequest}.
      *
@@ -134,6 +141,7 @@ public class TravelTimeRequest extends AbstractInputTuple {
     public final Short getSinit() {
         return (Short) super.get(S_INIT_IDX);
     }
+
     /**
      * Returns the end segment of this {@link TravelTimeRequest}.
      *
@@ -142,6 +150,7 @@ public class TravelTimeRequest extends AbstractInputTuple {
     public final Short getSend() {
         return (Short) super.get(S_END_IDX);
     }
+
     /**
      * Returns the day-of-week of this {@link TravelTimeRequest}.
      *
@@ -150,6 +159,7 @@ public class TravelTimeRequest extends AbstractInputTuple {
     public final Short getDow() {
         return (Short) super.get(DOW_IDX);
     }
+
     /**
      * Returns the time-of-day of this {@link TravelTimeRequest}.
      *

@@ -1,5 +1,7 @@
 package common.helper;
+
 import java.util.LinkedList;
+
 /**
  * TODO: make it generic
  */
@@ -10,11 +12,13 @@ public class Event extends LinkedList<String> {
     public static int pos_time_stamp = 0;
     public static int pos_key = 1;
     public static int pos_state = 2;
+
     //    public String value;
 //    private String event;
 //    private String key;
     public Event() {//this is required by kryo, not sure why..
     }
+
     public Event(Long timeStamp, String key, String value) {
         String sb = timeStamp +
                 split_expression +
@@ -29,6 +33,7 @@ public class Event extends LinkedList<String> {
         this.add(value);
         this.add(sb);
     }
+
     /**
      * TODO: StringBuilder may be slow..
      *
@@ -51,9 +56,11 @@ public class Event extends LinkedList<String> {
         this.add(sb);
         this.add(flag);
     }
+
     public String getEvent() {
         return this.get(3);
     }
+
     public String getKey() {
         return this.get(2);
     }

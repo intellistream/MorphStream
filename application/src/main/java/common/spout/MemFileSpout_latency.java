@@ -1,8 +1,8 @@
 package common.spout;
+
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
-import common.helper.wrapper.StringStatesWrapper;
 import components.operators.api.AbstractSpout;
 import execution.ExecutionGraph;
 import org.slf4j.Logger;
@@ -13,6 +13,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Scanner;
+
 public class MemFileSpout_latency extends AbstractSpout {
     private static final Logger LOG = LoggerFactory.getLogger(MemFileSpout_latency.class);
     private static final long serialVersionUID = -2394340130331865581L;
@@ -27,10 +28,12 @@ public class MemFileSpout_latency extends AbstractSpout {
     private long msgID_start;
     private long msgID_end;
     private long msgID_counter;
+
     public MemFileSpout_latency() {
         super(LOG);
 //		this.scalable = false;
     }
+
     @Override
     public Integer default_scale(Configuration conf) {
         int numNodes = conf.getInt("num_socket", 1);
@@ -40,6 +43,7 @@ public class MemFileSpout_latency extends AbstractSpout {
             return 1;
         }
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         LOG.info("Spout initialize is being called");
@@ -82,6 +86,7 @@ public class MemFileSpout_latency extends AbstractSpout {
         msgID_end = (long) (1E4 * (taskId + 1));
         msgID_counter = msgID_start;
     }
+
     /**
      * relax_reset source messages.
      */
@@ -93,6 +98,7 @@ public class MemFileSpout_latency extends AbstractSpout {
         Scanner scanner = new Scanner(new File((prefix + i) + "." + postfix), "UTF-8");
         build(scanner);
     }
+
     private void splitRead(String fileName) throws FileNotFoundException {
         int numSpout = this.getContext().getComponent(taskId).getNumTasks();
         int range = 10 / numSpout;//original file is split into 10 sub-files.
@@ -107,6 +113,7 @@ public class MemFileSpout_latency extends AbstractSpout {
             }
         }
     }
+
     private void openFile(String fileName) throws FileNotFoundException {
         boolean split;
         split = !OsUtils.isMac() && config.getBoolean("split", true);
@@ -119,6 +126,7 @@ public class MemFileSpout_latency extends AbstractSpout {
         array_array = array.toArray(new char[array.size()][]);
         counter = 0;
     }
+
     private void spout_pid() {
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         String jvmName = runtimeBean.getName();
@@ -143,6 +151,7 @@ public class MemFileSpout_latency extends AbstractSpout {
             e.printStackTrace();
         }
     }
+
     //	private boolean start_measure = false;
     public void freeze() throws InterruptedException {
         Object obj = new Object();
@@ -150,6 +159,7 @@ public class MemFileSpout_latency extends AbstractSpout {
             obj.wait();
         }
     }
+
     @Override
     public void nextTuple() {
         counter++;
@@ -169,6 +179,7 @@ public class MemFileSpout_latency extends AbstractSpout {
 //			collector.emit(array_array[timestamp_counter], -1, 0);
 //		}
     }
+
     public void display() {
         LOG.info("timestamp_counter:" + counter);
     }

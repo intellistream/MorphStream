@@ -1,4 +1,5 @@
 package common.model.predictor;
+
 /**
  * @author maycon
  */

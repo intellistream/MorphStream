@@ -1,4 +1,5 @@
 package common.util.maps;
+
 import com.google.common.base.Optional;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
@@ -10,14 +11,17 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+
 public final class BingMapsLookup {
     private static final Logger LOG = LoggerFactory.getLogger(BingMapsLookup.class);
     private static final String BING_MAPS_URL_START = "http://dev.virtualearth.net/REST/v1/Locations/";
     private static final String BING_MAPS_URL_MIDDLE_JSON = "?o=json&key=";
     private static String BING_MAPS_API_KEY;
+
     public static void setApiKey(String apiKey) {
         BING_MAPS_API_KEY = apiKey;
     }
+
     public final static Optional<String> reverseGeocodeFromLatLong(final double latitude, final double longitude) {
         final StringBuilder bingMapsURL = new StringBuilder();
         bingMapsURL.append(BING_MAPS_URL_START)
@@ -52,6 +56,7 @@ public final class BingMapsLookup {
         }
         return Optional.absent();
     }
+
     @SuppressWarnings("unchecked")
     private static Optional<String> getStateFromJSONResponse(InputStream inputStream) {
         final ObjectMapper mapper = new ObjectMapper();

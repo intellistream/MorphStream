@@ -1,10 +1,13 @@
 package common.util.math;
+
 import java.util.Random;
+
 /**
  * @author maycon
  */
 public class RandomUtil {
     private static final Random rand = new Random();
+
     /**
      * Returns a pseudo-random number between min and max, inclusive.
      * The difference between min and max can be at most
@@ -23,11 +26,13 @@ public class RandomUtil {
         int randomNum = rand.nextInt((max - min) + 1) + min;
         return randomNum;
     }
+
     public static double randDouble(double min, double max) {
         //Random rand = new Random();
         double randomNum = min + (rand.nextDouble() * ((max - min) + 1));
         return randomNum;
     }
+
     public static int randomMinMax(int min, int max) {
         return min + (int) (rand.nextDouble() * (double) (max - min + 1));
     }

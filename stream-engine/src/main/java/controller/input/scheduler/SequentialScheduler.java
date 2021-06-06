@@ -1,10 +1,12 @@
 package controller.input.scheduler;
+
+import controller.input.InputStreamController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import controller.input.InputStreamController;
 
 import java.util.LinkedList;
 import java.util.Queue;
+
 /**
  * Created by shuhaozhang on 17/7/16.
  * every executor owns its own input scheduler.
@@ -20,6 +22,7 @@ public class SequentialScheduler extends InputStreamController {
      */
     private int size;
     private int current = 0;
+
     public void initialize() {
         super.initialize();
         for (String streamId : keySet) {
@@ -32,6 +35,7 @@ public class SequentialScheduler extends InputStreamController {
             System.exit(-1);
         }
     }
+
     //
 //	@Override
 //	public JumboTuple fetchResults() {

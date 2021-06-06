@@ -1,15 +1,16 @@
 package common.bolts.transactional.tp;
+
 import common.param.lr.LREvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import transaction.dedicated.ordered.TxnManagerTStream;
 import transaction.function.AVG;
 import transaction.function.CNT;
@@ -23,6 +24,7 @@ import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_app_combo;
 import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static profiler.MeasureTools.*;
+
 /**
  * Combine Read-Write for TStream.
  */
@@ -30,19 +32,23 @@ public class TPBolt_ts extends TPBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TPBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<LREvent> LREvents = new ArrayDeque<>();
+
     public TPBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
         state = new ValueState();
     }
+
     public TPBolt_ts(int fid) {
         super(LOG, fid, null);
         state = new ValueState();
     }
+
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
                 , context.getThisTaskId(), context.getGraph());
     }
+
     /**
      * THIS IS ONLY USED BY TSTREAM.
      * IT CONSTRUCTS and POSTPONES TXNS.
@@ -57,6 +63,7 @@ public class TPBolt_ts extends TPBolt {
         }
         END_PRE_TXN_TIME_MEASURE(thread_Id);
     }
+
     protected void REQUEST_CONSTRUCT(LREvent event, TxnContext txnContext) throws DatabaseException {
         //it simply construct the operations and return.
         transactionManager.Asy_ModifyRecord_Read(txnContext
@@ -73,11 +80,13 @@ public class TPBolt_ts extends TPBolt {
         );          //asynchronously return.
         LREvents.add(event);
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_SEGMENTS, this.context.getThisComponent().getNumTasks());
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
@@ -102,6 +111,7 @@ public class TPBolt_ts extends TPBolt {
             execute_ts_normal(in);
         }
     }
+
     protected void REQUEST_POST() throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (LREvent event : LREvents) {
@@ -109,11 +119,13 @@ public class TPBolt_ts extends TPBolt {
         }
         END_POST_TIME_MEASURE_ACC(thread_Id);
     }
+
     protected void REQUEST_REQUEST_CORE() {
         for (LREvent event : LREvents) {
             TXN_REQUEST_CORE_TS(event);
         }
     }
+
     private void TXN_REQUEST_CORE_TS(LREvent event) {
         event.count = event.count_value.getRecord().getValue().getInt();
         event.lav = event.speed_value.getRecord().getValue().getDouble();

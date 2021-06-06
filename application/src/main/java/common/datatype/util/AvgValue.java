@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype.util;
+
 /**
  * {@link AvgValue} is an class that helps to compute an average.
  *
@@ -31,6 +32,7 @@ public final class AvgValue {
      * The current number of comm values.
      */
     private int count;
+
     /**
      * Instantiates a new {@link AvgValue} object with set_executor_ready value_list.
      *
@@ -40,6 +42,7 @@ public final class AvgValue {
         this.sum = initalValue;
         this.count = 1;
     }
+
     /**
      * Adds a new value_list to the average.
      *
@@ -49,6 +52,7 @@ public final class AvgValue {
         this.sum += value;
         ++this.count;
     }
+
     /**
      * Returns the current average.
      *

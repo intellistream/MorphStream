@@ -1,18 +1,19 @@
 package common.bolts.transactional.ob;
+
 import common.param.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import transaction.dedicated.ordered.TxnManagerTStream;
 import transaction.function.Condition;
 import transaction.function.DEC;
@@ -27,6 +28,7 @@ import static common.CONTROL.*;
 import static common.constants.OnlineBidingSystemConstants.Constant.NUM_ACCESSES_PER_BUY;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
+
 public class OBBolt_ts extends OBBolt {
     private static final long serialVersionUID = -589295586738474236L;
     private static final Logger LOG = LoggerFactory.getLogger(OBBolt_ts.class);
@@ -34,24 +36,29 @@ public class OBBolt_ts extends OBBolt {
     final ArrayDeque<BuyingEvent> buyingEvents = new ArrayDeque<>();
     private int thisTaskId;
     private int alertEvents = 0, toppingEvents = 0;
+
     public OBBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
         state = new ValueState();
     }
+
     public OBBolt_ts(int fid) {
         super(LOG, fid, null);
         state = new ValueState();
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         this.thisTaskId = thread_Id;
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks());
     }
+
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
     }
+
     protected void TOPPING_REQUEST_CONSTRUCT(ToppingEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         for (int i = 0; i < event.getNum_access(); i++)
@@ -61,6 +68,7 @@ public class OBBolt_ts extends OBBolt {
         END_POST_TIME_MEASURE_ACC(thread_Id);
         toppingEvents++;
     }
+
     protected void ALERT_REQUEST_CONSTRUCT(AlertEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         for (int i = 0; i < event.getNum_access(); i++)
@@ -70,6 +78,7 @@ public class OBBolt_ts extends OBBolt {
         END_POST_TIME_MEASURE_ACC(thread_Id);
         alertEvents++;
     }
+
     private void BUYING_REQUEST_CONSTRUCT(BuyingEvent event, TxnContext txnContext) throws DatabaseException {
         //it simply construct the operations and return.
         for (int i = 0; i < NUM_ACCESSES_PER_BUY; i++) {
@@ -86,6 +95,7 @@ public class OBBolt_ts extends OBBolt {
         }
         buyingEvents.add(event);
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
@@ -117,6 +127,7 @@ public class OBBolt_ts extends OBBolt {
             execute_ts_normal(in);
         }
     }
+
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
@@ -133,16 +144,19 @@ public class OBBolt_ts extends OBBolt {
         }
         END_PRE_TXN_TIME_MEASURE(thread_Id);
     }
+
     private void BUYING_REQUEST_POST() throws InterruptedException {
         for (BuyingEvent event : buyingEvents) {
             BUYING_REQUEST_POST(event);
         }
     }
+
     private void BUYING_REQUEST_CORE() {
         for (BuyingEvent event : buyingEvents) {
             BUYING_REQUEST_CORE(event);
         }
     }
+
     /**
      * Evaluation are pushed down..
      *

@@ -1,10 +1,11 @@
 package transaction.dedicated.ordered;
+
+import common.OrderValidate;
+import common.meta.MetaTypes;
+import content.Content;
+import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import db.DatabaseException;
-import common.meta.MetaTypes;
-import common.OrderValidate;
-import content.Content;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -19,16 +20,19 @@ import java.util.LinkedList;
 import static common.meta.MetaTypes.AccessType.*;
 import static common.meta.MetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
+
 /**
  * ordering constrained occ. in-completed
  */
 public class TxnManagerOrderedOcc extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerOrderedOcc.class);
     final OrderValidate orderValidate;
+
     public TxnManagerOrderedOcc(StorageManager storageManager, OrderValidate orderValidate, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
         this.orderValidate = orderValidate;
     }
+
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException {
         record.is_visible_ = false;
@@ -46,6 +50,7 @@ public class TxnManagerOrderedOcc extends TxnManagerDedicated {
             return true;
         }
     }
+
     @Override
     public boolean CommitTransaction(TxnContext txnContext) {
         // step 1: acquire lock_ratio and validate
@@ -155,10 +160,12 @@ public class TxnManagerOrderedOcc extends TxnManagerDedicated {
         access_list_.Clear();
         return is_success;
     }
+
     @Override
     public void AbortTransaction() {
         assert (false);
     }
+
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef s_record_ref, MetaTypes.AccessType accessType) {
         if (accessType == READ_ONLY) {

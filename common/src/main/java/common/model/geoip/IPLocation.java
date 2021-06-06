@@ -1,4 +1,5 @@
 package common.model.geoip;
+
 /**
  * @author mayconbordin
  */

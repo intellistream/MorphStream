@@ -1,16 +1,19 @@
 package common.bolts.transactional.sl;
+
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
 import db.DatabaseException;
+import org.slf4j.Logger;
 import transaction.impl.TxnContext;
 
 import static profiler.MeasureTools.*;
+
 public class SLBolt_LA extends SLBolt {
     public SLBolt_LA(Logger log, int fid, SINKCombo sink) {
         super(log, fid, sink);
     }
+
     protected void PostLAL_process(long _bid) throws DatabaseException, InterruptedException {
         int _combo_bid_size = 1;
         //txn process phase.
@@ -29,6 +32,7 @@ public class SLBolt_LA extends SLBolt {
             transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);
         }
     }
+
     @Override
     protected void LAL_PROCESS(long _bid) throws InterruptedException, DatabaseException {
         BEGIN_WAIT_TIME_MEASURE(thread_Id);

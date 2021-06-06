@@ -1,4 +1,5 @@
 package storage;
+
 import db.DatabaseException;
 import storage.datatype.DataBox;
 import storage.table.BaseTable;
@@ -11,22 +12,27 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 public class StorageManager {
     public Map<String, BaseTable> tables;
     int table_count;
+
     public StorageManager() {
         tables = new ConcurrentHashMap<>();
     }
+
     public BaseTable getTable(String tableName) throws DatabaseException {
         if (!tables.containsKey(tableName)) {
             throw new DatabaseException("Table: " + tableName + " does not exist");
         }
         return tables.get(tableName);
     }
+
     public void InsertRecord(String tableName, TableRecord record) throws DatabaseException {
         BaseTable tab = getTable(tableName);
         tab.InsertRecord(record);
     }
+
     /**
      * Create a new table in this database.
      *
@@ -41,6 +47,7 @@ public class StorageManager {
         tables.put(tableName, new ShareTable(s, tableName, true));//here we decide which table to use.
         table_count++;
     }
+
     /**
      * TODO: to be implemented.
      * Create a new table in this database with an index on each of the given column names.
@@ -77,6 +84,7 @@ public class StorageManager {
             //this.indexLookup.put(indexName, new BtreeIndex(colType, indexName, this.fileDir));
         }
     }
+
     /**
      * Delete a table in this database.
      *
@@ -91,6 +99,7 @@ public class StorageManager {
         tables.remove(tableName);
         return true;
     }
+
     /**
      * Delete all tables from this database.
      */
@@ -100,6 +109,7 @@ public class StorageManager {
             dropTable(s);
         }
     }
+
     /**
      * Close this database.
      */

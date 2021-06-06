@@ -1,15 +1,16 @@
 package common.bolts.transactional.sl;
+
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
+import content.T_StreamContent;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Tuple;
-import db.DatabaseException;
-import content.T_StreamContent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import transaction.dedicated.ordered.TxnManagerTStream;
@@ -22,22 +23,27 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
 import static profiler.MeasureTools.*;
+
 public class SLBolt_ts_nopush extends SLBolt_ts {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_ts_nopush.class);
     ArrayDeque<DepositEvent> depositeEvents;
+
     public SLBolt_ts_nopush(int fid, SINKCombo sink) {
         super(fid, sink);
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ACCOUNTS, this.context.getThisComponent().getNumTasks());
         depositeEvents = new ArrayDeque<>();
     }
+
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
@@ -61,6 +67,7 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
             execute_ts_normal(in);
         }
     }
+
     protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.Asy_ReadRecords(txnContext,
                 "accounts",
@@ -83,22 +90,26 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
                 , event.enqueue_time);   //asynchronously return.
         transactionEvents.add(event);
     }
+
     protected void DEPOSITE_REQUEST_CONSTRUCT(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         transactionManager.Asy_ReadRecords(txnContext, "accounts", event.getAccountId(), event.account_values, event.enqueue_time);
         transactionManager.Asy_ReadRecords(txnContext, "bookEntries", event.getBookEntryId(), event.asset_values, event.enqueue_time);
         depositeEvents.add(event);
     }
+
     private void DEPOSITE_REQUEST_CORE() {
         for (DepositEvent event : depositeEvents) {
             DEPOSITE_REQUEST_CORE(event);
         }
     }
+
     private void DEPOSITE_REQUEST_POST() throws InterruptedException {
         for (DepositEvent event : depositeEvents) {
             DEPOSITE_REQUEST_POST(event);
         }
     }
+
     protected void DEPOSITE_REQUEST_CORE(DepositEvent event) {
         SchemaRecord srcRecord = event.account_values.getRecord().content_.readPreValues(event.getBid());
         List<DataBox> values = srcRecord.getValues();
@@ -109,6 +120,7 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
         long newAssetValue = values.get(1).getLong() + event.getBookEntryTransfer();
         asset_values.get(1).setLong(newAssetValue);
     }
+
     protected void TRANSFER_REQUEST_CORE(TransactionEvent event) throws InterruptedException {
         // read
         SchemaRecord preValues = event.src_account_values.getRecord().content_.readPreValues(event.getBid());
@@ -167,11 +179,13 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
             event.transaction_result = new TransactionResult(event, false, sourceAccountBalance, targetAccountBalance);
         }
     }
+
     protected void TRANSFER_REQUEST_CORE() throws InterruptedException {
         for (TransactionEvent event : transactionEvents) {
             TRANSFER_REQUEST_CORE(event);
         }
     }
+
     protected void TRANSFER_REQUEST_POST() throws InterruptedException {
         for (TransactionEvent event : transactionEvents) {
             TRANSFER_REQUEST_POST(event);

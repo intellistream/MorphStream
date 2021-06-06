@@ -1,4 +1,5 @@
 package common.collections;
+
 public class STREAM {
     static final Object lock2 = new Object();
     static Object lock = new Object();
@@ -20,11 +21,13 @@ public class STREAM {
     double[] bytes;
     Double tmp;
     double FLT_MAX;
+
     static void reach_barrier() {
         synchronized (lock2) {
             _barrier++;
         }
     }
+
     public static void main(String[] args) {
         //int num_threads = 64;//Integer.parseInt(args[0]);
         int num_threads = Integer.parseInt(args[0]);
@@ -73,11 +76,13 @@ public class STREAM {
             System.out.println();
         }
     }
+
     long pr(long ticks, int pid, String msg) {
         long t = System.currentTimeMillis();
         System.out.println("PID " + pid + msg + " (" + ((t - ticks) / 1000) + " secs since last report)");
         return t;
     }
+
     public void run(int pid) {
         long ticks = pr(System.currentTimeMillis(), pid, " begins to allocate");
         N = 200000;
@@ -186,18 +191,21 @@ public class STREAM {
         ticks = pr(ticks, pid, " exits");
         //System.out.println(HLINE);
     }
+
     public double MIN(double x, double y) {
         if (x < y)
             return x;
         else
             return y;
     }
+
     public double MAX(double x, double y) {
         if (x > y)
             return x;
         else
             return y;
     }
+
     private int checktick() {
         int i, minDelta, Delta;
         double t1, t2;
@@ -223,6 +231,7 @@ public class STREAM {
         }
         return (minDelta);
     }
+
     /**
      * A gettimeofday routine to give access to the wall
      * clock timer on most UNIX-like systems.

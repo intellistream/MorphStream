@@ -1,9 +1,12 @@
 package storage.datatype;
+
 import java.util.LinkedList;
 import java.util.List;
+
 public class ListDoubleDataBox extends DataBox {
     private final int movingAverageWindow;
     private final LinkedList<Double> list;
+
     /**
      * Construct an empty StringDataBox.
      *
@@ -13,9 +16,11 @@ public class ListDoubleDataBox extends DataBox {
         this.movingAverageWindow = movingAverageWindow;
         this.list = new LinkedList<>();
     }
+
     public int getSize() throws DataBoxException {
         return 8 * list.size();
     }
+
     @Override
     public DataBox clone() {
         ListDoubleDataBox dataBox = new ListDoubleDataBox(movingAverageWindow);
@@ -24,10 +29,12 @@ public class ListDoubleDataBox extends DataBox {
         }
         return dataBox;
     }
+
     @Override
     public List<Double> getList() {
         return this.list;
     }
+
     @Override
     public double addItem(Double nextDouble) {
         double valueToRemove = 0;
@@ -37,10 +44,12 @@ public class ListDoubleDataBox extends DataBox {
         list.addLast(nextDouble);
         return valueToRemove;
     }
+
     @Override
     public Types type() {
         return Types.STRING;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -55,13 +64,16 @@ public class ListDoubleDataBox extends DataBox {
         ListDoubleDataBox other = (ListDoubleDataBox) obj;
         return this.getString().equals(other.getString());
     }
+
     @Override
     public int hashCode() {
         return this.getString().hashCode();
     }
+
     public double size() {
         return list.size();
     }
+
     @Override
     public String toString() throws DataBoxException {
         return list.toString();

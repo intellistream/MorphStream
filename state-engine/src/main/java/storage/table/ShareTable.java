@@ -1,4 +1,5 @@
 package storage.table;
+
 import index.BaseUnorderedIndex;
 import index.HashTableIndex;
 import index.StdUnorderedIndex;
@@ -9,9 +10,11 @@ import storage.datatype.DataBox;
 
 import java.util.Iterator;
 import java.util.List;
+
 public class ShareTable extends BaseTable {
     //    private final BaseOrderedIndex[] secondary_indexes_;
     private final BaseUnorderedIndex primary_index_;
+
     public ShareTable(RecordSchema schema, String tableName, boolean is_thread_safe) {
         super(schema, tableName);
         if (is_thread_safe) {
@@ -33,15 +36,18 @@ public class ShareTable extends BaseTable {
 //            }
         }
     }
+
     @Override
     public TableRecord SelectKeyRecord(String primary_key) {
         return primary_index_.SearchRecord(primary_key);
     }
+
     @Override
     public void SelectRecords(int idx_id, String secondary_key, TableRecords records) {
 //        secondary_indexes_[idx_id].SearchRecords(secondary_key, records);
         throw new UnsupportedOperationException();
     }
+
     ///////////////////INSERT//////////////////
     @Override
     public boolean InsertRecord(TableRecord record) {
@@ -59,24 +65,30 @@ public class ShareTable extends BaseTable {
             return false;
         }
     }
+
     @Override
     public void clean() {
     }
+
     @Override
     public SchemaRecord deleteRecord(RowID rid) {
         return null;
     }
+
     @Override
     public SchemaRecord getRecord(RowID rid) {
         return null;
     }
+
     @Override
     public SchemaRecord updateRecord(List<DataBox> values, RowID rid) {
         return null;
     }
+
     @Override
     public void close() {
     }
+
     @Override
     public Iterator<TableRecord> iterator() {
         return primary_index_.iterator();

@@ -1,6 +1,5 @@
 package topology;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import components.MultiStreamComponent;
 import components.Topology;
 import components.TopologyComponent;
@@ -16,8 +15,10 @@ import components.operators.executor.IExecutor;
 import components.streaminfo;
 import controller.input.InputStreamController;
 import controller.input.scheduler.SequentialScheduler;
-import execution.runtime.tuple.impl.OutputFieldsDeclarer;
 import db.Database;
+import execution.runtime.tuple.impl.OutputFieldsDeclarer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static common.Constants.*;
+
 /**
  * Builder pattern for Topology_components class
  */
@@ -32,10 +34,12 @@ public class TopologyBuilder {
     private static final Logger LOG = LoggerFactory.getLogger(TopologyBuilder.class);
     private final Topology topology;
     private final Set<String> idSet;
+
     public TopologyBuilder() {
         topology = new Topology();
         idSet = new HashSet<>();
     }
+
     /**
      * add spout to Brisk.topology
      *
@@ -58,9 +62,11 @@ public class TopologyBuilder {
         topology.addRecord(topologyComponent);
         return this;
     }
+
     public TopologyBuilder setBolt(String id, AbstractBolt b, int numTasks, Grouping... groups) throws InvalidIDException {
         return setBolt(boltType, id, b, numTasks, groups);
     }
+
     /**
      * add bolt with shuffle Grouping to parent
      *
@@ -89,9 +95,11 @@ public class TopologyBuilder {
         setBolt(type, id, executor, output_streams, numTasks, groups);
         return this;
     }
+
     public TopologyBuilder setBolt(String id, AbstractWindowedBolt bolt, int numTasks, Grouping... groups) throws InvalidIDException {
         return setBolt(boltType, id, bolt, numTasks, groups);
     }
+
     private TopologyBuilder setBolt(char type, String id, AbstractWindowedBolt b, int numTasks, Grouping... groups) throws InvalidIDException {
         if (idSet.contains(id)) {
             throw new InvalidIDException("ID already taken");
@@ -110,6 +118,7 @@ public class TopologyBuilder {
         setBolt(type, id, executor, output_streams, numTasks, groups);
         return this;
     }
+
     /**
      * @param type
      * @param id
@@ -138,12 +147,15 @@ public class TopologyBuilder {
         }
         return this;
     }
+
     public TopologyBuilder setSink(String id, AbstractBolt b, int numTasks, Grouping... groups) throws InvalidIDException {
         return setBolt(sinkType, id, b, numTasks, groups);
     }
+
     public void setGlobalScheduler(InputStreamController scheduler) {
         topology.setScheduler(scheduler);
     }
+
     public Topology createTopology(Database db, TransactionTopology txnTopology) {
         if (topology.getScheduler() == null) {
             LOG.info("Tuple input scheduler is not set, use default scheduler instead!");
@@ -155,6 +167,7 @@ public class TopologyBuilder {
         }
         return topology;
     }
+
     public Topology createTopology() {
         if (topology.getScheduler() == null) {
             LOG.info("JumboTuple scheduler is not set, use default Brisk.execution.runtime.tuple scheduler instead!");

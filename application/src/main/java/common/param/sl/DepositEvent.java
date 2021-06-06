@@ -1,11 +1,20 @@
 package common.param.sl;
+
 import common.param.TxnEvent;
 import storage.SchemaRecordRef;
 import storage.TableRecordRef;
 import storage.datatype.DataBox;
 
 import java.util.List;
+
 public class DepositEvent extends TxnEvent {
+    private final String accountId; //32 bytes
+    //expected state.
+    //long Item_value=0;
+    //long asset_value=0;
+    private final String bookEntryId; //32 bytes
+    private final long accountTransfer; //64 bytes
+    private final long bookEntryTransfer;//64 bytes
     //updated state...to be written.
     public long newAccountValue;
     public long newAssetValue;
@@ -15,13 +24,7 @@ public class DepositEvent extends TxnEvent {
     //used in no-push.
     public TableRecordRef account_values = new TableRecordRef();
     public TableRecordRef asset_values = new TableRecordRef();
-    private final String accountId; //32 bytes
-    //expected state.
-    //long Item_value=0;
-    //long asset_value=0;
-    private final String bookEntryId; //32 bytes
-    private final long accountTransfer; //64 bytes
-    private final long bookEntryTransfer;//64 bytes
+
     /**
      * Creates a new DepositEvent.
      */
@@ -37,6 +40,7 @@ public class DepositEvent extends TxnEvent {
         this.accountTransfer = accountTransfer;
         this.bookEntryTransfer = bookEntryTransfer;
     }
+
     /**
      * Loading a DepositEvent.
      *
@@ -60,24 +64,31 @@ public class DepositEvent extends TxnEvent {
         this.accountTransfer = accountTransfer;
         this.bookEntryTransfer = bookEntryTransfer;
     }
+
     public String getAccountId() {
         return accountId;
     }
+
     public String getBookEntryId() {
         return bookEntryId;
     }
+
     public long getAccountTransfer() {
         return accountTransfer;
     }
+
     public long getBookEntryTransfer() {
         return bookEntryTransfer;
     }
+
     public List<DataBox> getUpdatedAcount_value() {
         return null;
     }
+
     public List<DataBox> getUpdatedAsset_value() {
         return null;
     }
+
     // ------------------------------------------------------------------------
     //  miscellaneous
     // ------------------------------------------------------------------------

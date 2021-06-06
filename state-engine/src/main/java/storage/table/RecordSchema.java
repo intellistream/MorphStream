@@ -1,4 +1,5 @@
 package storage.table;
+
 import storage.SchemaRecord;
 import storage.datatype.*;
 
@@ -6,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 /**
  * The RecordSchema of a particular table.
  * <p>
@@ -19,6 +21,7 @@ public class RecordSchema {
     private final List<String> fields;
     private final List<DataBox> fieldTypes;
     private int size;
+
     public RecordSchema(List<String> fields, List<DataBox> fieldTypes) {
         assert (fields.size() == fieldTypes.size());
         this.fields = fields;
@@ -29,9 +32,11 @@ public class RecordSchema {
         }
         secondary_num_ = fields.size();
     }
+
     public int getSecondary_num_() {
         return secondary_num_;
     }
+
     /**
      * Verifies that a list of DataBoxes corresponds to this schema. A list of
      * DataBoxes corresponds to this schema if the number of DataBoxes in the
@@ -58,6 +63,7 @@ public class RecordSchema {
         }
         return new SchemaRecord(values);
     }
+
     /**
      * Serializes the provided d_record into a byte[]. Uses the DataBoxes'
      * serialization methods. A serialized d_record is represented as the
@@ -74,6 +80,7 @@ public class RecordSchema {
         }
         return byteBuffer.array();
     }
+
     /**
      * Takes a byte[] and decodes it into a SchemaRecord. This method assumes that the
      * input byte[] represents a d_record that corresponds to this schema.
@@ -104,15 +111,19 @@ public class RecordSchema {
         }
         return new SchemaRecord(values);
     }
+
     public int getEntrySize() {
         return this.size;
     }
+
     public List<String> getFieldNames() {
         return this.fields;
     }
+
     public List<DataBox> getFieldTypes() {
         return this.fieldTypes;
     }
+
     @Override
     public boolean equals(Object other) {
         if (!(other instanceof RecordSchema)) {

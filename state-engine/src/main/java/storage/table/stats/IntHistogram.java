@@ -1,4 +1,5 @@
 package storage.table.stats;
+
 import operator.QueryPlan;
 import storage.datatype.DataBox;
 
@@ -6,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+
 /**
  * A class that represents the histogram of an integer column.
  * An instance of IntHistogram exposes statistics helpful
@@ -21,6 +23,7 @@ public class IntHistogram implements Histogram<Integer> {
     private int numDistinct;
     private List<Bucket<Integer>> buckets;
     private HashSet<Integer> entrySet;
+
     /**
      * Creates a new IntHistogram with no entries.
      */
@@ -37,6 +40,7 @@ public class IntHistogram implements Histogram<Integer> {
             this.buckets.add(new Bucket<>(start, end));
         }
     }
+
     /**
      * Creates a new IntHistogram with given buckets and
      * an estimate number of distinct entries.
@@ -49,6 +53,7 @@ public class IntHistogram implements Histogram<Integer> {
         this.numDistinct = numDistinct;
         this.buckets = buckets;
     }
+
     /**
      * Creates a new IntHistogram that would result from
      * applying the given reduction factor over this.
@@ -69,6 +74,7 @@ public class IntHistogram implements Histogram<Integer> {
         int copyNumDistinct = (int) Math.ceil(this.getNumDistinct() * reductionFactor);
         return new IntHistogram(copyBuckets, copyNumDistinct);
     }
+
     /**
      * Creates a new IntHistogram that would result from
      * applying the given predicate and value_list over this.
@@ -130,10 +136,12 @@ public class IntHistogram implements Histogram<Integer> {
         int copyNumDistinct = (int) (this.getNumDistinct() * reductionFactor);
         return new IntHistogram(copyBuckets, copyNumDistinct);
     }
+
     @Override
     public int getSampleCount() {
         return 0;
     }
+
     /**
      * Gets the buckets of this IntHistogram.
      *
@@ -142,14 +150,17 @@ public class IntHistogram implements Histogram<Integer> {
     public List<Bucket<Integer>> getAllBuckets() {
         return this.buckets;
     }
+
     @Override
     public Long get(Integer value) {
         return null;
     }
+
     @Override
     public Collection<Integer> values() {
         return null;
     }
+
     /**
      * Adds an entry into this IntHistogram.
      * Buckets are start inclusive and end exclusive.
@@ -166,6 +177,7 @@ public class IntHistogram implements Histogram<Integer> {
         }
         this.entrySet.add(value);
     }
+
     /**
      * Removes an entry from this IntHistogram.
      */
@@ -176,6 +188,7 @@ public class IntHistogram implements Histogram<Integer> {
             }
         }
     }
+
     /**
      * Computes the reduction factor that a predicate and value_list result in
      * over this IntHistogram. You'll find instance methods of this class
@@ -212,6 +225,7 @@ public class IntHistogram implements Histogram<Integer> {
         }
         return rf;
     }
+
     /**
      * Gets the number of entries within a certain range.
      *
@@ -239,6 +253,7 @@ public class IntHistogram implements Histogram<Integer> {
         }
         return entries;
     }
+
     /**
      * Gets the estimate minimum value_list of this. The estimate minimum
      * value_list is the start value_list of the leftmost bucket with some entries.
@@ -255,6 +270,7 @@ public class IntHistogram implements Histogram<Integer> {
         }
         return minValue;
     }
+
     /**
      * Gets the estimate maximum value_list of this. The estimate maximum
      * value_list is the end value_list of the rightmost bucket with some entries.
@@ -272,14 +288,17 @@ public class IntHistogram implements Histogram<Integer> {
         }
         return maxValue;
     }
+
     @Override
     public Integer getMinValue() {
         return null;
     }
+
     @Override
     public Integer getMaxValue() {
         return null;
     }
+
     /**
      * Gets the estimate number of distinct entries in this histogram.
      *
@@ -292,6 +311,7 @@ public class IntHistogram implements Histogram<Integer> {
             return entrySet.size();
         }
     }
+
     /**
      * Refactors the buckets backing this IntHistogram to allow
      * the given value_list to belong in a bucket of this IntHistogram.

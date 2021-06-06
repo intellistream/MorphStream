@@ -1,5 +1,7 @@
 package common.sink.helper;
+
 import org.slf4j.Logger;
+
 /**
  * Created by I309939 on 7/23/2016.
  */
@@ -7,10 +9,12 @@ public class warmup_sink_helper extends helper {
     private final double average_throughput;
     private long periodic_start;
     private long periodic_end;
+
     public warmup_sink_helper(Logger LOG, int runtime, String metric_path, double average_throughput, int thisTaskId) {
         super(runtime, 0, 0, metric_path, thisTaskId, false);
         this.average_throughput = average_throughput;
     }
+
     public warmup_sink_helper(warmup_sink_helper sink_state, int thisTaskId) {
         super(sink_state.runtimeInSEC, 0, 0, sink_state.metric_path, thisTaskId, false);
         this.average_throughput = sink_state.average_throughput;
@@ -23,6 +27,7 @@ public class warmup_sink_helper extends helper {
         periodic_start = sink_state.periodic_start;
         periodic_end = sink_state.periodic_end;
     }
+
     public double execute(long bid) {
         if (atomic_index_e.get() == 0) {
             start = System.nanoTime();

@@ -1,7 +1,9 @@
 package profiler;
+
 import common.CONTROL;
 
 import static common.meta.MetaTypes.kMaxThreadNum;
+
 public class MeasureTools {
     //control.
     public static long[] measure_counts = new long[kMaxThreadNum];
@@ -104,13 +106,14 @@ public class MeasureTools {
 
         }
     }
+
     public static void BEGIN_TOTAL_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile) {
 //            if (measure_counts[thread_id] >= CONTROL.MeasureStart && measure_counts[thread_id] < CONTROL.MeasureBound) {
-                profile_start[thread_id] = true;
-                prepare_start[thread_id] = System.nanoTime();
-                if (total_start[thread_id] == 0)
-                    total_start[thread_id] = prepare_start[thread_id];
+            profile_start[thread_id] = true;
+            prepare_start[thread_id] = System.nanoTime();
+            if (total_start[thread_id] == 0)
+                total_start[thread_id] = prepare_start[thread_id];
 //            } else
 //                profile_start[thread_id] = false;
         }
@@ -145,6 +148,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             index_start[thread_id] = System.nanoTime();
     }
+
     public static void END_INDEX_TIME_MEASURE_ACC(int thread_id, boolean is_retry_) {
         if (profile_start[thread_id]) {
             index_time[thread_id] += System.nanoTime() - index_start[thread_id];
@@ -155,29 +159,35 @@ public class MeasureTools {
         if (profile_start[thread_id])
             post_time_start[thread_id] = System.nanoTime();
     }
+
     public static void END_POST_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id]) {
             post_time[thread_id] = System.nanoTime() - post_time_start[thread_id];
         }
     }
+
     public static void END_POST_TIME_MEASURE_ACC(int thread_id) {
         if (profile_start[thread_id]) {
             post_time[thread_id] += System.nanoTime() - post_time_start[thread_id];
         }
     }
+
     public static void BEGIN_WAIT_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             txn_wait_start[thread_id] = System.nanoTime();
     }
+
     public static void BEGIN_LOCK_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             txn_lock_start[thread_id] = System.nanoTime();
     }
+
     public static void END_LOCK_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id]) {
             txn_lock[thread_id] = System.nanoTime() - txn_lock_start[thread_id];
         }
     }
+
     public static void END_WAIT_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             txn_wait[thread_id] = (System.nanoTime() - txn_wait_start[thread_id] - txn_lock[thread_id]);
@@ -339,6 +349,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             submit_time_total[thread_id] += System.nanoTime() - submit_time_start[thread_id];
     }
+
     public static void BEGIN_SUBMIT_BARRIER_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             submit_time_barrier_start[thread_id] = System.nanoTime();
@@ -348,6 +359,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             submit_time_barrier_total[thread_id] += System.nanoTime() - submit_time_barrier_start[thread_id];
     }
+
     public static void BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             submit_time_overhead_start[thread_id] = System.nanoTime();
@@ -357,6 +369,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             submit_time_overhead_total[thread_id] += System.nanoTime() - submit_time_overhead_start[thread_id];
     }
+
     public static void BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             submit_time_extra_param_1_start[thread_id] = System.nanoTime();
@@ -366,6 +379,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             submit_time_extra_param_1_total[thread_id] += System.nanoTime() - submit_time_extra_param_1_start[thread_id];
     }
+
     public static void BEGIN_SUBMIT_EXTRA_PARAM_2_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             submit_time_extra_param_2_start[thread_id] = System.nanoTime();
@@ -375,6 +389,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             submit_time_extra_param_2_total[thread_id] += System.nanoTime() - submit_time_extra_param_2_start[thread_id];
     }
+
     public static void BEGIN_SUBMIT_EXTRA_PARAM_3_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             submit_time_extra_param_3_start[thread_id] = System.nanoTime();
@@ -394,6 +409,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             get_next_time_total[thread_id] += System.nanoTime() - get_next_time_start[thread_id];
     }
+
     public static void BEGIN_GET_NEXT_OVERHEAD_TIME_MEASURE(int thread_id) { // transaction processing time
         if (profile_start[thread_id])
             get_next_overhead_time_start[thread_id] = System.nanoTime();
@@ -403,6 +419,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             get_next_overhead_time_total[thread_id] += System.nanoTime() - get_next_overhead_time_start[thread_id];
     }
+
     public static void BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             get_next_barrier_time_start[thread_id] = System.nanoTime();
@@ -412,6 +429,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             get_next_barrier_time_total[thread_id] += System.nanoTime() - get_next_barrier_time_start[thread_id];
     }
+
     public static void BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             get_next_thread_wait_time_start[thread_id] = System.nanoTime();
@@ -421,6 +439,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             get_next_thread_wait_time_total[thread_id] += System.nanoTime() - get_next_thread_wait_time_start[thread_id];
     }
+
     public static void BEGIN_GET_NEXT_EXTRA_PARAM_1_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             get_next_extra_param_1_start[thread_id] = System.nanoTime();
@@ -430,6 +449,7 @@ public class MeasureTools {
         if (profile_start[thread_id])
             get_next_extra_param_1_total[thread_id] += System.nanoTime() - get_next_extra_param_1_start[thread_id];
     }
+
     public static void BEGIN_GET_NEXT_EXTRA_PARAM_2_TIME_MEASURE(int thread_id) {
         if (profile_start[thread_id])
             get_next_extra_param_2_start[thread_id] = System.nanoTime();
@@ -580,58 +600,71 @@ public class MeasureTools {
             txn_lock[thread_id] += rt - tp_core[thread_id] - index_time[thread_id];
         }
     }
+
     public static void END_COMPUTE_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound) {
             access_total[thread_id] = System.nanoTime() - access_start[thread_id];
         }
     }
+
     public static void END_INDEX_TIME_MEASURE(int thread_id, boolean is_retry_) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound) {
             if (!is_retry_)
                 index_time[thread_id] = System.nanoTime() - index_start[thread_id];
         }
     }
+
     public static void BEGIN_ABORT_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound)
             abort_start[thread_id] = System.nanoTime();
     }
+
     public static void END_ABORT_TIME_MEASURE_ACC(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound)
             abort_time[thread_id] += System.nanoTime() - abort_start[thread_id];
     }
+
     public static void CLEAN_ABORT_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound)
             abort_time[thread_id] = 0;
     }
+
     public static void BEGIN_TS_ALLOCATE_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound)
             ts_allocate_start[thread_id] = System.nanoTime();
     }
+
     public static void END_TS_ALLOCATE_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound)
             ts_allocate[thread_id] = System.nanoTime() - ts_allocate_start[thread_id];
     }
+
     public static void BEGIN_WRITE_HANDLE_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound)
             write_handle_start[thread_id] = System.nanoTime();
     }
+
     public static void END_WRITE_HANDLE_TIME_MEASURE_TS(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound)
             write_handle[thread_id] += System.nanoTime() - write_handle_start[thread_id];
     }
+
     public static void BEGIN_TP_SUBMIT_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound)
             tp_submit_start[thread_id] = System.nanoTime();
     }
+
     public static void END_TP_SUBMIT_TIME_MEASURE(int thread_id, int size) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound) {
             tp_submit[thread_id] = (double) (System.nanoTime() - tp_submit_start[thread_id]);
         }
     }
+
     public static void BEGIN_TP_CORE_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound)
             tp_core_start[thread_id] = System.nanoTime();
     }
+
     public static void END_TP_CORE_TIME_MEASURE_TS(int thread_id, int size) {
         if (CONTROL.enable_profile && CONTROL.MeasureStart <= measure_counts[thread_id] && measure_counts[thread_id] < CONTROL.MeasureBound) {
             tp_core[thread_id] = (System.nanoTime() - tp_core_start[thread_id] - tp_submit[thread_id]);

@@ -1,4 +1,5 @@
 package storage.table;
+
 import db.DatabaseException;
 import storage.SchemaRecord;
 import storage.TableRecord;
@@ -7,6 +8,7 @@ import storage.table.stats.TableStats;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * A database table. Allows the user to add, delete, update, and get records.
  * A table has an associated schema, stats, and page allocator. The first page
@@ -26,6 +28,7 @@ public abstract class BaseTable implements ITable {
     private final RecordSchema schema;
     private final TableStats stats;
     private final String table_Id;
+
     //TODO: move index structure here.
     //A table may or may not have index associated. The index structure should not be maintained outside.
     public BaseTable(RecordSchema schema, String table_Id) {
@@ -34,6 +37,7 @@ public abstract class BaseTable implements ITable {
         this.stats = new TableStats(this.schema);
         secondary_count_ = schema.getSecondary_num_();
     }
+
     /**
      * Adds a new d_record to this table.
      *
@@ -43,10 +47,12 @@ public abstract class BaseTable implements ITable {
      *                           correspond to the schema of this table
      */
     public abstract boolean InsertRecord(TableRecord record) throws DatabaseException;
+
     /**
      * Delete all records in the table.
      */
     public abstract void clean();
+
     /**
      * Deletes the d_record specified by rid from the table.
      *
@@ -55,6 +61,7 @@ public abstract class BaseTable implements ITable {
      * @throws DatabaseException if rid does not correspond to a valid d_record
      */
     public abstract SchemaRecord deleteRecord(RowID rid);
+
     /**
      * Retrieves a d_record from the table.
      *
@@ -63,6 +70,7 @@ public abstract class BaseTable implements ITable {
      * @throws DatabaseException if rid does not correspond to a valid d_record
      */
     public abstract SchemaRecord getRecord(RowID rid);
+
     /**
      * Updates an existing d_record with new values and returns the old version of the d_record.
      * Make sure to update this.stats as necessary.
@@ -74,15 +82,19 @@ public abstract class BaseTable implements ITable {
      *                           if the values do not correspond to the schema of this table
      */
     public abstract SchemaRecord updateRecord(List<DataBox> values, RowID rid);
+
     public int getNumRecords() {
         return this.numRecords.get();
     }
+
     public RecordSchema getSchema() {
         return this.schema;
     }
+
     public TableStats getStats() {
         return this.stats;
     }
+
     public int getEntrySize() {
         return this.schema.getEntrySize();
     }

@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype.util;
+
 /**
  * TODO
  *
@@ -122,8 +123,10 @@ public class LRTopologyControl {
     public final static String ACCIDENT_INFO_FIELD_NAME = "accidentInfo";
     public final static String TIME_FIELD_NAME = "StormTimer";
     public final static String BALANCE_NOTIFICATION_REQUESTS_FIELD_NAME = "balancenotification";
+
     private LRTopologyControl() {
     }
+
     public interface Field {
         String PositionReport = "PositionReport";
         String PositionReport_Key = "PositionReport_Key";

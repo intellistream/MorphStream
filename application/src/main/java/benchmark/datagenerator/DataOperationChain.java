@@ -7,17 +7,14 @@ import java.util.Objects;
 public class DataOperationChain {
 
     private final String stateId;
-    private int operationsCount = 0;
-    private int dependencyLevel;
-
-    private boolean isDependencyLevelDirty = false;
-    private boolean readForTraversal = false;
-
     private final ArrayList<DataOperationChain> dependsUpon = new ArrayList<>();
     private final ArrayList<DataOperationChain> dependents = new ArrayList<>();
-
     private final HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel;
     private final int averageRecordsPerDeLevel;
+    private int operationsCount = 0;
+    private int dependencyLevel;
+    private boolean isDependencyLevelDirty = false;
+    private boolean readForTraversal = false;
 
     public DataOperationChain(String stateId, int averageRecordsPerDeLevel, HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel) {
         this.stateId = stateId;
@@ -25,9 +22,11 @@ public class DataOperationChain {
         this.averageRecordsPerDeLevel = averageRecordsPerDeLevel;
         updateLevelInMap(0, averageRecordsPerDeLevel);
     }
+
     public String getStateId() {
         return stateId;
     }
+
     public int getId() {
         return Integer.parseInt(stateId.split("_")[1]);
     }
@@ -98,6 +97,7 @@ public class DataOperationChain {
             doc.markDependentsReadyForTraversal();
         }
     }
+
     public boolean doesDependsUpon(DataOperationChain oc) {
         boolean traversalResult = false;
         for (DataOperationChain doc : dependsUpon) {

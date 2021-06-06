@@ -1,11 +1,13 @@
 package common.sink;
+
 import common.sink.helper.stable_sink_helper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.BaseSink;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ConsoleSink extends BaseSink {
     private static final Logger LOG = LoggerFactory.getLogger(ConsoleSink.class);
     private static final long serialVersionUID = 3026838156176068865L;
@@ -17,9 +19,11 @@ public class ConsoleSink extends BaseSink {
     private long start;
     private boolean helper_finished = false;
     private boolean helper2_finished = false;
+
     private ConsoleSink() {
         super(LOG);
     }
+
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         helper = new stable_sink_helper(LOG
@@ -29,10 +33,12 @@ public class ConsoleSink extends BaseSink {
                 , config.getInt("runtimeInSeconds")
                 , config.getString("metrics.output"), config.getDouble("predict"), 0, thread_Id, false);
     }
+
     @Override
     public void execute(Tuple input) {
         //not in use.
     }
+
     @Override
     public void execute(JumboTuple input) {
         int bound = input.length;
@@ -66,6 +72,7 @@ public class ConsoleSink extends BaseSink {
             }
         }
     }
+
     @Override
     protected Logger getLogger() {
         return LOG;

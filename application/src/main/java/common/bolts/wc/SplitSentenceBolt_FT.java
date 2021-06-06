@@ -1,12 +1,10 @@
 package common.bolts.wc;
+
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.constants.WordCountConstants.Field;
 import common.util.datatypes.StreamValues;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.Checkpointable;
 import components.operators.base.splitBolt;
 import execution.ExecutionGraph;
@@ -15,12 +13,17 @@ import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+
 //import static Brisk.utils.Utils.printAddresses;
 public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
     private static final Logger LOG = LoggerFactory.getLogger(SplitSentenceBolt_FT.class);
     private static final long serialVersionUID = -8704562309673923018L;
+
     //	long end = 0;
 //	boolean GetAndUpdate = false;
 //	int loop = 1;
@@ -31,13 +34,16 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
         this.output_selectivity.put(BaseConstants.BaseStream.DEFAULT, 10.0);
         state = new ValueState();
     }
+
     public Integer default_scale(Configuration conf) {
         return conf.getInt("num_socket") * 5;
     }
+
     @Override
     public Fields getDefaultFields() {
         return new Fields(Field.WORD);
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException {
         final long bid = in.getBID();
@@ -50,6 +56,7 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
             }
         }
     }
+
     public void execute(JumboTuple in) throws InterruptedException {
         //up remote: 14161.599999999988, 13, 14; all local: 13271.8, 0, 15; down remote:11786.49, 0, 14.
         int bound = in.length;
@@ -69,21 +76,26 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
             }
         }
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         long pid = OsUtils.getPID();
 //		LOG.info("PID  = " + pid);
     }
+
     @Override
     public void forward_checkpoint_single(int sourceId, long bid, Marker marker) {
     }
+
     @Override
     public void forward_checkpoint_single(int sourceTask, String streamId, long bid, Marker marker) {
     }
+
     @Override
     public boolean checkpoint(int counter) {
         return false;
     }
+
     @Override
     public void forward_checkpoint(int sourceId, long bid, Marker marker) throws InterruptedException {
         final boolean check = checkpoint_forward(sourceId);//simply forward marker when it is ready.
@@ -92,9 +104,11 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
             //LOG.DEBUG(this.getContext().getThisComponentId() + this.getContext().getThisTaskId() + " broadcast marker with id:" + marker.msgId + "@" + DateTime.now());
         }
     }
+
     @Override
     public void forward_checkpoint(int sourceTask, String streamId, long bid, Marker marker) {
     }
+
     @Override
     public void ack_checkpoint(Marker marker) {
 //		//LOG.DEBUG("Received ack from all consumers.");
@@ -102,6 +116,7 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
 //		//LOG.DEBUG("Broadcast ack to all producers.");
         this.collector.broadcast_ack(marker);//bolt needs to broadcast_ack
     }
+
     @Override
     public void earlier_ack_checkpoint(Marker marker) {
     }

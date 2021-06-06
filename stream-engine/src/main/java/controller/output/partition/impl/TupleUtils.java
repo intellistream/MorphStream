@@ -1,14 +1,18 @@
 package controller.output.partition.impl;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
+
 public final class TupleUtils {
     private static final Logger LOG = LoggerFactory.getLogger(TupleUtils.class);
+
     private TupleUtils() {
         // No instantiation
     }
+
     //	public static boolean isTick(Tuple tuple) {
 //		return tuple != null
 //				&& Constants.SYSTEM_COMPONENT_ID.equals(tuple.getSourceComponent())
@@ -17,9 +21,11 @@ public final class TupleUtils {
     public static <T> int chooseTaskIndex(List<T> keys, int numTasks) {
         return Math.floorMod(listHashCode(keys), numTasks);
     }
+
     public static <T> int chooseTaskIndex(int hashcode, int numTasks) {
         return Math.floorMod(hashcode, numTasks);
     }
+
     private static <T> int listHashCode(List<T> alist) {
         if (alist == null) {
             return 1;

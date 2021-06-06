@@ -1,9 +1,11 @@
 package common.sink;
+
 import common.collections.OsUtils;
-import org.slf4j.Logger;
 import execution.runtime.tuple.impl.Tuple;
+import org.slf4j.Logger;
 
 import java.io.*;
+
 public class MeasureSink_Txn_latency extends MeasureSink_latency {
     @Override
     public void execute(Tuple input) {
@@ -29,6 +31,7 @@ public class MeasureSink_Txn_latency extends MeasureSink_latency {
             }
         }
     }
+
     /**
      * Only one sink will do the measure_end.
      */
@@ -71,6 +74,7 @@ public class MeasureSink_Txn_latency extends MeasureSink_latency {
 //			}
         }
     }
+
     @Override
     protected Logger getLogger() {
         return LOG;

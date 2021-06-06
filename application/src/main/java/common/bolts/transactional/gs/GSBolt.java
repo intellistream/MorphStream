@@ -1,12 +1,13 @@
 package common.bolts.transactional.gs;
+
+import common.meta.MetaTypes;
 import common.param.mb.MicroEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
 import components.operators.api.TransactionalBolt;
+import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
-import db.DatabaseException;
-import common.meta.MetaTypes;
+import org.slf4j.Logger;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.datatype.DataBox;
@@ -21,16 +22,20 @@ import static common.meta.MetaTypes.AccessType.READ_ONLY;
 import static common.meta.MetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
+
 public abstract class GSBolt extends TransactionalBolt {
     public SINKCombo sink;
+
     public GSBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
         this.configPrefix = "gs";
     }
+
     @Override
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
+
     protected boolean READ_CORE(MicroEvent event) {
         for (int i = 0; i < NUM_ACCESSES; ++i) {
             SchemaRecordRef ref = event.getRecord_refs()[i];
@@ -42,6 +47,7 @@ public abstract class GSBolt extends TransactionalBolt {
         }
         return true;
     }
+
     //    volatile int com_result = 0;
     protected void READ_POST(MicroEvent event) throws InterruptedException {
         int sum = 0;
@@ -68,6 +74,7 @@ public abstract class GSBolt extends TransactionalBolt {
         }
         sum = 0;
     }
+
     protected void WRITE_POST(MicroEvent event) throws InterruptedException {
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
@@ -77,6 +84,7 @@ public abstract class GSBolt extends TransactionalBolt {
             }
         }
     }
+
     protected void WRITE_CORE(MicroEvent event) {
 //        long start = System.nanoTime();
         for (int i = 0; i < NUM_ACCESSES; ++i) {
@@ -87,16 +95,19 @@ public abstract class GSBolt extends TransactionalBolt {
             recordValues.get(1).setString(values.get(1).getString(), VALUE_LEN);
         }
     }
+
     protected void READ_LOCK_AHEAD(MicroEvent Event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < NUM_ACCESSES; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(Event.getKeys()[i]), Event.getRecord_refs()[i], READ_ONLY);
     }
+
     protected void WRITE_LOCK_AHEAD(MicroEvent Event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < NUM_ACCESSES; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(Event.getKeys()[i]), Event.getRecord_refs()[i], READ_WRITE);
     }
+
     private boolean process_request_noLock(MicroEvent event, TxnContext txnContext, MetaTypes.AccessType accessType) throws DatabaseException {
         for (int i = 0; i < NUM_ACCESSES; ++i) {
             boolean rt = transactionManager.SelectKeyRecord_noLock(txnContext, "MicroTable",
@@ -109,6 +120,7 @@ public abstract class GSBolt extends TransactionalBolt {
         }
         return false;
     }
+
     private boolean process_request(MicroEvent event, TxnContext txnContext, MetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
         for (int i = 0; i < NUM_ACCESSES; ++i) {
             boolean rt = transactionManager.SelectKeyRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
@@ -120,22 +132,28 @@ public abstract class GSBolt extends TransactionalBolt {
         }
         return false;
     }
+
     protected boolean read_request_noLock(MicroEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, READ_ONLY);
     }
+
     protected boolean write_request_noLock(MicroEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, READ_WRITE);
     }
+
     protected boolean read_request(MicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         return !process_request(event, txnContext, READ_ONLY);
     }
+
     protected boolean write_request(MicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         return !process_request(event, txnContext, READ_WRITE);
     }
+
     //lock_ratio-ahead phase.
     protected void LAL_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         //ONLY USED BY LAL, LWM, and PAT.
     }
+
     //post stream processing phase..
     protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);

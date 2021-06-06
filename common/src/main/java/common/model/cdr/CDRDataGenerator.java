@@ -1,4 +1,5 @@
 package common.model.cdr;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import common.collections.JavaUtils;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+
 /**
  * @author maycon
  */
@@ -113,6 +115,7 @@ public class CDRDataGenerator {
     public static final Object[] TERMINATION_CAUSE_CODES = TERMINATION_CAUSES.keySet().toArray();
     private static JSONArray countryArray;
     private static Map<String, String> countryMap;
+
     static {
         try {
             String strJson;
@@ -142,9 +145,11 @@ public class CDRDataGenerator {
             System.exit(-1);
         }
     }
+
     public static String phoneNumber() {
         return phoneNumber("", -1);
     }
+
     public static String phoneNumber(String countryName, int numDigits) {
         numDigits = (numDigits == -1) ? 11 : numDigits;
         StringBuilder number = new StringBuilder();
@@ -162,6 +167,7 @@ public class CDRDataGenerator {
         }
         return number.toString();
     }
+
     /**
      * Random IMEI (International Mobile Station Equipment Identity) Number Generator.
      * http://en.wikipedia.org/wiki/IMEI
@@ -218,6 +224,7 @@ public class CDRDataGenerator {
         // Output the IMEI value.
         return imei.toString();//.substring(0, len);
     }
+
     /**
      * Random IMSI (International mobile subscriber identity) generator.
      *
@@ -230,9 +237,11 @@ public class CDRDataGenerator {
         }
         return imsi.toString();
     }
+
     public static String callType() {
         return CALL_TYPES[RandomUtil.randInt(0, CALL_TYPES.length - 1)];
     }
+
     /**
      * Return the code for a random termination cause.
      *
@@ -245,6 +254,7 @@ public class CDRDataGenerator {
         else
             return TERMINATION_CAUSE_OK;
     }
+
     /**
      * Return the information about the cause for termination with the given code.
      *
@@ -254,10 +264,12 @@ public class CDRDataGenerator {
     public static String causeForTerminationInfo(int code) {
         return TERMINATION_CAUSES.get(code);
     }
+
     public static String uniqueId() {
         UUID id = UUID.randomUUID();
         return id.toString();
     }
+
     public static CallDetailRecord createRandom() {
         CallDetailRecord cdr = new CallDetailRecord();
         //cdr.setId(CDRDataGenerator.uniqueId());

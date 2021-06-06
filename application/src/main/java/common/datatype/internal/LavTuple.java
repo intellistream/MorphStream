@@ -17,11 +17,13 @@
  * #_
  */
 package common.datatype.internal;
+
 import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
 import common.util.datatypes.StreamValues;
 import execution.runtime.tuple.impl.Fields;
+
 /**
  * {@link LavTuple} represents an intermediate result tuple; the "latest average velocity" (LAV) of a segment within the
  * last 5 minutes (ie, 'minute number'; see {@link Time#getMinute(short)}).<br />
@@ -60,8 +62,10 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
      */
     public final static int LAV_IDX = 4;
     public final static int TIME_IDX = 5;
+
     public LavTuple() {
     }
+
     /**
      * Instantiates a new {@link LavTuple} for the given attributes.
      *
@@ -86,9 +90,11 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
         super.add(TIME_IDX, time);
         assert (super.size() == 6);
     }
+
     public static Fields getLatencySchema() {
         return null;
     }
+
     /**
      * Returns the schema of a {@link LavTuple}.
      *
@@ -101,6 +107,7 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
                 LRTopologyControl.TIME_FIELD_NAME
         );
     }
+
     /**
      * Returns the timestamp of this {@link LavTuple}.
      *
@@ -109,6 +116,7 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
     public final Short getTime() {
         return (Short) super.get(MIN_IDX);
     }
+
     /**
      * Returns the 'minute number' of this {@link LavTuple}.
      *
@@ -117,6 +125,7 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
     public final short getMinuteNumber() {
         return Time.getMinute(this.getTime().shortValue());
     }
+
     /**
      * Returns the expressway ID of this {@link LavTuple}.
      *
@@ -126,6 +135,7 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
     public final Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
+
     /**
      * Returns the segment of this {@link LavTuple}.
      *
@@ -135,6 +145,7 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
     public final Short getSegment() {
         return (Short) super.get(SEG_IDX);
     }
+
     /**
      * Returns the vehicle's direction of this {@link LavTuple}.
      *
@@ -144,6 +155,7 @@ public final class LavTuple extends StreamValues implements ISegmentIdentifier {
     public final Short getDirection() {
         return (Short) super.get(DIR_IDX);
     }
+
     /**
      * Returns the latest average velocity (LAV) of this {@link LavTuple}.
      *

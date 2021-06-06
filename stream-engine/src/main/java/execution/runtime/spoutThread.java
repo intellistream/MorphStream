@@ -1,13 +1,14 @@
 package execution.runtime;
+
+import common.Clock;
 import common.collections.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
 import components.operators.executor.BasicSpoutBatchExecutor;
+import db.DatabaseException;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
-import common.Clock;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
@@ -16,6 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_app_combo;
 import static content.Content.*;
+
 /**
  * Task thread that hosts spout logic.
  */
@@ -24,8 +26,9 @@ public class spoutThread extends executorThread {
     private final BasicSpoutBatchExecutor sp;
     private final OutputCollector collector;
     int _combo_bid_size = 1;
+
     /**
-     * @param e                 :                  Each thread corresponds to one executionNode.
+     * @param e         :                  Each thread corresponds to one executionNode.
      * @param conf
      * @param cpu
      * @param node
@@ -52,6 +55,7 @@ public class spoutThread extends executorThread {
                 _combo_bid_size = combo_bid_size;
         }
     }
+
     @Override
     protected void _execute_noControl() throws InterruptedException {
         sp.bulk_emit(batch);
@@ -60,11 +64,13 @@ public class spoutThread extends executorThread {
         else
             cnt += batch;
     }
+
     protected void _execute() throws InterruptedException {
 
         _execute_noControl();
 
     }
+
     @Override
     public void run() {
         try {
@@ -92,9 +98,9 @@ public class spoutThread extends executorThread {
             double actual_throughput = (cnt - this.executor.op.getEmpty()) * 1E6 / (end_emit - start_emit);
 
             LOG.info(this.executor.getOP_full()
-                            + "\tfinished execution and exit with throughput (k input_event/s) of:\t"
-                            + actual_throughput
-                            + " on node: " + node
+                    + "\tfinished execution and exit with throughput (k input_event/s) of:\t"
+                    + actual_throughput
+                    + " on node: " + node
             );
             try {
                 Thread.sleep(1000);

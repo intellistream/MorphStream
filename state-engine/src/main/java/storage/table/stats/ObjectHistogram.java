@@ -5,15 +5,17 @@ package storage.table.stats;
 //import frontend.voltdb.VoltTypeException;
 //import frontend.voltdb.catalog.SimpleDatabase;
 //import frontend.voltdb.utils.VoltTypeUtil;
+
+import operator.QueryPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import operator.QueryPlan;
 import storage.datatype.DataBox;
 import storage.datatype.VoltType;
 import storage.datatype.VoltTypeException;
 
 import java.util.*;
 import java.util.Map.Entry;
+
 /**
  * A very nice and simple generic Histogram
  *
@@ -23,6 +25,7 @@ import java.util.Map.Entry;
 public class ObjectHistogram<X> implements Histogram<X> {
     private static final Logger LOG = LoggerFactory.getLogger(ObjectHistogram.class);
     protected final Map<X, Long> histogram = new HashMap<>();
+    private final transient boolean debug_percentages = false;
     protected VoltType value_type = VoltType.INVALID;
     protected int num_samples = 0;
     protected transient Comparable<X> max_value;
@@ -40,18 +43,19 @@ public class ObjectHistogram<X> implements Histogram<X> {
     protected boolean keep_zero_entries = false;
     private transient boolean dirty = false;
     private transient Map<Object, String> debug_names;
-    private final transient boolean debug_percentages = false;
     /**
      * The Min/Max values are the smallest/greatest values we have seen based
      * on some natural ordering
      */
     private transient Comparable<X> min_value;
+
     /**
      * Constructor
      */
     public ObjectHistogram() {
         // Nothing...
     }
+
     /**
      * Constructor
      *
@@ -60,6 +64,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public ObjectHistogram(boolean keepZeroEntries) {
         this.keep_zero_entries = keepZeroEntries;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ObjectHistogram<?>) {
@@ -78,6 +83,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //		assert (other != null);
 //		this.add(other);
 //	}
+
     /**
      * The main method that updates a value_list in the histogram with a given sample count
      * This should be called by one of the public interface methods that are synchronized
@@ -153,6 +159,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //	public boolean isZeroEntriesEnabled() {
 //		return this.keep_zero_entries;
 //	}
+
     /**
      * Recalculate the min/max count value_list sets
      * Since this is expensive, this should only be done whenever that information is needed
@@ -203,6 +210,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
         } // FOR
         this.dirty = false;
     }
+
     /**
      * Get the number of samples entered into the histogram using the put methods
      *
@@ -212,6 +220,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public int getSampleCount() {
         return (this.num_samples);
     }
+
     /**
      * Return the internal variable for what we "think" the type is for this
      * Histogram Use this at your own risk
@@ -221,6 +230,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public VoltType getEstimatedType() {
         return (this.value_type);
     }
+
     //	/**
 //	 * Get the number of unique values entered into the histogram
 //	 *
@@ -234,10 +244,12 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public Collection<X> values() {
         return (Collections.unmodifiableCollection(this.histogram.keySet()));
     }
+
     @Override
     public synchronized void add(X value) {
         this._put(value, 1);
     }
+
     //	@Override
 //	public Collection<X> getValuesForCount(long count) {
 //		Set<X> ret = new HashSet<X>();
@@ -304,28 +316,34 @@ public class ObjectHistogram<X> implements Histogram<X> {
     @Override
     public void removeValue(X value) {
     }
+
     @Override
     public float computeReductionFactor(QueryPlan.PredicateOperator predicate, DataBox value) {
         return 0;
     }
+
     @Override
     public int getEntriesInRange(X start, X end) {
         return 0;
     }
+
     @Override
     public int getMinValueIndex() {
         return 0;
     }
+
     @Override
     public int getMaxValueIndex() {
         return 0;
     }
+
     @SuppressWarnings("unchecked")
     @Override
     public X getMinValue() {
         this.calculateInternalValues();
         return ((X) this.min_value);
     }
+
     //	@Override
 //	public void putAll() {
 //		this.put(this.histogram.keySet(), 1);
@@ -409,18 +427,22 @@ public class ObjectHistogram<X> implements Histogram<X> {
         this.calculateInternalValues();
         return ((X) this.max_value);
     }
+
     @Override
     public int getNumDistinct() {
         return 0;
     }
+
     @Override
     public Histogram<X> copyWithReduction(float reductionFactor) {
         return null;
     }
+
     @Override
     public Histogram<X> copyWithPredicate(QueryPlan.PredicateOperator predicate, DataBox value) {
         return null;
     }
+
     /**
      * Returns the current count for the given value_list
      * If the value_list was never entered into the histogram, then the count will be null
@@ -477,6 +499,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
     // ----------------------------------------------------------------------------
     // GET METHODS
     // ----------------------------------------------------------------------------
+
     /**
      * Returns the current count for the given value_list.
      * If that value_list was nevered entered in the histogram, then the value_list returned will be value_if_null
@@ -489,6 +512,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
         Long count = this.histogram.get(value);
         return (count == null ? value_if_null : count);
     }
+
     /**
      * Returns true if this histogram contains the specified key.
      *
@@ -498,6 +522,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
     public boolean contains(X value) {
         return (this.histogram.containsKey(value));
     }
+
     public enum Members {
         VALUE_TYPE,
         HISTOGRAM,

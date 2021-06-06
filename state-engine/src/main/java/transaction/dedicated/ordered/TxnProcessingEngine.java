@@ -1,9 +1,10 @@
 package transaction.dedicated.ordered;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import common.Operation;
 import common.OperationChain;
 import content.T_StreamContent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import profiler.Metrics;
 import storage.SchemaRecord;
@@ -12,16 +13,19 @@ import storage.datatype.DoubleDataBox;
 import storage.datatype.IntDataBox;
 import storage.datatype.ListDoubleDataBox;
 import transaction.function.*;
-import transaction.scheduler.*;
-import transaction.scheduler.obsolete.SchedulerFactory;
-import transaction.scheduler.obsolete.SchedulerFactory.SCHEDULER_TYPE;
+import transaction.scheduler.IScheduler;
+import transaction.scheduler.SchedulerFactory;
 
 import java.io.Closeable;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static common.CONTROL.*;
 import static common.meta.MetaTypes.AccessType.*;
+
 /**
  * There is one TxnProcessingEngine of each stage.
  * This is closely bundled with the start_ready map.
@@ -39,6 +43,9 @@ public final class TxnProcessingEngine {
      */
 
     private static final HashMap<Integer, List<OperationChain>> ocsDLevel = new HashMap<>();
+    private final long previous_ID = 0;
+    //    fast determine the corresponding instance. This design is for NUMA-awareness.
+    private final HashMap<Integer, Instance> multi_engine = new HashMap<>();//one island one engine.
     Metrics metrics;
     private Integer num_op = -1;
     private Integer first_exe;
@@ -48,21 +55,21 @@ public final class TxnProcessingEngine {
     private ConcurrentHashMap<String, Holder_in_range> holder_by_stage;//multi table support.
     private int app;
     private int TOTAL_CORES;
-    private final long previous_ID = 0;
     private IScheduler scheduler;
-    //    fast determine the corresponding instance. This design is for NUMA-awareness.
-    private final HashMap<Integer, Instance> multi_engine = new HashMap<>();//one island one engine.
-//    private int partition = 1;//NUMA-awareness. Hardware Island. If it is one, it is the default shared-everything.
+
+    //    private int partition = 1;//NUMA-awareness. Hardware Island. If it is one, it is the default shared-everything.
 //    private int range_min = 0;
 //    private int range_max = 1_000_000;//change this for different application.
     private TxnProcessingEngine() {
     }
+
     /**
      * @return
      */
     public static TxnProcessingEngine getInstance() {
         return instance;
     }
+
     public void initilize(int size, int app) {
         num_op = size;
         this.app = app;
@@ -83,15 +90,19 @@ public final class TxnProcessingEngine {
         }
         metrics = Metrics.getInstance();
     }
+
     public Holder_in_range getHolder(String table_name) {
         return holder_by_stage.get(table_name);
     }
+
     public ConcurrentHashMap<String, Holder_in_range> getHolder() {
         return holder_by_stage;
     }
+
     public Collection<Holder_in_range> getHolderValues() {
         return holder_by_stage.values();
     }
+
     public void engine_init(Integer first_exe, Integer last_exe, Integer stage_size, int tp, String schedulerType) {
 
         scheduler = new SchedulerFactory(tp).CreateScheduler(SchedulerFactory.SCHEDULER_TYPE.valueOf(schedulerType));
@@ -129,6 +140,7 @@ public final class TxnProcessingEngine {
         TOTAL_CORES = tp;
         LOG.info("Engine initialize:" + " Working Threads:" + tp);
     }
+
     public void engine_shutdown() {
         LOG.info("Shutdown Engine!");
         if (enable_work_partition) {
@@ -140,6 +152,7 @@ public final class TxnProcessingEngine {
             standalone_engine.close();
         }
     }
+
     // DD: Transfer event processing
     private void CT_Transfer_Fun(int threadId, Operation operation, long previous_mark_ID, boolean clean) {
         // read
@@ -200,6 +213,7 @@ public final class TxnProcessingEngine {
             operation.success[0] = false;
         }
     }
+
     private void CT_Depo_Fun(Operation operation, long mark_ID, boolean clean) {
         SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
         List<DataBox> values = srcRecord.getValues();
@@ -209,6 +223,7 @@ public final class TxnProcessingEngine {
         tempo_record.getValues().get(operation.column_id).incLong(operation.function.delta_long);//compute.
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
+
     //TODO: the following are mostly hard-coded.
     private void process(int threadId, Operation operation, long mark_ID, boolean clean) {
         if (operation.accessType == READS_ONLY) {
@@ -327,6 +342,7 @@ public final class TxnProcessingEngine {
                 throw new UnsupportedOperationException();
         }
     }
+
     //TODO: actual evaluation on the operation_chain.
     private void process(int threadId, MyList<Operation> operation_chain, long mark_ID) {
 
@@ -337,6 +353,7 @@ public final class TxnProcessingEngine {
         }//loop.
 
     }
+
     //    private int ThreadToSocket(int thread_Id) {
 //
 //        return (thread_Id + 2) % CORE_PER_SOCKET;
@@ -356,6 +373,7 @@ public final class TxnProcessingEngine {
         // LOG.debug("submit to engine: "+ rt);
         return rt;
     }
+
     private int TaskToEngine(int key) {
         int rt;
         if (island == -1) {
@@ -371,9 +389,11 @@ public final class TxnProcessingEngine {
         // LOG.debug("submit to engine: "+ rt);
         return rt;
     }
+
     public IScheduler getScheduler() {
         return this.scheduler;
     }
+
     public void start_evaluation(int threadId, long mark_ID) throws InterruptedException {
 
         MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
@@ -407,6 +427,7 @@ public final class TxnProcessingEngine {
 //     holder with key 2 can hold operations on tuples with key 101-200 and so on...
     public class Holder_in_range {
         public ConcurrentHashMap<Integer, Holder> rangeMap = new ConcurrentHashMap<>();//each op has a holder.
+
         public Holder_in_range(Integer num_op) {
             int i;
             for (i = 0; i < num_op; i++) {
@@ -414,6 +435,7 @@ public final class TxnProcessingEngine {
             }
         }
     }
+
     /**
      * TP-processing instance.
      * If it is one, it is a shared everything configuration.
@@ -423,6 +445,7 @@ public final class TxnProcessingEngine {
         public ExecutorService executor;
         int range_min;
         int range_max;
+
         //        ExecutorCompletionService<Integer> TP_THREADS; // In the next work, we can try asynchronous return from the TP-Layer!
         public Instance(int tpInstance, int range_min, int range_max) {
             this.range_min = range_min;
@@ -444,12 +467,14 @@ public final class TxnProcessingEngine {
                     executor = Executors.newFixedThreadPool(tpInstance);//shared, no stealing.
             }
         }
+
         /**
          * @param tpInstance
          */
         public Instance(int tpInstance) {
             this(tpInstance, 0, 0);
         }
+
         @Override
         public void close() {
             executor.shutdown();

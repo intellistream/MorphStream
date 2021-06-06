@@ -1,19 +1,23 @@
 package common.bolts.transactional.tp;
+
 import common.param.lr.LREvent;
 import common.sink.SINKCombo;
+import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import db.DatabaseException;
 import transaction.impl.TxnContext;
+
 /**
  * Combine Read-Write for TStream.
  */
 public class TPBolt_ts_nopush extends TPBolt_ts {
     private static final Logger LOG = LoggerFactory.getLogger(TPBolt_ts_nopush.class);
     private static final long serialVersionUID = -5968750340131744744L;
+
     public TPBolt_ts_nopush(int fid, SINKCombo sink) {
         super(fid, sink);
     }
+
     @Override
     protected void REQUEST_CONSTRUCT(LREvent event, TxnContext txnContext) throws DatabaseException {
         //it simply construct the operations and return.
@@ -31,6 +35,7 @@ public class TPBolt_ts_nopush extends TPBolt_ts {
         );          //asynchronously return.
         LREvents.add(event);
     }
+
     @Override
     protected void REQUEST_REQUEST_CORE() {
         for (LREvent event : LREvents) {

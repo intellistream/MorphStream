@@ -1,10 +1,13 @@
 package transaction;
+
 import common.tools.FastZipfGenerator;
 
 import static common.CONTROL.enable_states_partition;
+
 public class State {
     public static FastZipfGenerator shared_store;
     public static FastZipfGenerator[] partioned_store;
+
     //    public static void initilize(Configuration config) {
 //        double scale_factor = config.getDouble("scale_factor", 1);
 //        double theta = config.getDouble("theta", 0);

@@ -1,15 +1,16 @@
 package common.topology.transactional.initializer;
+
+import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.OBParam;
 import common.param.ob.ToppingEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import db.Database;
 import db.DatabaseException;
-import common.SpinLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -32,16 +33,19 @@ import static common.constants.OnlineBidingSystemConstants.Constant.*;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
 import static utils.PartitionHelper.getPartition_interval;
+
 //import static xerial.jnuma.Numa.setLocalAlloc;
 public class OBInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(OBInitializer.class);
     //triple decisions
     protected int[] triple_decision = new int[]{0, 0, 0, 0, 0, 0, 1, 2};//6:1:1 buy, alert, topping_handle.
     private int i = 0;
+
     public OBInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
         configure_store(scale_factor, theta, tthread, NUM_ITEMS);
     }
+
     @Override
     public void loadDB(int thread_id, int NUMTasks) {
         int partition_interval = getPartition_interval();
@@ -57,6 +61,7 @@ public class OBInitializer extends TableInitilizer {
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
+
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks) {
         int partition_interval = getPartition_interval();
@@ -73,6 +78,7 @@ public class OBInitializer extends TableInitilizer {
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
+
     /**
      * 4 + 8 + 8
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
@@ -90,6 +96,7 @@ public class OBInitializer extends TableInitilizer {
             e.printStackTrace();
         }
     }
+
     private void insertItemRecords(int key, long value, int pid, SpinLock[] spinlock_) {
         List<DataBox> values = new ArrayList<>();
         values.add(new IntDataBox(key));
@@ -102,6 +109,7 @@ public class OBInitializer extends TableInitilizer {
             e.printStackTrace();
         }
     }
+
     private RecordSchema Goods() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -113,6 +121,7 @@ public class OBInitializer extends TableInitilizer {
         fieldNames.add("Qty");
         return new RecordSchema(fieldNames, dataBoxes);
     }
+
     /**
      * OB
      *
@@ -133,6 +142,7 @@ public class OBInitializer extends TableInitilizer {
         assert !enable_states_partition || verify(keys, partition_id, number_of_partitions);
         return new BuyingEvent(param.keys(), rnd, partition_id, bid_array, bid, number_of_partitions);
     }
+
     protected AlertEvent randomAlertEvents(int partition_id, long[] bid_array, int number_of_partitions, long bid, SplittableRandom rnd) {
         int pid = partition_id;
         int num_access = rnd.nextInt(NUM_ACCESSES_PER_ALERT) + 5;
@@ -149,6 +159,7 @@ public class OBInitializer extends TableInitilizer {
                 partition_id, bid_array, bid, number_of_partitions
         );
     }
+
     protected ToppingEvent randomToppingEvents(int partition_id, long[] bid_array, int number_of_partitions, long bid, SplittableRandom rnd) {
         int pid = partition_id;
         int num_access = rnd.nextInt(NUM_ACCESSES_PER_TOP) + 5;
@@ -165,6 +176,7 @@ public class OBInitializer extends TableInitilizer {
                 partition_id, bid_array, bid, number_of_partitions
         );
     }
+
     protected int next_decision3() {
         int rt = triple_decision[i];
         i++;
@@ -172,6 +184,7 @@ public class OBInitializer extends TableInitilizer {
             i = 0;
         return rt;
     }
+
     @Override
     public Object create_new_event(int num_p, int bid) {
         int flag = next_decision3();
@@ -183,12 +196,14 @@ public class OBInitializer extends TableInitilizer {
             return randomToppingEvents(p, p_bid.clone(), num_p, bid, rnd);//(AlertEvent) in.getValue(0);
         }
     }
+
     @Override
     public boolean Prepared(String file) throws IOException {
         String event_path = Event_Path
                 + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition);
         return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
     }
+
     @Override
     public void store(String file_name) throws IOException {
         String event_path = Event_Path
@@ -252,6 +267,7 @@ public class OBInitializer extends TableInitilizer {
         }
         w.close();
     }
+
     public void creates_Table(Configuration config) {
         RecordSchema s = Goods();
         db.createTable(s, "goods");

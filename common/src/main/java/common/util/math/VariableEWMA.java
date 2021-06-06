@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 package common.util.math;
+
 /**
  * VariableEWMA represents the exponentially weighted moving average of a series of
  * numbers. Unlike SimpleEWMA, it supports a custom age, and thus uses more memory.
@@ -63,6 +64,7 @@ public class VariableEWMA {
      * The number of samples added to this instance.
      */
     protected int count;
+
     /**
      * @param age The age is related to the decay factor alpha by the formula
      *            given for the DECAY constant. It signifies the average age of the samples
@@ -71,6 +73,7 @@ public class VariableEWMA {
     public VariableEWMA(double age) {
         decay = 2 / (age + 1);
     }
+
     /**
      * Add adds a value to the series and updates the moving average.
      *
@@ -87,10 +90,12 @@ public class VariableEWMA {
             average = (value * decay) + (average * (1 - decay));
         }
     }
+
     public void clear() {
         average = 0;
         count = 0;
     }
+
     /**
      * @return The current value of the average, or 0.0 if the series hasn't warmed up yet.
      */

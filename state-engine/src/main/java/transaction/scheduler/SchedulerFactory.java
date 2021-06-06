@@ -12,12 +12,13 @@ public class SchedulerFactory {
     public SchedulerFactory(int tp) {
         totalThread = tp;
     }
+
     public IScheduler CreateScheduler(SCHEDULER_TYPE schedulerType) {
 
         IScheduler scheduler = null;
         switch (schedulerType) {
             case LRR:
-                scheduler= new Scheduler1( totalThread);
+                scheduler = new Scheduler1(totalThread);
                 break;
         }
         return scheduler;

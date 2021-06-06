@@ -1,4 +1,5 @@
 package common.platform;
+
 import common.collections.CacheInfo;
 
 import java.io.Serializable;
@@ -31,6 +32,7 @@ public class Platform implements Serializable {
     double latency_L2;//measured latency in ns for each cache line sized tuple access.
     double latency_LOCAL_MEM;//measured latency in ns for each cache line access.
     double CoresPerSocket = 0;//numCPUs() / (numNodes() > 2 ? numNodes() : 1);//8 cores per socket
+
     /**
      * @param machine
      * @return

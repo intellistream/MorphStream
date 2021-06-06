@@ -1,6 +1,8 @@
 package common.platform;
+
 public class HUAWEI_Machine extends Platform {
     private static final long serialVersionUID = 2511492570058016274L;
+
     public HUAWEI_Machine() {
         this.latency_L2 = 11.2;//measured latency in ns for each cache line sized tuple access.
         this.latency_LLC = 50;//measured latency in ns for each cache line sized tuple access.

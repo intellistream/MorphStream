@@ -1,21 +1,26 @@
 package common.constants;
+
 public interface WordCountConstants extends BaseConstants {
     String PREFIX = "wc";
     int max_hz = 450000;
+
     interface Field extends BaseField {
         String WORD = "word";
         String COUNT = "count";
         String LargeData = "LD";
     }
+
     interface Conf extends BaseConf {
         String SPLITTER_THREADS = "wc.splitter.threads";
         String COUNTER_THREADS = "wc.counter.threads";
     }
+
     interface Component extends BaseComponent {
         String SPLITTER = "splitSentence";
         String COUNTER = "wordCount";
         String AGG = "aggregator";
     }
+
     interface TunedConfiguration {
         int Splitter_core1 = 1;
         int Counter_core1 = 1;

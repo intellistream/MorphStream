@@ -1,4 +1,5 @@
 package components.operators.api;
+
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.helper.wrapper.StringStatesWrapper;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
+
 /**
  * Abstract AbstractSpout is a special partition-pass Operator.
  */
@@ -21,16 +23,21 @@ public abstract class AbstractSpout extends Operator {
     protected int counter = 0;
     protected int taskId;
     protected int cnt;
+
     protected AbstractSpout(Logger log) {
         super(log, true, -1, 1);
     }
+
     protected String getConfigKey(String template) {
         return String.format(template, configPrefix);
     }
+
     public abstract void nextTuple() throws InterruptedException;
+
     public void nextTuple_nonblocking() throws InterruptedException {
         nextTuple();
     }
+
     private void construction(Scanner scanner, StringStatesWrapper wrapper) {
         String splitregex = ",";
         String[] words = scanner.nextLine().split(splitregex);
@@ -40,6 +47,7 @@ public abstract class AbstractSpout extends Operator {
         }
         array.add(sb.toString());
     }
+
     private void splitRead(String fileName) throws FileNotFoundException {
         int numSpout = this.getContext().getComponent(taskId).getNumTasks();
         int range = 10 / numSpout;//original file is split into 10 sub-files.
@@ -54,10 +62,12 @@ public abstract class AbstractSpout extends Operator {
             }
         }
     }
+
     private void read(String prefix, int i, String postfix) throws FileNotFoundException {
         Scanner scanner = new Scanner(new File((prefix + i) + "." + postfix), "UTF-8");
         build(scanner);
     }
+
     protected void build(Scanner scanner) {
         cnt = 100;
         //&& cnt-- > 0
@@ -84,6 +94,7 @@ public abstract class AbstractSpout extends Operator {
         }
         counter = 0;
     }
+
     protected void load_input() {
         long start = System.nanoTime();
         // numTasks = config.getInt(getConfigKey(BaseConstants.BaseConf.SPOUT_THREADS));
@@ -141,6 +152,7 @@ public abstract class AbstractSpout extends Operator {
         long end = System.nanoTime();
         LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
     }
+
     /**
      * When all my consumers callback_bolt, I can  delete source message.
      *

@@ -1,20 +1,22 @@
 package common.combo;
+
+import benchmark.DataHolder;
 import common.bolts.transactional.sl.*;
 import common.collections.Configuration;
 import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import benchmark.DataHolder;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayDeque;
 
 import static common.CONTROL.*;
 import static content.Content.*;
+
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class SLCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(SLCombo.class);
@@ -24,12 +26,15 @@ public class SLCombo extends SPOUTCombo {
     int[] concerned_length = new int[]{1, 10, 40};
     int cnt = 0;
     ArrayDeque<TxnEvent> prevents = new ArrayDeque<>();
+
     public SLCombo() {
         super(LOG, 0);
     }
+
     private boolean key_conflict(int pre_key, int key) {
         return pre_key == key;
     }
+
     private int[] getKeys(TxnEvent event) {
         int[] keys;
         if (event instanceof DepositEvent)
@@ -46,11 +51,13 @@ public class SLCombo extends SPOUTCombo {
             };
         return keys;
     }
+
     private int getLength(TxnEvent event) {
         if (event instanceof DepositEvent)
             return 2;
         return 4;
     }
+
     private int check_conflict(TxnEvent pre_event, TxnEvent event) {
         int conf = 0;//in case no conflict at all.
         for (int key : getKeys(event)) {
@@ -62,6 +69,7 @@ public class SLCombo extends SPOUTCombo {
         }
         return conf;
     }
+
     private int conflict(TxnEvent event) {
         int conc = getLength(event);//in case no conflict at all.
         for (TxnEvent prevent : prevents) {
@@ -69,6 +77,7 @@ public class SLCombo extends SPOUTCombo {
         }
         return Math.max(0, conc);
     }
+
     protected void show_stats() {
         while (cnt < 8) {
             for (Object myevent : myevents) {

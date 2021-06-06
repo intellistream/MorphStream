@@ -17,8 +17,10 @@
  * #_
  */
 package common.datatype;
+
 import common.datatype.util.LRTopologyControl;
 import execution.runtime.tuple.impl.Fields;
+
 /**
  * A {@link DailyExpenditureRequest} from the LRB data generator.<br />
  * <br />
@@ -50,9 +52,11 @@ public class DailyExpenditureRequest extends AbstractInputTuple {
      */
     private final static int DAY_IDX = 5;
     private static final long serialVersionUID = 5710564296782458284L;
+
     public DailyExpenditureRequest() {
         super();
     }
+
     /**
      * Instantiates a new daily expenditure request for the given attributes.
      *
@@ -72,6 +76,7 @@ public class DailyExpenditureRequest extends AbstractInputTuple {
         super.add(DAY_IDX, day);
         assert (super.size() == 6);
     }
+
     /**
      * Returns the schema of a {@link DailyExpenditureRequest}.
      *
@@ -82,6 +87,7 @@ public class DailyExpenditureRequest extends AbstractInputTuple {
                 LRTopologyControl.VEHICLE_ID_FIELD_NAME, LRTopologyControl.XWAY_FIELD_NAME,
                 LRTopologyControl.QUERY_ID_FIELD_NAME, LRTopologyControl.DAY_FIELD_NAME);
     }
+
     /**
      * Returns the expressway ID of this {@link DailyExpenditureRequest}.
      *
@@ -90,6 +96,7 @@ public class DailyExpenditureRequest extends AbstractInputTuple {
     public final Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
+
     /**
      * Returns the query ID of this {@link DailyExpenditureRequest}.
      *
@@ -98,6 +105,7 @@ public class DailyExpenditureRequest extends AbstractInputTuple {
     public final Integer getQid() {
         return (Integer) super.get(QID_IDX);
     }
+
     /**
      * Returns the day of this {@link DailyExpenditureRequest}.
      *

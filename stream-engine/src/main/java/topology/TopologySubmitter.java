@@ -1,15 +1,16 @@
 package topology;
+
 import common.CONTROL;
+import common.SpinLock;
 import common.collections.Configuration;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.Topology;
 import components.TopologyComponent;
 import components.exception.UnhandledCaseException;
 import execution.ExecutionGraph;
 import optimization.OptimizationManager;
-import common.SpinLock;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.Metrics;
 
 import java.util.Collection;
@@ -21,9 +22,11 @@ import static profiler.Metrics.POST_COMPUTE_COMPLEXITY;
 public class TopologySubmitter {
     private final static Logger LOG = LoggerFactory.getLogger(TopologySubmitter.class);
     private OptimizationManager OM;
+
     public OptimizationManager getOM() {
         return OM;
     }
+
     /**
      * TODO: support different configurations in TM.
      */

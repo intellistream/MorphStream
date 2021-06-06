@@ -1,9 +1,11 @@
 package common.tools.cacheSim;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
+
 /**
  * Created by szhang026 on 4/23/2016.
  */
@@ -12,9 +14,11 @@ public class cacheHitSimulator_PI_generic_bak {
     private static int start = 0;
     private static int cnt = 100;
     private static int app = 4;
+
     private static double nextTime(double rateParameter) {
         return -Math.log(1.0 - Math.random()) / rateParameter;
     }
+
     private static int getsum(Collection<String> l, Map<String, Integer> instruction_per_function) {
         int sum = 0;
         for (String i : l) {
@@ -22,6 +26,7 @@ public class cacheHitSimulator_PI_generic_bak {
         }
         return sum;
     }
+
     //    private static Vector2D cacheHit(LinkedList<String> event_trace, Map<String, Integer> instruction_per_function, int policy) throws IOException {
 //        final int cache_size = 32000;
 //        int cache_used = 0;
@@ -161,6 +166,7 @@ public class cacheHitSimulator_PI_generic_bak {
         list.removeFirst();
         return list;
     }
+
     public static void main(String[] arg) throws IOException {
         if (arg.length > 3) {
             start = Integer.parseInt(arg[0]);
@@ -234,6 +240,7 @@ public class cacheHitSimulator_PI_generic_bak {
         //System.out.println("Cache Miss:" + (result.getX() + result.getY() )/ event_trace.size());
         //}
     }
+
     private static void calculate_distribution(LinkedList<String> event_trace, final LinkedList<String> top_function
             , final Map<String, Integer> instruction_per_function, int app, int start, int cnt) {
         //final TreeMap<Integer, Integer>[] gaps = new TreeMap[top_function.size()];
@@ -338,6 +345,7 @@ public class cacheHitSimulator_PI_generic_bak {
         System.out.println("Finished clean");
         System.exit(0);
     }
+
     //
 //    private static void calculate_distribution(LinkedList<String> event_trace, Map<String, Integer> instruction_per_function, int app) {
 //        int total_size = event_trace.size();
@@ -360,6 +368,7 @@ public class cacheHitSimulator_PI_generic_bak {
         }
         return result;
     }
+
     private static class record {
         /*
         * Column Labels:
@@ -372,6 +381,7 @@ public class cacheHitSimulator_PI_generic_bak {
         public int EN_EX;//0 means enter, 1 means exit
         public String NAME_M;
         public String NAME_T;
+
         public record(int read_0, String read_1, String read_2, String read_3) {
             PTT_INSTS = read_0;
             if (read_1.equalsIgnoreCase("<")) {

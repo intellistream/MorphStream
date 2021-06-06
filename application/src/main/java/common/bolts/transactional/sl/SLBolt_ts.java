@@ -1,16 +1,18 @@
 package common.bolts.transactional.sl;
+
 import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import transaction.dedicated.ordered.TxnManagerTStream;
 import transaction.function.Condition;
 import transaction.function.DEC;
@@ -21,8 +23,6 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import profiler.MeasureTools;
-
 import static common.CONTROL.*;
 
 public class SLBolt_ts extends SLBolt {
@@ -31,14 +31,17 @@ public class SLBolt_ts extends SLBolt {
     private final static double write_useful_time = 3316;//write-compute time pre-measured.
     ArrayDeque<TransactionEvent> transactionEvents;
     private int depositeEvents;
+
     public SLBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
         state = new ValueState();
     }
+
     public SLBolt_ts(int fid) {
         super(LOG, fid, null);
         state = new ValueState();
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
@@ -47,6 +50,7 @@ public class SLBolt_ts extends SLBolt {
                 numberOfStates, this.context.getThisComponent().getNumTasks());
         transactionEvents = new ArrayDeque<>();
     }
+
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
@@ -82,6 +86,7 @@ public class SLBolt_ts extends SLBolt {
             execute_ts_normal(in);
         }
     }
+
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
@@ -98,6 +103,7 @@ public class SLBolt_ts extends SLBolt {
         }
         MeasureTools.END_PRE_TXN_TIME_MEASURE(thread_Id);//includes post time deposite..
     }
+
     protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
 //        System.out.println(event.toString());
 //        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txnContext.thread_Id);
@@ -149,6 +155,7 @@ public class SLBolt_ts extends SLBolt {
         transactionEvents.add(event);
 
     }
+
     protected void DEPOSITE_REQUEST_CONSTRUCT(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()));// read and modify the account itself.
@@ -158,11 +165,13 @@ public class SLBolt_ts extends SLBolt {
         MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
         depositeEvents++;
     }
+
     private void TRANSFER_REQUEST_POST() throws InterruptedException {
         for (TransactionEvent event : transactionEvents) {
             TRANSFER_REQUEST_POST(event);
         }
     }
+
     private void TRANSFER_REQUEST_CORE() throws InterruptedException {
         for (TransactionEvent event : transactionEvents) {
             event.transaction_result = new TransactionResult(event, event.success[0],

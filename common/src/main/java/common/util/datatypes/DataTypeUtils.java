@@ -1,4 +1,5 @@
 package common.util.datatypes;
+
 /**
  * @author mayconbordin
  */

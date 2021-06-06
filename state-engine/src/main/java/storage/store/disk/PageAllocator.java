@@ -1,4 +1,5 @@
 package storage.store.disk;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -8,6 +9,7 @@ import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * A PageAllocation system for an OS paging system. Provides memory-mapped paging from the OS, an
  * interface to individual pages with the Page objects, an LRU cache for pages, 16GB worth of paging,
@@ -22,11 +24,12 @@ public class PageAllocator implements Iterable<Page>, Closeable {
     private static final LRUCache<Long, Page> pageLRU = new LRUCache<>(cacheSize);
     private static final AtomicLong numIOs = new AtomicLong(0);
     private static final AtomicLong cacheMisses = new AtomicLong(0);
-    private Page masterPage;
     private final FileChannel fc;
-    private int numPages;
     private final int allocID;
     private final boolean durable;
+    private Page masterPage;
+    private int numPages;
+
     /**
      * Create a new PageAllocator that writes its bytes into a file named fName. If wipe is true, the
      * data in the page is completely removed.
@@ -37,6 +40,7 @@ public class PageAllocator implements Iterable<Page>, Closeable {
     public PageAllocator(String fName, boolean wipe) {
         this(fName, wipe, true);
     }
+
     public PageAllocator(String fName, boolean wipe, boolean durable) {
         this.durable = durable;
         try {
@@ -69,21 +73,27 @@ public class PageAllocator implements Iterable<Page>, Closeable {
             this.numPages += pageCounts[i];
         }
     }
+
     public static long getNumIOs() {
         return PageAllocator.numIOs.get();
     }
+
     static void incrementNumIOs() {
         PageAllocator.numIOs.getAndIncrement();
     }
+
     static void incrementCacheMisses() {
         PageAllocator.cacheMisses.getAndIncrement();
     }
+
     public static long getNumCacheMisses() {
         return PageAllocator.cacheMisses.get();
     }
+
     static private int translateAllocator(long vPageNum) {
         return (int) ((vPageNum & 0xFFFFFFFF00000000L) >> 32);
     }
+
     /**
      * Allocates a new page in the file.
      *
@@ -131,6 +141,7 @@ public class PageAllocator implements Iterable<Page>, Closeable {
         this.numPages += 1;
         return pageNum;
     }
+
     /**
      * Fetches the page corresponding to virtual page number pageNum.
      *
@@ -169,6 +180,7 @@ public class PageAllocator implements Iterable<Page>, Closeable {
         }
         return dataPage;
     }
+
     /**
      * Frees the page to be returned back to the system. The page is no longer valid and can be re-used
      * the next time the user called allocPage.
@@ -205,6 +217,7 @@ public class PageAllocator implements Iterable<Page>, Closeable {
         this.numPages -= 1;
         return true;
     }
+
     /**
      * Frees the page to be returned back to the system. The page is no longer valid and can be re-used
      * the next time the user called allocPage.
@@ -221,6 +234,7 @@ public class PageAllocator implements Iterable<Page>, Closeable {
         }
         return freePage(p);
     }
+
     /**
      * Close this PageAllocator.
      */
@@ -262,32 +276,40 @@ public class PageAllocator implements Iterable<Page>, Closeable {
             throw new PageException("Could not clean Page Alloc " + e.getMessage());
         }
     }
+
     private Page getHeadPage(int headIndex) {
         int headBlockID = 1 + headIndex * (Page.pageSize + 1);
         return new Page(this.fc, headBlockID, -1);
     }
+
     public int getNumPages() {
         return this.numPages;
     }
+
     private long translatePageNum(int pageNum) {
         return (((long) this.allocID) << 32) | (((long) pageNum) & 0xFFFFFFFFL);
     }
+
     /**
      * @return an iterator of the valid pages managed by this PageAllocator.
      */
     public Iterator<Page> iterator() {
         return new PageIterator();
     }
+
     private class PageIterator implements Iterator<Page> {
         private int pageNum;
         private int cursor;
+
         public PageIterator() {
             this.pageNum = 0;
             this.cursor = 0;
         }
+
         public boolean hasNext() {
             return this.pageNum < PageAllocator.this.numPages;
         }
+
         public Page next() {
             if (this.hasNext()) {
                 while (true) {
@@ -304,6 +326,7 @@ public class PageAllocator implements Iterable<Page>, Closeable {
             }
             throw new NoSuchElementException();
         }
+
         public void remove() {
             throw new UnsupportedOperationException();
         }

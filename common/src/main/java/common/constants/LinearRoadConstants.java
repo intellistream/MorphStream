@@ -1,4 +1,5 @@
 package common.constants;
+
 /**
  * @author mayconbordin
  */
@@ -21,6 +22,7 @@ public interface LinearRoadConstants extends BaseConstants {
     int HISTORY_LOADING_NOTIFIER_PORT = 2233;
     String CLEAN_START = "clean-start";
     String HISTORY_COMPONENT_HOST = "localhost"; //This is strictly a temporary value. Must find a way to
+
     interface Field extends BaseField {
         String TIMESTAMP = "timestamp";
         String VEHICLE_ID = "vehicleId";
@@ -31,6 +33,7 @@ public interface LinearRoadConstants extends BaseConstants {
         String SEGMENT = "segment";
         String POSITION = "position";
     }
+
     //get the correct location of the history loading component.
     interface Conf extends BaseConf {
         String segstatBoltThreads = "lrf.segstat.threads";
@@ -50,9 +53,11 @@ public interface LinearRoadConstants extends BaseConstants {
         String COUNT_VEHICLES_Threads = "lrf.count.threads";
         String Executor_Threads = "lrf.executor.threads";
     }
+
     interface Component extends BaseComponent {
         String EXECUTOR = "executor";
     }
+
     interface TunedConfiguration {
         int DispatcherBoltThreads_core1 = 1;
         int AverageSpeedThreads_core1 = 1;

@@ -1,8 +1,6 @@
 package execution;
+
 import common.platform.Platform;
-import org.apache.commons.lang3.SerializationUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.TopologyComponent;
 import components.operators.executor.IExecutor;
 import components.operators.executor.SpoutExecutor;
@@ -10,12 +8,16 @@ import controller.input.InputStreamController;
 import controller.output.OutputController;
 import execution.runtime.tuple.impl.Marker;
 import faulttolerance.Writer;
+import org.apache.commons.lang3.SerializationUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Queue;
 import java.util.Set;
+
 /**
  * Created by shuhaozhang on 11/7/16.
  *
@@ -32,11 +34,11 @@ public class ExecutionNode implements Serializable {
     private final int executorID;//global ID for this executorNode in current Brisk.topology
     //    public HashMap<Integer, Boolean> BP=new HashMap<>();//Backpressure corrected.
     private final boolean BP = false;
+    private final boolean activate = true;
     //Below are created later.
     private OutputController controller;//TODO: it should be initialized during Brisk.topology compile, which is after current Brisk.execution SimExecutionNode being initialized, so it can't be made final.
     private InputStreamController inputStreamController;//inputStreamController is initialized even after partition.
     private boolean last_executor = false;//if this executor is the last executor of operator
-    private final boolean activate = true;
     private HashMap<TopologyComponent, ArrayList<ExecutionNode>> parents = new HashMap();
     private HashMap<TopologyComponent, ArrayList<ExecutionNode>> children = new HashMap();
     //private boolean _allocated = false;
@@ -59,6 +61,7 @@ public class ExecutionNode implements Serializable {
         children = new HashMap();
 
     }
+
     public ExecutionNode(ExecutionNode e, TopologyComponent topo, Platform p) {
         compressRatio = e.compressRatio;
         this.operator = topo;
@@ -80,6 +83,7 @@ public class ExecutionNode implements Serializable {
         children = new HashMap();
 
     }
+
     public ExecutionNode(TopologyComponent rec, int i, Platform p) {
         this.operator = rec;
         this.executorID = i;
@@ -97,9 +101,11 @@ public class ExecutionNode implements Serializable {
         }
 
     }
+
     public boolean isFirst_executor() {
         return first_executor;
     }
+
     public void setFirst_executor(boolean first_executor) {
         this.first_executor = first_executor;
     }
@@ -107,9 +113,11 @@ public class ExecutionNode implements Serializable {
     public String toString() {
         return this.getOP();
     }
+
     public boolean is_statistics() {
         return _statistics;
     }
+
     /**
      * custom inputStreamController for this execution mapping_node.
      *
@@ -118,24 +126,31 @@ public class ExecutionNode implements Serializable {
     public boolean hasScheduler() {
         return inputStreamController != null;
     }
+
     public InputStreamController getInputStreamController() {
         return inputStreamController;
     }
+
     public void setInputStreamController(InputStreamController inputStreamController) {
         this.inputStreamController = inputStreamController;
     }
+
     public HashMap<TopologyComponent, ArrayList<ExecutionNode>> getParents() {
         return parents;
     }
+
     public Set<TopologyComponent> getParents_keySet() {
         return parents.keySet();
     }
+
     public HashMap<TopologyComponent, ArrayList<ExecutionNode>> getChildren() {
         return children;
     }
+
     public Set<TopologyComponent> getChildren_keySet() {
         return children.keySet();
     }
+
     public ArrayList<ExecutionNode> getParentsOf(TopologyComponent operator) {
         ArrayList<ExecutionNode> executionNodes = parents.get(operator);
         if (executionNodes == null) {
@@ -143,18 +158,23 @@ public class ExecutionNode implements Serializable {
         }
         return executionNodes;
     }
+
     public String getOP() {
         return operator.getId();
     }
+
     public String getOP_full() {
         return operator.getId() + "(" + executorID + ")";
     }
+
     public ArrayList<ExecutionNode> getChildrenOf(TopologyComponent operator) {
         return children.get(operator);
     }
+
     public OutputController getController() {
         return controller;
     }
+
     //    /**
 //     * TODO: It's too costly to measure_end this flag every time. This is in Brisk.execution critical metric_path!!
 //     * Move it to construction phase and Store it locally!
@@ -166,22 +186,28 @@ public class ExecutionNode implements Serializable {
     public void setController(OutputController controller) {
         this.controller = controller;
     }
+
     public int getExecutorID() {
         return executorID;
     }
+
     public boolean isSourceNode() {
         return operator.getOp() instanceof SpoutExecutor;
     }
+
     public boolean isLeafNode() {
         return operator.isLeafNode();
     }
+
     private boolean isLeadNode() {
         final ExecutionNode node = operator.getExecutorList().iterator().next();
         return this == node;
     }
+
     public boolean isEmpty() {
         return getController() == null || getController().isEmpty();
     }
+
     public void setReceive_queueOfChildren(String streamId) {
         if (!isLeafNode()) {
             final OutputController controller = getController();
@@ -211,6 +237,7 @@ public class ExecutionNode implements Serializable {
             this.inputStreamController.initialize();
         }
     }
+
     public void allocate_OutputQueue(boolean linked, int desired_elements_epoch_per_core) {
         if (!isLeafNode()) {
             final OutputController controller = getController();
@@ -232,6 +259,7 @@ public class ExecutionNode implements Serializable {
     public boolean isVirtual() {
         return executorID == -2;
     }
+
     public void display() {
         op.display();
     }

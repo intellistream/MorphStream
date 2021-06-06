@@ -1,4 +1,5 @@
 package common.combo;
+
 import common.bolts.transactional.ob.*;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -6,11 +7,11 @@ import common.param.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -22,6 +23,7 @@ import java.util.Scanner;
 import static common.CONTROL.*;
 import static common.Constants.Event_Path;
 import static content.Content.*;
+
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class OBCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(OBCombo.class);
@@ -31,12 +33,15 @@ public class OBCombo extends SPOUTCombo {
     int[] concerned_length = new int[]{1, 10, 50, 100, 250, 500, 750, 1000};
     int cnt = 0;
     ArrayDeque<TxnEvent> prevents = new ArrayDeque<>();
+
     public OBCombo() {
         super(LOG, 0);
     }
+
     private boolean key_conflict(int pre_key, int key) {
         return pre_key == key;
     }
+
     private int[] getKeys(TxnEvent event) {
         int[] keys;
         if (event instanceof AlertEvent)
@@ -47,6 +52,7 @@ public class OBCombo extends SPOUTCombo {
             keys = ((BuyingEvent) event).getItemId();
         return keys;
     }
+
     private int getLength(TxnEvent event) {
         if (event instanceof AlertEvent)
             return ((AlertEvent) event).getItemId().length;
@@ -55,6 +61,7 @@ public class OBCombo extends SPOUTCombo {
         else
             return ((BuyingEvent) event).getItemId().length;
     }
+
     private int check_conflict(TxnEvent pre_event, TxnEvent event) {
         int conf = 0;//in case no conflict at all.
         for (int key : getKeys(event)) {
@@ -66,6 +73,7 @@ public class OBCombo extends SPOUTCombo {
         }
         return conf;
     }
+
     private int conflict(TxnEvent event) {
         int conc = getLength(event);//in case no conflict at all.
         for (TxnEvent prevent : prevents) {
@@ -73,6 +81,7 @@ public class OBCombo extends SPOUTCombo {
         }
         return Math.max(0, conc);
     }
+
     protected void show_stats() {
         while (cnt < 8) {
             for (Object myevent : myevents) {
@@ -91,6 +100,7 @@ public class OBCombo extends SPOUTCombo {
             cnt++;
         }
     }
+
     @Override
     public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) {
         String event_path = Event_Path
@@ -153,6 +163,7 @@ public class OBCombo extends SPOUTCombo {
         if (enable_debug)
             show_stats();
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);

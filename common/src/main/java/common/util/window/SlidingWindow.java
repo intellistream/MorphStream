@@ -1,25 +1,31 @@
 package common.util.window;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Random;
+
 /**
  * Author: Thilina
  * Date: 11/22/14
  */
 public class SlidingWindow {
     private final ArrayDeque<SlidingWindowEntry> window = new ArrayDeque<>();
+    private final long length;
     private long tsStart;
     private long tsEnd;
-    private final long length;
+
     public SlidingWindow(long length) {
         this.length = length;
     }
+
     public static void main(String[] args) {
         class SlidingWindowEntryImpl implements SlidingWindowEntry {
             private final long time;
+
             SlidingWindowEntryImpl(long time) {
                 this.time = time;
             }
+
             @Override
             public long getTime() {
                 return time;
@@ -41,6 +47,7 @@ public class SlidingWindow {
             }
         }
     }
+
     public void add(SlidingWindowEntry entry, SlidingWindowCallback callback) {
         //System.out.println("Adding " + entry.getTime());
         // very first entry in the window

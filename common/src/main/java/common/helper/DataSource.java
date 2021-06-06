@@ -1,4 +1,5 @@
 package common.helper;
+
 import common.collections.ClassLoaderUtils;
 import common.helper.wrapper.basic.StateWrapper;
 import common.util.datatypes.StreamValues;
@@ -7,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
+
 /**
  * This is a shared class for both Kafka producer or local producer.
  * Created by I309939 on 8/9/2016.
@@ -18,6 +20,7 @@ public class DataSource {
     private static long id = 0;
     private final StateWrapper<List<StreamValues>> wrapper;
     protected int counter = 0;
+
     public DataSource(String parserClass, int skew, boolean test, int tuple_size, boolean verbose) {
         size_elements = tuple_size;
         array_key = new String[size_elements];
@@ -25,9 +28,11 @@ public class DataSource {
         prepareKey(skew, test);
         counter = 0;
     }
+
     public DataSource(int skew, boolean test, int tuple_size, boolean verbose) {
         this("ValueStatesWrapper", skew, test, tuple_size, verbose);
     }
+
     private static void prepareKey(int skew, boolean test) {
         //generate #size_elements keys according to skew
         //FastZipfGenerator z1 = new FastZipfGenerator(size_elements, skew);
@@ -38,6 +43,7 @@ public class DataSource {
         if (test)
             System.out.println(Arrays.toString(array_key));
     }
+
     public Event generateEvent() {
         if (counter == array_key.length)
             counter = 0;
@@ -48,6 +54,7 @@ public class DataSource {
 //        }
         return event;
     }
+
     public Event generateEvent(boolean verbose) {
         if (counter == array_key.length)
             counter = 0;

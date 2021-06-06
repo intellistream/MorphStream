@@ -1,4 +1,5 @@
 package db;
+
 import benchmark.TxnParam;
 import operator.QueryPlan;
 import storage.SchemaRecord;
@@ -9,15 +10,17 @@ import storage.table.SimpleTable;
 import storage.table.stats.TableStats;
 
 import java.util.*;
+
 /**
  * Simply put locks on tables for each transaction.
  * This could be useful to examine CC with streaming (remove all locks.) instead of CC with DB.
  */
 public class SimpleDatabase {
+    private final LockManager lockMan;
     public TxnParam param;
     public Map<String, SimpleTable> tables;
-    private final LockManager lockMan;
     private long numTransactions;
+
     /**
      * Creates a new database.
      *
@@ -28,6 +31,7 @@ public class SimpleDatabase {
         numTransactions = 0;
         lockMan = new LockManager();
     }
+
     /**
      * Start a new transaction.
      *
@@ -38,6 +42,7 @@ public class SimpleDatabase {
         this.numTransactions++;
         return t;
     }
+
     /**
      * TODO: to be implemented.
      * Create a new table in this database with an index on each of the given column names.
@@ -74,6 +79,7 @@ public class SimpleDatabase {
             //this.indexLookup.put(indexName, new BtreeIndex(colType, indexName, this.fileDir));
         }
     }
+
     /**
      * Delete a table in this database.
      *
@@ -88,6 +94,7 @@ public class SimpleDatabase {
         tables.remove(tableName);
         return true;
     }
+
     /**
      * Delete all tables from this database.
      */
@@ -97,6 +104,7 @@ public class SimpleDatabase {
             dropTable(s);
         }
     }
+
     /**
      * Close this database.
      */
@@ -106,6 +114,7 @@ public class SimpleDatabase {
         }
         tables.clear();
     }
+
     /**
      * Create a new table in this database.
      *
@@ -119,12 +128,14 @@ public class SimpleDatabase {
         }
         tables.put(tableName, new SimpleTable(s, tableName));
     }
+
     public class Transaction {
         long transNum;
         boolean active;
         HashMap<String, LockManager.LockType> locksHeld;
         HashMap<String, SimpleTable> tempTables;
         HashMap<String, String> aliasMaps;
+
         private Transaction(long tNum) {
             this.transNum = tNum;
             this.active = true;
@@ -132,15 +143,18 @@ public class SimpleDatabase {
             this.tempTables = new HashMap<>();
             this.aliasMaps = new HashMap<>();
         }
+
         public boolean isActive() {
             return this.active;
         }
+
         public void end() {
             assert (this.active);
             releaseAllLocks();
             deleteAllTempTables();
             this.active = false;
         }
+
         /**
          * Allows the user to query a table. See query#QueryPlan
          *
@@ -152,6 +166,7 @@ public class SimpleDatabase {
             checkAndGrabSharedLock(tableName);
             return new QueryPlan(this, tableName);
         }
+
         /**
          * Allows the user to provide an alias for a particular table. That alias is valid for the
          * remainder of the transaction. For a particular QueryPlan, once you specify an alias, you
@@ -177,6 +192,7 @@ public class SimpleDatabase {
                 throw new DatabaseException("SimpleTable name not found");
             }
         }
+
         /**
          * Create a temporary table within this transaction.
          *
@@ -193,6 +209,7 @@ public class SimpleDatabase {
             this.tempTables.put(tempTableName, new SimpleTable(schema, tempTableName));
             this.locksHeld.put(tempTableName, LockManager.LockType.EXCLUSIVE);
         }
+
         /**
          * Perform a check to see if the database has an index on this (table,column).
          *
@@ -230,6 +247,7 @@ public class SimpleDatabase {
             SimpleTable tab = getTable(tableName);
             tab.clean();
         }
+
         /**
          * Delete a row form the table.
          *
@@ -245,16 +263,19 @@ public class SimpleDatabase {
             SchemaRecord rec = tab.deleteRecord(rid);
 
         }
+
         public SchemaRecord getRecord(String tableName, RowID rid) throws DatabaseException {
             assert (active);
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getRecord(rid);
         }
+
         public Iterator<SchemaRecord> getRecordIterator(String tableName) throws DatabaseException {
             assert (this.active);
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).iterator();
         }
+
         /**
          * @param tableName the table to be updated.
          * @param values    the new values of the d_record
@@ -277,26 +298,31 @@ public class SimpleDatabase {
                 }
             }
         }
+
         public TableStats getStats(String tableName) throws DatabaseException {
             assert (this.active);
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getStats();
         }
+
         public int getEntrySize(String tableName) throws DatabaseException {
             assert (this.active);
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getEntrySize();
         }
+
         public long getNumRecords(String tableName) throws DatabaseException {
             assert (this.active);
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getNumRecords();
         }
+
         public RecordSchema getSchema(String tableName) throws DatabaseException {
             assert (this.active);
             checkAndGrabSharedLock(tableName);
             return getTable(tableName).getSchema();
         }
+
         public RecordSchema getFullyQualifiedSchema(String tableName) throws DatabaseException {
             assert (this.active);
             checkAndGrabSharedLock(tableName);
@@ -321,6 +347,7 @@ public class SimpleDatabase {
             checkAndGrabSharedLock(tableName);
             return tables.get(tableName);
         }
+
         private void checkAndGrabSharedLock(String tableName) throws DatabaseException {
             if (this.locksHeld.containsKey(tableName)) {
                 return;
@@ -339,6 +366,7 @@ public class SimpleDatabase {
                 lockMan.acquireLock(tableName, this.transNum, LockManager.LockType.SHARED);
             }
         }
+
         private void checkAndGrabExclusiveLock(String tableName) throws DatabaseException {
             while (aliasMaps.containsKey(tableName)) {
                 tableName = aliasMaps.get(tableName);
@@ -356,12 +384,14 @@ public class SimpleDatabase {
                 lockMan.acquireLock(tableName, this.transNum, LockManager.LockType.EXCLUSIVE);
             }
         }
+
         private void releaseAllLocks() {
             LockManager lockMan = SimpleDatabase.this.lockMan;
             for (String tableName : this.locksHeld.keySet()) {
                 lockMan.releaseLock(tableName, this.transNum);
             }
         }
+
         public void deleteTempTable(String tempTableName) {
             assert (this.active);
             if (!this.tempTables.containsKey(tempTableName)) {
@@ -370,6 +400,7 @@ public class SimpleDatabase {
             this.tempTables.get(tempTableName).close();
             tables.remove(tempTableName);
         }
+
         private void deleteAllTempTables() {
             Set<String> keys = tempTables.keySet();
             for (String tableName : keys) {

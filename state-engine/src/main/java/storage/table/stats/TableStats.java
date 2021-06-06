@@ -1,4 +1,5 @@
 package storage.table.stats;
+
 import operator.QueryPlan;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
@@ -6,6 +7,7 @@ import storage.table.RecordSchema;
 
 import java.util.ArrayList;
 import java.util.List;
+
 /**
  * A wrapper class to represent the statistics for a partition table.
  * Note that statistics are an estimate over the data in a table.
@@ -16,9 +18,10 @@ import java.util.List;
  */
 public class TableStats {
     private final boolean estimate;
-    private int numRecords;
     private final RecordSchema tableSchema;
+    private int numRecords;
     private List<Histogram> histograms;
+
     /**
      * Creates a new TableStats with a given RecordSchema.
      *
@@ -46,6 +49,7 @@ public class TableStats {
             }
         }
     }
+
     /**
      * Creates a new TableStats with a schema, a list of histograms,
      * and an estimate number of records.
@@ -60,6 +64,7 @@ public class TableStats {
         this.tableSchema = tableSchema;
         this.histograms = histograms;
     }
+
     /**
      * Adds the stats for a new d_record.
      *
@@ -88,6 +93,7 @@ public class TableStats {
             count++;
         }
     }
+
     /**
      * Remove the stats for an existing d_record.
      *
@@ -116,6 +122,7 @@ public class TableStats {
             count++;
         }
     }
+
     /**
      * Clean the table states
      */
@@ -139,6 +146,7 @@ public class TableStats {
             }
         }
     }
+
     /**
      * Gets the number of records the target table contains.
      *
@@ -147,6 +155,7 @@ public class TableStats {
     public int getNumRecords() {
         return this.numRecords;
     }
+
     /**
      * Gets the estimate reduction factor a predicate
      * and value_list would result in over a certain column.
@@ -161,6 +170,7 @@ public class TableStats {
                                     DataBox value) {
         return this.getHistogram(index).computeReductionFactor(predicate, value);
     }
+
     /**
      * Creates a new TableStats which is the statistics for the table
      * that results from the given predicate and value_list applied to
@@ -188,6 +198,7 @@ public class TableStats {
         int numRecords = (int) (this.numRecords * reductionFactor);
         return new TableStats(this.tableSchema, copyHistograms, numRecords);
     }
+
     /**
      * Creates a new TableStats which is the statistics for the table
      * that results from this TableStats joined with the given TableStats.
@@ -250,6 +261,7 @@ public class TableStats {
         int outputSize = (int) (inputSize * reductionFactor);
         return new TableStats(copySchema, copyHistograms, outputSize);
     }
+
     /**
      * Gets the histogram for a certain column.
      *
@@ -259,6 +271,7 @@ public class TableStats {
     public Histogram getHistogram(int index) {
         return this.histograms.get(index);
     }
+
     /**
      * Gets the histograms of this TableStatistics.
      *
@@ -267,6 +280,7 @@ public class TableStats {
     public List<Histogram> getHistograms() {
         return this.histograms;
     }
+
     /**
      * Gets the schema of this TableStatistics.
      *
@@ -275,6 +289,7 @@ public class TableStats {
     public RecordSchema getSchema() {
         return this.tableSchema;
     }
+
     /**
      * Gets the estimate number of distinct entries for a certain column.
      *

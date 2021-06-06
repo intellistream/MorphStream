@@ -1,18 +1,19 @@
 package utils;
+
 import common.SpinLock;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
+
 public class SOURCE_CONTROL {
+    private static final SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
     //    static ReentrantLock counterLock = new ReentrantLock(true); // enable fairness policy
     static SpinLock counterLock = new SpinLock();
-    private static final SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
-    volatile boolean success = false;
     private final long counter = 0;
     private final AtomicInteger wm = new AtomicInteger(0);// it is already volatiled.
-
+    volatile boolean success = false;
     private int totalThreads;
     private CyclicBarrier startBarrier;
     private CyclicBarrier endBarrier;
@@ -25,9 +26,11 @@ public class SOURCE_CONTROL {
 
     //    private long _combo_bid_size;
     private HashMap<Integer, Integer> iteration;
+
     public static SOURCE_CONTROL getInstance() {
         return ourInstance;
     }
+
     //return the starting point of counter.
 //    public long GetAndUpdate() {
 //        counterLock.lock();
@@ -61,9 +64,11 @@ public class SOURCE_CONTROL {
     public long Get() {
         return counter;
     }
+
     private int min_iteration() {
         return Collections.min(iteration.values());
     }
+
     public void preStateAccessBarrier(int threadId) {
         try {
             if (threadId == 0) {
@@ -76,6 +81,7 @@ public class SOURCE_CONTROL {
             e.printStackTrace();
         }
     }
+
     public void postStateAccessBarrier(int threadId) {
         try {
             endBarrier.await();

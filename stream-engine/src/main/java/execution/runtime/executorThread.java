@@ -1,4 +1,5 @@
 package execution.runtime;
+
 import common.collections.Configuration;
 import components.TopologyComponent;
 import components.context.TopologyContext;
@@ -13,6 +14,7 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
 //import static xerial.jnuma.Numa.newCPUBitMask;
+
 /**
  * Created by shuhaozhang on 12/7/16.
  */
@@ -36,6 +38,7 @@ public abstract class executorThread extends Thread {
     int batch;
     private boolean start = true;
     private volatile boolean ready = false;
+
     protected executorThread(ExecutionNode e, Configuration conf, TopologyContext context
             , long[] cpu, int node, CountDownLatch latch, HashMap<Integer, executorThread> threadMap) {
         this.context = context;
@@ -50,12 +53,15 @@ public abstract class executorThread extends Thread {
             this.executor.getController().setContext(this.executor.getExecutorID(), context);
         }
     }
+
     public TopologyContext getContext() {
         return context;
     }
+
     public void setContext(TopologyContext context) {
         this.context = context;
     }
+
     //    private long[] convertToCPUMasK(long[] cpu) {
 //        final long[] cpuMask = newCPUBitMask();
 //        LOG.info("Empty cpuMask:" + Arrays.toString(cpuMask));
@@ -69,6 +75,7 @@ public abstract class executorThread extends Thread {
         allocate_OutputQueue();
         assign_InputQueue();
     }
+
     private void pause() {
         for (TopologyComponent children : this.executor.getChildren_keySet()) {
             for (ExecutionNode c : children.getExecutorList()) {
@@ -80,6 +87,7 @@ public abstract class executorThread extends Thread {
             }
         }
     }
+
     private void pause_parent() {
         for (TopologyComponent parent : this.executor.getParents_keySet()) {
             for (ExecutionNode p : parent.getExecutorList()) {
@@ -91,6 +99,7 @@ public abstract class executorThread extends Thread {
             }
         }
     }
+
     private void restart() {
         for (TopologyComponent children : this.executor.getChildren_keySet()) {
             for (ExecutionNode c : children.getExecutorList()) {
@@ -102,6 +111,7 @@ public abstract class executorThread extends Thread {
             }
         }
     }
+
     private void restart_parents() {
         for (TopologyComponent parent : this.executor.getParents_keySet()) {
             for (ExecutionNode p : parent.getExecutorList()) {
@@ -113,12 +123,15 @@ public abstract class executorThread extends Thread {
             }
         }
     }
+
     private void allocate_OutputQueue() {
         executor.allocate_OutputQueue(conf.getBoolean("linked", false), conf.getInt("queue_size"));
     }
+
     private void assign_InputQueue(String streamId) {
         executor.setReceive_queueOfChildren(streamId);
     }
+
     /**
      * Assign my output queue to my downstream executor.
      */
@@ -127,12 +140,15 @@ public abstract class executorThread extends Thread {
             assign_InputQueue(streamId);
         }
     }
+
     HashMap<Integer, Queue> get_receiving_queue(String streamId) {
         return executor.getInputStreamController().getReceive_queue(streamId);
     }
+
     HashMap<String, HashMap<Integer, Queue>> get_receiving_queue() {
         return executor.getInputStreamController().getRQ();
     }
+
     void routing() throws InterruptedException, DatabaseException, BrokenBarrierException {
 //        int s = 0;
         if (start) {
@@ -145,20 +161,27 @@ public abstract class executorThread extends Thread {
         }
         end_emit = System.nanoTime();
     }
+
     protected abstract void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException;
+
     protected abstract void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException;
+
     public int getExecutorID() {
         return executor.getExecutorID();
     }
+
     public String getOP() {
         return executor.getOP();
     }
+
     public double getResults() {
         return executor.op.getResults();
     }
+
     public boolean isReady() {
         return ready;
     }
+
     void Ready(Logger LOG) {
         //LOG.DEBUG("BasicBoltBatchExecutor:" + executor.getExecutorID() + " is set to ready");
         ready = true;

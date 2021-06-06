@@ -1,22 +1,26 @@
 package common.tools.cacheSim;
+
 import com.vividsolutions.jts.math.Vector2D;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+
 /**
  * Created by szhang026 on 4/23/2016.
  */
 public class cacheHitSimulator_PI_generic_cacheHit {
+    private static final int policy = 1;
     static String path = "C:\\Users\\szhang026\\Documents\\Profile-experiments\\compatibility-tracing\\log\\genlib";
     private static int start = 0;
     private static int cnt = 0;
     private static int app;
-    private static final int policy = 1;
+
     private static double nextTime(double rateParameter) {
         return -Math.log(1.0 - Math.random()) / rateParameter;
     }
+
     private static int getsum(Collection<String> l, Map<String, Integer> instruction_per_function) {
         int sum = 0;
         for (String i : l) {
@@ -24,6 +28,7 @@ public class cacheHitSimulator_PI_generic_cacheHit {
         }
         return sum;
     }
+
     private static Vector2D cacheHit(LinkedList<String> event_trace, Map<String, Integer> instruction_per_function, int policy) {
         final int cache_size = 32000;
         int cache_used = 0;
@@ -92,6 +97,7 @@ public class cacheHitSimulator_PI_generic_cacheHit {
         }
         return new Vector2D(compulsory_miss, access_miss);
     }
+
     private static LinkedList<record> clean_InTrace_results(int app) throws IOException {
         FileWriter writer = null;
         Scanner sc = null;
@@ -154,6 +160,7 @@ public class cacheHitSimulator_PI_generic_cacheHit {
         list.removeFirst();
         return list;
     }
+
     public static void main(String[] arg) throws IOException {
         start = Integer.parseInt(arg[0]);
         cnt = Integer.parseInt(arg[1]);
@@ -214,6 +221,7 @@ public class cacheHitSimulator_PI_generic_cacheHit {
         System.out.println("compulsory_miss ratio:" + result.getX() / event_trace.size());
         System.out.println("Access_miss ratio:" + result.getY() / event_trace.size());
     }
+
     public static <K, V extends Comparable<? super V>> Map<K, V>
     sortByValue(Map<K, V> map) {
         List<Map.Entry<K, V>> list =
@@ -226,6 +234,7 @@ public class cacheHitSimulator_PI_generic_cacheHit {
         }
         return result;
     }
+
     private static class record {
         /*
         * Column Labels:
@@ -238,6 +247,7 @@ public class cacheHitSimulator_PI_generic_cacheHit {
         public int EN_EX;//0 means enter, 1 means exit
         public String NAME_M;
         public String NAME_T;
+
         public record(int read_0, String read_1, String read_2, String read_3) {
             PTT_INSTS = read_0;
             if (read_1.equalsIgnoreCase("<")) {

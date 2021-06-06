@@ -1,8 +1,10 @@
 package common.util.io;
+
 public class FileUtils {
     public static String humanReadableByteCount(long bytes) {
         return humanReadableByteCount(bytes, false);
     }
+
     public static String humanReadableByteCount(long bytes, boolean si) {
         int unit = si ? 1000 : 1024;
         if (bytes < unit) return bytes + " B";

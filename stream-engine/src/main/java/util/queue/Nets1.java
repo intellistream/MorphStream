@@ -1,6 +1,8 @@
 package util.queue;
+
 import java.awt.*;
 import java.util.Random;
+
 class Nets1 extends Frame {
     private static final int N = 100000;
     //_______Other vars____
@@ -21,8 +23,10 @@ class Nets1 extends Frame {
     private static double talpha;
     private static double tbeta;
     private static int customers_dropped = 0;
+
     public Nets1() {
     }
+
     public static void main(String[] args) {
         if (args.length <= 3 && args.length >= 2) {
             alpha = Double.parseDouble(args[0]);
@@ -206,13 +210,16 @@ class Nets1 extends Frame {
         System.out.println("No. of Packets dropped are : " + customers_dropped);
         System.out.flush();
     }
+
     private static void print(String s) {
         System.out.println(s);
         System.out.flush();
     }
+
     private static boolean iszero(double d) {
         return d < 0.0001;
     }
+
     private static void printtheory(double tot_time, double taq, double tot_waiting) {
         double ro = alpha / beta;
         print("\n \n \nResults");

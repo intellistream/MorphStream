@@ -1,12 +1,15 @@
 package operator;
+
 import db.DatabaseException;
 import db.SimpleDatabase;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 
 import java.util.*;
+
 public class GraceHashOperator extends JoinOperator {
     private int numBuffers;//?
+
     public GraceHashOperator(QueryOperator leftSource,
                              QueryOperator rightSource,
                              String leftColumnName,
@@ -22,9 +25,11 @@ public class GraceHashOperator extends JoinOperator {
         this.stats = this.estimateStats();
         this.cost = this.estimateIOCost();
     }
+
     public Iterator<SchemaRecord> iterator() throws QueryPlanException, DatabaseException {
         return new GraceHashIterator();
     }
+
     public int estimateIOCost() {
         /* TODO: Implement me! */
 //		int io;
@@ -34,21 +39,23 @@ public class GraceHashOperator extends JoinOperator {
 //		return io;
         return 0;
     }
+
     /**
      * An implementation of Iterator that provides an iterator interface for this operator.
      */
     private class GraceHashIterator implements Iterator<SchemaRecord> {
+        private final String[] leftPartitions;
+        private final String[] rightPartitions;
         private Iterator<SchemaRecord> leftIterator;
         private Iterator<SchemaRecord> rightIterator;
         private SchemaRecord rightRecord;
         private SchemaRecord nextRecord;
-        private final String[] leftPartitions;
-        private final String[] rightPartitions;
         private int currentPartition;
         private Map<DataBox, ArrayList<SchemaRecord>> inMemoryHashTable;
         private int currIndexInList;
         private ArrayList<SchemaRecord> currList;
         private List<DataBox> rightRecordVals;
+
         public GraceHashIterator() throws QueryPlanException, DatabaseException {
             this.leftIterator = getLeftSource().iterator();
             this.rightIterator = getRightSource().iterator();
@@ -105,6 +112,7 @@ public class GraceHashOperator extends JoinOperator {
                 this.currList = this.inMemoryHashTable.get(this.rightRecord.getValues().get(GraceHashOperator.this.getRightColumnIndex()));
             }
         }
+
         /**
          * Checks if there are more d_record(s) to yield
          *
@@ -160,6 +168,7 @@ public class GraceHashOperator extends JoinOperator {
                 }
             }
         }
+
         /**
          * Yields the next d_record of this iterator.
          *
@@ -174,6 +183,7 @@ public class GraceHashOperator extends JoinOperator {
             }
             throw new NoSuchElementException();
         }
+
         public void remove() {
             throw new UnsupportedOperationException();
         }

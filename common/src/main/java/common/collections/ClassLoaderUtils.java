@@ -1,13 +1,16 @@
 package common.collections;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+
 public class ClassLoaderUtils {
     private static final String NOT_FOUND_ERROR = "Unable to find %s class %s";
     private static final String ILLEGAL_ACCESS_ERROR = "Unable to access %s class %s";
     private static final String INSTANTIATION_ERROR = "Unable to instantiate %s class %s";
+
     public static Object newInstance(String className, String name, Logger logger) {
         if (StringUtils.isBlank(className)) {
             logger.error("A {} must be provided", name);
@@ -30,6 +33,7 @@ public class ClassLoaderUtils {
             throw new RuntimeException(error, ex);
         }
     }
+
     public static Object newInstance(String className, String name, Logger logger, int arguments) {
         if (StringUtils.isBlank(className)) {
             logger.error("A {} must be provided", name);
@@ -57,6 +61,7 @@ public class ClassLoaderUtils {
             throw new RuntimeException(error, ex);
         }
     }
+
     public static Object newInstance(String className, String name, Logger logger, Configuration arguments) {
         if (StringUtils.isBlank(className)) {
             logger.error("A {} must be provided", name);

@@ -1,24 +1,30 @@
 package common;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
 public class PartitionedOrderLock implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(PartitionedOrderLock.class);
     private static final long serialVersionUID = 1347267778748318967L;
     private static final PartitionedOrderLock ourInstance = new PartitionedOrderLock();
     HashMap<Integer, LOCK> locks = new HashMap<>();
     boolean initilize = false;
+
     private PartitionedOrderLock() {
     }
+
     public static PartitionedOrderLock getInstance() {
         return ourInstance;
     }
+
     public LOCK get(int pid) {
         return locks.get(pid);
     }
+
     /**
      * Initilize locks.
      * This method shall be called only once.
@@ -33,8 +39,10 @@ public class PartitionedOrderLock implements Serializable {
             initilize = true;
         }
     }
+
     public class LOCK {
         volatile AtomicLong bid = new AtomicLong();
+
         public boolean blocking_wait(final long bid, long _bid) {
 //            if (!this.counter.compareAndSet(counter, counter))
 //                LOG.info("not ready for this batch to proceed:" + counter + " lock_ratio @" + this);
@@ -47,9 +55,11 @@ public class PartitionedOrderLock implements Serializable {
             }
             return true;
         }
+
         public void advance() {
             bid.incrementAndGet();//allow next batch to proceed.
         }
+
         public void reset() {
             bid.set(0);
         }

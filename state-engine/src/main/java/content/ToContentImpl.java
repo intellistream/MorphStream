@@ -1,14 +1,16 @@
 package content;
+
+import common.SpinLock;
+import common.meta.MetaTypes;
+import content.common.RequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import common.meta.MetaTypes;
-import common.SpinLock;
-import content.common.RequestEntry;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import utils.Utils;
 
 import java.util.List;
+
 /**
  * #elif TO
  * ToContentImpl content_;
@@ -16,6 +18,7 @@ import java.util.List;
 public class ToContentImpl extends ToContent {
     public final static String TO_CONTENT = "TO_CONTENT";
     private static final Logger LOG = LoggerFactory.getLogger(ToContentImpl.class);
+    private final SpinLock spinlock_ = new SpinLock();
     private List<DataBox> data; //	char  * data_ptr_;
     private int data_size_;
     // last read that has been issued.
@@ -34,7 +37,7 @@ public class ToContentImpl extends ToContent {
     private RequestEntry write_requests_head_;
     // commit request queue.
     private RequestEntry commit_requests_head_;
-    private final SpinLock spinlock_ = new SpinLock();
+
     public ToContentImpl() {
         read_ts_ = 0;
         write_ts_ = 0;
@@ -44,6 +47,7 @@ public class ToContentImpl extends ToContent {
         write_requests_head_ = null;
         commit_requests_head_ = null;
     }
+
     /**
      * @param timestamp
      * @param data
@@ -77,6 +81,7 @@ public class ToContentImpl extends ToContent {
         spinlock_.unlock();
         return is_success;
     }
+
     @Override
     public boolean RequestWriteAccess(final long timestamp, List<DataBox> data) {
         boolean is_success = true;
@@ -93,6 +98,7 @@ public class ToContentImpl extends ToContent {
         spinlock_.unlock();
         return is_success;
     }
+
     /**
      * commit write Operation.
      *
@@ -131,6 +137,7 @@ public class ToContentImpl extends ToContent {
         }
         spinlock_.unlock();
     }
+
     @Override
     public void RequestAbort(long timestamp) {
         spinlock_.lock();
@@ -140,20 +147,25 @@ public class ToContentImpl extends ToContent {
         //delete entry;
         //entry = NULL;
     }
+
     @Override
     public SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, MetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public SchemaRecord readPreValues(long ts) {
         return null;
     }
+
     @Override
     public void clean_map(long mark_ID) {
     }
+
     @Override
     public void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
     }
+
     // this function is always called after write has been installed or aborted.
     void UpdateBuffer() {
         while (true) {
@@ -230,14 +242,17 @@ public class ToContentImpl extends ToContent {
 //			win_commit = null;
         }
     }
+
     long GetMinReadTimestamp() {
         RequestEntry tmp_entry = read_requests_head_;
         return GetMinTimestamp(tmp_entry);
     }
+
     long GetMinWriteTimestamp() {
         RequestEntry tmp_entry = write_requests_head_;
         return GetMinTimestamp(tmp_entry);
     }
+
     long GetMinTimestamp(RequestEntry tmp_entry) {
         long new_min_ts = Integer.MAX_VALUE;
         // the request list is sorted from big to small
@@ -251,6 +266,7 @@ public class ToContentImpl extends ToContent {
         }
         return new_min_ts;
     }
+
     // we can get a list of matching request
     RequestEntry DebufferCommitRequest() {
         RequestEntry ret_entry = null;
@@ -269,6 +285,7 @@ public class ToContentImpl extends ToContent {
         }
         return ret_entry;
     }
+
     RequestEntry DebufferReadRequest() {
         RequestEntry ret_entry = null;
         RequestEntry tmp_entry = read_requests_head_;
@@ -286,6 +303,7 @@ public class ToContentImpl extends ToContent {
         }
         return ret_entry;
     }
+
     // we can always get exactly one matching request.
     RequestEntry DebufferWriteRequest(final long timestamp) {
         assert (write_requests_head_ != null);
@@ -305,6 +323,7 @@ public class ToContentImpl extends ToContent {
         ret_entry.next_ = null;
         return ret_entry;
     }
+
     private void BufferReadRequest(final long timestamp, List<DataBox> data, boolean[] is_ready) {
         RequestEntry entry = new RequestEntry();
         entry.timestamp_ = timestamp;
@@ -331,6 +350,7 @@ public class ToContentImpl extends ToContent {
             min_read_ts_ = timestamp;
         }
     }
+
     private void BufferWriteRequest(final long timestamp, List<DataBox> data) {
         RequestEntry entry = new RequestEntry();
         entry.timestamp_ = timestamp;
@@ -356,6 +376,7 @@ public class ToContentImpl extends ToContent {
             min_write_ts_ = timestamp;
         }
     }
+
     void BufferCommitRequest(final long timestamp, boolean[] is_ready) {
         RequestEntry entry = new RequestEntry();
         entry.timestamp_ = timestamp;

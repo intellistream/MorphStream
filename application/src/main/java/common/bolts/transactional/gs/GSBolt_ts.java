@@ -1,13 +1,14 @@
 package common.bolts.transactional.gs;
+
 import common.param.mb.MicroEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import transaction.dedicated.ordered.TxnManagerTStream;
 import transaction.impl.TxnContext;
 
@@ -18,20 +19,24 @@ import java.util.concurrent.BrokenBarrierException;
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
+
 public class GSBolt_ts extends GSBolt {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
+    private final double write_useful_time = 556;//write-compute time pre-measured.
     Collection<MicroEvent> EventsHolder;
     private int writeEvents;
-    private final double write_useful_time = 556;//write-compute time pre-measured.
+
     public GSBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
         state = new ValueState();
     }
+
     public GSBolt_ts(int fid) {
         super(LOG, fid, null);
         state = new ValueState();
     }
+
     /**
      * THIS IS ONLY USED BY TSTREAM.
      * IT CONSTRUCTS and POSTPONES TXNS.
@@ -52,6 +57,7 @@ public class GSBolt_ts extends GSBolt {
         }
         END_PRE_TXN_TIME_MEASURE(thread_Id);
     }
+
     void read_construct(MicroEvent event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < NUM_ACCESSES; i++) {
             //it simply constructs the operations and return.
@@ -64,6 +70,7 @@ public class GSBolt_ts extends GSBolt {
             EventsHolder.add(event);//mark the tuple as ``in-complete"
         }
     }
+
     protected void write_construct(MicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         for (int i = 0; i < NUM_ACCESSES; ++i) {
             //it simply construct the operations and return.
@@ -75,12 +82,14 @@ public class GSBolt_ts extends GSBolt {
         WRITE_POST(event);
         END_POST_TIME_MEASURE_ACC(thread_Id);
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks());
         EventsHolder = new ArrayDeque<>();
     }
+
     void READ_REQUEST_CORE() throws InterruptedException {
 //        while (!EventsHolder.isEmpty() && !Thread.interrupted()) {
 //            MicroEvent input_event = EventsHolder.remove();
@@ -96,11 +105,13 @@ public class GSBolt_ts extends GSBolt {
             READ_CORE(event);
         }
     }
+
     void READ_POST() throws InterruptedException {
         for (MicroEvent event : EventsHolder) {
             READ_POST(event);
         }
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {

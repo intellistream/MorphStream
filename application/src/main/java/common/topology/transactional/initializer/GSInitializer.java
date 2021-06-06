@@ -1,13 +1,14 @@
 package common.topology.transactional.initializer;
+
+import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.MicroParam;
 import common.param.mb.MicroEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import db.Database;
 import db.DatabaseException;
-import common.SpinLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -39,6 +40,7 @@ public class GSInitializer extends TableInitilizer {
     //just enable one of the decision array
     protected transient boolean[] read_decision;
     int i = 0;
+
     public GSInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
         floor_interval = (int) Math.floor(NUM_ITEMS / (double) tthread);//NUM_ITEMS / tthread;
@@ -59,6 +61,7 @@ public class GSInitializer extends TableInitilizer {
         LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
         configure_store(scale_factor, theta, tthread, NUM_ITEMS);
     }
+
     /**
      * "INSERT INTO MicroTable (key, value_list) VALUES (?, ?);"
      */
@@ -73,6 +76,7 @@ public class GSInitializer extends TableInitilizer {
             e.printStackTrace();
         }
     }
+
     private void insertMicroRecord(int key, String value) {
         List<DataBox> values = new ArrayList<>();
         values.add(new IntDataBox(key));
@@ -84,6 +88,7 @@ public class GSInitializer extends TableInitilizer {
             e.printStackTrace();
         }
     }
+
     @Override
     public void loadDB(int thread_id, int NUMTasks) {
         int partition_interval = getPartition_interval();
@@ -101,6 +106,7 @@ public class GSInitializer extends TableInitilizer {
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
+
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock_, int NUMTasks) {
         int partition_interval = getPartition_interval();
@@ -119,6 +125,7 @@ public class GSInitializer extends TableInitilizer {
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
+
     @Override
     public boolean Prepared(String file) throws IOException {
         double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
@@ -135,6 +142,7 @@ public class GSInitializer extends TableInitilizer {
                 + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
         return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
     }
+
     @Override
     public void store(String file_name) throws IOException {
         double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
@@ -175,6 +183,7 @@ public class GSInitializer extends TableInitilizer {
         }
         w.close();
     }
+
     protected boolean next_read_decision() {
         boolean rt = read_decision[i];
         i++;
@@ -182,11 +191,13 @@ public class GSInitializer extends TableInitilizer {
             i = 0;
         return rt;
     }
+
     @Override
     public Object create_new_event(int number_partitions, int bid) {
         boolean flag = next_read_decision();
         return generateEvent(p, p_bid.clone(), number_partitions, bid, flag);
     }
+
     /**
      * Generate events according to the given parition_id.
      *
@@ -215,6 +226,7 @@ public class GSInitializer extends TableInitilizer {
                 number_of_partitions
         );
     }
+
     private RecordSchema MicroTableSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -224,6 +236,7 @@ public class GSInitializer extends TableInitilizer {
         fieldNames.add("Value");
         return new RecordSchema(fieldNames, dataBoxes);
     }
+
     public void creates_Table(Configuration config) {
         RecordSchema s = MicroTableSchema();
         db.createTable(s, "MicroTable");

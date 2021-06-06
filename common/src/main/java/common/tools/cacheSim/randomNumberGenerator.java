@@ -1,5 +1,7 @@
 package common.tools.cacheSim;
+
 import java.util.Random;
+
 /**
  * Created by I309939 on 7/29/2016.
  */

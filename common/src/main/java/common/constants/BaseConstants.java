@@ -1,4 +1,5 @@
 package common.constants;
+
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,14 +7,17 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 import static common.Constants.DEFAULT_STREAM_ID;
+
 public interface BaseConstants {
     Logger LOG = LoggerFactory.getLogger(BaseConstants.class);
     String BASE_PREFIX = "compatibility";
+
     enum AckStrategy {
         ACK_IGNORE,
         ACK_ON_RECEIVE,
         ACK_ON_WRITE
     }
+
     interface BaseConf {
         String PARSER_THREADS = "parser.threads";
         String SPOUT_THREADS = "%s.spout.threads";
@@ -58,6 +62,7 @@ public interface BaseConstants {
         String State_Size = "%s.Brisk.execution.runtime.tuple.fieldSize";
         String Skew = "%s.Brisk.execution.runtime.tuple.skew";
     }
+
     interface BaseConst {
         String CASSANDRA_CONFIG_KEY = "cassandra-config";
         Map<String, AckStrategy> CASSANDRA_ACK_STRATEGIES = ImmutableMap.<String, AckStrategy>builder()
@@ -66,17 +71,20 @@ public interface BaseConstants {
                 .put("ignore", AckStrategy.ACK_IGNORE)
                 .build();
     }
+
     interface BaseComponent {
         String PARSER = "parser";
         String SPOUT = "spout";
         String SINK = "sink";
         String FORWARD = "forward";
     }
+
     interface BaseField {
         String SYSTEMTIMESTAMP = "systemtimestamp";
         String MSG_ID = "systemmsgID";
         String TEXT = "text";
     }
+
     interface BaseStream {
         String DEFAULT = DEFAULT_STREAM_ID;
     }
