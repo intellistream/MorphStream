@@ -12,6 +12,10 @@ import java.util.HashMap;
 public abstract class LayeredScheduler implements IScheduler {
     protected LayeredContext<?> context;
 
+    @Override
+    public void reset() {
+        context.reset();
+    }
     /**
      * Build buckets with submitted ocs.
      * Return the local maximal dependency level.
@@ -34,6 +38,24 @@ public abstract class LayeredScheduler implements IScheduler {
         }
         return localMaxDLevel;
     }
+
+    /**
+     * It implements different ways to query operation chains from global buckets at certain dependency level.
+     * It has three different ways: Hash, RR, and SW.
+     *
+     * @param threadId
+     * @param dLevel
+     * @return
+     */
+    public abstract OperationChain getOC(int threadId, int dLevel);
+
+    /**
+     * The following are methods to explore global buckets.
+     * It has two different ways: DFS and BFS.
+     *
+     * @param threadId
+     * @return
+     */
 
     public OperationChain BFSearch(int threadId) {
         OperationChain oc = getOC(threadId, context.currentLevel[threadId]);
@@ -68,7 +90,5 @@ public abstract class LayeredScheduler implements IScheduler {
         MeasureTools.END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
         return oc;
     }
-
-    protected abstract OperationChain getOC(int threadId, int dLevel);
 
 }

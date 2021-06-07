@@ -16,7 +16,7 @@ public abstract class LayeredSharedWorkloadScheduler extends LayeredNonHashSched
         context = new SWContext(tp, ConcurrentLinkedQueue::new);
     }
 
-    protected OperationChain getOC(int threadId, int dLevel) {
+    public OperationChain getOC(int threadId, int dLevel) {
         Queue<OperationChain> ocs = context.layeredOCBucketGlobal.get(dLevel);
         OperationChain oc = null;
         if (ocs != null)
@@ -29,14 +29,4 @@ public abstract class LayeredSharedWorkloadScheduler extends LayeredNonHashSched
         return context.currentLevel[threadId] == context.maxDLevel &&
                 context.layeredOCBucketGlobal.get(context.maxDLevel).isEmpty();
     }
-
-    @Override
-    public void reset() {
-        context.layeredOCBucketGlobal.clear();
-        for (int lop = 0; lop < context.currentLevel.length; lop++) {
-            context.currentLevel[lop] = 0;
-        }
-        context.maxDLevel = 0;
-    }
-
 }

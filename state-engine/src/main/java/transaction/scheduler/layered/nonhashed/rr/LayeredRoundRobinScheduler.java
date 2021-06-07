@@ -1,10 +1,10 @@
 package transaction.scheduler.layered.nonhashed.rr;
 
 import common.OperationChain;
-import profiler.MeasureTools;
 import transaction.scheduler.layered.nonhashed.LayeredNonHashScheduler;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class LayeredRoundRobinScheduler extends LayeredNonHashScheduler<List<OperationChain>> {
     RRContext<List<OperationChain>> context;
@@ -17,7 +17,7 @@ public abstract class LayeredRoundRobinScheduler extends LayeredNonHashScheduler
      * @param dLevel
      * @return
      */
-    protected OperationChain getOC(int threadId, int dLevel) {
+    public OperationChain getOC(int threadId, int dLevel) {
         List<OperationChain> ocs = context.layeredOCBucketGlobal.get(dLevel);
         OperationChain oc = null;
         int indexOfOC = context.indexOfNextOCToProcess[threadId];
@@ -36,15 +36,4 @@ public abstract class LayeredRoundRobinScheduler extends LayeredNonHashScheduler
     public boolean finishedScheduling(int threadId) {
         return context.currentLevel[threadId] > context.maxDLevel;
     }
-
-    @Override
-    public void reset() {
-        context.layeredOCBucketGlobal.clear();
-        for (int threadId = 0; threadId < context.totalThreads; threadId++) {
-            context.indexOfNextOCToProcess[threadId] = threadId;
-            context.currentLevel[threadId] = 0;
-        }
-        context.maxDLevel = 0;
-    }
-
 }

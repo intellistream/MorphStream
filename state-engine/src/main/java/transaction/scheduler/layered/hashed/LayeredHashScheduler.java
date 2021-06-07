@@ -13,9 +13,9 @@ import java.util.HashMap;
 public abstract class LayeredHashScheduler extends LayeredScheduler implements IScheduler {
     public HashContext<HashMap<Integer, ArrayDeque<OperationChain>>> context;
     public LayeredHashScheduler(int tp) {
-        context = new HashContext<>(tp);
+        context = new HashContext<>(tp, HashMap::new);
         for (int threadId = 0; threadId < tp; threadId++) {
-            context.layeredOCBucketGlobal.put(threadId, new HashMap<>());
+            context.layeredOCBucketGlobal.put(threadId, context.createContents());
         }
     }
 
@@ -55,13 +55,7 @@ public abstract class LayeredHashScheduler extends LayeredScheduler implements I
         return context.scheduledOcsCount[threadId] == context.totalOcsToSchedule[threadId];
     }
 
-    @Override
-    public void reset() {
-        context.reset();
-        for (int lop = 0; lop < context.totalThread; lop++) {
-            context.currentLevel[lop] = 0;
-        }
-    }
+
     /**
      * This is needed because hash-scheduler can be workload unbalanced.
      *

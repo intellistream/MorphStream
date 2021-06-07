@@ -11,6 +11,7 @@ public class LayeredContext<V> {
     //if Shared: levelID, listOCs.
     public ConcurrentHashMap<Integer, V> layeredOCBucketGlobal;
     protected Supplier<V> supplier;
+    public int totalThreads;
 
     public LayeredContext(int totalThreads, Supplier<V> supplier) {
         layeredOCBucketGlobal = new ConcurrentHashMap<>(); // TODO: make sure this will not cause trouble with multithreaded access.
@@ -20,4 +21,12 @@ public class LayeredContext<V> {
     public V createContents() {
         return supplier.get();
     }
+
+    public void reset() {
+        layeredOCBucketGlobal.clear();
+        for (int threadId = 0; threadId < totalThreads; threadId++) {
+            currentLevel[threadId] = 0;
+        }
+    }
 }
+
