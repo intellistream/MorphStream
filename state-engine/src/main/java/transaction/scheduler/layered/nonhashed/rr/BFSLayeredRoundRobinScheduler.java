@@ -9,7 +9,7 @@ public class BFSLayeredRoundRobinScheduler extends LayeredRoundRobinScheduler {
     }
 
     @Override
-    public OperationChain nextOperationChain(int threadId) {
+    public OperationChain NEXT(int threadId) {
         OperationChain oc = BFSearch(threadId);
         return oc;// if a null is returned, it means, we are done with level!
     }

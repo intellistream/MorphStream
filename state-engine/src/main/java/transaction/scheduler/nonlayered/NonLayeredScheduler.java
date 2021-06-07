@@ -15,11 +15,12 @@ public class NonLayeredScheduler extends Scheduler {
     }
 
     public NonLayeredScheduler(int tp) {
+
         context = new NonLayeredContext(tp);
     }
 
     @Override
-    public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
+    public void SUBMIT(int threadId, Collection<OperationChain> ocs) {
 
         for (OperationChain oc : ocs) {
             if (!oc.hasParents() && oc.hasChildren())
@@ -33,10 +34,10 @@ public class NonLayeredScheduler extends Scheduler {
     }
 
     @Override
-    public OperationChain nextOperationChain(int threadId) {
+    public OperationChain NEXT(int threadId) {
         OperationChain oc = Distribute(threadId);
         while (oc == null) {
-            if (finishedScheduling(threadId))
+            if (Finished(threadId))
                 break;
             oc = Distribute(threadId);
         }
@@ -73,7 +74,7 @@ public class NonLayeredScheduler extends Scheduler {
     }
 
     @Override
-    public boolean finishedScheduling(int threadId) {
+    public boolean Finished(int threadId) {
         return context.finished(threadId);
     }
 }

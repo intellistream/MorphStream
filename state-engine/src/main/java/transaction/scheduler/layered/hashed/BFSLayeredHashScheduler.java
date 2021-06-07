@@ -11,7 +11,7 @@ public class BFSLayeredHashScheduler extends LayeredHashScheduler {
 
     }
     @Override
-    public OperationChain nextOperationChain(int threadId) {
+    public OperationChain NEXT(int threadId) {
         OperationChain oc = BFSearch(threadId);
         checkFinished(threadId);
         if (oc != null)

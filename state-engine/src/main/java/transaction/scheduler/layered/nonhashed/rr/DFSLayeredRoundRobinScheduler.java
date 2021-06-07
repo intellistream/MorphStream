@@ -9,7 +9,7 @@ public class DFSLayeredRoundRobinScheduler extends LayeredRoundRobinScheduler {
     }
 
     @Override
-    public OperationChain nextOperationChain(int threadId) {
+    public OperationChain NEXT(int threadId) {
         OperationChain oc = DFSearch(threadId);
         return oc;// if a null is returned, it means, we are done with level!
     }

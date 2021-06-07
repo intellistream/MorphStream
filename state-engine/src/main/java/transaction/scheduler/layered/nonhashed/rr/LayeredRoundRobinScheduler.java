@@ -32,7 +32,7 @@ public abstract class LayeredRoundRobinScheduler extends LayeredNonHashScheduler
     }
 
     @Override
-    public boolean finishedScheduling(int threadId) {
+    public boolean Finished(int threadId) {
         return context.finished(threadId);
     }
 }

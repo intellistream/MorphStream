@@ -10,7 +10,7 @@ public class DFSLayeredHashScheduler extends LayeredHashScheduler {
         super(tp);
     }
     @Override
-    public OperationChain nextOperationChain(int threadId) {
+    public OperationChain NEXT(int threadId) {
         OperationChain oc = DFSearch(threadId);
         checkFinished(threadId);
         if (oc != null)

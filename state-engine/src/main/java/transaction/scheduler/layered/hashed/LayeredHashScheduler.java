@@ -28,7 +28,7 @@ public abstract class LayeredHashScheduler extends LayeredScheduler implements I
      * @param ocs
      */
     @Override
-    public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
+    public void SUBMIT(int threadId, Collection<OperationChain> ocs) {
         MeasureTools.BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
         context.totalOcsToSchedule[threadId] += ocs.size();
         HashMap<Integer, ArrayDeque<OperationChain>> layeredOCBucketThread = context.layeredOCBucketGlobal.get(threadId);
@@ -50,7 +50,7 @@ public abstract class LayeredHashScheduler extends LayeredScheduler implements I
     }
 
     @Override
-    public boolean finishedScheduling(int threadId) {
+    public boolean Finished(int threadId) {
         return context.finished(threadId);
     }
 
@@ -60,7 +60,7 @@ public abstract class LayeredHashScheduler extends LayeredScheduler implements I
      * @param threadId
      */
     protected void checkFinished(int threadId) {
-        if (finishedScheduling(threadId)) {
+        if (Finished(threadId)) {
             MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
             SOURCE_CONTROL.getInstance().waitForOtherThreads();

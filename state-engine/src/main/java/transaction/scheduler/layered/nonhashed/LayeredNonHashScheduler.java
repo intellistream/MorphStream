@@ -34,7 +34,7 @@ public abstract class LayeredNonHashScheduler<V extends Collection<OperationChai
      * @param ocs
      */
     @Override
-    public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
+    public void SUBMIT(int threadId, Collection<OperationChain> ocs) {
         MeasureTools.BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
         HashMap<Integer, ArrayDeque<OperationChain>> layeredOCBucketThread = buildTempBucketPerThread(threadId, ocs);
         for (var dLevel : layeredOCBucketThread.keySet())

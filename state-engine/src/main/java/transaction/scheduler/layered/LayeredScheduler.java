@@ -2,7 +2,6 @@ package transaction.scheduler.layered;
 
 import common.OperationChain;
 import profiler.MeasureTools;
-import transaction.scheduler.IScheduler;
 import transaction.scheduler.Scheduler;
 import utils.SOURCE_CONTROL;
 
@@ -54,9 +53,9 @@ public abstract class LayeredScheduler  extends Scheduler {
         if (oc != null) {
             return oc;//successfully get the next operation chain of the current level.
         } else {
-            if (!finishedScheduling(threadId)) {
+            if (!Finished(threadId)) {
                 while (oc == null) {
-                    if (finishedScheduling(threadId))
+                    if (Finished(threadId))
                         break;
                     context.currentLevel[threadId] += 1;//current level is done, process the next level.
                     oc = Distribute(threadId);
@@ -72,7 +71,7 @@ public abstract class LayeredScheduler  extends Scheduler {
     public OperationChain DFSearch(int threadId) {
         OperationChain oc = Distribute(threadId);
         while (oc == null) {
-            if (finishedScheduling(threadId))
+            if (Finished(threadId))
                 break;
             context.currentLevel[threadId] += 1;
             oc = Distribute(threadId);

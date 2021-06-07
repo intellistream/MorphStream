@@ -21,7 +21,7 @@ public abstract class LayeredSharedWorkloadScheduler extends LayeredNonHashSched
     }
 
     @Override
-    public boolean finishedScheduling(int threadId) {
+    public boolean Finished(int threadId) {
         return context.finished(threadId);
     }
 }

@@ -397,7 +397,7 @@ public final class TxnProcessingEngine {
     public void start_evaluation(int threadId, long mark_ID) throws InterruptedException {
 
         MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
-        OperationChain oc = scheduler.pickUp(threadId);
+        OperationChain oc = scheduler.NEXT(threadId);
         MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
         while (oc != null) {
             MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
@@ -406,7 +406,7 @@ public final class TxnProcessingEngine {
             MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
 
             MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
-            oc = scheduler.pickUp(threadId);
+            oc = scheduler.NEXT(threadId);
             MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
         }
     }
