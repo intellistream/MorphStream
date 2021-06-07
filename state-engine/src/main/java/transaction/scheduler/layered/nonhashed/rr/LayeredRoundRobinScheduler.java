@@ -14,11 +14,10 @@ public abstract class LayeredRoundRobinScheduler extends LayeredNonHashScheduler
 
     /**
      * @param threadId
-     * @param dLevel
      * @return
      */
-    public OperationChain getOC(int threadId, int dLevel) {
-        List<OperationChain> ocs = context.layeredOCBucketGlobal.get(dLevel);
+    protected OperationChain Distribute(int threadId) {
+        List<OperationChain> ocs = context.layeredOCBucketGlobal.get(context.currentLevel[threadId]);
         OperationChain oc = null;
         int indexOfOC = context.indexOfNextOCToProcess[threadId];
         if (ocs != null) {
@@ -34,6 +33,6 @@ public abstract class LayeredRoundRobinScheduler extends LayeredNonHashScheduler
 
     @Override
     public boolean finishedScheduling(int threadId) {
-        return context.currentLevel[threadId] > context.maxDLevel;
+        return context.finished(threadId);
     }
 }

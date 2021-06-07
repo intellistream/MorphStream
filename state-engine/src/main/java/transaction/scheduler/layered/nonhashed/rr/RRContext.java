@@ -11,10 +11,17 @@ public class RRContext<V> extends NonHashContext<V> {
             indexOfNextOCToProcess[threadId] = threadId;
         }
     }
-    public void reset() {
+
+    @Override
+    protected void reset() {
         super.reset();
         for (int threadId = 0; threadId < totalThreads; threadId++) {
             indexOfNextOCToProcess[threadId] = threadId;
         }
+    }
+
+    @Override
+    public boolean finished(int threadId){
+        return currentLevel[threadId] > maxDLevel;
     }
 }

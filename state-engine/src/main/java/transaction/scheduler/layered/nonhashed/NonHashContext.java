@@ -8,7 +8,7 @@ public class NonHashContext<V> extends LayeredContext<V> {
         super(totalThreads, supplier);
         this.maxDLevel = 0;
     }
-    public void reset() {
+    protected void reset() {
         super.reset();
         maxDLevel = 0;
     }

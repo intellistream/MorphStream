@@ -15,7 +15,13 @@ public class HashContext<V> extends LayeredContext<V> {
         scheduledOcsCount = new int[totalThread];
         totalOcsToSchedule = new int[totalThread];
     }
-    public void reset() {
+    @Override
+    public boolean finished(int threadId) {
+        return scheduledOcsCount[threadId] == totalOcsToSchedule[threadId];
+    }
+
+    @Override
+    protected void reset() {
         super.reset();
         for (int threadId = 0; threadId < totalThreads; threadId++) {
             totalOcsToSchedule[threadId] = 0;

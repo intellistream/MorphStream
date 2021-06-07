@@ -6,6 +6,7 @@ import transaction.scheduler.layered.nonhashed.rr.DFSLayeredRoundRobinScheduler;
 import transaction.scheduler.layered.nonhashed.sw.DFSLayeredSharedWorkloadScheduler;
 import transaction.scheduler.layered.nonhashed.rr.BFSLayeredRoundRobinScheduler;
 import transaction.scheduler.layered.nonhashed.sw.BFSLayeredSharedWorkloadScheduler;
+import transaction.scheduler.nonlayered.NonLayeredScheduler;
 
 /**
  * Author: Aqif Hamid
@@ -42,7 +43,7 @@ public class SchedulerFactory {
                 scheduler = new DFSLayeredSharedWorkloadScheduler(totalThread);
                 break;
             case G_S:
-                scheduler = new GreedySmartScheduler(totalThread);
+                scheduler = new NonLayeredScheduler(totalThread);
                 break;
         }
         return scheduler;

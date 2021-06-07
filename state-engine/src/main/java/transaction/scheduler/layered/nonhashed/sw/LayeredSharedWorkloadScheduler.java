@@ -1,12 +1,8 @@
 package transaction.scheduler.layered.nonhashed.sw;
 
 import common.OperationChain;
-import profiler.MeasureTools;
 import transaction.scheduler.layered.nonhashed.LayeredNonHashScheduler;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -16,8 +12,8 @@ public abstract class LayeredSharedWorkloadScheduler extends LayeredNonHashSched
         context = new SWContext(tp, ConcurrentLinkedQueue::new);
     }
 
-    public OperationChain getOC(int threadId, int dLevel) {
-        Queue<OperationChain> ocs = context.layeredOCBucketGlobal.get(dLevel);
+    protected OperationChain Distribute(int threadId) {
+        Queue<OperationChain> ocs = context.layeredOCBucketGlobal.get(context.currentLevel[threadId]);
         OperationChain oc = null;
         if (ocs != null)
             oc = ocs.poll(); // TODO: This might be costly, maybe we should stop removing and using a counter or use a synchronized queue?
@@ -26,7 +22,6 @@ public abstract class LayeredSharedWorkloadScheduler extends LayeredNonHashSched
 
     @Override
     public boolean finishedScheduling(int threadId) {
-        return context.currentLevel[threadId] == context.maxDLevel &&
-                context.layeredOCBucketGlobal.get(context.maxDLevel).isEmpty();
+        return context.finished(threadId);
     }
 }

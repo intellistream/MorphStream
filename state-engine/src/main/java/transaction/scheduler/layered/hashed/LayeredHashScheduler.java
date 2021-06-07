@@ -40,11 +40,10 @@ public abstract class LayeredHashScheduler extends LayeredScheduler implements I
      * Return the last operation chain of threadId at dLevel.
      *
      * @param threadId
-     * @param dLevel
      * @return
      */
-    public OperationChain getOC(int threadId, int dLevel) {
-        ArrayDeque<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(dLevel);
+    protected OperationChain Distribute(int threadId) {
+        ArrayDeque<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(context.currentLevel[threadId]);
         if (ocs.size() > 0)
             return ocs.removeLast();
         else return null;
@@ -52,9 +51,8 @@ public abstract class LayeredHashScheduler extends LayeredScheduler implements I
 
     @Override
     public boolean finishedScheduling(int threadId) {
-        return context.scheduledOcsCount[threadId] == context.totalOcsToSchedule[threadId];
+        return context.finished(threadId);
     }
-
 
     /**
      * This is needed because hash-scheduler can be workload unbalanced.
