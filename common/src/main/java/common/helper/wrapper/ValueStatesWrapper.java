@@ -1,7 +1,9 @@
 package common.helper.wrapper;
+
 import common.helper.wrapper.basic.StateWrapper;
 
 import java.util.Random;
+
 /**
  * create x (e.g., 20000) different values in-advance.
  * The summation of those 20k numbers have a uniform distribution over 0 to 99.
@@ -12,6 +14,7 @@ public class ValueStatesWrapper extends StateWrapper {
     private final int N = 20000;
     private final String[] values = new String[N];
     private int count = 0;
+
     public ValueStatesWrapper(int tuple_size) {
         super(0);
         Random r = new Random();
@@ -34,6 +37,7 @@ public class ValueStatesWrapper extends StateWrapper {
             values[i] = sb.toString();
         }
     }
+
     /**
      * Because String is primitive data structure, it returns by value? No, it is still a pointer reference to char array.
      *

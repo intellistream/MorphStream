@@ -1,4 +1,5 @@
 package common;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,6 +8,7 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static common.CONTROL.enable_debug;
+
 /**
  * Order lock_ratio should be globally shared.
  */
@@ -21,17 +23,21 @@ public class OrderLock implements Serializable {
     boolean wasSignalled = false;//to fight with missing signals.
     //	private transient HashMap<Integer, HashMap<Integer, Boolean>> executors_ready;//<FID, ExecutorID, true/false>
     private int end_fid;
+
     private OrderLock() {
     }
+
     public static OrderLock getInstance() {
         return ourInstance;
     }
+
     //	public int getFID() {
 //		return fid;
 //	}
     public long getBID() {
         return counter.get();
     }
+
     //	public synchronized void advanceFID() {
 //		fid++;
 //	}
@@ -42,6 +48,7 @@ public class OrderLock implements Serializable {
     public void setBID(long bid) {
         this.counter.set(bid);
     }
+
     protected void fill_gap(LinkedList<Long> gap) {
 //		while (!gap.isEmpty()) {
 //			try_fill_gap(gap.);
@@ -54,6 +61,7 @@ public class OrderLock implements Serializable {
             }
         }
     }
+
     /**
      * fill the gap.
      *
@@ -66,6 +74,7 @@ public class OrderLock implements Serializable {
         }
         return false;
     }
+
     public boolean blocking_wait(final long bid) throws InterruptedException {
 
         /* busy waiting.
@@ -104,6 +113,7 @@ public class OrderLock implements Serializable {
         }
         return true;
     }
+
     public void advance() {
 //		try_fill_gap();
 //		try {

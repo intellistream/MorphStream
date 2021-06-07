@@ -1,20 +1,24 @@
 package common.spout;
+
 import common.constants.BaseConstants.BaseConf;
 import common.constants.GrepSumConstants;
 import common.helper.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.AbstractSpout;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class LocalStateSpout extends AbstractSpout {
     private static final Logger LOG = LoggerFactory.getLogger(LocalStateSpout.class);
     private static final long serialVersionUID = -8358880222505243596L;
+
     //    private ReceiveParser parser;
     private LocalStateSpout() {
         super(LOG);
         setFields(new Fields(GrepSumConstants.Field.TIME, GrepSumConstants.Field.TEXT, GrepSumConstants.Field.STATE));
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
@@ -26,9 +30,11 @@ public class LocalStateSpout extends AbstractSpout {
 //        parser = new ReceiveParser();
         LOG.info("Use localSpout now");
     }
+
     @Override
     public void cleanup() {
     }
+
     @Override
     public void nextTuple() {
 //        final MicroEvent input_event = dataSource.generateEvent();

@@ -17,11 +17,13 @@
  * #_
  */
 package common.datatype;
+
 import common.datatype.util.Constants;
 import common.datatype.util.IPositionIdentifier;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
 import execution.runtime.tuple.impl.Fields;
+
 /**
  * A {@link PositionReport} from the LRB data generator.<br />
  * <br />
@@ -67,9 +69,11 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      */
     public final static int POS_IDX = 8;
     private final static long serialVersionUID = -4386109322233754497L;
+
     public PositionReport() {
         super();
     }
+
     /**
      * Instantiates a new position record for the given attributes.
      *
@@ -99,6 +103,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
         super.add(POS_IDX, position);
         assert (super.size() == 9);
     }
+
     /**
      * Returns the schema of a {@link PositionReport}.
      *
@@ -110,9 +115,11 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
                 LRTopologyControl.LANE_FIELD_NAME, LRTopologyControl.DIRECTION_FIELD_NAME, LRTopologyControl.SEGMENT_FIELD_NAME,
                 LRTopologyControl.POSITION_FIELD_NAME);
     }
+
     public static Fields getLatencySchema() {
         return null;
     }
+
     /**
      * Returns the vehicle's speed of this {@link PositionReport}.
      *
@@ -121,6 +128,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
     public final Integer getSpeed() {
         return (Integer) super.get(SPD_IDX);
     }
+
     /**
      * Returns the expressway ID of this {@link PositionReport}.
      *
@@ -130,6 +138,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
     public final Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
+
     /**
      * Returns the lane of this {@link PositionReport}.
      *
@@ -139,6 +148,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
     public final Short getLane() {
         return (Short) super.get(LANE_IDX);
     }
+
     /**
      * Returns the vehicle's direction of this {@link PositionReport}.
      *
@@ -148,6 +158,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
     public final Short getDirection() {
         return (Short) super.get(DIR_IDX);
     }
+
     /**
      * Returns the segment of this {@link PositionReport}.
      *
@@ -157,6 +168,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
     public final Short getSegment() {
         return (Short) super.get(SEG_IDX);
     }
+
     /**
      * Returns the vehicle's position of this {@link PositionReport}.
      *
@@ -166,6 +178,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
     public final Integer getPosition() {
         return (Integer) super.get(POS_IDX);
     }
+
     /**
      * Checks if the vehicle is on the exit lane or not.
      *
@@ -174,6 +187,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
     public boolean isOnExitLane() {
         return this.getLane().shortValue() == Constants.EXIT_LANE;
     }
+
     /**
      * Return a copy of this {@link PositionReport}.
      *

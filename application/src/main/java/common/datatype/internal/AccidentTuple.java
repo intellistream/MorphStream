@@ -17,10 +17,12 @@
  * #_
  */
 package common.datatype.internal;
+
 import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
 import execution.runtime.tuple.impl.Fields;
+
 /**
  * {@link AccidentTuple} represents an intermediate result tuple; and reports and accident that occurred in a specific
  * segment and minute (ie, 'minute number'; see {@link Time#getMinute(short)}).<br />
@@ -53,8 +55,10 @@ public final class AccidentTuple extends common.util.datatypes.StreamValues impl
      * The index of the DIR attribute.
      */
     public final static int DIR_IDX = 3;
+
     public AccidentTuple() {
     }
+
     /**
      * Instantiates a new {@link AccidentTuple} for the given attributes.
      *
@@ -74,6 +78,7 @@ public final class AccidentTuple extends common.util.datatypes.StreamValues impl
         super.add(DIR_IDX, direction);
         assert (super.size() == 4);
     }
+
     /**
      * Returns the schema of a {@link AccidentTuple}.
      *
@@ -86,6 +91,7 @@ public final class AccidentTuple extends common.util.datatypes.StreamValues impl
                 LRTopologyControl.SEGMENT_FIELD_NAME,
                 LRTopologyControl.DIRECTION_FIELD_NAME);
     }
+
     /**
      * Returns the timestamp (in LRB seconds) of this {@link AccidentTuple}.
      *
@@ -94,6 +100,7 @@ public final class AccidentTuple extends common.util.datatypes.StreamValues impl
     public final Short getTime() {
         return (Short) super.get(TIME_IDX);
     }
+
     /**
      * Returns the 'minute number' of this {@link AccidentTuple}.
      *
@@ -102,6 +109,7 @@ public final class AccidentTuple extends common.util.datatypes.StreamValues impl
     public final short getMinuteNumber() {
         return Time.getMinute(this.getTime().shortValue());
     }
+
     /**
      * Returns the expressway ID of this {@link AccidentTuple}.
      *
@@ -111,6 +119,7 @@ public final class AccidentTuple extends common.util.datatypes.StreamValues impl
     public final Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
+
     /**
      * Returns the segment of this {@link AccidentTuple}.
      *
@@ -120,6 +129,7 @@ public final class AccidentTuple extends common.util.datatypes.StreamValues impl
     public final Short getSegment() {
         return (Short) super.get(SEG_IDX);
     }
+
     /**
      * Returns the vehicle's direction of this {@link AccidentTuple}.
      *

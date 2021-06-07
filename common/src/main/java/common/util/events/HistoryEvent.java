@@ -1,4 +1,5 @@
 package common.util.events;
+
 /**
  * @author miyuru
  */
@@ -8,6 +9,7 @@ public class HistoryEvent {
     public int d;
     public int x;
     public int daily_exp;
+
     public HistoryEvent(int carid, int d, int x, int daily_exp) {
         super();
         this.carid = carid;

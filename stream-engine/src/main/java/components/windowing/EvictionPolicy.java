@@ -1,4 +1,5 @@
 package components.windowing;
+
 /**
  * Eviction policy tracks events and decides whether
  * an input_event should be evicted from the window or not.
@@ -14,6 +15,7 @@ public interface EvictionPolicy<T, S> {
      * @return the {@link org.apache.storm.windowing.EvictionPolicy.Action} to be taken based on the input input_event
      */
     Action evict(Event<T> event);
+
     /**
      * Tracks the input_event to later decide whether
      * {@link EvictionPolicy#evict(Event)} should evict it or not.
@@ -21,12 +23,14 @@ public interface EvictionPolicy<T, S> {
      * @param event the input input_event to be tracked
      */
     void track(Event<T> event);
+
     /**
      * Returns the current context that is part of this eviction policy.
      *
      * @return the eviction context
      */
     EvictionContext getContext();
+
     /**
      * Sets a context in the eviction policy that can be used while evicting the events.
      * E.g. For TimeEvictionPolicy, this could be used to set the reference timestamp.
@@ -34,10 +38,12 @@ public interface EvictionPolicy<T, S> {
      * @param context the eviction context
      */
     void setContext(EvictionContext context);
+
     /**
      * Resets the eviction policy.
      */
     void reset();
+
     /**
      * Return runtime state to be checkpointed by the framework for restoring the eviction policy
      * in case of failures.
@@ -45,12 +51,14 @@ public interface EvictionPolicy<T, S> {
      * @return the state
      */
     S getState();
+
     /**
      * Restore the eviction policy from the state that was earlier checkpointed by the framework.
      *
      * @param state the state
      */
     void restoreState(S state);
+
     /**
      * The action to be taken when {@link EvictionPolicy#evict(Event)} is invoked.
      */

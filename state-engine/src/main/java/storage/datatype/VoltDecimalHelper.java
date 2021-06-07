@@ -17,11 +17,13 @@
 package storage.datatype;
 //import frontend.voltdb.messaging.FastDeserializer;
 //import frontend.voltdb.messaging.FastSerializer;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.nio.ByteBuffer;
+
 /**
  * A class for serializing and deserializing Volt's 16-byte fixed precision and scale decimal format. The decimal's
  * are converted to/from Java's {@link BigDecimal BigDecimal} class. <code>BigDecimal</code> stores values
@@ -113,6 +115,7 @@ public class VoltDecimalHelper {
 //        }
 //        out.write(expandToLength16(unscaledValue, isNegative));
 //    }
+
     /**
      * Serialize the null decimal sigil to a the provided {@link ByteBuffer ByteBuffer}
      *
@@ -121,6 +124,7 @@ public class VoltDecimalHelper {
     static public void serializeNull(ByteBuffer buf) {
         buf.put(NULL_INDICATOR);
     }
+
     /**
      * Converts BigInteger's byte representation containing a scaled magnitude to a fixed size 16 byte array
      * and set the sign in the most significant byte's most significant bit.
@@ -199,6 +203,7 @@ public class VoltDecimalHelper {
 //        }
 //        return bd;
 //    }
+
     /**
      * Deserialize a Volt fixed precision and scale 16-byte decimal from a String representation
      *
@@ -217,6 +222,7 @@ public class VoltDecimalHelper {
         }
         return bd;
     }
+
     /**
      * Deserialize a Volt fixed precision and scale 16-byte decimal and return
      * it as a {@link BigDecimal BigDecimal} .
@@ -237,6 +243,7 @@ public class VoltDecimalHelper {
         }
         return bd;
     }
+
     public static void main(String[] args) {
 //        ByteBuffer buffer = ByteBuffer.allocate(16);
 //        BigDecimal bd = new BigDecimal("-23325.23425");

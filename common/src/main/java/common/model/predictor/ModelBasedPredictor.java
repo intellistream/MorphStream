@@ -15,6 +15,7 @@
  * permissions and limitations under the License.
  */
 package common.model.predictor;
+
 /**
  * Base class for all model based predictors
  *
@@ -22,5 +23,6 @@ package common.model.predictor;
  */
 public abstract class ModelBasedPredictor {
     public abstract Prediction execute(char[] entityID, char[] record);
+
     public abstract Prediction execute(String entityID, String record);
 }

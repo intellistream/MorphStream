@@ -1,15 +1,17 @@
 package faulttolerance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import components.TopologyComponent;
 import execution.ExecutionNode;
 import execution.runtime.tuple.impl.Marker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 
 import static common.CONTROL.enable_debug;
+
 /**
  * @param <E> actual contents
  */
@@ -19,11 +21,16 @@ public abstract class State<E extends Serializable> implements Serializable {
     public transient Writer writer;
     private transient HashMap<Integer, Boolean> source_ready;
     private transient HashMap<Integer, Boolean> consumer_ack;
+
     public State() {
     }
+
     public abstract void update(E value);
+
     public abstract E value();
+
     public abstract void clean();
+
     /**
      * have received all ack from consumers.
      *
@@ -32,6 +39,7 @@ public abstract class State<E extends Serializable> implements Serializable {
     boolean all_dst_ack() {
         return !(consumer_ack.containsValue(false));
     }
+
     public void source_state_ini(ExecutionNode executor) {
         if (source_ready == null) {
             source_ready = new HashMap<>();
@@ -46,6 +54,7 @@ public abstract class State<E extends Serializable> implements Serializable {
             }
         }
     }
+
     public void dst_state_init(ExecutionNode executor) {
         if (consumer_ack == null) {
             consumer_ack = new HashMap<>();
@@ -60,6 +69,7 @@ public abstract class State<E extends Serializable> implements Serializable {
             }
         }
     }
+
     /**
      * have received all tuples from source.
      *
@@ -68,6 +78,7 @@ public abstract class State<E extends Serializable> implements Serializable {
     protected boolean all_src_ready() {
         return !(source_ready.containsValue(false));
     }
+
     public boolean forward(int sourceId, ExecutionNode executor) {
         source_ready.put(sourceId, true);
         if (all_src_ready()) {
@@ -76,6 +87,7 @@ public abstract class State<E extends Serializable> implements Serializable {
         }
         return false;//not ready yet, do not forward the marker.
     }
+
     /**
      * 4. With compress and shared.
      *
@@ -103,6 +115,7 @@ public abstract class State<E extends Serializable> implements Serializable {
         }
         return false;//not ready yet, do not forward the marker.
     }
+
     /**
      * 3. With compress.
      *
@@ -130,6 +143,7 @@ public abstract class State<E extends Serializable> implements Serializable {
         }
         return false;//not ready yet, do not forward the marker.
     }
+
     /**
      * 2. No compress.
      *
@@ -157,6 +171,7 @@ public abstract class State<E extends Serializable> implements Serializable {
         }
         return false;//not ready yet, do not forward the marker.
     }
+
     /**
      * 1. Native.
      *
@@ -183,6 +198,7 @@ public abstract class State<E extends Serializable> implements Serializable {
         }
         return false;//not ready yet, do not forward the marker.
     }
+
     public synchronized void callback_bolt(int callee, Marker marker, ExecutionNode executor) {
         consumer_ack.put(callee, true);
         if (all_dst_ack()) {
@@ -192,6 +208,7 @@ public abstract class State<E extends Serializable> implements Serializable {
             executor.clean_state(marker);
         }
     }
+
     public synchronized void callback_spout(int callee, Marker marker, ExecutionNode executor) {
         consumer_ack.put(callee, true);
 //        executor.earlier_clean_state(marker);

@@ -17,6 +17,7 @@
  * #_
  */
 package common.collections;
+
 /**
  * Helper class to compute the current minute of given millisecond.
  *
@@ -26,6 +27,7 @@ package common.collections;
 public class Time {
     private Time() {
     }
+
     /**
      * Computes the 'minute number' if a time (in seconds).
      * <p/>
@@ -38,6 +40,7 @@ public class Time {
         assert (timestamp >= 0);
         return (short) ((timestamp / 60) + 1);
     }
+
     public static short getMinute(short timestamp) {
         assert (timestamp >= 0);
         return (short) ((timestamp / 60) + 1);

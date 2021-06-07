@@ -1,4 +1,5 @@
 package common.util.model.spam;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Input;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 /**
  * @author mayconbordin
  */
@@ -22,9 +24,11 @@ public class OfflineTraining {
     private static final Pattern wordregex = Pattern.compile("\\w+");
     private static Kryo kryoInstance;
     protected WordMap words;
+
     public OfflineTraining() {
         words = new WordMap();
     }
+
     private static Kryo getKryoInstance() {
         if (kryoInstance == null) {
             kryoInstance = new Kryo();
@@ -33,6 +37,7 @@ public class OfflineTraining {
         }
         return kryoInstance;
     }
+
     private static void printUsage() {
         System.out.print(
                 "Usage: java -cp <jar-file> OfflineTraining <command>\n"
@@ -41,6 +46,7 @@ public class OfflineTraining {
                         + "  check <wordmap-path>\n"
         );
     }
+
     public static void main(String[] args) throws IOException {
         System.out.println(Arrays.toString(args));
         if (args.length == 0) {
@@ -86,6 +92,7 @@ public class OfflineTraining {
             System.exit(1);
         }
     }
+
     public void train(String content, boolean isSpam) {
         String[] tokens = content.split(splitregex);
         for (String token : tokens) {
@@ -109,6 +116,7 @@ public class OfflineTraining {
             }
         }
     }
+
     public void finalizeTraining() {
         for (Word word : words.values()) {
             word.calcBadProb(words.getSpamTotal());
@@ -116,6 +124,7 @@ public class OfflineTraining {
             word.finalizeProb();
         }
     }
+
     public boolean saveTraining(String filePath) {
         try {
             Output output = new Output(new FileOutputStream(filePath));
@@ -129,6 +138,7 @@ public class OfflineTraining {
         }
         return false;
     }
+
     public boolean loadTraining(String filePath) {
         try {
             Input input = new Input(new FileInputStream(filePath));

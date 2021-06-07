@@ -1,4 +1,5 @@
 package common.model.log;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
 /**
  * Class that encapsulates the data and parsing logic for a partition log record (json) in a log file
  * Log record json structure sent from logstash:
@@ -31,16 +33,17 @@ public class LogEntry {
             "EEE, d MMM yyyy HH:mm:ss Z",
             "yyMMddHHmmssZ"
     };
-    private String source;
-    private String type;
     private final List<String> tags = new ArrayList<>();
     private final Map<String, String> fields = new HashMap<>();
+    private String source;
+    private String type;
     private Date timestamp;
     private String sourceHost;
     private String sourcePath;
     private String message = "";
     private boolean filter = false;
     private NotificationDetails notifyAbout = null;
+
     public LogEntry(JSONObject json) {
         source = (String) json.get("@source");
         timestamp = parseDate((String) json.get("@timestamp"));
@@ -53,6 +56,7 @@ public class LogEntry {
         JSONObject fieldsTmp = (JSONObject) json.get("@fields");
         fields.putAll(fieldsTmp);
     }
+
     /*
      * The date format can vary from log entry to entry, therefore parseDate() provides a best effort approach to
      * parsing the date
@@ -71,6 +75,7 @@ public class LogEntry {
         LOG.error("Could not parse timestamp for log");
         return null;
     }
+
     public JSONObject toJSON() {
         JSONObject json = new JSONObject();
         json.put("@source", source);
@@ -87,64 +92,84 @@ public class LogEntry {
         json.put("@fields", fieldTemp);
         return json;
     }
+
     public boolean isFilter() {
         return filter;
     }
+
     public void setFilter(boolean filter) {
         this.filter = filter;
     }
+
     public NotificationDetails getNotificationDetails() {
         return notifyAbout;
     }
+
     public void notifyAbout(NotificationDetails notifyAbout) {
         this.notifyAbout = notifyAbout;
     }
+
     public String getSource() {
         return source;
     }
+
     public void setSource(String source) {
         this.source = source;
     }
+
     public List<String> getTags() {
         return tags;
     }
+
     public Map<String, String> getFields() {
         return fields;
     }
+
     public void addField(String name, String value) {
         fields.put(name, value);
     }
+
     public void addTag(String tag) {
         tags.add(tag);
     }
+
     public Date getTimestamp() {
         return timestamp;
     }
+
     public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
     }
+
     public String getSourceHost() {
         return sourceHost;
     }
+
     public void setSourceHost(String sourceHost) {
         this.sourceHost = sourceHost;
     }
+
     public String getSourcePath() {
         //sourcePath.contains("");
         return sourcePath;
     }
+
     public void setSourcePath(String sourcePath) {
         this.sourcePath = sourcePath;
     }
+
     public String getMessage() {
         return message;
     }
+
     public String getType() {
         return type;
     }
+
     public void setType(String type) {
         this.type = type;
     }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -163,6 +188,7 @@ public class LogEntry {
         result = prime * result + ((type == null) ? 0 : type.hashCode());
         return result;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)

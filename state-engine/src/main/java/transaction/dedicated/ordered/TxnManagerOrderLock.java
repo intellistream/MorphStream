@@ -1,10 +1,11 @@
 package transaction.dedicated.ordered;
+
+import common.OrderLock;
+import common.meta.MetaTypes;
+import content.Content;
+import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import db.DatabaseException;
-import common.meta.MetaTypes;
-import common.OrderLock;
-import content.Content;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -19,6 +20,7 @@ import java.util.LinkedList;
 import static common.meta.MetaTypes.AccessType.*;
 import static common.meta.MetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
+
 /**
  * two-phase locking with no-sync_ratio strategy
  * If stream is in-ordered, this CC will already provide the desired property.
@@ -27,14 +29,17 @@ import static transaction.impl.TxnAccess.Access;
 public class TxnManagerOrderLock extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerOrderLock.class);
     final OrderLock orderLock;
+
     public TxnManagerOrderLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
         this.orderLock = OrderLock.getInstance();
 //		this.orderLock = orderLock;
     }
+
     public OrderLock getOrderLock() {
         return orderLock;
     }
+
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
             throws DatabaseException, InterruptedException {
@@ -62,6 +67,7 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
             return true;
         }
     }
+
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) throws InterruptedException {
         SchemaRecord s_record = t_record.record_;
@@ -135,6 +141,7 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
             return false;
         }
     }
+
     @Override
     public boolean CommitTransaction(TxnContext txn_context) {
 //		BEGIN_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
@@ -197,6 +204,7 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
 //		END_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
         return true;
     }
+
     @Override
     public void AbortTransaction() {
         // recover updated data and release locks.

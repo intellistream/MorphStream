@@ -1,11 +1,14 @@
 package common.sink;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Marker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MeasureSink_FT extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(MeasureSink_FT.class);
     private static final long serialVersionUID = 5481794109405775823L;
+
     @Override
     public void execute(JumboTuple input) {
         double results;

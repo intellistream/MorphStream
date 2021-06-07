@@ -19,6 +19,7 @@
 package common.datatype.util;
 
 import execution.runtime.tuple.impl.Fields;
+
 /**
  * PositionIdentifier represent an express way, lane, position, and direction.
  *
@@ -42,6 +43,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
      * Dir (0,1) indicates the direction (0 for Eastbound and 1 for Westbound).
      */
     private Short direction;
+
     /**
      * Returns the schema of a {@link PositionIdentifier}.
      *
@@ -51,6 +53,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
         return new Fields(LRTopologyControl.XWAY_FIELD_NAME, LRTopologyControl.LANE_FIELD_NAME,
                 LRTopologyControl.POSITION_FIELD_NAME, LRTopologyControl.DIRECTION_FIELD_NAME);
     }
+
     /**
      * Returns the express way ID.
      *
@@ -60,6 +63,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
     public Integer getXWay() {
         return this.xway;
     }
+
     /**
      * Returns the lane ID.
      *
@@ -69,6 +73,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
     public Short getLane() {
         return this.lane;
     }
+
     /**
      * Return the position.
      *
@@ -78,6 +83,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
     public Integer getPosition() {
         return this.position;
     }
+
     /**
      * Returns the direction.
      *
@@ -87,6 +93,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
     public Short getDirection() {
         return this.direction;
     }
+
     /**
      * Set express way ID, lane, position, and direction from the given d_record.
      *
@@ -100,6 +107,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
         this.direction = record.getDirection();
         return this;
     }
+
     /**
      * Return a copy of this {@link PositionIdentifier}.
      *
@@ -113,6 +121,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
         pid.direction = this.direction;
         return pid;
     }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -123,6 +132,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
         result = prime * result + ((this.xway == null) ? 0 : this.xway.hashCode());
         return result;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -162,6 +172,7 @@ public final class PositionIdentifier implements IPositionIdentifier {
             return this.xway.equals(other.xway);
         }
     }
+
     @Override
     public String toString() {
         return "x-way: " + this.xway + " lane: " + this.lane + " direction: " + this.direction + " position: "

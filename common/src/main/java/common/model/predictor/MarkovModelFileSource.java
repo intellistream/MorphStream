@@ -1,17 +1,21 @@
 package common.model.predictor;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
 /**
  * @author maycon
  */
 public class MarkovModelFileSource implements IMarkovModelSource {
     private final Charset charset;
+
     public MarkovModelFileSource() {
         charset = Charset.defaultCharset();
     }
+
     @Override
     public String getModel(String key) {
         byte[] encoded;

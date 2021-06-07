@@ -1,16 +1,18 @@
 package common.bolts.transactional.gs;
+
 import common.param.mb.MicroEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import transaction.dedicated.ordered.TxnManagerOrderedTo;
 
 import static common.CONTROL.combo_bid_size;
 import static profiler.MeasureTools.*;
+
 /**
  * timestamp ordering.
  * resulting in deadlock under the given application assumption.
@@ -18,10 +20,12 @@ import static profiler.MeasureTools.*;
 public class GSBolt_ots extends GSBolt {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_ots.class);
     private static final long serialVersionUID = -5968750340131744744L;
+
     public GSBolt_ots(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
         state = new ValueState();
     }
+
     protected void write_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
         boolean success = write_request(event, txn_context[(int) (i - _bid)]);
@@ -42,6 +46,7 @@ public class GSBolt_ots extends GSBolt {
             transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);//always success..
         }
     }
+
     protected void read_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         boolean success = read_request(event, txn_context[(int) (i - _bid)]);
         if (success) {
@@ -60,6 +65,7 @@ public class GSBolt_ots extends GSBolt {
             transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);//always success..
         }
     }
+
     @Override
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
@@ -72,11 +78,13 @@ public class GSBolt_ots extends GSBolt {
             }
         }
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerOrderedTo(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException {
         PRE_EXECUTE(in);

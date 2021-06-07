@@ -7,11 +7,8 @@ import java.util.Collection;
  * The customized execution scheduler abstraction.
  */
 public interface IScheduler {
-    void submitOperationChains(int threadId, Collection<OperationChain> ocs);
-    OperationChain nextOperationChain(int threadId);
-    boolean finishedScheduling(int threadId);
-    void reSchedule(int threadId, OperationChain oc);
-    boolean isReSchedulingEnabled();
+    void SUBMIT(int threadId, Collection<OperationChain> ocs);
+    OperationChain NEXT(int threadId);
     void reset();
 }
 

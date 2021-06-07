@@ -1,4 +1,5 @@
 package common.util.hash;
+
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -6,6 +7,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.BitSet;
 import java.util.Collection;
+
 /**
  * Implementation of a Bloom-filter, as described here:
  * http://en.wikipedia.org/wiki/Bloom_filter
@@ -26,6 +28,7 @@ public class BloomFilter<E> implements Serializable {
     static final String hashName = "MD5"; // MD5 gives good enough accuracy in most circumstances. Change to SHA1 if it's needed
     static final MessageDigest digestFunction;
     private static final long serialVersionUID = 14L;
+
     static { // The digest method is reused between instances
         MessageDigest tmp;
         try {
@@ -35,13 +38,15 @@ public class BloomFilter<E> implements Serializable {
         }
         digestFunction = tmp;
     }
-    private BitSet bitset;
+
     private final int bitSetSize;
     private final double bitsPerElement;
     private final int expectedNumberOfFilterElements; // expected (maximum) number of elements to be added
-    private int numberOfAddedElements; // number of elements actually added to the Bloom filter
     private final int k; // number of hash functions
+    private BitSet bitset;
+    private int numberOfAddedElements; // number of elements actually added to the Bloom filter
     private int numNonZero;
+
     /**
      * Constructs an empty Bloom filter. The total length of the Bloom filter will be
      * c*n.
@@ -59,6 +64,7 @@ public class BloomFilter<E> implements Serializable {
         this.bitset = new BitSet(bitSetSize);
         numNonZero = 0;
     }
+
     /**
      * Constructs an empty Bloom filter. The optimal number of hash functions (k) is estimated from the total size of the Bloom
      * and the number of expected elements.
@@ -71,6 +77,7 @@ public class BloomFilter<E> implements Serializable {
                 expectedNumberOElements,
                 (int) Math.round((bitSetSize / (double) expectedNumberOElements) * Math.log(2.0)));
     }
+
     /**
      * Constructs an empty Bloom filter with a given false positive probability. The number of bits per
      * element and the number of hash functions is estimated
@@ -84,6 +91,7 @@ public class BloomFilter<E> implements Serializable {
                 expectedNumberOfElements,
                 (int) Math.ceil(-(Math.log(falsePositiveProbability) / Math.log(2)))); // k = ceil(-log_2(false prob.))
     }
+
     /**
      * Construct a new Bloom filter based on existing Bloom filter data.
      *
@@ -97,6 +105,7 @@ public class BloomFilter<E> implements Serializable {
         this.bitset = filterData;
         this.numberOfAddedElements = actualNumberOfFilterElements;
     }
+
     /**
      * Generates a digest based on the contents of a String.
      *
@@ -107,6 +116,7 @@ public class BloomFilter<E> implements Serializable {
     public static int createHash(String val, Charset charset) {
         return createHash(val.getBytes(charset));
     }
+
     /**
      * Generates a digest based on the contents of a String.
      *
@@ -116,6 +126,7 @@ public class BloomFilter<E> implements Serializable {
     public static int createHash(String val) {
         return createHash(val, charset);
     }
+
     /**
      * Generates a digest based on the contents of an array of bytes.
      *
@@ -125,6 +136,7 @@ public class BloomFilter<E> implements Serializable {
     public static int createHash(byte[] data) {
         return createHashes(data, 1)[0];
     }
+
     /**
      * Generates digests based on the contents of an array of bytes and splits the result into 4-byte int's and Store them in an array. The
      * digest function is called until the required number of int's are produced. For each call to digest a salt
@@ -157,6 +169,7 @@ public class BloomFilter<E> implements Serializable {
         }
         return result;
     }
+
     /**
      * Compares the contents of two instances to see if they are equal.
      *
@@ -180,6 +193,7 @@ public class BloomFilter<E> implements Serializable {
         }
         return this.bitSetSize == other.bitSetSize && !(this.bitset != other.bitset && (this.bitset == null || !this.bitset.equals(other.bitset)));
     }
+
     /**
      * Calculates a hash code for this class.
      *
@@ -194,6 +208,7 @@ public class BloomFilter<E> implements Serializable {
         hash = 61 * hash + this.k;
         return hash;
     }
+
     /**
      * Calculates the expected probability of false positives based on
      * the number of expected filter elements and the size of the Bloom filter.
@@ -208,6 +223,7 @@ public class BloomFilter<E> implements Serializable {
     public double expectedFalsePositiveProbability() {
         return getFalsePositiveProbability(expectedNumberOfFilterElements);
     }
+
     /**
      * Calculate the probability of a false positive given the specified
      * number of inserted elements.
@@ -220,6 +236,7 @@ public class BloomFilter<E> implements Serializable {
         return Math.pow((1 - Math.exp(-k * numberOfElements
                 / (double) bitSetSize)), k);
     }
+
     /**
      * Get the current probability of a false positive. The probability is calculated from
      * the size of the Bloom filter and the current number of elements added to it.
@@ -229,6 +246,7 @@ public class BloomFilter<E> implements Serializable {
     public double getFalsePositiveProbability() {
         return getFalsePositiveProbability(numberOfAddedElements);
     }
+
     /**
      * Returns the value chosen for K.<br />
      * <br />
@@ -240,6 +258,7 @@ public class BloomFilter<E> implements Serializable {
     public int getK() {
         return k;
     }
+
     /**
      * Sets all bits to false in the Bloom filter.
      */
@@ -248,6 +267,7 @@ public class BloomFilter<E> implements Serializable {
         numberOfAddedElements = 0;
         numNonZero = 0;
     }
+
     /**
      * Adds an object to the Bloom filter. The output from the object's
      * toString() method is used as input to the hash functions.
@@ -257,6 +277,7 @@ public class BloomFilter<E> implements Serializable {
     public void add(E element) {
         add(element.toString().getBytes(charset));
     }
+
     /**
      * Adds an array of bytes to the Bloom filter.
      *
@@ -270,6 +291,7 @@ public class BloomFilter<E> implements Serializable {
         }
         numberOfAddedElements++;
     }
+
     /**
      * Get the percentage of buckets that have a value different than zero, i.e.
      * the percentage of buckets not empty.
@@ -279,9 +301,11 @@ public class BloomFilter<E> implements Serializable {
     public double getPercentNonZero() {
         return (double) numNonZero / (double) bitSetSize;
     }
+
     public int getNumNonZero() {
         return numNonZero;
     }
+
     /**
      * Adds all elements from a Collection to the Bloom filter.
      *
@@ -291,9 +315,11 @@ public class BloomFilter<E> implements Serializable {
         for (E element : c)
             add(element);
     }
+
     public boolean membershipTest(E element) {
         return contains(element);
     }
+
     /**
      * Returns true if the element could have been inserted into the Bloom filter.
      * Use getFalsePositiveProbability() to calculate the probability of this
@@ -305,6 +331,7 @@ public class BloomFilter<E> implements Serializable {
     public boolean contains(E element) {
         return contains(element.toString().getBytes(charset));
     }
+
     /**
      * Returns true if the array of bytes could have been inserted into the Bloom filter.
      * Use getFalsePositiveProbability() to calculate the probability of this
@@ -322,6 +349,7 @@ public class BloomFilter<E> implements Serializable {
         }
         return true;
     }
+
     /**
      * Returns true if all the elements of a Collection could have been inserted
      * into the Bloom filter. Use getFalsePositiveProbability() to calculate the
@@ -336,6 +364,7 @@ public class BloomFilter<E> implements Serializable {
                 return false;
         return true;
     }
+
     /**
      * Read a partition bit from the Bloom filter.
      *
@@ -345,6 +374,7 @@ public class BloomFilter<E> implements Serializable {
     public boolean getBit(int bit) {
         return bitset.get(bit);
     }
+
     /**
      * Set a partition bit in the Bloom filter.
      *
@@ -354,6 +384,7 @@ public class BloomFilter<E> implements Serializable {
     public void setBit(int bit, boolean value) {
         bitset.set(bit, value);
     }
+
     /**
      * Return the bit set used to Store the Bloom filter.
      *
@@ -362,6 +393,7 @@ public class BloomFilter<E> implements Serializable {
     public BitSet getBitSet() {
         return bitset;
     }
+
     /**
      * Returns the number of bits in the Bloom filter. Use count() to retrieve
      * the number of inserted elements.
@@ -371,6 +403,7 @@ public class BloomFilter<E> implements Serializable {
     public int size() {
         return this.bitSetSize;
     }
+
     /**
      * Returns the number of elements added to the Bloom filter after it
      * was constructed or after clean() was called.
@@ -380,6 +413,7 @@ public class BloomFilter<E> implements Serializable {
     public int count() {
         return this.numberOfAddedElements;
     }
+
     /**
      * Returns the expected number of elements to be inserted into the filter.
      * This value is the same value as the one passed to the constructor.
@@ -389,6 +423,7 @@ public class BloomFilter<E> implements Serializable {
     public int getExpectedNumberOfElements() {
         return expectedNumberOfFilterElements;
     }
+
     /**
      * Get expected number of bits per element when the Bloom filter is full. This value is set by the constructor
      * when the Bloom filter is created. See also getBitsPerElement().
@@ -398,6 +433,7 @@ public class BloomFilter<E> implements Serializable {
     public double getExpectedBitsPerElement() {
         return this.bitsPerElement;
     }
+
     /**
      * Get actual number of bits per element based on the number of elements that have currently been inserted and the length
      * of the Bloom filter. See also getExpectedBitsPerElement().

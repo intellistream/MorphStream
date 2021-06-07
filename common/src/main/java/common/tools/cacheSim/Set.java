@@ -1,7 +1,9 @@
 package common.tools.cacheSim;
+
 import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.Queue;
+
 /**
  * Class to simulate a set in a cache
  *
@@ -10,6 +12,7 @@ import java.util.Queue;
 public class Set {
     private final Queue<Integer> blocks; //Data contained in the set
     private final int setLength; //Set associativity
+
     /**
      * Constructor
      */
@@ -17,6 +20,7 @@ public class Set {
         this.setLength = setLength;
         blocks = new ArrayDeque<>();
     }
+
     /**
      * Check if the block is already there and placing it if it is not
      */
@@ -30,6 +34,7 @@ public class Set {
         //System.out.println(blockAddress + ": miss");
         return false; //It's a miss
     }
+
     /**
      * Method to move address to the back of the queue
      */
@@ -44,6 +49,7 @@ public class Set {
         }
         blocks.add(mostRecent); //Re-adding it to the back
     }
+
     /**
      * Algorithm to remove the least recently used address and add a new one
      */
@@ -54,6 +60,7 @@ public class Set {
         }
         blocks.add(address); //Add new one to the back
     }
+
     public String toString() {
         StringBuilder str = new StringBuilder("[");
         for (Integer block : blocks) { //Finding the matching address

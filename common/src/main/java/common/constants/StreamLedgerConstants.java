@@ -1,12 +1,15 @@
 package common.constants;
+
 public interface StreamLedgerConstants extends BaseConstants {
     String PREFIX = "sl";
+
     interface Field {
         String TIME = "time";
         String TEXT = "text";
         String STATE = "state";
         String FLAG = "flag";
     }
+
     interface Conf extends BaseConf {
         String DEG_THREADS = "deposit.generator.threads";
         String TEG_THREADS = "txn.generator.threads";
@@ -14,6 +17,7 @@ public interface StreamLedgerConstants extends BaseConstants {
         String TT_THREADS = "txn.transaction.threads";
         String SL_THREADS = "ct.transaction.threads";
     }
+
     interface Component extends BaseComponent {
         String DEG = "depositGenerator";
         String TEG = "txnGenerator";
@@ -21,6 +25,7 @@ public interface StreamLedgerConstants extends BaseConstants {
         String TT = "transferTxn";
         String SL = "CTBolt";
     }
+
     interface Constant {
         int NUM_ACCOUNTS = 100_000;
         int NUM_BOOK_ENTRIES = 100_000;

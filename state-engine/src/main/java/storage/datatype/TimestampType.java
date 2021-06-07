@@ -15,14 +15,17 @@
  * along with VoltDB.  If not, see <http://www.gnu.org/licenses/>.
  */
 package storage.datatype;
+
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
 public class TimestampType implements Comparable<TimestampType>, Serializable {
     public static final String STRING_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
     private static final long serialVersionUID = 35L;
     private final Date m_date;     // stores milliseconds from epoch.
     private final short m_usecs;   // stores microsecond within date's millisecond.
+
     /**
      * Create a TimestampType from microseconds from epoch.
      *
@@ -33,6 +36,7 @@ public class TimestampType implements Comparable<TimestampType>, Serializable {
         long millis = (timestamp - m_usecs) / 1000;
         m_date = new Date(millis);
     }
+
     /**
      * Create a new TimestampType from a given date object
      *
@@ -42,12 +46,14 @@ public class TimestampType implements Comparable<TimestampType>, Serializable {
         m_usecs = 0;
         m_date = date;
     }
+
     /**
      * Create a TimestampType instance for the current time.
      */
     public TimestampType() {
         this(new Date());
     }
+
     /**
      * Retrieve a copy of the approximate Java date.
      * The returned date is a copy; this object will not be affected by
@@ -58,6 +64,7 @@ public class TimestampType implements Comparable<TimestampType>, Serializable {
     public Date asApproximateJavaDate() {
         return (Date) m_date.clone();
     }
+
     /**
      * Read the microsecond in time stored by this timestamp.
      *
@@ -67,6 +74,7 @@ public class TimestampType implements Comparable<TimestampType>, Serializable {
         long millis = m_date.getTime();
         return millis * 1000 + m_usecs;
     }
+
     /**
      * Read the milliseconds in time stored by this timestamp.
      *
@@ -75,6 +83,7 @@ public class TimestampType implements Comparable<TimestampType>, Serializable {
     public long getMSTime() {
         return (m_date.getTime());
     }
+
     /**
      * Get the microsecond portion of this timestamp
      *
@@ -83,6 +92,7 @@ public class TimestampType implements Comparable<TimestampType>, Serializable {
     public short getUSec() {
         return m_usecs;
     }
+
     /**
      * Equality.
      *
@@ -96,6 +106,7 @@ public class TimestampType implements Comparable<TimestampType>, Serializable {
         TimestampType ts = (TimestampType) o;
         return ts.m_date.equals(this.m_date) && ts.m_usecs == this.m_usecs;
     }
+
     /**
      * toString for debugging and printing VoltTables
      */
@@ -105,6 +116,7 @@ public class TimestampType implements Comparable<TimestampType>, Serializable {
         String format = sdf.format(m_date);
         return format + "." + m_usecs;
     }
+
     /**
      * Hashcode with the same uniqueness as a Java Date.
      */
@@ -113,6 +125,7 @@ public class TimestampType implements Comparable<TimestampType>, Serializable {
         long usec = this.getTime();
         return (int) usec ^ (int) (usec >> 32);
     }
+
     /**
      * CompareTo - to mimic Java Date
      */

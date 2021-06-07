@@ -1,19 +1,22 @@
 package common.tools.cacheSim;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
+
 /**
  * Created by szhang026 on 4/23/2016.
  */
 public class cacheHitSimulator_PI_generic {
+    private static final boolean spilit_method = true;
     static String path = "C:\\Users\\szhang026\\Documents\\Profile-experiments\\compatibility-tracing\\log\\genlib";
     private static int start = 0;
     private static int cnt = 100;
     private static int app = 4;
-    private static final boolean spilit_method = true;
     private static int method = 0;//method 0: system method+user method. 1: user method only.
+
     private static LinkedList<record> clean_InTrace_results(int app) throws IOException {
         Scanner sc = null;
         switch (app) {
@@ -75,6 +78,7 @@ public class cacheHitSimulator_PI_generic {
         list.removeFirst();
         return list;
     }
+
     public static void main(String[] arg) throws IOException {
         if (arg.length == 4) {
             start = Integer.parseInt(arg[0]);
@@ -136,6 +140,7 @@ public class cacheHitSimulator_PI_generic {
         LinkedList<String> top_function = new LinkedList<>(Arrays.asList(arr));
         calculate_distribution(event_trace, top_function, Instruction_per_function, app, start, cnt);
     }
+
     private static void calculate_distribution(LinkedList<String> event_trace, final LinkedList<String> top_function
             , final Map<String, Integer> instruction_per_function, int app, int start, int cnt) {
         boolean[] first = new boolean[top_function.size()];
@@ -194,6 +199,7 @@ public class cacheHitSimulator_PI_generic {
         System.out.println("Finished clean");
         System.exit(0);
     }
+
     public static <K, V extends Comparable<? super V>> Map<K, V>
     sortByValue(Map<K, V> map) {
         List<Map.Entry<K, V>> list =
@@ -206,6 +212,7 @@ public class cacheHitSimulator_PI_generic {
         }
         return result;
     }
+
     private static class record {
         /*
         * Column Labels:
@@ -218,6 +225,7 @@ public class cacheHitSimulator_PI_generic {
         public int EN_EX;//0 means enter, 1 means exit
         public String NAME_M;
         public String NAME_T;
+
         public record(int read_0, String read_1, String read_2, String read_3) {
             PTT_INSTS = read_0;
             if (read_1.equalsIgnoreCase("<")) {

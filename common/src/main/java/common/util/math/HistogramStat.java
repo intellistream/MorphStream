@@ -15,9 +15,11 @@
  * permissions and limitations under the License.
  */
 package common.util.math;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
 /**
  * @author pranab
  */
@@ -26,6 +28,7 @@ public class HistogramStat {
     private final Map<Integer, Bin> binMap = new HashMap<>();
     private int count;
     private double sum = 0.0;
+
     /**
      * @param binWidth
      */
@@ -33,12 +36,14 @@ public class HistogramStat {
         super();
         this.binWidth = binWidth;
     }
+
     /**
      * @param value
      */
     public void add(int value) {
         add(value, 1);
     }
+
     /**
      * @param value
      * @param count
@@ -50,6 +55,7 @@ public class HistogramStat {
         this.count += count;
         sum += value * count;
     }
+
     /**
      * @param confidenceLimitPercent
      * @return
@@ -88,6 +94,7 @@ public class HistogramStat {
         confidenceBounds[1] = (int) ((((double) (meanIndex + offset)) + avBinWidth) * binWidth);
         return confidenceBounds;
     }
+
     /**
      * @return
      */
@@ -95,12 +102,14 @@ public class HistogramStat {
         int mean = (int) (sum / count);
         return mean;
     }
+
     /**
      * @return
      */
     public int getCount() {
         return count;
     }
+
     /**
      * @return
      */
@@ -114,31 +123,38 @@ public class HistogramStat {
         Arrays.sort(bins);
         return bins;
     }
+
     /**
      * @author pranab
      */
     private static class Bin implements Comparable<Bin> {
         private final int index;
         private int count;
+
         public Bin(int index) {
             super();
             this.index = index;
         }
+
         public Bin(int index, int count) {
             super();
             this.index = index;
             this.count = count;
         }
+
         public void addCount(int count) {
             this.count += count;
         }
+
         @Override
         public int compareTo(Bin that) {
             return this.index < that.index ? -1 : (this.index > that.index ? 1 : 0);
         }
+
         public int getIndex() {
             return index;
         }
+
         public int getCount() {
             return count;
         }

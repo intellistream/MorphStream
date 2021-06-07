@@ -1,6 +1,8 @@
 package common.platform;
+
 public class HP_Machine extends Platform {
     private static final long serialVersionUID = 5838346702608392798L;
+
     /**
      * ---latency---
      */

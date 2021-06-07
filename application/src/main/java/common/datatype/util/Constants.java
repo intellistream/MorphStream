@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype.util;
+
 /**
  * Constants related to the benchmark Constraints. (See page 483 "Linear Road: A Streaming Data Management Benchmark")
  *
@@ -71,6 +72,7 @@ public final class Constants {
      */
     private final static int MAX_POSITION = 527999;
     public final static int NUMBER_OF_POSITIONS = MAX_POSITION + 1;
+
     private Constants() {
     }
 }

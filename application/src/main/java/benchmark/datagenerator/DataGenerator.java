@@ -5,8 +5,13 @@ import benchmark.datagenerator.output.IOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Random;
 
 /**
  * Data generator for benchmarks
@@ -54,7 +59,7 @@ public class DataGenerator {
         this.mAssetLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mOcLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mPickAccount = new boolean[dataConfig.dependenciesDistributionForLevels.length];
-        this.mPartitionOffset = (mTotalTuplesToGenerate * 5)/dataConfig.totalThreads;
+        this.mPartitionOffset = (mTotalTuplesToGenerate * 5) / dataConfig.totalThreads;
     }
 
     public DataGeneratorConfig getDataConfig() {
@@ -72,8 +77,8 @@ public class DataGenerator {
 
         mDataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
 
-         LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
-        for (int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate/10; tupleNumber++) {
+        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
+        for (int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate / 10; tupleNumber++) {
             totalTimeStart = System.nanoTime();
             GenerateTuple();
             totalTime += System.nanoTime() - totalTimeStart;
@@ -82,12 +87,12 @@ public class DataGenerator {
             if (mTransactionId % 100000 == 0) {
                 float selectTuplesPer = (selectTuples * 1.0f) / (totalTime * 1.0f) * 100.0f;
                 float updateDependencyPer = (updateDependency * 1.0f) / (totalTime * 1.0f) * 100.0f;
-                 LOG.info(String.format("Dependency Distribution...select tuple time: %.3f%%, update dependency time: %.3f%%", selectTuplesPer, updateDependencyPer));
+                LOG.info(String.format("Dependency Distribution...select tuple time: %.3f%%, update dependency time: %.3f%%", selectTuplesPer, updateDependencyPer));
 
                 for (int lop = 0; lop < mOcLevelsDistribution.length; lop++) {
                     System.out.print(lop + ": " + mOcLevelsDistribution[lop] + "; ");
                 }
-                 LOG.info(" ");
+                LOG.info(" ");
             }
         }
         dumpGeneratedDataToFile();
@@ -135,18 +140,18 @@ public class DataGenerator {
                 srcAccOC = getRandomExistingOC(selectedLevel, mAccountOperationChainsByLevel);
                 if (srcAccOC == null)
                     srcAccOC = getNewAccountOC();
-                mPId+=1;
-                mPId = mPId%dataConfig.totalThreads;
+                mPId += 1;
+                mPId = mPId % dataConfig.totalThreads;
 
                 srcAstOC = getNewAssetOC();
-                mPId+=1;
-                mPId = mPId%dataConfig.totalThreads;
+                mPId += 1;
+                mPId = mPId % dataConfig.totalThreads;
 
                 dstAccOC = getRandomExistingDestOC(mAccountOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAccOC == null)
                     dstAccOC = getNewAccountOC();
-                mPId+=1;
-                mPId = mPId%dataConfig.totalThreads;
+                mPId += 1;
+                mPId = mPId % dataConfig.totalThreads;
 
                 dstAstOC = getRandomExistingDestOC(mAssetsOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAstOC == null)
@@ -155,20 +160,20 @@ public class DataGenerator {
             } else {
 
                 srcAccOC = getNewAccountOC();
-                mPId+=1;
-                mPId = mPId%dataConfig.totalThreads;
+                mPId += 1;
+                mPId = mPId % dataConfig.totalThreads;
 
                 srcAstOC = getRandomExistingOC(selectedLevel, mAssetsOperationChainsByLevel);
                 if (srcAstOC == null)
                     srcAstOC = getNewAssetOC();
-                mPId+=1;
-                mPId = mPId%dataConfig.totalThreads;
+                mPId += 1;
+                mPId = mPId % dataConfig.totalThreads;
 
                 dstAccOC = getRandomExistingDestOC(mAccountOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAccOC == null)
                     dstAccOC = getNewAccountOC();
-                mPId+=1;
-                mPId = mPId%dataConfig.totalThreads;
+                mPId += 1;
+                mPId = mPId % dataConfig.totalThreads;
 
                 dstAstOC = getRandomExistingDestOC(mAssetsOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAstOC == null)
@@ -255,7 +260,7 @@ public class DataGenerator {
         mDataTransactions.add(t);
         mTransactionId++;
         if (mTransactionId % 100000 == 0)
-             LOG.info(String.valueOf(mTransactionId));
+            LOG.info(String.valueOf(mTransactionId));
     }
 
     private void UpdateStats() {
@@ -276,6 +281,7 @@ public class DataGenerator {
             mPickAccount[lop] = mAccountLevelsDistribution[lop] < mAssetLevelsDistribution[lop];
         }
     }
+
     private DataOperationChain getRandomExistingDestOC(HashMap<Integer, ArrayList<DataOperationChain>> allOcs, DataOperationChain srcOC, DataOperationChain srcAst) {
 
         ArrayList<DataOperationChain> independentOcs = allOcs.get(0);
@@ -290,7 +296,7 @@ public class DataGenerator {
                     oc != srcAst &&
                     !srcOC.doesDependsUpon(oc) &&
                     !srcAst.doesDependsUpon(oc)
-                    && (oc.getId()%mPartitionOffset)==mPId)
+                    && (oc.getId() % mPartitionOffset) == mPId)
                 break;
             if (independentOcs.size() - lop > 100) {
                 oc = null;
@@ -301,6 +307,7 @@ public class DataGenerator {
         return oc;
 
     }
+
     private DataOperationChain getRandomExistingOC(int selectionLevel, HashMap<Integer, ArrayList<DataOperationChain>> ocs) {
 
         ArrayList<DataOperationChain> selectedLevelFilteredOCs = null;
@@ -313,15 +320,16 @@ public class DataGenerator {
         } else {
             oc = null;
         }
-        if(oc!=null  && (oc.getId()%mPartitionOffset)==mPId)
+        if (oc != null && (oc.getId() % mPartitionOffset) == mPId)
             oc = null;
         return oc;
     }
+
     private void dumpGeneratedDataToFile() {
 
         File file = new File(dataConfig.rootPath);
         if (file.exists()) {
-             LOG.info("Data already exists.. skipping data generation...");
+            LOG.info("Data already exists.. skipping data generation...");
             return;
         }
         file.mkdirs();
@@ -340,13 +348,13 @@ public class DataGenerator {
             e.printStackTrace();
         }
 
-         LOG.info(String.format("Dumping transactions..."));
+        LOG.info(String.format("Dumping transactions..."));
         mDataOutputHandler.sinkTransactions(mDataTransactions);
 //         LOG.info(String.format("Dumping Dependency Edges..."));
 //        mDataOutputHandler.sinkDependenciesEdges(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
-         LOG.info(String.format("Dumping Dependency Vertices..."));
+        LOG.info(String.format("Dumping Dependency Vertices..."));
         mDataOutputHandler.sinkDependenciesVertices(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
-         LOG.info(String.format("Dumping Dependency Vertices ids range..."));
+        LOG.info(String.format("Dumping Dependency Vertices ids range..."));
         mDataOutputHandler.sinkDependenciesVerticesIdsRange(totalAccountRecords, totalAssetRecords);
     }
 
@@ -357,23 +365,23 @@ public class DataGenerator {
         int range = (int) mPartitionOffset;
         if (dataConfig.idGenType.equals("uniform")) {
             id = mRandomGeneratorForAccIds.nextInt(range);
-            id += mPartitionOffset*mPId;
+            id += mPartitionOffset * mPId;
             id *= 10;
             totalAccountRecords++;
             while (mGeneratedAccountIds.containsKey(id)) {
                 id = mRandomGeneratorForAccIds.nextInt(range);
-                id += mPartitionOffset*mPId;
+                id += mPartitionOffset * mPId;
                 id *= 10;
                 totalAccountRecords++;
             }
         } else if (dataConfig.idGenType.equals("normal")) {
             id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
-            id += mPartitionOffset*mPId;
+            id += mPartitionOffset * mPId;
             id *= 10;
             totalAccountRecords++;
             while (mGeneratedAccountIds.containsKey(id)) {
                 id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
-                id += mPartitionOffset*mPId;
+                id += mPartitionOffset * mPId;
                 id *= 10;
                 totalAccountRecords++;
             }
@@ -392,23 +400,23 @@ public class DataGenerator {
         int range = (int) mPartitionOffset;
         if (dataConfig.idGenType.equals("uniform")) {
             id = mRandomGeneratorForAstIds.nextInt(range);
-            id += mPartitionOffset*mPId;
+            id += mPartitionOffset * mPId;
             id *= 10;
             totalAssetRecords++;
             while (mGeneratedAssetIds.containsKey(id)) {
                 id = mRandomGeneratorForAstIds.nextInt(range);
-                id += mPartitionOffset*mPId;
+                id += mPartitionOffset * mPId;
                 id *= 10;
                 totalAssetRecords++;
             }
         } else if (dataConfig.idGenType.equals("normal")) {
             id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
-            id += mPartitionOffset*mPId;
+            id += mPartitionOffset * mPId;
             id *= 10;
             totalAssetRecords++;
             while (mGeneratedAssetIds.containsKey(id)) {
                 id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
-                id += mPartitionOffset*mPId;
+                id += mPartitionOffset * mPId;
                 id *= 10;
                 totalAssetRecords++;
             }

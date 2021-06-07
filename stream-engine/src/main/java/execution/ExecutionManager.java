@@ -1,4 +1,5 @@
 package execution;
+
 import common.Clock;
 import common.collections.Configuration;
 import components.context.TopologyContext;
@@ -21,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static common.CONTROL.enable_shared_state;
 import static common.Constants.*;
+
 /**
  * Created by shuhaozhang on 19/8/16.
  */
@@ -30,8 +32,9 @@ public class ExecutionManager {
     public final HashMap<Integer, executorThread> ThreadMap = new HashMap<>();
     public final AffinityController AC;
     private final OptimizationManager optimizationManager;
-    TxnProcessingEngine tp_engine;
     private final ExecutionGraph g;
+    TxnProcessingEngine tp_engine;
+
     public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager) {
         this.g = g;
         AC = new AffinityController(conf);
@@ -99,7 +102,7 @@ public class ExecutionManager {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException ex) {
-                            ex.printStackTrace();
+                        ex.printStackTrace();
                     }
                 }
             }
@@ -107,6 +110,7 @@ public class ExecutionManager {
         long end = System.currentTimeMillis();
         LOG.info("It takes :" + (end - start) / 1000 + " seconds to finish launch the operators.");
     }
+
     private executorThread launchSpout_InCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                               int node, long[] cores, CountDownLatch latch) {
 
@@ -120,6 +124,7 @@ public class ExecutionManager {
         ThreadMap.putIfAbsent(e.getExecutorID(), st);
         return st;
     }
+
     private executorThread launchBolt_InCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                              int node, long[] cores, CountDownLatch latch) {
         boltThread wt;
@@ -132,6 +137,7 @@ public class ExecutionManager {
         ThreadMap.putIfAbsent(e.getExecutorID(), wt);
         return wt;
     }
+
     private executorThread launchSpout_SingleCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                                   int node, CountDownLatch latch) {
         LOG.info("Launch" + e.getOP() + " on node:" + node);
@@ -144,6 +150,7 @@ public class ExecutionManager {
 
         return launchSpout_InCore(e, context, conf, node, cpu, latch);
     }
+
     private executorThread launchBolt_SingleCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                                  int node, CountDownLatch latch) {
         LOG.info("Launch bolt:" + e.getOP() + " on node:" + node);
@@ -155,6 +162,7 @@ public class ExecutionManager {
         }
         return launchBolt_InCore(e, context, conf, node, cpu, latch);
     }
+
     /**
      * stop EM
      * It stops all execution threads as well.
@@ -168,6 +176,7 @@ public class ExecutionManager {
         if (enable_shared_state && tp_engine != null)
             tp_engine.engine_shutdown();
     }
+
     public executorThread getSinkThread() {
         return ThreadMap.get(g.getSinkThread());
     }

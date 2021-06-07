@@ -17,11 +17,13 @@
  * #_
  */
 package common.datatype.internal;
+
 import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
 import common.util.datatypes.StreamValues;
 import execution.runtime.tuple.impl.Fields;
+
 /**
  * {@link AvgSpeedTuple} represents an intermediate result tuple; the average speed of all vehicle in a segment within a
  * 'minute number' time frame (see {@link Time#getMinute(long)}).<br />
@@ -60,8 +62,10 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
      */
     private final static int AVGS_IDX = 4;
     private static final long serialVersionUID = 2759896465050962310L;
+
     public AvgSpeedTuple() {
     }
+
     /**
      * Instantiates a new {@link AvgSpeedTuple} for the given attributes.
      *
@@ -83,6 +87,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
         super.add(DIR_IDX, diretion);
         super.add(AVGS_IDX, avgSpeed);
     }
+
     /**
      * Returns the schema of a {@link AvgSpeedTuple}..
      *
@@ -93,6 +98,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
                 LRTopologyControl.SEGMENT_FIELD_NAME, LRTopologyControl.DIRECTION_FIELD_NAME,
                 LRTopologyControl.AVERAGE_SPEED_FIELD_NAME);
     }
+
     /**
      * Returns the 'minute number' of this {@link AvgSpeedTuple}.
      *
@@ -101,6 +107,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
     public final Short getMinuteNumber() {
         return (Short) super.get(MINUTE_IDX);
     }
+
     /**
      * Returns the expressway ID of this {@link AvgSpeedTuple}.
      *
@@ -110,6 +117,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
     public final Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
+
     /**
      * Returns the segment of this {@link AvgSpeedTuple}.
      *
@@ -119,6 +127,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
     public final Short getSegment() {
         return (Short) super.get(SEG_IDX);
     }
+
     /**
      * Returns the vehicle's direction of this {@link AvgSpeedTuple}.
      *
@@ -128,6 +137,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
     public final Short getDirection() {
         return (Short) super.get(DIR_IDX);
     }
+
     /**
      * Returns the vehicle's average speed of this {@link AvgSpeedTuple}.
      *

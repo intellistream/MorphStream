@@ -1,4 +1,5 @@
 package common.param.mb;
+
 import common.param.TxnEvent;
 import org.apache.commons.lang.StringUtils;
 import storage.SchemaRecordRef;
@@ -11,6 +12,7 @@ import java.util.List;
 
 import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
 import static profiler.Metrics.NUM_ACCESSES;
+
 /**
  * Support Multi workset since 1 SEP 2018.
  */
@@ -22,6 +24,7 @@ public class MicroEvent extends TxnEvent {
     public int[] result = new int[NUM_ACCESSES];
     private List<DataBox>[] value;//Note, it should be arraylist instead of linkedlist as there's no add/remove later.
     //    public double[] useful_ratio = new double[1];
+
     /**
      * creating a new MicroEvent.
      *
@@ -40,6 +43,7 @@ public class MicroEvent extends TxnEvent {
         }
         setValues(keys);
     }
+
     /**
      * Loading a DepositEvent.
      *
@@ -65,31 +69,39 @@ public class MicroEvent extends TxnEvent {
         }
         setValues(keys);
     }
+
     private static String rightpad(String text, int length) {
         return StringUtils.rightPad(text, length); // Returns "****foobar"
 //        return String.format("%-" + length + "." + length + "s", text);
     }
+
     public static String GenerateValue(int key) {
         return rightpad(String.valueOf(key), VALUE_LEN);
     }
+
     public int[] getKeys() {
         return keys;
     }
+
     public List<DataBox>[] getValues() {
         return value;
     }
+
     public void setValues(int[] keys) {
         value = new ArrayList[NUM_ACCESSES];//Note, it should be arraylist instead of linkedlist as there's no add/remove later.
         for (int access_id = 0; access_id < NUM_ACCESSES; ++access_id) {
             set_values(access_id, keys[access_id]);
         }
     }
+
     public SchemaRecordRef[] getRecord_refs() {
         return record_refs;
     }
+
     public boolean READ_EVENT() {
         return flag;
     }
+
     private void set_values(int access_id, int key) {
         List<DataBox> values = new ArrayList<>();
         values.add(new IntDataBox(key));//key  4 bytes

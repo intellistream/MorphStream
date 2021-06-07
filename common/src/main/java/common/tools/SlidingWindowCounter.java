@@ -1,6 +1,8 @@
 package common.tools;
+
 import java.io.Serializable;
 import java.util.Map;
+
 /**
  * This class counts objects in a sliding window fashion.
  * <p/>
@@ -49,9 +51,10 @@ import java.util.Map;
 public final class SlidingWindowCounter<T> implements Serializable {
     private static final long serialVersionUID = -2645063988768785810L;
     private final SlotBasedCounter<T> objCounter;
+    private final int windowLengthInSlots;
     private int headSlot;
     private int tailSlot;
-    private final int windowLengthInSlots;
+
     public SlidingWindowCounter(int windowLengthInSlots) {
         if (windowLengthInSlots < 2) {
             throw new IllegalArgumentException(
@@ -63,19 +66,24 @@ public final class SlidingWindowCounter<T> implements Serializable {
         this.headSlot = 0;
         this.tailSlot = slotAfter(headSlot);
     }
+
     public void incrementCount(T obj) {
         objCounter.incrementCount(obj, headSlot);
     }
+
     public void incrementCount(T obj, long increment) {
         objCounter.incrementCount(obj, headSlot, increment);
     }
+
     public long getCount(T obj) {
         return objCounter.getCount(obj);
     }
+
     public Map<T, Long> getCounts() {
         Map<T, Long> counts = objCounter.getCounts();
         return counts;
     }
+
     /**
      * Return the current (total) counts of all tracked objects, then advance the window.
      * <p/>
@@ -92,10 +100,12 @@ public final class SlidingWindowCounter<T> implements Serializable {
         advanceHead();
         return counts;
     }
+
     private void advanceHead() {
         headSlot = tailSlot;
         tailSlot = slotAfter(tailSlot);
     }
+
     private int slotAfter(int slot) {
         return (slot + 1) % windowLengthInSlots;
     }

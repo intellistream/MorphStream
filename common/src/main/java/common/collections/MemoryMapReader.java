@@ -1,10 +1,12 @@
 package common.collections;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+
 public class MemoryMapReader {
     /**
      * @param args

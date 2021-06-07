@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype.toll;
+
 import common.bolts.lr.model.TollEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.LinkedList;
 import java.util.Queue;
+
 /**
  * A {@link TollDataStore} that uses a file for storage including all disadvantages. Use only in a very simple topology
  * as the file I/O can easily produce a performance bottleneck.
@@ -35,6 +37,7 @@ public class FileTollDataStore implements TollDataStore {
     private static final Logger LOG = LoggerFactory.getLogger(FileTollDataStore.class);
     private final File histFile;
     private boolean firstWriteDone = false;
+
     /**
      * Creates a {@code FileTollDataStore} using a temporary file
      *
@@ -43,6 +46,7 @@ public class FileTollDataStore implements TollDataStore {
     private FileTollDataStore() throws IOException {
         this.histFile = File.createTempFile("aeolus-lrb", null);
     }
+
     /**
      * Creates a {@code FileTollDataStore} reading from {@code histFile}.
      *
@@ -51,6 +55,7 @@ public class FileTollDataStore implements TollDataStore {
     private FileTollDataStore(File histFile) {
         this.histFile = histFile;
     }
+
     /**
      * @param histFilePath
      * @throws FileNotFoundException    if the file denoted by {@code histFilePath} doesn't exist
@@ -65,6 +70,7 @@ public class FileTollDataStore implements TollDataStore {
         }
         this.histFile = new File(histFilePath);
     }
+
     @Override
     public Integer retrieveToll(int xWay, int day, int vehicleIdentifier) {
         try {
@@ -84,6 +90,7 @@ public class FileTollDataStore implements TollDataStore {
         }
         return null;
     }
+
     @Override
     public void storeToll(int xWay, int day, int vehicleIdentifier, int toll) {
         try {
@@ -127,6 +134,7 @@ public class FileTollDataStore implements TollDataStore {
             throw new RuntimeException(ex);
         }
     }
+
     @Override
     public Integer removeEntry(int xWay, int day, int vehicleIdentifier) {
         Integer retValue = null;

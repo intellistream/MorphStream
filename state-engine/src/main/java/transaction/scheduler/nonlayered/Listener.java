@@ -1,4 +1,4 @@
-package transaction.scheduler;
+package transaction.scheduler.nonlayered;
 
 import common.OperationChain;
 
@@ -15,8 +15,8 @@ public class Listener implements IOnDependencyResolvedListener{
     }
 
     @Override
-    public void onDependencyResolvedListener(int threadId, OperationChain oc) {
-        if (oc.hasDependents())
+    public void onParentsResolvedListener(int threadId, OperationChain oc) {
+        if (oc.hasChildren())
             withDependentsLocal[threadId].add(oc);
         else
             leftOversLocal[threadId].add(oc);

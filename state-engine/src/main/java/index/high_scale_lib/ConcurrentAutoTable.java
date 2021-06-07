@@ -3,11 +3,13 @@
  * http://creativecommons.org/licenses/publicdomain
  */
 package index.high_scale_lib;
+
 import sun.misc.Unsafe;
 
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 /**
  * An auto-resizing table of {@code longs}, supporting low-contention CAS
  * operations.  Updates are done with CAS's to no particular table element.
@@ -30,6 +32,7 @@ public class ConcurrentAutoTable implements Serializable {
             AtomicReferenceFieldUpdater.newUpdater(ConcurrentAutoTable.class, CAT.class, "_cat");
     // The underlying array of concurrently updated long counters
     private volatile CAT _cat = new CAT(null, 4/*Start Small, Think Big!*/, 0L);
+
     // Hash spreader
     private static final int hash() {
         int h = System.identityHashCode(Thread.currentThread());
@@ -40,6 +43,7 @@ public class ConcurrentAutoTable implements Serializable {
         h ^= (h >>> 7) ^ (h >>> 4);
         return h << 2;                // Pad out cache lines.  The goal is to avoid cache-line contention
     }
+
     /**
      * Add the given value_list to current counter value_list.  Concurrent updates will
      * not be lost, but addAndGet or getAndAdd are not implemented because the
@@ -50,18 +54,21 @@ public class ConcurrentAutoTable implements Serializable {
     public void add(long x) {
         add_if_mask(x, 0);
     }
+
     /**
      * {@link #add} with -1
      */
     public void decrement() {
         add_if_mask(-1L, 0);
     }
+
     /**
      * {@link #add} with +1
      */
     public void increment() {
         add_if_mask(1L, 0);
     }
+
     /**
      * Atomically set the sum of the striped counters to specified value_list.
      * Rather more expensive than a simple store, in order to remain atomic.
@@ -71,6 +78,7 @@ public class ConcurrentAutoTable implements Serializable {
         // Spin until CAS works
         while (!CAS_cat(_cat, newcat)) ;
     }
+
     /**
      * Current value_list of the counter.  Since other threads are updating furiously
      * the value_list is only approximate, but it includes all counts made by the
@@ -79,18 +87,21 @@ public class ConcurrentAutoTable implements Serializable {
     public long get() {
         return _cat.sum(0);
     }
+
     /**
      * Same as {@link #get}, included for completeness.
      */
     public int intValue() {
         return (int) _cat.sum(0);
     }
+
     /**
      * Same as {@link #get}, included for completeness.
      */
     public long longValue() {
         return _cat.sum(0);
     }
+
     /**
      * A cheaper {@link #get}.  Updated only once/millisecond, but as fast as a
      * simple load instruction when not updating.
@@ -98,12 +109,14 @@ public class ConcurrentAutoTable implements Serializable {
     public long estimate_get() {
         return _cat.estimate_sum(0);
     }
+
     /**
      * Return the counter's {@code long} value_list converted to a string.
      */
     public String toString() {
         return _cat.toString(0);
     }
+
     /**
      * A more verbose print than {@link #toString}, showing internal structure.
      * Useful for debugging.
@@ -111,6 +124,7 @@ public class ConcurrentAutoTable implements Serializable {
     public void print() {
         _cat.print();
     }
+
     /**
      * Return the internal counter striping factor.  Useful for diagnosing
      * performance problems.
@@ -118,6 +132,7 @@ public class ConcurrentAutoTable implements Serializable {
     public int internal_size() {
         return _cat._t.length;
     }
+
     // Only add 'x' to some slot in table, hinted at by 'hash', if bits under
     // the mask are all zero.  The sum can overflow or 'x' can contain bits in
     // the mask. Value is CAS'd so no counts are lost.  The CAS is retried until
@@ -127,9 +142,11 @@ public class ConcurrentAutoTable implements Serializable {
     private long add_if_mask(long x, long mask) {
         return _cat.add_if_mask(x, mask, hash(), this);
     }
+
     private boolean CAS_cat(CAT oldcat, CAT newcat) {
         return _catUpdater.compareAndSet(this, oldcat, newcat);
     }
+
     // --- CAT -----------------------------------------------------------------
     private static class CAT implements Serializable {
         private static final long serialVersionUID = 34L;
@@ -141,24 +158,28 @@ public class ConcurrentAutoTable implements Serializable {
                 AtomicLongFieldUpdater.newUpdater(CAT.class, "_resizers");
         private static final int MAX_SPIN = 2;
         private final CAT _next;
+        private final long[] _t;            // Power-of-2 array of longs
         volatile long _resizers;    // count of threads attempting a resize
         private volatile long _sum_cache;
         private volatile long _fuzzy_sum_cache;
         private volatile long _fuzzy_time;
-        private final long[] _t;            // Power-of-2 array of longs
+
         CAT(CAT next, int sz, long init) {
             _next = next;
             _sum_cache = Long.MIN_VALUE;
             _t = new long[sz];
             _t[0] = init;
         }
+
         private static long rawIndex(long[] ary, int i) {
             assert i >= 0 && i < ary.length;
             return _Lbase + i * _Lscale;
         }
+
         private final static boolean CAS(long[] A, int idx, long old, long nnn) {
             return _unsafe.compareAndSwapLong(A, rawIndex(A, idx), old, nnn);
         }
+
         // Only add 'x' to some slot in table, hinted at by 'hash', if bits under
         // the mask are all zero.  The sum can overflow or 'x' can contain bits in
         // the mask.  Value is CAS'd so no counts are lost.  The CAS is attempted
@@ -208,6 +229,7 @@ public class ConcurrentAutoTable implements Serializable {
             master.CAS_cat(this, newcat);
             return old;
         }
+
         // Return the current sum of all things in the table, stripping off mask
         // before the add.  Writers can be updating the table furiously, so the
         // sum is only locally accurate.
@@ -221,6 +243,7 @@ public class ConcurrentAutoTable implements Serializable {
             _sum_cache = sum;         // Cache includes recursive counts
             return sum;
         }
+
         // Fast fuzzy version.  Used a cached value_list until it gets old, then re-up
         // the cache.
         public long estimate_sum(long mask) {
@@ -234,6 +257,7 @@ public class ConcurrentAutoTable implements Serializable {
             }
             return _fuzzy_sum_cache;  // Return cached sum
         }
+
         // Update all table slots with CAS.
         public void all_or(long mask) {
             long[] t = _t;
@@ -248,6 +272,7 @@ public class ConcurrentAutoTable implements Serializable {
             if (_sum_cache != Long.MIN_VALUE)
                 _sum_cache = Long.MIN_VALUE; // Blow out cache
         }
+
         public void all_and(long mask) {
             long[] t = _t;
             for (int i = 0; i < t.length; i++) {
@@ -261,6 +286,7 @@ public class ConcurrentAutoTable implements Serializable {
             if (_sum_cache != Long.MIN_VALUE)
                 _sum_cache = Long.MIN_VALUE; // Blow out cache
         }
+
         // Set/stomp all table slots.  No CAS.
         public void all_set(long val) {
             long[] t = _t;
@@ -270,9 +296,11 @@ public class ConcurrentAutoTable implements Serializable {
             if (_sum_cache != Long.MIN_VALUE)
                 _sum_cache = Long.MIN_VALUE; // Blow out cache
         }
+
         String toString(long mask) {
             return Long.toString(sum(mask));
         }
+
         public void print() {
             long[] t = _t;
             System.out.print("[sum=" + _sum_cache + "," + t[0]);

@@ -1,9 +1,11 @@
 package common.tools.cacheSim;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Scanner;
+
 /**
  * Created by szhang026 on 4/23/2016.
  */
@@ -44,6 +46,7 @@ public class CaculateInst {
                 }
         }
     }
+
     public static int Compare(String s1, String s2) {
         String small, large;
         if (s1.length() > s2.length()) {
@@ -65,6 +68,7 @@ public class CaculateInst {
 //            System.out.println("Common prefix:" + large.substring(0, index));
         return index;
     }
+
     public static int calculate(String filename) throws FileNotFoundException {
         File asm = new File(filename);
         if (!asm.exists() || asm.length() == 0) {
@@ -117,6 +121,7 @@ public class CaculateInst {
         //System.out.println(instruction_size);
         return instruction_size;
     }
+
     public static void main(String[] arg) throws FileNotFoundException {
         calculate("C:\\Users\\szhang026\\Documents\\compatibility-app\\src\\InstructionInspection\\wc\\ReflectionFactory.asm");
     }

@@ -1,4 +1,5 @@
 package common.sink.helper;
+
 import common.collections.OsUtils;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Created by I309939 on 7/24/2016.
  */
@@ -28,6 +30,10 @@ public abstract class helper {
     final String sink_path;
     final String metric_path;
     private final boolean measure;
+    private final int thisTaskId;
+    private final long predict_sum = 0;
+    private final long actual_sum = 0;
+    private final long current_bid = 0;
     public double predict;//predicted throughput.
     public double size;
     /**
@@ -39,12 +45,9 @@ public abstract class helper {
     int checkPoint;
     boolean need_warm_up;
     boolean print_pid;
-    private final int thisTaskId;
-    private final long predict_sum = 0;
-    private final long actual_sum = 0;
     private long previous_bid = 0;
-    private final long current_bid = 0;
     private int local_index_e;
+
     public helper(int runtime, double predict, int size, String metric_path, int thisTaskId, boolean measure) {
         this.runtimeInSEC = runtime;
         this.runtimeInNANO = (long) ((runtime * 1E9));//used in verbose model, test for longer time.
@@ -67,6 +70,7 @@ public abstract class helper {
         this.size = size;
         LOG.info("test duration," + duration + ", warm_up time: " + warm_up + "measure_times:" + measure_times);
     }
+
     public void StartMeasurement() {
         if (print_pid) {
             sink_pid();
@@ -75,11 +79,13 @@ public abstract class helper {
             local_index_e = 0;
         }
     }
+
     public double EndMeasurement(long cnt) {
         end = System.nanoTime();
         long time_elapsed = end - start;
         return ((double) (cnt) * 1E6 / time_elapsed);//count/ns * 1E6 --> EVENTS/ms
     }
+
     double Measurement(String sourceComponent, long bid) {
         local_index_e++;
 //        current_bid = Math.max(current_bid, bid);
@@ -106,6 +112,7 @@ public abstract class helper {
         }
         return 0;
     }
+
     void sink_pid() {
         long pid = OsUtils.getJVMID();
         LOG.info("JVM PID  = " + pid);
@@ -132,6 +139,7 @@ public abstract class helper {
             e.printStackTrace();
         }
     }
+
     public double getMedian(ArrayList<Double> values) {
         double[] target = new double[values.size()];
         for (int i = 0; i < target.length; i++) {
@@ -141,6 +149,7 @@ public abstract class helper {
         }
         return getMedian(target);
     }
+
     //calculate median
     public double getMedian(double[] values) {
         Arrays.sort(values);
@@ -153,6 +162,7 @@ public abstract class helper {
         }
         return medianValue;
     }
+
     double calculateAverage(ArrayList<String> strings) {
         Double sum = 0.0;
         for (String v : strings) {
@@ -160,6 +170,7 @@ public abstract class helper {
         }
         return sum / strings.size();
     }
+
     void output(ArrayList<String> strings) {
         FileWriter fw = null;
         BufferedWriter writer = null;
@@ -177,6 +188,7 @@ public abstract class helper {
             e.printStackTrace();
         }
     }
+
     void output(double[] strings) {
         FileWriter fw = null;
         BufferedWriter writer = null;
@@ -194,6 +206,7 @@ public abstract class helper {
             e.printStackTrace();
         }
     }
+
     void output_doubles(ArrayList<Double> strings) {
         FileWriter fw = null;
         BufferedWriter writer = null;
@@ -213,6 +226,7 @@ public abstract class helper {
 //            e.printStackTrace();
         }
     }
+
     void output(double time) {
         FileWriter fw = null;
         BufferedWriter writer = null;
@@ -226,7 +240,9 @@ public abstract class helper {
             e.printStackTrace();
         }
     }
+
     public abstract double execute(long bid);
+
     public double execute() {
         return execute(0);
     }

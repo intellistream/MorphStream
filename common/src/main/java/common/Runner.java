@@ -1,4 +1,5 @@
 package common;
+
 import com.beust.jcommander.Parameter;
 import common.collections.OsUtils;
 import org.slf4j.Logger;
@@ -13,16 +14,9 @@ public abstract class Runner implements IRunner {
     private static final Logger LOG = LoggerFactory.getLogger(Runner.class);
     protected static String CFG_PATH = null;
     /**
-     * Functional Parameters.
-     */
-    @Parameter(names = {"--fault_tolerance"}, description = "Enable or disable fault tolerance, it is disabled by default.")
-    boolean enable_fault_tolerance = false;
-
-    /**
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-//    public String application = "GrepSum";
     public String application = "StreamLedger";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
@@ -46,68 +40,50 @@ public abstract class Runner implements IRunner {
     public double theta = 0.6; //0.6==medium contention
     @Parameter(names = {"--size_tuple"}, description = "size_tuple (number of elements in state)")
     public int size_tuple = 0;
-
     /**
      * System Tuning Parameters.
      */
 
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
-
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
     public boolean shared = true;
-
     @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
     public int batch = 1;
-
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)
     public int queue_size = 10000;
-
     /**
      * TStream Specific Parameters.
      */
     @Parameter(names = {"--disable_pushdown"}, description = "Push down write operations to engine, it is enabled by default.")
     public boolean disable_pushdown = false;
-
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (seconds)")
     public double checkpoint_interval = 5;// default checkpoint interval.
-
     @Parameter(names = {"--TP"}, description = "TP threads")
     public int TP = 4;// default TP threads
-
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 4;// default total execution threads
-
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_TStream;
-
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
-
     /**
      * Benchmarking Specific Parameters.
      */
     @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
     public String configStr;
-
     @Parameter(names = {"--measure"}, description = "enable measurement")
     public boolean enable_measurement = false;
-
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
     public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("tstreamplus") + OsUtils.OS_wrapper("data");
-
     @Parameter(names = {"-mp"}, description = "Metric path", required = false)
     public String metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
-
     @Parameter(names = {"--machine"}, description = "which machine to use? 0 (default): a simple one-socket machine with four cores. Add your machine specification accordingly and select them by change this specification")
     public int machine = 0;
-
     @Parameter(names = {"-r", "--runtime"}, description = "Runtime in seconds for the Brisk.topology (local mode only)")
     public int runtimeInSeconds = 30;
-
     @Parameter(names = {"--verbose"}, description = "whether print execution detail")
     public boolean verbose = false;
-
     /**
      * @author: Aqif
      * Input Dependency Benchmark. Bundled with StreamingLedger Application.
@@ -134,6 +110,11 @@ public abstract class Runner implements IRunner {
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
     public String idGenType = "uniform";
+    /**
+     * Functional Parameters.
+     */
+    @Parameter(names = {"--fault_tolerance"}, description = "Enable or disable fault tolerance, it is disabled by default.")
+    boolean enable_fault_tolerance = false;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";

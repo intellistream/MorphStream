@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype;
+
 /**
  * The comm class for all LRB input tuples (ie, position reports and query requests).<br />
  * <br />
@@ -36,15 +37,18 @@ public abstract class AbstractInputTuple extends AbstractLRBTuple {
     public final static int VID_IDX = 2;
     // attribute indexes
     private final static long serialVersionUID = 5607968457968961059L;
+
     protected AbstractInputTuple() {
         super();
     }
+
     protected AbstractInputTuple(Short type, Short time, Integer vid) {
         super(type, time);
         assert (vid != null);
         super.add(VID_IDX, vid);
         assert (super.size() == 3);
     }
+
     /**
      * Returns the vehicle ID of this {@link AbstractInputTuple}.
      *

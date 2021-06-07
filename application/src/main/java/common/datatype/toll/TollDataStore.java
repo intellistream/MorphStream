@@ -17,7 +17,9 @@
  * #_
  */
 package common.datatype.toll;
+
 import common.bolts.lr.model.TollEntry;
+
 /**
  * An interface for the storage of toll data (encapsulated in {@link TollEntry}) for historical queries. Allows to Store
  * and retrieve the toll amount.
@@ -35,6 +37,7 @@ public interface TollDataStore {
      * @return the stored toll for the combination of the parameters or {@code null} if there's no such entry
      */
     Integer retrieveToll(int xWay, int day, int vehicleIdentifier);
+
     /**
      * Stores the toll value_list in the underlying data Store. The way the data is stored and how efficient and fast this
      * storage is depends on implementors.
@@ -49,6 +52,7 @@ public interface TollDataStore {
      * (in key-value_list-based stores)
      */
     void storeToll(int xWay, int day, int vehicleIdentifier, int toll);
+
     /**
      * removes the entry associated with {@code xWay}, {@code day} and {@code vehicleIdentifier}
      *

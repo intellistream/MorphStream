@@ -17,11 +17,13 @@
  * #_
  */
 package common.datatype.toll;
+
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.HashMap;
 import java.util.Map;
+
 /**
  * a {@link TollDataStore} which stores data in memory. Due to the fact that data to satisfy historical LRB query can
  * GetAndUpdate huge, you're advised to use it carefully, only.<br />
@@ -37,6 +39,7 @@ public class MemoryTollDataStore implements TollDataStore {
     private final Map<Triple<Integer, Integer, Integer>, Integer> store = new HashMap<>();
     private final MutableTriple<Integer, Integer, Integer> reusableMapKey = new MutableTriple<>(
             0, 0, 0);
+
     // avoid the allocation of memory for every key
     @Override
     public Integer retrieveToll(int xWay, int day, int vehicleIdentifier) {
@@ -45,6 +48,7 @@ public class MemoryTollDataStore implements TollDataStore {
         this.reusableMapKey.setRight(vehicleIdentifier);
         return this.store.get(this.reusableMapKey);
     }
+
     @Override
     public void storeToll(int xWay, int day, int vehicleIdentifier, int toll) {
         this.reusableMapKey.setLeft(xWay);
@@ -52,6 +56,7 @@ public class MemoryTollDataStore implements TollDataStore {
         this.reusableMapKey.setRight(vehicleIdentifier);
         this.store.put(this.reusableMapKey, toll);
     }
+
     @Override
     public Integer removeEntry(int xWay, int day, int vehicleIdentifier) {
         this.reusableMapKey.setLeft(xWay);

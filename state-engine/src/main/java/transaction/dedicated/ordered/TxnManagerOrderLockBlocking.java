@@ -1,10 +1,11 @@
 package transaction.dedicated.ordered;
+
+import common.OrderLock;
+import common.meta.MetaTypes;
+import content.Content;
+import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import db.DatabaseException;
-import common.meta.MetaTypes;
-import common.OrderLock;
-import content.Content;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -17,19 +18,23 @@ import java.util.LinkedList;
 import static common.meta.MetaTypes.AccessType.*;
 import static common.meta.MetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
+
 /**
  * mimic of ACEP's S2PL method. It is essentially a blocking-based order locking.
  */
 public class TxnManagerOrderLockBlocking extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerOrderLockBlocking.class);
     public final OrderLock orderLock;
+
     public TxnManagerOrderLockBlocking(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
         this.orderLock = OrderLock.getInstance();
     }
+
     public OrderLock getOrderLock() {
         return orderLock;
     }
+
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
             throws DatabaseException, InterruptedException {
@@ -53,6 +58,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicated {
             return true;
         }
     }
+
     @Override
     protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
@@ -77,6 +83,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicated {
             return false;
         }
     }
+
     @Override
     public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
@@ -113,6 +120,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicated {
             return false;
         }
     }
+
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
@@ -161,6 +169,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicated {
             return false;
         }
     }
+
     @Override
     public boolean CommitTransaction(TxnContext txn_context) {
 //		long curr_epoch = Epoch.GetEpoch();
@@ -197,6 +206,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicated {
         access_list_.Clear();
         return true;
     }
+
     @Override
     public void AbortTransaction() {
         //not in use in this scheme.

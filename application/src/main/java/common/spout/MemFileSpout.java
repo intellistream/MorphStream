@@ -1,4 +1,5 @@
 package common.spout;
+
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import components.operators.api.AbstractSpout;
@@ -12,15 +13,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+
 public class MemFileSpout extends AbstractSpout {
     private static final Logger LOG = LoggerFactory.getLogger(MemFileSpout.class);
     private static final long serialVersionUID = -2394340130331865581L;
     protected int element = 0;
     private transient BufferedWriter writer;
+
     public MemFileSpout() {
         super(LOG);
         this.scalable = false;
     }
+
     @Override
     public Integer default_scale(Configuration conf) {
         int numNodes = conf.getInt("num_socket", 1);
@@ -30,6 +34,7 @@ public class MemFileSpout extends AbstractSpout {
             return 1;
         }
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         LOG.info("Spout initialize is being called");
@@ -38,12 +43,14 @@ public class MemFileSpout extends AbstractSpout {
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
         load_input();
     }
+
     /**
      * relax_reset source messages.
      */
     @Override
     public void cleanup() {
     }
+
     private void spout_pid() {
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         String jvmName = runtimeBean.getName();
@@ -77,6 +84,7 @@ public class MemFileSpout extends AbstractSpout {
             counter = 0;
         }
     }
+
     @Override
     public void nextTuple_nonblocking() throws InterruptedException {
         collector.emit_nowait(array.get(counter));
@@ -85,6 +93,7 @@ public class MemFileSpout extends AbstractSpout {
             counter = 0;
         }
     }
+
     public void display() {
         LOG.info("timestamp_counter:" + counter);
     }

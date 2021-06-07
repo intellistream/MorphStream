@@ -1,18 +1,22 @@
 package common.tools.cacheSim;
+
 import com.vividsolutions.jts.math.Vector2D;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+
 /**
  * Created by szhang026 on 4/23/2016.
  */
 public class cacheHitSimulator {
     static String path = "C:\\Users\\szhang026\\Documents\\Profile-experiments\\4-wayMachine\\compatibility\\instruction_trace\\batch=1";
+
     private static double nextTime(double rateParameter) {
         return -Math.log(1.0 - Math.random()) / rateParameter;
     }
+
     private static int getsum(Collection<String> l, Map<String, Integer> instruction_per_function) {
         int sum = 0;
         for (String i : l) {
@@ -20,6 +24,7 @@ public class cacheHitSimulator {
         }
         return sum;
     }
+
     private static Vector2D cacheHit(LinkedList<String> event_trace, Map<String, Integer> instruction_per_function, int policy) {
         final int cache_size = 32000;
         int cache_used = 0;
@@ -84,6 +89,7 @@ public class cacheHitSimulator {
         }
         return new Vector2D(compulsory_miss, access_miss);
     }
+
     private static LinkedList<String> clean_InTrace_results(int app) throws IOException {
         LinkedList<String> event_trace = new LinkedList<>();
         FileWriter writer = null;
@@ -146,6 +152,7 @@ public class cacheHitSimulator {
         writer.close();
         return event_trace;
     }
+
     public static void main(String[] arg) throws IOException {
         int policy = 1;//0:random, 1:LRU...
         for (int app = 4; app < 11; app++) {

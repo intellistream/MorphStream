@@ -1,8 +1,9 @@
 package transaction.dedicated;
+
+import common.meta.MetaTypes;
+import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import db.DatabaseException;
-import common.meta.MetaTypes;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -15,14 +16,17 @@ import java.util.LinkedList;
 import static common.meta.MetaTypes.AccessType.*;
 import static common.meta.MetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
+
 /**
  * Conventional Timestamp ordering from Cavalia.
  */
 public class TxnManagerTo extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerTo.class);
+
     public TxnManagerTo(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
     }
+
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException {
 //		BEGIN_PHASE_MEASURE(thread_id_, INSERT_PHASE);
@@ -56,6 +60,7 @@ public class TxnManagerTo extends TxnManagerDedicated {
             return true;
         }
     }
+
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_id, TableRecord t_record, SchemaRecordRef s_record_ref, MetaTypes.AccessType access_type) {
         if (is_first_access_) {
@@ -110,6 +115,7 @@ public class TxnManagerTo extends TxnManagerDedicated {
         s_record_ref.setRecord(local_record);
         return true;
     }
+
     @Override
     public boolean CommitTransaction(TxnContext txnContext) {
 //		BEGIN_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
@@ -143,6 +149,7 @@ public class TxnManagerTo extends TxnManagerDedicated {
         // END_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
         return true;
     }
+
     @Override
     public void AbortTransaction() {
         for (int i = 0; i < access_list_.access_count_; ++i) {

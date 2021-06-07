@@ -1,4 +1,5 @@
 package transaction;
+
 import benchmark.TxnParam;
 import common.SpinLock;
 import common.collections.Configuration;
@@ -17,6 +18,7 @@ import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.partioned_store;
 import static transaction.State.shared_store;
 import static utils.PartitionHelper.key_to_partition;
+
 public abstract class TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(TableInitilizer.class);
     public final Database db;
@@ -36,6 +38,7 @@ public abstract class TableInitilizer {
     //dual-decision
     public transient int[] dual_decision = new int[]{0, 0, 0, 0, 1, 1, 1, 1};//1:1 deposite and transfer;
     private int i = 0;
+
     public TableInitilizer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
         this.db = db;
         this.scale_factor = scale_factor;
@@ -70,6 +73,7 @@ public abstract class TableInitilizer {
         floor_interval = (int) Math.floor(NUM_ITEMS / (double) tthread);//NUM_ITEMS / tthread;
         p_generator = new FastZipfGenerator(NUM_ITEMS, theta, 0);
     }
+
     protected int next_decision2() {
         int rt = dual_decision[i];
         i++;
@@ -77,15 +81,21 @@ public abstract class TableInitilizer {
             i = 0;
         return rt;
     }
+
     public void loadDB(int maxContestants, String contestants) {
         throw new UnsupportedOperationException();
     }
+
     public abstract void creates_Table(Configuration config);
+
     public abstract void loadDB(int thread_id, int NUMTasks);
+
     public abstract void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks);
+
     public int get_pid(int partition_interval, int key) {
         return (int) Math.floor(key / (double) partition_interval);//NUM_ITEMS / tthread;
     }
+
     public boolean verify(Set keys, int partition_id, int number_of_partitions) {
         for (Object key : keys) {
             int i = (Integer) key;
@@ -98,6 +108,7 @@ public abstract class TableInitilizer {
         }
         return true;
     }
+
     public void randomkeys(int pid, TxnParam param, Set keys, int access_per_partition, int counter, int numAccessesPerBuy) {
         for (int access_id = 0; access_id < numAccessesPerBuy; ++access_id) {
             FastZipfGenerator generator;
@@ -126,7 +137,9 @@ public abstract class TableInitilizer {
             }
         }
     }
+
     public abstract boolean Prepared(String file) throws IOException;
+
     public void prepare_input_events(String file_path, int total_events) throws IOException {
 
         db.getEventManager().ini(total_events);
@@ -173,8 +186,10 @@ public abstract class TableInitilizer {
     }
 
     public abstract void store(String file_path) throws IOException;
+
     public Object create_new_event(String record, int bid) {
         throw new UnsupportedOperationException();
     }
+
     public abstract Object create_new_event(int number_partitions, int bid);
 }

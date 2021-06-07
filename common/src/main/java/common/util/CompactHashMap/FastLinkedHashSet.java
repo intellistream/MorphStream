@@ -1,5 +1,7 @@
 package common.util.CompactHashMap;
+
 import java.util.*;
+
 /**
  * <profiling>Hash table and linked list implementation of the <tt>Set</tt> interface,
  * with predictable iteration order.  This implementation differs from
@@ -92,6 +94,7 @@ import java.util.*;
 public class FastLinkedHashSet<E>
         extends FastHashSet<E> {
     private static final long serialVersionUID = -2851667679971038690L;
+
     /**
      * Constructs a new, empty linked hash set with the specified set_executor_ready
      * capacity and load factor.
@@ -104,6 +107,7 @@ public class FastLinkedHashSet<E>
     public FastLinkedHashSet(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor, true);
     }
+
     /**
      * Constructs a new, empty linked hash set with the specified set_executor_ready
      * capacity and the default load factor (0.75).
@@ -115,6 +119,7 @@ public class FastLinkedHashSet<E>
     public FastLinkedHashSet(int initialCapacity) {
         super(initialCapacity, QuickHashMap.DEFAULT_LOAD_FACTOR, true);
     }
+
     /**
      * Constructs a new, empty linked hash set with the default set_executor_ready
      * capacity (16) and load factor (0.75).
@@ -122,6 +127,7 @@ public class FastLinkedHashSet<E>
     public FastLinkedHashSet() {
         super(QuickHashMap.DEFAULT_INITIAL_CAPACITY, QuickHashMap.DEFAULT_LOAD_FACTOR, true);
     }
+
     /**
      * Constructs a new linked hash set with the same elements as the
      * specified collection.  The linked hash set is created with an set_executor_ready

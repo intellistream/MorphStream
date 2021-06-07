@@ -1,14 +1,17 @@
 package common.model.gis;
+
 import java.util.ArrayList;
+
 public class Polygon {
     private static final int EARTH_RADIUS = 6378137;
     private final ArrayList<Point> points;
+    private final int count;
+    private final double distance_min = 10 / 111.2 * 1000;
     private double xmin;
     private double xmax;
     private double ymin;
     private double ymax;
-    private final int count;
-    private final double distance_min = 10 / 111.2 * 1000;
+
     public Polygon(ArrayList<Point> points) {
         this.points = points;
         this.count = points.size();
@@ -27,6 +30,7 @@ public class Polygon {
                 this.ymin = p.getY();
         }
     }
+
     public static double pointToLine(double x1, double y1, double x2, double y2, double x0, double y0) {
         double space = 0;
         double a, b, c;
@@ -54,12 +58,14 @@ public class Polygon {
         space = 2 * s / a;
         return space;
     }
+
     public static double lineSpace(double x1, double y1, double x2, double y2) {
         double lineLength = 0;
         lineLength = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2)
                 * (y1 - y2));
         return lineLength;
     }
+
     public static double DistancePointToLine(double x1, double y1, double x2, double y2, double x, double y) {
         if (y1 == y2) {
             if (Math.min(x1, x2) < x && Math.max(x1, x2) > x) {
@@ -90,6 +96,7 @@ public class Polygon {
             }
         }
     }
+
     public static double ComputeD(double lat_a, double lng_a, double lat_b, double lng_b) {
         double radLat1 = (lat_a * Math.PI / 180.0);
         double radLat2 = (lat_b * Math.PI / 180.0);
@@ -100,6 +107,7 @@ public class Polygon {
         s = s * EARTH_RADIUS;
         return s;
     }
+
     public Boolean contains(Point p) {
         if (p.getX() >= xmax || p.getX() < xmin || p.getY() >= ymax || p.getY() < ymin)
             return false;
@@ -145,6 +153,7 @@ public class Polygon {
         }
         return cn % 2 != 0;
     }
+
     public boolean matchToRoad(Point p, int roadWidth) {
         int n = points.size();
         for (int i = 0; i < n - 1; i++) {
@@ -154,6 +163,7 @@ public class Polygon {
         }
         return false;
     }
+
     public boolean matchToRoad(Point p, int roadWidth, ArrayList<Point> ps) {
         double minD = Double.MAX_VALUE;
         int n = ps.size();

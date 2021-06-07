@@ -1,5 +1,7 @@
 package common.spout;
+
 import java.util.Random;
+
 public class PhoneCallGenerator {
     // Initialize some common constants and variables
     private static final String[] AREA_CODE_STRS = ("907,205,256,334,251,870,501,479" +
@@ -23,14 +25,17 @@ public class PhoneCallGenerator {
             ",253,715,920,262,414,608,304,307").split(",");
     // convert the area code array to a list of digits
     private static final long[] AREA_CODES = new long[AREA_CODE_STRS.length];
+
     static {
         for (int i = 0; i < AREA_CODES.length; i++)
             AREA_CODES[i] = Long.parseLong(AREA_CODE_STRS[i]);
     }
+
     private final int contestantCount;
     private final Random rand = new Random();
     private final int[] votingMap = new int[AREA_CODES.length];
     private long nextVoteId;
+
     public PhoneCallGenerator(int clientId, int contestantCount) {
         this.nextVoteId = clientId * 10000000L;
         this.contestantCount = contestantCount;
@@ -42,6 +47,7 @@ public class PhoneCallGenerator {
             }
         }
     }
+
     /**
      * Receives/generates a simulated voting call
      *
@@ -70,10 +76,12 @@ public class PhoneCallGenerator {
         // Return the generated phone number
         return new PhoneCall(this.nextVoteId++, contestantNumber, phoneNumber);
     }
+
     public static class PhoneCall {
         public final long voteId;
         public final int contestantNumber;
         public final long phoneNumber;
+
         PhoneCall(long voteId, int contestantNumber, long phoneNumber) {
             this.voteId = voteId;
             this.contestantNumber = contestantNumber;

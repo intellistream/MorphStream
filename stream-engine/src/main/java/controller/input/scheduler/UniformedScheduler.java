@@ -1,10 +1,12 @@
 package controller.input.scheduler;
+
 import common.util.CompactHashMap.QuickHashMap;
+import controller.input.InputStreamController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import controller.input.InputStreamController;
 
 import java.util.Arrays;
+
 /**
  * TODO: The over head is still too large.
  * Created by shuhaozhang on 17/7/16.
@@ -16,6 +18,7 @@ public class UniformedScheduler extends InputStreamController {
     private String[] streams;
     private int stream_index = 0;
     private int queue_index = 0;
+
     public void initialize() {
         super.initialize();
         this.streams = Arrays.copyOf(getRQ().keySet().toArray(), getRQ().keySet().size(), String[].class);
@@ -23,6 +26,7 @@ public class UniformedScheduler extends InputStreamController {
             queues.put(streamId, Arrays.copyOf(getRQ().get(streamId).keySet().toArray(), getRQ().get(streamId).size(), Integer[].class));
         }
     }
+
     @Override
     public Object fetchResults() {
 //        JumboTuple[] t = new JumboTuple[batch];

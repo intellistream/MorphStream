@@ -1,15 +1,16 @@
 package common.bolts.transactional.tp;
+
 import common.datatype.TollNotification;
 import common.datatype.util.AvgValue;
 import common.datatype.util.SegmentIdentifier;
 import common.param.lr.LREvent;
 import common.sink.SINKCombo;
-import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
 import components.operators.api.TransactionalBolt;
+import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
-import db.DatabaseException;
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
 import storage.datatype.DataBox;
 import transaction.impl.TxnContext;
 
@@ -23,27 +24,31 @@ import static common.Constants.DEFAULT_STREAM_ID;
 import static common.meta.MetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
+
 public abstract class TPBolt extends TransactionalBolt {
     /**
      * Maps each vehicle to its average speed value that corresponds to the current 'minute number' and specified segment.
      */
     private final Map<Integer, Pair<AvgValue, SegmentIdentifier>> avgSpeedsMap = new HashMap<>();
-    SINKCombo sink;
-    TollNotification tollNotification;
-    Tuple tuple;
     /**
      * The currently processed 'minute number'.
      */
     private final short currentMinute = 1;
     private final short time = -1;//not in use.
+    SINKCombo sink;
+    TollNotification tollNotification;
+    Tuple tuple;
+
     public TPBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
         this.configPrefix = "tptxn";
     }
+
     @Override
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
+
     protected void TXN_REQUEST_NOLOCK(LREvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.SelectKeyRecord_noLock(txnContext, "segment_speed"
                 , String.valueOf(event.getPOSReport().getSegment())
@@ -54,6 +59,7 @@ public abstract class TPBolt extends TransactionalBolt {
                 , event.count_value//holder to be filled up.
                 , READ_WRITE);
     }
+
     protected void TXN_REQUEST(LREvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         transactionManager.SelectKeyRecord(txnContext, "segment_speed"
                 , String.valueOf(event.getPOSReport().getSegment())
@@ -64,10 +70,12 @@ public abstract class TPBolt extends TransactionalBolt {
                 , event.count_value//holder to be filled up.
                 , READ_WRITE);
     }
+
     protected void REQUEST_LOCK_AHEAD(LREvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.lock_ahead(txnContext, "segment_speed", String.valueOf(event.getPOSReport().getSegment()), event.speed_value, READ_WRITE);
         transactionManager.lock_ahead(txnContext, "segment_cnt", String.valueOf(event.getPOSReport().getSegment()), event.count_value, READ_WRITE);
     }
+
     TollNotification toll_process(Integer vid, Integer count, Double lav, short time) {
         int toll = 0;
         if (lav < 40) {
@@ -84,6 +92,7 @@ public abstract class TPBolt extends TransactionalBolt {
 //                time, time, vid, lav, toll);
         return null;
     }
+
     void REQUEST_POST(LREvent event) throws InterruptedException {
         tollNotification = toll_process(event.getPOSReport().getVid(), event.count, event.lav, event.getPOSReport().getTime());
         if (!enable_app_combo) {
@@ -96,6 +105,7 @@ public abstract class TPBolt extends TransactionalBolt {
             sink.execute(tuple);
         }
     }
+
     @Override
     protected void POST_PROCESS(long bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
@@ -106,6 +116,7 @@ public abstract class TPBolt extends TransactionalBolt {
         }
         END_POST_TIME_MEASURE(thread_Id);
     }
+
     protected void TXN_REQUEST_CORE(LREvent event) {
         DataBox dataBox = event.count_value.getRecord().getValues().get(1);
         HashSet cnt_segment = dataBox.getHashSet();

@@ -1,17 +1,21 @@
 package common.tools.cacheSim;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Scanner;
+
 /**
  * Created by szhang026 on 4/23/2016.
  */
 public class cacheHitSimulator_PI_callflow {
     static String path = "C:\\Users\\szhang026\\Documents\\compatibility-app\\log\\log";
+
     private static double nextTime(double rateParameter) {
         return -Math.log(1.0 - Math.random()) / rateParameter;
     }
+
     //    private static int getsum(Collection<String> l, Map<String, Integer> instruction_per_function) {
 //        int sum = 0;
 //        for (String i : l) {
@@ -145,12 +149,14 @@ public class cacheHitSimulator_PI_callflow {
 //        }
         return list;
     }
+
     public static void main(String[] arg) throws IOException {
         int policy = 1;//0:random, 1:LRU...
         for (int app = 4; app < 4; app++) {
             LinkedList<record> event_trace = clean_InTrace_results(app);
         }
     }
+
     private static class record {
         /*
         * Column Labels:
@@ -171,6 +177,7 @@ public class cacheHitSimulator_PI_callflow {
         public int DS;
         public int IN;
         public String NAME;
+
         record(String LV,
                String CALLS,
                String CEE,

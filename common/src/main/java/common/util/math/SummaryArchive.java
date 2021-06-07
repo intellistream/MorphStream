@@ -1,7 +1,9 @@
 package common.util.math;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 /**
  * Author: Thilina
  * Date: 11/1/14
@@ -9,12 +11,15 @@ import java.util.List;
 public class SummaryArchive {
     private final List<Double> archive = new ArrayList<>();
     private final Long sliceLength;
+
     public SummaryArchive(Long sliceLength) {
         this.sliceLength = sliceLength;
     }
+
     public void archive(Double value) {
         archive.add(value);
     }
+
     public double getMedian() {
         int currentIndex = archive.size() - 1;
         int k = 1;
@@ -28,6 +33,7 @@ public class SummaryArchive {
         }
         return (values.size() > 0) ? getMedian(values) : 0.0;
     }
+
     private double getMedian(List<Double> values) {
         Collections.sort(values);
         int length = values.size();

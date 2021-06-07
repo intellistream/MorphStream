@@ -1,10 +1,12 @@
 package common.collections;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Scanner;
+
 /**
  * Created by szhang026 on 5/30/2016.
  */
@@ -45,6 +47,7 @@ public class NUMA_analysis {
             e.printStackTrace();
         }
     }
+
     static class record {
         //0,1,2,3,10,45
         String name;
@@ -57,6 +60,7 @@ public class NUMA_analysis {
         Long L2_Hit;
         Long L3_Hit;
         double RMA_Stalls = 0;
+
         record(String[] rw_record) {
             name = rw_record[0];
             CPU_CLK_UNHALTED = Long.parseLong(rw_record[1]);

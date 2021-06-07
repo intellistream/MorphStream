@@ -1,29 +1,31 @@
 package common.sink;
+
 import common.Constants;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.datatype.util.LRTopologyControl;
 import common.sink.helper.stable_sink_helper;
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.BaseSink;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.SINK_CONTROL;
 
 import java.io.*;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 
-import static common.CONTROL.*;
+import static common.CONTROL.enable_engine;
+import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.STAT_Path;
+
 public class MeasureSink extends BaseSink {
     private static final Logger LOG = LoggerFactory.getLogger(MeasureSink.class);
     private static final DescriptiveStatistics latency = new DescriptiveStatistics();
     private static final long serialVersionUID = 6249684803036342603L;
     protected static String directory;
-
 
 
     protected final ArrayDeque<Long> latency_map = new ArrayDeque();
@@ -35,16 +37,19 @@ public class MeasureSink extends BaseSink {
     long start;
 
     private int exe;
+
     public MeasureSink() {
         super(new HashMap<>());
         this.input_selectivity.put(Constants.DEFAULT_STREAM_ID, 1.0);
         this.input_selectivity.put(LRTopologyControl.TOLL_NOTIFICATIONS_STREAM_ID, 1.0);
     }
+
     @Override
     public Integer default_scale(Configuration conf) {
         int numNodes = conf.getInt("num_socket", 1);
         return 1;
     }
+
     public void initialize(int task_Id_InGroup, int thisTaskId, ExecutionGraph graph) {
         super.initialize(task_Id_InGroup, thisTaskId, graph);
         int size = graph.getSink().operator.getExecutorList().size();
@@ -69,11 +74,13 @@ public class MeasureSink extends BaseSink {
         exe = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         LOG.info("expected last events = " + exe);
     }
+
     @Override
     public void execute(Tuple input) throws InterruptedException {
         check(cnt, input);
         cnt++;
     }
+
     protected void latency_measure(Tuple input) {
         if (enable_latency_measurement) {
             if (cnt == 0) {
@@ -89,6 +96,7 @@ public class MeasureSink extends BaseSink {
             cnt++;
         }
     }
+
     protected void check(int cnt, Tuple input) {
         if (cnt == 0) {
             helper.StartMeasurement();
@@ -102,6 +110,7 @@ public class MeasureSink extends BaseSink {
             }
         }
     }
+
     /**
      * Only one sink will do the measure_end.
      *
@@ -139,6 +148,7 @@ public class MeasureSink extends BaseSink {
         context.Sequential_stopAll();
         SINK_CONTROL.getInstance().unlock();
     }
+
     @Override
     protected Logger getLogger() {
         return LOG;

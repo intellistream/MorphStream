@@ -1,10 +1,12 @@
 package util;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Random;
 import java.util.Scanner;
+
 public class FileClean {
     private static void SDClean() {
         try {
@@ -27,6 +29,7 @@ public class FileClean {
             e.printStackTrace();
         }
     }
+
     private static void LRClean() {
         try {
             Random r = new Random();
@@ -52,6 +55,7 @@ public class FileClean {
             e.printStackTrace();
         }
     }
+
     public static void main(String[] args) {
         LRClean();
     }

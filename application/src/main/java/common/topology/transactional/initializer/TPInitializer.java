@@ -1,10 +1,11 @@
 package common.topology.transactional.initializer;
+
+import common.SpinLock;
 import common.collections.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import db.Database;
 import db.DatabaseException;
-import common.SpinLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -19,11 +20,14 @@ import java.util.List;
 
 import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static utils.PartitionHelper.getPartition_interval;
+
 public class TPInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(TPInitializer.class);
+
     public TPInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
     }
+
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks) {
         int partition_interval = getPartition_interval();
@@ -42,6 +46,7 @@ public class TPInitializer extends TableInitilizer {
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
+
     @Override
     public void loadDB(int thread_id, int NUMTasks) {
         int partition_interval = getPartition_interval();
@@ -59,6 +64,7 @@ public class TPInitializer extends TableInitilizer {
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
+
     private void insertCntRecord(String key, int value, int pid, SpinLock[] spinlock) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
@@ -70,6 +76,7 @@ public class TPInitializer extends TableInitilizer {
             e.printStackTrace();
         }
     }
+
     private void insertSpeedRecord(String key, int value, int pid, SpinLock[] spinlock) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
@@ -81,6 +88,7 @@ public class TPInitializer extends TableInitilizer {
             e.printStackTrace();
         }
     }
+
     private void insertCntRecord(String key) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
@@ -92,6 +100,7 @@ public class TPInitializer extends TableInitilizer {
             e.printStackTrace();
         }
     }
+
     private void insertSpeedRecord(String key, int value) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
@@ -103,6 +112,7 @@ public class TPInitializer extends TableInitilizer {
             e.printStackTrace();
         }
     }
+
     private RecordSchema SpeedScheme() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -112,6 +122,7 @@ public class TPInitializer extends TableInitilizer {
         fieldNames.add("Value");
         return new RecordSchema(fieldNames, dataBoxes);
     }
+
     private RecordSchema CntScheme() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -121,20 +132,25 @@ public class TPInitializer extends TableInitilizer {
         fieldNames.add("Value");
         return new RecordSchema(fieldNames, dataBoxes);
     }
+
     @Override
     public boolean Prepared(String file) {
         return true;
     }
+
     @Override
     public void store(String file_name) {
     }
+
     @Override
     public Object create_new_event(int num_p, int bid) {
         return null;
     }
+
     protected String getConfigKey(String template) {
         return String.format(template, "tptxn");//TODO: make it flexible in future.
     }
+
     public void creates_Table(Configuration config) {
         RecordSchema s = SpeedScheme();
         db.createTable(s, "segment_speed");

@@ -15,6 +15,7 @@
  * permissions and limitations under the License.
  */
 package common.model.predictor;
+
 /**
  * Generic Pair class
  *
@@ -25,28 +26,36 @@ package common.model.predictor;
 public class Pair<L, R> {
     protected L left;
     protected R right;
+
     public Pair() {
     }
+
     public Pair(L left, R right) {
         this.left = left;
         this.right = right;
     }
+
     public L getLeft() {
         return left;
     }
+
     public void setLeft(L left) {
         this.left = left;
     }
+
     public R getRight() {
         return right;
     }
+
     public void setRight(R right) {
         this.right = right;
     }
+
     @Override
     public int hashCode() {
         return left.hashCode() ^ right.hashCode();
     }
+
     @Override
     public boolean equals(Object other) {
         boolean isEqual = false;

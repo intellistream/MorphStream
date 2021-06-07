@@ -1,4 +1,5 @@
 package common.collections;
+
 import common.helper.DataSource;
 import common.helper.Event;
 import kafka.javaapi.producer.Producer;
@@ -9,12 +10,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Properties;
+
 /**
  * Got datasource, and the corresponding spout executor has the split wrapper..
  * Created by I309939 on 7/29/2016.
  */
 public class utils {
     private static final Logger LOG = LoggerFactory.getLogger(utils.class);
+
     private static ProducerConfig configure() {
         Properties props = new Properties();
         props.put("metadata.broker.list", "127.0.0.1:9092");
@@ -24,6 +27,7 @@ public class utils {
         ProducerConfig config = new ProducerConfig(props);
         return config;
     }
+
     public static void main(String[] args) {
         int function = Integer.parseInt(args[1]);
         switch (function) {

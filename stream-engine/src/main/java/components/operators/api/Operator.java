@@ -1,12 +1,13 @@
 package components.operators.api;
+
+import common.Clock;
+import common.OrderLock;
+import common.OrderValidate;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
+import db.Database;
 import execution.ExecutionGraph;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
@@ -14,10 +15,10 @@ import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.OutputFieldsDeclarer;
 import faulttolerance.State;
-import common.Clock;
-import db.Database;
-import common.OrderLock;
-import common.OrderValidate;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import transaction.impl.TxnContext;
 
 import java.io.Serializable;
@@ -28,6 +29,7 @@ import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_app_combo;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static common.constants.BaseConstants.BaseField.TEXT;
+
 public abstract class Operator implements IOperator {
     /**
      * Because the flexibility of noSQL stream processing, we force user to tell us the output formulation.
@@ -68,6 +70,7 @@ public abstract class Operator implements IOperator {
     boolean Stateful = false;
     private double window = 1;//by default window fieldSize is 1, means per-tuple execution
     private double results = 0;
+
     /**
      * @param log
      * @param output_selectivity
@@ -100,6 +103,7 @@ public abstract class Operator implements IOperator {
         window = window_size;
         fields = new HashMap<>();
     }
+
     Operator(Logger log, boolean byP, double event_frequency, double w) {
         LOG = log;
         this.input_selectivity = new HashMap<>();
@@ -113,26 +117,34 @@ public abstract class Operator implements IOperator {
         window = w;
         fields = new HashMap<>();
     }
+
     public void setStateful() {
         Stateful = true;
     }
+
     public void display() {
     }
+
     public OutputCollector getCollector() {
         return collector;
     }
+
     public TopologyContext getContext() {
         return context;
     }
+
     private void setContext(TopologyContext context) {
         this.context = context;
     }
+
     public void setFields(Fields fields) {
         this.fields.put(BaseConstants.BaseStream.DEFAULT, fields);
     }
+
     public void setFields(String streamId, Fields fields) {
         this.fields.put(streamId, fields);
     }
+
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         if (fields.isEmpty()) {
@@ -147,6 +159,7 @@ public abstract class Operator implements IOperator {
             declarer.declareStream(e.getKey(), e.getValue());
         }
     }
+
     /**
      * default field.
      *
@@ -155,30 +168,39 @@ public abstract class Operator implements IOperator {
     protected Fields getDefaultFields() {//@define the output fields
         return new Fields(TEXT);
     }
+
     protected Map<String, Fields> getDefaultStreamFields() {
         return null;
     }
+
     public String getConfigPrefix() {
         return this.configPrefix;
     }
+
     public void setConfigPrefix(String configPrefix) {
         this.configPrefix = configPrefix;
     }
+
     public int getId() {
         return this.executor.getExecutorID();
     }
+
     public double getWindow() {
         return window;
     }
+
     public void setWindow(double window) {
         this.window = window;
     }
+
     public double getResults() {
         return results;
     }
+
     public void setResults(double results) {
         this.results = results;
     }
+
     /**
      * This is the API to talk to actual thread.
      *
@@ -192,15 +214,19 @@ public abstract class Operator implements IOperator {
         this.collector = collector;
         base_initialize(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
     }
+
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
     }
+
     public void loadDB(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         graph.topology.tableinitilizer.loadDB(thread_Id, this.context.getNUMTasks());
     }
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph){
+
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         LOG.info("The operator" + executor.getOP() + "does not require initialization");
     }
+
     /**
      * Base init will always be called.
      *
@@ -236,6 +262,7 @@ public abstract class Operator implements IOperator {
     public void setExecutionNode(ExecutionNode e) {
         this.executor = e;
     }
+
     /**
      * forward_checkpoint implementation
      * save state of the operator with or without MMIO.
@@ -248,6 +275,7 @@ public abstract class Operator implements IOperator {
     public boolean checkpoint_store(Serializable value, int sourceId, Marker marker) {
         return state.share_store(value, sourceId, marker, executor, context.getThisComponentId() + context.getThisTaskId());
     }
+
     /**
      * Simple forward the marker
      *
@@ -257,12 +285,15 @@ public abstract class Operator implements IOperator {
     public boolean checkpoint_forward(int sourceId) {
         return state.forward(sourceId, executor);
     }
+
     public Integer default_scale(Configuration conf) {
         return 1;
     }
+
     public int getFid() {
         return fid;
     }
+
     public double getEmpty() {
         return 0;
     }

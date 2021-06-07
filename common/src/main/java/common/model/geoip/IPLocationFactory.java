@@ -1,9 +1,12 @@
 package common.model.geoip;
+
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
+
 public class IPLocationFactory {
     public static final String GEOIP2 = "geoip2";
+
     public static IPLocation create(String name, Configuration config) {
         if (name.equals(GEOIP2)) {
             String OS_prefix = null;

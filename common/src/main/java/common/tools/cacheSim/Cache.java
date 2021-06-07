@@ -1,7 +1,9 @@
 package common.tools.cacheSim;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
+
 /**
  * Class to simulate a cache with a specified associativity and number of sets
  *
@@ -11,6 +13,7 @@ public class Cache {
     private final Set[] sets;
     private int setAssoc, hitCount, missCount, totalCount;
     private double hitRate, missRate;
+
     public Cache(int passedNumSets, int passedSetAssoc) {
         this.sets = new Set[passedNumSets / setAssoc];
         for (int i = 0; i < this.sets.length; i++) {
@@ -23,6 +26,7 @@ public class Cache {
         this.hitRate = 0.0;
         this.missRate = 0.0;
     }
+
     /**
      * Takes a .dat file name, reads memory addresses from it, and simulates filling the cache
      * as it reads each address
@@ -50,9 +54,11 @@ public class Cache {
         hitRate = hitCount / (double) totalCount * 100;
         missRate = missCount / (double) totalCount * 100;
     }
+
     public int getSetAssoc() {
         return setAssoc;
     }
+
     public void printStats() {
         System.out.println("Cache Stats!\n-----------------");
         System.out.println(this);
@@ -61,6 +67,7 @@ public class Cache {
         System.out.println("Hit Rate: " + hitRate);
         System.out.println("Miss Rate: " + missRate);
     }
+
     public String toString() {
         return "Cache Sets: " + sets.length + "\n" + "Set Associativity: " + setAssoc + "\n" + "Block Size: 4";
     }

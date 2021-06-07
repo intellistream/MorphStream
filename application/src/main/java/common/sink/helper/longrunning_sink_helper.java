@@ -1,17 +1,21 @@
 package common.sink.helper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * Created by I309939 on 7/23/2016.
  */
 public class longrunning_sink_helper extends helper {
     private static final Logger LOG = LoggerFactory.getLogger(longrunning_sink_helper.class);
     long warm_start = 0, warm_end = 0;
+
     public longrunning_sink_helper(Logger LOG, int runtime, String metric_path, int thisTaskId) {
         super(runtime, 0, 0, metric_path, thisTaskId, false);
         warm_start = System.nanoTime();
         need_warm_up = false;
     }
+
     public longrunning_sink_helper(longrunning_sink_helper sink_state, int thisTaskId) {
         super(sink_state.runtimeInSEC, 0, 0, sink_state.metric_path, thisTaskId, false);
         atomic_index_e = sink_state.atomic_index_e;
@@ -23,6 +27,7 @@ public class longrunning_sink_helper extends helper {
         warm_start = sink_state.warm_start;
         warm_end = sink_state.warm_end;
     }
+
     public double execute(long bid) {
         atomic_index_e.incrementAndGet();
         if (need_warm_up) {

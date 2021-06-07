@@ -1,4 +1,5 @@
 package storage.store.disk;
+
 /**
  * Exception thrown for errors while paging.
  * <p>
@@ -6,9 +7,11 @@ package storage.store.disk;
  */
 public class PageException extends RuntimeException {
     private static final long serialVersionUID = -2765706135666534861L;
+
     public PageException() {
         super();
     }
+
     public PageException(String message) {
         super(message);
     }

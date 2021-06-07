@@ -1,4 +1,7 @@
 package common.topology.transactional;
+
+import common.PartitionedOrderLock;
+import common.SpinLock;
 import common.bolts.transactional.sl.SLBolt_lwm;
 import common.bolts.transactional.sl.SLBolt_olb;
 import common.bolts.transactional.sl.SLBolt_sstore;
@@ -6,15 +9,13 @@ import common.bolts.transactional.sl.SLBolt_ts;
 import common.collections.Configuration;
 import common.constants.StreamLedgerConstants.Component;
 import common.topology.transactional.initializer.SLInitializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.Topology;
 import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;
-import common.PartitionedOrderLock;
-import common.SpinLock;
 import transaction.TableInitilizer;
 
 import java.util.Random;
@@ -24,21 +25,26 @@ import static common.constants.StreamLedgerConstants.Conf.SL_THREADS;
 import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
 import static common.constants.StreamLedgerConstants.PREFIX;
 import static utils.PartitionHelper.setPartition_interval;
+
 /**
  * Short term as SL.
  */
 public class StreamLedger extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(StreamLedger.class);
+
     public StreamLedger(String topologyName, Configuration config) {
         super(topologyName, config);
     }
+
     public static String getPrefix() {
         return PREFIX;
     }
+
     static int GenerateInteger(final int min, final int max) {
         Random r = new Random();
         return r.nextInt(max) + min;
     }
+
     //configure set_executor_ready database table.
     public TableInitilizer initializeDB(SpinLock[] spinlock_) {
         double scale_factor = config.getDouble("scale_factor", 1);
@@ -59,6 +65,7 @@ public class StreamLedger extends TransactionTopology {
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         return ini;
     }
+
     @Override
     public Topology buildTopology() {
         try {
@@ -105,10 +112,12 @@ public class StreamLedger extends TransactionTopology {
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology(db, this);
     }
+
     @Override
     public Logger getLogger() {
         return LOG;
     }
+
     @Override
     public String getConfigPrefix() {
         return PREFIX;

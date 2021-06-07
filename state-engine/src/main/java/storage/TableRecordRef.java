@@ -1,12 +1,16 @@
 package storage;
+
 import java.util.concurrent.RejectedExecutionException;
+
 public class TableRecordRef {
     public int cnt = 0;
     private volatile TableRecord record;
     private String name;
+
     public boolean isEmpty() {
         return cnt == 0;
     }
+
     public TableRecord getRecord() {
         try {
             if (record == null) {
@@ -22,6 +26,7 @@ public class TableRecordRef {
 //        }
         return record;
     }
+
     public void setRecord(TableRecord record) {
         this.record = record;
         cnt++;

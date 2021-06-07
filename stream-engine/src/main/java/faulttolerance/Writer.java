@@ -1,15 +1,17 @@
 package faulttolerance;
+
 import common.collections.OsUtils;
+import components.TopologyComponent;
+import execution.ExecutionNode;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import components.TopologyComponent;
-import execution.ExecutionNode;
 
 import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+
 /**
  * Operator shares the same writer.
  * Only one executor needs to perform the write!
@@ -25,12 +27,14 @@ public class Writer {
     Collections collections;
     private volatile int iteration = 0;
     private volatile int cnt = 0;
+
     public Writer(TopologyComponent operator, int numTasks) {
         this.operator = operator;
         this.numTasks = numTasks;
 //		this.collections = new HashMap<>();
         this.collections = new Collections(this.operator, this.operator.getNumTasks());
     }
+
     /**
      * TODO: implement the faster caller to store in future version.
      *
@@ -47,6 +51,7 @@ public class Writer {
             called_executors = 0;
         }
     }
+
     private synchronized File create_dir(long msgId) {
         String directory = System.getProperty("user.home")
                 + OsUtils.OS_wrapper("TStreamPlus") + OsUtils.OS_wrapper("checkpoints")
@@ -57,6 +62,7 @@ public class Writer {
         }
         return file;
     }
+
     public void save_state_MMIO_compress(long msgId, long timeStampNano
             , int myiteration, String path, boolean compress, ExecutionNode executor, State state) throws IOException {
         if (!reliable) {
@@ -99,6 +105,7 @@ public class Writer {
 //		int decompressedLength2 = decompressor2.decompress(compressed, 0, compressedLength, restored, 0);
 //		// decompressedLength == decompressedLength2
     }
+
     public void save_state(long msgId, long timeStampNano, int myiteration, String path, ExecutionNode executor, State state) throws IOException {
         File file = create_dir(msgId);
         byte[] data = SerializationUtils.serialize(state.value());
@@ -108,6 +115,7 @@ public class Writer {
             //LOG.DEBUG(path + " save state with marker Id:" + msgId + " size to store:" + data.length);
         }
     }
+
     /**
      * the original MMIO.
      *
@@ -129,20 +137,24 @@ public class Writer {
         out.put(data);
         reliable = false;
     }
+
     public synchronized void save_state_MMIO_shared(long msgId, long timeStampNano, int myiteration
             , String path, ExecutionNode executor, State state) throws IOException {
 //		collections.putIfAbsent(myiteration, new Collections(executor.operator, executor.operator.getNumTasks()));
 //		collections.GetAndUpdate(myiteration).add(msgId, timeStampNano, executor, myiteration, state.value_list());
         collections.add(msgId, timeStampNano, executor, myiteration, state.value());
     }
+
     class Collections {
         final int numTasks;
         private final int base;
         Serializable[] state;//an array of Serializable information from all executors of the same operator.
+
         Collections(TopologyComponent operator, int numTasks) {
             this.numTasks = numTasks;
             this.base = operator.getExecutorList().get(0).getExecutorID();
         }
+
         public synchronized void add(long msgId, Long timeStampNano, ExecutionNode executor, int myiteration, Serializable state_value) throws IOException {
             final int index = executor.getExecutorID() - base;
             if (myiteration > iteration) {

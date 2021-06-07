@@ -1,4 +1,5 @@
 package common.param.ob;
+
 import common.bolts.transactional.ob.BidingResult;
 import common.param.TxnEvent;
 import storage.SchemaRecordRef;
@@ -7,18 +8,20 @@ import java.util.Arrays;
 import java.util.SplittableRandom;
 
 import static common.constants.OnlineBidingSystemConstants.Constant.*;
+
 public class BuyingEvent extends TxnEvent {
+    //expected state.
+    //long Item_value=0;
+    //long asset_value=0;
+    private final int[] itemId;
     //place-rangeMap.
     public SchemaRecordRef[] record_refs;
     //updated state...to be written.
     public long newQty;
     public BidingResult biding_result;
-    //expected state.
-    //long Item_value=0;
-    //long asset_value=0;
-    private final int[] itemId;
     private long[] bid_price;
     private long[] bid_qty;
+
     /**
      * Creates a new BuyingEvent.
      */
@@ -33,6 +36,7 @@ public class BuyingEvent extends TxnEvent {
         bid_qty = new long[NUM_ACCESSES_PER_BUY];
         setValues(rnd);
     }
+
     /**
      * Loading a BuyingEvent.
      */
@@ -61,18 +65,23 @@ public class BuyingEvent extends TxnEvent {
             this.bid_qty[i] = Long.parseLong(qty_arrays[i].trim());
         }
     }
+
     public long getTimestamp() {
         return timestamp;
     }
+
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
+
     public long getBidPrice(int access_id) {
         return bid_price[access_id];
     }
+
     public long getBidQty(int access_id) {
         return bid_qty[access_id];
     }
+
     // ------------------------------------------------------------------------
     //  miscellaneous
     // ------------------------------------------------------------------------
@@ -84,19 +93,24 @@ public class BuyingEvent extends TxnEvent {
                 + ", bid_qty=" + Arrays.toString(bid_qty)
                 + '}';
     }
+
     public int[] getItemId() {
         return itemId;
     }
+
     public long[] getBidPrice() {
         return bid_price;
     }
+
     public long[] getBidQty() {
         return bid_qty;
     }
+
     private void set_values(int access_id, SplittableRandom rnd) {
         bid_price[access_id] = rnd.nextLong(MAX_Price);
         bid_qty[access_id] = rnd.nextLong(MAX_BUY_Transfer);
     }
+
     public void setValues(SplittableRandom rnd) {
         for (int access_id = 0; access_id < NUM_ACCESSES_PER_BUY; ++access_id) {
             set_values(access_id, rnd);

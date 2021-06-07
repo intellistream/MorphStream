@@ -15,16 +15,19 @@
  * permissions and limitations under the License.
  */
 package common.util.math;
+
 /**
  * @author pranab
  */
 public class SimpleStat {
     private double sum;
     private int count;
+
     public void add(double value) {
         sum += value;
         ++count;
     }
+
     public double getMean() {
         return sum / count;
     }

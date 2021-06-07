@@ -1,7 +1,9 @@
 package common;
+
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+
 /**
  * A synchronization aid that allows one or more threads to sync_ratio until
  * a set of operations being performed in other threads completes.
@@ -124,6 +126,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  */
 public class ResettableCountDownLatch {
     private final Sync sync;
+
     /**
      * Constructs a {@code CountDownLatch} initialized with the given count.
      *
@@ -135,6 +138,7 @@ public class ResettableCountDownLatch {
         if (count < 0) throw new IllegalArgumentException("count < 0");
         this.sync = new Sync(count);
     }
+
     /**
      * Causes the current thread to sync_ratio until the latch has counted down to
      * zero, unless the thread is {@linkplain Thread#interrupt interrupted}.
@@ -165,9 +169,11 @@ public class ResettableCountDownLatch {
     public void await() throws InterruptedException {
         sync.acquireSharedInterruptibly(1);
     }
+
     public void reset() {
         sync.reset();
     }
+
     /**
      * Causes the current thread to sync_ratio until the latch has counted down to
      * zero, unless the thread is {@linkplain Thread#interrupt interrupted},
@@ -213,6 +219,7 @@ public class ResettableCountDownLatch {
             throws InterruptedException {
         return sync.tryAcquireSharedNanos(1, unit.toNanos(timeout));
     }
+
     /**
      * Decrements the count of the latch, releasing all waiting threads if
      * the count reaches zero.
@@ -226,6 +233,7 @@ public class ResettableCountDownLatch {
     public void countDown() {
         sync.releaseShared(1);
     }
+
     /**
      * Returns the current count.
      *
@@ -236,6 +244,7 @@ public class ResettableCountDownLatch {
     public long getCount() {
         return sync.getCount();
     }
+
     /**
      * Returns a string identifying this latch, as well as its state.
      * The state, in brackets, includes the String {@code "Count ="}
@@ -246,6 +255,7 @@ public class ResettableCountDownLatch {
     public String toString() {
         return super.toString() + "[Count = " + sync.getCount() + "]";
     }
+
     /**
      * Synchronization control For CountDownLatch.
      * Uses AQS state to represent count.
@@ -253,16 +263,20 @@ public class ResettableCountDownLatch {
     private static final class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = 4982264981922014374L;
         public final int startCount;
+
         Sync(int count) {
             this.startCount = count;
             setState(startCount);
         }
+
         int getCount() {
             return getState();
         }
+
         public int tryAcquireShared(int acquires) {
             return getState() == 0 ? 1 : -1;
         }
+
         public boolean tryReleaseShared(int releases) {
             // Decrement count; signal when transition to zero
             for (; ; ) {
@@ -274,6 +288,7 @@ public class ResettableCountDownLatch {
                     return nextc == 0;
             }
         }
+
         public void reset() {
             setState(startCount);
         }

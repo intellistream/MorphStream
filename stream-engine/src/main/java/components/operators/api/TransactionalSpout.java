@@ -1,9 +1,10 @@
 package components.operators.api;
+
 import common.tools.FastZipfGenerator;
+import execution.runtime.tuple.impl.Marker;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import execution.runtime.tuple.impl.Marker;
 
 import java.io.BufferedWriter;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import static common.CONTROL.enable_debug;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static profiler.Metrics.NUM_ACCESSES;
+
 public abstract class TransactionalSpout extends AbstractSpout implements Checkpointable {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalSpout.class);
     public transient FastZipfGenerator p_generator;
@@ -31,15 +33,19 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public volatile boolean earilier_check = true;
     public int empty = 0;//execute without emit.
     public int batch_number_per_wm;
+
     protected TransactionalSpout(Logger log, int fid) {
         super(log);
         this.fid = fid;
     }
+
     public double getEmpty() {
         return empty;
     }
+
     @Override
     public abstract void nextTuple() throws InterruptedException;
+
     /**
      * THIS IS USED ONLY WHEN "enable_app_combo" is true.
      * <p>
@@ -51,14 +57,17 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public boolean checkpoint(int counter) {
         return (counter % batch_number_per_wm == 0);
     }
+
     @Override
     public void forward_checkpoint(int sourceId, long bid, Marker marker) throws InterruptedException {
         forward_checkpoint(sourceId, DEFAULT_STREAM_ID, bid, marker);
     }
+
     @Override
     public void forward_checkpoint_single(int sourceId, long bid, Marker marker) throws InterruptedException {
         forward_checkpoint_single(sourceId, DEFAULT_STREAM_ID, bid, marker);
     }
+
     @Override
     public void forward_checkpoint_single(int sourceTask, String streamId, long bid, Marker marker) throws InterruptedException {
         if (clock.tick(myiteration) && success) {//emit marker tuple
@@ -71,6 +80,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
             earilier_check = true;
         }
     }
+
     @Override
     public void forward_checkpoint(int sourceTask, String streamId, long bid, Marker marker) throws InterruptedException {
         if (clock.tick(myiteration) && success) {//emit marker tuple
@@ -84,6 +94,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
             earilier_check = true;
         }
     }
+
     @Override
     public void ack_checkpoint(Marker marker) {
         //Do something to clear past state. (optional)
@@ -99,6 +110,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
 //            control = 0;
 //        }
     }
+
     @Override
     public void earlier_ack_checkpoint(Marker marker) {
 //        if (earilier_check) {
@@ -106,6 +118,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
 //            earilier_check = false;
 //        }
     }
+
     @Override
     public void cleanup() {
     }

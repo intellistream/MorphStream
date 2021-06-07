@@ -1,8 +1,10 @@
 package utils;
+
 import storage.table.stats.Histogram;
 import storage.table.stats.ObjectHistogram;
 
 import java.util.*;
+
 /**
  * A class that generates random numbers that follow some distribution.
  * <p>
@@ -24,6 +26,7 @@ public class RandomDistribution {
         protected final double mean;
         protected final long range_size;
         private ObjectHistogram<Long> history;
+
         public DiscreteRNG(Random random, long min, long max) {
             if (min >= max) {
                 throw new IllegalArgumentException("Invalid range [" + min + " >= " + max + "]");
@@ -34,6 +37,7 @@ public class RandomDistribution {
             this.range_size = (max - min) + 1;
             this.mean = this.range_size / 2.0;
         }
+
         public static long nextLong(Random rng, long n) {
             // error checking and 2^x checking removed for simplicity.
             long bits, val;
@@ -43,7 +47,9 @@ public class RandomDistribution {
             } while (bits - val + (n - 1) < 0L);
             return val;
         }
+
         protected abstract long nextLongImpl();
+
         /**
          * Enable keeping track of the values that the RNG generates
          */
@@ -51,9 +57,11 @@ public class RandomDistribution {
             assert (this.history == null) : "Trying to enable history tracking more than once";
             this.history = new ObjectHistogram<>();
         }
+
         public boolean isHistoryEnabled() {
             return (this.history != null);
         }
+
         /**
          * Return the histogram of the values that have been generated
          *
@@ -63,6 +71,7 @@ public class RandomDistribution {
             assert (this.history != null) : "Trying to get value_list history but tracking wasn't enabled";
             return (this.history);
         }
+
         /**
          * Return the count for the number of values that have been generated
          * Only works if history tracking is enabled
@@ -72,21 +81,27 @@ public class RandomDistribution {
         public long getSampleCount() {
             return (this.history.getSampleCount());
         }
+
         public long getRange() {
             return this.range_size;
         }
+
         public double getMean() {
             return this.mean;
         }
+
         public long getMin() {
             return this.min;
         }
+
         public long getMax() {
             return this.max;
         }
+
         public Random getRandom() {
             return (this.random);
         }
+
         public Set<Integer> getRandomIntSet(int cnt) {
             assert (cnt < this.range_size);
             Set<Integer> ret = new HashSet<>();
@@ -95,6 +110,7 @@ public class RandomDistribution {
             } while (ret.size() < cnt);
             return (ret);
         }
+
         public Set<Integer> getRandomLongSet(int cnt) {
             assert (cnt < this.range_size);
             Set<Integer> ret = new HashSet<>();
@@ -103,6 +119,7 @@ public class RandomDistribution {
             } while (ret.size() < cnt);
             return (ret);
         }
+
         public double calculateMean(int num_samples) {
             long total = 0l;
             for (int i = 0; i < num_samples; i++) {
@@ -110,6 +127,7 @@ public class RandomDistribution {
             } // FOR
             return (total / (double) num_samples);
         }
+
         /**
          * Get the next random number as an int
          *
@@ -123,6 +141,7 @@ public class RandomDistribution {
             }
             return ((int) val);
         }
+
         /**
          * Get the next random number as a long
          *
@@ -136,16 +155,19 @@ public class RandomDistribution {
             }
             return (val);
         }
+
         @Override
         public String toString() {
             return String.format("%s[min=%d, max=%d]", this.getClass().getSimpleName(), this.min, this.max);
         }
     }
+
     /**
      * P(i)=1/(max-min)
      */
     public static class Flat extends DiscreteRNG {
         private static final long serialVersionUID = 1L;
+
         /**
          * Generate random integers from min (inclusive) to max (exclusive)
          * following even distribution.
@@ -157,6 +179,7 @@ public class RandomDistribution {
         public Flat(Random random, long min, long max) {
             super(random, min, max);
         }
+
         /**
          * @see DiscreteRNG#nextInt()
          */
@@ -174,6 +197,7 @@ public class RandomDistribution {
             return val;
         }
     }
+
     /**
      * P(i)=1/(max-min)
      */
@@ -183,6 +207,7 @@ public class RandomDistribution {
         private final Histogram<T> histogram;
         private final SortedMap<Long, T> value_rle = new TreeMap<>();
         private Histogram<T> history;
+
         /**
          * Generate a run-length of the values of the histogram
          */
@@ -197,20 +222,24 @@ public class RandomDistribution {
                 this.value_rle.put(total, k);
             } // FOR
         }
+
         @Override
         public void enableHistory() {
             this.history = new ObjectHistogram<>();
         }
+
         @Override
         public boolean isHistoryEnabled() {
             return (this.history != null);
         }
+
         public Histogram<T> getHistogramHistory() {
             if (this.history != null) {
                 return (this.history);
             }
             return (null);
         }
+
         public T nextValue() {
             int idx = this.inner.nextInt();
             Long total = this.value_rle.tailMap((long) idx).firstKey();
@@ -222,6 +251,7 @@ public class RandomDistribution {
             // assert(false) : "Went beyond our expected overhead_total '" + idx + "'";
             // return (null);
         }
+
         /**
          * @see DiscreteRNG#nextLong()
          */
@@ -234,14 +264,17 @@ public class RandomDistribution {
             return ((Long) val);
         }
     }
+
     /**
      * Gaussian Distribution
      */
     public static class Gaussian extends DiscreteRNG {
         private static final long serialVersionUID = 1L;
+
         public Gaussian(Random random, long min, long max) {
             super(random, min, max);
         }
+
         @Override
         protected long nextLongImpl() {
             int value = -1;
@@ -252,6 +285,7 @@ public class RandomDistribution {
             return (value + this.min);
         }
     }
+
     public static class HotWarmCold extends DiscreteRNG {
         private static final long serialVersionUID = 6086991912752643472L;
         int hot_data_access_skew;
@@ -263,6 +297,7 @@ public class RandomDistribution {
         int max;
         int hot_data_max;    // integers in the range 0 < x < hot_data_max will represent the "hot" numbers getting hot_data_access_skew% of the accesses
         int warm_data_max;  // integers in the range hot_data_max < x < warm_data_max will represent the "warm" numbers
+
         public HotWarmCold(Random r, int _min, int _max, int _hot_data_access_skew, int _hot_data_size, int _warm_data_access_skew, int _warm_data_size) {
             super(r, _min, _max);
             assert (_hot_data_access_skew + _warm_data_access_skew <= 100) : "Workload skew cannot be more than 100%.";
@@ -275,6 +310,7 @@ public class RandomDistribution {
             hot_data_max = (int) (max * (hot_data_size / (double) 100)) + min;
             warm_data_max = (int) (max * (warm_data_size / (double) 100)) + hot_data_max;
         }
+
         @Override
         protected long nextLongImpl() {
             int key = 0;
@@ -292,6 +328,7 @@ public class RandomDistribution {
             return key;
         }
     }
+
     /**
      * Zipf distribution. The ratio of the probabilities of integer i and j is
      * defined as follows: P(i)/P(j)=((j-min+1)/(i-min+1))^sigma.
@@ -301,6 +338,7 @@ public class RandomDistribution {
         private static final double DEFAULT_EPSILON = 0.001;
         private final ArrayList<Long> k;
         private final ArrayList<Double> v;
+
         /**
          * Constructor
          *
@@ -312,6 +350,7 @@ public class RandomDistribution {
         public Zipf(Random r, long min, long max, double sigma) {
             this(r, min, max, sigma, DEFAULT_EPSILON);
         }
+
         /**
          * Constructor.
          *
@@ -347,6 +386,7 @@ public class RandomDistribution {
                 v.set(i, v.get(i) / sum);
             }
         }
+
         /**
          * @see DiscreteRNG#nextInt()
          */
@@ -370,6 +410,7 @@ public class RandomDistribution {
             return ceiling - DiscreteRNG.nextLong(random, ceiling - lower);
         }
     }
+
     /**
      * Binomial distribution. P(k)=select(n, k)*p^k*(1-p)^(n-k) (k = 0, 1, ...,
      * n) P(k)=select(max-min-1, k-min)*p^(k-min)*(1-p)^(k-min)*(1-p)^(max-k-1)
@@ -378,6 +419,7 @@ public class RandomDistribution {
         private static final long serialVersionUID = 1L;
         private final double[] v;
         private final long n;
+
         /**
          * Generate random integers from min (inclusive) to max (exclusive)
          * following Binomial distribution.
@@ -404,6 +446,7 @@ public class RandomDistribution {
                 v = null;
             }
         }
+
         private static double select(long n, long k) {
             double ret = 1.0;
             for (long i = k + 1; i <= n; ++i) {
@@ -411,9 +454,11 @@ public class RandomDistribution {
             }
             return ret;
         }
+
         private static double power(double p, long k) {
             return Math.exp(k * Math.log(p));
         }
+
         /**
          * @see DiscreteRNG#nextInt()
          */

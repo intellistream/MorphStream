@@ -1,16 +1,17 @@
 package common.bolts.transactional.ob;
+
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import transaction.impl.TxnContext;
 
 import java.util.ArrayDeque;
@@ -20,36 +21,43 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_app_combo;
 import static profiler.MeasureTools.*;
+
 public class OBBolt_ts_nopush extends OBBolt_ts {
     private static final Logger LOG = LoggerFactory.getLogger(OBBolt_ts_nopush.class);
     private int thisTaskId;
     private Collection<ToppingEvent> ToppingEventsHolder;
     private Collection<AlertEvent> AlertEventsHolder;
+
     public OBBolt_ts_nopush(int fid, SINKCombo sink) {
         super(fid, sink);
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         ToppingEventsHolder = new ArrayDeque<>();
         AlertEventsHolder = new ArrayDeque<>();
     }
+
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
     }
+
     protected void TOPPING_REQUEST_CONSTRUCT(ToppingEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         for (int i = 0; i < event.getNum_access(); i++)
             transactionManager.Asy_ReadRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), event.record_refs[i], event.enqueue_time);//asynchronously return.
         ToppingEventsHolder.add(event);
     }
+
     protected void ALERT_REQUEST_CONSTRUCT(AlertEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         for (int i = 0; i < event.getNum_access(); i++)
             transactionManager.Asy_ReadRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), event.record_refs[i], event.enqueue_time);//asynchronously return.
         AlertEventsHolder.add(event);
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
@@ -83,36 +91,43 @@ public class OBBolt_ts_nopush extends OBBolt_ts {
             execute_ts_normal(in);
         }
     }
+
     private void TOPPING_REQUEST_POST() throws InterruptedException {
         for (ToppingEvent event : ToppingEventsHolder) {
             TOPPING_REQUEST_POST(event);
         }
     }
+
     private void ALERT_REQUEST_POST() throws InterruptedException {
         for (AlertEvent event : AlertEventsHolder) {
             ALERT_REQUEST_POST(event);
         }
     }
+
     private void TOPPING_REQUEST_CORE() {
         for (ToppingEvent event : ToppingEventsHolder) {
             TOPPING_REQUEST_CORE(event);
         }
     }
+
     private void ALERT_REQUEST_CORE() {
         for (AlertEvent event : AlertEventsHolder) {
             ALERT_REQUEST_CORE(event);
         }
     }
+
     private void BUYING_REQUEST_POST() throws InterruptedException {
         for (BuyingEvent event : buyingEvents) {
             BUYING_REQUEST_POST(event);
         }
     }
+
     private void BUYING_REQUEST_CORE() {
         for (BuyingEvent event : buyingEvents) {
             BUYING_REQUEST_CORE(event);
         }
     }
+
     /**
      * Evaluation are pushed down..
      *

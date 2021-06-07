@@ -1,10 +1,12 @@
 package transaction.dedicated;
+
+import common.meta.MetaTypes;
+import content.Content;
+import db.DatabaseException;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import db.DatabaseException;
-import common.meta.MetaTypes;
-import content.Content;
+import profiler.MeasureTools;
 import profiler.Metrics;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
@@ -17,19 +19,19 @@ import java.util.LinkedList;
 import static common.CONTROL.enable_debug;
 import static common.meta.MetaTypes.AccessType.*;
 import static common.meta.MetaTypes.kMaxAccessNum;
-
-import profiler.MeasureTools;
-
 import static transaction.impl.TxnAccess.Access;
+
 /**
  * conventional two-phase locking with no-sync_ratio strategy from Cavalia.
  */
 public class TxnManagerLock extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerLock.class);
     private final Metrics metrics = Metrics.getInstance();
+
     public TxnManagerLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
     }
+
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException {
 //		BEGIN_PHASE_MEASURE(thread_id_, INSERT_PHASE);
@@ -56,6 +58,7 @@ public class TxnManagerLock extends TxnManagerDedicated {
             return true;
         }
     }
+
     @Override
     public boolean CommitTransaction(TxnContext txnContext) {
 //        BEGIN_TS_ALLOCATE_TIME_MEASURE(txnContext.thread_Id);
@@ -122,6 +125,7 @@ public class TxnManagerLock extends TxnManagerDedicated {
 //		END_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
         return true;
     }
+
     @Override
     public void AbortTransaction() {
         // recover updated data and release locks.
@@ -150,6 +154,7 @@ public class TxnManagerLock extends TxnManagerDedicated {
         assert (access_list_.access_count_ <= kMaxAccessNum);
         access_list_.Clear();
     }
+
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord
             t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {

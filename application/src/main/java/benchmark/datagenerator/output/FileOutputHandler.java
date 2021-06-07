@@ -1,8 +1,8 @@
 package benchmark.datagenerator.output;
 
-import common.collections.OsUtils;
-import benchmark.datagenerator.DataTransaction;
 import benchmark.datagenerator.DataOperationChain;
+import benchmark.datagenerator.DataTransaction;
+import common.collections.OsUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;

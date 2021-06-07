@@ -1,11 +1,14 @@
 package components.formatter;
+
 import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.Tuple;
+
 /**
  * @author Maycon Viana Bordin <mayconbordin@gmail.com>
  */
 public class FullInfoFormatter extends Formatter {
     private static final String TEMPLATE = "source: %s:%d, stream: %s, id: %s, values: [%s]";
+
     @Override
     public String format(Tuple tuple) {
         Fields schema = context.getComponentOutputFields(tuple.getSourceComponent(), tuple.getSourceStreamId());

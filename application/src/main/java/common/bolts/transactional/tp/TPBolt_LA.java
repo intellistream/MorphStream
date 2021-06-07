@@ -1,18 +1,22 @@
 package common.bolts.transactional.tp;
+
 import common.param.lr.LREvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
 import db.DatabaseException;
+import org.slf4j.Logger;
 import transaction.impl.TxnContext;
 
 import static profiler.MeasureTools.*;
+
 public abstract class TPBolt_LA extends TPBolt {
     public TPBolt_LA(Logger log, int fid, SINKCombo sink) {
         super(log, fid, sink);
     }
+
     protected void LAL(LREvent event, long i, long _bid) throws DatabaseException {
         REQUEST_LOCK_AHEAD(event, txn_context[(int) (i - _bid)]);
     }
+
     //lock_ratio-ahead phase.
     @Override
     protected void LAL_PROCESS(long _bid) throws DatabaseException, InterruptedException {
@@ -31,6 +35,7 @@ public abstract class TPBolt_LA extends TPBolt {
         transactionManager.getOrderLock().advance();
         END_WAIT_TIME_MEASURE(thread_Id);
     }
+
     protected void PostLAL_process(long _bid) throws DatabaseException {
         int _combo_bid_size = 1;
         //txn process phase.

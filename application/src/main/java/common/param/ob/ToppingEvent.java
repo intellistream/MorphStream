@@ -1,4 +1,5 @@
 package common.param.ob;
+
 import common.param.TxnEvent;
 import storage.SchemaRecordRef;
 
@@ -6,13 +7,15 @@ import java.util.Arrays;
 import java.util.SplittableRandom;
 
 import static common.constants.OnlineBidingSystemConstants.Constant.MAX_TOP_UP;
+
 public class ToppingEvent extends TxnEvent {
     private final int num_access;
+    private final int[] itemId;
     //place-rangeMap.
     public SchemaRecordRef[] record_refs;
     public boolean topping_result;
-    private final int[] itemId;
     private long[] itemTopUp;
+
     /**
      * Creates a new ToppingEvent.
      */
@@ -29,6 +32,7 @@ public class ToppingEvent extends TxnEvent {
         this.itemId = itemId;
         setValues(num_access, rnd);
     }
+
     /**
      * @param bid
      * @param bid_array
@@ -57,33 +61,41 @@ public class ToppingEvent extends TxnEvent {
             this.itemTopUp[i] = Long.parseLong(top_arrays[i].trim());
         }
     }
+
     public int getNum_access() {
         return num_access;
     }
+
     private void setValues(int num_access, SplittableRandom rnd) {
         itemTopUp = new long[num_access];
         for (int access_id = 0; access_id < num_access; ++access_id) {
             set_values(access_id, rnd);
         }
     }
+
     private void set_values(int access_id, SplittableRandom rnd) {
         itemTopUp[access_id] = rnd.nextLong(MAX_TOP_UP);
     }
+
     public int[] getItemId() {
         return itemId;
     }
+
     public long getTimestamp() {
         return timestamp;
     }
+
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
+
     // ------------------------------------------------------------------------
     //  miscellaneous
     // ------------------------------------------------------------------------
     public long[] getItemTopUp() {
         return itemTopUp;
     }
+
     @Override
     public String toString() {
         return "ToppingEvent {"

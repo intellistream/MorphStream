@@ -1,10 +1,12 @@
 package operator;
+
 import db.DatabaseException;
 import db.SimpleDatabase;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 
 import java.util.*;
+
 /**
  * QueryPlan provides a set of functions to generate simple queries. Calling the methods corresponding
  * to SQL syntax stores the information in the QueryPlan, and calling execute generates and executes
@@ -12,7 +14,6 @@ import java.util.*;
  */
 public class QueryPlan {
     private final SimpleDatabase.Transaction transaction;
-    private QueryOperator finalOperator;
     private final String startTableName;
     private final List<String> joinTableNames;
     private final List<String> joinLeftColumnNames;
@@ -20,6 +21,7 @@ public class QueryPlan {
     private final List<String> selectColumnNames;
     private final List<PredicateOperator> selectOperators;
     private final List<DataBox> selectDataBoxes;
+    private QueryOperator finalOperator;
     private List<String> projectColumns;
     private String groupByColumn;
     private String orderByColumn;
@@ -28,6 +30,7 @@ public class QueryPlan {
     private boolean hasCount;
     private String averageColumnName;
     private String sumColumnName;
+
     /**
      * Creates a new QueryPlan within transaction. The base table is startTableName.
      *
@@ -51,9 +54,11 @@ public class QueryPlan {
         this.orderByColumn = null;
         this.finalOperator = null;
     }
+
     public QueryOperator getFinalOperator() {
         return this.finalOperator;
     }
+
     /**
      * Add a project operator to the QueryPlan with a list of column names. Can only specify one set
      * of projections.
@@ -70,6 +75,7 @@ public class QueryPlan {
         }
         this.projectColumns = columnNames;
     }
+
     /**
      * Add a select operator. Only returns columns in which the column fulfills the predicate relative
      * to value_list.
@@ -84,6 +90,7 @@ public class QueryPlan {
         this.selectOperators.add(comparison);
         this.selectDataBoxes.add(value);
     }
+
     /**
      * Set the group by column for this query.
      *
@@ -93,6 +100,7 @@ public class QueryPlan {
     public void groupBy(String column) {
         this.groupByColumn = column;
     }
+
     /**
      * Set the order by column for this query.
      *
@@ -105,6 +113,7 @@ public class QueryPlan {
         this.orderByASC = ASC;
         this.orderByLimit = limit;
     }
+
     /**
      * Add a count aggregate to this query. Only can specify count(*).
      *
@@ -113,6 +122,7 @@ public class QueryPlan {
     public void count() {
         this.hasCount = true;
     }
+
     /**
      * Add an average on column. Can only average over integer or float columns.
      *
@@ -122,6 +132,7 @@ public class QueryPlan {
     public void average(String column) {
         this.averageColumnName = column;
     }
+
     /**
      * Add a sum on column. Can only sum integer or float columns
      *
@@ -131,6 +142,7 @@ public class QueryPlan {
     public void sum(String column) {
         this.sumColumnName = column;
     }
+
     /**
      * Join the leftColumnName column of the existing queryplan against the rightColumnName column
      * of tableName.
@@ -144,6 +156,7 @@ public class QueryPlan {
         this.joinLeftColumnNames.add(leftColumnName);
         this.joinRightColumnNames.add(rightColumnName);
     }
+
     /**
      * Generates a naïve QueryPlan in which all joins are at the bottom of the DAG followed by all select
      * predicates, an optional group by operator, and a set of projects (in that order).
@@ -166,6 +179,7 @@ public class QueryPlan {
         }
         return this.finalOperator.execute();
     }
+
     /**
      * Generates an optimal QueryPlan based on the System R cost-based query txn.
      *
@@ -204,6 +218,7 @@ public class QueryPlan {
         this.addProjects();
         return this.finalOperator.iterator();
     }
+
     /**
      * Gets all SELECT predicates for which there exists an index on the column
      * referenced in that predicate for the given table.
@@ -221,6 +236,7 @@ public class QueryPlan {
         }
         return selectIndices;
     }
+
     /**
      * Applies all eligible SELECT predicates to a given source, except for the
      * predicate at index except. The purpose of except is because there might
@@ -260,6 +276,7 @@ public class QueryPlan {
         }
         return this.finalOperator;
     }
+
     /**
      * Finds the lowest cost QueryOperator that scans the given table. First
      * determine the cost of a sequential scan. Then for every index that can be
@@ -309,6 +326,7 @@ public class QueryPlan {
         minOp = this.pushDownSelects(minOp, minSelectIdx);
         return minOp;
     }
+
     /**
      * Given a join condition between an outer relation represented by leftOp
      * and an inner relation represented by rightOp, find the lowest cost join
@@ -352,6 +370,7 @@ public class QueryPlan {
         }
         return minOp;
     }
+
     /**
      * Iterate through all table sets in the previous pass of the search. For each
      * table set, check each join predicate to see if there is a valid join
@@ -391,6 +410,7 @@ public class QueryPlan {
         }
         return map;
     }
+
     /**
      * Finds the lowest cost QueryOperator in the given mapping. A mapping is
      * generated on each pass of the search algorithm, and relates a set of tables
@@ -416,6 +436,7 @@ public class QueryPlan {
         }
         return minOp;
     }
+
     private String checkIndexEligible() {
         if (this.selectColumnNames.size() > 0
                 && this.groupByColumn == null
@@ -433,6 +454,7 @@ public class QueryPlan {
         }
         return null;
     }
+
     private void generateIndexPlan(String indexColumn) throws QueryPlanException {
         int selectIndex = this.selectColumnNames.indexOf(indexColumn);
         PredicateOperator operator = this.selectOperators.get(selectIndex);
@@ -445,6 +467,7 @@ public class QueryPlan {
         this.addSelects();
         this.addProjects();
     }
+
     private void addJoins() throws QueryPlanException {
         int index = 0;
         for (String joinTable : this.joinTableNames) {
@@ -455,6 +478,7 @@ public class QueryPlan {
             index++;
         }
     }
+
     private void addSelects() {
         int index = 0;
         for (String selectColumn : this.selectColumnNames) {
@@ -470,6 +494,7 @@ public class QueryPlan {
             }
         }
     }
+
     private void addGroupBy() throws QueryPlanException {
         if (this.groupByColumn != null) {
             if (this.projectColumns.size() > 2 || (this.projectColumns.size() == 1 &&
@@ -481,6 +506,7 @@ public class QueryPlan {
             this.finalOperator = groupByOperator;
         }
     }
+
     private void addOrderBy() throws QueryPlanException {
         if (this.orderByColumn != null) {
             OrderByOperator orderByOperator = new OrderByOperator(this.finalOperator, this.transaction,
@@ -488,6 +514,7 @@ public class QueryPlan {
             this.finalOperator = orderByOperator;
         }
     }
+
     private void addProjects() throws QueryPlanException {
         if (!this.projectColumns.isEmpty() || this.hasCount || this.sumColumnName != null
                 || this.averageColumnName != null) {
@@ -496,6 +523,7 @@ public class QueryPlan {
             this.finalOperator = projectOperator;
         }
     }
+
     public enum PredicateOperator {
         EQUALS,
         NOT_EQUALS,

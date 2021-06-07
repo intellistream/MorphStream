@@ -1,20 +1,21 @@
 package common.combo;
+
 import common.CONTROL;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.sink.SINKCombo;
 import common.tools.FastZipfGenerator;
-import org.slf4j.Logger;
 import components.context.TopologyContext;
 import components.operators.api.TransactionalBolt;
 import components.operators.api.TransactionalSpout;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import faulttolerance.impl.ValueState;
-import db.DatabaseException;
+import org.slf4j.Logger;
 import profiler.MeasureTools;
 import profiler.Metrics;
 import utils.SOURCE_CONTROL;
@@ -26,6 +27,7 @@ import static common.Constants.DEFAULT_STREAM_ID;
 import static content.Content.CCOption_SStore;
 import static content.Content.CCOption_TStream;
 import static profiler.Metrics.NUM_ITEMS;
+
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public abstract class SPOUTCombo extends TransactionalSpout {
     private static final long serialVersionUID = -2394340130331865581L;
@@ -68,7 +70,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         state = new ValueState();
 
     }
+
     public abstract void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) throws FileNotFoundException;
+
     @Override
     public void nextTuple() throws InterruptedException {
         try {

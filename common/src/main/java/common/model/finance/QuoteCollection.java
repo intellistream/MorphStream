@@ -1,4 +1,5 @@
 package common.model.finance;
+
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,14 +13,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+
 public class QuoteCollection {
     private static final Logger logger = LoggerFactory.getLogger(QuoteCollection.class.getName());
     private Map<String, TimeSeries> quotes;
+
     public void QuoteCollection() {
     }
+
     public Map<String, TimeSeries> getQuotes() {
         return quotes;
     }
+
     public TimeSeries convertQuoteToTimeSeries(List<Quote> quotes) {
         TreeMap<DateTime, BigDecimal> prices = new TreeMap<>();
         TimeSeries series = new TimeSeries(prices);
@@ -28,6 +33,7 @@ public class QuoteCollection {
         }
         return series;
     }
+
     public void fetchAllQuotes(QuoteFetcher fetcher) throws Exception {
         logger.info("Starting quote fetching");
         Properties properties = new Properties();
@@ -45,6 +51,7 @@ public class QuoteCollection {
         }
         logger.info("Done fetching quotes");
     }
+
     public void fetchAllGoogleQuotes() throws Exception {
         fetchAllQuotes(new GoogleQuoteFetcher());
     }

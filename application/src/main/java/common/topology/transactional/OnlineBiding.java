@@ -1,4 +1,7 @@
 package common.topology.transactional;
+
+import common.PartitionedOrderLock;
+import common.SpinLock;
 import common.bolts.transactional.ob.OBBolt_lwm;
 import common.bolts.transactional.ob.OBBolt_olb;
 import common.bolts.transactional.ob.OBBolt_sstore;
@@ -6,15 +9,13 @@ import common.bolts.transactional.ob.OBBolt_ts;
 import common.collections.Configuration;
 import common.constants.OnlineBidingSystemConstants.Component;
 import common.topology.transactional.initializer.OBInitializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.Topology;
 import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;
-import common.PartitionedOrderLock;
-import common.SpinLock;
 import transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
@@ -22,14 +23,17 @@ import static common.constants.OnlineBidingSystemConstants.Conf.OB_THREADS;
 import static common.constants.OnlineBidingSystemConstants.PREFIX;
 import static profiler.Metrics.NUM_ITEMS;
 import static utils.PartitionHelper.setPartition_interval;
+
 /**
  * Short term as OB.
  */
 public class OnlineBiding extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(OnlineBiding.class);
+
     public OnlineBiding(String topologyName, Configuration config) {
         super(topologyName, config);
     }
+
     //configure set_executor_ready database table.
     public TableInitilizer initializeDB(SpinLock[] spinlock_) {
         double scale_factor = config.getDouble("scale_factor", 1);
@@ -45,6 +49,7 @@ public class OnlineBiding extends TransactionTopology {
         }
         return ini;
     }
+
     @Override
     public Topology buildTopology() {
         try {
@@ -92,10 +97,12 @@ public class OnlineBiding extends TransactionTopology {
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology(db, this);
     }
+
     @Override
     public Logger getLogger() {
         return LOG;
     }
+
     @Override
     public String getConfigPrefix() {
         return PREFIX;

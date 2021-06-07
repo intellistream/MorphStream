@@ -1,30 +1,36 @@
 package db;
+
 import storage.EventManager;
 import storage.StorageManager;
 import storage.TableRecord;
 import storage.table.RecordSchema;
 
 import java.io.IOException;
+
 public abstract class Database {
     public int numTransactions = 0;//current number of activate transactions
     StorageManager storageManager;
     EventManager eventManager;
+
     public EventManager getEventManager() {
         return eventManager;
     }
 //	public transient TxnParam param;
+
     /**
      * Close this database.
      */
     public synchronized void close() throws IOException {
         storageManager.close();
     }
+
     /**
      *
      */
     public void dropAllTables() throws IOException {
         storageManager.dropAllTables();
     }
+
     /**
      * @param tableSchema
      * @param tableName
@@ -36,7 +42,9 @@ public abstract class Database {
             e.printStackTrace();
         }
     }
+
     public abstract void InsertRecord(String table, TableRecord record) throws DatabaseException;
+
     public StorageManager getStorageManager() {
         return storageManager;
     }

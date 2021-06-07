@@ -1,14 +1,15 @@
 package common.bolts.wc;
+
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.WordCountConstants.Field;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.base.MapBolt;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,6 +17,7 @@ import java.util.Map;
 
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
+
 public class WordCountBolt_latency extends MapBolt {
     private static final Logger LOG = LoggerFactory.getLogger(WordCountBolt_latency.class);
     private static final long serialVersionUID = -6454380680803776555L;
@@ -23,23 +25,28 @@ public class WordCountBolt_latency extends MapBolt {
 //    private static final String splitregex = " ";
 //    private static LinkedList<String> logger = new LinkedList<String>();
     private final Map<Integer, Long> counts = new HashMap<>();
+
     public WordCountBolt_latency() {
         super(LOG);
         this.setStateful();
     }
+
     public Integer default_scale(Configuration conf) {
         int numNodes = conf.getInt("num_socket", 1);
         return numNodes;
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         long pid = OsUtils.getPID();
 //		LOG.info("PID  = " + pid);
     }
+
     @Override
     public Fields getDefaultFields() {
         return new Fields(MSG_ID, SYSTEMTIMESTAMP, Field.WORD, Field.COUNT);
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException {
         //not in use.
@@ -47,6 +54,7 @@ public class WordCountBolt_latency extends MapBolt {
     //a workaround to de-cache, otherwise, we have to profile Cpro under varying replication setting.
     /*volatile String word;*/
     /*volatile MutableLong count;*/
+
     /**
      * MutableLong count = counts.computeIfAbsent(Arrays.hashCode(word), k -> new Long(0));
      * count.increment();
@@ -81,6 +89,7 @@ public class WordCountBolt_latency extends MapBolt {
             }
         }
     }
+
     public void display() {
         double size_state;
 //		if (OsUtils.isUnix()) {

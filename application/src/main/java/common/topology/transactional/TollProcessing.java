@@ -1,4 +1,7 @@
 package common.topology.transactional;
+
+import common.PartitionedOrderLock;
+import common.SpinLock;
 import common.bolts.lr.DispatcherBolt;
 import common.bolts.transactional.tp.*;
 import common.collections.Configuration;
@@ -7,17 +10,15 @@ import common.constants.LinearRoadConstants.Field;
 import common.datatype.util.LRTopologyControl;
 import common.datatype.util.SegmentIdentifier;
 import common.topology.transactional.initializer.TPInitializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.Topology;
 import components.exception.InvalidIDException;
 import components.grouping.FieldsGrouping;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
 import execution.runtime.tuple.impl.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;
-import common.PartitionedOrderLock;
-import common.SpinLock;
 import transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
@@ -27,15 +28,19 @@ import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static common.constants.TPConstants.PREFIX;
 import static content.Content.*;
 import static utils.PartitionHelper.setPartition_interval;
+
 public class TollProcessing extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(TollProcessing.class);
+
     public TollProcessing(String topologyName, Configuration config) {
         super(topologyName, config);
     }
+
     public void initialize() {
         super.initialize();
         sink = loadSink();
     }
+
     //TODO: Clean this method..
     @Override
     public TableInitilizer initializeDB(SpinLock[] spinlock_) {
@@ -52,6 +57,7 @@ public class TollProcessing extends TransactionTopology {
         }
         return ini;
     }
+
     @Override
     public Topology buildTopology() {
         try {
@@ -118,10 +124,12 @@ public class TollProcessing extends TransactionTopology {
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology(db, this);
     }
+
     @Override
     public Logger getLogger() {
         return LOG;
     }
+
     @Override
     public String getConfigPrefix() {
         return PREFIX;

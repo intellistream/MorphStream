@@ -1,17 +1,19 @@
 package common.sink;
+
 import common.datatype.util.LRTopologyControl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.api.BaseSink;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+
 /**
  * @author mayconbordin
  */
@@ -33,9 +35,11 @@ public class NullSink_LR extends BaseSink {
     private boolean read4 = true;
     private int index_e3, end_index3 = 100;
     private int index_e4, end_index4 = 100;
+
     private NullSink_LR() {
         super(LOG);
     }
+
     //private final int tenM=10000000;
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
@@ -43,10 +47,12 @@ public class NullSink_LR extends BaseSink {
         start_true = end = 0;
         read1 = read2 = read3 = read4 = true;
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException {
         // not in use.
     }
+
     @Override
     public void execute(JumboTuple in) throws InterruptedException {
         int bound = in.length;
@@ -130,6 +136,7 @@ public class NullSink_LR extends BaseSink {
             }
         }
     }
+
     @Override
     protected Logger getLogger() {
         return LOG;

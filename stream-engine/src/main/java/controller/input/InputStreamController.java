@@ -1,10 +1,12 @@
 package controller.input;
+
 import execution.runtime.tuple.JumboTuple;
 
 import java.util.HashMap;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
+
 /**
  * Created by shuhaozhang on 17/7/16.
  */
@@ -21,9 +23,12 @@ public abstract class InputStreamController implements IISC {
     private final HashMap<String, HashMap<Integer, Queue>> RQ = new HashMap<>();
     protected Set<String> keySet;
     TreeSet<JumboTuple> tuples = new TreeSet<>();//temporarily holds all retrieved tuples.
+
     protected InputStreamController() {
     }
+
     public abstract Object fetchResults();
+
     protected Object fetchFromqueue(Queue queue) {
         Object tuple;
         tuple = queue.poll();
@@ -39,15 +44,19 @@ public abstract class InputStreamController implements IISC {
     public HashMap<String, HashMap<Integer, Queue>> getRQ() {
         return RQ;
     }
+
     public HashMap<Integer, Queue> getReceive_queue(String streamId) {
         return RQ.get(streamId);
     }
+
     public Set<String> getInputStreams() {
         return RQ.keySet();
     }
+
     public void initialize() {
         keySet = RQ.keySet();
     }
+
     /**
      * Should be called after executor initialize its own output queue.
      */

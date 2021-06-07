@@ -1,4 +1,5 @@
 package controller.affinity;
+
 import common.collections.Configuration;
 import common.platform.Platform;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ public class AffinityController {
     private final int cores;
     private final int sockets;
     int offset = 0;
+
     public AffinityController(Configuration conf) {
         this.conf = conf;
         this.sockets = conf.getInt("num_socket", 8);
@@ -30,6 +32,7 @@ public class AffinityController {
             cpu_pnt.put(i, 0);//zero number of threads on i socket.
         }
     }
+
     //depends on the server..
     public void clear() {
         cpu_pnt.put(0, 1);
@@ -37,6 +40,7 @@ public class AffinityController {
             cpu_pnt.put(i, 0);
         }
     }
+
     /**
      * one thread one socket mapping..
      *
@@ -49,6 +53,7 @@ public class AffinityController {
         }
         return requirePerSocket(node);
     }
+
     private synchronized long[] requirePerSocket(int node) {
         if (node == -1) {//run as native execution
             return require();
@@ -73,6 +78,7 @@ public class AffinityController {
             return cpus;
         }
     }
+
     /**
      * one thread one core mapping.
      *
@@ -100,6 +106,7 @@ public class AffinityController {
             return cpus;
         }
     }
+
     //depends on the server..
     private long[] require() {
         int num_node = conf.getInt("num_socket", 1);

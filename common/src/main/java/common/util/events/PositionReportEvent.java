@@ -1,4 +1,5 @@
 package common.util.events;
+
 /**
  * Created by szhang026 on 20/2/2016.
  */
@@ -11,8 +12,10 @@ public class PositionReportEvent {
     public short offset; // Yards since last Mile Marker 0..1759
     public byte lane; //Travel Lane 0..7. The lanes 0 and 7 are entrance/exit ramps
     public byte dir; //Direction 0(West) or 1 (East)
+
     public PositionReportEvent() {
     }
+
     public PositionReportEvent(String[] fields) {
         this.time = Long.parseLong(fields[1]);//Seconds since start of simulation
         this.vid = Integer.parseInt(fields[2]);//Car ID
@@ -23,6 +26,7 @@ public class PositionReportEvent {
         this.lane = Byte.parseByte(fields[5]); //The lane number
         this.dir = Byte.parseByte(fields[6]); //Direction (west = 0; East = 1)
     }
+
     //This is special constructor made to support internal protocol based packets. In future this constartur should be merged with the
     //general one which accept only a String[]
     public PositionReportEvent(String[] fields, boolean flg) {
@@ -35,6 +39,7 @@ public class PositionReportEvent {
         this.lane = Byte.parseByte(fields[6]); //The lane number
         this.dir = Byte.parseByte(fields[7]); //Direction (west = 0; East = 1)
     }
+
     public String toString() {
         return "PositionReportEvent -> Time : " + this.time + " vid : " + this.vid + " speed : " + this.speed + " xWay : " + this.xWay + "...";
     }

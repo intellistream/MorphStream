@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype.util;
+
 /**
  * TODO
  *
@@ -40,8 +41,10 @@ public class VSTopologyControl {
     public final static String ACD_STREAM_ID = "acd";
     public final static String FoFIR_STREAM_ID = "FoFIR";
     public final static String GlobalACD_STREAM_ID = "GlobalACD";
+
     private VSTopologyControl() {
     }
+
     public interface Field {
     }
 }

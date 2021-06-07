@@ -1,8 +1,10 @@
 package storage.store.disk;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+
 /**
  * General-purpose wrapper for interacting with the memory-mapped bytes on a page.
  * <p>
@@ -13,6 +15,7 @@ public class Page {
     private final MappedByteBuffer pageData;
     private final int pageNum;
     private final boolean durable;
+
     /**
      * Create a new page using fc with at offset blockNum with virtual page number pageNum
      *
@@ -23,6 +26,7 @@ public class Page {
     public Page(FileChannel fc, int blockNum, int pageNum) {
         this(fc, blockNum, pageNum, true);
     }
+
     public Page(FileChannel fc, int blockNum, int pageNum, boolean durable) {
         this.pageNum = pageNum;
         this.durable = durable;
@@ -33,6 +37,7 @@ public class Page {
             throw new PageException("Can't mmap page: " + pageNum + "at block: " + blockNum + " ; " + e.getMessage());
         }
     }
+
     /**
      * Reads num bytes from offset position into buf.
      *
@@ -50,6 +55,7 @@ public class Page {
         pageData.position(position);
         pageData.get(buf, 0, num);
     }
+
     /**
      * Reads num bytes from offset position and returns them in a new byte array.
      *
@@ -65,6 +71,7 @@ public class Page {
         readBytes(position, num, data);
         return data;
     }
+
     /**
      * Read all the bytes in file.
      *
@@ -73,6 +80,7 @@ public class Page {
     public byte[] readBytes() {
         return readBytes(0, Page.pageSize);
     }
+
     /**
      * Read the single byte at offset position.
      *
@@ -85,6 +93,7 @@ public class Page {
         }
         return pageData.get(position);
     }
+
     /**
      * Write num bytes from buf at offset position.
      *
@@ -105,6 +114,7 @@ public class Page {
         pageData.position(position);
         pageData.put(buf, 0, num);
     }
+
     /**
      * Write a single byte into the file at offset position.
      *
@@ -117,6 +127,7 @@ public class Page {
         }
         pageData.put(position, b);
     }
+
     /**
      * Write a 4-byte integer into the page at offset startPos.
      *
@@ -126,6 +137,7 @@ public class Page {
     public void writeInt(int startPos, int value) {
         this.writeBytes(startPos, 4, ByteBuffer.allocate(4).putInt(value).array());
     }
+
     /**
      * Read a 4-byte integer from the page at offset startPos.
      *
@@ -135,6 +147,7 @@ public class Page {
     public int readInt(int startPos) {
         return ByteBuffer.wrap(this.readBytes(startPos, 4)).getInt();
     }
+
     /**
      * Completely wipe (zero out) the page.
      */
@@ -142,6 +155,7 @@ public class Page {
         byte[] zeros = new byte[Page.pageSize];
         this.writeBytes(0, Page.pageSize, zeros);
     }
+
     /**
      * Force the page to disk.
      */
@@ -151,6 +165,7 @@ public class Page {
             this.pageData.force();
         }
     }
+
     /**
      * @return the virtual page number of this page
      */

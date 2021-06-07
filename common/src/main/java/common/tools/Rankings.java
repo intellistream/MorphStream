@@ -1,24 +1,29 @@
 package common.tools;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
+
 public class Rankings implements Serializable {
     private static final long serialVersionUID = -1549827195410578903L;
     private static final int DEFAULT_COUNT = 10;
     private final int maxSize;
     private final List<Rankable> rankedItems = Lists.newArrayList();
+
     public Rankings() {
         this(DEFAULT_COUNT);
     }
+
     public Rankings(int topN) {
         if (topN < 1) {
             throw new IllegalArgumentException("topN must be >= 1");
         }
         maxSize = topN;
     }
+
     /**
      * Copy constructor.
      *
@@ -28,18 +33,21 @@ public class Rankings implements Serializable {
         this(other.maxSize());
         updateWith(other);
     }
+
     /**
      * @return the maximum possible number (size) of ranked objects this instance can hold
      */
     public int maxSize() {
         return maxSize;
     }
+
     /**
      * @return the number (size) of ranked objects this instance is currently holding
      */
     public int size() {
         return rankedItems.size();
     }
+
     /**
      * The returned defensive copy is only "somewhat" defensive.  We do, for instance, return a defensive copy of the
      * enclosing List instance, and we do try to defensively copy any contained Rankable objects, too.  However, the
@@ -55,11 +63,13 @@ public class Rankings implements Serializable {
         }
         return ImmutableList.copyOf(copy);
     }
+
     public void updateWith(Rankings other) {
         for (Rankable r : other.getRankings()) {
             updateWith(r);
         }
     }
+
     public void updateWith(Rankable r) {
         synchronized (rankedItems) {
             addOrReplace(r);
@@ -67,6 +77,7 @@ public class Rankings implements Serializable {
             shrinkRankingsIfNeeded();
         }
     }
+
     private void addOrReplace(Rankable r) {
         Integer rank = findRankOf(r);
         if (rank != null) {
@@ -75,6 +86,7 @@ public class Rankings implements Serializable {
             rankedItems.add(r);
         }
     }
+
     private Integer findRankOf(Rankable r) {
         Object tag = r.getObject();
         for (int rank = 0; rank < rankedItems.size(); rank++) {
@@ -85,15 +97,18 @@ public class Rankings implements Serializable {
         }
         return null;
     }
+
     private void rerank() {
         Collections.sort(rankedItems);
         Collections.reverse(rankedItems);
     }
+
     private void shrinkRankingsIfNeeded() {
         if (rankedItems.size() > maxSize) {
             rankedItems.remove(maxSize);
         }
     }
+
     /**
      * Removes ranking entries that have a count of zero.
      */
@@ -107,10 +122,12 @@ public class Rankings implements Serializable {
             }
         }
     }
+
     @Override
     public String toString() {
         return rankedItems.toString();
     }
+
     /**
      * Creates a (defensive) copy of itself.
      *

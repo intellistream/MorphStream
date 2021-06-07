@@ -1,12 +1,15 @@
 package common.sink;
+
+import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import execution.runtime.tuple.impl.Tuple;
 
 import static common.CONTROL.enable_latency_measurement;
+
 public class MeasureSink_Txn extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(MeasureSink_Txn.class);
     private static final long serialVersionUID = 5481794109405775823L;
+
     @Override
     public void execute(Tuple input) {
         double results;

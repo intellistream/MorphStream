@@ -1,11 +1,14 @@
 package common.model.finance;
+
 import org.joda.time.DateTime;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
 public class GoogleQuoteFetcher extends QuoteFetcher {
     private static final long serialVersionUID = 3292469123361565774L;
+
     @Override
     public String fetchQuotes(String symbol, int days, int interval)
             throws Exception {
@@ -13,6 +16,7 @@ public class GoogleQuoteFetcher extends QuoteFetcher {
                 + "&p=" + days + "d&f=d,o,h,l,c,v&df=cpct&q=" + symbol;
         return fetchURLasString(url);
     }
+
     @Override
     public List<Quote> parseQuotes(String symbol, String quoteList, int interval) {
         String[] lines = dropLines(quoteList, 6);

@@ -1,21 +1,24 @@
 package common.bolts.wc;
+
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.constants.WordCountConstants.Field;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.operators.base.splitBolt;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+
 //import static Brisk.utils.Utils.printAddresses;
 public class SplitSentenceBolt_latency extends splitBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SplitSentenceBolt_latency.class);
     private static final long serialVersionUID = 8089145995668583749L;
+
     //	long end = 0;
 //	boolean GetAndUpdate = false;
 //	int loop = 1;
@@ -25,24 +28,29 @@ public class SplitSentenceBolt_latency extends splitBolt {
         super(LOG, new HashMap<>());
         this.output_selectivity.put(BaseConstants.BaseStream.DEFAULT, 10.0);
     }
+
     public Integer default_scale(Configuration conf) {
         int numNodes = conf.getInt("num_socket", 1);
         return numNodes;
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         long pid = OsUtils.getPID();
 //		LOG.info("PID  = " + pid);
     }
+
     @Override
     public Fields getDefaultFields() {
         return new Fields(Field.WORD);
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException {
 //not in use
     }
+
     public void execute(JumboTuple in) throws InterruptedException {
 //		final long bid = in.getBID();
         int bound = in.length;

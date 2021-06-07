@@ -1,12 +1,13 @@
 package common.bolts.transactional.gs;
+
 import common.param.mb.MicroEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import transaction.impl.TxnContext;
 
 import java.util.ArrayDeque;
@@ -15,13 +16,16 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_app_combo;
 import static profiler.MeasureTools.*;
+
 public class GSBolt_ts_nopush extends GSBolt_ts {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_ts_nopush.class);
     private static final long serialVersionUID = -5968750340131744744L;
     private Collection<MicroEvent> WriteEventsHolder;
+
     public GSBolt_ts_nopush(int fid, SINKCombo sink) {
         super(fid, sink);
     }
+
     @Override
     protected void write_construct(MicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         for (int i = 0; i < NUM_ACCESSES; ++i) {
@@ -30,11 +34,13 @@ public class GSBolt_ts_nopush extends GSBolt_ts {
         }
         WriteEventsHolder.add(event);
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         WriteEventsHolder = new ArrayDeque<>();
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
@@ -64,11 +70,13 @@ public class GSBolt_ts_nopush extends GSBolt_ts {
             execute_ts_normal(in);
         }
     }
+
     private void WRITE_REQUEST_CORE() {
         for (MicroEvent event : WriteEventsHolder) {
             WRITE_CORE(event);
         }
     }
+
     private void WRITE_POST() throws InterruptedException {
         for (MicroEvent event : WriteEventsHolder)
             WRITE_POST(event);

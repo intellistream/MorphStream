@@ -15,6 +15,7 @@
  * along with VoltDB.  If not, see <http://www.gnu.org/licenses/>.
  */
 package storage.datatype;
+
 /**
  * A volt-specific exception to be thrown when some flavor of unresolvable
  * type issue occurs (mismatched type, bad cast, cast leading to over/underflow,
@@ -27,14 +28,18 @@ package storage.datatype;
 // and add checked exception handling all everywhere /lazy
 public class VoltTypeException extends RuntimeException {
     private static final long serialVersionUID = -7774100755422441459L;
+
     public VoltTypeException() {
     }
+
     public VoltTypeException(String message) {
         super(message);
     }
+
     public VoltTypeException(Throwable cause) {
         super(cause);
     }
+
     public VoltTypeException(String message, Throwable cause) {
         super(message, cause);
     }

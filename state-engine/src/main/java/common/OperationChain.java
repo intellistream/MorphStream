@@ -1,7 +1,7 @@
 package common;
 
 import transaction.dedicated.ordered.MyList;
-import transaction.scheduler.IOnDependencyResolvedListener;
+import transaction.scheduler.nonlayered.IOnDependencyResolvedListener;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -20,13 +20,13 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     private final MyList<Operation> operations;
     private final ConcurrentSkipListMap<OperationChain, Operation> dependsUpon;
     private final AtomicInteger totalDependentsCount = new AtomicInteger();
-    private final AtomicInteger totalDependenciesCount = new AtomicInteger();
+    private final AtomicInteger totalParentsCount = new AtomicInteger();
 
     private final int minimumIndependentOpsCount = Integer.MAX_VALUE;
     private int dependencyLevel = -1;
     private int priority = 0;
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
-    private IOnDependencyResolvedListener onDependencyResolvedListener;
+    private IOnDependencyResolvedListener onParentsResolvedListener;
     private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialDependentsInfo = new ConcurrentLinkedQueue<>();
 
     public OperationChain(String tableName, String primaryKey) {
@@ -59,7 +59,7 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         while (iterator.hasNext()) {
             Operation dependencyOp = iterator.next();
             if (dependencyOp.bid < forOp.bid) {
-                totalDependenciesCount.incrementAndGet();
+                totalParentsCount.incrementAndGet();
                 this.dependsUpon.putIfAbsent(dependsUponOp, dependencyOp);
                 dependencyOp.addDependent(dependsUponOp, forOp);
                 dependsUponOp.addDependent(this, forOp);
@@ -71,13 +71,10 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
         totalDependentsCount.incrementAndGet();
     }
     public synchronized void updateDependencyLevel() {
-
         if (isDependencyLevelCalculated)
             return;
-
         dependencyLevel = 0;
         for (OperationChain oc : dependsUpon.keySet()) {
-
             if (!oc.hasValidDependencyLevel())
                 oc.updateDependencyLevel();
 
@@ -90,24 +87,24 @@ public class OperationChain implements Comparable<OperationChain>, Operation.IOp
     public synchronized boolean hasValidDependencyLevel() {
         return isDependencyLevelCalculated;
     }
-    public void setOnOperationChainChangeListener(IOnDependencyResolvedListener onDependencyResolvedListener) {
-        this.onDependencyResolvedListener = onDependencyResolvedListener;
+    public void Listen(IOnDependencyResolvedListener onDependencyResolvedListener) {
+        this.onParentsResolvedListener = onDependencyResolvedListener;
     }
     @Override
     public void onDependencyResolved(int threadId, Operation dependent, Operation dependency) {
 
-        if (totalDependenciesCount.decrementAndGet() == 0)
-            if (onDependencyResolvedListener != null)
-                onDependencyResolvedListener.onDependencyResolvedListener(threadId, this);
+        if (totalParentsCount.decrementAndGet() == 0)
+            if (onParentsResolvedListener != null)
+                onParentsResolvedListener.onParentsResolvedListener(threadId, this);
     }
     @Override
     public void onDependentResolved(Operation dependent, Operation dependency) {
         totalDependentsCount.decrementAndGet();
     }
-    public boolean hasDependency() {
-        return totalDependenciesCount.get() > 0;
+    public boolean hasParents() {
+        return totalParentsCount.get() > 0;
     }
-    public boolean hasDependents() {
+    public boolean hasChildren() {
         return totalDependentsCount.get() > 0;
     }
     public void addPotentialDependent(OperationChain potentialDependent, Operation op) {

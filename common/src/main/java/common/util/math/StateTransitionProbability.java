@@ -15,7 +15,9 @@
  * permissions and limitations under the License.
  */
 package common.util.math;
+
 import common.util.datatypes.TabularData;
+
 /**
  * Markov state transition probability matrix
  *
@@ -24,12 +26,14 @@ import common.util.datatypes.TabularData;
 public class StateTransitionProbability extends TabularData {
     private int scale = 100;
     private double[][] dTable;
+
     /**
      *
      */
     public StateTransitionProbability() {
         super();
     }
+
     /**
      * @param numRow
      * @param numCol
@@ -37,6 +41,7 @@ public class StateTransitionProbability extends TabularData {
     public StateTransitionProbability(int numRow, int numCol) {
         super(numRow, numCol);
     }
+
     /**
      * @param rowLabels
      * @param colLabels
@@ -44,12 +49,14 @@ public class StateTransitionProbability extends TabularData {
     public StateTransitionProbability(String[] rowLabels, String[] colLabels) {
         super(rowLabels, colLabels);
     }
+
     /**
      * @param scale
      */
     public void setScale(int scale) {
         this.scale = scale;
     }
+
     /**
      *
      */
@@ -82,6 +89,7 @@ public class StateTransitionProbability extends TabularData {
             }
         }
     }
+
     /* (non-Javadoc)
      * @see org.chombo.utils.TabularData#serializeRow(int)
      */
@@ -96,6 +104,7 @@ public class StateTransitionProbability extends TabularData {
         }
         return stBld.substring(0, stBld.length() - 1);
     }
+
     /* (non-Javadoc)
      * @see org.chombo.utils.TabularData#deseralizeRow(java.lang.String, int)
      */

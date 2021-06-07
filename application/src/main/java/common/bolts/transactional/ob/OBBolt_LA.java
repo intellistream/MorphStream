@@ -1,19 +1,23 @@
 package common.bolts.transactional.ob;
+
 import common.param.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
 import common.sink.SINKCombo;
-import org.slf4j.Logger;
 import db.DatabaseException;
+import org.slf4j.Logger;
 import transaction.impl.TxnContext;
 
 import static profiler.MeasureTools.*;
+
 public abstract class OBBolt_LA extends OBBolt {
     int _combo_bid_size = 1;
+
     public OBBolt_LA(Logger log, int fid, SINKCombo sink) {
         super(log, fid, sink);
     }
+
     protected void LAL(Object event, long i, long _bid) throws DatabaseException {
         if (event instanceof BuyingEvent) {
             BUYING_REQUEST_LOCKAHEAD((BuyingEvent) event, txn_context[(int) (i - _bid)]);
@@ -24,6 +28,7 @@ public abstract class OBBolt_LA extends OBBolt {
         } else
             throw new UnsupportedOperationException();
     }
+
     //lock_ratio-ahead phase.
     @Override
     protected void LAL_PROCESS(long _bid) throws DatabaseException, InterruptedException {
@@ -37,6 +42,7 @@ public abstract class OBBolt_LA extends OBBolt {
         transactionManager.getOrderLock().advance();
         END_WAIT_TIME_MEASURE(thread_Id);
     }
+
     protected void PostLAL_process(long _bid) throws DatabaseException {
         //txn process phase.
         for (long i = _bid; i < _bid + _combo_bid_size; i++) {

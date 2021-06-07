@@ -1,5 +1,7 @@
 package common;
+
 import common.collections.OsUtils;
+
 /**
  * HPI machine
  * L1d cache:             32K
@@ -24,6 +26,7 @@ public interface Constants {
     String DEFAULT_STREAM_ID = "default";
     String Marker_STREAM_ID = "marker";
     int DEFAULT_Socket_ID = 1;
+
     interface EVENTS {
         String UNHALTED_CORE_CYCLES = "UNHALTED_CORE_CYCLES";
         String INSTRUCTION_RETIRED = "INSTRUCTION_RETIRED";

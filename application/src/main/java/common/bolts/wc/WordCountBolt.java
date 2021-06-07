@@ -1,4 +1,5 @@
 package common.bolts.wc;
+
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.WordCountConstants.Field;
@@ -14,15 +15,18 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
 public class WordCountBolt extends MapBolt {
     private static final Logger LOG = LoggerFactory.getLogger(WordCountBolt.class);
     private static final long serialVersionUID = -6454380680803776555L;
 
     private final Map<Integer, Long> counts = new HashMap<>();//what if memory is not enough to hold counts?
+
     public WordCountBolt() {
         super(LOG);
         this.setStateful();
     }
+
     public Integer default_scale(Configuration conf) {
         int numNodes = conf.getInt("num_socket", 1);
         if (numNodes == 8) {
@@ -31,15 +35,18 @@ public class WordCountBolt extends MapBolt {
             return 1;
         }
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         long pid = OsUtils.getPID();
 //		LOG.info("PID  = " + pid);
     }
+
     @Override
     public Fields getDefaultFields() {
         return new Fields(Field.WORD, Field.COUNT);
     }
+
     @Override
     public void execute(Tuple input) throws InterruptedException {
 //		String word = input.getString(0);
@@ -62,6 +69,7 @@ public class WordCountBolt extends MapBolt {
     //a workaround to de-cache, otherwise, we have to profile Cpro under varying replication setting.
     /*volatile String word;*/
     /*volatile MutableLong count;*/
+
     /**
      * MutableLong count = counts.computeIfAbsent(Arrays.hashCode(word), k -> new Long(0));
      * count.increment();
@@ -82,6 +90,7 @@ public class WordCountBolt extends MapBolt {
             collector.emit(objects);
         }
     }
+
     public void display() {
         double size_state;
 //		if (OsUtils.isUnix()) {

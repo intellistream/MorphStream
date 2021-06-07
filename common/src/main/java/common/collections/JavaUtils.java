@@ -1,4 +1,5 @@
 package common.collections;
+
 public class JavaUtils {
     public static boolean isJar() {
         String className = JavaUtils.class.getName().replace('.', '/');

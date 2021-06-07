@@ -1,4 +1,5 @@
 package common.param.ob;
+
 import common.param.TxnEvent;
 import storage.SchemaRecordRef;
 
@@ -6,13 +7,15 @@ import java.util.Arrays;
 import java.util.SplittableRandom;
 
 import static common.constants.OnlineBidingSystemConstants.Constant.MAX_Price;
+
 public class AlertEvent extends TxnEvent {
     private final int num_access;
+    private final int[] itemId;//keys.
     public boolean alert_result;
     //place-rangeMap.
     public SchemaRecordRef[] record_refs;
-    private final int[] itemId;//keys.
     private long[] ask_price;//new ask price
+
     /**
      * Creates a new AlertEvent.
      */
@@ -29,6 +32,7 @@ public class AlertEvent extends TxnEvent {
         this.itemId = itemId;
         setValues(num_access, rnd);
     }
+
     public AlertEvent(int bid, String bid_array, int partition_id, int number_of_partitions,
                       int num_access, String key_array, String alert_array) {
         super(bid, partition_id, bid_array, number_of_partitions);
@@ -48,33 +52,41 @@ public class AlertEvent extends TxnEvent {
             this.ask_price[i] = Long.parseLong(top_arrays[i].trim());
         }
     }
+
     public int getNum_access() {
         return num_access;
     }
+
     private void setValues(int num_access, SplittableRandom rnd) {
         ask_price = new long[num_access];
         for (int access_id = 0; access_id < num_access; ++access_id) {
             set_values(access_id, rnd);
         }
     }
+
     private void set_values(int access_id, SplittableRandom rnd) {
         ask_price[access_id] = rnd.nextLong(MAX_Price);
     }
+
     public int[] getItemId() {
         return itemId;
     }
+
     public long getTimestamp() {
         return timestamp;
     }
+
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
+
     // ------------------------------------------------------------------------
     //  miscellaneous
     // ------------------------------------------------------------------------
     public long[] getAsk_price() {
         return ask_price;
     }
+
     @Override
     public String toString() {
         return "AlertEvent {"

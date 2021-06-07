@@ -15,6 +15,7 @@
  * permissions and limitations under the License.
  */
 package common.util.datatypes;
+
 /**
  * Tabular data structure
  *
@@ -27,8 +28,10 @@ public class TabularData {
     protected int numCol;
     protected String[] rowLabels;
     protected String[] colLabels;
+
     public TabularData() {
     }
+
     /**
      * @param numRow
      * @param numCol
@@ -36,6 +39,7 @@ public class TabularData {
     public TabularData(int numRow, int numCol) {
         initialize(numRow, numCol);
     }
+
     /**
      * @param rowLabels
      * @param colLabels
@@ -44,6 +48,7 @@ public class TabularData {
         initialize(rowLabels.length, colLabels.length);
         setLabels(rowLabels, colLabels);
     }
+
     /**
      * @param numRow
      * @param numCol
@@ -58,6 +63,7 @@ public class TabularData {
         this.numRow = numRow;
         this.numCol = numCol;
     }
+
     /**
      * @param rowLabels
      * @param colLabels
@@ -66,6 +72,7 @@ public class TabularData {
         this.rowLabels = rowLabels;
         this.colLabels = colLabels;
     }
+
     /**
      * @param row
      * @param col
@@ -74,6 +81,7 @@ public class TabularData {
     public void set(int row, int col, int val) {
         table[row][col] = val;
     }
+
     /**
      * @param row
      * @param col
@@ -82,6 +90,7 @@ public class TabularData {
     public int get(int row, int col) {
         return table[row][col];
     }
+
     /**
      * @param row
      * @return
@@ -89,6 +98,7 @@ public class TabularData {
     public int[] getRow(int row) {
         return table[row];
     }
+
     /**
      * @param row
      * @param col
@@ -97,6 +107,7 @@ public class TabularData {
     public void add(int row, int col, int val) {
         table[row][col] += val;
     }
+
     /**
      * add value to cell
      *
@@ -108,6 +119,7 @@ public class TabularData {
         int[] rowCol = getRowCol(rowLabel, colLabel);
         table[rowCol[0]][rowCol[1]] += val;
     }
+
     /**
      * increments cell
      *
@@ -117,6 +129,7 @@ public class TabularData {
     public void increment(int row, int col) {
         table[row][col] += 1;
     }
+
     /**
      * increments cell
      *
@@ -127,6 +140,7 @@ public class TabularData {
         int[] rowCol = getRowCol(rowLabel, colLabel);
         table[rowCol[0]][rowCol[1]] += 1;
     }
+
     /**
      * sum of SchemaRecord
      *
@@ -140,6 +154,7 @@ public class TabularData {
         }
         return sum;
     }
+
     /**
      * sum of column
      *
@@ -153,6 +168,7 @@ public class TabularData {
         }
         return sum;
     }
+
     /**
      * serializes table
      *
@@ -167,6 +183,7 @@ public class TabularData {
         }
         return stBld.substring(0, stBld.length() - 1);
     }
+
     /**
      * serialize SchemaRecord
      *
@@ -180,6 +197,7 @@ public class TabularData {
         }
         return stBld.substring(0, stBld.length() - 1);
     }
+
     /**
      * deserialize table
      *
@@ -194,6 +212,7 @@ public class TabularData {
             }
         }
     }
+
     /**
      * deserialize SchemaRecord
      *
@@ -207,6 +226,7 @@ public class TabularData {
             table[row][c] = Integer.parseInt(items[k++]);
         }
     }
+
     /**
      * SchemaRecord and column index
      *

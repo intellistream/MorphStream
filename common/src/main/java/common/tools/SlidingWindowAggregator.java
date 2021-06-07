@@ -1,15 +1,18 @@
 package common.tools;
+
 import java.io.Serializable;
 import java.util.Map;
+
 /**
  * Created by szhang026 on 8/10/2015.
  */
 public class SlidingWindowAggregator<T> implements Serializable {
     private static final long serialVersionUID = -2645063988768785810L;
     private final SlotBasedCounter<T> objCounter;
+    private final int windowLengthInSlots;
     private int headSlot;
     private int tailSlot;
-    private final int windowLengthInSlots;
+
     public SlidingWindowAggregator(int windowLengthInSlots) {
         if (windowLengthInSlots < 2) {
             throw new IllegalArgumentException(
@@ -21,12 +24,15 @@ public class SlidingWindowAggregator<T> implements Serializable {
         this.headSlot = 0;
         this.tailSlot = slotAfter(headSlot);
     }
+
     public void incrementCount(T obj) {
         objCounter.incrementCount(obj, headSlot);
     }
+
     public void incrementCount(T obj, long increment) {
         objCounter.incrementCount(obj, headSlot, increment);
     }
+
     /**
      * Return the current (total) counts of all tracked objects, then advance the window.
      * <p/>
@@ -43,10 +49,12 @@ public class SlidingWindowAggregator<T> implements Serializable {
         advanceHead();
         return counts;
     }
+
     private void advanceHead() {
         headSlot = tailSlot;
         tailSlot = slotAfter(tailSlot);
     }
+
     private int slotAfter(int slot) {
         return (slot + 1) % windowLengthInSlots;
     }

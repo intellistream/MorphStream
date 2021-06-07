@@ -1,8 +1,7 @@
 package execution;
+
 import common.collections.Configuration;
 import common.platform.Platform;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.MultiStreamComponent;
 import components.Topology;
 import components.TopologyComponent;
@@ -15,6 +14,8 @@ import controller.output.MultiStreamOutputContoller;
 import controller.output.OutputController;
 import controller.output.PartitionController;
 import controller.output.partition.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static common.Constants.virtualType;
+
 /**
  * Created by shuhaozhang on 11/7/16.
  */
@@ -37,6 +39,7 @@ public class ExecutionGraph extends RawExecutionGraph {
     private ExecutionNode sink;
     private boolean shared;//share by multi producers
     private boolean common;//shared by mutlti consumers
+
     /**
      * creates execution graph from topology
      *
@@ -51,6 +54,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         this.global_tuple_scheduler = topology.getScheduler();
         Configuration(this.topology, parallelism, conf, topology.getPlatform());
     }
+
     /**
      * duplicate graph
      *
@@ -64,6 +68,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         global_tuple_scheduler = graph.global_tuple_scheduler;
         Configuration(graph, conf, topology.getPlatform());
     }
+
     /**
      * creates the compressed graph
      *
@@ -83,6 +88,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         LOG.info("Creates the compressed graph with compressRatio:" + compressRatio);
         Configuration(topology, compressRatio, conf, topology.getPlatform());
     }
+
     private void Configuration(ExecutionGraph graph, Configuration conf, Platform p) {
         for (ExecutionNode e : graph.getExecutionNodeArrayList()) {
             if (!e.isVirtual()) {
@@ -93,6 +99,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         sink = executionNodeArrayList.get(executionNodeArrayList.size() - 1);
         setup(conf, p);
     }
+
     private void Configuration(Topology topology, int compressRatio, Configuration conf, Platform p) {
         for (TopologyComponent tr : topology.getRecords().values()) {
             if (!tr.isLeadNode() && tr.toCompress) {
@@ -106,6 +113,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         }
         setup(conf, p);
     }
+
     private void Configuration(Topology topology, Map<String, Integer> parallelism, Configuration conf, Platform p) {
         if (parallelism != null) {
             for (String tr : parallelism.keySet()) {
@@ -118,6 +126,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         }
         setup(conf, p);
     }
+
     /**
      * this will set up partition partition (also the partition ratio)
      *
@@ -149,12 +158,15 @@ public class ExecutionGraph extends RawExecutionGraph {
         build_streamController(conf.getInt("batch", 100));
 
     }
+
     public ExecutionNode getSpout() {
         return spout;
     }
+
     public ExecutionNode getSink() {
         return sink;
     }
+
     private void add(Set<TopologyComponent> children, ExecutionNode executor, TopologyComponent operator) {
         for (TopologyComponent child : children) {
             executor.getChildren().putIfAbsent(child, new ArrayList<>());
@@ -166,13 +178,16 @@ public class ExecutionGraph extends RawExecutionGraph {
             }
         }
     }
+
     //partition writer - multiple reader situation, volatile is enough.
     public ExecutionNode getvirtualGround() {
         return virtualNode;
     }
+
     public InputStreamController getGlobal_tuple_scheduler() {
         return global_tuple_scheduler;
     }
+
     private ExecutionNode addVirtual(Platform p) {
         MultiStreamComponent virtual = new MultiStreamComponent("Virtual", virtualType, new VirtualExecutor(), 1, null, null, null);
         ExecutionNode virtualNode = new ExecutionNode(virtual, -2, p);
@@ -180,6 +195,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         virtual.link_to_executor(virtualNode);//creates Operator->executor link.
         return virtualNode;
     }
+
     private void addRecord_RebuildRelationships(TopologyComponent operator, int compressRatio, Platform p) {
         if (compressRatio < 1) {
             LOG.info("compressRatio must be greater than 1, and your setting:" + compressRatio);
@@ -220,6 +236,7 @@ public class ExecutionGraph extends RawExecutionGraph {
 //		}
 //		operator.numTasks = numTasks;//GetAndUpdate numTasks.
     }
+
     /**
      * @param e
      * @param topo     is the corresponding operator associated in e.
@@ -233,6 +250,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         topo.link_to_executor(vertex);//creates Operator->executor link.
         return vertex;
     }
+
     private void addRecord(TopologyComponent operator, Platform p) {
         //create executionNode and assign unique vertex id to it.
         for (int i = 0; i < operator.getNumTasks(); i++) {
@@ -248,6 +266,7 @@ public class ExecutionGraph extends RawExecutionGraph {
             operator.link_to_executor(vertex);//creates Operator->executor link.
         }
     }
+
     /**
      * Initialize partition partition of each downstream srcOP.
      *
@@ -273,6 +292,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         }
         return PClist;
     }
+
     /**
      * This is used only for SPSC.
      *
@@ -311,6 +331,7 @@ public class ExecutionGraph extends RawExecutionGraph {
             return null;
         }
     }
+
     void build_inputScheduler() {
         for (ExecutionNode executor : executionNodeArrayList) {
             if (executor.isSourceNode()) {
@@ -330,6 +351,7 @@ public class ExecutionGraph extends RawExecutionGraph {
             }
         }
     }
+
     private void build_streamController(int batch) {
         if (!shared) {
             for (ExecutionNode executor : executionNodeArrayList) {//Build sc for each executor who is not leaf mapping_node.
@@ -364,9 +386,11 @@ public class ExecutionGraph extends RawExecutionGraph {
             }
         }
     }
+
     public Integer getSinkThread() {
         return sink.getExecutorID();
     }
+
     /**
      * Think about how to implement DAG sort in future..
      *
@@ -375,6 +399,7 @@ public class ExecutionGraph extends RawExecutionGraph {
     public ArrayList<ExecutionNode> sort() {
         return getExecutionNodeArrayList();
     }
+
     /**
      * search for the first execution node that has the same operator with the input e.
      *

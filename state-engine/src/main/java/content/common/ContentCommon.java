@@ -1,4 +1,5 @@
 package content.common;
+
 public class ContentCommon {
     public static final int kRecycleLength = 100;
     //Note, this is a workaround for Java for lack of pre-compiler.

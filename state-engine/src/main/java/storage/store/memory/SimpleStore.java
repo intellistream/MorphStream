@@ -1,10 +1,12 @@
 package storage.store.memory;
+
 import storage.SchemaRecord;
 import storage.store.Store;
 import storage.table.RowID;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * This is a simple interface for a table to Store and retrieve SchemaRecord data.
  * TODO: on and off heap implementation in future. Now just use the simple on-heap one.
@@ -18,20 +20,26 @@ public class SimpleStore implements Store {
      * @Update: use concurrent hashmap, but HashMap has poor support for range query, let's see...
      */
     ConcurrentHashMap<Integer, SchemaRecord> rows = new ConcurrentHashMap<>();
+
     public void clean() {
     }
+
     public void addrow(RowID rowID, SchemaRecord r) {
         rows.put(rowID.getID(), r);
     }
+
     public SchemaRecord deleterow(RowID rid) {
         return rows.remove(rid.getID());
     }
+
     public SchemaRecord getrow(RowID rid) {
         return rows.get(rid.getID());
     }
+
     public SchemaRecord updaterow(SchemaRecord record, RowID rid) {
         return rows.replace(rid.getID(), record);
     }
+
     public Iterator<SchemaRecord> getRowIterator() {
         return rows.values().iterator();
     }

@@ -1,11 +1,12 @@
 package transaction.dedicated.ordered;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import db.DatabaseException;
-import common.meta.MetaTypes;
+
 import common.OrderLock;
 import common.PartitionedOrderLock;
+import common.meta.MetaTypes;
 import content.Content;
+import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -20,6 +21,7 @@ import static common.meta.MetaTypes.AccessType.*;
 import static common.meta.MetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
 import static utils.PartitionHelper.key_to_partition;
+
 /**
  * mimic of S-Store
  */
@@ -27,14 +29,17 @@ public class TxnManagerSStore extends TxnManagerDedicated {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerSStore.class);
     public final PartitionedOrderLock orderLock;
     public final OrderLock shared_orderLock;
+
     public TxnManagerSStore(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
         this.shared_orderLock = OrderLock.getInstance();
         this.orderLock = PartitionedOrderLock.getInstance();
     }
+
     public OrderLock getOrderLock() {
         return shared_orderLock;
     }
+
     public PartitionedOrderLock.LOCK getOrderLock(int p_id) {
         return orderLock.get(p_id);
     }
@@ -105,10 +110,12 @@ public class TxnManagerSStore extends TxnManagerDedicated {
             return false;
         }
     }
+
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean CommitTransaction(TxnContext txn_context) {
         long[] partition_bid = txn_context.partition_bid;
@@ -160,6 +167,7 @@ public class TxnManagerSStore extends TxnManagerDedicated {
         access_list_.Clear();
         return true;
     }
+
     @Override
     public void AbortTransaction() {
         //not in use in this scheme.

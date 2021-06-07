@@ -1,4 +1,5 @@
 package common.parser;
+
 import common.helper.parser.Parser;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

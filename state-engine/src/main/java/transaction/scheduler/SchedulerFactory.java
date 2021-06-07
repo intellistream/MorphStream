@@ -1,5 +1,13 @@
 package transaction.scheduler;
 
+import transaction.scheduler.layered.hashed.DFSLayeredHashScheduler;
+import transaction.scheduler.layered.hashed.BFSLayeredHashScheduler;
+import transaction.scheduler.layered.nonhashed.rr.DFSLayeredRoundRobinScheduler;
+import transaction.scheduler.layered.nonhashed.sw.DFSLayeredSharedWorkloadScheduler;
+import transaction.scheduler.layered.nonhashed.rr.BFSLayeredRoundRobinScheduler;
+import transaction.scheduler.layered.nonhashed.sw.BFSLayeredSharedWorkloadScheduler;
+import transaction.scheduler.nonlayered.NonLayeredScheduler;
+
 /**
  * Author: Aqif Hamid
  * A single point schedulers creation factory.
@@ -17,25 +25,25 @@ public class SchedulerFactory {
         switch (schedulerType) {
 
             case BL:
-                scheduler = new LayeredHashScheduler(totalThread);
+                scheduler = new BFSLayeredHashScheduler(totalThread);
                 break;
             case RR:
-                scheduler = new LayeredRoundRobinScheduler(totalThread);
+                scheduler = new BFSLayeredRoundRobinScheduler(totalThread);
                 break;
             case SW:
-                scheduler = new SharedWorkloadScheduler(totalThread);
+                scheduler = new BFSLayeredSharedWorkloadScheduler(totalThread);
                 break;
             case NB_RR:
-                scheduler = new OperationChainedRoundRobinScheduler(totalThread);
+                scheduler = new DFSLayeredRoundRobinScheduler(totalThread);
                 break;
             case NB_BL:
-                scheduler = new OperationChainedHashScheduler(totalThread);
+                scheduler = new DFSLayeredHashScheduler(totalThread);
                 break;
             case NB_SW:
-                scheduler = new OperationChainedSharedWorkload(totalThread);
+                scheduler = new DFSLayeredSharedWorkloadScheduler(totalThread);
                 break;
             case G_S:
-                scheduler = new GreedySmartScheduler(totalThread);
+                scheduler = new NonLayeredScheduler(totalThread);
                 break;
         }
         return scheduler;

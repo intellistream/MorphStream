@@ -1,15 +1,18 @@
 package controller.affinity;
+
 import common.collections.OsUtils;
 import common.platform.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+
 public class SequentialBinding {
     private static final Logger LOG = LoggerFactory.getLogger(SequentialBinding.class);
     static int socket = 0;
     static int cpu = 0;//skip first cpu--> it is reserved by OS.
     static int cpu_for_db;
+
     public static void SequentialBindingInitilize() {
         if (OsUtils.isMac()) {
             cpu_for_db = 6;
@@ -17,10 +20,12 @@ public class SequentialBinding {
             cpu_for_db = 40;
         }
     }
+
     public static int next_cpu_for_db() {
         LOG.info("next_cpu_for_db:" + cpu_for_db);
         return cpu_for_db++;
     }
+
     public static int next_cpu() {
         if (OsUtils.isMac()) {
             if (cpu == 6) {

@@ -17,8 +17,10 @@
  * #_
  */
 package common.datatype;
+
 import common.collections.Time;
 import common.util.datatypes.StreamValues;
+
 /**
  * Base class for all LRB tuples.<br />
  * <br />
@@ -97,8 +99,10 @@ public abstract class AbstractLRBTuple extends StreamValues {
      */
     private final static int TYPE_IDX = 0;
     private final static long serialVersionUID = -1117500573019912901L;
+
     AbstractLRBTuple() {
     }
+
     AbstractLRBTuple(Short type, Short time) {
         assert (type != null);
         assert (time != null);
@@ -110,6 +114,7 @@ public abstract class AbstractLRBTuple extends StreamValues {
         super.add(TIME_IDX, time);
         assert (super.size() == 2);
     }
+
     /**
      * Returns the tuple type ID of this {@link AbstractLRBTuple}.
      *
@@ -118,6 +123,7 @@ public abstract class AbstractLRBTuple extends StreamValues {
     final Short getType() {
         return (Short) super.get(TYPE_IDX);
     }
+
     /**
      * Returns the timestamp (in LRB seconds) of this {@link AbstractLRBTuple}.
      *
@@ -126,6 +132,7 @@ public abstract class AbstractLRBTuple extends StreamValues {
     public final Short getTime() {
         return (Short) super.get(TIME_IDX);
     }
+
     /**
      * TODO remove class Time ???
      *

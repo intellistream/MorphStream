@@ -1,16 +1,18 @@
 package controller.output.partition;
+
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import common.collections.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.TopologyComponent;
 import execution.ExecutionNode;
 import execution.runtime.collector.impl.Meta;
 import execution.runtime.tuple.impl.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+
 /**
  * Created by shuhaozhang on 11/7/16.
  * Every stream corresponds a partitionController, who owns the output queue for each downstream executor.
@@ -22,6 +24,7 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
     private final HashFunction h2 = Hashing.murmur3_128(17);
     //	private Set<Integer> targetTasks;
     private final long[] targetTaskStats;
+
     public PartialKeyGroupingController(
             TopologyComponent operator, TopologyComponent childOP, HashMap<Integer,
             ExecutionNode> executionNodeHashMap,
@@ -29,10 +32,12 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
         super(operator, childOP, executionNodeHashMap, output_fields, input_fields, batch_size, executor, profile, conf);
         targetTaskStats = new long[this.targetTasks.length];
     }
+
     public void initilize() {
 //		this.targetTasks = getDownExecutor_list().keySet();
 //		targetTaskStats = new long[this.targetTasks.size()];
     }
+
     /**
      * no shuffle for better cache locality?
      */
@@ -47,6 +52,7 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
 //		Collections.shuffle(extendedTargetId);
         //	//LOG.DEBUG("extended target size:" + extendedTargetId.size());
     }
+
     public int chooseTasks(Object... values) {
         int taskId = 0;
         if (values.length > 0) {
@@ -60,6 +66,7 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
         }
         return taskId;
     }
+
     public int chooseTasks(char[] values) {
         int taskId = 0;
         if (values.length > 0) {
@@ -73,6 +80,7 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
         }
         return taskId;
     }
+
     /**
      * partition according to partition ratio.
      *
@@ -86,11 +94,13 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
         offer_bid(meta.src_id, target, streamId, output);
         return target;
     }
+
     public int emit_bid(Meta meta, String streamId, char[] output) throws InterruptedException {
         int target = chooseTasks(output);
         offer_bid(meta.src_id, target, streamId, output);
         return target;
     }
+
     /**
      * partition according to partition ratio.
      *
@@ -105,11 +115,13 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
         offer(meta.src_id, target, streamId, bid, output);
         return target;
     }
+
     public int emit(Meta meta, String streamId, long bid, char[] output) throws InterruptedException {
         int target = chooseTasks(output);
         offer(meta.src_id, target, streamId, bid, output);
         return target;
     }
+
     /**
      * partition according to partition ratio.
      *
@@ -125,6 +137,7 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
         offer_inorder(meta.src_id, target, streamId, bid, gap, output);
         return target;
     }
+
     /**
      * partition according to partition ratio.
      *
@@ -139,12 +152,14 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
         try_offer(meta.src_id, target, streamId, output);
         return target;
     }
+
     public int emit_nowait(Meta meta, String streamId, char[] key, long value) {
         //TODO: % is too slow, need some way to implement faster round-robin.
         int target = chooseTasks(key);
         try_offer(meta.src_id, target, streamId, key, value);
         return target;
     }
+
     public int emit_nowait(Meta meta, String streamId, char[] output) {
         //TODO: % is too slow, need some way to implement faster round-robin.
         int target = chooseTasks(output);

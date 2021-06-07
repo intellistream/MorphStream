@@ -1,31 +1,38 @@
 package topology;
+
 import common.collections.ClassLoaderUtils;
 import common.collections.Configuration;
 import common.constants.BaseConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import components.Topology;
 import components.operators.api.AbstractSpout;
 import components.operators.api.BaseSink;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class AbstractTopology {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractTopology.class);
     protected final TopologyBuilder builder;
     protected final Configuration config;
     private final String topologyName;
+
     protected AbstractTopology(String topologyName, Configuration config) {
         this.topologyName = topologyName;
         this.config = config;
         this.builder = new TopologyBuilder();
     }
+
     public String getTopologyName() {
         return topologyName;
     }
+
     AbstractSpout loadSpout() {
         return loadSpout(BaseConstants.BaseConf.SPOUT_CLASS, getConfigPrefix());
     }
+
     protected AbstractSpout loadSpout(String name) {
         return loadSpout(BaseConstants.BaseConf.SPOUT_CLASS, String.format("%s.%s", getConfigPrefix(), name));
     }
+
     protected AbstractSpout loadSpout(String configKey, String configPrefix) {
         String spoutClass = config.getString(String.format(configKey, configPrefix));
         if (config.getBoolean("verbose")) {
@@ -43,12 +50,15 @@ public abstract class AbstractTopology {
         spout.setConfigPrefix(configPrefix);
         return spout;
     }
+
     protected BaseSink loadSink() {
         return loadSink(BaseConstants.BaseConf.SINK_CLASS, getConfigPrefix());
     }
+
     protected BaseSink loadSink(String name) {
         return loadSink(BaseConstants.BaseConf.SINK_CLASS, String.format("%s.%s", getConfigPrefix(), name));
     }
+
     private BaseSink loadSink(String configKey, String configPrefix) {
         String sinkClass = config.getString(String.format(configKey, configPrefix));
         if (config.getBoolean("verbose")) {
@@ -67,6 +77,7 @@ public abstract class AbstractTopology {
         sink.setConfigPrefix(configPrefix);
         return sink;
     }
+
     /**
      * Utility method to parse a configuration key with the application prefix and
      * component prefix.
@@ -77,6 +88,7 @@ public abstract class AbstractTopology {
     protected String getConfigKey(String name) {
         return String.format(BaseConstants.BaseConf.SINK_THREADS, String.format("%s.%s", getConfigPrefix(), name));
     }
+
     /**
      * Utility method to parse a configuration key with the application prefix..
      *
@@ -85,8 +97,12 @@ public abstract class AbstractTopology {
     protected String getConfigKey() {
         return String.format(BaseConstants.BaseConf.SPOUT_PARSER, getConfigPrefix());
     }
+
     public abstract void initialize();
+
     public abstract Topology buildTopology();
+
     protected abstract Logger getLogger();
+
     protected abstract String getConfigPrefix();
 }

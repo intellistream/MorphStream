@@ -1,4 +1,5 @@
 package common;
+
 public interface CONTROL {
     int kMaxThreadNum = 40;
     int MeasureStart = 0;//10_000;//server needs at least 10,000 to compile, so skip them.

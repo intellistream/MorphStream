@@ -17,6 +17,7 @@
  * #_
  */
 package common.datatype.internal;
+
 import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
@@ -24,6 +25,7 @@ import execution.runtime.tuple.impl.Fields;
 
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
+
 /**
  * {@link AvgVehicleSpeedTuple} represents an intermediate result tuple; the average speed of an vehicle in a segment
  * within a 'minute number' time frame (see {@link Time#getMinute(short)}).<br />
@@ -71,8 +73,10 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
      */
     private final static int AVGS_IDX = 5;
     private static final long serialVersionUID = 9178312919140032032L;
+
     public AvgVehicleSpeedTuple() {
     }
+
     /**
      * Instantiates a new {@link AvgVehicleSpeedTuple} for the given attributes.
      *
@@ -99,6 +103,7 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
         super.add(AVGS_IDX, avgSpeed);
         super.add(TIME_IDX, time);
     }
+
     public AvgVehicleSpeedTuple(Integer vid, Short minute, Integer xway, Short segment, Short diretion, Double avgSpeed, Long msgId, Long sysStamp) {
         assert (vid != null);
         assert (minute != null);
@@ -115,6 +120,7 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
         super.add(msgId);//6
         super.add(sysStamp);//7
     }
+
     /**
      * Returns the schema of a {@link AvgVehicleSpeedTuple}.
      *
@@ -125,9 +131,11 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
                 LRTopologyControl.XWAY_FIELD_NAME, LRTopologyControl.SEGMENT_FIELD_NAME, LRTopologyControl.DIRECTION_FIELD_NAME,
                 LRTopologyControl.AVERAGE_VEHICLE_SPEED_FIELD_NAME);
     }
+
     public static Fields getLatencySchema() {
         return new Fields(LRTopologyControl.AVERAGE_VEHICLE_SPEED_FIELD_NAME, MSG_ID, SYSTEMTIMESTAMP);
     }
+
     /**
      * Returns the vehicle ID of this {@link AvgVehicleSpeedTuple}.
      *
@@ -136,6 +144,7 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
     public final Integer getVid() {
         return (Integer) super.get(VID_IDX);
     }
+
     /**
      * Returns the 'minute number' of this {@link AvgVehicleSpeedTuple}.
      *
@@ -144,6 +153,7 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
     public final Short getMinute() {
         return (Short) super.get(MINUTE_IDX);
     }
+
     /**
      * Returns the expressway ID of this {@link AvgVehicleSpeedTuple}.
      *
@@ -153,6 +163,7 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
     public final Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
+
     /**
      * Returns the segment of this {@link AvgVehicleSpeedTuple}.
      *
@@ -162,6 +173,7 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
     public final Short getSegment() {
         return (Short) super.get(SEG_IDX);
     }
+
     /**
      * Returns the vehicle's direction of this {@link AvgVehicleSpeedTuple}.
      *
@@ -179,6 +191,7 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
 //    public long getTimeStamp() {
 //        return (long) super.GetAndUpdate(7);
 //    }
+
     /**
      * Returns the vehicle's average speed of this {@link AvgVehicleSpeedTuple}.
      *
@@ -187,6 +200,7 @@ public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValu
     public final Double getAvgSpeed() {
         return (Double) super.get(AVGS_IDX);
     }
+
     public final short getTime() {
         return (short) super.get(TIME_IDX);
     }

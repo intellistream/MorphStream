@@ -1,4 +1,5 @@
 package common.topology;
+
 import common.bolts.comm.StringParserBolt;
 import common.bolts.wc.SplitSentenceBolt;
 import common.bolts.wc.WordCountBolt;
@@ -17,15 +18,19 @@ import org.slf4j.LoggerFactory;
 import topology.BasicTopology;
 
 import static common.constants.WordCountConstants.PREFIX;
+
 public class WordCount extends BasicTopology {
     private static final Logger LOG = LoggerFactory.getLogger(WordCount.class);
+
     public WordCount(String topologyName, Configuration config) {
         super(topologyName, config);
     }
+
     public void initialize() {
         super.initialize();
         sink = loadSink();
     }
+
     @Override
     public Topology buildTopology() {
         try {
@@ -50,10 +55,12 @@ public class WordCount extends BasicTopology {
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology();
     }
+
     @Override
     public Logger getLogger() {
         return LOG;
     }
+
     @Override
     public String getConfigPrefix() {
         return PREFIX;

@@ -17,7 +17,9 @@
  * #_
  */
 package common.datatype.util;
+
 import java.util.HashSet;
+
 /**
  * {@link CarCount} is an class that helps to count the number of cars in a segment. Its set_executor_ready count value_list is one.
  *

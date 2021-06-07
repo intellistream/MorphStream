@@ -1,10 +1,12 @@
 package common.collections;
+
 import common.util.datatypes.DataTypeUtils;
 import org.apache.commons.lang.math.NumberUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
 public class Configuration extends HashMap {
     public static final String TOPOLOGY_WORKER_CHILDOPTS = "work_opt";
     public static final String METRICS_ENABLED = "metrics.enabled";
@@ -42,6 +44,7 @@ public class Configuration extends HashMap {
     public boolean useLocalEventGenerator;
     protected String configPrefix = "";
     String GENERATOR_COUNT = "generator.count";
+
     public static Configuration fromMap(Map map) {
         Configuration config = new Configuration();
         for (Object k : map.keySet()) {
@@ -64,6 +67,7 @@ public class Configuration extends HashMap {
         }
         return config;
     }
+
     public static Configuration fromProperties(Properties properties) {
         Configuration config = new Configuration();
         for (String key : properties.stringPropertyNames()) {
@@ -71,6 +75,7 @@ public class Configuration extends HashMap {
         }
         return config;
     }
+
     public static Configuration fromStr(String str) {
         Map<String, String> map = strToMap(str);
         Configuration config = new Configuration();
@@ -79,6 +84,7 @@ public class Configuration extends HashMap {
         }
         return config;
     }
+
     public static Map<String, String> strToMap(String str) {
         Map<String, String> map = new HashMap<>();
         String[] arguments = str.split(",");
@@ -88,6 +94,7 @@ public class Configuration extends HashMap {
         }
         return map;
     }
+
     private static Object parseString(String value) {
         if (DataTypeUtils.isInteger(value)) {
             return Integer.parseInt(value);
@@ -98,12 +105,15 @@ public class Configuration extends HashMap {
         }
         return value;
     }
+
     public String getConfigKey(String template) {
         return String.format(template, configPrefix);
     }
+
     public void setUseLocalEventGenerator(boolean useLocalEventGenerator) {
         this.useLocalEventGenerator = useLocalEventGenerator;
     }
+
     public String getString(String key) {
         String val = null;
         Object obj = get(key);
@@ -118,6 +128,7 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public String getString(String key, String def) {
         String val = null;
         try {
@@ -127,6 +138,7 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public int getInt(String key) {
         int val = 0;
         Object obj = get(key);
@@ -149,6 +161,7 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public long getLong(String key) {
         long val = 0;
         Object obj = get(key);
@@ -169,6 +182,7 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public int getInt(String key, int def) {
         int val = 0;
         try {
@@ -178,6 +192,7 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public long getLong(String key, long def) {
         long val = 0;
         try {
@@ -187,6 +202,7 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public double getDouble(String key) {
         double val = 0;
         Object obj = get(key);
@@ -207,6 +223,7 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public double getDouble(String key, double def) {
         double val = 0;
         try {
@@ -216,6 +233,7 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public boolean getBoolean(String key) {
         boolean val = false;
         Object obj = get(key);
@@ -232,6 +250,7 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public boolean getBoolean(String key, boolean def) {
         boolean val = false;
         try {
@@ -241,9 +260,11 @@ public class Configuration extends HashMap {
         }
         return val;
     }
+
     public int[] getIntArray(String key, int[] def) {
         return getIntArray(key, ",", def);
     }
+
     public int[] getIntArray(String key, String separator, int[] def) {
         int[] values = null;
         try {
@@ -253,6 +274,7 @@ public class Configuration extends HashMap {
         }
         return values;
     }
+
     public int[] getIntArray(String key, String separator) {
         String value = getString(key);
         String[] items = value.split(separator);
@@ -267,12 +289,15 @@ public class Configuration extends HashMap {
         }
         return values;
     }
+
     public boolean exists(String key) {
         return containsKey(key);
     }
+
     public String getConfigPrefix() {
         return configPrefix;
     }
+
     public void setConfigPrefix(String configPrefix) {
         this.configPrefix = configPrefix;
     }
