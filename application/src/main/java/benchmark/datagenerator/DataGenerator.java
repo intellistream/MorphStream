@@ -8,6 +8,10 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Data generator for benchmarks
+ * TODO: refactor with an abstract DataGenerator, design different data generator for all apps.
+ */
 public class DataGenerator {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataGenerator.class);
@@ -52,10 +56,12 @@ public class DataGenerator {
         this.mPickAccount = new boolean[dataConfig.dependenciesDistributionForLevels.length];
         this.mPartitionOffset = (mTotalTuplesToGenerate * 5)/dataConfig.totalThreads;
     }
+
     public DataGeneratorConfig getDataConfig() {
         return dataConfig;
     }
-    public void GenerateData() {
+
+    public void GenerateStream() {
 
         File file = new File(dataConfig.rootPath);
         if (file.exists()) {
@@ -90,7 +96,6 @@ public class DataGenerator {
         this.dataConfig = null;
     }
 
-
     private void GenerateTuple() {
 
         DataOperationChain srcAccOC = null;
@@ -98,16 +103,19 @@ public class DataGenerator {
         DataOperationChain dstAccOC = null;
         DataOperationChain dstAstOC = null;
 
+        // 8 possible types of data dependencies in SL
         boolean srcAcc_dependsUpon_srcAst = false;
         boolean srcAst_dependsUpon_srcAcc = false;
 
+        boolean dstAst_dependsUpon_dstAcc = false;
+        boolean dstAcc_dependsUpon_dstAst = false;
+
         boolean dstAst_dependsUpon_srcAst = false;
         boolean dstAst_dependsUpon_srcAcc = false;
-        boolean dstAst_dependsUpon_dstAcc = false;
 
         boolean dstAcc_dependsUpon_srcAst = false;
         boolean dstAcc_dependsUpon_srcAcc = false;
-        boolean dstAcc_dependsUpon_dstAst = false;
+
 
         selectTuplesStart = System.nanoTime();
         if (mOcLevelsDistribution[0] >= dataConfig.dependenciesDistributionForLevels[0]) {
@@ -249,6 +257,7 @@ public class DataGenerator {
         if (mTransactionId % 100000 == 0)
              LOG.info(String.valueOf(mTransactionId));
     }
+
     private void UpdateStats() {
 
         for (int lop = 0; lop < dataConfig.numberOfDLevels; lop++) {
@@ -340,6 +349,7 @@ public class DataGenerator {
          LOG.info(String.format("Dumping Dependency Vertices ids range..."));
         mDataOutputHandler.sinkDependenciesVerticesIdsRange(totalAccountRecords, totalAssetRecords);
     }
+
     private DataOperationChain getNewAccountOC() {
 
         long id = 0;

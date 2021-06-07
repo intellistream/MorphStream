@@ -132,7 +132,7 @@ public abstract class TableInitilizer {
         db.getEventManager().ini(total_events);
         int _number_partitions = number_partitions;
 
-        //try to read from file.
+        //try to read from file or use user-defined generator for data preparation
         if (!Prepared(file_path + tthread)) {
             //if failed, create new one.
             Object event;

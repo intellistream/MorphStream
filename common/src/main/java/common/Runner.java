@@ -22,7 +22,8 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "GrepSum";
+//    public String application = "GrepSum";
+    public String application = "StreamLedger";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -75,7 +76,7 @@ public abstract class Runner implements IRunner {
     public int TP = 4;// default TP threads
 
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 1;// default total execution threads
+    public int tthread = 4;// default total execution threads
 
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_TStream;

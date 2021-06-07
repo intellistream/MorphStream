@@ -26,7 +26,7 @@ import java.util.*;
 
 import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
 import static transaction.State.configure_store;
-import static utils.PartitionHelper.getPartition_interval;
+
 //import static xerial.jnuma.Numa.setLocalAlloc;
 public class SLInitializer extends TableInitilizer {
 
@@ -244,7 +244,7 @@ public class SLInitializer extends TableInitilizer {
         String statsFolderPath = String.format(statsFolderPattern, mDataGenerator.getDataConfig().scheduler, numberOfLevels, tt, totalBatches, tuplesPerBatch);
         File file = new File(statsFolderPath + String.format("iteration_0.csv"));
         if (!file.exists()) {
-            mDataGenerator.GenerateData();
+            mDataGenerator.GenerateStream();
             mDataGenerator = null;
         }
         loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);

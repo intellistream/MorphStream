@@ -1,5 +1,8 @@
 package benchmark.datagenerator;
 
+/**
+ * Streamledger
+ */
 public class DataTransaction {
     private int id;
     private int sourceAccountId;

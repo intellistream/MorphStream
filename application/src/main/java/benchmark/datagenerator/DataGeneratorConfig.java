@@ -5,6 +5,9 @@ import common.tools.ZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Generator Config that is tunable for comprehensive experiments
+ */
 public class DataGeneratorConfig {
     private static final Logger LOG = LoggerFactory.getLogger(DataGeneratorConfig.class);
     public Integer tuplesPerBatch;
