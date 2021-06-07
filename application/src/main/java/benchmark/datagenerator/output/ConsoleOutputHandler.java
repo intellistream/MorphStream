@@ -26,7 +26,7 @@ public class ConsoleOutputHandler implements IOutputHandler {
 
         for (ArrayList<DataOperationChain> operationChains : allOperationChains.values()) {
             for (DataOperationChain oc : operationChains) {
-                if (!oc.hasDependents()) {
+                if (!oc.hasChildren()) {
                     ArrayList<String> dependencyChains = oc.getDependencyChainInfo();
                     for (String dependencyChain : dependencyChains) {
                         System.out.println("\"" + dependencyChain + "\",");

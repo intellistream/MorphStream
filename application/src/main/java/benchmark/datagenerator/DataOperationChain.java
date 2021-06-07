@@ -5,18 +5,17 @@ import java.util.HashMap;
 import java.util.Objects;
 
 /**
- * ????
+ * maintains the actual OCs will be constructed based on the data generator.
  */
 public class DataOperationChain {
 
     private final String stateId;
-    private final ArrayList<DataOperationChain> dependsUpon = new ArrayList<>();
-    private final ArrayList<DataOperationChain> dependents = new ArrayList<>();
+    private final ArrayList<DataOperationChain> parent = new ArrayList<>();
+    private final ArrayList<DataOperationChain> children = new ArrayList<>();
     private final HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel;
     private final int averageRecordsPerDeLevel;
     private int operationsCount = 0;
     private int dependencyLevel;
-    private boolean isDependencyLevelDirty = false;
     private boolean readForTraversal = false;
 
     public DataOperationChain(String stateId, int averageRecordsPerDeLevel, HashMap<Integer, ArrayList<DataOperationChain>> operationChainsByLevel) {
@@ -42,7 +41,7 @@ public class DataOperationChain {
         if (!readForTraversal)
             return;
         readForTraversal = false;
-        for (DataOperationChain oc : dependsUpon) {
+        for (DataOperationChain oc : parent) {
             String dependencyName = String.format("%s,%s", stateId, oc.getStateId());
             if (!allDependencies.contains(dependencyName))
                 allDependencies.add(dependencyName);
@@ -52,7 +51,7 @@ public class DataOperationChain {
 
     public ArrayList<String> getDependencyChainInfo() {
         ArrayList<String> chains = new ArrayList<>();
-        for (DataOperationChain oc : dependsUpon) {
+        for (DataOperationChain oc : parent) {
             ArrayList<String> dependsUponChains = oc.getDependencyChainInfo();
             if (dependsUponChains.size() == 0)
                 chains.add(stateId + "->" + oc.getStateId());
@@ -67,62 +66,45 @@ public class DataOperationChain {
         readForTraversal = true;
     }
 
-    public void markDependentsReadyForTraversal() {
-        if (readForTraversal)
-            return;
-        readForTraversal = true;
-        for (DataOperationChain doc : dependents) {
-            doc.markDependentsReadyForTraversal();
-        }
-    }
-
     public boolean hasInAllDependents(DataOperationChain oc) {
         if (!readForTraversal)
             return false;
         readForTraversal = false;
 
         boolean traversalResult = false;
-        for (DataOperationChain doc : dependents) {
-            traversalResult |= oc.equals(doc);
+        for (DataOperationChain doc : children) {
+            traversalResult = oc.equals(doc);
             if (traversalResult) break;
 
-            traversalResult |= doc.hasInAllDependents(oc);
+            traversalResult = doc.hasInAllDependents(oc);
             if (traversalResult) break;
         }
         return traversalResult;
     }
 
-    public void markDependsUponReadyForTraversal() {
-        if (readForTraversal)
-            return;
-        readForTraversal = true;
-        for (DataOperationChain doc : dependsUpon) {
-            doc.markDependentsReadyForTraversal();
-        }
-    }
-
-    public boolean doesDependsUpon(DataOperationChain oc) {
+    public boolean isDependUpon(DataOperationChain oc) {
         boolean traversalResult = false;
-        for (DataOperationChain doc : dependsUpon) {
-            traversalResult |= oc.equals(doc);
+        for (DataOperationChain doc : parent) {
+            traversalResult = oc.equals(doc);
             if (traversalResult) break;
 
-            traversalResult |= doc.hasInAllDependents(oc);
+            // TODO: this method is never used by far, and it is also meaningless
+            traversalResult = doc.hasInAllDependents(oc);
             if (traversalResult) break;
         }
         return traversalResult;
     }
 
-    public void addDependency(DataOperationChain dependency) {
-        dependsUpon.add(dependency);
+    public void addParent(DataOperationChain dependency) {
+        parent.add(dependency);
     }
 
-    public void addDependent(DataOperationChain dependent) {
-        dependents.add(dependent);
+    public void addChildren(DataOperationChain dependent) {
+        children.add(dependent);
     }
 
-    public boolean hasDependents() {
-        return !dependents.isEmpty();
+    public boolean hasChildren() {
+        return !children.isEmpty();
     }
 
     private void updateLevelInMap(int dependencyLevel, int averageRecordsPerDeLevel) {
@@ -145,15 +127,6 @@ public class DataOperationChain {
         }
     }
 
-    public void markAllDependencyLevelsDirty() {
-        if (isDependencyLevelDirty)
-            return;
-        isDependencyLevelDirty = true;
-        for (DataOperationChain doc : dependents) {
-            doc.markAllDependencyLevelsDirty();
-        }
-    }
-
     public void updateAllDependencyLevel() {
 
         int oldLevel = dependencyLevel;
@@ -162,7 +135,7 @@ public class DataOperationChain {
         if (oldLevel != dependencyLevel) {
             removeFromMap(oldLevel);
             updateLevelInMap(dependencyLevel, averageRecordsPerDeLevel);
-            for (DataOperationChain doc : dependents) {
+            for (DataOperationChain doc : children) {
                 doc.updateAllDependencyLevel();
             }
         }
@@ -171,35 +144,13 @@ public class DataOperationChain {
 
     private void updateDependencyLevel() {
         dependencyLevel = 0;
-        for (DataOperationChain oc : dependsUpon) {
+        for (DataOperationChain oc : parent) {
             if (oc.getDependencyLevel() >= dependencyLevel) {
                 dependencyLevel = oc.getDependencyLevel() + 1;
             }
         }
     }
 
-//    public int currentDependencyLevel() {
-//        int dependencyLevel = 0;
-//        for(DataOperationChain oc: dependsUpon) {
-//            if(oc.getDependencyLevel()>=dependencyLevel) {
-//                dependencyLevel = oc.getDependencyLevel()+1;
-//            }
-//        }
-//        return dependencyLevel;
-//    }
-
-//    public void pushDependencyLevelToDependents(int newDependencyLevel) {
-//
-//        if(newDependencyLevel>dependencyLevel) {
-//            removeFromMap(dependencyLevel);
-//            dependencyLevel = newDependencyLevel;
-//            updateLevelInMap(dependencyLevel);
-//            for (DataOperationChain doc: dependents) {
-//                doc.pushDependencyLevelToDependents(newDependencyLevel+1);
-//            }
-//        }
-//
-//    }
 
     public int getDependencyLevel() {
         return dependencyLevel;

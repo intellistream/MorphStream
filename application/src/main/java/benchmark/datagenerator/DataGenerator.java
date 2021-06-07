@@ -123,8 +123,15 @@ public class DataGenerator {
 
 
         selectTuplesStart = System.nanoTime();
+        // step 1: try to check whether the level 0 is generated properly i.e. has similar data distribution as expected
+        // if smaller, generate new tuple for level 0, which only need to create new ast and acc
+        // if bigger, generate higher level tuples.
         if (mOcLevelsDistribution[0] >= dataConfig.dependenciesDistributionForLevels[0]) {
 
+            // try to select a dependency level for dependency construction
+            // simply select the last level of distribution that is bigger as expected
+            // e.g. cur distribution: [0.28,0.25,0.25,0.22], expected: [0.25, 0.25, 0.25, 0.25]
+            // the selected dependency level is 2.
             int selectedLevel = 0;
             for (int lop = 1; lop < dataConfig.numberOfDLevels; lop++) {
                 if (mOcLevelsDistribution[lop] < dataConfig.dependenciesDistributionForLevels[lop]) {
@@ -133,31 +140,59 @@ public class DataGenerator {
                 }
             }
 
+            System.out.println("++++++");
+//            System.out.println(mOcLevelsDistribution[0]
+//                    + "," + mOcLevelsDistribution[1]
+//                    + "," + mOcLevelsDistribution[2]
+//                    + "," + mOcLevelsDistribution[3]);
+//            System.out.println(dataConfig.dependenciesDistributionForLevels[0]
+//                    + "," + dataConfig.dependenciesDistributionForLevels[1]
+//                    + "," + dataConfig.dependenciesDistributionForLevels[2]
+//                    + "," + dataConfig.dependenciesDistributionForLevels[3]);
+//            System.out.println(dataConfig.dependenciesDistributionForLevels[0]
+//                    + "," + dataConfig.dependenciesDistributionForLevels[1]
+//                    + "," + dataConfig.dependenciesDistributionForLevels[2]
+//                    + "," + dataConfig.dependenciesDistributionForLevels[3]);
+//            System.out.println(mPickAccount[0]
+//                    + "," + mPickAccount[1]
+//                    + "," + mPickAccount[2]
+//                    + "," + mPickAccount[3]);
+//            System.out.println(selectedLevel);
+
+
             mPId = mRandomGenerator.nextInt(dataConfig.totalThreads);
 
             if (mPickAccount[selectedLevel]) {
 
+                System.out.println("++++++ select from existing account");
+
+                // pick a existing OC of a typical level from account oc chains map
                 srcAccOC = getRandomExistingOC(selectedLevel, mAccountOperationChainsByLevel);
                 if (srcAccOC == null)
                     srcAccOC = getNewAccountOC();
                 mPId += 1;
                 mPId = mPId % dataConfig.totalThreads;
 
+                // generate a new asset OC for processing
                 srcAstOC = getNewAssetOC();
                 mPId += 1;
                 mPId = mPId % dataConfig.totalThreads;
 
+                // TODO: dst acc oc is always null...
                 dstAccOC = getRandomExistingDestOC(mAccountOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAccOC == null)
                     dstAccOC = getNewAccountOC();
                 mPId += 1;
                 mPId = mPId % dataConfig.totalThreads;
 
+                // TODO: ast ast oc is always null...
                 dstAstOC = getRandomExistingDestOC(mAssetsOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAstOC == null)
                     dstAstOC = getNewAssetOC();
 
             } else {
+
+                System.out.println("++++++ create a new account at that level");
 
                 srcAccOC = getNewAccountOC();
                 mPId += 1;
@@ -169,14 +204,18 @@ public class DataGenerator {
                 mPId += 1;
                 mPId = mPId % dataConfig.totalThreads;
 
+                // TODO: dst acc oc is always null...
                 dstAccOC = getRandomExistingDestOC(mAccountOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAccOC == null)
+                    System.out.println("++++++ create new dst acc oc");
                     dstAccOC = getNewAccountOC();
                 mPId += 1;
                 mPId = mPId % dataConfig.totalThreads;
 
+                // TODO: dst ast oc is always null...
                 dstAstOC = getRandomExistingDestOC(mAssetsOperationChainsByLevel, srcAccOC, srcAstOC);
                 if (dstAstOC == null)
+                    System.out.println("++++++ create new dst ast oc");
                     dstAstOC = getNewAssetOC();
             }
 
@@ -188,63 +227,63 @@ public class DataGenerator {
         }
         selectTuples += System.nanoTime() - selectTuplesStart;
 
-        dstAcc_dependsUpon_dstAst = dstAccOC.doesDependsUpon(dstAstOC);
-        dstAst_dependsUpon_dstAcc = dstAstOC.doesDependsUpon(dstAccOC);
+        dstAcc_dependsUpon_dstAst = dstAccOC.isDependUpon(dstAstOC);
+        dstAst_dependsUpon_dstAcc = dstAstOC.isDependUpon(dstAccOC);
 
         // register dependencies for srcAssets
         if (srcAccOC.getOperationsCount() > 0) {
-            srcAst_dependsUpon_srcAcc = srcAstOC.doesDependsUpon(srcAccOC);
-            dstAcc_dependsUpon_srcAcc = dstAccOC.doesDependsUpon(srcAccOC);
-            dstAst_dependsUpon_srcAcc = dstAstOC.doesDependsUpon(srcAccOC);
+            srcAst_dependsUpon_srcAcc = srcAstOC.isDependUpon(srcAccOC);
+            dstAcc_dependsUpon_srcAcc = dstAccOC.isDependUpon(srcAccOC);
+            dstAst_dependsUpon_srcAcc = dstAstOC.isDependUpon(srcAccOC);
 
             if (!srcAst_dependsUpon_srcAcc) {
-                srcAccOC.addDependent(srcAstOC);
-                srcAstOC.addDependency(srcAccOC);
+                srcAccOC.addChildren(srcAstOC);
+                srcAstOC.addParent(srcAccOC);
                 updateDependencyStart = System.nanoTime();
                 srcAstOC.updateAllDependencyLevel();
                 updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
             if (!dstAcc_dependsUpon_srcAcc && !dstAcc_dependsUpon_dstAst) {
-                srcAccOC.addDependent(dstAccOC);
-                dstAccOC.addDependency(srcAccOC);
+                srcAccOC.addChildren(dstAccOC);
+                dstAccOC.addParent(srcAccOC);
                 updateDependencyStart = System.nanoTime();
                 dstAccOC.updateAllDependencyLevel();
                 updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
             if (!dstAst_dependsUpon_srcAcc && !dstAst_dependsUpon_dstAcc) {
-                srcAccOC.addDependent(dstAstOC);
-                dstAstOC.addDependency(srcAccOC);
+                srcAccOC.addChildren(dstAstOC);
+                dstAstOC.addParent(srcAccOC);
                 updateDependencyStart = System.nanoTime();
                 dstAstOC.updateAllDependencyLevel();
                 updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
         } else if (srcAstOC.getOperationsCount() > 0) {
-            srcAcc_dependsUpon_srcAst = srcAstOC.doesDependsUpon(srcAstOC);
-            dstAcc_dependsUpon_srcAst = dstAccOC.doesDependsUpon(srcAstOC);
-            dstAst_dependsUpon_srcAst = dstAstOC.doesDependsUpon(srcAstOC);
+            srcAcc_dependsUpon_srcAst = srcAstOC.isDependUpon(srcAstOC);
+            dstAcc_dependsUpon_srcAst = dstAccOC.isDependUpon(srcAstOC);
+            dstAst_dependsUpon_srcAst = dstAstOC.isDependUpon(srcAstOC);
 
             if (!srcAcc_dependsUpon_srcAst) {
-                srcAstOC.addDependent(srcAccOC);
-                srcAccOC.addDependency(srcAstOC);
+                srcAstOC.addChildren(srcAccOC);
+                srcAccOC.addParent(srcAstOC);
                 updateDependencyStart = System.nanoTime();
                 srcAccOC.updateAllDependencyLevel();
                 updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
             if (!dstAcc_dependsUpon_srcAst && !dstAcc_dependsUpon_dstAst) {
-                srcAstOC.addDependent(dstAccOC);
-                dstAccOC.addDependency(srcAstOC);
+                srcAstOC.addChildren(dstAccOC);
+                dstAccOC.addParent(srcAstOC);
                 updateDependencyStart = System.nanoTime();
                 dstAccOC.updateAllDependencyLevel();
                 updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
             if (!dstAst_dependsUpon_srcAst && !dstAst_dependsUpon_dstAcc) {
-                srcAstOC.addDependent(dstAstOC);
-                dstAstOC.addDependency(srcAstOC);
+                srcAstOC.addChildren(dstAstOC);
+                dstAstOC.addParent(srcAstOC);
                 updateDependencyStart = System.nanoTime();
                 dstAstOC.updateAllDependencyLevel();
                 updateDependency += System.nanoTime() - updateDependencyStart;
@@ -280,6 +319,23 @@ public class DataGenerator {
             mOcLevelsDistribution[lop] = (accountLevelCount + assetLevelCount) / (totalAccountRecords + totalAssetRecords);
             mPickAccount[lop] = mAccountLevelsDistribution[lop] < mAssetLevelsDistribution[lop];
         }
+//        System.out.println("++++++");
+//        System.out.println(mAccountLevelsDistribution[0]
+//                + "," + mAccountLevelsDistribution[1]
+//                + "," + mAccountLevelsDistribution[2]
+//                + "," + mAccountLevelsDistribution[3]);
+//        System.out.println(mAssetLevelsDistribution[0]
+//                + "," + mAssetLevelsDistribution[1]
+//                + "," + mAssetLevelsDistribution[2]
+//                + "," + mAssetLevelsDistribution[3]);
+//        System.out.println(mOcLevelsDistribution[0]
+//                + "," + mOcLevelsDistribution[1]
+//                + "," + mOcLevelsDistribution[2]
+//                + "," + mOcLevelsDistribution[3]);
+//        System.out.println(mPickAccount[0]
+//                + "," + mPickAccount[1]
+//                + "," + mPickAccount[2]
+//                + "," + mPickAccount[3]);
     }
 
     private DataOperationChain getRandomExistingDestOC(HashMap<Integer, ArrayList<DataOperationChain>> allOcs, DataOperationChain srcOC, DataOperationChain srcAst) {
@@ -291,11 +347,11 @@ public class DataGenerator {
         DataOperationChain oc = null;
         for (int lop = independentOcs.size() - 1; lop >= 0; lop--) {
             oc = independentOcs.get(lop);
-            if (!oc.hasDependents() &&
+            if (!oc.hasChildren() &&
                     oc != srcOC &&
                     oc != srcAst &&
-                    !srcOC.doesDependsUpon(oc) &&
-                    !srcAst.doesDependsUpon(oc)
+                    !srcOC.isDependUpon(oc) &&
+                    !srcAst.isDependUpon(oc)
                     && (oc.getId() % mPartitionOffset) == mPId)
                 break;
             if (independentOcs.size() - lop > 100) {
