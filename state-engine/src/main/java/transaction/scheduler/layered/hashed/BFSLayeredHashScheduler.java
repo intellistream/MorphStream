@@ -3,15 +3,16 @@ package transaction.scheduler.layered.hashed;
 import common.OperationChain;
 
 /**
- * depth-first-search based layered hash scheduler.
+ * breath-first-search based layered hash scheduler.
  */
-public class DFSLayeredHashScheduler extends LayeredHashScheduler {
-    public DFSLayeredHashScheduler(int tp) {
+public class BFSLayeredHashScheduler extends LayeredHashScheduler {
+    public BFSLayeredHashScheduler(int tp) {
         super(tp);
+
     }
     @Override
     public OperationChain nextOperationChain(int threadId) {
-        OperationChain oc = DFSearch(threadId);
+        OperationChain oc = BFSearch(threadId);
         checkFinished(threadId);
         if (oc != null)
             context.scheduledOcsCount[threadId] += 1;

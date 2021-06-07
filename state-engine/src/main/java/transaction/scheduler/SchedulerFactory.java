@@ -1,11 +1,11 @@
 package transaction.scheduler;
 
 import transaction.scheduler.layered.hashed.DFSLayeredHashScheduler;
-import transaction.scheduler.layered.hashed.LayeredHashScheduler;
-import transaction.scheduler.layered.nonhashed.DFSLayeredRoundRobinScheduler;
-import transaction.scheduler.layered.nonhashed.DFSLayeredSharedWorkloadScheduler;
-import transaction.scheduler.layered.nonhashed.LayeredRoundRobinScheduler;
-import transaction.scheduler.layered.nonhashed.LayeredSharedWorkloadScheduler;
+import transaction.scheduler.layered.hashed.BFSLayeredHashScheduler;
+import transaction.scheduler.layered.nonhashed.rr.DFSLayeredRoundRobinScheduler;
+import transaction.scheduler.layered.nonhashed.sw.DFSLayeredSharedWorkloadScheduler;
+import transaction.scheduler.layered.nonhashed.rr.BFSLayeredRoundRobinScheduler;
+import transaction.scheduler.layered.nonhashed.sw.BFSLayeredSharedWorkloadScheduler;
 
 /**
  * Author: Aqif Hamid
@@ -24,13 +24,13 @@ public class SchedulerFactory {
         switch (schedulerType) {
 
             case BL:
-                scheduler = new LayeredHashScheduler(totalThread);
+                scheduler = new BFSLayeredHashScheduler(totalThread);
                 break;
             case RR:
-                scheduler = new LayeredRoundRobinScheduler(totalThread);
+                scheduler = new BFSLayeredRoundRobinScheduler(totalThread);
                 break;
             case SW:
-                scheduler = new LayeredSharedWorkloadScheduler(totalThread);
+                scheduler = new BFSLayeredSharedWorkloadScheduler(totalThread);
                 break;
             case NB_RR:
                 scheduler = new DFSLayeredRoundRobinScheduler(totalThread);

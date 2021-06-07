@@ -10,18 +10,12 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
 
-public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, ArrayDeque<OperationChain>>> implements IScheduler {
-
-    protected int[] scheduledOcsCount;//current number of operation chains processed per thread.
-    protected int[] totalOcsToSchedule;//total number of operation chains to process per thread.
-
+public abstract class LayeredHashScheduler extends LayeredScheduler implements IScheduler {
+    public HashContext<HashMap<Integer, ArrayDeque<OperationChain>>> context;
     public LayeredHashScheduler(int tp) {
-        super(tp);
-        scheduledOcsCount = new int[tp];
-        totalOcsToSchedule = new int[tp];
-
+        context = new HashContext<>(tp);
         for (int threadId = 0; threadId < tp; threadId++) {
-            layeredOCBucketGlobal.put(threadId, new HashMap<>());
+            context.layeredOCBucketGlobal.put(threadId, new HashMap<>());
         }
     }
 
@@ -36,33 +30,10 @@ public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, Arra
     @Override
     public void submitOperationChains(int threadId, Collection<OperationChain> ocs) {
         MeasureTools.BEGIN_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
-        totalOcsToSchedule[threadId] += ocs.size();
-        HashMap<Integer, ArrayDeque<OperationChain>> layeredOCBucketThread = layeredOCBucketGlobal.get(threadId);
+        context.totalOcsToSchedule[threadId] += ocs.size();
+        HashMap<Integer, ArrayDeque<OperationChain>> layeredOCBucketThread = context.layeredOCBucketGlobal.get(threadId);
         buildBucketPerThread(layeredOCBucketThread, ocs);
         MeasureTools.END_SUBMIT_OVERHEAD_TIME_MEASURE(threadId);
-    }
-
-    /**
-     * Process all operation chains of one layer until another layer.
-     * It's more like a breath-first-search.
-     *
-     * @param threadId
-     * @return
-     */
-    @Override
-    public OperationChain nextOperationChain(int threadId) {
-        OperationChain oc = super.nextOperationChain(threadId);
-        if (oc != null)
-            scheduledOcsCount[threadId] += 1;
-
-        if (finishedScheduling(threadId)) {//finished scheduling already. This is needed because hash-scheduler can be workload unbalanced.
-            MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
-            SOURCE_CONTROL.getInstance().oneThreadCompleted();
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
-        }
-
-        return oc; // if a null is returned, it means, we are done with level!
     }
 
     /**
@@ -72,8 +43,8 @@ public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, Arra
      * @param dLevel
      * @return
      */
-    protected OperationChain getOC(int threadId, int dLevel) {
-        ArrayDeque<OperationChain> ocs = layeredOCBucketGlobal.get(threadId).get(dLevel);
+    public OperationChain getOC(int threadId, int dLevel) {
+        ArrayDeque<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(dLevel);
         if (ocs.size() > 0)
             return ocs.removeLast();
         else return null;
@@ -81,16 +52,27 @@ public class LayeredHashScheduler extends LayeredScheduler<HashMap<Integer, Arra
 
     @Override
     public boolean finishedScheduling(int threadId) {
-        return scheduledOcsCount[threadId] == totalOcsToSchedule[threadId];
+        return context.scheduledOcsCount[threadId] == context.totalOcsToSchedule[threadId];
     }
 
     @Override
     public void reset() {
-        for (int lop = 0; lop < totalOcsToSchedule.length; lop++) {
-            totalOcsToSchedule[lop] = 0;
-            scheduledOcsCount[lop] = 0;
-            currentLevel[lop] = 0;
+        context.reset();
+        for (int lop = 0; lop < context.totalThread; lop++) {
+            context.currentLevel[lop] = 0;
         }
     }
-
+    /**
+     * This is needed because hash-scheduler can be workload unbalanced.
+     *
+     * @param threadId
+     */
+    protected void checkFinished(int threadId) {
+        if (finishedScheduling(threadId)) {
+            MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
+            SOURCE_CONTROL.getInstance().oneThreadCompleted();
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
+        }
+    }
 }

@@ -8,20 +8,9 @@ import utils.SOURCE_CONTROL;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class LayeredScheduler<V> implements IScheduler {
-
-    //if Hashed: threadID, levelID, listOCs.
-    //if RR: levelID, listOCs.
-    //if Shared: levelID, listOCs.
-    protected ConcurrentHashMap<Integer, V> layeredOCBucketGlobal;
-    protected int[] currentLevel;
-
-    public LayeredScheduler(int totalThreads) {
-        layeredOCBucketGlobal = new ConcurrentHashMap(); // TODO: make sure this will not cause trouble with multithreaded access.
-        currentLevel = new int[totalThreads];
-    }
+public abstract class LayeredScheduler implements IScheduler {
+    protected LayeredContext<?> context;
 
     /**
      * Build buckets with submitted ocs.
@@ -46,8 +35,8 @@ public abstract class LayeredScheduler<V> implements IScheduler {
         return localMaxDLevel;
     }
 
-    public OperationChain nextOperationChain(int threadId) {
-        OperationChain oc = getOC(threadId, currentLevel[threadId]);
+    public OperationChain BFSearch(int threadId) {
+        OperationChain oc = getOC(threadId, context.currentLevel[threadId]);
         if (oc != null) {
             return oc;//successfully get the next operation chain of the current level.
         } else {
@@ -55,14 +44,28 @@ public abstract class LayeredScheduler<V> implements IScheduler {
                 while (oc == null) {
                     if (finishedScheduling(threadId))
                         break;
-                    currentLevel[threadId] += 1;//current level is done, process the next level.
-                    oc = getOC(threadId, currentLevel[threadId]);
+                    context.currentLevel[threadId] += 1;//current level is done, process the next level.
+                    oc = getOC(threadId, context.currentLevel[threadId]);
                     MeasureTools.BEGIN_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
                     SOURCE_CONTROL.getInstance().waitForOtherThreads();
                     MeasureTools.END_GET_NEXT_BARRIER_TIME_MEASURE(threadId);
                 }
             }
         }
+        return oc;
+    }
+
+    public OperationChain DFSearch(int threadId) {
+        OperationChain oc = getOC(threadId, context.currentLevel[threadId]);
+        while (oc == null) {
+            if (finishedScheduling(threadId))
+                break;
+            context.currentLevel[threadId] += 1;
+            oc = getOC(threadId, context.currentLevel[threadId]);
+        }
+        MeasureTools.BEGIN_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
+        while (oc != null && oc.hasParents()) ; // Busy-Wait for dependency resolution
+        MeasureTools.END_GET_NEXT_THREAD_WAIT_TIME_MEASURE(threadId);
         return oc;
     }
 
