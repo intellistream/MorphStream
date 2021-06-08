@@ -1,4 +1,4 @@
-package benchmark.datagenerator;
+package benchmark.datagenerator.old;
 
 import common.collections.Configuration;
 import common.tools.ZipfGenerator;

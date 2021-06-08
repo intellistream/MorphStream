@@ -1,8 +1,8 @@
 package common.topology.transactional.initializer;
 
 import benchmark.DataHolder;
-import benchmark.datagenerator.DataGenerator;
-import benchmark.datagenerator.DataGeneratorConfig;
+import benchmark.datagenerator.old.DataGenerator;
+import benchmark.datagenerator.old.DataGeneratorConfig;
 import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;

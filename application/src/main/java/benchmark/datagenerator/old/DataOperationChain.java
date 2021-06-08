@@ -1,4 +1,4 @@
-package benchmark.datagenerator;
+package benchmark.datagenerator.old;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,12 +95,12 @@ public class DataOperationChain {
         return traversalResult;
     }
 
-    public void addParent(DataOperationChain dependency) {
-        parent.add(dependency);
+    public void addParent(DataOperationChain parent) {
+        this.parent.add(parent);
     }
 
-    public void addChildren(DataOperationChain dependent) {
-        children.add(dependent);
+    public void addChildren(DataOperationChain child) {
+        children.add(child);
     }
 
     public boolean hasChildren() {

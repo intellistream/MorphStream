@@ -1,6 +1,6 @@
 package benchmark.datagenerator.output;
 
-import benchmark.datagenerator.DataOperationChain;
+import benchmark.datagenerator.old.DataOperationChain;
 
 import java.io.File;
 import java.io.FileWriter;

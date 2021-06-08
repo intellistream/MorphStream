@@ -1,7 +1,7 @@
 package benchmark.datagenerator.output;
 
-import benchmark.datagenerator.DataOperationChain;
-import benchmark.datagenerator.DataTransaction;
+import benchmark.datagenerator.old.DataOperationChain;
+import benchmark.datagenerator.old.DataTransaction;
 
 import java.util.ArrayList;
 import java.util.HashMap;

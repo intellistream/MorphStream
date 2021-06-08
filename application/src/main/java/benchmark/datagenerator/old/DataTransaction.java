@@ -1,4 +1,4 @@
-package benchmark.datagenerator;
+package benchmark.datagenerator.old;
 
 /**
  * Streamledger
