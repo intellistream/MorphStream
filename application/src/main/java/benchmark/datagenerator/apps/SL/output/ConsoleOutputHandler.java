@@ -1,7 +1,8 @@
-package benchmark.datagenerator.output;
+package benchmark.datagenerator.apps.SL.output;
 
-import benchmark.datagenerator.old.DataOperationChain;
-import benchmark.datagenerator.old.DataTransaction;
+
+import benchmark.datagenerator.apps.SL.SLDataOperationChain;
+import benchmark.datagenerator.apps.SL.SLDataTransaction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,22 +11,22 @@ import java.util.List;
 public class ConsoleOutputHandler implements IOutputHandler {
 
     @Override
-    public void sinkTransactions(List<DataTransaction> dataTransactions) {
-        for (DataTransaction dummyTransaction : dataTransactions) {
+    public void sinkTransactions(List<SLDataTransaction> dataTransactions) {
+        for (SLDataTransaction dummyTransaction : dataTransactions) {
             System.out.println(dummyTransaction.toString());
         }
     }
 
     @Override
-    public void sinkDependenciesEdges(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetOperationChains) {
+    public void sinkDependenciesEdges(HashMap<Integer, ArrayList<SLDataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<SLDataOperationChain>> allAssetOperationChains) {
         printDependencies(allAccountOperationChains);
         printDependencies(allAssetOperationChains);
     }
 
-    private void printDependencies(HashMap<Integer, ArrayList<DataOperationChain>> allOperationChains) {
+    private void printDependencies(HashMap<Integer, ArrayList<SLDataOperationChain>> allOperationChains) {
 
-        for (ArrayList<DataOperationChain> operationChains : allOperationChains.values()) {
-            for (DataOperationChain oc : operationChains) {
+        for (ArrayList<SLDataOperationChain> operationChains : allOperationChains.values()) {
+            for (SLDataOperationChain oc : operationChains) {
                 if (!oc.hasChildren()) {
                     ArrayList<String> dependencyChains = oc.getDependencyChainInfo();
                     for (String dependencyChain : dependencyChains) {
@@ -37,7 +38,7 @@ public class ConsoleOutputHandler implements IOutputHandler {
     }
 
     @Override
-    public void sinkDependenciesVertices(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetsOperationChains) {
+    public void sinkDependenciesVertices(HashMap<Integer, ArrayList<SLDataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<SLDataOperationChain>> allAssetsOperationChains) {
     }
 
     @Override

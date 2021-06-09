@@ -1,6 +1,7 @@
-package benchmark.datagenerator.output;
+package benchmark.datagenerator.apps.SL.output;
 
-import benchmark.datagenerator.old.DataOperationChain;
+
+import benchmark.datagenerator.apps.SL.SLDataOperationChain;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -19,7 +20,7 @@ public class GephiOutputHandler extends FileOutputHandler {
     }
 
     @Override
-    public void sinkDependenciesEdges(HashMap<Integer, ArrayList<DataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<DataOperationChain>> allAssetOperationChains) {
+    public void sinkDependenciesEdges(HashMap<Integer, ArrayList<SLDataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<SLDataOperationChain>> allAssetOperationChains) {
         FileWriter fileWriter = null;
         try {
 
@@ -30,13 +31,13 @@ public class GephiOutputHandler extends FileOutputHandler {
 
             fileWriter = new FileWriter(file, true);
             fileWriter.write("source,target\n");
-            for (ArrayList<DataOperationChain> operationChains : allAccountOperationChains.values()) {
-                for (DataOperationChain oc : operationChains)
+            for (ArrayList<SLDataOperationChain> operationChains : allAccountOperationChains.values()) {
+                for (SLDataOperationChain oc : operationChains)
                     oc.markReadyForTraversal();
             }
 
-            for (ArrayList<DataOperationChain> operationChains : allAssetOperationChains.values()) {
-                for (DataOperationChain oc : operationChains)
+            for (ArrayList<SLDataOperationChain> operationChains : allAssetOperationChains.values()) {
+                for (SLDataOperationChain oc : operationChains)
                     oc.markReadyForTraversal();
             }
             writeDependencyEdges(allAccountOperationChains, fileWriter);
@@ -50,10 +51,10 @@ public class GephiOutputHandler extends FileOutputHandler {
 
     }
 
-    private void writeDependencyEdges(HashMap<Integer, ArrayList<DataOperationChain>> allOperationChains, FileWriter fileWriter) throws IOException {
+    private void writeDependencyEdges(HashMap<Integer, ArrayList<SLDataOperationChain>> allOperationChains, FileWriter fileWriter) throws IOException {
 
-        for (ArrayList<DataOperationChain> operationChains : allOperationChains.values()) {
-            for (DataOperationChain oc : operationChains) {
+        for (ArrayList<SLDataOperationChain> operationChains : allOperationChains.values()) {
+            for (SLDataOperationChain oc : operationChains) {
                 ArrayList<String> dependencies = new ArrayList<>();
                 oc.registerAllDependenciesToList(dependencies);
                 for (String dependency : dependencies) {

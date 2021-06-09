@@ -1,4 +1,4 @@
-package benchmark.datagenerator.output;
+package benchmark.datagenerator.old.output;
 
 import benchmark.datagenerator.old.DataOperationChain;
 import benchmark.datagenerator.old.DataTransaction;
