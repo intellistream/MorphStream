@@ -33,7 +33,8 @@ public abstract class DataGenerator {
         // if file is already exist, skip generation
         if (isFileExist()) return;
 
-        for (int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate / 10; tupleNumber++) { // TODO: why / 10?
+        for (int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate / 10; tupleNumber++) {
+            // by far only generate 1/10 tuples and replicate 10 times when dumping outside
             generateTuple();
         }
 
@@ -66,5 +67,7 @@ public abstract class DataGenerator {
 
     protected abstract void dumpGeneratedDataToFile();
 
-    protected abstract void clearDataStructures();
+    protected void clearDataStructures() {
+        this.dataConfig = null;
+    };
 }

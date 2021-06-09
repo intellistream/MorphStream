@@ -65,7 +65,7 @@ public class DataGenerator {
         this.mAssetLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mOcLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mPickAccount = new boolean[dataConfig.dependenciesDistributionForLevels.length];
-        this.mPartitionOffset = (mTotalTuplesToGenerate * 5L) / dataConfig.totalThreads;
+        this.mPartitionOffset = (mTotalTuplesToGenerate * 5L) / dataConfig.totalThreads; // TODO: still not understand why * 5
     }
 
     public DataGeneratorConfig getDataConfig() {
@@ -77,7 +77,9 @@ public class DataGenerator {
         if (isFileExist()) return;
 
         LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
+        // only generate 1/10 data and replicate them to the total tuple needed
         for (int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate / 10; tupleNumber++) {
+            System.out.println("++++++ tuple number: " + tupleNumber + " transactions: " + mDataTransactions.size());
             long totalTimeStart = System.nanoTime();
             GenerateTuple();
             totalTime += System.nanoTime() - totalTimeStart;

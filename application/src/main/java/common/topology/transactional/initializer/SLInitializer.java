@@ -1,8 +1,12 @@
 package common.topology.transactional.initializer;
 
 import benchmark.DataHolder;
-import benchmark.datagenerator.old.DataGenerator;
-import benchmark.datagenerator.old.DataGeneratorConfig;
+//import benchmark.datagenerator.old.DataGenerator;
+//import benchmark.datagenerator.old.DataGeneratorConfig;
+
+import benchmark.datagenerator.DataGenerator;
+import benchmark.datagenerator.DataGeneratorConfig;
+import benchmark.datagenerator.apps.SL.SLDataGenerator;
 import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -35,7 +39,7 @@ public class SLInitializer extends TableInitilizer {
     private final int totalRecords;
     private final String idsGenType;
     private String dataRootPath;
-    private DataGenerator mDataGenerator;
+    private SLDataGenerator mDataGenerator;
 
 
     private int startingBalance = 1000000;
@@ -77,7 +81,7 @@ public class SLInitializer extends TableInitilizer {
         dataConfig.idsPath += OsUtils.OS_wrapper(subFolder);
         this.dataRootPath += OsUtils.OS_wrapper(subFolder);
 
-        mDataGenerator = new DataGenerator(dataConfig);
+        mDataGenerator = new SLDataGenerator(dataConfig);
     }
 
     @Override
@@ -249,7 +253,7 @@ public class SLInitializer extends TableInitilizer {
         String statsFolderPath = String.format(statsFolderPattern, mDataGenerator.getDataConfig().scheduler, numberOfLevels, tt, totalBatches, tuplesPerBatch);
         File file = new File(statsFolderPath + String.format("iteration_0.csv"));
         if (!file.exists()) {
-            mDataGenerator.GenerateStream();
+            mDataGenerator.generateStream();
             mDataGenerator = null;
         }
         loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);

@@ -18,9 +18,9 @@ public class SLDataGenerator extends DataGenerator {
 
     HashMap<Long, Integer> mGeneratedAccountIds = new HashMap<>();
     HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
-    private Random mRandomGenerator = new Random();
-    private Random mRandomGeneratorForAccIds = new Random(12345678);
-    private Random mRandomGeneratorForAstIds = new Random(123456789);
+    private final Random mRandomGenerator = new Random();
+    private final Random mRandomGeneratorForAccIds = new Random(12345678);
+    private final Random mRandomGeneratorForAstIds = new Random(123456789);
     private int totalAccountRecords = 0;
     private int totalAssetRecords = 0;
     private ArrayList<SLDataTransaction> mDataTransactions;
@@ -31,12 +31,6 @@ public class SLDataGenerator extends DataGenerator {
     private float[] mOcLevelsDistribution;
     private boolean[] mPickAccount;
     private int mTransactionId = 0;
-    private long totalTimeStart = 0;
-    private long totalTime = 0;
-    private long selectTuplesStart = 0;
-    private long selectTuples = 0;
-    private long updateDependencyStart = 0;
-    private long updateDependency = 0;
 
     private long mPartitionOffset = 0;
     private int mPId = 0;
@@ -55,15 +49,14 @@ public class SLDataGenerator extends DataGenerator {
         this.mAssetLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mOcLevelsDistribution = new float[dataConfig.dependenciesDistributionForLevels.length];
         this.mPickAccount = new boolean[dataConfig.dependenciesDistributionForLevels.length];
-        this.mPartitionOffset = (mTotalTuplesToGenerate * 5) / dataConfig.totalThreads;
+        this.mPartitionOffset = (mTotalTuplesToGenerate * 5L) / dataConfig.totalThreads;
     }
 
     @Override
     protected void generateTuple() {
         // Step 1: select OCs for txn according to the required OCs dependency distribution
-        selectTuplesStart = System.nanoTime();
+        long selectTuplesStart = System.nanoTime();
         selectOCsForTransaction();
-        selectTuples += System.nanoTime() - selectTuplesStart;
 
         // Step 2: update OCs dependencies graph for future data generation
         updateOCDependencies();
@@ -76,12 +69,11 @@ public class SLDataGenerator extends DataGenerator {
             LOG.info(String.valueOf(mTransactionId));
 
         // Step 4: update the statistics such as dependency distribution to guide future data generation
-        UpdateStats();
+        updateStats();
     }
 
     @Override
     protected void dumpGeneratedDataToFile() {
-
         File file = new File(dataConfig.rootPath);
         if (file.exists()) {
             LOG.info("Data already exists.. skipping data generation...");
@@ -103,19 +95,18 @@ public class SLDataGenerator extends DataGenerator {
             e.printStackTrace();
         }
 
-        LOG.info(String.format("Dumping transactions..."));
+        LOG.info("Dumping transactions...");
         mDataOutputHandler.sinkTransactions(mDataTransactions);
 //         LOG.info(String.format("Dumping Dependency Edges..."));
 //        mDataOutputHandler.sinkDependenciesEdges(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
-        LOG.info(String.format("Dumping Dependency Vertices..."));
+        LOG.info("Dumping Dependency Vertices...");
         mDataOutputHandler.sinkDependenciesVertices(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
-        LOG.info(String.format("Dumping Dependency Vertices ids range..."));
+        LOG.info("Dumping Dependency Vertices ids range...");
         mDataOutputHandler.sinkDependenciesVerticesIdsRange(totalAccountRecords, totalAssetRecords);
     }
 
     @Override
     protected void clearDataStructures() {
-
         if (mDataTransactions != null) {
             mDataTransactions.clear();
         }
@@ -135,6 +126,8 @@ public class SLDataGenerator extends DataGenerator {
         this.mAssetLevelsDistribution = new float[dataConfig.numberOfDLevels];
         this.mOcLevelsDistribution = new float[dataConfig.numberOfDLevels];
         this.mPickAccount = new boolean[dataConfig.numberOfDLevels];
+        // clear the data structure in super class
+        super.clearDataStructures();
     }
 
     private void selectOCsForTransaction() {
@@ -203,6 +196,7 @@ public class SLDataGenerator extends DataGenerator {
                     + dstAcc_dependsUpon_dstAst + " : " + dstAst_dependsUpon_dstAcc);
 
         // register dependencies for srcAssets
+        long updateDependencyStart = 0;
         if (srcAccOC.getOperationsCount() > 0) {
             srcAst_dependsUpon_srcAcc = srcAstOC.isDependUpon(srcAccOC);
             dstAcc_dependsUpon_srcAcc = dstAccOC.isDependUpon(srcAccOC);
@@ -213,7 +207,6 @@ public class SLDataGenerator extends DataGenerator {
                 srcAstOC.addParent(srcAccOC);
                 updateDependencyStart = System.nanoTime();
                 srcAstOC.updateAllDependencyLevel();
-                updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
             if (!dstAcc_dependsUpon_srcAcc && !dstAcc_dependsUpon_dstAst) {
@@ -221,7 +214,6 @@ public class SLDataGenerator extends DataGenerator {
                 dstAccOC.addParent(srcAccOC);
                 updateDependencyStart = System.nanoTime();
                 dstAccOC.updateAllDependencyLevel();
-                updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
             if (!dstAst_dependsUpon_srcAcc && !dstAst_dependsUpon_dstAcc) {
@@ -229,7 +221,6 @@ public class SLDataGenerator extends DataGenerator {
                 dstAstOC.addParent(srcAccOC);
                 updateDependencyStart = System.nanoTime();
                 dstAstOC.updateAllDependencyLevel();
-                updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
         } else if (srcAstOC.getOperationsCount() > 0) {
@@ -242,7 +233,6 @@ public class SLDataGenerator extends DataGenerator {
                 srcAccOC.addParent(srcAstOC);
                 updateDependencyStart = System.nanoTime();
                 srcAccOC.updateAllDependencyLevel();
-                updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
             if (!dstAcc_dependsUpon_srcAst && !dstAcc_dependsUpon_dstAst) {
@@ -250,7 +240,6 @@ public class SLDataGenerator extends DataGenerator {
                 dstAccOC.addParent(srcAstOC);
                 updateDependencyStart = System.nanoTime();
                 dstAccOC.updateAllDependencyLevel();
-                updateDependency += System.nanoTime() - updateDependencyStart;
             }
 
             if (!dstAst_dependsUpon_srcAst && !dstAst_dependsUpon_dstAcc) {
@@ -258,7 +247,6 @@ public class SLDataGenerator extends DataGenerator {
                 dstAstOC.addParent(srcAstOC);
                 updateDependencyStart = System.nanoTime();
                 dstAstOC.updateAllDependencyLevel();
-                updateDependency += System.nanoTime() - updateDependencyStart;
             }
         }
 
@@ -268,7 +256,7 @@ public class SLDataGenerator extends DataGenerator {
         dstAstOC.addAnOperation();
     }
 
-    private void UpdateStats() {
+    private void updateStats() {
 
         for (int lop = 0; lop < dataConfig.numberOfDLevels; lop++) {
 
@@ -417,70 +405,54 @@ public class SLDataGenerator extends DataGenerator {
     }
 
     private SLDataOperationChain getNewAccountOC() {
-
-        long id = 0;
-//        int range = 10 * mTotalTuplesToGenerate * 5;
-        int range = (int) mPartitionOffset;
-        if (dataConfig.idGenType.equals("uniform")) {
-            id = mRandomGeneratorForAccIds.nextInt(range);
-            id += mPartitionOffset * mPId;
-            id *= 10;
-            totalAccountRecords++;
-            while (mGeneratedAccountIds.containsKey(id)) {
-                id = mRandomGeneratorForAccIds.nextInt(range);
-                id += mPartitionOffset * mPId;
-                id *= 10;
-                totalAccountRecords++;
-            }
-        } else if (dataConfig.idGenType.equals("normal")) {
-            id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
-            id += mPartitionOffset * mPId;
-            id *= 10;
-            totalAccountRecords++;
-            while (mGeneratedAccountIds.containsKey(id)) {
-                id = (int) Math.floor(Math.abs(mRandomGeneratorForAccIds.nextGaussian() / 3.5) * range) % range;
-                id += mPartitionOffset * mPId;
-                id *= 10;
-                totalAccountRecords++;
-            }
-        }
-
-        mGeneratedAccountIds.put(id, null);
-        SLDataOperationChain oc = new SLDataOperationChain("act_" + id, (10 * mTotalTuplesToGenerate * 5) / dataConfig.numberOfDLevels, mAccountOperationChainsByLevel);
-
-        return oc;
+        long id = getUniqueId(mRandomGeneratorForAccIds, mGeneratedAccountIds, true);
+        return new SLDataOperationChain("act_" + id, (10 * mTotalTuplesToGenerate * 5) / dataConfig.numberOfDLevels, mAccountOperationChainsByLevel);
     }
 
     private SLDataOperationChain getNewAssetOC() {
+        long id = getUniqueId(mRandomGeneratorForAstIds, mGeneratedAssetIds, false);
+        return new SLDataOperationChain("ast_" + id, (10 * mTotalTuplesToGenerate * 5) / dataConfig.numberOfDLevels, mAssetsOperationChainsByLevel);
+    }
 
+    private long getUniqueId(Random randomGeneratorForIds, HashMap<Long, Integer> mGeneratedIds, boolean isAcc) {
         long id = 0;
 //        int range = 10 * mTotalTuplesToGenerate * 5;
         int range = (int) mPartitionOffset;
         if (dataConfig.idGenType.equals("uniform")) {
-            id = mRandomGeneratorForAstIds.nextInt(range);
-            id += mPartitionOffset * mPId;
-            id *= 10;
-            totalAssetRecords++;
-            while (mGeneratedAssetIds.containsKey(id)) {
-                id = mRandomGeneratorForAstIds.nextInt(range);
-                id += mPartitionOffset * mPId;
-                id *= 10;
-                totalAssetRecords++;
+            id = getUniformId(randomGeneratorForIds, isAcc, range);
+            while (mGeneratedIds.containsKey(id)) {
+                System.out.println("+++++ conflict");
+                id = getUniformId(randomGeneratorForIds, isAcc, range);
             }
         } else if (dataConfig.idGenType.equals("normal")) {
-            id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
-            id += mPartitionOffset * mPId;
-            id *= 10;
-            totalAssetRecords++;
-            while (mGeneratedAssetIds.containsKey(id)) {
-                id = (int) Math.floor(Math.abs(mRandomGeneratorForAstIds.nextGaussian() / 3.5) * range) % range;
-                id += mPartitionOffset * mPId;
-                id *= 10;
-                totalAssetRecords++;
+            id = getNormalId(randomGeneratorForIds, isAcc, range);
+            while (mGeneratedIds.containsKey(id)) {
+                System.out.println("+++++ conflict");
+                id = getNormalId(randomGeneratorForIds, isAcc, range);
             }
         }
-        mGeneratedAssetIds.put(id, null);
-        SLDataOperationChain oc = new SLDataOperationChain("ast_" + id, (10 * mTotalTuplesToGenerate * 5) / dataConfig.numberOfDLevels, mAssetsOperationChainsByLevel);
-        return oc;
+        mGeneratedIds.put(id, null);
+
+        return id;
+    }
+
+    private long getNormalId(Random randomGeneratorForIds, boolean isAcc, int range) {
+        long id;
+        id = (int) Math.floor(Math.abs(randomGeneratorForIds.nextGaussian() / 3.5) * range) % range;
+        id += mPartitionOffset * mPId;
+        id *= 10;
+        if (isAcc) totalAccountRecords++;
+        else totalAssetRecords++;
+        return id;
+    }
+
+    private long getUniformId(Random randomGeneratorForIds, boolean isAcc, int range) {
+        long id;
+        id = randomGeneratorForIds.nextInt(range);
+        id += mPartitionOffset * mPId;
+        id *= 10;
+        if (isAcc) totalAccountRecords++;
+        else totalAssetRecords++;
+        return id;
     }
 }
