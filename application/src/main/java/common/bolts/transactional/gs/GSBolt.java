@@ -1,6 +1,6 @@
 package common.bolts.transactional.gs;
 
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import common.param.mb.MicroEvent;
 import common.sink.SINKCombo;
 import components.operators.api.TransactionalBolt;
@@ -18,8 +18,8 @@ import java.util.List;
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
-import static common.meta.MetaTypes.AccessType.READ_ONLY;
-import static common.meta.MetaTypes.AccessType.READ_WRITE;
+import static common.meta.CommonMetaTypes.AccessType.READ_ONLY;
+import static common.meta.CommonMetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
@@ -108,7 +108,7 @@ public abstract class GSBolt extends TransactionalBolt {
                     String.valueOf(Event.getKeys()[i]), Event.getRecord_refs()[i], READ_WRITE);
     }
 
-    private boolean process_request_noLock(MicroEvent event, TxnContext txnContext, MetaTypes.AccessType accessType) throws DatabaseException {
+    private boolean process_request_noLock(MicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         for (int i = 0; i < NUM_ACCESSES; ++i) {
             boolean rt = transactionManager.SelectKeyRecord_noLock(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
@@ -121,7 +121,7 @@ public abstract class GSBolt extends TransactionalBolt {
         return false;
     }
 
-    private boolean process_request(MicroEvent event, TxnContext txnContext, MetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
+    private boolean process_request(MicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
         for (int i = 0; i < NUM_ACCESSES; ++i) {
             boolean rt = transactionManager.SelectKeyRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
             if (rt) {

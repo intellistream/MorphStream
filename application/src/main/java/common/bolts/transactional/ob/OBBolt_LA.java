@@ -26,7 +26,10 @@ public abstract class OBBolt_LA extends OBBolt {
         } else if (event instanceof ToppingEvent) {
             TOPPING_REQUEST_LOCKAHEAD((ToppingEvent) event, txn_context[(int) (i - _bid)]);
         } else
-            throw new UnsupportedOperationException();
+        {
+            LOG.error("Wrong");
+            System.exit(-1);
+        }
     }
 
     //lock_ratio-ahead phase.

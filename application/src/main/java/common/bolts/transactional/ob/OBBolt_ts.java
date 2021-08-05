@@ -165,6 +165,6 @@ public class OBBolt_ts extends OBBolt {
     @Override
     protected void BUYING_REQUEST_CORE(BuyingEvent event) {
         //measure_end if any item is not able to buy.
-        event.biding_result = new BidingResult(event, event.success[0]);
+        event.biding_result = new BidingResult(event, event.success[0] == NUM_ACCESSES_PER_BUY);
     }
 }

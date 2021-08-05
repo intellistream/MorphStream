@@ -1,13 +1,11 @@
 package transaction.dedicated;
 
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import content.Content;
 import db.DatabaseException;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
-import profiler.Metrics;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -17,8 +15,8 @@ import transaction.impl.TxnContext;
 import java.util.LinkedList;
 
 import static common.CONTROL.enable_debug;
-import static common.meta.MetaTypes.AccessType.*;
-import static common.meta.MetaTypes.kMaxAccessNum;
+import static common.meta.CommonMetaTypes.AccessType.*;
+import static common.meta.CommonMetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
 
 /**
@@ -111,7 +109,7 @@ public class TxnManagerLock extends TxnManagerDedicated {
 
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord
-            t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
+            t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_); //return the table record for modifying in the application layer.
         if (accessType == READ_ONLY) {
             // if cannot get lock_ratio, then return immediately.

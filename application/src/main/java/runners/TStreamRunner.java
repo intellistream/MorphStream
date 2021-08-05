@@ -48,9 +48,7 @@ public class TStreamRunner extends Runner {
     private Platform platform;
 
     public TStreamRunner() {
-
         driver = new AppDriver();
-
         //Ordinary Application
         driver.addApp("WordCount", WordCount.class);//WC
 
@@ -218,7 +216,7 @@ public class TStreamRunner extends Runner {
                         content_type = SSTORE_CONTENT;//records the multi-version of table record.
                         break;
                     default:
-                        throw new UnsupportedOperationException("Please define correct content type!");
+                        System.exit(-1);
                 }
                 int tthread = config.getInt("tthread");
                 if (enable_app_combo) {

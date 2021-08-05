@@ -1,7 +1,7 @@
 package content;
 
 import common.OrderLock;
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import transaction.impl.TxnContext;
@@ -51,7 +51,7 @@ public interface Content {
     long GetLWM();
 
     //	LWMContentImpl.XLockQueue GetXLockQueue();
-    SchemaRecord ReadAccess(TxnContext context, MetaTypes.AccessType accessType);
+    SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType);
 
     SchemaRecord readPreValues(long ts);
 
@@ -65,7 +65,7 @@ public interface Content {
 
     boolean AcquireCertifyLock();
 
-    SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, MetaTypes.AccessType accessType);
+    SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, CommonMetaTypes.AccessType accessType);
 
     void WriteAccess(long commit_timestamp, long mark_ID, boolean clean, SchemaRecord local_record_);
 

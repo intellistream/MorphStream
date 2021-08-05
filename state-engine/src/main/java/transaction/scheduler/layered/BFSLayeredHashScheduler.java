@@ -1,14 +1,23 @@
 package transaction.scheduler.layered;
 
+import content.T_StreamContent;
 import profiler.MeasureTools;
+import storage.SchemaRecord;
+import storage.datatype.DataBox;
+import storage.datatype.DoubleDataBox;
+import storage.datatype.IntDataBox;
+import storage.datatype.ListDoubleDataBox;
 import transaction.TxnProcessingEngine;
+import transaction.dedicated.ordered.MyList;
+import transaction.function.*;
 import transaction.scheduler.Scheduler;
+import transaction.scheduler.layered.struct.Operation;
 import transaction.scheduler.layered.struct.OperationChain;
 import utils.SOURCE_CONTROL;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
+
+import static common.meta.CommonMetaTypes.AccessType.*;
 
 /**
  * breath-first-search based layered hash scheduler.
@@ -44,12 +53,17 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
                 OCBucketThread.put(dependencyLevel, new ArrayDeque<>());
             OCBucketThread.get(dependencyLevel).add(oc);
         }
-        log.info("localMaxDLevel"+localMaxDLevel);
+        log.debug("localMaxDLevel" + localMaxDLevel);
         return localMaxDLevel;
     }
 
     private void submit(int threadId, Collection<OperationChain> ocs) {
         context.totalOcsToSchedule[threadId] += ocs.size();
+
+        for (OperationChain oc : ocs) {
+            context.totalOsToSchedule[threadId] += oc.getOperations().size();
+        }
+
         HashMap<Integer, ArrayDeque<OperationChain>> layeredOCBucketThread = context.layeredOCBucketGlobal.get(threadId);
         buildBucketPerThread(layeredOCBucketThread, ocs);
     }
@@ -63,6 +77,143 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
 
+    // DD: Transfer event processing
+    public void CT_Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
+        // read
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+        SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
+        if (preValues == null) {
+            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
+            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
+            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
+                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+            }
+            log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
+        }
+        if (preValues1 == null) {
+            log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
+            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
+            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
+                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+            }
+            log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
+        }
+        final long sourceAccountBalance = preValues.getValues().get(1).getLong();
+        final long sourceAssetValue = preValues1.getValues().get(1).getLong();
+
+        //TODO: make the condition checking more generic in future.
+
+        // DD: Transaction Operation is conditioned on both source asset and account balance. So the operation can depend on both.
+        if (sourceAccountBalance > operation.condition.arg1
+                && sourceAccountBalance > operation.condition.arg2
+                && sourceAssetValue > operation.condition.arg3) {
+            //read
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+            //apply function.
+            if (operation.function instanceof INC) {
+                tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
+            } else if (operation.function instanceof DEC) {
+                tempo_record.getValues().get(1).decLong(sourceAccountBalance, operation.function.delta_long);//compute.
+            } else
+                throw new UnsupportedOperationException();
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+        } else {
+            log.info("Process failed");
+        }
+    }
+
+    private void CT_Depo_Fun(Operation operation, long mark_ID, boolean clean) {
+        SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+        List<DataBox> values = srcRecord.getValues();
+        //apply function to modify..
+        SchemaRecord tempo_record;
+        tempo_record = new SchemaRecord(values);//tempo record
+        tempo_record.getValues().get(operation.column_id).incLong(operation.function.delta_long);//compute.
+        operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+    }
+
+    //TODO: the following are mostly hard-coded.
+    private void process(int threadId, Operation operation, long mark_ID, boolean clean) {
+        if (operation.accessType == READS_ONLY) {
+            operation.records_ref.setRecord(operation.d_record);
+        } else if (operation.accessType == READ_ONLY) {//used in MB.
+            SchemaRecord schemaRecord = operation.d_record.content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType);
+            operation.record_ref.setRecord(new SchemaRecord(schemaRecord.getValues()));//Note that, locking scheme allows directly modifying on original table d_record.
+        } else if (operation.accessType == WRITE_ONLY) {//push evaluation down.
+            if (operation.value_list != null) { //directly replace value_list --only used for MB.
+                operation.d_record.content_.WriteAccess(operation.bid, mark_ID, clean, new SchemaRecord(operation.value_list));//it may reduce NUMA-traffic.
+            } else { //update by column_id.
+                operation.d_record.record_.getValues().get(operation.column_id).setLong(operation.value);
+            }
+        } else if (operation.accessType == READ_WRITE) {//read, modify, write.
+            CT_Depo_Fun(operation, mark_ID, clean);//used in SL
+        } else if (operation.accessType == READ_WRITE_COND) {//read, modify (depends on condition), write( depends on condition).
+            //TODO: pass function here in future instead of hard-code it. Seems not trivial in Java, consider callable interface?
+            CT_Transfer_Fun(operation, mark_ID, clean);
+        } else if (operation.accessType == READ_WRITE_COND_READ) {
+            CT_Transfer_Fun(operation, mark_ID, clean);
+            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            assert operation.record_ref.cnt == 1;
+        } else if (operation.accessType == READ_WRITE_READ) {//used in PK, TP.
+            assert operation.record_ref != null;
+            //read source.
+            List<DataBox> srcRecord = operation.s_record.content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType).getValues();
+            //apply function.
+            if (operation.function instanceof Mean) {
+                // compute.
+                ListDoubleDataBox valueList = (ListDoubleDataBox) srcRecord.get(1);
+                double sum = srcRecord.get(2).getDouble();
+                double[] nextDouble = operation.function.new_value;
+                for (int j = 0; j < 50; j++) {
+                    sum -= valueList.addItem(nextDouble[j]);
+                    sum += nextDouble[j];
+                }
+                srcRecord.get(2).setDouble(sum);
+                if (valueList.size() < 1_000) {//just added
+                    operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(nextDouble[50 - 1])));
+                } else {
+                    operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(sum / 1_000)));
+                }
+            } else if (operation.function instanceof AVG) {//used by TP
+                double latestAvgSpeeds = srcRecord.get(1).getDouble();
+                double lav;
+                if (latestAvgSpeeds == 0) {//not initialized
+                    lav = operation.function.delta_double;
+                } else
+                    lav = (latestAvgSpeeds + operation.function.delta_double) / 2;
+                srcRecord.get(1).setDouble(lav);//write to state.
+                operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
+            } else if (operation.function instanceof CNT) {//used by TP
+                HashSet cnt_segment = srcRecord.get(1).getHashSet();
+                cnt_segment.add(operation.function.delta_int);//update hashset; updated state also. TODO: be careful of this.
+                operation.record_ref.setRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
+            } else
+                log.info("ERROR!");
+        } else
+            log.info("ERROR 2!");
+    }
+
+    /**
+     * Used by OCScheduler.
+     *
+     * @param threadId
+     * @param operation_chain
+     * @param mark_ID
+     */
+    public void process(int threadId, MyList<Operation> operation_chain, long mark_ID) {
+        Operation operation = operation_chain.pollFirst();
+        //loop.
+        while (operation != null) {
+            process(threadId, operation, mark_ID, false);
+            operation = operation_chain.pollFirst();
+        }
+        assert operation_chain.isEmpty();
+    }
+
     @Override
     public void PROCESS(int threadId, long mark_ID) {
         do {
@@ -71,7 +222,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
             MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
             if (next == null) break;
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            TxnProcessingEngine.getInstance().process(threadId, next.getOperations(), mark_ID);
+            process(threadId, next.getOperations(), mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             log.debug("finished process: " + next.toString());
         } while (true);
@@ -89,9 +240,9 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
         if (oc != null) {
             return oc;//successfully get the next operation chain of the current level.
         } else {
-            if (!isFinished(threadId)) {
+            if (!FINISHED(threadId)) {
                 while (oc == null) {
-                    if (isFinished(threadId))
+                    if (FINISHED(threadId))
                         break;
                     context.currentLevel[threadId] += 1;//current level is done, process the next level.
                     oc = Retrieve(threadId);
@@ -103,7 +254,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     }
 
     private OperationChain next(int threadId) {
-        return ready_oc.remove(threadId);// if a null is returned, it means, we are done with level!
+        return ready_oc.remove(threadId);// if a null is returned, it means, we are done with this level!
     }
 
     /**
@@ -112,7 +263,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
      * @param threadId
      */
     private void checkFinished(int threadId) {
-        if (isFinished(threadId)) {
+        if (FINISHED(threadId)) {
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
         }
@@ -130,11 +281,11 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     public void RESET() {
 
     }
+
     @Override
-    public boolean isFinished(int threadId) {
+    public boolean FINISHED(int threadId) {
         return context.finished(threadId);
     }
-
     /**
      * Return the last operation chain of threadId at dLevel.
      *

@@ -13,6 +13,7 @@ import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import storage.SchemaRecord;
 import transaction.dedicated.ordered.TxnManagerTStream;
 import transaction.function.Condition;
 import transaction.function.DEC;
@@ -52,7 +53,7 @@ public class SLBolt_ts extends SLBolt {
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
                 numberOfStates, this.context.getThisComponent().getNumTasks());
         transactionEvents = new ArrayDeque<>();
-        depositeEvents=new ArrayDeque<>();
+        depositeEvents = new ArrayDeque<>();
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
@@ -184,8 +185,21 @@ public class SLBolt_ts extends SLBolt {
 
     private void TRANSFER_REQUEST_CORE() throws InterruptedException {
         for (TransactionEvent event : transactionEvents) {
-            event.transaction_result = new TransactionResult(event, event.success[0],
-                    event.src_account_value.getRecord().getValues().get(1).getLong(), event.dst_account_value.getRecord().getValues().get(1).getLong());
+
+            SchemaRecord srcAccountValueRecord = event.src_account_value.getRecord();
+            SchemaRecord dstAccountValueRecord = event.dst_account_value.getRecord();
+
+            if (srcAccountValueRecord == null) {
+                LOG.info(event.getSourceAccountId());
+            }
+            if (dstAccountValueRecord == null) {
+                LOG.info(event.getTargetAccountId());
+            }
+
+            if (srcAccountValueRecord != null && dstAccountValueRecord != null)
+                event.transaction_result = new TransactionResult(event, event.success[0] == 4,
+                        srcAccountValueRecord.getValues().get(1).getLong(),
+                        dstAccountValueRecord.getValues().get(1).getLong());
         }
     }
 }

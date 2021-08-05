@@ -1,6 +1,7 @@
 package transaction.scheduler;
 
 import transaction.scheduler.layered.BFSLayeredHashScheduler;
+import transaction.scheduler.tpg.TPGScheduler;
 
 /**
  * Author: Aqif Hamid
@@ -19,6 +20,9 @@ public class SchedulerFactory {
         switch (schedulerType) {
             case BFS:
                 scheduler = new BFSLayeredHashScheduler(totalThread);
+                break;
+            case TPG:
+                scheduler = new TPGScheduler(totalThread);
                 break;
         }
         return scheduler;

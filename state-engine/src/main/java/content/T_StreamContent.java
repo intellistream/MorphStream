@@ -109,6 +109,8 @@ public abstract class T_StreamContent implements Content {
 //            if (record_at_ts.getValues() == null) {
 //                System.out.println("Read a null value??");
 //            }
+        if (record_at_ts == null || record_at_ts.getValues() == null)
+            System.out.println("Read a null value??");
         return record_at_ts;
     }
 

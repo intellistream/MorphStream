@@ -2,8 +2,8 @@ package transaction.dedicated;
 
 import common.OrderLock;
 import common.PartitionedOrderLock;
-import common.meta.MetaTypes;
-import common.meta.MetaTypes.AccessType;
+import common.meta.CommonMetaTypes;
+import common.meta.CommonMetaTypes.AccessType;
 import db.Database;
 import db.DatabaseException;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.meta.MetaTypes.kMaxAccessNum;
+import static common.meta.CommonMetaTypes.kMaxAccessNum;
 
 /**
  * TxnManagerDedicated is a thread-local structure.
@@ -97,7 +97,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
 
     @Override
     public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String primary_key, List<DataBox> value, double[] enqueue_time) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.WRITE_ONLY;
+        CommonMetaTypes.AccessType accessType = AccessType.WRITE_ONLY;
 //        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
 //        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
@@ -112,7 +112,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
 
     @Override
     public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String primary_key, long value, int column_id) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.WRITE_ONLY;
+        CommonMetaTypes.AccessType accessType = AccessType.WRITE_ONLY;
 //        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
 //        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
@@ -126,7 +126,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
     }
 
     public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String primary_key, SchemaRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READ_ONLY;
+        CommonMetaTypes.AccessType accessType = AccessType.READ_ONLY;
 //        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
 //        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
@@ -141,7 +141,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
 
     @Override
     public boolean Asy_ReadRecords(TxnContext txn_context, String srcTable, String primary_key, TableRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READS_ONLY;//read multiple versions.
+        CommonMetaTypes.AccessType accessType = AccessType.READS_ONLY;//read multiple versions.
 //        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
 //        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
@@ -156,7 +156,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
 
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function, int column_id) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READ_WRITE;
+        CommonMetaTypes.AccessType accessType = AccessType.READ_WRITE;
 //        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(source_key);
 //        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
@@ -171,7 +171,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
 
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, String dest_key, Function function) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READ_WRITE;
+        CommonMetaTypes.AccessType accessType = AccessType.READ_WRITE;
 //        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(source_key);
         TableRecord d_record = storageManager_.getTable(srcTable).SelectKeyRecord(dest_key);
@@ -188,7 +188,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
     // Modify for deposit
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READ_WRITE;
+        CommonMetaTypes.AccessType accessType = AccessType.READ_WRITE;
 //        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
 //        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
@@ -202,7 +202,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
 
     @Override
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String source_key, String dest_key, SchemaRecordRef record_ref, Function function) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READ_WRITE_READ;
+        CommonMetaTypes.AccessType accessType = AccessType.READ_WRITE_READ;
 //        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(source_key);
         TableRecord d_record = storageManager_.getTable(srcTable).SelectKeyRecord(dest_key);
@@ -218,7 +218,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
 
     @Override
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READ_WRITE_READ;
+        CommonMetaTypes.AccessType accessType = AccessType.READ_WRITE_READ;
 //        BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
 //        END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
@@ -232,8 +232,8 @@ public abstract class TxnManagerDedicated implements TxnManager {
     }
 
     @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String src_key, String dest_key, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, boolean[] success) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
+    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String src_key, String dest_key, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success) throws DatabaseException {
+        CommonMetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
@@ -262,8 +262,8 @@ public abstract class TxnManagerDedicated implements TxnManager {
      * @throws DatabaseException
      */
     @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, Condition condition, boolean[] success) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
+    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, Condition condition, int[] success) throws DatabaseException {
+        CommonMetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
         TableRecord[] condition_records = new TableRecord[1];
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         condition_records[0] = s_record;
@@ -303,8 +303,8 @@ public abstract class TxnManagerDedicated implements TxnManager {
                                     Function function,
                                     String[] condition_sourceTable, String[] condition_source,
                                     Condition condition,
-                                    boolean[] success) throws DatabaseException {
-        MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
+                                    int[] success) throws DatabaseException {
+        CommonMetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
@@ -323,9 +323,9 @@ public abstract class TxnManagerDedicated implements TxnManager {
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                          Function function,
                                          String[] condition_sourceTable, String[] condition_source,
-                                         Condition condition, boolean[] success) throws DatabaseException {
+                                         Condition condition, int[] success) throws DatabaseException {
 
-        MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND_READ;
+        CommonMetaTypes.AccessType accessType = AccessType.READ_WRITE_COND_READ;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
@@ -491,7 +491,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
      * @return
      */
     protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, String sourceKey, TableRecord s_record, SchemaRecordRef record_ref, Function function,
-                                              String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, AccessType accessType, boolean[] success) {
+                                              String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, AccessType accessType, int[] success) {
         throw new UnsupportedOperationException();
     }
 
@@ -508,12 +508,12 @@ public abstract class TxnManagerDedicated implements TxnManager {
     }
 
     protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String sourceKey, TableRecord s_record, TableRecord d_record, Function function,
-                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, AccessType accessType, boolean[] success) {
+                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, AccessType accessType, int[] success) {
         throw new UnsupportedOperationException();
     }
 
     protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String sourceKey, TableRecord s_record, Function function,
-                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, AccessType accessType, boolean[] success) {
+                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, AccessType accessType, int[] success) {
         return Asy_ModifyRecordCC(txn_context, srcTable, sourceKey, s_record, s_record, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
     }
 
@@ -530,7 +530,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
     public abstract boolean CommitTransaction(TxnContext txn_context);
 
     @Override
-    public boolean SelectRecords(Database db, TxnContext txn_context, String table_name, int i, String secondary_key, SchemaRecords records, MetaTypes.AccessType accessType, LinkedList<Long> gap) {
+    public boolean SelectRecords(Database db, TxnContext txn_context, String table_name, int i, String secondary_key, SchemaRecords records, CommonMetaTypes.AccessType accessType, LinkedList<Long> gap) {
         throw new UnsupportedOperationException();
     }
 }

@@ -31,17 +31,6 @@ public class SOURCE_CONTROL {
         return ourInstance;
     }
 
-    //return the starting point of counter.
-//    public long GetAndUpdate() {
-//        counterLock.lock();
-//        long rt = counter;
-//
-//        counter += _combo_bid_size;//increment counter by combo_bid_size times...
-//
-//        counterLock.unlock();
-//
-//        return rt;
-//    }
     public void config(int number_threads) {
         totalThreads = number_threads;
         startBarrier = new CyclicBarrier(number_threads);

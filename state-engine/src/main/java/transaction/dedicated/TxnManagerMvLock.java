@@ -1,6 +1,6 @@
 package transaction.dedicated;
 
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +12,7 @@ import transaction.impl.TxnContext;
 
 import java.util.LinkedList;
 
-import static common.meta.MetaTypes.AccessType.*;
+import static common.meta.CommonMetaTypes.AccessType.*;
 import static transaction.impl.TxnAccess.Access;
 
 /**
@@ -154,7 +154,7 @@ public class TxnManagerMvLock extends TxnManagerDedicated {
     }
 
     @Override
-    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
+    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         SchemaRecord s_record = t_record.record_;
         if (accessType == READ_ONLY) {
             // if cannot get lock_ratio, then return immediately.

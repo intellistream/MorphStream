@@ -1,7 +1,7 @@
 package transaction.dedicated.ordered;
 
 import common.OrderLock;
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import content.Content;
 import db.DatabaseException;
 import org.slf4j.Logger;
@@ -17,8 +17,8 @@ import transaction.impl.TxnContext;
 
 import java.util.LinkedList;
 
-import static common.meta.MetaTypes.AccessType.*;
-import static common.meta.MetaTypes.kMaxAccessNum;
+import static common.meta.CommonMetaTypes.AccessType.*;
+import static common.meta.CommonMetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
 
 /**
@@ -69,7 +69,7 @@ public class TxnManagerOrderLock extends TxnManagerDedicated {
     }
 
     @Override
-    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) throws InterruptedException {
+    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws InterruptedException {
         SchemaRecord s_record = t_record.record_;
         if (accessType == READ_ONLY) {
             // if cannot get lock_ratio, then return immediately.

@@ -1,7 +1,7 @@
 package content;
 
 import common.OrderLock;
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import storage.SchemaRecord;
 import transaction.impl.TxnContext;
 
@@ -66,7 +66,7 @@ public abstract class ToContent implements Content {
 //		return null;
 //	}
     @Override
-    public SchemaRecord ReadAccess(TxnContext context, MetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
 

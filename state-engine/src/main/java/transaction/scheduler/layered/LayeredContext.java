@@ -10,6 +10,8 @@ public class LayeredContext<V> extends SchedulerContext {
     protected int[] scheduledOcsCount;//current number of operation chains processed per thread.
     protected int[] totalOcsToSchedule;//total number of operation chains to process per thread.
 
+    protected int[] totalOsToSchedule;//total number of operations to process per thread.
+
     public ConcurrentHashMap<Integer, V> layeredOCBucketGlobal;
     protected Supplier<V> supplier;
     public int totalThreads;
@@ -20,6 +22,8 @@ public class LayeredContext<V> extends SchedulerContext {
         this.supplier = supplier;
         scheduledOcsCount = new int[totalThreads];
         totalOcsToSchedule = new int[totalThreads];
+
+        totalOsToSchedule = new int[totalThreads];
     }
     public V createContents() {
         return supplier.get();

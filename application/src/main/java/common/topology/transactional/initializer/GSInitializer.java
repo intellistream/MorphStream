@@ -56,7 +56,7 @@ public class GSInitializer extends TableInitilizer {
         } else if (ratio_of_read == 1) {
             read_decision = new boolean[]{true, true, true, true, true, true, true, true};// all read.
         } else {
-            throw new UnsupportedOperationException();
+            System.exit(-1);
         }
         LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
         configure_store(scale_factor, theta, tthread, NUM_ITEMS);

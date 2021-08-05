@@ -1,6 +1,6 @@
 package transaction.dedicated.ordered;
 
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,13 +15,12 @@ import transaction.scheduler.layered.struct.Operation;
 import transaction.scheduler.layered.struct.OperationChain;
 import utils.SOURCE_CONTROL;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static common.meta.MetaTypes.AccessType.INSERT_ONLY;
+import static common.meta.CommonMetaTypes.AccessType.INSERT_ONLY;
 import static transaction.impl.TxnAccess.Access;
 
 /**
@@ -67,7 +66,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     }
 
     @Override
-    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
+    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         //not in use.
         throw new UnsupportedOperationException();
     }
@@ -102,7 +101,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      * @param txn_context
      */
 
-    public void operation_chain_construction_read_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, SchemaRecordRef record_ref, TxnContext txn_context) {
+    public void operation_chain_construction_read_only(TableRecord record, String primaryKey, String table_name, long bid, CommonMetaTypes.AccessType accessType, SchemaRecordRef record_ref, TxnContext txn_context) {
 //        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        MyList<Operation> myList = holder.get(primaryKey);
@@ -118,7 +117,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 //        holder.add(new Operation(txn_context, bid, accessType, record, record_ref));
     }
 
-    public void operation_chain_construction_read_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, TableRecordRef record_ref, TxnContext txn_context) {
+    public void operation_chain_construction_read_only(TableRecord record, String primaryKey, String table_name, long bid, CommonMetaTypes.AccessType accessType, TableRecordRef record_ref, TxnContext txn_context) {
 //        ConcurrentHashMap<String, MyList<Operation>> holder = instance.getHolder(table_name).rangeMap.get(getTaskId(primaryKey)).holder_v1;
 //        holder.putIfAbsent(primaryKey, new MyList(table_name, primaryKey));
 //        MyList<Operation> myList = holder.get(primaryKey);
@@ -143,27 +142,27 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      * @param value
      * @param txn_context
      */
-    private void operation_chain_construction_write_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, List<DataBox> value, TxnContext txn_context) {
+    private void operation_chain_construction_write_only(TableRecord record, String primaryKey, String table_name, long bid, CommonMetaTypes.AccessType accessType, List<DataBox> value, TxnContext txn_context) {
 
         addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, value), table_name, primaryKey);
     }
 
-    private void operation_chain_construction_write_only(TableRecord record, String primaryKey, String table_name, long bid, MetaTypes.AccessType accessType, long value, int column_id, TxnContext txn_context) {
+    private void operation_chain_construction_write_only(TableRecord record, String primaryKey, String table_name, long bid, CommonMetaTypes.AccessType accessType, long value, int column_id, TxnContext txn_context) {
         addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, value, column_id), table_name, primaryKey);
     }
 
     private void operation_chain_construction_modify_read(TableRecord record, String table_name, long bid,
-                                                          MetaTypes.AccessType accessType, SchemaRecordRef record_ref, Function function, TxnContext txn_context) {
+                                                          CommonMetaTypes.AccessType accessType, SchemaRecordRef record_ref, Function function, TxnContext txn_context) {
         addOperationToChain(new Operation(table_name, txn_context, bid, accessType, record, record_ref, function), table_name, record.record_.GetPrimaryKey());
     }
 
     //READ_WRITE
-    private void operation_chain_construction_modify_only(TableRecord s_record, String table_name, long bid, MetaTypes.AccessType accessType, TableRecord d_record, Function function, TxnContext txn_context, int column_id) {
+    private void operation_chain_construction_modify_only(TableRecord s_record, String table_name, long bid, CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, TxnContext txn_context, int column_id) {
         addOperationToChain(new Operation(table_name, s_record, d_record, bid, accessType, function, txn_context, column_id), table_name, d_record.record_.GetPrimaryKey());
     }
 
-    private void operation_chain_construction_modify_only(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, Function function,
-                                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
+    private void operation_chain_construction_modify_only(String table_name, String key, long bid, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, Function function,
+                                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, int[] success) {
         addOperationToChain(new Operation(table_name, s_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success), table_name, d_record.record_.GetPrimaryKey());
 
     }
@@ -201,8 +200,8 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     }
 
     //READ_WRITE_COND // TRANSFER_AST
-    private void operation_chain_construction_modify_only(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord d_record, Function function,
-                                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
+    private void operation_chain_construction_modify_only(String table_name, String key, long bid, CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function,
+                                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, int[] success) {
 
         OperationChain oc = getCachedOcFor(table_name, d_record.record_.GetPrimaryKey());
         Operation op = new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success);
@@ -211,8 +210,8 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     }
 
     //READ_WRITE_COND_READ // TRANSFER_ACT
-    private void operation_chain_construction_modify_read(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord d_record, SchemaRecordRef record_ref, Function function,
-                                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
+    private void operation_chain_construction_modify_read(String table_name, String key, long bid, CommonMetaTypes.AccessType accessType, TableRecord d_record, SchemaRecordRef record_ref, Function function,
+                                                          String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, int[] success) {
 
 //        MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
         OperationChain oc = getCachedOcFor(table_name, d_record.record_.GetPrimaryKey());
@@ -259,7 +258,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      * @return
      */
     @Override
-    protected boolean Asy_ReadRecordCC(TxnContext txn_context, String primary_key, String table_name, TableRecord t_record, SchemaRecordRef record_ref, double[] enqueue_time, MetaTypes.AccessType accessType) {
+    protected boolean Asy_ReadRecordCC(TxnContext txn_context, String primary_key, String table_name, TableRecord t_record, SchemaRecordRef record_ref, double[] enqueue_time, CommonMetaTypes.AccessType accessType) {
         long bid = txn_context.getBID();
         operation_chain_construction_read_only(t_record, primary_key, table_name, bid, accessType, record_ref, txn_context);
         return true;//it should be always success.
@@ -278,35 +277,35 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      * @return
      */
     @Override
-    protected boolean Asy_ReadRecordCC(TxnContext txn_context, String primary_key, String table_name, TableRecord t_record, TableRecordRef record_ref, double[] enqueue_time, MetaTypes.AccessType accessType) {
+    protected boolean Asy_ReadRecordCC(TxnContext txn_context, String primary_key, String table_name, TableRecord t_record, TableRecordRef record_ref, double[] enqueue_time, CommonMetaTypes.AccessType accessType) {
         long bid = txn_context.getBID();
         operation_chain_construction_read_only(t_record, primary_key, table_name, bid, accessType, record_ref, txn_context);
         return true;//it should be always success.
     }
 
     @Override
-    protected boolean Asy_WriteRecordCC(TxnContext txn_context, String primary_key, String table_name, TableRecord t_record, long value, int column_id, MetaTypes.AccessType access_type) {
+    protected boolean Asy_WriteRecordCC(TxnContext txn_context, String primary_key, String table_name, TableRecord t_record, long value, int column_id, CommonMetaTypes.AccessType access_type) {
         long bid = txn_context.getBID();
         operation_chain_construction_write_only(t_record, primary_key, table_name, bid, access_type, value, column_id, txn_context);
         return true;//it should be always success.
     }
 
     @Override
-    protected boolean Asy_WriteRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, String primary_key, List<DataBox> value, double[] enqueue_time, MetaTypes.AccessType access_type) {
+    protected boolean Asy_WriteRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, String primary_key, List<DataBox> value, double[] enqueue_time, CommonMetaTypes.AccessType access_type) {
         long bid = txn_context.getBID();
         operation_chain_construction_write_only(t_record, primary_key, table_name, bid, access_type, value, txn_context);
         return true;//it should be always success.
     }
 
     @Override
-    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, TableRecord t_record, TableRecord d_record, Function function, MetaTypes.AccessType accessType, int column_id) {
+    protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, TableRecord t_record, TableRecord d_record, Function function, CommonMetaTypes.AccessType accessType, int column_id) {
         long bid = txn_context.getBID();
         operation_chain_construction_modify_only(t_record, srcTable, bid, accessType, d_record, function, txn_context, column_id);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
     }
 
     protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, TableRecord t_record,
-                                              SchemaRecordRef record_ref, Function function, MetaTypes.AccessType accessType) {
+                                              SchemaRecordRef record_ref, Function function, CommonMetaTypes.AccessType accessType) {
         long bid = txn_context.getBID();
         operation_chain_construction_modify_read(t_record, srcTable, bid, accessType, record_ref, function, txn_context);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
@@ -314,7 +313,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 
     // TRANSFER_ACT
     protected boolean Asy_ModifyRecord_ReadCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, SchemaRecordRef record_ref, Function function,
-                                              String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
+                                              String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, CommonMetaTypes.AccessType accessType, int[] success) {
         long bid = txn_context.getBID();
         operation_chain_construction_modify_read(srcTable, key, bid, accessType,
                 s_record, record_ref, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
@@ -323,7 +322,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 
     @Override
     protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, TableRecord d_record, Function function,
-                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
+                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, CommonMetaTypes.AccessType accessType, int[] success) {
         long bid = txn_context.getBID();
         operation_chain_construction_modify_only(srcTable, key, bid, accessType, s_record, d_record, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;
@@ -331,7 +330,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
 
     // TRANSFER_AST
     protected boolean Asy_ModifyRecordCC(TxnContext txn_context, String srcTable, String key, TableRecord s_record, Function function,
-                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, MetaTypes.AccessType accessType, boolean[] success) {
+                                         String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, CommonMetaTypes.AccessType accessType, int[] success) {
         long bid = txn_context.getBID();
         operation_chain_construction_modify_only(srcTable, key, bid, accessType, s_record, function, condition_sourceTable, condition_source, condition_records, condition, txn_context, success);//TODO: this is for sure READ_WRITE... think about how to further optimize.
         return true;

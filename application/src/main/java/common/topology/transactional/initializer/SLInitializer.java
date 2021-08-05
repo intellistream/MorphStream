@@ -1,10 +1,6 @@
 package common.topology.transactional.initializer;
 
 import benchmark.DataHolder;
-//import benchmark.datagenerator.old.DataGenerator;
-//import benchmark.datagenerator.old.DataGeneratorConfig;
-
-import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.SLDataGenerator;
 import common.SpinLock;
@@ -41,7 +37,6 @@ public class SLInitializer extends TableInitilizer {
     private String dataRootPath;
     private SLDataGenerator mDataGenerator;
 
-
     private int startingBalance = 1000000;
     private String actTableKey = "accounts";
     private String bookTableKey = "bookEntries";
@@ -71,8 +66,10 @@ public class SLInitializer extends TableInitilizer {
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(
                             digest.digest(
-                                    String.format("%d_%s", dataConfig.tuplesPerBatch * dataConfig.totalBatches,
-                                            Arrays.toString(dataConfig.dependenciesDistributionForLevels))
+                                    String.format("%d_%d_%s",
+                                                    dataConfig.totalThreads,
+                                                    dataConfig.tuplesPerBatch * dataConfig.totalBatches,
+                                                    Arrays.toString(dataConfig.dependenciesDistributionForLevels))
                                             .getBytes(StandardCharsets.UTF_8))));
         } catch (Exception e) {
             e.printStackTrace();
@@ -159,7 +156,6 @@ public class SLInitializer extends TableInitilizer {
         }
         return id;
     }
-
 
     /**
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"

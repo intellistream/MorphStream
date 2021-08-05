@@ -65,7 +65,9 @@ public class DataGeneratorConfig {
                 dependenciesDistributionForLevels[index] = (float) zipf.getProbability(numberOfDLevels - index);
             }
         } else {
-            throw new UnsupportedOperationException("Invalid fanout scheme.");
+//            throw new UnsupportedOperationException("Invalid fanout scheme.");
+            LOG.info("Invalid fanout scheme.");
+            System.exit(-1);
         }
 
         LOG.info(String.format("totalEventsPerBatch: %d", tuplesPerBatch));

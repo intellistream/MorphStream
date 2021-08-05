@@ -1,6 +1,6 @@
 package common.meta;
 
-public interface MetaTypes {
+public interface CommonMetaTypes {
     int kEventsNum = 2;
     int kMaxProcedureNum = 10;
     int kMaxThreadNum = 50;
@@ -19,6 +19,7 @@ public interface MetaTypes {
     }
 
     enum AccessType {
-        READ_ONLY, READS_ONLY, READ_WRITE, READ_WRITE_READ, READ_WRITE_COND, READ_WRITE_COND_READ, WRITE_ONLY, INSERT_ONLY, DELETE_ONLY
+        READ_ONLY, READS_ONLY, READ_WRITE, READ_WRITE_READ, READ_WRITE_COND, READ_WRITE_COND_READ, WRITE_ONLY, INSERT_ONLY, DELETE_ONLY,
+        GET, SET
     }
 }

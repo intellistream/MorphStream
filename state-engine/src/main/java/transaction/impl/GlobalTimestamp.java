@@ -2,8 +2,8 @@ package transaction.impl;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static common.meta.MetaTypes.kBatchTsNum;
-import static common.meta.MetaTypes.kMaxThreadNum;
+import static common.meta.CommonMetaTypes.kBatchTsNum;
+import static common.meta.CommonMetaTypes.kMaxThreadNum;
 
 public abstract class GlobalTimestamp {
     static AtomicLong monotone_timestamp_ = new AtomicLong(0);

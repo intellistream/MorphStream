@@ -161,7 +161,7 @@ public class GSCombo extends SPOUTCombo {
             }
 
             default:
-                throw new UnsupportedOperationException("Please select correct CC option!");
+                LOG.error("Please select correct CC option!");
         }
         //do preparation.
         bolt.prepare(config, context, collector);

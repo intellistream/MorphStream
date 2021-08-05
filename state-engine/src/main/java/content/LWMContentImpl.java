@@ -1,7 +1,7 @@
 package content;
 
 import common.SpinLock;
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
@@ -82,7 +82,7 @@ public class LWMContentImpl extends LWMContent {
     }
 
     @Override
-    public SchemaRecord ReadAccess(TxnContext txn_context, MetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(TxnContext txn_context, CommonMetaTypes.AccessType accessType) {
         int retry_count = 0;
         long bid = txn_context.getBID();
         switch (accessType) {
@@ -111,7 +111,7 @@ public class LWMContentImpl extends LWMContent {
     }
 
     @Override
-    public SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, MetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, CommonMetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
 

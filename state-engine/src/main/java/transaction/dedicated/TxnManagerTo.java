@@ -1,6 +1,6 @@
 package transaction.dedicated;
 
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,8 +13,8 @@ import transaction.impl.TxnContext;
 
 import java.util.LinkedList;
 
-import static common.meta.MetaTypes.AccessType.*;
-import static common.meta.MetaTypes.kMaxAccessNum;
+import static common.meta.CommonMetaTypes.AccessType.*;
+import static common.meta.CommonMetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
 
 /**
@@ -62,7 +62,7 @@ public class TxnManagerTo extends TxnManagerDedicated {
     }
 
     @Override
-    protected boolean SelectRecordCC(TxnContext txn_context, String table_id, TableRecord t_record, SchemaRecordRef s_record_ref, MetaTypes.AccessType access_type) {
+    protected boolean SelectRecordCC(TxnContext txn_context, String table_id, TableRecord t_record, SchemaRecordRef s_record_ref, CommonMetaTypes.AccessType access_type) {
         if (is_first_access_) {
 //			BEGIN_CC_TS_ALLOC_TIME_MEASURE(thread_id_);
             start_timestamp_ = GlobalTimestamp.GetMonotoneTimestamp();
