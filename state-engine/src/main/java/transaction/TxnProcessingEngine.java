@@ -1,22 +1,26 @@
 package transaction;
 
-import transaction.dedicated.ordered.MyList;
-import transaction.scheduler.layered.struct.Operation;
-import transaction.scheduler.layered.struct.OperationChain;
 import content.T_StreamContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import storage.datatype.DoubleDataBox;
 import storage.datatype.IntDataBox;
 import storage.datatype.ListDoubleDataBox;
+import transaction.dedicated.ordered.MyList;
 import transaction.function.*;
 import transaction.scheduler.IScheduler;
 import transaction.scheduler.SchedulerFactory;
+import transaction.scheduler.layered.struct.Operation;
+import transaction.scheduler.layered.struct.OperationChain;
 
 import java.io.Closeable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -50,6 +54,8 @@ public final class TxnProcessingEngine {
     private ConcurrentHashMap<String, Holder_in_range> holder_by_stage;//multi table support.
     private int app;
     private int TOTAL_CORES;
+
+    //TODO: select which scheduler to initialize.
     private IScheduler scheduler;
 
     private TxnProcessingEngine() {
@@ -196,7 +202,7 @@ public final class TxnProcessingEngine {
     }
 
     //TODO: the following are mostly hard-coded.
-    private void process(Operation operation, long mark_ID, boolean clean) {
+    private void process(int threadId, Operation operation, long mark_ID, boolean clean) {
         if (operation.accessType == READS_ONLY) {
             operation.records_ref.setRecord(operation.d_record);
         } else if (operation.accessType == READ_ONLY) {//used in MB.
@@ -314,29 +320,42 @@ public final class TxnProcessingEngine {
         }
     }
 
-    //TODO: actual evaluation on the operation_chain.
-    private void process(MyList<Operation> operation_chain, long mark_ID) {
-
-        Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
+    /**
+     * Used by OCScheduler.
+     *
+     * @param threadId
+     * @param operation_chain
+     * @param mark_ID
+     */
+    public void process(int threadId, MyList<Operation> operation_chain, long mark_ID) {
+        Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain
+        //, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
         while (operation != null) {
-            process(operation, mark_ID, false);
+            process(threadId, operation, mark_ID, false);
             operation = operation_chain.pollFirst();
         }//loop.
-
     }
 
     public IScheduler getScheduler() {
         return this.scheduler;
     }
 
-    public void start_evaluation(int threadId, long mark_ID) throws InterruptedException {
-        OperationChain oc = scheduler.NEXT(threadId);
-        while (oc != null) {
-            MyList<Operation> operations = oc.getOperations();
-            process(operations, mark_ID);//directly apply the computation.
-            oc = scheduler.NEXT(threadId);
+    public void start_evaluation(int threadId, long mark_ID, int num_events) throws InterruptedException {
+        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+        scheduler.INITIALIZE(threadId);
+        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 
-        }
+        do {
+            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+            scheduler.EXPLORE(threadId);
+            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            scheduler.PROCESS(threadId, mark_ID);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+        } while (!scheduler.isFinished(threadId));
+
+        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+        scheduler.RESET();//  Controller.exec.shutdownNow();
     }
 
     /**

@@ -347,22 +347,8 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      */
     @Override
     public void start_evaluate(int thread_Id, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
-
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-
-        Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
-        for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
-            instance.getScheduler().SUBMIT(thread_Id, tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
-        }
-
-        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-
-        instance.start_evaluation(thread_Id, mark_ID);
-        for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
-            tableHolderInRange.rangeMap.get(thread_Id).holder_v1.clear();
-        }
-
+        instance.start_evaluation(thread_Id, mark_ID, num_events);
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
-
     }
 }
