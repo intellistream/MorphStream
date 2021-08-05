@@ -47,20 +47,14 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
-            int readSize = transactionEvents.size();
+            int transSize = transactionEvents.size();
             int depoSize = depositeEvents.size();
-            BEGIN_TXN_TIME_MEASURE(thread_Id);
-            BEGIN_TXN_PROCESSING_TIME_MEASURE(thread_Id);
-            transactionManager.start_evaluate(thread_Id, in.getBID());//start lazy evaluation in transaction manager.
-            END_TXN_PROCESSING_TIME_MEASURE(thread_Id);
-            BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+            int num_events = transSize + depoSize;
+            transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
             TRANSFER_REQUEST_CORE();
             DEPOSITE_REQUEST_CORE();
-            END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize + depoSize, 0, 0);
-            END_TXN_TIME_MEASURE_TS(thread_Id, 0);//overhead_total txn time
             TRANSFER_REQUEST_POST();
             DEPOSITE_REQUEST_POST();
-            END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize + depoSize);
             transactionEvents.clear();//all tuples in the holder is finished.
             depositeEvents.clear();
         } else {

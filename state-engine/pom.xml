@@ -42,6 +42,12 @@
             <version>26.0-jre</version>
         </dependency>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.tony</groupId>
             <artifactId>common</artifactId>
             <version>${tstream.version}</version>

@@ -186,9 +186,6 @@ public class OBCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                if (config.getBoolean("disable_pushdown", false))
-                    bolt = new OBBolt_ts_nopush(0, sink);
-                else
                     bolt = new OBBolt_ts(0, sink);
                 break;
             }

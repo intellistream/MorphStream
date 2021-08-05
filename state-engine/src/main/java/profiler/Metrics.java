@@ -5,140 +5,287 @@ import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import static common.meta.MetaTypes.kMaxThreadNum;
 
 public class Metrics {
-    private static final Metrics ourInstance = new Metrics();
     public static int COMPUTE_COMPLEXITY = 10;//default setting. 1, 10, 100
     public static int POST_COMPUTE_COMPLEXITY = 1;
     //change to 3 for S_STORE testing.
     public static int NUM_ACCESSES = 3;//10 as default setting. 2 for short transaction, 10 for long transaction.? --> this is the setting used in YingJun's work. 16 is the default value_list used in 1000core machine.
     public static int NUM_ITEMS = 1_000_000;//1. 1_000_000; 2. ? ; 3. 1_000  //1_000_000 YCSB has 16 million records, Ledger use 200 million records.
     public static int H2_SIZE;
-    public DescriptiveStatistics[] total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-    public DescriptiveStatistics[] number_of_ocs_processed = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-    public DescriptiveStatistics[] numberOf_transactional_events_processed = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
 
-    public DescriptiveStatistics[] txn_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-    public DescriptiveStatistics[] txn_processing_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-    public DescriptiveStatistics[] state_access_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-    public DescriptiveStatistics[] barriers_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-    public DescriptiveStatistics[] calculate_levels_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-    public DescriptiveStatistics[] iterative_processing_useful_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
+    static class TxnRuntime {
+        public static long[] IndexStart = new long[kMaxThreadNum];
+        public static long[] Index = new long[kMaxThreadNum];
+        public static long[] WaitStart = new long[kMaxThreadNum];
+        public static long[] Wait = new long[kMaxThreadNum];
+        public static long[] LockStart = new long[kMaxThreadNum];
+        public static long[] Lock = new long[kMaxThreadNum];
+        public static long[] AccessStart = new long[kMaxThreadNum];
+        public static long[] Access = new long[kMaxThreadNum];
+        public static long[] AbortStart = new long[kMaxThreadNum];
+        public static long[] Abort = new long[kMaxThreadNum];
 
-    public DescriptiveStatistics[] pre_txn_total = new DescriptiveStatistics[kMaxThreadNum];
-    public DescriptiveStatistics[] create_oc_total = new DescriptiveStatistics[kMaxThreadNum];
-    public DescriptiveStatistics[] dependency_checking_total = new DescriptiveStatistics[kMaxThreadNum];
-    public DescriptiveStatistics[] dependency_outoforder_overhead_total = new DescriptiveStatistics[kMaxThreadNum];
-    public DescriptiveStatistics[] db_access_time = new DescriptiveStatistics[kMaxThreadNum];
-
-    public DescriptiveStatistics[] stream_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-    public DescriptiveStatistics[] overhead_total = new DescriptiveStatistics[kMaxThreadNum];//overhead_total time spend in txn.
-
-    public DescriptiveStatistics[] index_ratio = new DescriptiveStatistics[kMaxThreadNum];//index
-    public DescriptiveStatistics[] useful_ratio = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
-    public DescriptiveStatistics[] sync_ratio = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] lock_ratio = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-
-    public DescriptiveStatistics[] submit_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] submit_time_barrier_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] submit_time_overhead_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] submit_time_extra_param_1_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] submit_time_extra_param_2_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] submit_time_extra_param_3_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-
-    public DescriptiveStatistics[] get_next_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] get_next_overhead_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] get_next_barrier_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] get_next_thread_wait_time_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] get_next_extra_param_1_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] get_next_extra_param_2_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-    public DescriptiveStatistics[] get_next_extra_param_3_total = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
-
-    // Op id, descriptive
-//    public Map<String, DescriptiveStatistics> useful_ratio = new HashMap<>();//useful_work time.
-//    public Map<String, DescriptiveStatistics> abort_ratio = new HashMap<>();//abort
-//    public Map<String, DescriptiveStatistics> ts_allocation = new HashMap<>();//timestamp allocation
-//    public Map<String, DescriptiveStatistics> index_ratio = new HashMap<>();//index
-//    public Map<String, DescriptiveStatistics> sync_ratio = new HashMap<>();// sync_ratio lock_ratio and order.
-//    public Map<String, DescriptiveStatistics> exe_ratio = new HashMap<>();//not in use.
-//    public Map<String, DescriptiveStatistics> order_wait = new HashMap<>();//order sync_ratio
-//    public Map<String, DescriptiveStatistics> enqueue_time = new HashMap<>();//event enqueue
-    //TODO: single op for now. per task/thread.
-//    public DescriptiveStatistics[] ts_allocation = new DescriptiveStatistics[kMaxThreadNum];//timestamp allocation
-    public DescriptiveStatistics[] average_tp_core = new DescriptiveStatistics[kMaxThreadNum];// average tp processing time per thread without considering synchronization.
-    public DescriptiveStatistics[] average_tp_submit = new DescriptiveStatistics[kMaxThreadNum];// average tp processing time per thread without considering synchronization.
-    public DescriptiveStatistics[] average_tp_w_syn = new DescriptiveStatistics[kMaxThreadNum];// average tp processing time per thread with synchronization.
-    public DescriptiveStatistics[] average_txn_construct = new DescriptiveStatistics[kMaxThreadNum];
-//    public Map<Integer, DescriptiveStatistics> exe_ratio = new HashMap<>();//not in use.
-    /**
-     * Specially for T-Stream..
-     */
-    public DescriptiveStatistics[] enqueue_time = new DescriptiveStatistics[kMaxThreadNum];//event enqueue
-
-    private Metrics() {
+        public static void Initialize() {
+            for (int i = 0; i < kMaxThreadNum; i++) {
+                IndexStart[i] = 0;
+                Index[i] = 0;
+                WaitStart[i] = 0;
+                LockStart[i] = 0;
+                Lock[i] = 0;
+                Wait[i] = 0;
+                AccessStart[i] = 0;
+                Access[i] = 0;
+                AbortStart[i] = 0;
+                Abort[i] = 0;
+            }
+        }
     }
 
-    public static Metrics getInstance() {
-        return ourInstance;
+    static class Runtime {
+        public static long[] Start = new long[kMaxThreadNum];
+        public static long[] PrepareStart = new long[kMaxThreadNum];
+        public static long[] Prepare = new long[kMaxThreadNum];
+        public static long[] PostStart = new long[kMaxThreadNum];
+        public static long[] Post = new long[kMaxThreadNum];
+        public static long[] TxnStart = new long[kMaxThreadNum];
+        public static long[] Txn = new long[kMaxThreadNum];
+        //USED ONLY BY TStream
+        public static long[] PreTxnStart = new long[kMaxThreadNum];
+        public static long[] PreTxn = new long[kMaxThreadNum];
+        public static void Initialize() {
+            for (int i = 0; i < kMaxThreadNum; i++) {
+                Start[i] = 0;
+                PrepareStart[i] = 0;
+                Prepare[i] = 0;
+                PostStart[i] = 0;
+                Post[i] = 0;
+                TxnStart[i] = 0;
+                Txn[i] = 0;
+                PreTxnStart[i] = 0;
+                PreTxn[i] = 0;
+            }
+        }
     }
 
-    /**
-     * Initilize all metric counters.
-     */
-    public void initilize(String ID, int num_access) {
-//        exe_ratio.put(ID, new DescriptiveStatistics());
-//        useful_ratio.put(ID, new DescriptiveStatistics());
-//        abort_ratio.put(ID, new DescriptiveStatistics());
-//        index_ratio.put(ID, new DescriptiveStatistics());
-//        sync_ratio.put(ID, new DescriptiveStatistics());
-//        ts_allocation.put(ID, new DescriptiveStatistics());
-//        enqueue_time.put(ID, new DescriptiveStatistics());
-        NUM_ACCESSES = num_access;
+    static class Total_Record {
+        public static DescriptiveStatistics[] totalProcessTimePerEvent = new DescriptiveStatistics[kMaxThreadNum];//total time spend for every input event.
+        public static DescriptiveStatistics[] txn_total = new DescriptiveStatistics[kMaxThreadNum];//total time spend in txn.
+        public static DescriptiveStatistics[] stream_total = new DescriptiveStatistics[kMaxThreadNum];//total time spend in stream processing.
+        public static DescriptiveStatistics[] overhead_total = new DescriptiveStatistics[kMaxThreadNum];//other overheads.
+
+        public static void Initialize() {
+            for (int i = 0; i < kMaxThreadNum; i++) {
+                totalProcessTimePerEvent[i] = new DescriptiveStatistics();
+                txn_total[i] = new DescriptiveStatistics();
+                stream_total[i] = new DescriptiveStatistics();
+                overhead_total[i] = new DescriptiveStatistics();
+            }
+        }
     }
 
-    public void initilize(int task) {
+    static class Transaction_Record {
+        public static DescriptiveStatistics[] index_ratio = new DescriptiveStatistics[kMaxThreadNum];//index
+        public static DescriptiveStatistics[] useful_ratio = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
+        public static DescriptiveStatistics[] sync_ratio = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
+        public static DescriptiveStatistics[] lock_ratio = new DescriptiveStatistics[kMaxThreadNum];// sync_ratio lock_ratio and order.
 
-        total[task] = new DescriptiveStatistics();
-        number_of_ocs_processed[task] = new DescriptiveStatistics();
-        numberOf_transactional_events_processed[task] = new DescriptiveStatistics();
+        public static void Initialize() {
+            for (int i = 0; i < kMaxThreadNum; i++) {
+                index_ratio[i] = new DescriptiveStatistics();
+                useful_ratio[i] = new DescriptiveStatistics();
+                sync_ratio[i] = new DescriptiveStatistics();
+                lock_ratio[i] = new DescriptiveStatistics();
+            }
+        }
+    }
 
-        txn_total[task] = new DescriptiveStatistics();
-        txn_processing_total[task] = new DescriptiveStatistics();
-        state_access_total[task] = new DescriptiveStatistics();
-        calculate_levels_total[task] = new DescriptiveStatistics();
-        iterative_processing_useful_total[task] = new DescriptiveStatistics();
+    static class Scheduler {
+        public static long[] NextStart = new long[kMaxThreadNum];
+        public static long[] Next = new long[kMaxThreadNum];
+        public static long[] UsefulStart = new long[kMaxThreadNum];
+        public static long[] Useful = new long[kMaxThreadNum];
+        public static long[] Explore = new long[kMaxThreadNum];
+        public static long[] ExploreStart = new long[kMaxThreadNum];
+        public static void Initialize() {
+            for (int i = 0; i < kMaxThreadNum; i++) {
+                NextStart[i] = 0;
+                Next[i] = 0;
+                UsefulStart[i] = 0;
+                Useful[i] = 0;
+                ExploreStart[i] = 0;
+                Explore[i] = 0;
+            }
+        }
+    }
 
-        pre_txn_total[task] = new DescriptiveStatistics();
-        create_oc_total[task] = new DescriptiveStatistics();
-        dependency_checking_total[task] = new DescriptiveStatistics();
-        barriers_total[task] = new DescriptiveStatistics();
+    static class Scheduler_Record {
+        public static DescriptiveStatistics[] Next = new DescriptiveStatistics[kMaxThreadNum];//NEXT.
+        public static DescriptiveStatistics[] Explore = new DescriptiveStatistics[kMaxThreadNum];//EXPLORE.
+        public static DescriptiveStatistics[] Useful = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
 
-        dependency_outoforder_overhead_total[task] = new DescriptiveStatistics();
-        db_access_time[task] = new DescriptiveStatistics();
+        public static void Initialize() {
+            for (int i = 0; i < kMaxThreadNum; i++) {
+                Next[i] = new DescriptiveStatistics();
+                Explore[i] = new DescriptiveStatistics();
+                Useful[i] = new DescriptiveStatistics();
+            }
+        }
+    }
 
-        stream_total[task] = new DescriptiveStatistics();
-        overhead_total[task] = new DescriptiveStatistics();
-        useful_ratio[task] = new DescriptiveStatistics();
-        index_ratio[task] = new DescriptiveStatistics();
-        sync_ratio[task] = new DescriptiveStatistics();
-        lock_ratio[task] = new DescriptiveStatistics();
-        average_tp_core[task] = new DescriptiveStatistics();
-        average_txn_construct[task] = new DescriptiveStatistics();
-        average_tp_submit[task] = new DescriptiveStatistics();
-        average_tp_w_syn[task] = new DescriptiveStatistics();
+    public static void RESET_COUNTERS(int thread_id) {
+        //reset accumulative counters.
+        Runtime.Prepare[thread_id] = 0;
+    }
 
-        submit_time_total[task] = new DescriptiveStatistics();
-        submit_time_barrier_total[task] = new DescriptiveStatistics();
-        submit_time_overhead_total[task] = new DescriptiveStatistics();
-        submit_time_extra_param_1_total[task] = new DescriptiveStatistics();
-        submit_time_extra_param_2_total[task] = new DescriptiveStatistics();
-        submit_time_extra_param_3_total[task] = new DescriptiveStatistics();
+    public static void COMPUTE_START_TIME(int thread_id) {
+        Runtime.Start[thread_id] = System.nanoTime();
+    }
+    public static void RECORD_SCHEDULE_TIME(int thread_id, int num_events) {
+        double explore_time = Scheduler.Explore[thread_id] / (double) num_events;
+        double next_time = Scheduler.Next[thread_id] / (double) num_events;
+        double useful_time = Scheduler.Useful[thread_id] / (double) num_events;
+        Scheduler_Record.Explore[thread_id].addValue(explore_time);
+        Scheduler_Record.Next[thread_id].addValue(next_time);
+        Scheduler_Record.Useful[thread_id].addValue(useful_time);
+    }
 
-        get_next_time_total[task] = new DescriptiveStatistics();
-        get_next_overhead_time_total[task] = new DescriptiveStatistics();
-        get_next_barrier_time_total[task] = new DescriptiveStatistics();
-        get_next_thread_wait_time_total[task] = new DescriptiveStatistics();
-        get_next_extra_param_1_total[task] = new DescriptiveStatistics();
-        get_next_extra_param_2_total[task] = new DescriptiveStatistics();
-        get_next_extra_param_3_total[task] = new DescriptiveStatistics();
+    public static void RECORD_TIME(int thread_id) {
+        long total_time = System.nanoTime() - Runtime.Start[thread_id];
+        Total_Record.totalProcessTimePerEvent[thread_id].addValue(total_time);
+        Total_Record.stream_total[thread_id].addValue(Runtime.Prepare[thread_id] + Runtime.Post[thread_id]);
+        Total_Record.txn_total[thread_id].addValue(Runtime.Txn[thread_id]);
+        Total_Record.overhead_total[thread_id].addValue(total_time - Runtime.Prepare[thread_id] - Runtime.Post[thread_id] - Runtime.Txn[thread_id]);
+    }
 
+    public static void RECORD_TIME(int thread_id, int number_events) {
+        double total_time = (System.nanoTime() - Runtime.Start[thread_id]) / (double) number_events;
+        double stream_total = (Runtime.Prepare[thread_id] + Runtime.Post[thread_id] + Runtime.PreTxn[thread_id]) / (double) number_events;
+        double txn_total = Runtime.Txn[thread_id] / (double) number_events;
+        Total_Record.totalProcessTimePerEvent[thread_id].addValue(total_time);
+        Total_Record.stream_total[thread_id].addValue(stream_total);
+        Total_Record.txn_total[thread_id].addValue(txn_total);
+        Total_Record.overhead_total[thread_id].addValue(total_time - stream_total - txn_total);
+    }
+    public static void COMPUTE_PRE_EXE_START_TIME(int thread_id) {
+        Metrics.Runtime.PrepareStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_PRE_EXE_TIME(int thread_id) {
+        Runtime.Prepare[thread_id] = System.nanoTime() - Runtime.PrepareStart[thread_id];
+    }
+
+    public static void COMPUTE_PRE_EXE_TIME_ACC(int thread_id) {
+        Runtime.Prepare[thread_id] += System.nanoTime() - Runtime.PrepareStart[thread_id];
+    }
+
+    public static void COMPUTE_START_INDEX_TIME(int thread_id) {
+        TxnRuntime.IndexStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_INDEX_TIME_ACC(int thread_id) {
+        TxnRuntime.Index[thread_id] += System.nanoTime() - TxnRuntime.IndexStart[thread_id];
+    }
+
+    public static void COMPUTE_START_POST_EXE_TIME(int thread_id) {
+        Runtime.PostStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_POST_EXE_TIME(int thread_id) {
+        Runtime.Post[thread_id] = System.nanoTime() - Runtime.PostStart[thread_id];
+    }
+
+    public static void COMPUTE_POST_EXE_TIME_ACC(int thread_id) {
+        Runtime.Post[thread_id] += System.nanoTime() - Runtime.PostStart[thread_id];
+    }
+
+    public static void COMPUTE_START_WAIT_TIME(int thread_id) {
+
+        TxnRuntime.WaitStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_START_LOCK_TIME(int thread_id) {
+
+        TxnRuntime.LockStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_LOCK_TIME(int thread_id) {
+        TxnRuntime.Lock[thread_id] = System.nanoTime() - TxnRuntime.LockStart[thread_id];
+    }
+
+    public static void COMPUTE_WAIT_TIME(int thread_id) {
+        TxnRuntime.Wait[thread_id] = System.nanoTime() - TxnRuntime.WaitStart[thread_id] - TxnRuntime.Lock[thread_id];
+    }
+
+    public static void COMPUTE_ABORT_START_TIME(int thread_id) {
+
+        TxnRuntime.AbortStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_ABORT_TIME_ACC(int thread_id) {
+        TxnRuntime.Abort[thread_id] += System.nanoTime() - TxnRuntime.AbortStart[thread_id];
+    }
+
+    public static void COMPUTE_START_ACCESS_TIME(int thread_id) {
+
+        TxnRuntime.AccessStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_ACCESS_TIME(int thread_id, int read_size, double write_time) {
+        if (read_size == 0) {
+            TxnRuntime.Access[thread_id] = (long) write_time;
+        } else {
+            TxnRuntime.Access[thread_id] = (System.nanoTime() - TxnRuntime.AccessStart[thread_id]) + (long) write_time;
+        }
+    }
+
+    public static void COMPUTE_ACCESS_TIME_ACC(int thread_id) {
+        TxnRuntime.Access[thread_id] += System.nanoTime() - TxnRuntime.AccessStart[thread_id];
+    }
+
+    public static void COMPUTE_TXN_START_TIME(int thread_id) {
+        Runtime.TxnStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_TXN_TIME(int thread_id) {
+        Runtime.Txn[thread_id] = (System.nanoTime() - Runtime.TxnStart[thread_id]);
+    }
+
+    public static void COMPUTE_PRE_TXN_START_TIME(int thread_id) {
+        Runtime.PreTxnStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_PRE_TXN_TIME_ACC(int thread_id) {
+        Runtime.PreTxn[thread_id] += System.nanoTime() - Runtime.PreTxnStart[thread_id];
+    }
+
+    public static void RECORD_TXN_BREAKDOWN_RATIO(int thread_id) {
+        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
+        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
+        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
+        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id] / (double) Runtime.Txn[thread_id]);
+    }
+
+    // Scheduler
+    public static void COMPUTE_SCHEDULE_NEXT_START(int thread_id) {
+        Scheduler.NextStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_SCHEDULE_NEXT_ACC(int thread_id) {
+        Scheduler.Next[thread_id] += System.nanoTime() - Scheduler.NextStart[thread_id];
+    }
+
+    public static void COMPUTE_SCHEDULE_EXPLORE_START(int thread_id) {
+        Scheduler.ExploreStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_SCHEDULE_EXPLORE_ACC(int thread_id) {
+        Scheduler.Explore[thread_id] += System.nanoTime() - Scheduler.ExploreStart[thread_id];
+    }
+
+    public static void COMPUTE_SCHEDULE_USEFUL_START(int thread_id) {
+        Scheduler.UsefulStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_SCHEDULE_USEFUL(int thread_id) {
+        Scheduler.Useful[thread_id] += System.nanoTime() - Scheduler.UsefulStart[thread_id];
     }
 }

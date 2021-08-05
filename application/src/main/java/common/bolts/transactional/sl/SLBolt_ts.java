@@ -23,14 +23,17 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_latency_measurement;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 
 public class SLBolt_ts extends SLBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     private final static double write_useful_time = 3316;//write-compute time pre-measured.
     ArrayDeque<TransactionEvent> transactionEvents;
-    private int depositeEvents;
+    ArrayDeque<DepositEvent> depositeEvents;
 
     public SLBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -49,6 +52,7 @@ public class SLBolt_ts extends SLBolt {
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
                 numberOfStates, this.context.getThisComponent().getNumTasks());
         transactionEvents = new ArrayDeque<>();
+        depositeEvents=new ArrayDeque<>();
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
@@ -61,27 +65,31 @@ public class SLBolt_ts extends SLBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         if (in.isMarker()) {
-            int readSize = transactionEvents.size();
+            int transSize = transactionEvents.size();
+            int depoSize = depositeEvents.size();
+            int num_events = transSize + depoSize;
+            /**
+             *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
+             */
+            {
+                MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
+                {
+                    transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
+                    TRANSFER_REQUEST_CORE();
+                }
+                MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
+                BEGIN_POST_TIME_MEASURE(thread_Id);
+                {
+                    TRANSFER_REQUEST_POST();
+                    DEPOSITE_REQUEST_POST();
+                }
+                END_POST_TIME_MEASURE_ACC(thread_Id);
 
-            MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
-
-            MeasureTools.BEGIN_TXN_PROCESSING_TIME_MEASURE(thread_Id);
-            transactionManager.start_evaluate(thread_Id, in.getBID());//start lazy evaluation in transaction manager.
-            MeasureTools.END_TXN_PROCESSING_TIME_MEASURE(thread_Id);
-
-            MeasureTools.BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-            TRANSFER_REQUEST_CORE();
-            MeasureTools.END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, write_useful_time, depositeEvents);
-
-            MeasureTools.END_TXN_TIME_MEASURE_TS(thread_Id, write_useful_time * depositeEvents);//overhead_total txn time
-
-            TRANSFER_REQUEST_POST();
-            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize + depositeEvents);
-
-            transactionEvents.clear();//all tuples in the holder is finished.
-            if (enable_profile) {
-                depositeEvents = 0;//all tuples in the holder is finished.
+                //all tuples in the holder is finished.
+                transactionEvents.clear();
+                depositeEvents.clear();
             }
+            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
         } else {
             execute_ts_normal(in);
         }
@@ -101,7 +109,6 @@ public class SLBolt_ts extends SLBolt {
                 TRANSFER_REQUEST_CONSTRUCT((TransactionEvent) event, txnContext);
             }
         }
-        MeasureTools.END_PRE_TXN_TIME_MEASURE(thread_Id);//includes post time deposite..
     }
 
     protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
@@ -160,10 +167,13 @@ public class SLBolt_ts extends SLBolt {
         //it simply construct the operations and return.
         transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()));// read and modify the account itself.
         transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()));// read and modify the asset itself.
-        MeasureTools.BEGIN_POST_TIME_MEASURE(thread_Id);
-        DEPOSITE_REQUEST_POST(event);
-        MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
-        depositeEvents++;
+        depositeEvents.add(event);
+    }
+
+    private void DEPOSITE_REQUEST_POST() throws InterruptedException {
+        for (DepositEvent event : depositeEvents) {
+            DEPOSITE_REQUEST_POST(event);
+        }
     }
 
     private void TRANSFER_REQUEST_POST() throws InterruptedException {

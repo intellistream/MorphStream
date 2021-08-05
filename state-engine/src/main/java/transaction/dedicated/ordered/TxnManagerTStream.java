@@ -1,18 +1,18 @@
 package transaction.dedicated.ordered;
 
-import transaction.scheduler.layered.struct.Operation;
-import transaction.scheduler.layered.struct.OperationChain;
 import common.meta.MetaTypes;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
 import storage.*;
 import storage.datatype.DataBox;
+import transaction.TxnProcessingEngine;
 import transaction.dedicated.TxnManagerDedicated;
 import transaction.function.Condition;
 import transaction.function.Function;
 import transaction.impl.TxnContext;
+import transaction.scheduler.layered.struct.Operation;
+import transaction.scheduler.layered.struct.OperationChain;
 import utils.SOURCE_CONTROL;
 
 import java.util.Collection;
@@ -36,34 +36,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw) {
         super(storageManager, thisComponentId, thisTaskId, thread_countw);
         instance = TxnProcessingEngine.getInstance();
-//        delta_long = (int) Math.ceil(NUM_ITEMS / (double) thread_countw);//range of each partition. depends on the number of op in the stage.
-//        delta = (int) Math.ceil(NUM_ACCOUNTS / (double) thread_countw);//NUM_ITEMS / tthread;
         delta = (int) Math.ceil(numberOfStates / (double) thread_countw); // Check id generation in DateGenerator.
-
-//        switch (config.getInt("app")) {
-//            case "StreamLedger": {
-//                delta = (int) Math.ceil(NUM_ACCOUNTS / (double) thread_countw);//NUM_ITEMS / tthread;
-//                break;
-//            }
-//            case "OnlineBiding": {
-//                delta = (int) Math.ceil(NUM_ITEMS / (double) thread_countw);//NUM_ITEMS / tthread;
-//                break;
-//            }
-//
-//            case "TP": {
-//                delta = (int) Math.ceil(NUM_SEGMENTS / (double) thread_countw);//NUM_ITEMS / tthread;
-//                break;
-//            }
-//
-//            case "MicroBenchmark": {
-//                delta = (int) Math.ceil(NUM_ITEMS / (double) thread_countw);//NUM_ITEMS / tthread;
-//                break;
-//            }
-//            case "PositionKeeping": {
-//                delta = (int) Math.ceil(NUM_MACHINES / (double) thread_countw);//NUM_ITEMS / tthread;
-//                break;
-//            }
-//        }
     }
 
     @Override
@@ -231,15 +204,10 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     private void operation_chain_construction_modify_only(String table_name, String key, long bid, MetaTypes.AccessType accessType, TableRecord d_record, Function function,
                                                           String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, TxnContext txn_context, boolean[] success) {
 
-//        MeasureTools.BEGIN_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
         OperationChain oc = getCachedOcFor(table_name, d_record.record_.GetPrimaryKey());
         Operation op = new Operation(table_name, d_record, bid, accessType, function, condition_records, condition, txn_context, success);
         oc.addOperation(op);
-//        MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
-
-        MeasureTools.BEGIN_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
         checkDataDependencies(oc, op, txn_context.thread_Id, table_name, key, condition_sourceTable, condition_source);
-        MeasureTools.END_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
     }
 
     //READ_WRITE_COND_READ // TRANSFER_ACT
@@ -252,9 +220,7 @@ public class TxnManagerTStream extends TxnManagerDedicated {
         oc.addOperation(op);
 //        MeasureTools.END_CREATE_OC_TIME_MEASURE(txn_context.thread_Id);
 
-        MeasureTools.BEGIN_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
         checkDataDependencies(oc, op, txn_context.thread_Id, table_name, key, condition_sourceTable, condition_source);
-        MeasureTools.END_DEPENDENCY_CHECKING_TIME_MEASURE(txn_context.thread_Id);
     }
 
     private void checkDataDependencies(OperationChain dependent, Operation op, int thread_Id, String table_name,
@@ -376,29 +342,27 @@ public class TxnManagerTStream extends TxnManagerDedicated {
      *
      * @param thread_Id
      * @param mark_ID
+     * @param num_events
      * @return time spend in tp evaluation.
      */
     @Override
-    public void start_evaluate(int thread_Id, long mark_ID) throws InterruptedException, BrokenBarrierException {
+    public void start_evaluate(int thread_Id, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
 
-        MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-        MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
-        MeasureTools.BEGIN_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
+
         Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = instance.getHolder().values();
         for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
             instance.getScheduler().SUBMIT(thread_Id, tableHolderInRange.rangeMap.get(thread_Id).holder_v1.values());
         }
-        MeasureTools.END_SUBMIT_TOTAL_TIME_MEASURE(thread_Id);
-        MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
+
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-        MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
+
         instance.start_evaluation(thread_Id, mark_ID);
         for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {
             tableHolderInRange.rangeMap.get(thread_Id).holder_v1.clear();
         }
-        MeasureTools.BEGIN_BARRIER_TIME_MEASURE(thread_Id);
+
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
-        MeasureTools.END_BARRIER_TIME_MEASURE(thread_Id);
+
     }
 }

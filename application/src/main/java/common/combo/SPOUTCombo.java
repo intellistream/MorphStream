@@ -17,7 +17,6 @@ import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import profiler.MeasureTools;
-import profiler.Metrics;
 import utils.SOURCE_CONTROL;
 
 import java.io.FileNotFoundException;
@@ -110,7 +109,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
                 if (counter == the_end) {
                     if (ccOption == CCOption_SStore)
-                        MeasureTools.END_TOTAL_TIME_MEASURE(taskId, 1);//otherwise deadlock.
+                        MeasureTools.END_TOTAL_TIME_MEASURE(taskId);//otherwise deadlock.
                     SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                     if (taskId == 0)
                         sink.end(global_cnt);
@@ -162,7 +161,6 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
-            MeasureTools.measure_counts[thisTaskId] = CONTROL.MeasureStart;//skip warm-up phase.
             start_measure = 0;
         } else {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
@@ -178,8 +176,5 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         } else {
             global_cnt = (the_end - CONTROL.MeasureStart) * tthread;
         }
-
-        Metrics metrics = Metrics.getInstance();
-        metrics.initilize(thread_Id);
     }
 }

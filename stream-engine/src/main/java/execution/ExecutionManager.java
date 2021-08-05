@@ -13,7 +13,7 @@ import faulttolerance.Writer;
 import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.dedicated.ordered.TxnProcessingEngine;
+import transaction.TxnProcessingEngine;
 
 import java.util.HashMap;
 import java.util.LinkedList;

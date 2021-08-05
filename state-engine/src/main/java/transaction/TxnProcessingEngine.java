@@ -1,12 +1,11 @@
-package transaction.dedicated.ordered;
+package transaction;
 
+import transaction.dedicated.ordered.MyList;
 import transaction.scheduler.layered.struct.Operation;
 import transaction.scheduler.layered.struct.OperationChain;
 import content.T_StreamContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
-import profiler.Metrics;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import storage.datatype.DoubleDataBox;
@@ -41,12 +40,8 @@ public final class TxnProcessingEngine {
      * @return time spend in tp evaluation.
      * @throws InterruptedException
      */
-
-    private static final HashMap<Integer, List<OperationChain>> ocsDLevel = new HashMap<>();
-    private final long previous_ID = 0;
     //    fast determine the corresponding instance. This design is for NUMA-awareness.
     private final HashMap<Integer, Instance> multi_engine = new HashMap<>();//one island one engine.
-    Metrics metrics;
     private Integer num_op = -1;
     private Integer first_exe;
     private Integer last_exe;
@@ -57,9 +52,6 @@ public final class TxnProcessingEngine {
     private int TOTAL_CORES;
     private IScheduler scheduler;
 
-    //    private int partition = 1;//NUMA-awareness. Hardware Island. If it is one, it is the default shared-everything.
-//    private int range_min = 0;
-//    private int range_max = 1_000_000;//change this for different application.
     private TxnProcessingEngine() {
     }
 
@@ -88,7 +80,6 @@ public final class TxnProcessingEngine {
         } else {//MB or S_STORE
             holder_by_stage.put("MicroTable", new Holder_in_range(num_op));
         }
-        metrics = Metrics.getInstance();
     }
 
     public Holder_in_range getHolder(String table_name) {
@@ -97,10 +88,6 @@ public final class TxnProcessingEngine {
 
     public ConcurrentHashMap<String, Holder_in_range> getHolder() {
         return holder_by_stage;
-    }
-
-    public Collection<Holder_in_range> getHolderValues() {
-        return holder_by_stage.values();
     }
 
     public void engine_init(Integer first_exe, Integer last_exe, Integer stage_size, int tp, String schedulerType) {
@@ -126,15 +113,7 @@ public final class TxnProcessingEngine {
                 }
             } else
                 throw new UnsupportedOperationException();
-//            if (island != -1)
-//                for (int i = 0; i < island; i++) {
-//                    multi_engine.put(i, new Instance(tp / island));
-//                }
-//            else {
-//
-//            }
         } else {
-            //single box engine.
             standalone_engine = new Instance(tp);
         }
         TOTAL_CORES = tp;
@@ -154,7 +133,7 @@ public final class TxnProcessingEngine {
     }
 
     // DD: Transfer event processing
-    private void CT_Transfer_Fun(int threadId, Operation operation, long previous_mark_ID, boolean clean) {
+    private void CT_Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         // read
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
@@ -217,7 +196,7 @@ public final class TxnProcessingEngine {
     }
 
     //TODO: the following are mostly hard-coded.
-    private void process(int threadId, Operation operation, long mark_ID, boolean clean) {
+    private void process(Operation operation, long mark_ID, boolean clean) {
         if (operation.accessType == READS_ONLY) {
             operation.records_ref.setRecord(operation.d_record);
         } else if (operation.accessType == READ_ONLY) {//used in MB.
@@ -260,7 +239,7 @@ public final class TxnProcessingEngine {
         } else if (operation.accessType == READ_WRITE_COND) {//read, modify (depends on condition), write( depends on condition).
             //TODO: pass function here in future instead of hard-code it. Seems not trivial in Java, consider callable interface?
             if (app == 1) {//used in SL
-                CT_Transfer_Fun(threadId, operation, mark_ID, clean);
+                CT_Transfer_Fun(operation, mark_ID, clean);
             } else if (app == 2) {//used in OB
                 //check if any item is not able to buy.
                 List<DataBox> d_record = operation.condition_records[0].content_
@@ -280,7 +259,7 @@ public final class TxnProcessingEngine {
         } else if (operation.accessType == READ_WRITE_COND_READ) {
             assert operation.record_ref != null;
             if (app == 1) {//used in SL
-                CT_Transfer_Fun(threadId, operation, mark_ID, clean);
+                CT_Transfer_Fun(operation, mark_ID, clean);
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             } else
                 throw new UnsupportedOperationException();
@@ -336,50 +315,14 @@ public final class TxnProcessingEngine {
     }
 
     //TODO: actual evaluation on the operation_chain.
-    private void process(int threadId, MyList<Operation> operation_chain, long mark_ID) {
+    private void process(MyList<Operation> operation_chain, long mark_ID) {
 
         Operation operation = operation_chain.pollFirst();//multiple threads may work on the same operation chain, use MVCC to preserve the correctness. // Right now: 1 thread executes 1 OC.
         while (operation != null) {
-            process(threadId, operation, mark_ID, false);
+            process(operation, mark_ID, false);
             operation = operation_chain.pollFirst();
         }//loop.
 
-    }
-
-    //    private int ThreadToSocket(int thread_Id) {
-//
-//        return (thread_Id + 2) % CORE_PER_SOCKET;
-//    }
-    private int ThreadToEngine(int thread_Id) {
-        int rt;
-        if (island == -1) {
-            rt = (thread_Id);
-        } else if (island == -2) {
-            rt = thread_Id / CORE_PER_SOCKET;
-        } else
-            throw new UnsupportedOperationException();
-//        if (island != -1)
-//            rt = (thread_Id) / (TOTAL_CORES / island);
-//        else
-//            rt = (thread_Id);
-        // LOG.debug("submit to engine: "+ rt);
-        return rt;
-    }
-
-    private int TaskToEngine(int key) {
-        int rt;
-        if (island == -1) {
-            rt = (key);
-        } else if (island == -2) {
-            rt = key / CORE_PER_SOCKET;
-        } else
-            throw new UnsupportedOperationException();
-//        if (island != -1)
-//            rt = (thread_Id) / (TOTAL_CORES / island);
-//        else
-//            rt = (thread_Id);
-        // LOG.debug("submit to engine: "+ rt);
-        return rt;
     }
 
     public IScheduler getScheduler() {
@@ -387,19 +330,12 @@ public final class TxnProcessingEngine {
     }
 
     public void start_evaluation(int threadId, long mark_ID) throws InterruptedException {
-
-        MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
         OperationChain oc = scheduler.NEXT(threadId);
-        MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
         while (oc != null) {
-            MeasureTools.BEGIN_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
             MyList<Operation> operations = oc.getOperations();
-            process(threadId, operations, mark_ID);//directly apply the computation.
-            MeasureTools.END_ITERATIVE_PROCESSING_USEFUL_TIME_MEASURE(threadId);
-
-            MeasureTools.BEGIN_GET_NEXT_TIME_MEASURE(threadId);
+            process(operations, mark_ID);//directly apply the computation.
             oc = scheduler.NEXT(threadId);
-            MeasureTools.END_GET_NEXT_TIME_MEASURE(threadId);
+
         }
     }
 

@@ -304,14 +304,12 @@ public abstract class TxnManagerDedicated implements TxnManager {
                                     String[] condition_sourceTable, String[] condition_source,
                                     Condition condition,
                                     boolean[] success) throws DatabaseException {
-        MeasureTools.BEGIN_DB_ACCESS_TIME_MEASURE(txn_context.thread_Id);
         MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        MeasureTools.END_DB_ACCESS_TIME_MEASURE(txn_context.thread_Id, txn_context.is_retry_);
         if (s_record != null) {
             return Asy_ModifyRecordCC(txn_context, srcTable, key, s_record, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
         } else {
@@ -321,27 +319,12 @@ public abstract class TxnManagerDedicated implements TxnManager {
         }
     }
 
-//     Decrement Source
-//     transactionManager.Asy_ModifyRecord_Read(
-//     txnContext, "accounts", event.getSourceAccountId(), event.src_account_value,//to be fill up.
-//              new DEC(event.getAccountTransfer()),
-//              rcTable, srcID,//condition source, condition id.
-//              new Condition( event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()), event.success);
-
-//      Increment Destination
-//      transactionManager.Asy_ModifyRecord_Read(
-//              txnContext, "accounts", event.getTargetAccountId(), event.dst_account_value,//to be fill up.
-//              new INC(event.getAccountTransfer()),
-//              srcTable, srcID//condition source, condition id.
-//              , new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer()), event.success);
-
     @Override // TRANSFER_ACT
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                          Function function,
                                          String[] condition_sourceTable, String[] condition_source,
                                          Condition condition, boolean[] success) throws DatabaseException {
 
-        MeasureTools.BEGIN_DB_ACCESS_TIME_MEASURE(txn_context.thread_Id);
         MetaTypes.AccessType accessType = AccessType.READ_WRITE_COND_READ;
         TableRecord[] condition_records = new TableRecord[condition_source.length];
         for (int i = 0; i < condition_source.length; i++) {
@@ -352,7 +335,6 @@ public abstract class TxnManagerDedicated implements TxnManager {
             }
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        MeasureTools.END_DB_ACCESS_TIME_MEASURE(txn_context.thread_Id, txn_context.is_retry_);
         if (s_record != null) {
             return Asy_ModifyRecord_ReadCC(txn_context, srcTable, key, s_record, record_ref, function, condition_sourceTable, condition_source, condition_records, condition, accessType, success);
         } else {
@@ -362,7 +344,7 @@ public abstract class TxnManagerDedicated implements TxnManager {
         }
     }
 
-    public void start_evaluate(int taskId, long mark_ID) throws InterruptedException, BrokenBarrierException {
+    public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
 
