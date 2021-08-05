@@ -1,4 +1,4 @@
-package benchmark.datagenerator.apps.SL;
+package benchmark.datagenerator.apps.SL.OCScheduler;
 
 /**
  * Streamledger related transaction data

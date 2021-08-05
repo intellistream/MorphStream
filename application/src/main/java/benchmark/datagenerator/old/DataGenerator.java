@@ -1,6 +1,5 @@
 package benchmark.datagenerator.old;
 
-import benchmark.datagenerator.apps.SL.SLDataOperationChain;
 import benchmark.datagenerator.old.output.GephiOutputHandler;
 import benchmark.datagenerator.old.output.IOutputHandler;
 import org.slf4j.Logger;

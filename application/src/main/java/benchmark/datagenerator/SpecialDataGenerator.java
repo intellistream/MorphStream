@@ -1,5 +1,6 @@
 package benchmark.datagenerator;
 
+import benchmark.datagenerator.apps.SL.OCScheduler.DataGeneratorConfigForOC;
 import benchmark.datagenerator.apps.SL.output.GephiOutputHandler;
 import benchmark.datagenerator.apps.SL.output.IOutputHandler;
 import org.slf4j.Logger;
@@ -15,17 +16,17 @@ public abstract class SpecialDataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialDataGenerator.class);
 
     protected final int nTuples;
-    protected DataGeneratorConfig dataConfig;
+    protected DataGeneratorConfigForOC dataConfig;
 
     protected IOutputHandler dataOutputHandler; // dump data to the specified path
 
-    public SpecialDataGenerator(DataGeneratorConfig dataConfig) {
+    public SpecialDataGenerator(DataGeneratorConfigForOC dataConfig) {
         this.dataConfig = dataConfig;
         this.nTuples = dataConfig.tuplesPerBatch * dataConfig.totalBatches;
         this.dataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
     }
 
-    public DataGeneratorConfig getDataConfig() {
+    public DataGeneratorConfigForOC getDataConfig() {
         return dataConfig;
     }
 

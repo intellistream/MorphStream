@@ -4,8 +4,8 @@ import benchmark.DataHolder;
 //import benchmark.datagenerator.old.DataGenerator;
 //import benchmark.datagenerator.old.DataGeneratorConfig;
 
-import benchmark.datagenerator.DataGeneratorConfig;
-import benchmark.datagenerator.apps.SL.SLDataGeneratorForOC;
+import benchmark.datagenerator.apps.SL.OCScheduler.DataGeneratorConfigForOC;
+import benchmark.datagenerator.apps.SL.OCScheduler.SLDataGeneratorForOC;
 import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -61,7 +61,7 @@ public class SLInitializer extends TableInitilizer {
 
     protected void createDataGenerator(Configuration config) {
 
-        DataGeneratorConfig dataConfig = new DataGeneratorConfig();
+        DataGeneratorConfigForOC dataConfig = new DataGeneratorConfigForOC();
         dataConfig.initialize(config);
 
         MessageDigest digest;
