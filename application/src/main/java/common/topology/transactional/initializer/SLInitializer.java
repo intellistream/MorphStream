@@ -4,9 +4,8 @@ import benchmark.DataHolder;
 //import benchmark.datagenerator.old.DataGenerator;
 //import benchmark.datagenerator.old.DataGeneratorConfig;
 
-import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
-import benchmark.datagenerator.apps.SL.SLDataGenerator;
+import benchmark.datagenerator.apps.SL.SLDataGeneratorForOC;
 import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -29,7 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 
-import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
+import static common.constants.StreamLedgerConstants.Constant.*;
 import static transaction.State.configure_store;
 
 //import static xerial.jnuma.Numa.setLocalAlloc;
@@ -39,7 +38,7 @@ public class SLInitializer extends TableInitilizer {
     private final int totalRecords;
     private final String idsGenType;
     private String dataRootPath;
-    private SLDataGenerator mDataGenerator;
+    private SLDataGeneratorForOC mDataGenerator;
 
 
     private int startingBalance = 1000000;
@@ -53,7 +52,8 @@ public class SLInitializer extends TableInitilizer {
         configure_store(scale_factor, theta, tthread, NUM_ACCOUNTS);
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         idsGenType = config.getString("idGenType");
-        this.mPartitionOffset = (totalRecords * 5) / tthread;
+//        this.mPartitionOffset = (totalRecords * 5) / tthread;
+        this.mPartitionOffset = config.getInt("NUM_ITEMS") / tthread;
 
         createDataGenerator(config);
 
@@ -81,7 +81,7 @@ public class SLInitializer extends TableInitilizer {
         dataConfig.idsPath += OsUtils.OS_wrapper(subFolder);
         this.dataRootPath += OsUtils.OS_wrapper(subFolder);
 
-        mDataGenerator = new SLDataGenerator(dataConfig);
+        mDataGenerator = new SLDataGeneratorForOC(dataConfig);
     }
 
     @Override
@@ -89,45 +89,71 @@ public class SLInitializer extends TableInitilizer {
         loadDB(thread_id, null, NUM_TASK);
     }
 
+//    @Override
+//    public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
+//
+//        int[] maxId = readRecordMaximumIds(); // read maximum possible number of ids.
+//
+//        // load account records in to the db.
+//        LOG.info("Thread:" + thread_id + " loading account records...");
+//        Random mRandomGeneratorForAccIds = new Random(12345678); // Imp: DataGenerator uses the same seed.
+//        HashMap<Long, Integer> mGeneratedAccountIds = new HashMap<>();
+//        for (int idNum = 0; idNum <= maxId[0]; idNum++) {
+//
+//            long id = getNextId(mRandomGeneratorForAccIds) + (thread_id * mPartitionOffset); // each thread loads data for the corresponding partition.
+//            System.out.println(id);
+////            id *= 10; //scaling the id.
+////            for (int iter = 0; iter < 10; iter++) {   // fill gap between scaled ids.
+////                if (mGeneratedAccountIds.containsKey(id + iter))
+////                    continue;
+////                mGeneratedAccountIds.put(id + iter, null);
+////                insertAccountRecord(String.format("%d", id + iter), startingBalance, thread_id, spinlock);
+////            }
+//
+//            mGeneratedAccountIds.put(id, null);
+//            insertAccountRecord(String.format("%d", id), startingBalance, thread_id, spinlock);
+//        }
+//
+//        // load asset records in to the db.
+//        LOG.info("Thread:" + thread_id + " loading asset records...");
+//        Random mRandomGeneratorForAstIds = new Random(123456789); // Imp: DataGenerator uses the same seed.
+//        HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
+//        for (int idNum = 0; idNum <= maxId[1]; idNum++) {
+//
+//            long id = getNextId(mRandomGeneratorForAstIds) + (thread_id * mPartitionOffset);
+////            id *= 10;
+////            for (int iter = 0; iter < 10; iter++) {
+////                if (mGeneratedAssetIds.containsKey(id + iter))
+////                    continue;
+////                mGeneratedAssetIds.put(id + iter, null);
+////                insertAssetRecord(String.format("%d", id + iter), startingBalance, thread_id, spinlock);
+////            }
+//            mGeneratedAssetIds.put(id, null);
+//            insertAssetRecord(String.format("%d", id), startingBalance, thread_id, spinlock);
+//        }
+//
+//        LOG.info("Thread:" + thread_id + " finished loading records...");
+//        System.gc();
+//    }
+
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
-
-        int[] maxId = readRecordMaximumIds(); // read maximum possible number of ids.
-
-        // load account records in to the db.
-        LOG.info("Thread:" + thread_id + " loading account records...");
-        Random mRandomGeneratorForAccIds = new Random(12345678); // Imp: DataGenerator uses the same seed.
-        HashMap<Long, Integer> mGeneratedAccountIds = new HashMap<>();
-        for (int idNum = 0; idNum <= maxId[0]; idNum++) {
-
-            long id = getNextId(mRandomGeneratorForAccIds) + (thread_id * mPartitionOffset); // each thread loads data for the corresponding partition.
-            id *= 10; //scaling the id.
-            for (int iter = 0; iter < 10; iter++) {   // fill gap between scaled ids.
-                if (mGeneratedAccountIds.containsKey(id + iter))
-                    continue;
-                mGeneratedAccountIds.put(id + iter, null);
-                insertAccountRecord(String.format("%d", id + iter), startingBalance, thread_id, spinlock);
-            }
+        int partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
+        int left_bound = thread_id * partition_interval;
+        int right_bound;
+        if (thread_id == NUM_TASK - 1) {//last executor need to handle left-over
+            right_bound = config.getInt("NUM_ITEMS");
+        } else {
+            right_bound = (thread_id + 1) * partition_interval;
         }
-
-        // load asset records in to the db.
-        LOG.info("Thread:" + thread_id + " loading asset records...");
-        Random mRandomGeneratorForAstIds = new Random(123456789); // Imp: DataGenerator uses the same seed.
-        HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
-        for (int idNum = 0; idNum <= maxId[1]; idNum++) {
-
-            long id = getNextId(mRandomGeneratorForAstIds) + (thread_id * mPartitionOffset);
-            id *= 10;
-            for (int iter = 0; iter < 10; iter++) {
-                if (mGeneratedAssetIds.containsKey(id + iter))
-                    continue;
-                mGeneratedAssetIds.put(id + iter, null);
-                insertAssetRecord(String.format("%d", id + iter), startingBalance, thread_id, spinlock);
-            }
+        for (int key = left_bound; key < right_bound; key++) {
+            int pid = get_pid(partition_interval, key);
+            String _key = GenerateKey(ACCOUNT_ID_PREFIX, key);
+            insertAccountRecord(_key, startingBalance, pid, spinlock);
+            _key = GenerateKey(BOOK_ENTRY_ID_PREFIX, key);
+            insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-
-        LOG.info("Thread:" + thread_id + " finished loading records...");
-        System.gc();
+        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     private int[] readRecordMaximumIds() {
@@ -269,7 +295,8 @@ public class SLInitializer extends TableInitilizer {
 
         if (DataHolder.events == null) {
             int numberOfEvents = tuplesPerBatch * totalBatches;
-            int mPartitionOffset = (10 * numberOfEvents * 5) / tthread;
+//            int mPartitionOffset = (10 * numberOfEvents * 5) / tthread;
+            int mPartitionOffset = config.getInt("NUM_ITEMS") / tthread;
             DataHolder.events = new TransactionEvent[numberOfEvents];
             File file = new File(folder + "transactions.txt");
             if (file.exists()) {

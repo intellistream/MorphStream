@@ -208,23 +208,8 @@ public class TxnManagerTStream extends TxnManagerDedicated {
     }
 
     private OperationChain getCachedOcFor(String tableName, String pKey) {
-
-        OperationChain oc = null;
-        for (int index = 0; index < cacheIndex; index++)
-            if (localCache[index].getTableName().equals(tableName) && localCache[index].getPrimaryKey().equals(pKey)) {
-                oc = localCache[index];
-                break;
-            }
-
-        if (oc == null) {
-            oc = new OperationChain(tableName, pKey);
-            OperationChain retOc = instance.getHolder(tableName).rangeMap.get(getTaskId(pKey)).holder_v1.putIfAbsent(pKey, oc);
-            if (retOc != null) oc = retOc;
-            localCache[cacheIndex] = oc;
-            cacheIndex++;
-        }
-
-        return oc;
+        ConcurrentHashMap<String, OperationChain> holder = instance.getHolder(tableName).rangeMap.get(getTaskId(pKey)).holder_v1;
+        return holder.computeIfAbsent(pKey, s -> new OperationChain(tableName, pKey));
     }
 
     //READ_WRITE_COND // TRANSFER_AST

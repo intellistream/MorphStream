@@ -22,6 +22,8 @@ public class DataGeneratorConfig {
     public String rootPath;
     public String idsPath;
 
+    public int nKeyStates;
+
     public float[] dependenciesDistributionForLevels;
 
     public void initialize(Configuration config) {
@@ -34,6 +36,7 @@ public class DataGeneratorConfig {
         this.fanoutDist = config.getString("fanoutDist");
         this.idGenType = config.getString("idGenType");
         this.rootPath = config.getString("rootFilePath");
+        this.nKeyStates = config.getInt("NUM_ITEMS");
 
         this.idsPath = this.rootPath;
         this.updateDependencyLevels();
