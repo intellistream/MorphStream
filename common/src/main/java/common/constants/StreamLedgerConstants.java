@@ -27,7 +27,7 @@ public interface StreamLedgerConstants extends BaseConstants {
     }
 
     interface Constant {
-        int NUM_ACCOUNTS = 100_000;
+        int NUM_ACCOUNTS = 1_000_000;
         int NUM_BOOK_ENTRIES = 100_000;
         String ACCOUNT_ID_PREFIX = "";//ACCT-
         String BOOK_ENTRY_ID_PREFIX = "";//BOOK-
