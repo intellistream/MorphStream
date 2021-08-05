@@ -1,4 +1,4 @@
-package common;
+package transaction.scheduler.layered.struct;
 
 import common.meta.MetaTypes;
 import storage.SchemaRecordRef;
@@ -35,8 +35,6 @@ public class Operation implements Comparable<Operation> {
     public Condition condition;
     public boolean[] success;
     public String name;
-    private IOpConflictResolutionListener opConflictResolutionListener;
-    private OperationChain oc;
 
     public Operation(String table_name, TxnContext txn_context, long bid, MetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref, Function function) {
         this.table_name = table_name;
@@ -176,41 +174,11 @@ public class Operation implements Comparable<Operation> {
             return Long.compare(this.bid, operation.bid);
     }
 
-    public void set_worker(String name) {
-        assert this.name == null;
-        this.name = name;
+    public void setOc() {
     }
 
-    public void setOc(OperationChain oc) {
-//        this.oc = oc;
-        this.opConflictResolutionListener = oc;
-    }
-
-//    public OperationChain getOc() {
-//        return oc;
-//    }
-
-    public void addDependent(IOpConflictResolutionListener opConflictResolutionListener, Operation dependent) {
+    public void addDependent(Operation dependent) {
         this.dependents.add(dependent);
-        this.opConflictResolutionListener = opConflictResolutionListener; // this should always be the same.
-    }
-
-    private void onDependencyResolved(int threadId, Operation dependencyOp) {
-        opConflictResolutionListener.onDependencyResolved(threadId, this, dependencyOp);
-    }
-
-    public void notifyOpProcessed(int threadId) {
-        while (!dependents.isEmpty()) {
-            Operation op = dependents.poll();
-            op.onDependencyResolved(threadId, this);
-            opConflictResolutionListener.onDependentResolved(op, this);
-        }
-    }
-
-    public interface IOpConflictResolutionListener {
-        void onDependencyResolved(int threadId, Operation dependent, Operation dependency);
-
-        void onDependentResolved(Operation dependent, Operation dependency);
     }
 
 }

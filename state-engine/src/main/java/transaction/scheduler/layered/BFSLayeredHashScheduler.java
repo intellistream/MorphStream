@@ -1,6 +1,6 @@
-package transaction.scheduler.layered.hashed;
+package transaction.scheduler.layered;
 
-import common.OperationChain;
+import transaction.scheduler.layered.struct.OperationChain;
 
 /**
  * breath-first-search based layered hash scheduler.

@@ -1,7 +1,7 @@
 package transaction.dedicated.ordered;
 
-import common.Operation;
-import common.OperationChain;
+import transaction.scheduler.layered.struct.Operation;
+import transaction.scheduler.layered.struct.OperationChain;
 import content.T_StreamContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -201,15 +201,7 @@ public final class TxnProcessingEngine {
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             //Operation.d_record.content_.WriteAccess(Operation.bid, new SchemaRecord(values), wid);//does this even needed?
             operation.success[0] = true;
-            MeasureTools.BEGIN_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
-            operation.notifyOpProcessed(threadId);
-            MeasureTools.END_SUBMIT_EXTRA_PARAM_1_TIME_MEASURE(threadId);
-//            if (operation.table_name.equalsIgnoreCase("accounts") && operation.d_record.record_.GetPrimaryKey().equalsIgnoreCase("11")) {
-//            LOG.info("key: " + operation.d_record.record_.GetPrimaryKey() + " BID: " + operation.bid + " set " + operation.success.hashCode() + " to true." + " sourceAccountBalance:" + sourceAccountBalance);
-//            }
         } else {
-//            if (operation.success[0] == true)
-//                System.nanoTime();
             operation.success[0] = false;
         }
     }

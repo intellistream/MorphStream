@@ -1,6 +1,6 @@
 package transaction.scheduler.layered;
 
-import common.OperationChain;
+import transaction.scheduler.layered.struct.OperationChain;
 import profiler.MeasureTools;
 import transaction.scheduler.Scheduler;
 import utils.SOURCE_CONTROL;

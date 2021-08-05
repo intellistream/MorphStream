@@ -1,5 +1,5 @@
 package transaction.scheduler;
-import common.OperationChain;
+import transaction.scheduler.layered.struct.OperationChain;
 import java.util.Collection;
 
 /**

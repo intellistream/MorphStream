@@ -1,7 +1,7 @@
 package transaction.dedicated.ordered;
 
-import common.Operation;
-import common.OperationChain;
+import transaction.scheduler.layered.struct.Operation;
+import transaction.scheduler.layered.struct.OperationChain;
 import common.meta.MetaTypes;
 import db.DatabaseException;
 import org.slf4j.Logger;

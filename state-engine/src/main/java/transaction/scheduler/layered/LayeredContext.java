@@ -7,9 +7,6 @@ import java.util.function.Supplier;
 public class LayeredContext<V> extends SchedulerContext {
     public int[] currentLevel;
 
-    //if Hashed: threadID, levelID, listOCs.
-    //if RR: levelID, listOCs.
-    //if Shared: levelID, listOCs.
     public ConcurrentHashMap<Integer, V> layeredOCBucketGlobal;
     protected Supplier<V> supplier;
     public int totalThreads;

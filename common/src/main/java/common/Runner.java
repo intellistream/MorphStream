@@ -85,18 +85,7 @@ public abstract class Runner implements IRunner {
     public int runtimeInSeconds = 30;
     @Parameter(names = {"--verbose"}, description = "whether print execution detail")
     public boolean verbose = false;
-    /**
-     * @author: Aqif
-     * Input Dependency Benchmark. Bundled with StreamingLedger Application.
-     * Scheduler Types:
-     * BL (Barrier-based Hashed Scheduler),
-     * RR (Barrier-based Round Robin Scheduler),
-     * SW (Barrier-based Shared Workload Scheduler),
-     * NB_BL (Greedy Hashed Scheduler),
-     * NB_RR (Greedy Round Robin Scheduler),
-     * NB_SW (Greedy Sahred Workload Scheduler),
-     * G_S (Greedy-smart Scheduler),
-     */
+
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
     public int totalEventsPerBatch = 100000;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
@@ -106,7 +95,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "G_S";
+    public String scheduler = "BFS";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")

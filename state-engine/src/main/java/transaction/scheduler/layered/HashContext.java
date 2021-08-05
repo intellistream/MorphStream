@@ -1,6 +1,4 @@
-package transaction.scheduler.layered.hashed;
-
-import transaction.scheduler.layered.LayeredContext;
+package transaction.scheduler.layered;
 
 import java.util.function.Supplier;
 /**

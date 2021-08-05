@@ -1,9 +1,8 @@
-package transaction.scheduler.layered.hashed;
+package transaction.scheduler.layered;
 
-import common.OperationChain;
+import transaction.scheduler.layered.struct.OperationChain;
 import profiler.MeasureTools;
 import transaction.scheduler.IScheduler;
-import transaction.scheduler.layered.LayeredScheduler;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayDeque;
