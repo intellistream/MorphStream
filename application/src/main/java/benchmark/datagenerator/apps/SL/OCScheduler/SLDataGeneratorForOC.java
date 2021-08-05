@@ -1,7 +1,6 @@
-package benchmark.datagenerator.apps.SL;
+package benchmark.datagenerator.apps.SL.OCScheduler;
 
 import benchmark.datagenerator.SpecialDataGenerator;
-import benchmark.datagenerator.DataGeneratorConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +39,7 @@ public class SLDataGeneratorForOC extends SpecialDataGenerator {
     SLDataOperationChain dstAccOC = null;
     SLDataOperationChain dstAstOC = null;
 
-    public SLDataGeneratorForOC(DataGeneratorConfig dataConfig) {
+    public SLDataGeneratorForOC(DataGeneratorConfigForOC dataConfig) {
         super(dataConfig);
         this.dataTransactions = new ArrayList<>(nTuples);
         this.accountOperationChainsByLevel = new HashMap<>();

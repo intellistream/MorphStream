@@ -1,8 +1,8 @@
 package benchmark.datagenerator.apps.SL.output;
 
 
-import benchmark.datagenerator.apps.SL.SLDataOperationChain;
-import benchmark.datagenerator.apps.SL.SLDataTransaction;
+import benchmark.datagenerator.apps.SL.OCScheduler.SLDataOperationChain;
+import benchmark.datagenerator.apps.SL.OCScheduler.SLDataTransaction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
