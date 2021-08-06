@@ -73,7 +73,7 @@ public class ExecutionManager {
 //            TxnProcessingEngine tp_engine = new TxnProcessingEngine(stage);
             tp_engine = TxnProcessingEngine.getInstance();
             if (integers != null) {
-                int numberOfStates = 10 * conf.getInt("totalEventsPerBatch") * conf.getInt("numberOfBatches") * 5;//TODO:???
+                int numberOfStates = conf.getInt("NUM_ITEMS");
                 tp_engine.engine_init(conf.getInt("tthread"), numberOfStates, conf.getString("scheduler", "BL"));
             }
         }
