@@ -267,7 +267,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     }
     @Override
     public void RESET() {
-
+        SOURCE_CONTROL.getInstance().oneThreadCompleted();
     }
 
     //TODO: key divide by key range to determine responsible thread.

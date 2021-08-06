@@ -64,8 +64,7 @@ public final class TxnProcessingEngine {
             scheduler.PROCESS(threadId, mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         } while (!scheduler.FINISHED(threadId));
-        SOURCE_CONTROL.getInstance().oneThreadCompleted();
-        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
         scheduler.RESET();//
+        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 }
