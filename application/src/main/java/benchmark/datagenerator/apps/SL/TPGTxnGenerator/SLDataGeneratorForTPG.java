@@ -38,7 +38,6 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
     private final int Transaction_Length; // transaction length, 4 or 8 or longer
     private final int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
 
-    protected final int nTotalTransactionsToGenerate;
     private ArrayList<SLTransaction> dataTransactions;
 
     // control the number of txns overlap with each other.
@@ -67,29 +66,28 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
 
 
         int nKeyState = dataConfig.getnKeyStates();
-        nTotalTransactionsToGenerate = nTuples;
-        dataTransactions = new ArrayList<>(nTotalTransactionsToGenerate);
+        dataTransactions = new ArrayList<>(nTuples);
         // zipf state access generator
         accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness/100, 0);
         assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness/100, 0);
     }
 
-    @Override
-    public void generateStream() {
-        // if file is already exist, skip generation
-        if (isFileExist())
-            return;
-
-        for (int tupleNumber = 0; tupleNumber < nTotalTransactionsToGenerate; tupleNumber++) {
-            // by far only generate 1/10 tuples and replicate 10 times when dumping outside
-            generateTuple();
-        }
-
-        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
-        dumpGeneratedDataToFile();
-        LOG.info("Data Generation is done...");
-        clearDataStructures();
-    }
+//    @Override
+//    public void generateStream() {
+//        // if file is already exist, skip generation
+//        if (isFileExist())
+//            return;
+//
+//        for (int tupleNumber = 0; tupleNumber < nTuples; tupleNumber++) {
+//            // by far only generate 1/10 tuples and replicate 10 times when dumping outside
+//            generateTuple();
+//        }
+//
+//        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
+//        dumpGeneratedDataToFile();
+//        LOG.info("Data Generation is done...");
+//        clearDataStructures();
+//    }
 
     protected void generateTuple() {
 //         select keys in zipf distribution
@@ -177,7 +175,6 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
 
 
     protected void dumpGeneratedDataToFile() {
-//        System.out.println("++++++" + nGeneratedAccountIds);
         System.out.println("++++++" + nGeneratedAccountIds.size());
         System.out.println("++++++" + nGeneratedAssetIds.size());
 
@@ -202,8 +199,6 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
 
         LOG.info("Dumping transactions...");
         dataOutputHandler.sinkTransactions(dataTransactions);
-        LOG.info("Dumping Dependency Vertices ids range...");
-        dataOutputHandler.sinkDependenciesVerticesIdsRange(nGeneratedAssetIds.size(), nGeneratedAccountIds.size());
     }
 
     @Override
