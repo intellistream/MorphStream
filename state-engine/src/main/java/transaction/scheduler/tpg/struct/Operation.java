@@ -41,10 +41,8 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
     public volatile TableRecord s_record;//only if it is different from d_record.
     public volatile TableRecord[] condition_records;
     public Condition condition;
-    public boolean[] success;
+    public int[] success;
     public String name;
-
-    private TaskPrecedenceGraph.ShortCutListener shortCutListener;
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef recordRef) {
         super();
@@ -62,7 +60,7 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
     /****************************Defined by MYC*************************************/
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
-                     SchemaRecordRef record_ref, Function function, Condition condition, boolean[] success) {
+                     SchemaRecordRef record_ref, Function function, Condition condition, int[] success) {
         super();
         this.table_name = table_name;
         this.d_record = record;
@@ -77,7 +75,7 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
     }
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
-                     Function function, Condition condition, boolean[] success) {
+                     Function function, Condition condition, int[] success) {
         super();
         this.table_name = table_name;
         this.d_record = record;
@@ -134,7 +132,6 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
 
 
     public void setExecutableOperationListener(TaskPrecedenceGraph.ShortCutListener shortCutListener) {
-        this.shortCutListener = shortCutListener;
     }
 
     @Override

@@ -18,6 +18,7 @@ import storage.datatype.LongDataBox;
 import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
+import transaction.scheduler.tpg.struct.Controller;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -103,7 +104,10 @@ public class SLInitializer extends TableInitilizer {
                 if (mGeneratedAccountIds.containsKey(id + iter))
                     continue;
                 mGeneratedAccountIds.put(id + iter, null);
-                insertAccountRecord(String.format("%d", id + iter), startingBalance, thread_id, spinlock);
+                String _key = String.format("%d", id + iter);
+                insertAccountRecord(_key, startingBalance, thread_id, spinlock);
+                Controller.UpdateMapping(thread_id, "accounts" + "|" + _key);
+
             }
         }
 
@@ -119,7 +123,9 @@ public class SLInitializer extends TableInitilizer {
                 if (mGeneratedAssetIds.containsKey(id + iter))
                     continue;
                 mGeneratedAssetIds.put(id + iter, null);
-                insertAssetRecord(String.format("%d", id + iter), startingBalance, thread_id, spinlock);
+                String _key = String.format("%d", id + iter);
+                insertAssetRecord(_key, startingBalance, thread_id, spinlock);
+                Controller.UpdateMapping(thread_id, "bookEntries" + "|" + _key);
             }
         }
 

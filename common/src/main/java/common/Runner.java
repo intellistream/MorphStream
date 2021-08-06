@@ -91,11 +91,12 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
     public int numberOfBatches = 1;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
-    public Integer numberOfDLevels = 4;
+    public Integer numberOfDLevels = 10;
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BFS";
+//    public String scheduler = "BFS";
+    public String scheduler = "TPG";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")

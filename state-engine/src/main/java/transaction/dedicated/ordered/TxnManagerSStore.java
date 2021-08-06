@@ -11,7 +11,7 @@ import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
 import storage.TableRecord;
-import transaction.dedicated.TxnManagerDedicated;
+import transaction.dedicated.TxnManagerDedicatedLocked;
 import transaction.impl.TxnContext;
 
 import java.util.LinkedList;
@@ -25,7 +25,7 @@ import static utils.PartitionHelper.key_to_partition;
 /**
  * mimic of S-Store
  */
-public class TxnManagerSStore extends TxnManagerDedicated {
+public class TxnManagerSStore extends TxnManagerDedicatedLocked {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerSStore.class);
     public final PartitionedOrderLock orderLock;
     public final OrderLock shared_orderLock;

@@ -10,7 +10,7 @@ import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
 import storage.TableRecord;
-import transaction.dedicated.TxnManagerDedicated;
+import transaction.dedicated.TxnManagerDedicatedLocked;
 import transaction.impl.TxnContext;
 
 import java.util.LinkedList;
@@ -20,9 +20,9 @@ import static common.meta.CommonMetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
 
 /**
- * mimic of ACEP's S2PL method. It is essentially a blocking-based order locking.
+ * conventional two-phase locking with no-sync_ratio strategy from Cavalia.
  */
-public class TxnManagerOrderLockBlocking extends TxnManagerDedicated {
+public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerOrderLockBlocking.class);
     public final OrderLock orderLock;
 

@@ -1,15 +1,17 @@
 package transaction.scheduler.layered;
 
 import content.T_StreamContent;
+import index.high_scale_lib.ConcurrentHashMap;
 import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import storage.datatype.DoubleDataBox;
 import storage.datatype.IntDataBox;
 import storage.datatype.ListDoubleDataBox;
-import transaction.TxnProcessingEngine;
+import transaction.Holder_in_range;
 import transaction.dedicated.ordered.MyList;
 import transaction.function.*;
+import transaction.scheduler.Request;
 import transaction.scheduler.Scheduler;
 import transaction.scheduler.layered.struct.Operation;
 import transaction.scheduler.layered.struct.OperationChain;
@@ -24,13 +26,18 @@ import static common.meta.CommonMetaTypes.AccessType.*;
  */
 @lombok.extern.slf4j.Slf4j
 public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
-    public LayeredContext<HashMap<Integer, ArrayDeque<OperationChain>>> context;
-    HashMap<Integer, OperationChain> ready_oc = new HashMap<>();
-    public BFSLayeredHashScheduler(int tp) {
+    private int cacheIndex = 0;
+    protected int delta;//range of each partition. depends on the number of op in the stage.
+
+    public LayeredContext<HashMap<Integer, ArrayDeque<OperationChain>>> context;//<LevelID, ArrayDeque>
+    Map<Integer, OperationChain> ready_oc = new ConcurrentHashMap<>();
+
+    public BFSLayeredHashScheduler(int tp, int NUM_ITEMS) {
         context = new LayeredContext<>(tp, HashMap::new);
         for (int threadId = 0; threadId < tp; threadId++) {
             context.layeredOCBucketGlobal.put(threadId, context.createContents());
         }
+        delta = (int) Math.ceil(NUM_ITEMS / (double) tp); // Check id generation in DateGenerator.
     }
 
     /**
@@ -70,8 +77,8 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
 
     @Override
     public void INITIALIZE(int threadId) {
-        Collection<TxnProcessingEngine.Holder_in_range> tablesHolderInRange = TxnProcessingEngine.getInstance().getHolder().values();
-        for (TxnProcessingEngine.Holder_in_range tableHolderInRange : tablesHolderInRange) {//for each table.
+        Collection<Holder_in_range> tablesHolderInRange = context.getHolder().values();
+        for (Holder_in_range tableHolderInRange : tablesHolderInRange) {//for each table.
             submit(threadId, tableHolderInRange.rangeMap.get(threadId).holder_v1.values());
         }
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
@@ -224,6 +231,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             process(threadId, next.getOperations(), mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            context.scheduledOcsCount[threadId] += 1;
             log.debug("finished process: " + next.toString());
         } while (true);
     }
@@ -273,13 +281,61 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     public void EXPLORE(int threadId) {
         OperationChain oc = BFSearch(threadId);
         checkFinished(threadId);
-        if (oc != null)
-            context.scheduledOcsCount[threadId] += 1;
         DISTRIBUTE(oc, threadId);
     }
     @Override
     public void RESET() {
 
+    }
+
+    //TODO: key divide by key range to determine responsible thread.
+    private int getTaskId(String key) {
+        Integer _key = Integer.valueOf(key);
+        return _key / delta;
+    }
+
+    private OperationChain getOC(String tableName, String pKey) {
+
+        ConcurrentHashMap<String, OperationChain> holder = context.getHolder(tableName).rangeMap.get(getTaskId(pKey)).holder_v1;
+        return holder.computeIfAbsent(pKey, s -> new OperationChain(tableName, pKey));
+    }
+
+    private void checkDataDependencies(OperationChain dependent, Operation op, int thread_Id, String table_name,
+                                       String key, String[] condition_sourceTable, String[] condition_source) {
+        for (int index = 0; index < condition_source.length; index++) {
+            if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
+                continue;// no need to check data dependency on a key itself.
+            OperationChain dependency = getOC(condition_sourceTable[index], condition_source[index]);
+            // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
+            if (dependency.getOperations().isEmpty() || dependency.getOperations().first().bid >= op.bid) {
+                dependency.addPotentialDependent(dependent, op);
+            } else {
+                // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
+                dependent.addDependency(op, dependency); // record dependency
+            }
+        }
+        dependent.checkOtherPotentialDependencies(op);
+        cacheIndex = cacheIndex % 4;
+    }
+
+    @Override
+    public boolean SubmitRequest(Request request) {
+        long bid = request.txn_context.getBID();
+        OperationChain oc = getOC(request.table_name, request.d_record.record_.GetPrimaryKey());
+        Operation operation = new Operation(request.table_name, request.s_record, request.d_record, request.record_ref, bid, request.accessType,
+                request.function, request.condition_records, request.condition, request.txn_context, request.success);
+        oc.addOperation(operation);
+        checkDataDependencies(oc, operation, request.txn_context.thread_Id, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        return true;
+    }
+    @Override
+    public void TxnSubmitBegin(int thread_Id) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void TxnSubmitFinished(int thread_Id) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -293,10 +349,9 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
      * @return
      */
     protected OperationChain Retrieve(int threadId) {
-        ArrayDeque<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(context.currentLevel[threadId]);
-        if (ocs == null) {
-            System.nanoTime();
-        }
+        HashMap<Integer, ArrayDeque<OperationChain>> map = context.layeredOCBucketGlobal.get(threadId);
+        ArrayDeque<OperationChain> ocs = map.get(context.currentLevel[threadId]);
+
         if (ocs.size() > 0)
             return ocs.removeLast();
         else return null;

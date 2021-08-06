@@ -113,8 +113,6 @@ public class SLBolt_ts extends SLBolt {
     }
 
     protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
-//        System.out.println(event.toString());
-//        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txnContext.thread_Id);
 
         String[] srcTable = new String[]{"accounts", "bookEntries"};
         String[] srcID = new String[]{event.getSourceAccountId(), event.getSourceBookEntryId()};
@@ -128,8 +126,7 @@ public class SLBolt_ts extends SLBolt {
         INC increment2 = new INC(event.getBookEntryTransfer());
         Condition condition4 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
 
-//        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txnContext.thread_Id, false);
-
+        transactionManager.BeginTransaction(txnContext);
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "accounts",
                 event.getSourceAccountId(), event.src_account_value,//to be fill up.
@@ -160,8 +157,10 @@ public class SLBolt_ts extends SLBolt {
                 srcTable, srcID,
                 condition4,
                 event.success);   //asynchronously return.
-        transactionEvents.add(event);
 
+        transactionManager.CommitTransaction(txnContext);
+
+        transactionEvents.add(event);
     }
 
     protected void DEPOSITE_REQUEST_CONSTRUCT(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
@@ -190,10 +189,10 @@ public class SLBolt_ts extends SLBolt {
             SchemaRecord dstAccountValueRecord = event.dst_account_value.getRecord();
 
             if (srcAccountValueRecord == null) {
-                LOG.info(event.getSourceAccountId());
+                LOG.error(event.getSourceAccountId());
             }
             if (dstAccountValueRecord == null) {
-                LOG.info(event.getTargetAccountId());
+                LOG.error(event.getTargetAccountId());
             }
 
             if (srcAccountValueRecord != null && dstAccountValueRecord != null)
