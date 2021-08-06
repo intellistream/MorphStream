@@ -3,11 +3,13 @@ package transaction.scheduler.layered;
 import index.high_scale_lib.ConcurrentHashMap;
 import transaction.Holder_in_range;
 import transaction.scheduler.SchedulerContext;
+import transaction.scheduler.layered.struct.OperationChain;
 
+import java.util.Map;
 import java.util.function.Supplier;
 public class LayeredContext<V> extends SchedulerContext {
     private ConcurrentHashMap<String, Holder_in_range> holder_by_stage;//multi table support.
-
+    Map<Integer, OperationChain> ready_oc = new ConcurrentHashMap<>();
     public int[] currentLevel;
     protected int[] scheduledOcsCount;//current number of operation chains processed per thread.
     protected int[] totalOcsToSchedule;//total number of operation chains to process per thread.

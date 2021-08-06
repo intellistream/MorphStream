@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.scheduler.IScheduler;
 import transaction.scheduler.SchedulerFactory;
+import utils.SOURCE_CONTROL;
 
 /**
  * There is one TxnProcessingEngine of each stage.
@@ -63,7 +64,7 @@ public final class TxnProcessingEngine {
             scheduler.PROCESS(threadId, mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         } while (!scheduler.FINISHED(threadId));
-
+        SOURCE_CONTROL.getInstance().oneThreadCompleted();
         MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
         scheduler.RESET();//
     }

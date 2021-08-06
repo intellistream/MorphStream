@@ -2,14 +2,13 @@ package utils;
 
 import common.SpinLock;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SOURCE_CONTROL {
     private static final SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
-    //    static ReentrantLock counterLock = new ReentrantLock(true); // enable fairness policy
     static SpinLock counterLock = new SpinLock();
     private final long counter = 0;
     private final AtomicInteger wm = new AtomicInteger(0);// it is already volatiled.
@@ -19,12 +18,7 @@ public class SOURCE_CONTROL {
     private CyclicBarrier endBarrier;
     private CyclicBarrier finalEndBarrier;
 
-    private HashMap<Integer, CyclicBarrier> dLevelBarriers;
-    private CyclicBarrier dLevelEndBarrier;
-    private int completedThreadsCount;
-    private int dependencyLevelToProcess = -1;
-
-    //    private long _combo_bid_size;
+    private Phaser dLevelEndBarrier;
     private HashMap<Integer, Integer> iteration;
 
     public static SOURCE_CONTROL getInstance() {
@@ -36,17 +30,11 @@ public class SOURCE_CONTROL {
         startBarrier = new CyclicBarrier(number_threads);
         endBarrier = new CyclicBarrier(number_threads);
         finalEndBarrier = new CyclicBarrier(number_threads);
-
-        dLevelBarriers = new HashMap<>();
-        for (int threadCount = 1; threadCount <= totalThreads; threadCount++) {
-            dLevelBarriers.put(threadCount, new CyclicBarrier(threadCount));
-        }
-
+        dLevelEndBarrier = new Phaser(number_threads);
         iteration = new HashMap<>();
         for (int i = 0; i < number_threads; i++) {
             iteration.put(i, 0);
         }
-//        this._combo_bid_size = _combo_bid_size;
     }
 
     //return counter.
@@ -56,11 +44,6 @@ public class SOURCE_CONTROL {
 
     public void preStateAccessBarrier(int threadId) {
         try {
-            if (threadId == 0) {
-                completedThreadsCount = 0;
-                dependencyLevelToProcess = -1;
-                updateThreadBarrierOnDLevel(0);
-            }
             startBarrier.await();
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,21 +68,14 @@ public class SOURCE_CONTROL {
 
     public void waitForOtherThreads() {
         try {
-            dLevelEndBarrier.await();
+            dLevelEndBarrier.arriveAndAwaitAdvance();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    public synchronized void oneThreadCompleted() {
-        completedThreadsCount++;
-    }
-
-    public synchronized void updateThreadBarrierOnDLevel(int dLevelToProcess) {
-        if (completedThreadsCount == totalThreads || dependencyLevelToProcess == dLevelToProcess)
-            return;
-        dependencyLevelToProcess = dLevelToProcess;
-        dLevelEndBarrier = dLevelBarriers.get(totalThreads - completedThreadsCount);
+    public void oneThreadCompleted() {
+        dLevelEndBarrier.arriveAndDeregister();
     }
 
 }

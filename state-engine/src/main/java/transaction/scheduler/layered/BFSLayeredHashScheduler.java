@@ -30,7 +30,6 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     protected int delta;//range of each partition. depends on the number of op in the stage.
 
     public LayeredContext<HashMap<Integer, ArrayDeque<OperationChain>>> context;//<LevelID, ArrayDeque>
-    Map<Integer, OperationChain> ready_oc = new ConcurrentHashMap<>();
 
     public BFSLayeredHashScheduler(int tp, int NUM_ITEMS) {
         context = new LayeredContext<>(tp, HashMap::new);
@@ -224,11 +223,13 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
         OperationChain next = next(threadId);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-        if (next == null) return;
-        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-        execute(threadId, next.getOperations(), mark_ID);
-        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-        log.debug("finished process: " + next.toString());
+
+        if (next != null) {
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            execute(threadId, next.getOperations(), mark_ID);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            log.debug("finished process: " + next.toString());
+        }
     }
 
     /**
@@ -239,33 +240,30 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
      */
     protected OperationChain BFSearch(int threadId) {
         ArrayDeque<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(context.currentLevel[threadId]);
+        OperationChain oc = null;
         if (ocs != null && ocs.size() > 0)
-            return ocs.removeLast();
-        else return null;
+            oc = ocs.removeLast();
+        return oc;
     }
 
     private OperationChain next(int threadId) {
-        return ready_oc.remove(threadId);// if a null is returned, it means, we are done with this level!
+        return context.ready_oc.remove(threadId);// if a null is returned, it means, we are done with this level!
     }
 
     @Override
     public void EXPLORE(int threadId) {
-        OperationChain oc = BFSearch(threadId);
-        if (oc != null) {
+        OperationChain next = BFSearch(threadId);
+        if (next != null) {
             context.scheduledOcsCount[threadId] += 1;
         } else if (!context.finished(threadId)) {
-            while (oc == null) {
+            while (next == null) {
                 context.currentLevel[threadId] += 1;
-                oc = BFSearch(threadId);
+                next = BFSearch(threadId);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(context.currentLevel[threadId]);
             }
             context.scheduledOcsCount[threadId] += 1;
-        } else {
-            SOURCE_CONTROL.getInstance().oneThreadCompleted();
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
         }
-        DISTRIBUTE(oc, threadId);
+        DISTRIBUTE(next, threadId);
     }
     @Override
     public void RESET() {
@@ -327,6 +325,6 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
 
     @Override
     protected void DISTRIBUTE(OperationChain task, int threadId) {
-        ready_oc.put(threadId, task);
+        context.ready_oc.put(threadId, task);
     }
 }
