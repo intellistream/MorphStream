@@ -1,5 +1,6 @@
 package benchmark.datagenerator;
 
+import benchmark.datagenerator.apps.SL.OCScheduler.DataGeneratorConfigForOC;
 import benchmark.datagenerator.apps.SL.output.GephiOutputHandler;
 import benchmark.datagenerator.apps.SL.output.IOutputHandler;
 import org.slf4j.Logger;
@@ -10,22 +11,22 @@ import java.io.File;
 /**
  * Data generator for benchmarks, this class contains all common methods and attributes that can be used in each application
  */
-public abstract class DataGenerator {
+public abstract class SpecialDataGenerator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DataGenerator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SpecialDataGenerator.class);
 
-    protected final int mTotalTuplesToGenerate;
-    protected DataGeneratorConfig dataConfig;
+    protected final int nTuples;
+    protected DataGeneratorConfigForOC dataConfig;
 
-    protected IOutputHandler mDataOutputHandler; // dump data to the specified path
+    protected IOutputHandler dataOutputHandler; // dump data to the specified path
 
-    public DataGenerator(DataGeneratorConfig dataConfig) {
+    public SpecialDataGenerator(DataGeneratorConfigForOC dataConfig) {
         this.dataConfig = dataConfig;
-        this.mTotalTuplesToGenerate = dataConfig.tuplesPerBatch * dataConfig.totalBatches;
-        this.mDataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
+        this.nTuples = dataConfig.tuplesPerBatch * dataConfig.totalBatches;
+        this.dataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
     }
 
-    public DataGeneratorConfig getDataConfig() {
+    public DataGeneratorConfigForOC getDataConfig() {
         return dataConfig;
     }
 
@@ -33,8 +34,7 @@ public abstract class DataGenerator {
         // if file is already exist, skip generation
         if (isFileExist()) return;
 
-        for (int tupleNumber = 0; tupleNumber < mTotalTuplesToGenerate / 10; tupleNumber++) {
-            // by far only generate 1/10 tuples and replicate 10 times when dumping outside
+        for (int tupleNumber = 0; tupleNumber < nTuples; tupleNumber++) {
             generateTuple();
         }
 

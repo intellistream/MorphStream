@@ -1,6 +1,7 @@
 package transaction.scheduler.layered;
 
 import content.T_StreamContent;
+import index.high_scale_lib.ConcurrentHashMap;
 import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
@@ -25,7 +26,7 @@ import static common.meta.CommonMetaTypes.AccessType.*;
 @lombok.extern.slf4j.Slf4j
 public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     public LayeredContext<HashMap<Integer, ArrayDeque<OperationChain>>> context;
-    HashMap<Integer, OperationChain> ready_oc = new HashMap<>();
+    ConcurrentHashMap<Integer, OperationChain> ready_oc = new ConcurrentHashMap<>();
     public BFSLayeredHashScheduler(int tp) {
         context = new LayeredContext<>(tp, HashMap::new);
         for (int threadId = 0; threadId < tp; threadId++) {
@@ -246,7 +247,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
                         break;
                     context.currentLevel[threadId] += 1;//current level is done, process the next level.
                     oc = Retrieve(threadId);
-                    SOURCE_CONTROL.getInstance().waitForOtherThreads();
+//                    SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 }
             }
         }
@@ -294,12 +295,14 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
      */
     protected OperationChain Retrieve(int threadId) {
         ArrayDeque<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(context.currentLevel[threadId]);
+
         if (ocs == null) {
-            System.nanoTime();
+            return null;
+        } else {
+            if (ocs.size() > 0)
+                return ocs.removeLast();
+            else return null;
         }
-        if (ocs.size() > 0)
-            return ocs.removeLast();
-        else return null;
     }
 
     @Override
