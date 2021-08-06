@@ -54,10 +54,6 @@ public class SOURCE_CONTROL {
         return counter;
     }
 
-    private int min_iteration() {
-        return Collections.min(iteration.values());
-    }
-
     public void preStateAccessBarrier(int threadId) {
         try {
             if (threadId == 0) {

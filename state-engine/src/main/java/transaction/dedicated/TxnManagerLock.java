@@ -22,7 +22,7 @@ import static transaction.impl.TxnAccess.Access;
 /**
  * conventional two-phase locking with no-sync_ratio strategy from Cavalia.
  */
-public class TxnManagerLock extends TxnManagerDedicated {
+public class TxnManagerLock extends TxnManagerDedicatedLocked {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerLock.class);
 
     public TxnManagerLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {

@@ -1,22 +1,23 @@
 package transaction.scheduler.tpg;
 
+import common.meta.CommonMetaTypes;
 import content.T_StreamContent;
 import index.high_scale_lib.ConcurrentHashMap;
 import profiler.MeasureTools;
 import storage.SchemaRecord;
-import transaction.TxnProcessingEngine;
+import storage.SchemaRecordRef;
+import storage.TableRecord;
 import transaction.function.DEC;
 import transaction.function.INC;
+import transaction.impl.TxnContext;
+import transaction.scheduler.Request;
 import transaction.scheduler.Scheduler;
 import transaction.scheduler.tpg.struct.Controller;
 import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
 import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static common.meta.CommonMetaTypes.AccessType.GET;
@@ -27,19 +28,21 @@ import static common.meta.CommonMetaTypes.AccessType.SET;
  * 1. explore dependencies in TPG, and find out the ready/speculative operations
  * 2. map operations to threads and put them into the queue of threads.
  * 3. thread will find operations from its queue for execution.
+ * It's a shared data structure!
  */
 @lombok.extern.slf4j.Slf4j
 public class TPGScheduler extends Scheduler<Operation> {
     private final int totalThreads;
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
     private final ConcurrentHashMap<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
-
+    private final ConcurrentHashMap<Integer, ArrayDeque<Request>> requests = new ConcurrentHashMap<>();
     public TPGScheduler(int tp) {
         totalThreads = tp;
         this.tpg = new TaskPrecedenceGraph(totalThreads);
         taskQueues = new ConcurrentHashMap<>();
         for (int i = 0; i < totalThreads; i++) {
             taskQueues.put(i, new ConcurrentLinkedDeque<>());
+            requests.put(i, new ArrayDeque<>());
         }
     }
 
@@ -70,12 +73,78 @@ public class TPGScheduler extends Scheduler<Operation> {
     public void RESET() {
         Controller.exec.shutdownNow();
     }
+    @Override
+    public boolean SubmitRequest(Request request) {
+        requests.get(request.txn_context.thread_Id).push(request);
+        return false;
+    }
+
+    @Override
+    public void TxnSubmitBegin(int thread_Id) {
+        requests.get(thread_Id).clear();
+    }
+    private Operation[] constructGetOperation(TxnContext txn_context, String[] condition_sourceTable,
+                                              String[] condition_source, TableRecord[] condition_records, long bid) {
+        // read the s_record
+        Operation[] get_ops = new Operation[condition_source.length];
+        for (int index = 0; index < condition_source.length; index++) {
+            TableRecord s_record = condition_records[index];
+            String s_table_name = condition_sourceTable[index];
+            SchemaRecordRef tmp_src_value = new SchemaRecordRef();
+            get_ops[index] = new Operation(s_table_name, txn_context, bid, CommonMetaTypes.AccessType.GET, s_record, tmp_src_value);
+        }
+        return get_ops;
+    }
+
+    @Override
+    public void TxnSubmitFinished(int thread_Id) {
+        // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
+        List<Operation> operationGraph = new ArrayList<>();
+        for (Request request : requests.get(thread_Id)) {
+            long bid = request.txn_context.getBID();
+            if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND)) {
+                // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
+                // 1. construct operations
+                // read source record that to help the update on destination record
+                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
+//                common.tpg.Operation set_op = new common.tpg.Operation(targetTables[i], txn_context, bid, MetaTypes.AccessType.SET, d_records[i], functions[i]);
+                Operation set_op = new Operation(request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.function, request.condition, request.success);
+                // write the destination record, the write operation depends on the record returned by get_op
+
+                // 2. add data dependencies, parent op will notify children op after it was executed
+                for (Operation get_op : get_ops) {
+                    get_op.addChild(set_op, MetaTypes.DependencyType.FD);
+                    set_op.addParent(get_op, MetaTypes.DependencyType.FD);
+                    operationGraph.add(get_op);
+                }
+                operationGraph.add(set_op);
+            } else if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND_READ)) {
+                // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
+                // 1. construct operations
+                // read the s_record
+                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
+                Operation set_op = new Operation(request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.record_ref, request.function, request.condition, request.success);
+
+                // 2. add data dependencies, parent op will notify children op after it was executed
+                for (Operation get_op : get_ops) {
+                    get_op.addChild(set_op, MetaTypes.DependencyType.FD);
+                    set_op.addParent(get_op, MetaTypes.DependencyType.FD);
+                    operationGraph.add(get_op);
+                }
+                operationGraph.add(set_op);
+            }
+        }
+
+        // 4. send operation graph to tpg for tpg construction
+        tpg.addTxn(operationGraph);//TODO: this is bad refactor.
+
+    }
 
     // DD: Transfer event processing
-    private void CT_Transfer_Fun(int threadId, transaction.scheduler.tpg.struct.Operation operation, long previous_mark_ID, boolean clean) {
+    private void CT_Transfer_Fun(int threadId, Operation operation, long previous_mark_ID, boolean clean) {
         Queue<Operation> fd_parents = operation.getParents(MetaTypes.DependencyType.FD);
         List<SchemaRecord> preValues = new ArrayList<>();
-        for (transaction.scheduler.tpg.struct.Operation parent : fd_parents) {
+        for (Operation parent : fd_parents) {
             preValues.add(parent.record_ref.getRecord());
         }
 
@@ -110,14 +179,15 @@ public class TPGScheduler extends Scheduler<Operation> {
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            operation.success[0] = true;
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
         } else {
             log.info("++++++ operation failed: "
                     + sourceAccountBalance + "-" + operation.condition.arg1
                     + " : " + sourceAccountBalance + "-" + operation.condition.arg2
                     + " : " + sourceAssetValue + "-" + operation.condition.arg3
                     + " condition: " + operation.condition);
-            operation.success[0] = false;
         }
     }
 
@@ -129,8 +199,7 @@ public class TPGScheduler extends Scheduler<Operation> {
      * @param mark_ID
      * @param clean
      */
-    public void process(int threadId, transaction.scheduler.tpg.struct.Operation operation, long mark_ID, boolean clean)
-    {
+    public void process(int threadId, Operation operation, long mark_ID, boolean clean) {
         log.trace("++++++execute: " + operation);
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.READY) || operation.getOperationState().equals(MetaTypes.OperationStateType.SPECULATIVE)) {
             // the operation will only be executed when the state is in READY/SPECULATIVE,
@@ -145,9 +214,10 @@ public class TPGScheduler extends Scheduler<Operation> {
                 }
             } else if (operation.accessType.equals(SET)) {
                 log.debug("++++++execute: " + operation);
+                int success = operation.success[0];
                 CT_Transfer_Fun(threadId, operation, mark_ID, clean);
                 // operation success check
-                if (!operation.success[0]) {
+                if (operation.success[0] == success) {
                     isFailed = true;
                 } else {
                     if (operation.record_ref != null) {
@@ -162,7 +232,7 @@ public class TPGScheduler extends Scheduler<Operation> {
             Controller.stateManagers.get(threadId).onProcessed(operation, isFailed);
         }//otherwise, skip (those already been tagged as aborted).
     }
-    
+
     @Override
     public void PROCESS(int threadId, long mark_ID) {
         do {

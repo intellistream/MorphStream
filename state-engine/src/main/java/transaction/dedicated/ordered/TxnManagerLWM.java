@@ -9,7 +9,7 @@ import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
 import storage.TableRecord;
-import transaction.dedicated.TxnManagerDedicated;
+import transaction.dedicated.TxnManagerDedicatedLocked;
 import transaction.impl.TxnContext;
 
 import java.util.LinkedList;
@@ -21,7 +21,7 @@ import static transaction.impl.TxnAccess.Access;
 /**
  * mimic of ACEP's LWM method.
  */
-public class TxnManagerLWM extends TxnManagerDedicated {
+public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerLWM.class);
     final OrderLock orderLock;
 

@@ -6,4 +6,8 @@ public interface IScheduler {
     void EXPLORE(int threadId);
     boolean FINISHED(int threadId);
     void RESET();
+    boolean SubmitRequest(Request request);
+    void TxnSubmitBegin(int thread_Id);
+    void TxnSubmitFinished(int thread_Id);
+
 }

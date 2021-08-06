@@ -2,6 +2,7 @@ package transaction.scheduler.tpg.struct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.BrokenBarrierException;
@@ -9,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
-
 
 /**
  * TPG  -> Partition -> Key:OperationChain -> Operation-Operation-Operation...
@@ -180,7 +180,7 @@ public class TaskPrecedenceGraph {
      * expose an api to check whether all operations are in the final state i.e. aborted/committed
      */
     public boolean isFinished() {
-        // LOG.debug(nPendingOperation.get());
+//        LOG.info("operations left to do:" + nPendingOperation.get());
         return nPendingOperation.get() == 0;
     }
 
