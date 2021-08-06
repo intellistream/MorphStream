@@ -413,49 +413,22 @@ public class SLDataGeneratorForOC extends SpecialDataGenerator {
         return new SLDataOperationChain("ast_" + id, (nTuples * 5) / dataConfig.numberOfDLevels, assetsOperationChainsByLevel);
     }
 
-//    private long getUniqueId(Random randomGeneratorForIds, HashMap<Long, Integer> mGeneratedIds, boolean isAcc) {
-//        long id = 0;
-////        int range = 10 * mTotalTuplesToGenerate * 5;
-//        int range = (int) mPartitionOffset;
-//        if (dataConfig.idGenType.equals("uniform")) {
-//            id = getUniformId(randomGeneratorForIds, isAcc, range);
-//            while (mGeneratedIds.containsKey(id)) {
-//                System.out.println("+++++ conflict");
-//                id = getUniformId(randomGeneratorForIds, isAcc, range);
-//            }
-//        } else if (dataConfig.idGenType.equals("normal")) {
-//            id = getNormalId(randomGeneratorForIds, isAcc, range);
-//            while (mGeneratedIds.containsKey(id)) {
-//                System.out.println("+++++ conflict");
-//                id = getNormalId(randomGeneratorForIds, isAcc, range);
-//            }
-//        }
-//        mGeneratedIds.put(id, null);
-//
-//        return id;
-//    }
-
     private long getUniqueId(Random randomGeneratorForIds, HashMap<Long, Integer> mGeneratedIds, boolean isAcc) {
         long id = 0;
-//        int range = 10 * mTotalTuplesToGenerate * 5;
         int range = (int) partitionOffset;
         if (dataConfig.idGenType.equals("uniform")) {
-            id = randomGeneratorForIds.nextInt(range);
+            id = getUniformId(randomGeneratorForIds, isAcc, range);
             while (mGeneratedIds.containsKey(id)) {
                 System.out.println("+++++ conflict");
-                id = randomGeneratorForIds.nextInt(range);
+                id = getUniformId(randomGeneratorForIds, isAcc, range);
             }
         } else if (dataConfig.idGenType.equals("normal")) {
-            id = (int) Math.floor(Math.abs(randomGeneratorForIds.nextGaussian() / 3.5) * range) % range;
+            id = getNormalId(randomGeneratorForIds, isAcc, range);
             while (mGeneratedIds.containsKey(id)) {
                 System.out.println("+++++ conflict");
-                id = (int) Math.floor(Math.abs(randomGeneratorForIds.nextGaussian() / 3.5) * range) % range;
+                id = getNormalId(randomGeneratorForIds, isAcc, range);
             }
         }
-
-        if (isAcc) totalAccountRecords++;
-        else totalAssetRecords++;
-
         mGeneratedIds.put(id, null);
 
         return id;
@@ -463,7 +436,6 @@ public class SLDataGeneratorForOC extends SpecialDataGenerator {
 
 //    private long getUniqueId(Random randomGeneratorForIds, HashMap<Long, Integer> mGeneratedIds, boolean isAcc) {
 //        long id = 0;
-////        int range = 10 * mTotalTuplesToGenerate * 5;
 //        int range = (int) partitionOffset;
 //        if (dataConfig.idGenType.equals("uniform")) {
 //            id = randomGeneratorForIds.nextInt(range);
