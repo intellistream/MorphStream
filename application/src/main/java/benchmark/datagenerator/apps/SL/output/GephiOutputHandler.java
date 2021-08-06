@@ -1,7 +1,7 @@
 package benchmark.datagenerator.apps.SL.output;
 
 
-import benchmark.datagenerator.apps.SL.OCScheduler.SLDataOperationChain;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
 
 import java.io.File;
 import java.io.FileWriter;

@@ -1,12 +1,14 @@
 package benchmark.datagenerator;
 
-import benchmark.datagenerator.apps.SL.OCScheduler.DataGeneratorConfigForOC;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.DataGeneratorConfigForOC;
 import benchmark.datagenerator.apps.SL.output.GephiOutputHandler;
 import benchmark.datagenerator.apps.SL.output.IOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import transaction.scheduler.tpg.struct.OperationStateMachine;
 
 import java.io.File;
+import java.util.Queue;
 
 /**
  * Data generator for benchmarks, this class contains all common methods and attributes that can be used in each application
@@ -16,18 +18,18 @@ public abstract class SpecialDataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialDataGenerator.class);
 
     protected final int nTuples;
-    protected DataGeneratorConfigForOC dataConfig;
+    protected DataGeneratorConfig dataConfig;
 
     protected IOutputHandler dataOutputHandler; // dump data to the specified path
 
-    public SpecialDataGenerator(DataGeneratorConfigForOC dataConfig) {
+    public SpecialDataGenerator(DataGeneratorConfig dataConfig) {
         this.dataConfig = dataConfig;
         this.nTuples = dataConfig.tuplesPerBatch * dataConfig.totalBatches;
         this.dataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
     }
 
-    public DataGeneratorConfigForOC getDataConfig() {
-        return dataConfig;
+    public <T extends DataGeneratorConfig> T getDataConfig() {
+        return (T) dataConfig;
     }
 
     public void generateStream() {

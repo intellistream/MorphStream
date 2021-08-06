@@ -2,7 +2,7 @@ package benchmark.datagenerator;
 
 import common.collections.Configuration;
 
-public class DataGeneratorConfig {
+public abstract class DataGeneratorConfig {
     public Integer tuplesPerBatch;
     public Integer totalBatches;
     public Integer totalThreads;

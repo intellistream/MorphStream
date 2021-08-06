@@ -1,4 +1,4 @@
-package benchmark.datagenerator.apps.SL.OCScheduler;
+package benchmark.datagenerator.apps.SL.OCTxnGenerator;
 
 import benchmark.datagenerator.SpecialDataGenerator;
 import org.slf4j.Logger;

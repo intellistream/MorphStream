@@ -1,8 +1,11 @@
 package common.topology.transactional.initializer;
 
 import benchmark.DataHolder;
-import benchmark.datagenerator.apps.SL.OCScheduler.DataGeneratorConfigForOC;
-import benchmark.datagenerator.apps.SL.OCScheduler.SLDataGeneratorForOC;
+import benchmark.datagenerator.SpecialDataGenerator;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.DataGeneratorConfigForOC;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataGeneratorForOC;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.DataGeneratorConfigForTPG;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLDataGeneratorForTPG;
 import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -36,7 +39,7 @@ public class SLInitializer extends TableInitilizer {
     private final int totalRecords;
     private final String idsGenType;
     private String dataRootPath;
-    private SLDataGeneratorForOC dataGenerator;
+    private SpecialDataGenerator dataGenerator;
 
     private int startingBalance = 1000000;
     private String actTableKey = "accounts";
@@ -52,11 +55,14 @@ public class SLInitializer extends TableInitilizer {
 //        this.mPartitionOffset = (totalRecords * 5) / tthread;
         this.partitionOffset = config.getInt("NUM_ITEMS") / tthread;
 
-        createDataGenerator(config);
-
+        if (config.getString("scheduler").equals("BFS")) {
+            createDataGeneratorForBFS(config);
+        } else {
+            createDataGeneratorForTPG(config);
+        }
     }
 
-    protected void createDataGenerator(Configuration config) {
+    protected void createDataGeneratorForBFS(Configuration config) {
 
         DataGeneratorConfigForOC dataConfig = new DataGeneratorConfigForOC();
         dataConfig.initialize(config);
@@ -80,6 +86,31 @@ public class SLInitializer extends TableInitilizer {
         dataConfig.idsPath += OsUtils.OS_wrapper(subFolder);
         this.dataRootPath += OsUtils.OS_wrapper(subFolder);
         dataGenerator = new SLDataGeneratorForOC(dataConfig);
+    }
+
+    protected void createDataGeneratorForTPG(Configuration config) {
+
+        DataGeneratorConfigForTPG dataConfig = new DataGeneratorConfigForTPG();
+        dataConfig.initialize(config);
+
+        MessageDigest digest;
+        String subFolder = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+            subFolder = OsUtils.osWrapperPostFix(
+                    DatatypeConverter.printHexBinary(
+                            digest.digest(
+                                    String.format("%d_%d",
+                                                    dataConfig.totalThreads,
+                                                    dataConfig.tuplesPerBatch * dataConfig.totalBatches, )
+                                            .getBytes(StandardCharsets.UTF_8))));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        dataConfig.rootPath += OsUtils.OS_wrapper(subFolder);
+        dataConfig.idsPath += OsUtils.OS_wrapper(subFolder);
+        this.dataRootPath += OsUtils.OS_wrapper(subFolder);
+        dataGenerator = new SLDataGeneratorForTPG(dataConfig);
     }
 
     @Override

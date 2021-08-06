@@ -1,4 +1,4 @@
-package benchmark.datagenerator.apps.SL.OCScheduler;
+package benchmark.datagenerator.apps.SL.OCTxnGenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
