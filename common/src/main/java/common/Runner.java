@@ -56,7 +56,7 @@ public abstract class Runner implements IRunner {
     /**
      * TStream Specific Parameters.
      */
-    @Parameter(names = {"--disable_pushdown"}, description = "Push down write operations to engine, it is enabled by default.")
+    @Parameter(names = {"--disable_pushufflingActiveshdown"}, description = "Push down write operations to engine, it is enabled by default.")
     public boolean disable_pushdown = false;
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (seconds)")
     public double checkpoint_interval = 5;// default checkpoint interval.

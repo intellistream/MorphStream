@@ -1,14 +1,11 @@
 package benchmark.datagenerator;
 
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.DataGeneratorConfigForOC;
 import benchmark.datagenerator.apps.SL.output.GephiOutputHandler;
 import benchmark.datagenerator.apps.SL.output.IOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.scheduler.tpg.struct.OperationStateMachine;
 
 import java.io.File;
-import java.util.Queue;
 
 /**
  * Data generator for benchmarks, this class contains all common methods and attributes that can be used in each application
@@ -24,8 +21,8 @@ public abstract class SpecialDataGenerator {
 
     public SpecialDataGenerator(DataGeneratorConfig dataConfig) {
         this.dataConfig = dataConfig;
-        this.nTuples = dataConfig.tuplesPerBatch * dataConfig.totalBatches;
-        this.dataOutputHandler = new GephiOutputHandler(dataConfig.rootPath);
+        this.nTuples = dataConfig.getTuplesPerBatch() * dataConfig.getTotalBatches();
+        this.dataOutputHandler = new GephiOutputHandler(dataConfig.getRootPath());
     }
 
     public <T extends DataGeneratorConfig> T getDataConfig() {
@@ -40,18 +37,18 @@ public abstract class SpecialDataGenerator {
             generateTuple();
         }
 
-        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
+        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
         dumpGeneratedDataToFile();
         LOG.info("Data Generation is done...");
         clearDataStructures();
         this.dataConfig = null;
     }
 
-    private boolean isFileExist() {
-        File file = new File(dataConfig.rootPath);
+    protected boolean isFileExist() {
+        File file = new File(dataConfig.getRootPath());
         if (file.exists()) {
             LOG.info("Data already exists.. skipping data generation...");
-            LOG.info(dataConfig.rootPath);
+            LOG.info(dataConfig.getRootPath());
             return true;
         }
         return false;

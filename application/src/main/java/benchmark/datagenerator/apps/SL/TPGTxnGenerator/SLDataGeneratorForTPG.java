@@ -1,9 +1,9 @@
 package benchmark.datagenerator.apps.SL.TPGTxnGenerator;
 
-import benchmark.datagenerator.DataGenerator;
-import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.SpecialDataGenerator;
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataTransaction;
+import benchmark.datagenerator.apps.SL.Transaction.SLDepositTransaction;
+import benchmark.datagenerator.apps.SL.Transaction.SLTransaction;
+import benchmark.datagenerator.apps.SL.Transaction.SLTransferTransaction;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
     private final int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
 
     protected final int nTotalTransactionsToGenerate;
-    private ArrayList<SLDataTransaction> dataTransactions;
+    private ArrayList<SLTransaction> dataTransactions;
 
     // control the number of txns overlap with each other.
     private final ArrayList<Integer> generatedAcc = new ArrayList<>();
@@ -66,8 +66,8 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
         Ratio_of_Transaction_Aborts = 0;
 
 
-        int nKeyState = dataConfig.nKeyState;
-        nTotalTransactionsToGenerate = mTotalTuplesToGenerate;
+        int nKeyState = dataConfig.getnKeyStates();
+        nTotalTransactionsToGenerate = nTuples;
         dataTransactions = new ArrayList<>(nTotalTransactionsToGenerate);
         // zipf state access generator
         accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness/100, 0);
@@ -85,7 +85,7 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
             generateTuple();
         }
 
-        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.rootPath));
+        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
         dumpGeneratedDataToFile();
         LOG.info("Data Generation is done...");
         clearDataStructures();
@@ -153,7 +153,7 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
         nGeneratedAssetIds.put((long) srcAst, nGeneratedAccountIds.getOrDefault((long) srcAst, 0) + 1);
         nGeneratedAssetIds.put((long) dstAst, nGeneratedAccountIds.getOrDefault((long) dstAst, 0) + 1);
 
-        SLTransferTransaction t = new SLTransferTransaction(transactionId, srcAcc, srcAst, dstAcc, dstAst);
+        SLTransaction t = new SLTransferTransaction(transactionId, srcAcc, srcAst, dstAcc, dstAst);
 
         // increase the timestamp i.e. transaction id
         transactionId++;
@@ -168,7 +168,7 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
         nGeneratedAccountIds.put((long) acc, nGeneratedAccountIds.getOrDefault((long) acc, 0) + 1);
         nGeneratedAssetIds.put((long) ast, nGeneratedAccountIds.getOrDefault((long) ast, 0) + 1);
 
-        SLDepositTransaction t = new SLDepositTransaction(transactionId, acc, ast);
+        SLTransaction t = new SLDepositTransaction(transactionId, acc, ast);
 
         // increase the timestamp i.e. transaction id
         transactionId++;
@@ -181,29 +181,29 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
         System.out.println("++++++" + nGeneratedAccountIds.size());
         System.out.println("++++++" + nGeneratedAssetIds.size());
 
-        File file = new File(dataConfig.rootPath);
+        File file = new File(dataConfig.getRootPath());
         if (file.exists()) {
             LOG.info("Data already exists.. skipping data generation...");
             return;
         }
         file.mkdirs();
 
-        File versionFile = new File(dataConfig.rootPath.substring(0, dataConfig.rootPath.length() - 1)
-                + String.format("_%d_%d.txt", dataConfig.tuplesPerBatch, dataConfig.totalBatches));
+        File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
+                + String.format("_%d_%d.txt", dataConfig.getTuplesPerBatch(), dataConfig.getTotalBatches()));
         try {
             versionFile.createNewFile();
             FileWriter fileWriter = new FileWriter(versionFile);
-            fileWriter.write(String.format("Tuples per batch      : %d\n", dataConfig.tuplesPerBatch));
-            fileWriter.write(String.format("Total batches         : %d\n", dataConfig.totalBatches));
+            fileWriter.write(String.format("Tuples per batch      : %d\n", dataConfig.getTuplesPerBatch()));
+            fileWriter.write(String.format("Total batches         : %d\n", dataConfig.getTotalBatches()));
             fileWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         LOG.info("Dumping transactions...");
-        mDataOutputHandler.sinkTransactionsNoReplication(dataTransactions);
+        dataOutputHandler.sinkTransactions(dataTransactions);
         LOG.info("Dumping Dependency Vertices ids range...");
-        mDataOutputHandler.sinkDependenciesVerticesIdsRange(nGeneratedAssetIds.size(), nGeneratedAccountIds.size());
+        dataOutputHandler.sinkDependenciesVerticesIdsRange(nGeneratedAssetIds.size(), nGeneratedAccountIds.size());
     }
 
     @Override

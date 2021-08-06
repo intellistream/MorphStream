@@ -1,9 +1,10 @@
 package common.topology.transactional.initializer;
 
 import benchmark.DataHolder;
+import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.SpecialDataGenerator;
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.DataGeneratorConfigForOC;
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataGeneratorForOC;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.DataGeneratorConfigForBFS;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataGeneratorForBFS;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.DataGeneratorConfigForTPG;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLDataGeneratorForTPG;
 import common.SpinLock;
@@ -55,44 +56,35 @@ public class SLInitializer extends TableInitilizer {
 //        this.mPartitionOffset = (totalRecords * 5) / tthread;
         this.partitionOffset = config.getInt("NUM_ITEMS") / tthread;
 
-        if (config.getString("scheduler").equals("BFS")) {
-            createDataGeneratorForBFS(config);
+        String scheduler = config.getString("scheduler");
+        if (scheduler.equals("BFS")) {
+            createDataGeneratorFoBFS(config);
+        } else if (scheduler.equals("TPG")) {
+            createDataGeneratorFoTPG(config);
         } else {
-            createDataGeneratorForTPG(config);
+            throw new UnsupportedOperationException("wrong scheduler set up: " + scheduler);
         }
     }
 
-    protected void createDataGeneratorForBFS(Configuration config) {
+    protected void createDataGeneratorFoBFS(Configuration config) {
 
-        DataGeneratorConfigForOC dataConfig = new DataGeneratorConfigForOC();
+        DataGeneratorConfig dataConfig = new DataGeneratorConfigForBFS();
         dataConfig.initialize(config);
 
-        MessageDigest digest;
-        String subFolder = null;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-            subFolder = OsUtils.osWrapperPostFix(
-                    DatatypeConverter.printHexBinary(
-                            digest.digest(
-                                    String.format("%d_%d_%s",
-                                                    dataConfig.totalThreads,
-                                                    dataConfig.tuplesPerBatch * dataConfig.totalBatches,
-                                                    Arrays.toString(dataConfig.dependenciesDistributionForLevels))
-                                            .getBytes(StandardCharsets.UTF_8))));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        dataConfig.rootPath += OsUtils.OS_wrapper(subFolder);
-        dataConfig.idsPath += OsUtils.OS_wrapper(subFolder);
-        this.dataRootPath += OsUtils.OS_wrapper(subFolder);
-        dataGenerator = new SLDataGeneratorForOC(dataConfig);
+        setupExpFolder(dataConfig);
+        dataGenerator = new SLDataGeneratorForBFS((DataGeneratorConfigForBFS) dataConfig);
     }
 
-    protected void createDataGeneratorForTPG(Configuration config) {
+    protected void createDataGeneratorFoTPG(Configuration config) {
 
-        DataGeneratorConfigForTPG dataConfig = new DataGeneratorConfigForTPG();
+        DataGeneratorConfig dataConfig = new DataGeneratorConfigForTPG();
         dataConfig.initialize(config);
 
+        setupExpFolder(dataConfig);
+        dataGenerator = new SLDataGeneratorForTPG((DataGeneratorConfigForTPG) dataConfig);
+    }
+
+    private void setupExpFolder(DataGeneratorConfig dataConfig) {
         MessageDigest digest;
         String subFolder = null;
         try {
@@ -101,17 +93,17 @@ public class SLInitializer extends TableInitilizer {
                     DatatypeConverter.printHexBinary(
                             digest.digest(
                                     String.format("%d_%d",
-                                                    dataConfig.totalThreads,
-                                                    dataConfig.tuplesPerBatch * dataConfig.totalBatches, )
+                                            dataConfig.getTotalThreads(),
+                                                    dataConfig.getTuplesPerBatch() * dataConfig.getTotalBatches())
                                             .getBytes(StandardCharsets.UTF_8))));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        dataConfig.rootPath += OsUtils.OS_wrapper(subFolder);
-        dataConfig.idsPath += OsUtils.OS_wrapper(subFolder);
+        dataConfig.setRootPath(dataConfig.getRootPath() + OsUtils.OS_wrapper(subFolder));
+        dataConfig.setIdsPath(dataConfig.getIdsPath() + OsUtils.OS_wrapper(subFolder));
         this.dataRootPath += OsUtils.OS_wrapper(subFolder);
-        dataGenerator = new SLDataGeneratorForTPG(dataConfig);
     }
+
 
     @Override
     public void loadDB(int thread_id, int NUM_TASK) {
@@ -245,14 +237,14 @@ public class SLInitializer extends TableInitilizer {
     @Override
     public boolean Prepared(String fileN) throws IOException {
 
-        int tuplesPerBatch = dataGenerator.getDataConfig().tuplesPerBatch;
-        int totalBatches = dataGenerator.getDataConfig().totalBatches;
-        int numberOfLevels = dataGenerator.getDataConfig().numberOfDLevels;
-        int tt = dataGenerator.getDataConfig().totalThreads;
-        boolean shufflingActive = dataGenerator.getDataConfig().shufflingActive;
-        String folder = dataGenerator.getDataConfig().rootPath;
+        int tuplesPerBatch = dataGenerator.getDataConfig().getTuplesPerBatch();
+        int totalBatches = dataGenerator.getDataConfig().getTotalBatches();
+        int tt = dataGenerator.getDataConfig().getTotalThreads();
+        boolean shufflingActive =false;
+        String folder = dataGenerator.getDataConfig().getRootPath();
+        String scheduler = dataGenerator.getDataConfig().getScheduler();
 
-        String statsFolderPattern = dataGenerator.getDataConfig().idsPath
+        String statsFolderPattern = config.getString("rootFilePath")
                 + OsUtils.osWrapperPostFix("stats")
                 + OsUtils.osWrapperPostFix("scheduler = %s")
                 + OsUtils.osWrapperPostFix("depth = %d")
@@ -260,11 +252,22 @@ public class SLInitializer extends TableInitilizer {
                 + OsUtils.osWrapperPostFix("total_batches = %d")
                 + OsUtils.osWrapperPostFix("events_per_batch = %d");
 
-        String statsFolderPath = String.format(statsFolderPattern, dataGenerator.getDataConfig().scheduler, numberOfLevels, tt, totalBatches, tuplesPerBatch);
-        File file = new File(statsFolderPath + String.format("iteration_0.csv"));
-        if (!file.exists()) {
-            dataGenerator.generateStream();
-            dataGenerator = null;
+        if (scheduler.equals("BFS")) {
+            DataGeneratorConfigForBFS dataConfig = dataGenerator.getDataConfig();
+            String statsFolderPath = String.format(statsFolderPattern, scheduler, dataConfig.getNumberOfDLevels(), tt, totalBatches, tuplesPerBatch);
+            File file = new File(statsFolderPath + "iteration_0.csv");
+            if (!file.exists()) {
+                dataGenerator.generateStream();
+                dataGenerator = null;
+            }
+        } else if (scheduler.equals("TPG")) {
+            DataGeneratorConfigForTPG dataConfig = dataGenerator.getDataConfig();
+            String statsFolderPath = String.format(statsFolderPattern, scheduler, tt, totalBatches, tuplesPerBatch);
+            File file = new File(statsFolderPath + "iteration_0.csv");
+            if (!file.exists()) {
+                dataGenerator.generateStream();
+                dataGenerator = null;
+            }
         }
         loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
         return true;

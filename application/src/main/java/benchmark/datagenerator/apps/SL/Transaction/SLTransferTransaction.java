@@ -1,9 +1,9 @@
-package benchmark.datagenerator.apps.SL.OCTxnGenerator;
+package benchmark.datagenerator.apps.SL.Transaction;
 
 /**
  * Streamledger related transaction data
  */
-public class SLDataTransaction {
+public class SLTransferTransaction extends SLTransaction {
     private int id;
     private int sourceAccountId;
     private int destinationAccountId;
@@ -14,7 +14,7 @@ public class SLDataTransaction {
     private int sourceAssetAmount;
     private int destinationAssetAmount;
 
-    public SLDataTransaction(int id, int sourceAccountId, int sourceAssetId, int destinationAccountId, int destinationAssetId) {
+    public SLTransferTransaction(int id, int sourceAccountId, int sourceAssetId, int destinationAccountId, int destinationAssetId) {
         this.id = id;
         this.sourceAccountId = sourceAccountId;
         this.destinationAccountId = destinationAccountId;
@@ -26,7 +26,7 @@ public class SLDataTransaction {
         this.destinationAssetAmount = 10;
     }
 
-    public SLDataTransaction(int sourceAccountId, int sourceAssetId, int destinationAccountId, int destinationAssetId, int sourceAccountAmount, int sourceAssetAmount, int destinationAssetAmount, int destinationAccountAmount) {
+    public SLTransferTransaction(int sourceAccountId, int sourceAssetId, int destinationAccountId, int destinationAssetId, int sourceAccountAmount, int sourceAssetAmount, int destinationAssetAmount, int destinationAccountAmount) {
         this.sourceAccountId = sourceAccountId;
         this.destinationAccountId = destinationAccountId;
         this.sourceAssetId = sourceAssetId;
@@ -120,6 +120,7 @@ public class SLDataTransaction {
                 destinationAssetId;
     }
 
+    @Override
     public String toString(int iterationNumber, int totalTransaction) {
         return (id + (iterationNumber * totalTransaction)) + "," +
                 (sourceAccountId + iterationNumber) + "," +

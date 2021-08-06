@@ -240,6 +240,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
      */
     protected OperationChain BFSearch(int threadId) {
         ArrayDeque<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(context.currentLevel[threadId]);
+        System.out.println(threadId + "|" + Arrays.toString(context.currentLevel));
         OperationChain oc = null;
         if (ocs != null && ocs.size() > 0)
             oc = ocs.removeLast();

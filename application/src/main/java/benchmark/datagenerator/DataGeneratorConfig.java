@@ -3,21 +3,77 @@ package benchmark.datagenerator;
 import common.collections.Configuration;
 
 public abstract class DataGeneratorConfig {
-    public Integer tuplesPerBatch;
-    public Integer totalBatches;
-    public Integer totalThreads;
-    public String scheduler;
-    public String rootPath;
-    public int nKeyStates;
-    public String idsPath;
+    private Integer tuplesPerBatch;
+    private Integer totalBatches;
+    private Integer totalThreads;
+    private String scheduler;
+    private String rootPath;
+    private int nKeyStates;
+    private String idsPath;
 
     public void initialize(Configuration config) {
-        this.tuplesPerBatch = config.getInt("totalEventsPerBatch");
-        this.totalBatches = config.getInt("numberOfBatches");
-        this.totalThreads = config.getInt("tthread");
-        this.scheduler = config.getString("scheduler");
-        this.rootPath = config.getString("rootFilePath");
-        this.nKeyStates = config.getInt("NUM_ITEMS");
-        this.idsPath = this.rootPath;
+        this.setTuplesPerBatch(config.getInt("totalEventsPerBatch"));
+        this.setTotalBatches(config.getInt("numberOfBatches"));
+        this.setTotalThreads(config.getInt("tthread"));
+        this.setScheduler(config.getString("scheduler"));
+        this.setRootPath(config.getString("rootFilePath"));
+        this.setnKeyStates(config.getInt("NUM_ITEMS"));
+        this.setIdsPath(this.getRootPath());
+    }
+
+    public Integer getTuplesPerBatch() {
+        return tuplesPerBatch;
+    }
+
+    public void setTuplesPerBatch(Integer tuplesPerBatch) {
+        this.tuplesPerBatch = tuplesPerBatch;
+    }
+
+    public Integer getTotalBatches() {
+        return totalBatches;
+    }
+
+    public void setTotalBatches(Integer totalBatches) {
+        this.totalBatches = totalBatches;
+    }
+
+    public Integer getTotalThreads() {
+        return totalThreads;
+    }
+
+    public void setTotalThreads(Integer totalThreads) {
+        this.totalThreads = totalThreads;
+    }
+
+    public String getScheduler() {
+        return scheduler;
+    }
+
+    public void setScheduler(String scheduler) {
+        this.scheduler = scheduler;
+    }
+
+    public String getRootPath() {
+        return rootPath;
+    }
+
+    public void setRootPath(String rootPath) {
+        this.rootPath = rootPath;
+    }
+
+    public int getnKeyStates() {
+        return nKeyStates;
+    }
+
+    public void setnKeyStates(int nKeyStates) {
+        this.nKeyStates = nKeyStates;
+    }
+
+    public String getIdsPath() {
+        return idsPath;
+    }
+
+    public void setIdsPath(String idsPath) {
+        this.idsPath = idsPath;
     }
 }
