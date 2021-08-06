@@ -144,7 +144,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     }
 
     //TODO: the following are mostly hard-coded.
-    private void process(int threadId, Operation operation, long mark_ID, boolean clean) {
+    private void execute(int threadId, Operation operation, long mark_ID, boolean clean) {
         if (operation.accessType == READS_ONLY) {
             operation.records_ref.setRecord(operation.d_record);
         } else if (operation.accessType == READ_ONLY) {//used in MB.
@@ -211,76 +211,60 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
      * @param operation_chain
      * @param mark_ID
      */
-    public void process(int threadId, MyList<Operation> operation_chain, long mark_ID) {
+    public void execute(int threadId, MyList<Operation> operation_chain, long mark_ID) {
         Operation operation = operation_chain.pollFirst();
-        //loop.
         while (operation != null) {
-            process(threadId, operation, mark_ID, false);
+            execute(threadId, operation, mark_ID, false);
             operation = operation_chain.pollFirst();
         }
-        assert operation_chain.isEmpty();
     }
 
     @Override
     public void PROCESS(int threadId, long mark_ID) {
-        do {
-            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-            OperationChain next = next(threadId);
-            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-            if (next == null) break;
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            process(threadId, next.getOperations(), mark_ID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            context.scheduledOcsCount[threadId] += 1;
-            log.debug("finished process: " + next.toString());
-        } while (true);
+        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+        OperationChain next = next(threadId);
+        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+        if (next == null) return;
+        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+        execute(threadId, next.getOperations(), mark_ID);
+        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+        log.debug("finished process: " + next.toString());
     }
 
     /**
-     * The following are methods to explore global buckets.
-     * It has two different ways: DFS and BFS.
+     * Return the last operation chain of threadId at dLevel.
      *
      * @param threadId
      * @return
      */
-    public OperationChain BFSearch(int threadId) {
-        OperationChain oc = Retrieve(threadId);
-        if (oc != null) {
-            return oc;//successfully get the next operation chain of the current level.
-        } else {
-            if (!FINISHED(threadId)) {
-                while (oc == null) {
-                    if (FINISHED(threadId))
-                        break;
-                    context.currentLevel[threadId] += 1;//current level is done, process the next level.
-                    oc = Retrieve(threadId);
-                    SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                }
-            }
-        }
-        return oc;
+    protected OperationChain BFSearch(int threadId) {
+        ArrayDeque<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(context.currentLevel[threadId]);
+        if (ocs != null && ocs.size() > 0)
+            return ocs.removeLast();
+        else return null;
     }
 
     private OperationChain next(int threadId) {
         return ready_oc.remove(threadId);// if a null is returned, it means, we are done with this level!
     }
 
-    /**
-     * This is needed because hash-scheduler can be workload unbalanced.
-     *
-     * @param threadId
-     */
-    private void checkFinished(int threadId) {
-        if (FINISHED(threadId)) {
-            SOURCE_CONTROL.getInstance().oneThreadCompleted();
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
-        }
-    }
-
     @Override
     public void EXPLORE(int threadId) {
         OperationChain oc = BFSearch(threadId);
-        checkFinished(threadId);
+        if (oc != null) {
+            context.scheduledOcsCount[threadId] += 1;
+        } else if (!context.finished(threadId)) {
+            while (oc == null) {
+                context.currentLevel[threadId] += 1;
+                oc = BFSearch(threadId);
+                SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(context.currentLevel[threadId]);
+            }
+            context.scheduledOcsCount[threadId] += 1;
+        } else {
+            SOURCE_CONTROL.getInstance().oneThreadCompleted();
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        }
         DISTRIBUTE(oc, threadId);
     }
     @Override
@@ -330,31 +314,15 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     }
     @Override
     public void TxnSubmitBegin(int thread_Id) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
     public void TxnSubmitFinished(int thread_Id) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean FINISHED(int threadId) {
         return context.finished(threadId);
-    }
-    /**
-     * Return the last operation chain of threadId at dLevel.
-     *
-     * @param threadId
-     * @return
-     */
-    protected OperationChain Retrieve(int threadId) {
-        HashMap<Integer, ArrayDeque<OperationChain>> map = context.layeredOCBucketGlobal.get(threadId);
-        ArrayDeque<OperationChain> ocs = map.get(context.currentLevel[threadId]);
-
-        if (ocs.size() > 0)
-            return ocs.removeLast();
-        else return null;
     }
 
     @Override
