@@ -232,39 +232,73 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     }
 
     /**
-     * Return the last operation chain of threadId at dLevel.
+     * The following are methods to explore global buckets.
+     * It has two different ways: DFS and BFS.
      *
      * @param threadId
      * @return
      */
-    protected OperationChain BFSearch(int threadId) {
-        ArrayDeque<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(context.currentLevel[threadId]);
-        if (ocs != null && ocs.size() > 0)
-            return ocs.removeLast();
-        else return null;
+    public OperationChain BFSearch(int threadId) {
+        OperationChain oc = Retrieve(threadId);
+        if (oc != null) {
+            return oc;//successfully get the next operation chain of the current level.
+        } else {
+            if (!FINISHED(threadId)) {
+                while (oc == null) {
+                    if (FINISHED(threadId))
+                        break;
+                    context.currentLevel[threadId] += 1;//current level is done, process the next level.
+                    oc = Retrieve(threadId);
+                    SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                }
+            }
+        }
+        return oc;
     }
+
+//    public OperationChain BFSearch(int threadId) {
+//        OperationChain oc = Retrieve(threadId);
+//        if (oc != null) {
+//            return oc;//successfully get the next operation chain of the current level.
+//        } else {
+//            if (!FINISHED(threadId)) {
+//                while (oc == null) {
+//                    if (FINISHED(threadId))
+//                        break;
+//                    context.currentLevel[threadId] += 1;//current level is done, process the next level.
+//                    oc = Retrieve(threadId);
+//                    SOURCE_CONTROL.getInstance().waitForOtherThreads();
+//                }
+//            }
+//        }
+//
+//        if (oc == null) {
+//            throw new RuntimeException("oc value should not be null after BFSearch, something may wrong");
+//        }
+//
+//        return oc;
+//    }
 
     private OperationChain next(int threadId) {
         return ready_oc.remove(threadId);// if a null is returned, it means, we are done with this level!
     }
 
-    @Override
-    public void EXPLORE(int threadId) {
-        OperationChain oc = BFSearch(threadId);
-        if (oc != null) {
-            context.scheduledOcsCount[threadId] += 1;
-        } else if (!context.finished(threadId)) {
-            while (oc == null) {
-                context.currentLevel[threadId] += 1;
-                oc = BFSearch(threadId);
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                SOURCE_CONTROL.getInstance().updateThreadBarrierOnDLevel(context.currentLevel[threadId]);
-            }
-            context.scheduledOcsCount[threadId] += 1;
-        } else {
+    /**
+     * This is needed because hash-scheduler can be workload unbalanced.
+     *
+     * @param threadId
+     */
+    private void checkFinished(int threadId) {
+        if (FINISHED(threadId)) {
             SOURCE_CONTROL.getInstance().oneThreadCompleted();
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
         }
+    }
+
+    @Override
+    public void EXPLORE(int threadId) {
+        OperationChain oc = BFSearch(threadId);
+        checkFinished(threadId);
         DISTRIBUTE(oc, threadId);
     }
     @Override
@@ -313,17 +347,32 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
         return true;
     }
     @Override
-    public void TxnSubmitBegin(int thread_Id) {
-    }
+    public void TxnSubmitBegin(int thread_Id) {}
 
     @Override
-    public void TxnSubmitFinished(int thread_Id) {
-    }
+    public void TxnSubmitFinished(int thread_Id) {}
 
     @Override
     public boolean FINISHED(int threadId) {
         return context.finished(threadId);
     }
+
+    /**
+     * Return the last operation chain of threadId at dLevel.
+     *
+     * @param threadId
+     * @return
+     */
+    protected OperationChain Retrieve(int threadId) {
+        HashMap<Integer, ArrayDeque<OperationChain>> map = context.layeredOCBucketGlobal.get(threadId);
+        ArrayDeque<OperationChain> ocs = map.get(context.currentLevel[threadId]);
+
+        if (ocs != null && ocs.size() > 0)
+            return ocs.removeLast();
+        else return null;
+    }
+
+
 
     @Override
     protected void DISTRIBUTE(OperationChain task, int threadId) {

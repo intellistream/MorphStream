@@ -1,9 +1,6 @@
 package common.topology.transactional.initializer;
 
 import benchmark.DataHolder;
-//import benchmark.datagenerator.old.DataGenerator;
-//import benchmark.datagenerator.old.DataGeneratorConfig;
-
 import benchmark.datagenerator.apps.SL.OCScheduler.DataGeneratorConfigForOC;
 import benchmark.datagenerator.apps.SL.OCScheduler.SLDataGeneratorForOC;
 import common.SpinLock;
@@ -39,22 +36,21 @@ public class SLInitializer extends TableInitilizer {
     private final int totalRecords;
     private final String idsGenType;
     private String dataRootPath;
-    private SLDataGeneratorForOC mDataGenerator;
-
+    private SLDataGeneratorForOC dataGenerator;
 
     private int startingBalance = 1000000;
     private String actTableKey = "accounts";
     private String bookTableKey = "bookEntries";
-    private int mPartitionOffset;
+    private int partitionOffset;
 
     public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
         this.dataRootPath = dataRootPath;
-        configure_store(scale_factor, theta, tthread, NUM_ACCOUNTS);
+        configure_store(scale_factor, theta, tthread, config.getInt("NUM_ITEMS"));
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         idsGenType = config.getString("idGenType");
 //        this.mPartitionOffset = (totalRecords * 5) / tthread;
-        this.mPartitionOffset = config.getInt("NUM_ITEMS") / tthread;
+        this.partitionOffset = config.getInt("NUM_ITEMS") / tthread;
 
         createDataGenerator(config);
 
@@ -83,60 +79,13 @@ public class SLInitializer extends TableInitilizer {
         dataConfig.rootPath += OsUtils.OS_wrapper(subFolder);
         dataConfig.idsPath += OsUtils.OS_wrapper(subFolder);
         this.dataRootPath += OsUtils.OS_wrapper(subFolder);
-
-        mDataGenerator = new SLDataGeneratorForOC(dataConfig);
+        dataGenerator = new SLDataGeneratorForOC(dataConfig);
     }
 
     @Override
     public void loadDB(int thread_id, int NUM_TASK) {
         loadDB(thread_id, null, NUM_TASK);
     }
-
-//    @Override
-//    public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
-//
-//        int[] maxId = readRecordMaximumIds(); // read maximum possible number of ids.
-//
-//        // load account records in to the db.
-//        LOG.info("Thread:" + thread_id + " loading account records...");
-//        Random mRandomGeneratorForAccIds = new Random(12345678); // Imp: DataGenerator uses the same seed.
-//        HashMap<Long, Integer> mGeneratedAccountIds = new HashMap<>();
-//        for (int idNum = 0; idNum <= maxId[0]; idNum++) {
-//
-//            long id = getNextId(mRandomGeneratorForAccIds) + (thread_id * mPartitionOffset); // each thread loads data for the corresponding partition.
-//            id *= 10; //scaling the id.
-//            for (int iter = 0; iter < 10; iter++) {   // fill gap between scaled ids.
-//                if (mGeneratedAccountIds.containsKey(id + iter))
-//                    continue;
-//                mGeneratedAccountIds.put(id + iter, null);
-//                String _key = String.format("%d", id + iter);
-//                insertAccountRecord(_key, startingBalance, thread_id, spinlock);
-//                Controller.UpdateMapping(thread_id, "accounts" + "|" + _key);
-//
-//            }
-//        }
-//
-//        // load asset records in to the db.
-//        LOG.info("Thread:" + thread_id + " loading asset records...");
-//        Random mRandomGeneratorForAstIds = new Random(123456789); // Imp: DataGenerator uses the same seed.
-//        HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
-//        for (int idNum = 0; idNum <= maxId[1]; idNum++) {
-//
-//            long id = getNextId(mRandomGeneratorForAstIds) + (thread_id * mPartitionOffset);
-//            id *= 10;
-//            for (int iter = 0; iter < 10; iter++) {
-//                if (mGeneratedAssetIds.containsKey(id + iter))
-//                    continue;
-//                mGeneratedAssetIds.put(id + iter, null);
-//                String _key = String.format("%d", id + iter);
-//                insertAssetRecord(_key, startingBalance, thread_id, spinlock);
-//                Controller.UpdateMapping(thread_id, "bookEntries" + "|" + _key);
-//            }
-//        }
-//
-//        LOG.info("Thread:" + thread_id + " finished loading records...");
-//        System.gc();
-//    }
 
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
@@ -156,6 +105,7 @@ public class SLInitializer extends TableInitilizer {
             _key = GenerateKey(BOOK_ENTRY_ID_PREFIX, key);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
             Controller.UpdateMapping(thread_id, "bookEntries" + "|" + _key);
+
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
@@ -183,9 +133,9 @@ public class SLInitializer extends TableInitilizer {
     private int getNextId(Random random) {
         int id = 0;
         if (idsGenType.equals("uniform")) {
-            id = random.nextInt(mPartitionOffset);
+            id = random.nextInt(partitionOffset);
         } else if (idsGenType.equals("normal")) {
-            id = (int) Math.floor(Math.abs(random.nextGaussian() / 3.5) * mPartitionOffset) % mPartitionOffset;
+            id = (int) Math.floor(Math.abs(random.nextGaussian() / 3.5) * partitionOffset) % partitionOffset;
         }
         return id;
     }
@@ -264,14 +214,14 @@ public class SLInitializer extends TableInitilizer {
     @Override
     public boolean Prepared(String fileN) throws IOException {
 
-        int tuplesPerBatch = mDataGenerator.getDataConfig().tuplesPerBatch;
-        int totalBatches = mDataGenerator.getDataConfig().totalBatches;
-        int numberOfLevels = mDataGenerator.getDataConfig().numberOfDLevels;
-        int tt = mDataGenerator.getDataConfig().totalThreads;
-        boolean shufflingActive = mDataGenerator.getDataConfig().shufflingActive;
-        String folder = mDataGenerator.getDataConfig().rootPath;
+        int tuplesPerBatch = dataGenerator.getDataConfig().tuplesPerBatch;
+        int totalBatches = dataGenerator.getDataConfig().totalBatches;
+        int numberOfLevels = dataGenerator.getDataConfig().numberOfDLevels;
+        int tt = dataGenerator.getDataConfig().totalThreads;
+        boolean shufflingActive = dataGenerator.getDataConfig().shufflingActive;
+        String folder = dataGenerator.getDataConfig().rootPath;
 
-        String statsFolderPattern = mDataGenerator.getDataConfig().idsPath
+        String statsFolderPattern = dataGenerator.getDataConfig().idsPath
                 + OsUtils.osWrapperPostFix("stats")
                 + OsUtils.osWrapperPostFix("scheduler = %s")
                 + OsUtils.osWrapperPostFix("depth = %d")
@@ -279,11 +229,11 @@ public class SLInitializer extends TableInitilizer {
                 + OsUtils.osWrapperPostFix("total_batches = %d")
                 + OsUtils.osWrapperPostFix("events_per_batch = %d");
 
-        String statsFolderPath = String.format(statsFolderPattern, mDataGenerator.getDataConfig().scheduler, numberOfLevels, tt, totalBatches, tuplesPerBatch);
+        String statsFolderPath = String.format(statsFolderPattern, dataGenerator.getDataConfig().scheduler, numberOfLevels, tt, totalBatches, tuplesPerBatch);
         File file = new File(statsFolderPath + String.format("iteration_0.csv"));
         if (!file.exists()) {
-            mDataGenerator.generateStream();
-            mDataGenerator = null;
+            dataGenerator.generateStream();
+            dataGenerator = null;
         }
         loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
         return true;
@@ -300,6 +250,7 @@ public class SLInitializer extends TableInitilizer {
             int numberOfEvents = tuplesPerBatch * totalBatches;
 //            int mPartitionOffset = (10 * numberOfEvents * 5) / tthread;
             int mPartitionOffset = config.getInt("NUM_ITEMS") / tthread;
+
             DataHolder.events = new TransactionEvent[numberOfEvents];
             File file = new File(folder + "transactions.txt");
             if (file.exists()) {
@@ -311,7 +262,7 @@ public class SLInitializer extends TableInitilizer {
                     int p_bids[] = new int[tthread];
                     while (txn != null) {
                         String[] split = txn.split(",");
-                        int npid = (int) (Long.valueOf(split[1]) / mPartitionOffset);
+                        int npid = (int) (Long.valueOf(split[1]) / partitionOffset);
                         TransactionEvent event = new TransactionEvent(
                                 Integer.parseInt(split[0]), //bid
                                 npid, //pid

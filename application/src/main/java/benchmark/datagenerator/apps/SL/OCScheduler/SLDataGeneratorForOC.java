@@ -461,6 +461,32 @@ public class SLDataGeneratorForOC extends SpecialDataGenerator {
         return id;
     }
 
+//    private long getUniqueId(Random randomGeneratorForIds, HashMap<Long, Integer> mGeneratedIds, boolean isAcc) {
+//        long id = 0;
+////        int range = 10 * mTotalTuplesToGenerate * 5;
+//        int range = (int) partitionOffset;
+//        if (dataConfig.idGenType.equals("uniform")) {
+//            id = randomGeneratorForIds.nextInt(range);
+//            while (mGeneratedIds.containsKey(id)) {
+//                System.out.println("+++++ conflict");
+//                id = randomGeneratorForIds.nextInt(range);
+//            }
+//        } else if (dataConfig.idGenType.equals("normal")) {
+//            id = (int) Math.floor(Math.abs(randomGeneratorForIds.nextGaussian() / 3.5) * range) % range;
+//            while (mGeneratedIds.containsKey(id)) {
+//                System.out.println("+++++ conflict");
+//                id = (int) Math.floor(Math.abs(randomGeneratorForIds.nextGaussian() / 3.5) * range) % range;
+//            }
+//        }
+//
+//        if (isAcc) totalAccountRecords++;
+//        else totalAssetRecords++;
+//
+//        mGeneratedIds.put(id, null);
+//
+//        return id;
+//    }
+
     private long getNormalId(Random randomGeneratorForIds, boolean isAcc, int range) {
         long id;
         id = (int) Math.floor(Math.abs(randomGeneratorForIds.nextGaussian() / 3.5) * range) % range;
