@@ -11,7 +11,7 @@ public class Controller {
     public static HashMap<Integer, Partition> threadtoStateMapping = new HashMap<>(); // <threadId, list of states being responsible for>
     public static HashMap<String, PartitionStateManager> stateToThreadMapping = new HashMap<>(); // <State, thread>
     public static HashMap<Integer, PartitionStateManager> stateManagers = new HashMap<>();
-    public static ExecutorService exec = Executors.newFixedThreadPool(2);//TODO: make it to be tunable
+    public static ExecutorService exec;
 
 
     public static void UpdateMapping(int thread_id, String operationChainKey) {
@@ -19,6 +19,10 @@ public class Controller {
         list.add(operationChainKey);
         var operationStateManager = Controller.stateManagers.computeIfAbsent(thread_id, integer -> new PartitionStateManager(thread_id));
         stateToThreadMapping.put(operationChainKey, operationStateManager);
+    }
+
+    public static void setExec(int totalThread) {
+        exec = Executors.newFixedThreadPool(totalThread);
     }
 
     public static class Partition extends ArrayList<String> {

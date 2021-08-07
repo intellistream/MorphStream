@@ -2,6 +2,7 @@ package transaction.scheduler.tpg.struct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import transaction.scheduler.tpg.TPGScheduler;
 
 import java.util.List;
 import java.util.Queue;
@@ -36,6 +37,7 @@ public class TaskPrecedenceGraph {
     private final ShortCutListener shortCutListener;
     public static final AtomicInteger nPendingOperation = new AtomicInteger(0);
     private final AtomicInteger nExecutedOperation = new AtomicInteger(0);
+    private TPGScheduler.ExecutableTaskListener executableTaskListener = null;
 
     public final static int Maximum_Speculation = 10;
     private int totalThreads;
@@ -131,6 +133,7 @@ public class TaskPrecedenceGraph {
 //                head.exploreReadyOperation();
                 Controller.stateManagers.get(threadId).setShortCutListener(shortCutListener);
                 if (head.isRoot()) {
+//                    System.out.println("++++++ thread id: " + threadId + " head: " + head);
                     Controller.stateManagers.get(threadId).onRootStart(head);
                 }
 //                var operationStateManager = Controller.stateManagers.get(threadId);
@@ -153,6 +156,10 @@ public class TaskPrecedenceGraph {
         retOc.addOperation(operation);
     }
 
+    public void setExecutableListener(TPGScheduler.ExecutableTaskListener executableTaskListener) {
+        this.executableTaskListener = executableTaskListener;
+    }
+
     /**
      * Register an operation to queue.
      */
@@ -163,6 +170,10 @@ public class TaskPrecedenceGraph {
             } else {
                 speculativeQueue.add(operation);
             }
+        }
+
+        public void onExecutable(Operation operation, boolean isReady, int threadId) {
+            executableTaskListener.onExecutable(operation, threadId);
         }
 
         public void onOperationFinalized(Operation operation, boolean isCommitted) {

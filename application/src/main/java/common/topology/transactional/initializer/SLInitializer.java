@@ -42,10 +42,13 @@ public class SLInitializer extends TableInitilizer {
     private String dataRootPath;
     private SpecialDataGenerator dataGenerator;
 
-    private int startingBalance = 1000000;
-    private String actTableKey = "accounts";
-    private String bookTableKey = "bookEntries";
-    private int partitionOffset;
+    private final int startingBalance = 1000000;
+    private final String actTableKey = "accounts";
+    private final String bookTableKey = "bookEntries";
+    private final int partitionOffset;
+
+    private final boolean isBFS;
+    private final boolean isTPG;
 
     public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
@@ -56,10 +59,15 @@ public class SLInitializer extends TableInitilizer {
 //        this.mPartitionOffset = (totalRecords * 5) / tthread;
         this.partitionOffset = config.getInt("NUM_ITEMS") / tthread;
 
+        Controller.setExec(tthread);
+
         String scheduler = config.getString("scheduler");
-        if (scheduler.equals("BFS")) {
+//        isBFS = scheduler.equals("BFS");
+        isBFS = true; // just for test
+        isTPG = scheduler.equals("TPG");
+        if (isBFS) {
             createDataGeneratorFoBFS(config);
-        } else if (scheduler.equals("TPG")) {
+        } else if (isTPG) {
             createDataGeneratorFoTPG(config);
         } else {
             throw new UnsupportedOperationException("wrong scheduler set up: " + scheduler);
@@ -240,19 +248,19 @@ public class SLInitializer extends TableInitilizer {
         int tuplesPerBatch = dataGenerator.getDataConfig().getTuplesPerBatch();
         int totalBatches = dataGenerator.getDataConfig().getTotalBatches();
         int tt = dataGenerator.getDataConfig().getTotalThreads();
-        boolean shufflingActive =false;
+        boolean shufflingActive = dataGenerator.getDataConfig().getShufflingActive();
         String folder = dataGenerator.getDataConfig().getRootPath();
         String scheduler = dataGenerator.getDataConfig().getScheduler();
 
-        String statsFolderPattern = config.getString("rootFilePath")
-                + OsUtils.osWrapperPostFix("stats")
-                + OsUtils.osWrapperPostFix("scheduler = %s")
-                + OsUtils.osWrapperPostFix("depth = %d")
-                + OsUtils.osWrapperPostFix("threads = %d")
-                + OsUtils.osWrapperPostFix("total_batches = %d")
-                + OsUtils.osWrapperPostFix("events_per_batch = %d");
+        if (isBFS) {
+            String statsFolderPattern = dataGenerator.getDataConfig().getIdsPath()
+                    + OsUtils.osWrapperPostFix("stats")
+                    + OsUtils.osWrapperPostFix("scheduler = %s")
+                    + OsUtils.osWrapperPostFix("depth = %d")
+                    + OsUtils.osWrapperPostFix("threads = %d")
+                    + OsUtils.osWrapperPostFix("total_batches = %d")
+                    + OsUtils.osWrapperPostFix("events_per_batch = %d");
 
-        if (scheduler.equals("BFS")) {
             DataGeneratorConfigForBFS dataConfig = dataGenerator.getDataConfig();
             String statsFolderPath = String.format(statsFolderPattern, scheduler, dataConfig.getNumberOfDLevels(), tt, totalBatches, tuplesPerBatch);
             File file = new File(statsFolderPath + "iteration_0.csv");
@@ -260,7 +268,14 @@ public class SLInitializer extends TableInitilizer {
                 dataGenerator.generateStream();
                 dataGenerator = null;
             }
-        } else if (scheduler.equals("TPG")) {
+        } else if (isTPG) {
+            String statsFolderPattern = dataGenerator.getDataConfig().getIdsPath()
+                    + OsUtils.osWrapperPostFix("stats")
+                    + OsUtils.osWrapperPostFix("scheduler = %s")
+                    + OsUtils.osWrapperPostFix("threads = %d")
+                    + OsUtils.osWrapperPostFix("total_batches = %d")
+                    + OsUtils.osWrapperPostFix("events_per_batch = %d");
+
             DataGeneratorConfigForTPG dataConfig = dataGenerator.getDataConfig();
             String statsFolderPath = String.format(statsFolderPattern, scheduler, tt, totalBatches, tuplesPerBatch);
             File file = new File(statsFolderPath + "iteration_0.csv");

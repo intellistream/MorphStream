@@ -235,7 +235,8 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
 
     private void blockedToReadyAction(Operation operation) {
         // notify a number of speculative children to execute in parallel.
-        shortCutListener.onExecutable(operation, true);
+//        shortCutListener.onExecutable(operation, true);
+        shortCutListener.onExecutable(operation, true, thread_id);
         ArrayDeque<Operation> children = operation.getChildren(MetaTypes.DependencyType.SP_LD);
         // notify the size - 1 number of operations to speculative execute in parallel
         // the last one keeps in blocked state for as a potential future ready candidate.
@@ -250,7 +251,8 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     }
 
     private void blockedToSpeculativeAction(Operation operation) {
-        shortCutListener.onExecutable(operation, false);
+//        shortCutListener.onExecutable(operation, false);
+        shortCutListener.onExecutable(operation, false, thread_id);
     }
 
     private void executedAction(Operation operation) {

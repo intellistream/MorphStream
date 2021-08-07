@@ -131,7 +131,7 @@ public abstract class OperationStateMachine {
     }
 
     public void stateTransition(MetaTypes.OperationStateType state) {
-        LOG.debug(this + " : state transit " + operationState + " -> " + state);
+            LOG.debug(this + " : state transit " + operationState + " -> " + state);
         operationState.getAndSet(state);
     }
 

@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 public class DataGeneratorConfigForBFS extends DataGeneratorConfig {
     private static final Logger LOG = LoggerFactory.getLogger(DataGeneratorConfigForBFS.class);
     private Integer numberOfDLevels;
-    private Boolean shufflingActive;
     private String fanoutDist;
     private String idGenType;
     private float[] dependenciesDistributionForLevels;
@@ -21,7 +20,6 @@ public class DataGeneratorConfigForBFS extends DataGeneratorConfig {
     public void initialize(Configuration config) {
         super.initialize(config);
         this.setNumberOfDLevels(config.getInt("numberOfDLevels"));
-        this.setShufflingActive(false);
         this.setFanoutDist(config.getString("fanoutDist"));
         this.setIdGenType(config.getString("idGenType"));
 
@@ -69,14 +67,6 @@ public class DataGeneratorConfigForBFS extends DataGeneratorConfig {
 
     public void setNumberOfDLevels(Integer numberOfDLevels) {
         this.numberOfDLevels = numberOfDLevels;
-    }
-
-    public Boolean getShufflingActive() {
-        return shufflingActive;
-    }
-
-    public void setShufflingActive(Boolean shufflingActive) {
-        this.shufflingActive = shufflingActive;
     }
 
     public String getFanoutDist() {

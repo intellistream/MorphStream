@@ -44,6 +44,8 @@ public class TPGScheduler extends Scheduler<Operation> {
             taskQueues.put(i, new ConcurrentLinkedDeque<>());
             requests.put(i, new ArrayDeque<>());
         }
+        ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
+        tpg.setExecutableListener(executableTaskListener);
     }
 
     @Override
@@ -62,8 +64,8 @@ public class TPGScheduler extends Scheduler<Operation> {
      */
     @Override
     public void EXPLORE(int threadId) {
-        DISTRIBUTE(tpg.exploreReady(), threadId);
-        DISTRIBUTE(tpg.exploreSpeculative(), threadId);
+//        DISTRIBUTE(tpg.exploreReady(), threadId);
+//        DISTRIBUTE(tpg.exploreSpeculative(), threadId);
     }
     @Override
     public boolean FINISHED(int threadId) {
@@ -268,5 +270,14 @@ public class TPGScheduler extends Scheduler<Operation> {
     protected void DISTRIBUTE(Operation executableOperation, int threadId) {
         if (executableOperation != null)
             taskQueues.get(threadId).add(executableOperation);
+    }
+
+    /**
+     * Register an operation to queue.
+     */
+    public class ExecutableTaskListener {
+        public void onExecutable(Operation operation, int threadId) {
+            DISTRIBUTE(operation, threadId);
+        }
     }
 }

@@ -10,6 +10,7 @@ public abstract class DataGeneratorConfig {
     private String rootPath;
     private int nKeyStates;
     private String idsPath;
+    private Boolean shufflingActive;
 
     public void initialize(Configuration config) {
         this.setTuplesPerBatch(config.getInt("totalEventsPerBatch"));
@@ -19,6 +20,7 @@ public abstract class DataGeneratorConfig {
         this.setRootPath(config.getString("rootFilePath"));
         this.setnKeyStates(config.getInt("NUM_ITEMS"));
         this.setIdsPath(this.getRootPath());
+        this.setShufflingActive(false);
     }
 
     public Integer getTuplesPerBatch() {
@@ -75,5 +77,13 @@ public abstract class DataGeneratorConfig {
 
     public void setIdsPath(String idsPath) {
         this.idsPath = idsPath;
+    }
+
+    public Boolean getShufflingActive() {
+        return shufflingActive;
+    }
+
+    public void setShufflingActive(Boolean shufflingActive) {
+        this.shufflingActive = shufflingActive;
     }
 }
