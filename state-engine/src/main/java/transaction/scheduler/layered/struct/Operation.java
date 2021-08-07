@@ -35,6 +35,7 @@ public class Operation implements Comparable<Operation> {
     public Condition condition;
     public int[] success;
     public String name;
+    public boolean aborted = false;
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref, Function function) {
         this.table_name = table_name;

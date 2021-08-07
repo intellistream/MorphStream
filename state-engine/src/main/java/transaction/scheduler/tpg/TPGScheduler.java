@@ -19,7 +19,6 @@ import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static common.meta.CommonMetaTypes.AccessType.GET;
 import static common.meta.CommonMetaTypes.AccessType.SET;
