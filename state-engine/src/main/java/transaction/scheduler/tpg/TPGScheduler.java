@@ -19,6 +19,7 @@ import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static common.meta.CommonMetaTypes.AccessType.GET;
 import static common.meta.CommonMetaTypes.AccessType.SET;
@@ -34,12 +35,12 @@ import static common.meta.CommonMetaTypes.AccessType.SET;
 public class TPGScheduler extends Scheduler<Operation> {
     private final int totalThreads;
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
-    private final ConcurrentHashMap<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
-    private final ConcurrentHashMap<Integer, ArrayDeque<Request>> requests = new ConcurrentHashMap<>();
+    private final Map<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
+    private final Map<Integer, ArrayDeque<Request>> requests = new ConcurrentHashMap<>();
     public TPGScheduler(int tp) {
         totalThreads = tp;
         this.tpg = new TaskPrecedenceGraph(totalThreads);
-        taskQueues = new ConcurrentHashMap<>();
+        taskQueues = new HashMap<>();
         for (int i = 0; i < totalThreads; i++) {
             taskQueues.put(i, new ConcurrentLinkedDeque<>());
             requests.put(i, new ArrayDeque<>());
@@ -248,6 +249,12 @@ public class TPGScheduler extends Scheduler<Operation> {
         } while (true);
     }
 
+//    public void measureTime(int threadId, Runnable runnable, Operation operation) {
+////        long start = System.nanoTime();
+//        runnable.run();
+////        System.out.println(threadId + "|" + operation.accessType + "|[" + operation + "]|" + (System.nanoTime() - start));
+//    }
+
     /**
      * Try to get task from local queue.
      *
@@ -255,10 +262,13 @@ public class TPGScheduler extends Scheduler<Operation> {
      * @return
      */
     public Operation next(int threadId) {
-        ConcurrentLinkedDeque<Operation> taskQueue = taskQueues.get(threadId);
-        if (taskQueue.size() > 0)
-            return taskQueue.removeLast();
-        else return null;
+        return taskQueues.get(threadId).pollLast();
+//        if (taskQueue.size() > 0) {
+//        System.out.println(threadId + " | " + Thread.currentThread().getId());
+//            return taskQueue.removeLast();
+//        }
+//        return taskQueue.pollLast();
+//        else return null;
     }
     /**
      * Distribute the operations to different threads with different strategies

@@ -213,9 +213,16 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     public void execute(int threadId, MyList<Operation> operation_chain, long mark_ID) {
         Operation operation = operation_chain.pollFirst();
         while (operation != null) {
-            execute(threadId, operation, mark_ID, false);
+            Operation finalOperation = operation;
+            measureTime(threadId, () -> execute(threadId, finalOperation, mark_ID, false), operation);
             operation = operation_chain.pollFirst();
         }
+    }
+
+    public void measureTime(int threadId, Runnable runnable, Operation operation) {
+        long start = System.nanoTime();
+        runnable.run();
+        System.out.println(threadId + "|" + operation.accessType + "|" + (System.nanoTime() - start));
     }
 
     @Override

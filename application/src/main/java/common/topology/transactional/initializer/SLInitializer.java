@@ -63,7 +63,7 @@ public class SLInitializer extends TableInitilizer {
 
         String scheduler = config.getString("scheduler");
 //        isBFS = scheduler.equals("BFS");
-        isBFS = true; // just for test
+        isBFS = true; // just for test, make tpg and bfs use the same data generator - bfs
         isTPG = scheduler.equals("TPG");
         if (isBFS) {
             createDataGeneratorFoBFS(config);
