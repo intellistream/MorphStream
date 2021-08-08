@@ -93,7 +93,7 @@ public class TaskPrecedenceGraph {
                 int reversedOffset = (Maximum_Speculation + 1 - offset);
                 if (i - reversedOffset >= 0) // TODO: we should sort the queue to ensure the order and make sure the speculative operation can be identified.
                     curOperation.addParent(operations.get(i - reversedOffset), MetaTypes.DependencyType.SP_LD);
-//                if (i+offset < operations.size() && offset != Maximum_Speculation) // because speculation is emit from ready operation, it should eliminate itself for parallel process
+//                if (i+offset < operations.size() && offset != Maximum_Speculation) // because speculation is emit from ready operation, it should eliminate itself for parallel execute
                 if (i + offset < operations.size())
                     curOperation.addChild(operations.get(i + offset), MetaTypes.DependencyType.SP_LD);
             }
@@ -133,11 +133,8 @@ public class TaskPrecedenceGraph {
 //                head.exploreReadyOperation();
                 Controller.stateManagers.get(threadId).setShortCutListener(shortCutListener);
                 if (head.isRoot()) {
-//                    System.out.println("++++++ thread id: " + threadId + " head: " + head);
                     Controller.stateManagers.get(threadId).onRootStart(head);
                 }
-//                var operationStateManager = Controller.stateManagers.get(threadId);
-//                operationStateManager.addState(key, operationChain);
                 return operationChain;
             });
         }
@@ -151,7 +148,7 @@ public class TaskPrecedenceGraph {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         String table_name = operation.table_name;
         String primaryKey = operation.d_record.record_.GetPrimaryKey();
-        String operationChainKey = table_name + "|" + primaryKey;
+        String operationChainKey = operation.getOperationChainKey();
         OperationChain retOc = operationChains.computeIfAbsent(operationChainKey, s -> new OperationChain(table_name, primaryKey));
         retOc.addOperation(operation);
     }

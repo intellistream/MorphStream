@@ -52,7 +52,7 @@ public final class TxnProcessingEngine {
         return this.scheduler;
     }
 
-    public void start_evaluation(int threadId, long mark_ID, int num_events) throws InterruptedException {
+    public void start_evaluation(int threadId, long mark_ID, int num_events) {
         MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         scheduler.INITIALIZE(threadId);
         MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);

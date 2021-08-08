@@ -98,17 +98,11 @@ public abstract class T_StreamContent implements Content {
     public SchemaRecord readPreValues(long ts) {
 //            spinlock_.lock_ratio();
         SchemaRecord record_at_ts = null;
-//            while (record_at_ts == null) {//polling for correct entry.
         Map.Entry<Long, SchemaRecord> entry = versions.lowerEntry(ts);//always get the original (previous) version.
         if (entry != null) {
             record_at_ts = entry.getValue();
         } else
             record_at_ts = versions.get(ts);//not modified in last round
-//            }
-//            spinlock_.unlock();
-//            if (record_at_ts.getValues() == null) {
-//                System.out.println("Read a null value??");
-//            }
         if (record_at_ts == null || record_at_ts.getValues() == null)
             System.out.println("Read a null value??");
         return record_at_ts;

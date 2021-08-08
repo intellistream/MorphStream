@@ -11,7 +11,6 @@ import transaction.impl.TxnContext;
 
 
 import java.util.List;
-import java.util.Queue;
 
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
@@ -30,13 +29,13 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
     //required by READ_WRITE_and Condition.
     public final Function function;
     public final String table_name;
+    private final String operationChainKey;
 
     public volatile TableRecordRef records_ref;//for cross-record dependency.
     public volatile SchemaRecordRef record_ref;//required by read-only: the place holder of the reading d_record.
     public List<DataBox> value_list;//required by write-only: the value_list to be used to update the d_record.
     //only update corresponding column.
     public long value;
-    public int column_id;
     //required by READ_WRITE.
     public volatile TableRecord s_record;//only if it is different from d_record.
     public volatile TableRecord[] condition_records;
@@ -54,6 +53,7 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
         this.s_record = d_record;
         this.function = null;
         this.record_ref = recordRef;//this holds events' recordRef.
+        this.operationChainKey = table_name + "|" +  d_record.record_.GetPrimaryKey();
     }
 
 
@@ -72,6 +72,7 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
         this.record_ref = record_ref;//this holds events' record_ref.
         this.condition = condition;
         this.success = success;
+        this.operationChainKey = table_name + "|" +  d_record.record_.GetPrimaryKey();
     }
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
@@ -87,6 +88,7 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
         this.record_ref = null;
         this.condition = condition;
         this.success = success;
+        this.operationChainKey = table_name + "|" +  d_record.record_.GetPrimaryKey();
     }
 
     /****************************End*************************************/
@@ -110,11 +112,6 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
             return Long.compare(this.bid, operation.bid);
     }
 
-    public void set_worker(String name) {
-        assert this.name == null;
-        this.name = name;
-    }
-
     @Override
     public String toString() {
         return bid + "|" + txn_op_id + "|" + String.format("%-15s", this.getOperationState());
@@ -134,17 +131,7 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
     public void setExecutableOperationListener(TaskPrecedenceGraph.ShortCutListener shortCutListener) {
     }
 
-    @Override
-    protected boolean checkOthertxnOperation(Queue<OperationStateMachine> td_parents, MetaTypes.OperationStateType targetState) {
-        boolean isInTargetState = true;
-        for (OperationStateMachine operation : td_parents) {
-            if (((Operation) operation).bid != this.bid) {
-                // if not belong to the same transaction, then check whether committed
-                if (!operation.getOperationState().equals(targetState)) {
-                    isInTargetState = false;
-                }
-            }
-        }
-        return isInTargetState;
+    public String getOperationChainKey() {
+        return operationChainKey;
     }
 }

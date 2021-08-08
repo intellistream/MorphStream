@@ -23,42 +23,32 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
 
     @Override
     public void onParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-//        while (inTransition.get());
         stateTransitionQueue.add(new OnParentUpdatedSignal(operation, dependencyType, parentState));//
     }
 
     @Override
     public void onReadyParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-//        while (inTransition.get());
         stateTransitionQueue.add(new OnReadyParentExecutedSignal(operation, dependencyType, parentState));//
     }
 
     @Override
     public void onHeaderStateUpdated(Operation operation, MetaTypes.OperationStateType headerState) {
-//        while (inTransition.get());
         stateTransitionQueue.add(new OnHeaderUpdatedSignal(operation, headerState));//
     }
 
     @Override
     public void onDescendantStateUpdated(Operation operation, MetaTypes.OperationStateType descendantState) {
-//        while (inTransition.get());
         stateTransitionQueue.add(new OnDescendantUpdatedSignal(operation, descendantState));//
     }
 
     @Override
     public void onProcessed(Operation operation, boolean isFailed) {
-//        while (inTransition.get());
-        // TODO: use future statement
         PartitionStateManager partitionStateManager = getTargetStateManager(operation);
         if (partitionStateManager.equals(this)) {
             stateTransitionQueue.add(new OnProcessedSignal(operation, isFailed));//
         } else {
             partitionStateManager.onProcessed(operation, isFailed);
         }
-//        operation.stateTransition(OperationState.EXECUTED);
-        // explore its children to do further state transition
-        // if the children is in the same state manager, do state transition at this state manager
-        // otherwise notify other state manager to do further state transition
     }
 
     public void onRootStart(Operation operation) {
@@ -98,9 +88,6 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
             }
             signal = stateTransitionQueue.poll();
         }
-//        inTransition.compareAndSet(true, false);
-//        System.out.println(stateTransitionQueue.keySet());
-//        stateTransitionQueue.clear();
     }
 
     private void onReadyParentUpdatedTransition(Operation operation) {
@@ -283,9 +270,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     }
 
     private PartitionStateManager getTargetStateManager(Operation child) {
-        String table_name = child.table_name;
-        String primaryKey = child.d_record.record_.GetPrimaryKey();
-        String operationChainKey = table_name + "|" + primaryKey;
+        String operationChainKey = child.getOperationChainKey();
         return Controller.stateToThreadMapping.get(operationChainKey);
     }
 

@@ -224,7 +224,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
         Operation operation = operation_chain.pollFirst();
         while (operation != null) {
             Operation finalOperation = operation;
-            measureTime(threadId, () -> execute(threadId, finalOperation, mark_ID, false), operation);
+            execute(threadId, finalOperation, mark_ID, false);
             operation = operation_chain.pollFirst();
         }
     }
@@ -245,7 +245,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(threadId, next.getOperations(), mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            log.debug("finished process current operation chain: " + next.toString());
+            log.debug("finished execute current operation chain: " + next.toString());
         }
     }
 

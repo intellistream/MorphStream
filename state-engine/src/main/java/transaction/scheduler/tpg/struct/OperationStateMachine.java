@@ -246,8 +246,6 @@ public abstract class OperationStateMachine {
         return isCommittable;
     }
 
-    protected abstract boolean checkOthertxnOperation(Queue<OperationStateMachine> td_parents, MetaTypes.OperationStateType targetState);
-
 
     // **********************************Utilities**********************************
     /**
@@ -318,15 +316,6 @@ public abstract class OperationStateMachine {
             for (int i = 0; i < arr.length; i++) {
                 arr[i] = new AtomicInteger(0);
             }
-        }
-
-        // promote header to be the first ready candidate of the transaction
-        public void setReadyCandidate() {
-            is_spec_or_ready_candidate.getAndSet(READY_CANDIDATE);
-        }
-
-        public void setSpeculativeCandidate() {
-            is_spec_or_ready_candidate.compareAndSet(NONE_CANDIDATE, SPECULATIVE_CANDIDATE);
         }
     }
 }

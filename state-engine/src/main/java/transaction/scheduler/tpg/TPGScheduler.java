@@ -32,15 +32,14 @@ import static common.meta.CommonMetaTypes.AccessType.SET;
  */
 @lombok.extern.slf4j.Slf4j
 public class TPGScheduler extends Scheduler<Operation> {
-    private final int totalThreads;
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
+//    private final Map<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
     private final Map<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
     private final Map<Integer, ArrayDeque<Request>> requests = new ConcurrentHashMap<>();
     public TPGScheduler(int tp) {
-        totalThreads = tp;
-        this.tpg = new TaskPrecedenceGraph(totalThreads);
+        this.tpg = new TaskPrecedenceGraph(tp);
         taskQueues = new HashMap<>();
-        for (int i = 0; i < totalThreads; i++) {
+        for (int i = 0; i < tp; i++) {
             taskQueues.put(i, new ConcurrentLinkedDeque<>());
             requests.put(i, new ArrayDeque<>());
         }
@@ -109,7 +108,6 @@ public class TPGScheduler extends Scheduler<Operation> {
                 // 1. construct operations
                 // read source record that to help the update on destination record
                 Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
-//                common.tpg.Operation set_op = new common.tpg.Operation(targetTables[i], txn_context, bid, MetaTypes.AccessType.SET, d_records[i], functions[i]);
                 Operation set_op = new Operation(request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.function, request.condition, request.success);
                 // write the destination record, the write operation depends on the record returned by get_op
 
@@ -143,7 +141,7 @@ public class TPGScheduler extends Scheduler<Operation> {
     }
 
     // DD: Transfer event processing
-    private void CT_Transfer_Fun(int threadId, Operation operation, long previous_mark_ID, boolean clean) {
+    private void CT_Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         Queue<Operation> fd_parents = operation.getParents(MetaTypes.DependencyType.FD);
         List<SchemaRecord> preValues = new ArrayList<>();
         for (Operation parent : fd_parents) {
@@ -171,9 +169,10 @@ public class TPGScheduler extends Scheduler<Operation> {
         if (sourceAccountBalance > operation.condition.arg1
                 && sourceAccountBalance > operation.condition.arg2
                 && sourceAssetValue > operation.condition.arg3) {
+            // read
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-
+            // apply function
             if (operation.function instanceof INC) {
                 tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
             } else if (operation.function instanceof DEC) {
@@ -201,38 +200,33 @@ public class TPGScheduler extends Scheduler<Operation> {
      * @param mark_ID
      * @param clean
      */
-    public void process(int threadId, Operation operation, long mark_ID, boolean clean) {
+    public void execute(int threadId, Operation operation, long mark_ID, boolean clean) {
         log.trace("++++++execute: " + operation);
-        if (operation.getOperationState().equals(MetaTypes.OperationStateType.READY) || operation.getOperationState().equals(MetaTypes.OperationStateType.SPECULATIVE)) {
-            // the operation will only be executed when the state is in READY/SPECULATIVE,
-            boolean isFailed = false;
-            if (operation.accessType.equals(GET)) {
-                SchemaRecord schemaRecord = operation.d_record.content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType);
-                // operation success check
-                if (schemaRecord == null) {
-                    isFailed = true;
-                } else {
-                    operation.record_ref.setRecord(new SchemaRecord(schemaRecord.getValues()));//Note that, locking scheme allows directly modifying on original table d_record.
-                }
-            } else if (operation.accessType.equals(SET)) {
-                log.debug("++++++execute: " + operation);
-                int success = operation.success[0];
-                CT_Transfer_Fun(threadId, operation, mark_ID, clean);
-                // operation success check
-                if (operation.success[0] == success) {
-                    isFailed = true;
-                } else {
-                    if (operation.record_ref != null) {
-                        operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-                    }
-                }
+        if (!(operation.getOperationState().equals(MetaTypes.OperationStateType.READY) || operation.getOperationState().equals(MetaTypes.OperationStateType.SPECULATIVE))) {
+            //otherwise, skip (those already been tagged as aborted).
+            return;
+        }
+        // the operation will only be executed when the state is in READY/SPECULATIVE,
+        boolean isFailed = false;
+        if (operation.accessType.equals(GET)) {
+            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+        } else if (operation.accessType.equals(SET)) {
+            int success = operation.success[0];
+            CT_Transfer_Fun(operation, mark_ID, clean);
+            // operation success check
+            if (operation.success[0] == success) {
+                isFailed = true;
             } else {
-                throw new UnsupportedOperationException();
+                // check whether needs to return a read results of the operation
+                if (operation.record_ref != null) {
+                    operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+                }
             }
-            assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
-//            operation.onProcessed(isFailed);
-            Controller.stateManagers.get(threadId).onProcessed(operation, isFailed);
-        }//otherwise, skip (those already been tagged as aborted).
+        } else {
+            throw new UnsupportedOperationException();
+        }
+        assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
+        Controller.stateManagers.get(threadId).onProcessed(operation, isFailed);
     }
 
     @Override
@@ -243,7 +237,7 @@ public class TPGScheduler extends Scheduler<Operation> {
             MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
             if (next == null) break;
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            process(threadId, next, mark_ID, false);
+            execute(threadId, next, mark_ID, false);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         } while (true);
     }
