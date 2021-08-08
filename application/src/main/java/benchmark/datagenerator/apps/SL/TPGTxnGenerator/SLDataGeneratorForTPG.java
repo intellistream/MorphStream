@@ -44,7 +44,7 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
     private final ArrayList<Integer> generatedAcc = new ArrayList<>();
     private final ArrayList<Integer> generatedAst = new ArrayList<>();
     // independent transactions.
-    private final boolean isUnique = false;
+    private final boolean isUnique = true;
 
     HashMap<Long, Integer> nGeneratedAccountIds = new HashMap<>();
     HashMap<Long, Integer> nGeneratedAssetIds = new HashMap<>();

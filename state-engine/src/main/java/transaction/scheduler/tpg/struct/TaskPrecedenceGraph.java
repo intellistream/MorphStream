@@ -126,12 +126,12 @@ public class TaskPrecedenceGraph {
      * @param threadId
      */
     public void firstTimeExploreTPG(int threadId) {
+        Controller.stateManagers.get(threadId).initialize(shortCutListener);
         for (String key : Controller.threadtoStateMapping.get(threadId)) {
             operationChains.computeIfPresent(key, (s, operationChain) -> {
                 operationChain.updateTDDependencies();
                 Operation head = operationChain.getOperations().first();
 //                head.exploreReadyOperation();
-                Controller.stateManagers.get(threadId).setShortCutListener(shortCutListener);
                 if (head.isRoot()) {
                     Controller.stateManagers.get(threadId).onRootStart(head);
                 }
