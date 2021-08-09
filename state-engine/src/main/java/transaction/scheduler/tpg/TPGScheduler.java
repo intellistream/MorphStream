@@ -104,8 +104,8 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         for (int index = 0; index < condition_source.length; index++) {
             TableRecord s_record = condition_records[index];
             String s_table_name = condition_sourceTable[index];
-            SchemaRecordRef tmp_src_value = new SchemaRecordRef();
-            get_ops[index] = new Operation(getTargetContext(s_record), s_table_name, txn_context, bid, CommonMetaTypes.AccessType.GET, s_record, tmp_src_value);
+//            SchemaRecordRef tmp_src_value = new SchemaRecordRef();
+            get_ops[index] = new Operation(getTargetContext(s_record), s_table_name, txn_context, bid, CommonMetaTypes.AccessType.GET, s_record);
         }
         return get_ops;
     }
@@ -122,7 +122,8 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
                 // 1. construct operations
                 // read source record that to help the update on destination record
                 Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
-                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.function, request.condition, request.success);
+                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET,
+                        request.d_record, request.function, request.condition, request.condition_records, request.success);
                 // write the destination record, the write operation depends on the record returned by get_op
 
                 // 2. add data dependencies, parent op will notify children op after it was executed
@@ -137,7 +138,8 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
                 // 1. construct operations
                 // read the s_record
                 Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
-                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.record_ref, request.function, request.condition, request.success);
+                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET,
+                        request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
 
                 // 2. add data dependencies, parent op will notify children op after it was executed
                 for (Operation get_op : get_ops) {
@@ -167,13 +169,35 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
 
     // DD: Transfer event processing
     private void CT_Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        Queue<Operation> fd_parents = operation.getParents(MetaTypes.DependencyType.FD);
-        List<SchemaRecord> preValues = new ArrayList<>();
-        for (Operation parent : fd_parents) {
-            preValues.add(parent.record_ref.getRecord());
-        }
+//        Queue<Operation> fd_parents = operation.getParents(MetaTypes.DependencyType.FD);
+//        List<SchemaRecord> preValues = new ArrayList<>();
+//        for (Operation parent : fd_parents) {
+//            preValues.add(parent.record_ref.getRecord());
+//        }
+//        System.out.println("read: " + (System.nanoTime() - start));
 
-        if (preValues.get(0) == null) {
+//        if (preValues.get(0) == null) {
+//            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
+//            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
+//            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
+//                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+//            }
+//            log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
+//        }
+//        if (preValues.get(1) == null) {
+//            log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
+//            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
+//            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
+//                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+//            }
+//            log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
+//        }
+//        final long sourceAccountBalance = preValues.get(0).getValues().get(1).getLong();
+//        final long sourceAssetValue = preValues.get(1).getValues().get(1).getLong();
+
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+        SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
+        if (preValues == null) {
             log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
             log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
@@ -181,7 +205,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
             }
             log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
         }
-        if (preValues.get(1) == null) {
+        if (preValues1 == null) {
             log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
             log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
@@ -189,8 +213,9 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
             }
             log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
         }
-        final long sourceAccountBalance = preValues.get(0).getValues().get(1).getLong();
-        final long sourceAssetValue = preValues.get(1).getValues().get(1).getLong();
+        final long sourceAccountBalance = preValues.getValues().get(1).getLong();
+        final long sourceAssetValue = preValues1.getValues().get(1).getLong();
+
         if (sourceAccountBalance > operation.condition.arg1
                 && sourceAccountBalance > operation.condition.arg2
                 && sourceAssetValue > operation.condition.arg3) {
@@ -233,7 +258,8 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         }
         // the operation will only be executed when the state is in READY/SPECULATIVE,
         if (operation.accessType.equals(GET)) {
-            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+//            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            // do nothing but notify set operation that it is executable
         } else if (operation.accessType.equals(SET)) {
             int success = operation.success[0];
             CT_Transfer_Fun(operation, mark_ID, clean);
@@ -255,7 +281,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
     @Override
     public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
-        int batch_size = 5;//TODO;
+        int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
 
