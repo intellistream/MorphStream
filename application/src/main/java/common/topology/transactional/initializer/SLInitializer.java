@@ -3,10 +3,10 @@ package common.topology.transactional.initializer;
 import benchmark.DataHolder;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.SpecialDataGenerator;
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGenerator;
-import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGenerator;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
 import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -28,12 +28,13 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
-import static common.constants.StreamLedgerConstants.Constant.*;
 import static transaction.State.configure_store;
 
-//import static xerial.jnuma.Numa.setLocalAlloc;
 public class SLInitializer extends TableInitilizer {
 
     private static final Logger LOG = LoggerFactory.getLogger(SLInitializer.class);
@@ -41,55 +42,53 @@ public class SLInitializer extends TableInitilizer {
     private final String idsGenType;
     private String dataRootPath;
     private SpecialDataGenerator dataGenerator;
+    private final int numberOfStates;
 
     private final int startingBalance = 1000000;
     private final String actTableKey = "accounts";
     private final String bookTableKey = "bookEntries";
     private final int partitionOffset;
 
-    private final boolean isOC;
-    private final boolean isTPG;
-
-    public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
+    public SLInitializer(Database db, String dataRootPath, int numberOfStates, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
+        this.numberOfStates = numberOfStates;
         this.dataRootPath = dataRootPath;
-        configure_store(scale_factor, theta, tthread, config.getInt("NUM_ITEMS"));
+        configure_store(scale_factor, theta, tthread, numberOfStates);
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         idsGenType = config.getString("idGenType");
-//        this.mPartitionOffset = (totalRecords * 5) / tthread;
-        this.partitionOffset = config.getInt("NUM_ITEMS") / tthread;
+        this.partitionOffset = numberOfStates / tthread;
 
         Controller.setExec(tthread);
 
-        String generator = config.getString("generator");
-        isOC = generator.equals("OCGenerator");
-//        isBFS = true; // just for test, make tpg and bfs use the same data generator - bfs
-        isTPG = generator.equals("TPGGenerator");
-        if (isOC) {
-            createDataGeneratorForBFS(config);
-        } else if (isTPG) {
-            createDataGeneratorForTPG(config);
-        } else {
-            throw new UnsupportedOperationException("wrong scheduler set up: " + generator);
+        String generatorType = config.getString("generator");
+        switch (generatorType) {
+            case "OCGenerator":
+                createLayeredOCGenerator(config);
+                break;
+            case "TPGGenerator":
+                createTPGGenerator(config);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + generatorType);
         }
     }
 
-    protected void createDataGeneratorForBFS(Configuration config) {
+    protected void createLayeredOCGenerator(Configuration config) {
 
-        DataGeneratorConfig dataConfig = new LayeredOCDataGeneratorConfig();
+        LayeredOCDataGeneratorConfig dataConfig = new LayeredOCDataGeneratorConfig();
         dataConfig.initialize(config);
 
         configurePath(dataConfig);
-        dataGenerator = new LayeredOCDataGenerator((LayeredOCDataGeneratorConfig) dataConfig);
+        dataGenerator = new LayeredOCDataGenerator(dataConfig);
     }
 
-    protected void createDataGeneratorForTPG(Configuration config) {
+    protected void createTPGGenerator(Configuration config) {
 
-        DataGeneratorConfig dataConfig = new TPGDataGeneratorConfig();
+        TPGDataGeneratorConfig dataConfig = new TPGDataGeneratorConfig();
         dataConfig.initialize(config);
 
         configurePath(dataConfig);
-        dataGenerator = new TPGDataGenerator((TPGDataGeneratorConfig) dataConfig);
+        dataGenerator = new TPGDataGenerator(dataConfig);
     }
 
     private void configurePath(DataGeneratorConfig dataConfig) {
@@ -120,7 +119,7 @@ public class SLInitializer extends TableInitilizer {
 
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
-        int partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
+        int partition_interval = (int) Math.ceil(numberOfStates / (double) NUM_TASK);
         int left_bound = thread_id * partition_interval;
         int right_bound;
         if (thread_id == NUM_TASK - 1) {//last executor need to handle left-over
@@ -130,13 +129,11 @@ public class SLInitializer extends TableInitilizer {
         }
         for (int key = left_bound; key < right_bound; key++) {
             int pid = get_pid(partition_interval, key);
-            String _key = GenerateKey(ACCOUNT_ID_PREFIX, key);
+            String _key = String.valueOf(key);
             insertAccountRecord(_key, startingBalance, pid, spinlock);
-            Controller.UpdateMapping(thread_id, "accounts" + "|" + _key);
-            _key = GenerateKey(BOOK_ENTRY_ID_PREFIX, key);
+            Controller.UpdateMapping(thread_id, actTableKey + "|" + _key);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
-            Controller.UpdateMapping(thread_id, "bookEntries" + "|" + _key);
-
+            Controller.UpdateMapping(thread_id, bookTableKey + "|" + _key);
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
@@ -183,15 +180,6 @@ public class SLInitializer extends TableInitilizer {
         values.add(new StringDataBox(key, key.length()));
         values.add(new LongDataBox(value));
         return new SchemaRecord(values);
-    }
-
-    //    private String rightpad(String text, int length) {
-//        return String.format("%-" + length + "." + length + "s", text);
-//    }
-//
-    private String GenerateKey(String prefix, int key) {
-//        return rightpad(prefix + String.valueOf(key), VALUE_LEN);
-        return prefix + key;
     }
 
     private RecordSchema getRecordSchema() {

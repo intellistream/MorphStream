@@ -61,8 +61,8 @@ public abstract class Runner implements IRunner {
     public boolean disable_pushdown = false;
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (seconds)")
     public double checkpoint_interval = 5;// default checkpoint interval.
-    @Parameter(names = {"--TP"}, description = "TP threads")
-    public int TP = 4;// default TP threads
+//    @Parameter(names = {"--TP"}, description = "TP threads")
+//    public int TP = 4;// default TP threads
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
@@ -151,7 +151,7 @@ public abstract class Runner implements IRunner {
             config.put("partition", enable_partition);
         config.put("measure", enable_measurement);
         config.put("checkpoint", checkpoint_interval);
-        config.put("TP", TP);
+//        config.put("TP", TP);
         config.put("tthread", tthread);
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);

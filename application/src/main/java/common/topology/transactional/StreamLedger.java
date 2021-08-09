@@ -50,8 +50,9 @@ public class StreamLedger extends TransactionTopology {
         double scale_factor = config.getDouble("scale_factor", 1);
         double theta = config.getDouble("theta", 1);
         int tthread = config.getInt("tthread");
-        setPartition_interval((int) (Math.ceil(NUM_ACCOUNTS / (double) tthread)), tthread);
-        TableInitilizer ini = new SLInitializer(db, config.getString("rootFilePath"), scale_factor, theta, tthread, config);
+        int numberOfStates = config.getInt("NUM_ITEMS");
+        setPartition_interval((int) (Math.ceil(numberOfStates / (double) tthread)), tthread);
+        TableInitilizer ini = new SLInitializer(db, config.getString("rootFilePath"), numberOfStates, scale_factor, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)

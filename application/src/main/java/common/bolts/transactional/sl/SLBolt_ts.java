@@ -49,7 +49,6 @@ public class SLBolt_ts extends SLBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-//        int numberOfStates = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         int numberOfStates = config.getInt("NUM_ITEMS");
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
                 numberOfStates, this.context.getThisComponent().getNumTasks());
@@ -166,8 +165,11 @@ public class SLBolt_ts extends SLBolt {
 
     protected void DEPOSITE_REQUEST_CONSTRUCT(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
+        transactionManager.BeginTransaction(txnContext);
         transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()));// read and modify the account itself.
         transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()));// read and modify the asset itself.
+        transactionManager.CommitTransaction(txnContext);
+
         depositeEvents.add(event);
     }
 

@@ -61,7 +61,6 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
     @Override
     protected void generateTuple() {
         // Step 1: select OCs for txn according to the required OCs dependency distribution
-        long selectTuplesStart = System.nanoTime();
         selectOCsForTransaction();
 
         // Step 2: update OCs dependencies graph for future data generation
