@@ -19,7 +19,7 @@ public class TPGContext extends SchedulerContext {
         taskQueues = new ConcurrentLinkedDeque<>();
         batchedOperations = new ArrayDeque<>();
         partitionStateManager = new PartitionStateManager();
-
+        requests = new ArrayDeque<>();
     }
 
     @Override
