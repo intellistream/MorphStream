@@ -42,37 +42,43 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
     public String name;
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
-        this(null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null);
+        this(null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
     }
 
     /****************************Defined by MYC*************************************/
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
                      Function function, Condition condition, int[] success) {
-        this(null, table_name, txn_context, bid, accessType, record, null, function, condition, success);
+        this(null, table_name, txn_context, bid, accessType, record, null, function, condition, null, success);
     }
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
                      SchemaRecordRef record_ref, Function function, Condition condition, int[] success) {
-        this(null, table_name, txn_context, bid, accessType, record, record_ref, function, condition, success);
+        this(null, table_name, txn_context, bid, accessType, record, record_ref, function, condition, null, success);
     }
 
 
     public <Context extends TPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, int[] success) {
-        this(context, table_name, txn_context, bid, accessType, d_record, null, function, condition, success);
+                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
+        this(context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
+    }
+
+    public <Context extends TPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record) {
+        this(context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
     }
 
     public <Context extends TPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record,
                                                   SchemaRecordRef record_ref) {
-        this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null);
+        this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
 
     public <Context extends TPGContext> Operation(
             Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            SchemaRecordRef record_ref, Function function, Condition condition, int[] success) {
+            SchemaRecordRef record_ref, Function function, Condition condition,
+            TableRecord[] condition_records, int[] success) {
         super();
         this.context = context;
         this.table_name = table_name;
@@ -84,6 +90,7 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
         this.s_record = d_record;
         this.record_ref = record_ref;//this holds events' record_ref.
         this.condition = condition;
+        this.condition_records = condition_records;
         this.success = success;
         this.operationChainKey = table_name + "|" + d_record.record_.GetPrimaryKey();
 
