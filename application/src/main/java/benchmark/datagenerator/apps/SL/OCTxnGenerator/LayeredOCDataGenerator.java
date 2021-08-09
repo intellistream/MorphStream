@@ -20,7 +20,7 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
     private final Random randomGenerator = new Random();
     private final Random randomGeneratorForAccIds = new Random(12345678);
     private final Random randomGeneratorForAstIds = new Random(123456789);
-    protected DataGeneratorConfigForBFS dataConfig;
+    protected LayeredOCDataGeneratorConfig dataConfig;
     HashMap<Long, Integer> generatedAccountIds = new HashMap<>();
     HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
     SLDataOperationChain srcAccOC = null;
@@ -39,8 +39,6 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
     private int transactionId = 0;
     private long partitionOffset = 0;
     private int partitionId = 0;
-
-    protected LayeredOCDataGeneratorConfig dataConfig;
 
     public LayeredOCDataGenerator(LayeredOCDataGeneratorConfig dataConfig) {
         super(dataConfig);

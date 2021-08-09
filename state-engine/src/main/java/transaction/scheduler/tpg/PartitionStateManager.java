@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class PartitionStateManager implements OperationStateListener, Runnable {
     public final ArrayList<String> partition; //  list of states being responsible for
-//    public final HashMap<String, Queue<NotificationSignal>> stateTransitionQueueMap;
+    //    public final HashMap<String, Queue<NotificationSignal>> stateTransitionQueueMap;
     public final Queue<NotificationSignal> stateTransitionQueue;
     private TaskPrecedenceGraph.ShortCutListener shortCutListener;
 
@@ -201,26 +201,26 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
             // notify descendants to commit.
             ArrayDeque<Operation> descendants = operation.getDescendants();
             for (Operation descendant : descendants) {
-                getTargetStateManager(descendant).onHeaderStateUpdated(descendant, MetaTypes.OperationStateType.COMMITTED);
+                descendant.context.partitionStateManager.onHeaderStateUpdated(descendant, MetaTypes.OperationStateType.COMMITTED);
             }
         }
         // notify all td children committed
         ArrayDeque<Operation> children = operation.getChildren(MetaTypes.DependencyType.TD);
         for (Operation child : children) {
-            getTargetStateManager(child).onParentStateUpdated(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.COMMITTED);
+            child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.COMMITTED);
         }
     }
 
     private void executedToCommittableAction(Operation operation) {
         // notify a number of speculative children to execute in parallel.
         Operation header = operation.getHeader();
-        getTargetStateManager(header).onDescendantStateUpdated(header, MetaTypes.OperationStateType.COMMITTABLE);
+        header.context.partitionStateManager.onDescendantStateUpdated(header, MetaTypes.OperationStateType.COMMITTABLE);
     }
 
     private void blockedToReadyAction(Operation operation) {
         // notify a number of speculative children to execute in parallel.
 //        shortCutListener.onExecutable(operation, true);
-        shortCutListener.onExecutable(operation, true, thread_id);
+        shortCutListener.onExecutable(operation, true);
         ArrayDeque<Operation> children = operation.getChildren(MetaTypes.DependencyType.SP_LD);
         // notify the size - 1 number of operations to speculative execute in parallel
         // the last one keeps in blocked state for as a potential future ready candidate.
@@ -228,7 +228,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
         int curIdx = 0;
         for (Operation child : children) {
             if (curIdx != last) {
-                getTargetStateManager(child).onParentStateUpdated(child, MetaTypes.DependencyType.SP_LD, MetaTypes.OperationStateType.READY);
+                child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.SP_LD, MetaTypes.OperationStateType.READY);
             }
             curIdx++;
         }
@@ -236,46 +236,41 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
 
     private void blockedToSpeculativeAction(Operation operation) {
 //        shortCutListener.onExecutable(operation, false);
-        shortCutListener.onExecutable(operation, false, thread_id);
+        shortCutListener.onExecutable(operation, false);
     }
 
     private void executedAction(Operation operation) {
         // put child to the targeting state manager state transitiion queue.
         ArrayDeque<Operation> children = operation.getChildren(MetaTypes.DependencyType.TD);
         for (Operation child : children) {
-            getTargetStateManager(child).onParentStateUpdated(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.EXECUTED);
+//            getTargetStateManager(child).onParentStateUpdated(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.EXECUTED);
+            child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.EXECUTED);
         }
         children = operation.getChildren(MetaTypes.DependencyType.FD);
         for (Operation child : children) {
-            getTargetStateManager(child).onParentStateUpdated(child, MetaTypes.DependencyType.FD, MetaTypes.OperationStateType.EXECUTED);
+            child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.FD, MetaTypes.OperationStateType.EXECUTED);
         }
         children = operation.getChildren(MetaTypes.DependencyType.SP_LD);
         if (operation.isReadyCandidate()) {
             // if is ready candidate and is executed, elect a new ready candidate
             if (!children.isEmpty()) {
                 Operation child = children.getLast();
-                getTargetStateManager(child).onReadyParentStateUpdated(child, MetaTypes.DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
+                child.context.partitionStateManager.onReadyParentStateUpdated(child, MetaTypes.DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
             }
         }
         // notify its ld speculative children to countdown, this countdown will only be used for ready candidate.
         // i.e. the read candidate will transit to ready when all its speculative countdown is 0;
         for (Operation child : children) {
-            getTargetStateManager(child).onParentStateUpdated(child, MetaTypes.DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
+            child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
         }
-    }
-
-    private PartitionStateManager getTargetStateManager(Operation child) {
-        String operationChainKey = child.getOperationChainKey();
-        return Controller.stateToThreadMapping.get(operationChainKey);
     }
 
     public void initialize(TaskPrecedenceGraph.ShortCutListener shortCutListener) {
         // 1. set listener
         this.shortCutListener = shortCutListener;
-        // 2. initialize signal queues
-        Controller.Partition partition = Controller.threadtoStateMapping.get(thread_id);
-        for (String operationChainKey : partition) {
-            this.stateTransitionQueueMap.put(operationChainKey, new ConcurrentLinkedQueue<>());
-        }
+//        // 2. initialize signal queues
+//        for (String operationChainKey : partition) {
+//            this.stateTransitionQueue.put(operationChainKey, new ConcurrentLinkedQueue<>());
+//        }
     }
 }

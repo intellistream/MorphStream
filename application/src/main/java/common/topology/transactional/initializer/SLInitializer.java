@@ -44,20 +44,18 @@ public class SLInitializer extends TableInitilizer {
     private final String idsGenType;
     private final int numberOfStates;
     private final int startingBalance = 1000000;
-    private final String actTableKey = "accounts";
-    private final String bookTableKey = "bookEntries";
     private final int partitionOffset;
     private String dataRootPath;
     private SpecialDataGenerator dataGenerator;
 
-    public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
+    public SLInitializer(Database db, String dataRootPath, int numberOfStates, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
         this.numberOfStates = numberOfStates;
         this.dataRootPath = dataRootPath;
-        configure_store(scale_factor, theta, tthread, numberOfStates);
+        configure_store(scale_factor, theta, tthread, this.numberOfStates);
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         idsGenType = config.getString("idGenType");
-        this.partitionOffset = numberOfStates / tthread;
+        this.partitionOffset = this.numberOfStates / tthread;
 
 //        Controller.setExec(tthread);
 
