@@ -242,11 +242,14 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
 
         do {
             Operation next = next(context);
-            if (next == null || cnt > batch_size) {
+            if (next == null) {
                 break;
             }
             context.batchedOperations.push(next);
             cnt++;
+            if (cnt > batch_size) {
+                break;
+            }
         } while (true);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
