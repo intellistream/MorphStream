@@ -73,4 +73,8 @@ public abstract class SpecialDataGenerator {
     }
 
     ;
+
+    public void prepareForExecution() {
+        throw new UnsupportedOperationException("this is not support at abstract class");
+    }
 }

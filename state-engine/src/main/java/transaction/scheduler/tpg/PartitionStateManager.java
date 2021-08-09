@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class PartitionStateManager implements OperationStateListener, Runnable {
     public final ArrayList<String> partition; //  list of states being responsible for
-//    public final HashMap<String, Queue<NotificationSignal>> stateTransitionQueueMap;
+    //    public final HashMap<String, Queue<NotificationSignal>> stateTransitionQueueMap;
     public final Queue<NotificationSignal> stateTransitionQueue;
     private TaskPrecedenceGraph.ShortCutListener shortCutListener;
 

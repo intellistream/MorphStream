@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Generator Config that is tunable for comprehensive experiments
  */
-public class DataGeneratorConfigForTPG extends DataGeneratorConfig {
-    private static final Logger LOG = LoggerFactory.getLogger(DataGeneratorConfigForTPG.class);
+public class TPGDataGeneratorConfig extends DataGeneratorConfig {
+    private static final Logger LOG = LoggerFactory.getLogger(TPGDataGeneratorConfig.class);
 
     @Override
     public void initialize(Configuration config) {

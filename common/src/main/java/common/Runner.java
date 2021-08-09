@@ -61,8 +61,8 @@ public abstract class Runner implements IRunner {
     public boolean disable_pushdown = false;
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (seconds)")
     public double checkpoint_interval = 5;// default checkpoint interval.
-    @Parameter(names = {"--TP"}, description = "TP threads")
-    public int TP = 4;// default TP threads
+//    @Parameter(names = {"--TP"}, description = "TP threads")
+//    public int TP = 4;// default TP threads
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
@@ -87,6 +87,12 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--verbose"}, description = "whether print execution detail")
     public boolean verbose = false;
 
+    /**
+     * generator parameters
+     */
+    @Parameter(names = {"--generator"}, description = "Generator for TStream.")
+//    public String generator = "TPGGenerator";
+    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
     public int totalEventsPerBatch = 100_000;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
@@ -102,6 +108,7 @@ public abstract class Runner implements IRunner {
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
     public String idGenType = "uniform";
+
     /**
      * Functional Parameters.
      */
@@ -133,6 +140,7 @@ public abstract class Runner implements IRunner {
         config.put("numberOfBatches", numberOfBatches);
         config.put("rootFilePath", rootPath);
         config.put("scheduler", scheduler);
+        config.put("generator", generator);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
         config.put("numberOfDLevels", numberOfDLevels);
@@ -143,7 +151,7 @@ public abstract class Runner implements IRunner {
             config.put("partition", enable_partition);
         config.put("measure", enable_measurement);
         config.put("checkpoint", checkpoint_interval);
-        config.put("TP", TP);
+//        config.put("TP", TP);
         config.put("tthread", tthread);
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);

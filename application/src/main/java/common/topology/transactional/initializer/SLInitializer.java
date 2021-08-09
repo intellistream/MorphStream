@@ -3,10 +3,10 @@ package common.topology.transactional.initializer;
 import benchmark.DataHolder;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.SpecialDataGenerator;
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.DataGeneratorConfigForBFS;
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataGeneratorForBFS;
-import benchmark.datagenerator.apps.SL.TPGTxnGenerator.DataGeneratorConfigForTPG;
-import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLDataGeneratorForTPG;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGenerator;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGenerator;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
 import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -42,58 +42,55 @@ public class SLInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(SLInitializer.class);
     private final int totalRecords;
     private final String idsGenType;
+    private final int numberOfStates;
     private final int startingBalance = 1000000;
-    private final String actTableKey = "accounts";
-    private final String bookTableKey = "bookEntries";
     private final int partitionOffset;
-    private final boolean isBFS;
-    private final boolean isTPG;
     private String dataRootPath;
     private SpecialDataGenerator dataGenerator;
 
-    public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
+    public SLInitializer(Database db, String dataRootPath, int numberOfStates, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
+        this.numberOfStates = numberOfStates;
         this.dataRootPath = dataRootPath;
-        configure_store(scale_factor, theta, tthread, config.getInt("NUM_ITEMS"));
+        configure_store(scale_factor, theta, tthread, this.numberOfStates);
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         idsGenType = config.getString("idGenType");
-//        this.mPartitionOffset = (totalRecords * 5) / tthread;
-        this.partitionOffset = config.getInt("NUM_ITEMS") / tthread;
+        this.partitionOffset = this.numberOfStates / tthread;
 
 //        Controller.setExec(tthread);
 
-        String scheduler = config.getString("scheduler");
-//        isBFS = scheduler.equals("BFS");
-        isBFS = true; // just for test, make tpg and bfs use the same data generator - bfs
-        isTPG = scheduler.equals("TPG");
-        if (isBFS) {
-            createDataGeneratorFoBFS(config);
-        } else if (isTPG) {
-            createDataGeneratorFoTPG(config);
-        } else {
-            throw new UnsupportedOperationException("wrong scheduler set up: " + scheduler);
+        String generatorType = config.getString("generator");
+        switch (generatorType) {
+            case "OCGenerator":
+                createLayeredOCGenerator(config);
+                break;
+            case "TPGGenerator":
+                createTPGGenerator(config);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + generatorType);
         }
     }
 
-    protected void createDataGeneratorFoBFS(Configuration config) {
+    protected void createLayeredOCGenerator(Configuration config) {
 
-        DataGeneratorConfig dataConfig = new DataGeneratorConfigForBFS();
+        LayeredOCDataGeneratorConfig dataConfig = new LayeredOCDataGeneratorConfig();
         dataConfig.initialize(config);
 
-        setupExpFolder(dataConfig);
-        dataGenerator = new SLDataGeneratorForBFS((DataGeneratorConfigForBFS) dataConfig);
+        configurePath(dataConfig);
+        dataGenerator = new LayeredOCDataGenerator(dataConfig);
     }
 
-    protected void createDataGeneratorFoTPG(Configuration config) {
+    protected void createTPGGenerator(Configuration config) {
 
-        DataGeneratorConfig dataConfig = new DataGeneratorConfigForTPG();
+        TPGDataGeneratorConfig dataConfig = new TPGDataGeneratorConfig();
         dataConfig.initialize(config);
 
-        setupExpFolder(dataConfig);
-        dataGenerator = new SLDataGeneratorForTPG((DataGeneratorConfigForTPG) dataConfig);
+        configurePath(dataConfig);
+        dataGenerator = new TPGDataGenerator(dataConfig);
     }
 
-    private void setupExpFolder(DataGeneratorConfig dataConfig) {
+    private void configurePath(DataGeneratorConfig dataConfig) {
         MessageDigest digest;
         String subFolder = null;
         try {
@@ -121,7 +118,7 @@ public class SLInitializer extends TableInitilizer {
 
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
-        int partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
+        int partition_interval = (int) Math.ceil(numberOfStates / (double) NUM_TASK);
         int left_bound = thread_id * partition_interval;
         int right_bound;
         if (thread_id == NUM_TASK - 1) {//last executor need to handle left-over
@@ -131,9 +128,8 @@ public class SLInitializer extends TableInitilizer {
         }
         for (int key = left_bound; key < right_bound; key++) {
             int pid = get_pid(partition_interval, key);
-            String _key = GenerateKey(ACCOUNT_ID_PREFIX, key);
+            String _key = String.valueOf(key);
             insertAccountRecord(_key, startingBalance, pid, spinlock);
-            _key = GenerateKey(BOOK_ENTRY_ID_PREFIX, key);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -164,10 +160,9 @@ public class SLInitializer extends TableInitilizer {
         }
         for (int key = left_bound; key < right_bound; key++) {
             int pid = get_pid(partition_interval, key);
-            String _key = GenerateKey(ACCOUNT_ID_PREFIX, key);
+            String _key = String.valueOf(key);
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             context.UpdateMapping("accounts" + "|" + _key);
-            _key = GenerateKey(BOOK_ENTRY_ID_PREFIX, key);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
             context.UpdateMapping("bookEntries" + "|" + _key);
         }
@@ -249,15 +244,6 @@ public class SLInitializer extends TableInitilizer {
         return new SchemaRecord(values);
     }
 
-    //    private String rightpad(String text, int length) {
-//        return String.format("%-" + length + "." + length + "s", text);
-//    }
-//
-    private String GenerateKey(String prefix, int key) {
-//        return rightpad(prefix + String.valueOf(key), VALUE_LEN);
-        return prefix + key;
-    }
-
     private RecordSchema getRecordSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -277,47 +263,15 @@ public class SLInitializer extends TableInitilizer {
     }
 
     @Override
-    public boolean Prepared(String fileN) throws IOException {
+    public boolean Prepared(String fileN) {
 
         int tuplesPerBatch = dataGenerator.getDataConfig().getTuplesPerBatch();
         int totalBatches = dataGenerator.getDataConfig().getTotalBatches();
-        int tt = dataGenerator.getDataConfig().getTotalThreads();
         boolean shufflingActive = dataGenerator.getDataConfig().getShufflingActive();
         String folder = dataGenerator.getDataConfig().getRootPath();
-        String scheduler = dataGenerator.getDataConfig().getScheduler();
 
-        if (isBFS) {
-            String statsFolderPattern = dataGenerator.getDataConfig().getIdsPath()
-                    + OsUtils.osWrapperPostFix("stats")
-                    + OsUtils.osWrapperPostFix("scheduler = %s")
-                    + OsUtils.osWrapperPostFix("depth = %d")
-                    + OsUtils.osWrapperPostFix("threads = %d")
-                    + OsUtils.osWrapperPostFix("total_batches = %d")
-                    + OsUtils.osWrapperPostFix("events_per_batch = %d");
+        dataGenerator.prepareForExecution();
 
-            DataGeneratorConfigForBFS dataConfig = dataGenerator.getDataConfig();
-            String statsFolderPath = String.format(statsFolderPattern, scheduler, dataConfig.getNumberOfDLevels(), tt, totalBatches, tuplesPerBatch);
-            File file = new File(statsFolderPath + "iteration_0.csv");
-            if (!file.exists()) {
-                dataGenerator.generateStream();
-                dataGenerator = null;
-            }
-        } else if (isTPG) {
-            String statsFolderPattern = dataGenerator.getDataConfig().getIdsPath()
-                    + OsUtils.osWrapperPostFix("stats")
-                    + OsUtils.osWrapperPostFix("scheduler = %s")
-                    + OsUtils.osWrapperPostFix("threads = %d")
-                    + OsUtils.osWrapperPostFix("total_batches = %d")
-                    + OsUtils.osWrapperPostFix("events_per_batch = %d");
-
-            DataGeneratorConfigForTPG dataConfig = dataGenerator.getDataConfig();
-            String statsFolderPath = String.format(statsFolderPattern, scheduler, tt, totalBatches, tuplesPerBatch);
-            File file = new File(statsFolderPath + "iteration_0.csv");
-            if (!file.exists()) {
-                dataGenerator.generateStream();
-                dataGenerator = null;
-            }
-        }
         loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
         return true;
     }
@@ -330,11 +284,7 @@ public class SLInitializer extends TableInitilizer {
     protected void loadTransactionEvents(int tuplesPerBatch, int totalBatches, boolean shufflingActive, String folder) {
 
         if (DataHolder.events == null) {
-            int numberOfEvents = tuplesPerBatch * totalBatches;
-//            int mPartitionOffset = (10 * numberOfEvents * 5) / tthread;
-            int mPartitionOffset = config.getInt("NUM_ITEMS") / tthread;
-
-            DataHolder.events = new TransactionEvent[numberOfEvents];
+            DataHolder.events = new TransactionEvent[totalRecords];
             File file = new File(folder + "transactions.txt");
             if (file.exists()) {
                 LOG.info(String.format("Reading transactions..."));
