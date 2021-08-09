@@ -24,9 +24,9 @@ public interface OperationStateListener {
     /**
      * thread notify the operation execution results either success/failed, do state transition correspondingly
      * @param operation
-     * @param isFailed
+     *
      */
-    void onProcessed(Operation operation, boolean isFailed);
+    void onProcessed(Operation operation);
 
     /**
      * this method will only be used in header operation, others should not use it.

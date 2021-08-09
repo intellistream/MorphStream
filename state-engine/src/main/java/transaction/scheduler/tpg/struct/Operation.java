@@ -41,6 +41,7 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
     public volatile TableRecord[] condition_records;
     public Condition condition;
     public int[] success;
+    public boolean isFailed;
     public String name;
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef recordRef) {

@@ -33,15 +33,18 @@ import static common.meta.CommonMetaTypes.AccessType.SET;
 @lombok.extern.slf4j.Slf4j
 public class TPGScheduler extends Scheduler<Operation> {
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
-//    private final Map<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
+    //    private final Map<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
     private final Map<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
     private final Map<Integer, ArrayDeque<Request>> requests = new ConcurrentHashMap<>();
+    private final Map<Integer, ArrayDeque<Operation>> batchedOperations = new ConcurrentHashMap<>();
+
     public TPGScheduler(int tp) {
         this.tpg = new TaskPrecedenceGraph(tp);
         taskQueues = new HashMap<>();
         for (int i = 0; i < tp; i++) {
             taskQueues.put(i, new ConcurrentLinkedDeque<>());
             requests.put(i, new ArrayDeque<>());
+            batchedOperations.put(i, new ArrayDeque<>());
         }
         ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
         tpg.setExecutableListener(executableTaskListener);
@@ -63,8 +66,11 @@ public class TPGScheduler extends Scheduler<Operation> {
      */
     @Override
     public void EXPLORE(int threadId) {
-//        DISTRIBUTE(tpg.exploreReady(), threadId);
-//        DISTRIBUTE(tpg.exploreSpeculative(), threadId);
+        while (batchedOperations.get(threadId).size() != 0) {
+            Operation remove = batchedOperations.get(threadId).remove();
+            Controller.stateManagers.get(threadId).onProcessed(remove);
+        }
+
     }
     @Override
     public boolean FINISHED(int threadId) {
@@ -207,7 +213,6 @@ public class TPGScheduler extends Scheduler<Operation> {
             return;
         }
         // the operation will only be executed when the state is in READY/SPECULATIVE,
-        boolean isFailed = false;
         if (operation.accessType.equals(GET)) {
             operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
         } else if (operation.accessType.equals(SET)) {
@@ -215,7 +220,7 @@ public class TPGScheduler extends Scheduler<Operation> {
             CT_Transfer_Fun(operation, mark_ID, clean);
             // operation success check
             if (operation.success[0] == success) {
-                isFailed = true;
+                operation.isFailed = true;
             } else {
                 // check whether needs to return a read results of the operation
                 if (operation.record_ref != null) {
@@ -226,27 +231,30 @@ public class TPGScheduler extends Scheduler<Operation> {
             throw new UnsupportedOperationException();
         }
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
-        Controller.stateManagers.get(threadId).onProcessed(operation, isFailed);
     }
 
     @Override
     public void PROCESS(int threadId, long mark_ID) {
-        do {
-            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-            Operation next = next(threadId);
-            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-            if (next == null) break;
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            execute(threadId, next, mark_ID, false);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-        } while (true);
-    }
+        int cnt = 0;
+        int batch_size = 5;//TODO;
+        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
-//    public void measureTime(int threadId, Runnable runnable, Operation operation) {
-////        long start = System.nanoTime();
-//        runnable.run();
-////        System.out.println(threadId + "|" + operation.accessType + "|[" + operation + "]|" + (System.nanoTime() - start));
-//    }
+        do {
+            Operation next = next(threadId);
+            if (next == null || cnt > batch_size) {
+                break;
+            }
+            batchedOperations.get(threadId).push(next);
+            cnt++;
+        } while (true);
+        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+
+        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+        for (Operation operation : batchedOperations.get(threadId)) {
+            execute(threadId, operation, mark_ID, false);
+        }
+        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+    }
 
     /**
      * Try to get task from local queue.
@@ -255,14 +263,10 @@ public class TPGScheduler extends Scheduler<Operation> {
      * @return
      */
     public Operation next(int threadId) {
+
         return taskQueues.get(threadId).pollLast();
-//        if (taskQueue.size() > 0) {
-//        System.out.println(threadId + " | " + Thread.currentThread().getId());
-//            return taskQueue.removeLast();
-//        }
-//        return taskQueue.pollLast();
-//        else return null;
     }
+
     /**
      * Distribute the operations to different threads with different strategies
      * 1. greedy: simply execute all operations has picked up.

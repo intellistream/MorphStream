@@ -5,8 +5,6 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.scheduler.IScheduler;
 import transaction.scheduler.SchedulerFactory;
-import transaction.scheduler.layered.struct.Operation;
-import utils.SOURCE_CONTROL;
 
 /**
  * There is one TxnProcessingEngine of each stage.

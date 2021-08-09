@@ -65,9 +65,7 @@ public class TaskPrecedenceGraph {
     public void addTxn(List<Operation> operations) {
         // add Logical dependnecies for those operations in the operation graph
         // two operations can have both data dependency and logical dependency.
-
         transactions.add(operations);
-
         Operation headerOperation = operations.get(0);
         headerOperation.setReadyCandidate();
         for (int i = 0; i < operations.size(); i++) {
@@ -188,7 +186,7 @@ public class TaskPrecedenceGraph {
      * expose an api to check whether all operations are in the final state i.e. aborted/committed
      */
     public boolean isFinished() {
-//        LOG.info("operations left to do:" + nPendingOperation.get());
+        LOG.debug("operations left to do:" + nPendingOperation.get());
         return nPendingOperation.get() == 0;
     }
 

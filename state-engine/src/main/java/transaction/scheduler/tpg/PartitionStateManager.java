@@ -43,12 +43,12 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     }
 
     @Override
-    public void onProcessed(Operation operation, boolean isFailed) {
+    public void onProcessed(Operation operation) {
         PartitionStateManager partitionStateManager = getTargetStateManager(operation);
         if (partitionStateManager.equals(this)) {
-            stateTransitionQueueMap.get(operation.getOperationChainKey()).add(new OnProcessedSignal(operation, isFailed));//
+            stateTransitionQueueMap.get(operation.getOperationChainKey()).add(new OnProcessedSignal(operation, operation.isFailed));//
         } else {
-            partitionStateManager.onProcessed(operation, isFailed);
+            partitionStateManager.onProcessed(operation);
         }
     }
 
