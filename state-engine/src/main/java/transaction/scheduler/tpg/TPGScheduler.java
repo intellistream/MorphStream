@@ -98,7 +98,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
             TableRecord s_record = condition_records[index];
             String s_table_name = condition_sourceTable[index];
             SchemaRecordRef tmp_src_value = new SchemaRecordRef();
-            get_ops[index] = new Operation(s_table_name, txn_context, bid, CommonMetaTypes.AccessType.GET, s_record, tmp_src_value);
+            get_ops[index] = new Operation(context, s_table_name, txn_context, bid, CommonMetaTypes.AccessType.GET, s_record, tmp_src_value);
         }
         return get_ops;
     }

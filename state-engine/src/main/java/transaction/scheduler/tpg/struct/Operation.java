@@ -63,6 +63,11 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
         this(context, table_name, txn_context, bid, accessType, d_record, null, function, condition, success);
     }
 
+    public <Context extends TPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record,
+                                                  SchemaRecordRef record_ref) {
+        this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null);
+    }
 
     public <Context extends TPGContext> Operation(
             Context context, String table_name, TxnContext txn_context, long bid,
@@ -83,6 +88,7 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
         this.operationChainKey = table_name + "|" + d_record.record_.GetPrimaryKey();
 
     }
+
 
     /****************************End*************************************/
 
