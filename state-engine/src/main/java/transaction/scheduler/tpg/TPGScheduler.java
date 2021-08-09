@@ -2,7 +2,6 @@ package transaction.scheduler.tpg;
 
 import common.meta.CommonMetaTypes;
 import content.T_StreamContent;
-import index.high_scale_lib.ConcurrentHashMap;
 import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
@@ -12,13 +11,14 @@ import transaction.function.INC;
 import transaction.impl.TxnContext;
 import transaction.scheduler.Request;
 import transaction.scheduler.Scheduler;
-import transaction.scheduler.tpg.struct.Controller;
 import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
 import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 
 import static common.meta.CommonMetaTypes.AccessType.GET;
 import static common.meta.CommonMetaTypes.AccessType.SET;
@@ -31,30 +31,20 @@ import static common.meta.CommonMetaTypes.AccessType.SET;
  * It's a shared data structure!
  */
 @lombok.extern.slf4j.Slf4j
-public class TPGScheduler extends Scheduler<Operation> {
+public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context, Operation> {
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
-    //    private final Map<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
-    private final Map<Integer, ConcurrentLinkedDeque<Operation>> taskQueues; // task queues to store operations for each thread
-    private final Map<Integer, ArrayDeque<Request>> requests = new ConcurrentHashMap<>();
-    private final Map<Integer, ArrayDeque<Operation>> batchedOperations = new ConcurrentHashMap<>();
 
     public TPGScheduler(int tp) {
         this.tpg = new TaskPrecedenceGraph(tp);
-        taskQueues = new HashMap<>();
-        for (int i = 0; i < tp; i++) {
-            taskQueues.put(i, new ConcurrentLinkedDeque<>());
-            requests.put(i, new ArrayDeque<>());
-            batchedOperations.put(i, new ArrayDeque<>());
-        }
         ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
         tpg.setExecutableListener(executableTaskListener);
     }
 
     @Override
-    public void INITIALIZE(int threadId) {
-        tpg.firstTimeExploreTPG(threadId);
-        Controller.exec.submit(Controller.stateManagers.get(threadId));
+    public void INITIALIZE(Context context) {
+        tpg.firstTimeExploreTPG(context);
     }
+
     /**
      * // O1 -> (logical)  O2
      * // T1: pickup O1. Transition O1 (ready - > execute) || notify O2 (speculative -> ready).
@@ -62,35 +52,46 @@ public class TPGScheduler extends Scheduler<Operation> {
      * // T3: pickup O2
      * fast explore dependencies in TPG and put ready/speculative operations into task queues.
      *
-     * @param threadId
+     * @param context
      */
     @Override
-    public void EXPLORE(int threadId) {
-        while (batchedOperations.get(threadId).size() != 0) {
-            Operation remove = batchedOperations.get(threadId).remove();
-            Controller.stateManagers.get(threadId).onProcessed(remove);
+    public void EXPLORE(Context context) {
+        while (context.batchedOperations.size() != 0) {
+            Operation remove = context.batchedOperations.remove();
+//            Controller.stateManagers.get(threadId).onProcessed(remove);
         }
 
     }
+
     @Override
-    public boolean FINISHED(int threadId) {
+    public boolean FINISHED(Context threadId) {
         return tpg.isFinished();
     }
+
     @Override
     public void RESET() {
-        Controller.exec.shutdownNow();
+//        Controller.exec.shutdownNow();
     }
+
+    /**
+     * Submit requests to target thread --> data shuffling is involved.
+     *
+     * @param context
+     * @param request
+     * @return
+     */
     @Override
-    public boolean SubmitRequest(Request request) {
-        requests.get(request.txn_context.thread_Id).push(request);
+    public boolean SubmitRequest(Context context, Request request) {
+        context.requests.push(request);
         return false;
     }
 
     @Override
-    public void TxnSubmitBegin(int thread_Id) {
-        requests.get(thread_Id).clear();
+    public void TxnSubmitBegin(Context context) {
+        context.requests.clear();
     }
-    private Operation[] constructGetOperation(TxnContext txn_context, String[] condition_sourceTable,
+
+    private Operation[] constructGetOperation(Context context, TxnContext txn_context, String[] condition_sourceTable,
                                               String[] condition_source, TableRecord[] condition_records, long bid) {
         // read the s_record
         Operation[] get_ops = new Operation[condition_source.length];
@@ -104,17 +105,17 @@ public class TPGScheduler extends Scheduler<Operation> {
     }
 
     @Override
-    public void TxnSubmitFinished(int thread_Id) {
+    public void TxnSubmitFinished(Context context) {
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<Operation> operationGraph = new ArrayList<>();
-        for (Request request : requests.get(thread_Id)) {
+        for (Request request : context.requests) {
             long bid = request.txn_context.getBID();
             if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND)) {
                 // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
                 // 1. construct operations
                 // read source record that to help the update on destination record
-                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
-                Operation set_op = new Operation(request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.function, request.condition, request.success);
+                Operation[] get_ops = constructGetOperation(context, request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
+                Operation set_op = new Operation(context, request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.function, request.condition, request.success);
                 // write the destination record, the write operation depends on the record returned by get_op
 
                 // 2. add data dependencies, parent op will notify children op after it was executed
@@ -128,7 +129,7 @@ public class TPGScheduler extends Scheduler<Operation> {
                 // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
                 // 1. construct operations
                 // read the s_record
-                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
+                Operation[] get_ops = constructGetOperation(context, request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
                 Operation set_op = new Operation(request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.record_ref, request.function, request.condition, request.success);
 
                 // 2. add data dependencies, parent op will notify children op after it was executed
@@ -234,23 +235,24 @@ public class TPGScheduler extends Scheduler<Operation> {
     }
 
     @Override
-    public void PROCESS(int threadId, long mark_ID) {
+    public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
         int batch_size = 5;//TODO;
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+        int threadId = context.thisThreadId;
+        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
 
         do {
-            Operation next = next(threadId);
+            Operation next = next(context);
             if (next == null || cnt > batch_size) {
                 break;
             }
-            batchedOperations.get(threadId).push(next);
+            context.batchedOperations.push(next);
             cnt++;
         } while (true);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-        for (Operation operation : batchedOperations.get(threadId)) {
+        for (Operation operation : context.batchedOperations) {
             execute(threadId, operation, mark_ID, false);
         }
         MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
@@ -259,32 +261,35 @@ public class TPGScheduler extends Scheduler<Operation> {
     /**
      * Try to get task from local queue.
      *
-     * @param threadId
+     * @param context
      * @return
      */
-    public Operation next(int threadId) {
-
-        return taskQueues.get(threadId).pollLast();
+    public Operation next(Context context) {
+        return context.taskQueues.pollLast();
     }
+
 
     /**
      * Distribute the operations to different threads with different strategies
      * 1. greedy: simply execute all operations has picked up.
      * 2. conserved: hash operations to threads based on the targeting key state
      * 3. shared: put all operations in a pool and
+     *
+     * @param executableOperation
+     * @param context
      */
     @Override
-    protected void DISTRIBUTE(Operation executableOperation, int threadId) {
+    protected void DISTRIBUTE(Operation executableOperation, Context context) {
         if (executableOperation != null)
-            taskQueues.get(threadId).add(executableOperation);
+            context.taskQueues.add(executableOperation);
     }
 
     /**
      * Register an operation to queue.
      */
     public class ExecutableTaskListener {
-        public void onExecutable(Operation operation, int threadId) {
-            DISTRIBUTE(operation, threadId);
+        public void onExecutable(Operation operation) {
+            DISTRIBUTE(operation, (Context) operation.context);//TODO: make it clear..
         }
     }
 }

@@ -1,6 +1,7 @@
 package transaction.scheduler.layered.struct;
 
 import transaction.dedicated.ordered.MyList;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -15,20 +16,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class OperationChain implements Comparable<OperationChain> {
 
-    public OperationChain next;
-    public OperationChain prev;
     private final String tableName;
     private final String primaryKey;
     private final MyList<Operation> operations;
     private final ConcurrentSkipListMap<OperationChain, Operation> dependsUpon;
     private final AtomicInteger totalDependentsCount = new AtomicInteger();
     private final AtomicInteger totalParentsCount = new AtomicInteger();
-
+    private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialDependentsInfo = new ConcurrentLinkedQueue<>();
+    public OperationChain next;
+    public OperationChain prev;
     private int dependencyLevel = -1;
     private int priority = 0;
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
-
-    private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialDependentsInfo = new ConcurrentLinkedQueue<>();
 
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
@@ -36,19 +35,24 @@ public class OperationChain implements Comparable<OperationChain> {
         this.operations = new MyList<>(tableName, primaryKey);
         this.dependsUpon = new ConcurrentSkipListMap<>();
     }
+
     public String getTableName() {
         return tableName;
     }
+
     public String getPrimaryKey() {
         return primaryKey;
     }
+
     public void addOperation(Operation op) {
         op.setOc();
         operations.add(op);
     }
+
     public MyList<Operation> getOperations() {
         return operations;
     }
+
     public void addDependency(Operation forOp, OperationChain dependsUponOp) {
         Iterator<Operation> iterator = dependsUponOp.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than forOp bid
         while (iterator.hasNext()) {
@@ -62,9 +66,11 @@ public class OperationChain implements Comparable<OperationChain> {
             }
         }
     }
+
     private void addDependent(OperationChain dependentOc, Operation dependentOp) {
         totalDependentsCount.incrementAndGet();
     }
+
     public synchronized void updateDependencyLevel() {
         if (isDependencyLevelCalculated)
             return;
@@ -79,6 +85,7 @@ public class OperationChain implements Comparable<OperationChain> {
         }
         isDependencyLevelCalculated = true;
     }
+
     public synchronized boolean hasValidDependencyLevel() {
         return isDependencyLevelCalculated;
     }
@@ -86,12 +93,15 @@ public class OperationChain implements Comparable<OperationChain> {
     public boolean hasParents() {
         return totalParentsCount.get() > 0;
     }
+
     public boolean hasChildren() {
         return totalDependentsCount.get() > 0;
     }
+
     public void addPotentialDependent(OperationChain potentialDependent, Operation op) {
         potentialDependentsInfo.add(new PotentialDependencyInfo(potentialDependent, op));
     }
+
     public void checkOtherPotentialDependencies(Operation dependencyOp) {
 
         List<PotentialDependencyInfo> processed = new ArrayList<>();
@@ -105,13 +115,16 @@ public class OperationChain implements Comparable<OperationChain> {
         potentialDependentsInfo.removeAll(processed);
         processed.clear();
     }
+
     public int getDependencyLevel() {
         return dependencyLevel;
     }
+
     @Override
     public String toString() {
         return "{" + tableName + " " + primaryKey + "}";//": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
     }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -120,10 +133,12 @@ public class OperationChain implements Comparable<OperationChain> {
         return tableName.equals(that.tableName) &&
                 primaryKey.equals(that.primaryKey);
     }
+
     @Override
     public int hashCode() {
         return Objects.hash(tableName, primaryKey);
     }
+
     @Override
     public int compareTo(OperationChain o) {
         if (o.toString().equals(toString()))
@@ -135,6 +150,7 @@ public class OperationChain implements Comparable<OperationChain> {
     public class PotentialDependencyInfo implements Comparable<PotentialDependencyInfo> {
         public OperationChain oc;
         public Operation op;
+
         public PotentialDependencyInfo(OperationChain oc, Operation op) {
             this.oc = oc;
             this.op = op;

@@ -40,7 +40,7 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
-        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
+        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
     }
 
     @Override

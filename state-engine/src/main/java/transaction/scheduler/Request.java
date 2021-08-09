@@ -1,10 +1,12 @@
 package transaction.scheduler;
+
 import common.meta.CommonMetaTypes;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.function.Condition;
 import transaction.function.Function;
 import transaction.impl.TxnContext;
+
 public class Request {
     public final TxnContext txn_context;
     public final CommonMetaTypes.AccessType accessType;
@@ -32,6 +34,7 @@ public class Request {
                    String table_name) {
         this(txn_context, accessType, table_name, null);
     }
+
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,
                    String table_name, double[] enqueue_time) {

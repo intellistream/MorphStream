@@ -1,7 +1,5 @@
 package storage;
 
-import java.util.concurrent.RejectedExecutionException;
-
 /**
  * A hack ref to SchemaRecord, simulating C++ pointer.
  */

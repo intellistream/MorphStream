@@ -9,6 +9,7 @@ public interface OperationStateListener {
 
     /**
      * this method will only be used in header operation, others should not use it.
+     *
      * @param operation
      * @param headerState
      */
@@ -16,6 +17,7 @@ public interface OperationStateListener {
 
     /**
      * this method will only be used in header operation, others should not use it.
+     *
      * @param operation
      * @param descendantState
      */
@@ -23,13 +25,14 @@ public interface OperationStateListener {
 
     /**
      * thread notify the operation execution results either success/failed, do state transition correspondingly
-     * @param operation
      *
+     * @param operation
      */
     void onProcessed(Operation operation);
 
     /**
      * this method will only be used in header operation, others should not use it.
+     *
      * @param child
      * @param spLd
      * @param executed

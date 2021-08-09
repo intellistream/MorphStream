@@ -140,8 +140,8 @@ public class FastLinkedHashSet<E>
      */
     public FastLinkedHashSet(Collection<? extends E> c) {
         super(Math.max(
-                (int) (c.size() / QuickHashMap.DEFAULT_LOAD_FACTOR) + 1,
-                QuickHashMap.DEFAULT_INITIAL_CAPACITY),
+                        (int) (c.size() / QuickHashMap.DEFAULT_LOAD_FACTOR) + 1,
+                        QuickHashMap.DEFAULT_INITIAL_CAPACITY),
                 QuickHashMap.DEFAULT_LOAD_FACTOR, true);
         addAll(c);
     }

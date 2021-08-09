@@ -32,7 +32,7 @@ import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 public class SLBolt_ts extends SLBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
-    private final static double write_useful_time = 3316;//write-compute time pre-measured.
+    //write-compute time pre-measured.
     ArrayDeque<TransactionEvent> transactionEvents;
     ArrayDeque<DepositEvent> depositeEvents;
 
@@ -59,9 +59,11 @@ public class SLBolt_ts extends SLBolt {
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
-        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
+        loadDB(transactionManager.getSchedulerContext(),
+                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
         // Aqif: For TStream taskId increases by 1 and executorId is always 0.
     }
+
 
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {

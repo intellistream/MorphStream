@@ -11,6 +11,7 @@ import storage.datatype.DataBox;
 import transaction.function.Condition;
 import transaction.function.Function;
 import transaction.impl.TxnContext;
+import transaction.scheduler.SchedulerContext;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -95,5 +96,8 @@ public interface TxnManager {
     boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;
 
     void BeginTransaction(TxnContext txnContext);
+
     boolean CommitTransaction(TxnContext txn_context);
+
+    SchedulerContext getSchedulerContext();
 }

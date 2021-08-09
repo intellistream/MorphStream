@@ -3,8 +3,6 @@ package transaction.dedicated.ordered;
 import common.OrderLock;
 import common.meta.CommonMetaTypes;
 import db.DatabaseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -22,7 +20,6 @@ import static transaction.impl.TxnAccess.Access;
  * mimic of ACEP's LWM method.
  */
 public class TxnManagerLWM extends TxnManagerDedicatedLocked {
-    private static final Logger LOG = LoggerFactory.getLogger(TxnManagerLWM.class);
     final OrderLock orderLock;
 
     public TxnManagerLWM(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {

@@ -12,28 +12,22 @@ import java.util.concurrent.atomic.AtomicReference;
  * TODO: clean ``state" and ``reference".
  */
 public abstract class OperationStateMachine {
+    public final static int NONE_CANDIDATE = 0;
+    public final static int SPECULATIVE_CANDIDATE = 1;
+    public final static int READY_CANDIDATE = 2;
     private static final Logger LOG = LoggerFactory.getLogger(OperationStateMachine.class);
-
-    private OperationStateMachine ld_head_operation;
     private final Queue<OperationStateMachine> ld_descendant_operations;
-
     private final Queue<OperationStateMachine> fd_children; // the finctional dependencies ops to be executed after this op.
     private final Queue<OperationStateMachine> td_children; // the finctional dependencies ops to be executed after this op.
     private final Queue<OperationStateMachine> ld_children; // the finctional dependencies ops to be executed after this op.
     private final Queue<OperationStateMachine> ld_spec_children; // speculative children to notify.
-
     private final Queue<OperationStateMachine> fd_parents; // the finctional dependnecies ops to be executed in advance
     private final Queue<OperationStateMachine> td_parents; // the finctional dependnecies ops to be executed in advance
     private final Queue<OperationStateMachine> ld_parents; // the finctional dependnecies ops to be executed in advance
     private final Queue<OperationStateMachine> ld_spec_parents; // speculative parents to wait, include the last ready op
-
     private final OperationMetadata operationMetadata;
-
     private final AtomicReference<MetaTypes.OperationStateType> operationState;
-
-    public final static int NONE_CANDIDATE = 0;
-    public final static int SPECULATIVE_CANDIDATE = 1;
-    public final static int READY_CANDIDATE = 2;
+    private OperationStateMachine ld_head_operation;
 
     public OperationStateMachine() {
         ld_head_operation = null;
@@ -131,7 +125,7 @@ public abstract class OperationStateMachine {
     }
 
     public void stateTransition(MetaTypes.OperationStateType state) {
-            LOG.debug(this + " : state transit " + operationState + " -> " + state);
+        LOG.debug(this + " : state transit " + operationState + " -> " + state);
         operationState.getAndSet(state);
     }
 
@@ -151,6 +145,7 @@ public abstract class OperationStateMachine {
 
     /**
      * Modify CountDown Variables.
+     *
      * @param dependencyType
      * @param parentState
      */
@@ -182,8 +177,8 @@ public abstract class OperationStateMachine {
 
     public boolean trySpeculative(boolean isRollback) {
         boolean isSpeculative = operationMetadata.td_countdown[0].get() == 0
-                            && operationMetadata.fd_countdown[0].get() == 0
-                            && operationMetadata.is_spec_or_ready_candidate.get() == SPECULATIVE_CANDIDATE;
+                && operationMetadata.fd_countdown[0].get() == 0
+                && operationMetadata.is_spec_or_ready_candidate.get() == SPECULATIVE_CANDIDATE;
         if (isRollback)
             isSpeculative = isSpeculative
                     && this.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED);
@@ -198,9 +193,9 @@ public abstract class OperationStateMachine {
 
     public boolean tryReady(boolean isRollback) {
         boolean isReady = operationMetadata.td_countdown[0].get() == 0
-                        && operationMetadata.fd_countdown[0].get() == 0
-                        && operationMetadata.ld_spec_countdown[0].get() == 0
-                        && operationMetadata.is_spec_or_ready_candidate.get() == READY_CANDIDATE;
+                && operationMetadata.fd_countdown[0].get() == 0
+                && operationMetadata.ld_spec_countdown[0].get() == 0
+                && operationMetadata.is_spec_or_ready_candidate.get() == READY_CANDIDATE;
         if (isRollback)
             isReady = isReady
                     && this.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED);
@@ -220,7 +215,7 @@ public abstract class OperationStateMachine {
         }
         LOG.debug("++++++" + this + " check whether committable: " + ld_descendant_operations);
         boolean readyToCommit = this.getOperationState().equals(MetaTypes.OperationStateType.COMMITTABLE);
-        readyToCommit = readyToCommit && operationMetadata.ld_descendant_countdown.get()==0;
+        readyToCommit = readyToCommit && operationMetadata.ld_descendant_countdown.get() == 0;
         if (readyToCommit) {
             // notify all descendants to commit.
             stateTransition(MetaTypes.OperationStateType.COMMITTED);
@@ -234,8 +229,8 @@ public abstract class OperationStateMachine {
                 operationMetadata.td_countdown[1].get() == 0
                         && this.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED);
         LOG.debug("++++++" + this + " try commit results: " +
-                        (operationMetadata.td_countdown[1].get() == 0)
-                        + " | " + this.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED));
+                (operationMetadata.td_countdown[1].get() == 0)
+                + " | " + this.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED));
         if (isCommittable) {
             // EXECUTED->COMMITTABLE
             stateTransition(MetaTypes.OperationStateType.COMMITTABLE);
@@ -248,6 +243,7 @@ public abstract class OperationStateMachine {
 
 
     // **********************************Utilities**********************************
+
     /**
      * @param type
      * @param <T>

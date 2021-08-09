@@ -2,7 +2,6 @@ package transaction.scheduler.tpg.struct;
 
 import transaction.dedicated.ordered.MyList;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -58,9 +57,8 @@ public class OperationChain implements Comparable<OperationChain> {
 
     /**
      * Update TD of each operation in the operation chain
-     *
+     * <p>
      * OC: O1 <- O2 O3. O2
-     *
      */
     public void updateTDDependencies() {
         Operation prevOperation = null;

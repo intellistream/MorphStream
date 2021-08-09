@@ -180,6 +180,7 @@ public class MeasureTools {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_SCHEDULE_EXPLORE_ACC(thread_id);
     }
+
     public static void BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_SCHEDULE_USEFUL_START(thread_id);
@@ -245,6 +246,7 @@ public class MeasureTools {
             e.printStackTrace();
         }
     }
+
     private static void SchedulerTimeBreakdownReport(File file, int tthread) {
         try {
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);

@@ -16,12 +16,16 @@ import java.util.Random;
 
 public class SLDataGeneratorForBFS extends SpecialDataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialDataGenerator.class);
-
-    HashMap<Long, Integer> generatedAccountIds = new HashMap<>();
-    HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
     private final Random randomGenerator = new Random();
     private final Random randomGeneratorForAccIds = new Random(12345678);
     private final Random randomGeneratorForAstIds = new Random(123456789);
+    protected DataGeneratorConfigForBFS dataConfig;
+    HashMap<Long, Integer> generatedAccountIds = new HashMap<>();
+    HashMap<Long, Integer> mGeneratedAssetIds = new HashMap<>();
+    SLDataOperationChain srcAccOC = null;
+    SLDataOperationChain srcAstOC = null;
+    SLDataOperationChain dstAccOC = null;
+    SLDataOperationChain dstAstOC = null;
     private int totalAccountRecords = 0;
     private int totalAssetRecords = 0;
     private ArrayList<SLTransaction> dataTransactions;
@@ -32,17 +36,8 @@ public class SLDataGeneratorForBFS extends SpecialDataGenerator {
     private float[] ocLevelsDistribution;
     private boolean[] pickAccount;
     private int transactionId = 0;
-
     private long partitionOffset = 0;
     private int partitionId = 0;
-
-    protected DataGeneratorConfigForBFS dataConfig;
-
-
-    SLDataOperationChain srcAccOC = null;
-    SLDataOperationChain srcAstOC = null;
-    SLDataOperationChain dstAccOC = null;
-    SLDataOperationChain dstAstOC = null;
 
     public SLDataGeneratorForBFS(DataGeneratorConfigForBFS dataConfig) {
         super(dataConfig);
@@ -411,7 +406,7 @@ public class SLDataGeneratorForBFS extends SpecialDataGenerator {
 
     private SLDataOperationChain getNewAccountOC() {
         long id = getUniqueId(randomGeneratorForAccIds, generatedAccountIds, true);
-        return new SLDataOperationChain("act_" + id, ( nTuples * 5) / dataConfig.getNumberOfDLevels(), accountOperationChainsByLevel);
+        return new SLDataOperationChain("act_" + id, (nTuples * 5) / dataConfig.getNumberOfDLevels(), accountOperationChainsByLevel);
     }
 
     private SLDataOperationChain getNewAssetOC() {
@@ -482,8 +477,7 @@ public class SLDataGeneratorForBFS extends SpecialDataGenerator {
 //        id *= 10;
         if (isAcc) {
             totalAccountRecords++;
-        }
-        else totalAssetRecords++;
+        } else totalAssetRecords++;
         return id;
     }
 }

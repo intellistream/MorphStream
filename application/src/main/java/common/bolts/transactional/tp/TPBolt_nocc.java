@@ -38,7 +38,7 @@ public class TPBolt_nocc extends TPBolt {
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
-                , context.getThisTaskId(), context.getGraph());
+                , context.getGraph());
     }
 
     @Override

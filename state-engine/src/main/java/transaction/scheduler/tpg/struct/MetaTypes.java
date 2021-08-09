@@ -1,4 +1,5 @@
 package transaction.scheduler.tpg.struct;
+
 public interface MetaTypes {
 
     enum DependencyType {

@@ -25,8 +25,7 @@ public abstract class OBBolt_LA extends OBBolt {
             ALERT_REQUEST_LOCKAHEAD((AlertEvent) event, txn_context[(int) (i - _bid)]);
         } else if (event instanceof ToppingEvent) {
             TOPPING_REQUEST_LOCKAHEAD((ToppingEvent) event, txn_context[(int) (i - _bid)]);
-        } else
-        {
+        } else {
             LOG.error("Wrong");
             System.exit(-1);
         }

@@ -2,6 +2,7 @@ package transaction.scheduler.tpg.struct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.TPGScheduler;
 
 import java.util.List;
@@ -28,17 +29,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  * -> Key: OperationChain [ Operation... ]
  */
 public class TaskPrecedenceGraph {
+    public static final AtomicInteger nPendingOperation = new AtomicInteger(0);
+    public final static int Maximum_Speculation = 10;
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(Operation.class);
     private final ConcurrentHashMap<String, OperationChain> operationChains;// < state, OC>
     private final ConcurrentLinkedQueue<List<Operation>> transactions;//
     private final ShortCutListener shortCutListener;
-    public static final AtomicInteger nPendingOperation = new AtomicInteger(0);
     private final AtomicInteger nExecutedOperation = new AtomicInteger(0);
-    private TPGScheduler.ExecutableTaskListener executableTaskListener = null;
-
-    public final static int Maximum_Speculation = 10;
     CyclicBarrier barrier;
+    private TPGScheduler.ExecutableTaskListener executableTaskListener = null;
 
     /**
      * @param totalThreads
@@ -93,18 +93,32 @@ public class TaskPrecedenceGraph {
 //        LOG.debug("++++++operations: " + operations);
     }
 
-    /**
-     * @param threadId
-     */
-    public void firstTimeExploreTPG(int threadId) {
-        Controller.stateManagers.get(threadId).initialize(shortCutListener);
-        for (String key : Controller.threadtoStateMapping.get(threadId)) {
+//    /**
+//     * @param threadId
+//     */
+//    public void firstTimeExploreTPG(int threadId) {
+//        Controller.stateManagers.get(threadId).initialize(shortCutListener);
+//        for (String key : Controller.threadtoStateMapping.get(threadId)) {
+//            operationChains.computeIfPresent(key, (s, operationChain) -> {
+//                operationChain.updateTDDependencies();
+//                Operation head = operationChain.getOperations().first();
+//                if (head.isRoot()) {
+//                    head.context.partitionStateManager.onRootStart();
+//                }
+//                return operationChain;
+//            });
+//        }
+//        LOG.trace("++++++ end explore");
+//    }
+
+    public <Context extends TPGContext> void firstTimeExploreTPG(Context context) {
+        context.initialize(shortCutListener);
+        for (String key : context.partitionStateManager.partition) {
             operationChains.computeIfPresent(key, (s, operationChain) -> {
                 operationChain.updateTDDependencies();
                 Operation head = operationChain.getOperations().first();
-//                head.exploreReadyOperation();
                 if (head.isRoot()) {
-                    Controller.stateManagers.get(threadId).onRootStart(head);
+                    head.context.partitionStateManager.onRootStart(head);
                 }
                 return operationChain;
             });
@@ -126,26 +140,6 @@ public class TaskPrecedenceGraph {
 
     public void setExecutableListener(TPGScheduler.ExecutableTaskListener executableTaskListener) {
         this.executableTaskListener = executableTaskListener;
-    }
-
-    /**
-     * Register an operation to queue.
-     */
-    public class ShortCutListener {
-
-        public void onExecutable(Operation operation, boolean isReady, int threadId) {
-            executableTaskListener.onExecutable(operation, threadId);
-        }
-
-        public void onOperationFinalized(Operation operation, boolean isCommitted) {
-            LOG.debug("npending: " + nPendingOperation.get());
-            nPendingOperation.decrementAndGet();
-        }
-
-        public void onOperationExecuted() {
-            LOG.debug("nexecuted: " + nExecutedOperation.get());
-            nExecutedOperation.incrementAndGet();
-        }
     }
 
     /**
@@ -259,5 +253,25 @@ public class TaskPrecedenceGraph {
             }
         }
         return true;
+    }
+
+    /**
+     * Register an operation to queue.
+     */
+    public class ShortCutListener {
+
+        public void onExecutable(Operation operation, boolean isReady) {
+            executableTaskListener.onExecutable(operation);
+        }
+
+        public void onOperationFinalized(Operation operation, boolean isCommitted) {
+            LOG.debug("npending: " + nPendingOperation.get());
+            nPendingOperation.decrementAndGet();
+        }
+
+        public void onOperationExecuted() {
+            LOG.debug("nexecuted: " + nExecutedOperation.get());
+            nExecutedOperation.incrementAndGet();
+        }
     }
 }

@@ -186,7 +186,7 @@ public class OBCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                    bolt = new OBBolt_ts(0, sink);
+                bolt = new OBBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore

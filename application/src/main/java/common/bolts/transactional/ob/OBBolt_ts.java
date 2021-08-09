@@ -56,7 +56,7 @@ public class OBBolt_ts extends OBBolt {
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
-        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
+        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
     }
 
     protected void TOPPING_REQUEST_CONSTRUCT(ToppingEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {

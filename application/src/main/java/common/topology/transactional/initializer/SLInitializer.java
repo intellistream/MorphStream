@@ -22,33 +22,34 @@ import storage.datatype.LongDataBox;
 import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
-import transaction.scheduler.tpg.struct.Controller;
+import transaction.scheduler.SchedulerContext;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
-import static common.constants.StreamLedgerConstants.Constant.*;
+import static common.constants.StreamLedgerConstants.Constant.ACCOUNT_ID_PREFIX;
+import static common.constants.StreamLedgerConstants.Constant.BOOK_ENTRY_ID_PREFIX;
 import static transaction.State.configure_store;
 
-//import static xerial.jnuma.Numa.setLocalAlloc;
 public class SLInitializer extends TableInitilizer {
 
     private static final Logger LOG = LoggerFactory.getLogger(SLInitializer.class);
     private final int totalRecords;
     private final String idsGenType;
-    private String dataRootPath;
-    private SpecialDataGenerator dataGenerator;
-
     private final int startingBalance = 1000000;
     private final String actTableKey = "accounts";
     private final String bookTableKey = "bookEntries";
     private final int partitionOffset;
-
     private final boolean isBFS;
     private final boolean isTPG;
+    private String dataRootPath;
+    private SpecialDataGenerator dataGenerator;
 
     public SLInitializer(Database db, String dataRootPath, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
@@ -59,7 +60,7 @@ public class SLInitializer extends TableInitilizer {
 //        this.mPartitionOffset = (totalRecords * 5) / tthread;
         this.partitionOffset = config.getInt("NUM_ITEMS") / tthread;
 
-        Controller.setExec(tthread);
+//        Controller.setExec(tthread);
 
         String scheduler = config.getString("scheduler");
 //        isBFS = scheduler.equals("BFS");
@@ -101,7 +102,7 @@ public class SLInitializer extends TableInitilizer {
                     DatatypeConverter.printHexBinary(
                             digest.digest(
                                     String.format("%d_%d",
-                                            dataConfig.getTotalThreads(),
+                                                    dataConfig.getTotalThreads(),
                                                     dataConfig.getTuplesPerBatch() * dataConfig.getTotalBatches())
                                             .getBytes(StandardCharsets.UTF_8))));
         } catch (Exception e) {
@@ -132,14 +133,47 @@ public class SLInitializer extends TableInitilizer {
             int pid = get_pid(partition_interval, key);
             String _key = GenerateKey(ACCOUNT_ID_PREFIX, key);
             insertAccountRecord(_key, startingBalance, pid, spinlock);
-            Controller.UpdateMapping(thread_id, "accounts" + "|" + _key);
             _key = GenerateKey(BOOK_ENTRY_ID_PREFIX, key);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
-            Controller.UpdateMapping(thread_id, "bookEntries" + "|" + _key);
-
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
+
+    @Override
+    public void loadDB(SchedulerContext context, int thread_id, int NUM_TASK) {
+        loadDB(context, thread_id, null, NUM_TASK);
+    }
+
+    /**
+     * TODO: code clean up to deduplicate.
+     *
+     * @param context
+     * @param thread_id
+     * @param spinlock
+     * @param NUM_TASK
+     */
+    @Override
+    public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUM_TASK) {
+        int partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
+        int left_bound = thread_id * partition_interval;
+        int right_bound;
+        if (thread_id == NUM_TASK - 1) {//last executor need to handle left-over
+            right_bound = config.getInt("NUM_ITEMS");
+        } else {
+            right_bound = (thread_id + 1) * partition_interval;
+        }
+        for (int key = left_bound; key < right_bound; key++) {
+            int pid = get_pid(partition_interval, key);
+            String _key = GenerateKey(ACCOUNT_ID_PREFIX, key);
+            insertAccountRecord(_key, startingBalance, pid, spinlock);
+            context.UpdateMapping("accounts" + "|" + _key);
+            _key = GenerateKey(BOOK_ENTRY_ID_PREFIX, key);
+            insertAssetRecord(_key, startingBalance, pid, spinlock);
+            context.UpdateMapping("bookEntries" + "|" + _key);
+        }
+        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+    }
+
 
     private int[] readRecordMaximumIds() {
 

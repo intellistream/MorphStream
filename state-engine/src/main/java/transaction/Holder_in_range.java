@@ -1,6 +1,7 @@
 package transaction;
 
 import index.high_scale_lib.ConcurrentHashMap;
+
 //     DD: We basically keep multiple holders and distribute operations among them.
 //     For example, holder with key 1 can hold operations on tuples with key, 1-100,
 //     holder with key 2 can hold operations on tuples with key 101-200 and so on...

@@ -1,4 +1,6 @@
 package transaction.scheduler;
-public abstract class Scheduler<T> implements IScheduler {
-    protected abstract void DISTRIBUTE(T task, int threadId);
+
+
+public abstract class Scheduler<Context, Task> implements IScheduler<Context> {
+    protected abstract void DISTRIBUTE(Task task, Context context);
 }

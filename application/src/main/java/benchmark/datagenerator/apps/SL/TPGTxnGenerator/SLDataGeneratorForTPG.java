@@ -20,14 +20,14 @@ import java.util.Random;
  * We extend SL for workload sensitivity study by tweaking its workload generation for varying dependency characteristics. The default configuration and varying values of parameters are summarized in \tony{Table~\ref{}}.
  * Specifically, we vary the following parameters during workload generation.
  * \begin{enumerate}
- *     \item \textbf{Ratio of State Access Types:}
- *     We vary the ratio of functional dependencies in the workload by tuning the ratio between transfer (w/ functional dependency) and deposit (w/o functional dependency) requests in the input stream.
- *     \item \textbf{State Access Skewness:}
- *     To present a more realistic scenario, we model the access distribution as Zipfian skew, where certain states are more likely to be accessed than others. The skewness is controlled by the parameter $\theta$ of the Zipfian distribution. More skewed state access also stands for more temporal dependencies in the workload.
- *     \item \textbf{Transaction Length:}
- *     We vary the number of operations in the same transaction, which essentially determines the logical dependency depth.
- *     \item \textbf{Transaction Aborts:}
- *     Transaction will be aborted when balance will become negative. To systematically evaluate the effectiveness of \system in handling transaction aborts, we insert artificial abort in state transactions and vary its ratio in the workload.
+ * \item \textbf{Ratio of State Access Types:}
+ * We vary the ratio of functional dependencies in the workload by tuning the ratio between transfer (w/ functional dependency) and deposit (w/o functional dependency) requests in the input stream.
+ * \item \textbf{State Access Skewness:}
+ * To present a more realistic scenario, we model the access distribution as Zipfian skew, where certain states are more likely to be accessed than others. The skewness is controlled by the parameter $\theta$ of the Zipfian distribution. More skewed state access also stands for more temporal dependencies in the workload.
+ * \item \textbf{Transaction Length:}
+ * We vary the number of operations in the same transaction, which essentially determines the logical dependency depth.
+ * \item \textbf{Transaction Aborts:}
+ * Transaction will be aborted when balance will become negative. To systematically evaluate the effectiveness of \system in handling transaction aborts, we insert artificial abort in state transactions and vary its ratio in the workload.
  * \end{enumerate}
  */
 public class SLDataGeneratorForTPG extends SpecialDataGenerator {
@@ -37,22 +37,17 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
     private final int State_Access_Skewness; // ratio of state access, following zipf distribution
     private final int Transaction_Length; // transaction length, 4 or 8 or longer
     private final int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
-
-    private ArrayList<SLTransaction> dataTransactions;
-
     // control the number of txns overlap with each other.
     private final ArrayList<Integer> generatedAcc = new ArrayList<>();
     private final ArrayList<Integer> generatedAst = new ArrayList<>();
     // independent transactions.
     private final boolean isUnique = true;
-
-    HashMap<Long, Integer> nGeneratedAccountIds = new HashMap<>();
-    HashMap<Long, Integer> nGeneratedAssetIds = new HashMap<>();
-
     private final FastZipfGenerator accountZipf;
     private final FastZipfGenerator assetZipf;
     private final Random transactionTypeDecider = new Random(0); // the transaction type decider
-
+    HashMap<Long, Integer> nGeneratedAccountIds = new HashMap<>();
+    HashMap<Long, Integer> nGeneratedAssetIds = new HashMap<>();
+    private ArrayList<SLTransaction> dataTransactions;
     private int transactionId = 0;
 
     public SLDataGeneratorForTPG(DataGeneratorConfigForTPG dataConfig) {
@@ -68,8 +63,8 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
         int nKeyState = dataConfig.getnKeyStates();
         dataTransactions = new ArrayList<>(nTuples);
         // zipf state access generator
-        accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness/100, 0);
-        assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness/100, 0);
+        accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+        assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
     }
 
 //    @Override
@@ -88,6 +83,11 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
 //        LOG.info("Data Generation is done...");
 //        clearDataStructures();
 //    }
+
+    public static void main(String[] args) {
+        FastZipfGenerator fastZipfGenerator = new FastZipfGenerator(10, 1, 0);
+        fastZipfGenerator.show_sample();
+    }
 
     protected void generateTuple() {
 //         select keys in zipf distribution
@@ -173,7 +173,6 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
         return t;
     }
 
-
     protected void dumpGeneratedDataToFile() {
         System.out.println("++++++" + nGeneratedAccountIds.size());
         System.out.println("++++++" + nGeneratedAssetIds.size());
@@ -209,10 +208,5 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
         dataTransactions = new ArrayList<>();
         // clear the data structure in super class
         super.clearDataStructures();
-    }
-
-    public static void main(String[] args) {
-        FastZipfGenerator fastZipfGenerator = new FastZipfGenerator(10, 1, 0);
-        fastZipfGenerator.show_sample();
     }
 }

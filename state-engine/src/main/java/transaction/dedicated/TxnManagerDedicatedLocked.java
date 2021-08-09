@@ -13,6 +13,7 @@ import transaction.function.Condition;
 import transaction.function.Function;
 import transaction.impl.TxnAccess;
 import transaction.impl.TxnContext;
+import transaction.scheduler.SchedulerContext;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -25,10 +26,10 @@ import static common.meta.CommonMetaTypes.kMaxAccessNum;
  */
 @lombok.extern.slf4j.Slf4j
 public abstract class TxnManagerDedicatedLocked implements TxnManager {
-    protected TxnProcessingEngine instance;
     protected final StorageManager storageManager_;
     protected final String thisComponentId;
     private final long thread_id_;
+    protected TxnProcessingEngine instance;
     protected TxnAccess.AccessList access_list_ = new TxnAccess.AccessList(kMaxAccessNum);
     protected TableRecords t_records_ = new TableRecords(64);
     protected boolean is_first_access_;
@@ -45,6 +46,7 @@ public abstract class TxnManagerDedicatedLocked implements TxnManager {
         is_first_access_ = true;
         instance = TxnProcessingEngine.getInstance();
     }
+
     public long GenerateScalableTimestamp(long curr_epoch, long max_rw_ts) {
         long max_global_ts = max_rw_ts >> 32;
         long max_local_ts = max_rw_ts & 0xFFFFFFFF;
@@ -83,6 +85,7 @@ public abstract class TxnManagerDedicatedLocked implements TxnManager {
     public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
+
     public void AbortTransaction() {
         throw new UnsupportedOperationException();
     }
@@ -101,11 +104,8 @@ public abstract class TxnManagerDedicatedLocked implements TxnManager {
         MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);//index look up.
         MeasureTools.END_INDEX_TIME_MEASURE_ACC(txn_context.thread_Id, txn_context.is_retry_);
-//
         if (t_record != null) {
-//			BEGIN_PHASE_MEASURE(thread_id_, SELECT_PHASE);
             boolean rt = SelectRecordCC(txn_context, table_name, t_record, record_, access_type);
-//			END_PHASE_MEASURE(thread_id_, SELECT_PHASE);
             assert !rt || record_.getRecord() != null;
             return rt;
         } else {
@@ -188,6 +188,7 @@ public abstract class TxnManagerDedicatedLocked implements TxnManager {
     public void BeginTransaction(TxnContext txn_context) {
         throw new UnsupportedOperationException();
     }
+
     public abstract boolean CommitTransaction(TxnContext txn_context);
 
     // Those should not be used by dedicated locked txn manager.
@@ -195,40 +196,54 @@ public abstract class TxnManagerDedicatedLocked implements TxnManager {
     public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Asy_ReadRecords(TxnContext txn_context, String srcTable, String key, TableRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String key, List<DataBox> value, double[] enqueue_time) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Asy_WriteRecord(TxnContext txn_context, String table, String id, long value, int column_id) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function, int column_id) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, Condition condition, int[] success) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SchedulerContext getSchedulerContext() {
         throw new UnsupportedOperationException();
     }
 }

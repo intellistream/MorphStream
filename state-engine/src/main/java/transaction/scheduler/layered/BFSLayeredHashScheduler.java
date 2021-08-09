@@ -27,17 +27,25 @@ import static java.lang.Integer.min;
  * breath-first-search based layered hash scheduler.
  */
 @lombok.extern.slf4j.Slf4j
-public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
+public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Scheduler<Context, OperationChain> {
     protected final int delta;//range of each partition. depends on the number of op in the stage.
-
-    public LayeredContext<HashMap<Integer, ArrayList<OperationChain>>> context;//<ThreadID, LevelID, ArrayDeque>
+    public int targetRollbackLevel;//shared data structure.
+    private ConcurrentHashMap<String, Holder_in_range> holder_by_stage;//shared data structure.
 
     public BFSLayeredHashScheduler(int tp, int NUM_ITEMS) {
-        context = new LayeredContext<>(tp, HashMap::new);
-        for (int threadId = 0; threadId < tp; threadId++) {
-            context.layeredOCBucketGlobal.put(threadId, context.createContents());
-        }
         delta = (int) Math.ceil(NUM_ITEMS / (double) tp); // Check id generation in DateGenerator.
+        //create holder.
+        holder_by_stage = new ConcurrentHashMap<>();
+        holder_by_stage.put("accounts", new Holder_in_range(tp));
+        holder_by_stage.put("bookEntries", new Holder_in_range(tp));
+    }
+
+    public Holder_in_range getHolder(String table_name) {
+        return holder_by_stage.get(table_name);
+    }
+
+    public ConcurrentHashMap<String, Holder_in_range> getHolder() {
+        return holder_by_stage;
     }
 
     /**
@@ -64,19 +72,20 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
         return localMaxDLevel;
     }
 
-    private void submit(int threadId, Collection<OperationChain> ocs) {
+    private void submit(Context context, Collection<OperationChain> ocs) {
         for (OperationChain oc : ocs) {
-            context.totalOsToSchedule[threadId] += oc.getOperations().size();
+            context.totalOsToSchedule += oc.getOperations().size();
         }
-        HashMap<Integer, ArrayList<OperationChain>> layeredOCBucketThread = context.layeredOCBucketGlobal.get(threadId);
-        context.maxLevel[threadId] = buildBucketPerThread(layeredOCBucketThread, ocs);
+        HashMap<Integer, ArrayList<OperationChain>> layeredOCBucketThread = context.layeredOCBucketGlobal;
+        context.maxLevel = buildBucketPerThread(layeredOCBucketThread, ocs);
     }
 
     @Override
-    public void INITIALIZE(int threadId) {
-        Collection<Holder_in_range> tablesHolderInRange = context.getHolder().values();
+    public void INITIALIZE(Context context) {
+        int threadId = context.thisThreadId;
+        Collection<Holder_in_range> tablesHolderInRange = getHolder().values();
         for (Holder_in_range tableHolderInRange : tablesHolderInRange) {//for each table.
-            submit(threadId, tableHolderInRange.rangeMap.get(threadId).holder_v1.values());
+            submit(context, tableHolderInRange.rangeMap.get(threadId).holder_v1.values());
         }
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
@@ -141,7 +150,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     }
 
     //TODO: the following are mostly hard-coded.
-    private void execute(int threadId, Operation operation, long mark_ID, boolean clean) {
+    private void execute(Operation operation, long mark_ID, boolean clean) {
         if (operation.aborted) return;
         if (operation.accessType == READS_ONLY) {
             operation.records_ref.setRecord(operation.d_record);
@@ -207,43 +216,38 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
                 operation.record_ref.setRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             }
         }
-        if (operation.aborted) {
-            context.abortedOperations[threadId].push(operation);
-            context.aborted = true;
-        }
     }
 
     /**
      * Used by BFSScheduler.
      *
-     * @param threadId
+     * @param context
      * @param operation_chain
      * @param mark_ID
      */
-    public void execute(int threadId, MyList<Operation> operation_chain, long mark_ID) {
+    public void execute(Context context, MyList<Operation> operation_chain, long mark_ID) {
         Operation operation = operation_chain.pollFirst();
         while (operation != null) {
             Operation finalOperation = operation;
-            execute(threadId, finalOperation, mark_ID, false);
+            execute(finalOperation, mark_ID, false);
+            if (operation.aborted) {
+                context.abortedOperations.push(operation);
+                context.aborted = true;
+            }
             operation = operation_chain.pollFirst();
         }
     }
 
-    public void measureTime(int threadId, Runnable runnable, Operation operation) {
-        long start = System.nanoTime();
-        runnable.run();
-        System.out.println(threadId + "|" + operation.accessType + "|" + (System.nanoTime() - start));
-    }
-
     @Override
-    public void PROCESS(int threadId, long mark_ID) {
+    public void PROCESS(Context context, long mark_ID) {
+        int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-        OperationChain next = next(threadId);
+        OperationChain next = next(context);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            execute(threadId, next.getOperations(), mark_ID);
+            execute(context, next.getOperations(), mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             log.debug("finished execute current operation chain: " + next.toString());
         }
@@ -252,117 +256,114 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     /**
      * Return the last operation chain of threadId at dLevel.
      *
-     * @param threadId
+     * @param context
      * @return
      */
-    protected OperationChain BFSearch(int threadId) {
-        ArrayList<OperationChain> ocs = context.layeredOCBucketGlobal.get(threadId).get(context.currentLevel[threadId]);
+    protected OperationChain BFSearch(Context context) {
+        ArrayList<OperationChain> ocs = context.BFSearch(); //
         OperationChain oc = null;
-        if (ocs != null && context.currentLevelIndex[threadId] < ocs.size()) {
-            oc = ocs.get(context.currentLevelIndex[threadId]++);
-            context.scheduledOPs[threadId] += oc.getOperations().size();
+        if (ocs != null && context.currentLevelIndex < ocs.size()) {
+            oc = ocs.get(context.currentLevelIndex++);
+            context.scheduledOPs += oc.getOperations().size();
         }
         return oc;
     }
 
-    private OperationChain next(int threadId) {
-        OperationChain operationChain = context.ready_oc[threadId];
-        context.ready_oc[threadId] = null;
+    private OperationChain next(Context context) {
+        OperationChain operationChain = context.ready_oc;
+        context.ready_oc = null;
         return operationChain;// if a null is returned, it means, we are done with this level!
     }
 
     @Override
-    public void EXPLORE(int threadId) {
-        OperationChain next = BFSearch(threadId);
-        if (next == null && !context.finished(threadId)) {//current level is all processed at the current thread.
+    public void EXPLORE(Context context) {
+        OperationChain next = BFSearch(context);
+        if (next == null && !context.finished()) {//current level is all processed at the current thread.
             //Ready to proceed to next level
             //Check if there's any aborts
             if (context.aborted) {
-                MarkOperationsToAbort(threadId);
+                MarkOperationsToAbort(context);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                IdentifyRollbackLevel(threadId);
+                IdentifyRollbackLevel(context);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                SetRollbackLevel(threadId);
-                RollbackToCorrectLayerForRedo(threadId);
+                SetRollbackLevel(context);
+                RollbackToCorrectLayerForRedo(context);
                 context.aborted = false;
             }
             while (next == null) {
-                ProcessedToNextLevel(threadId);
-                next = BFSearch(threadId);
+                ProcessedToNextLevel(context);
+                next = BFSearch(context);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 //all threads come to the current level.
             }
         }
-        DISTRIBUTE(next, threadId);
+        DISTRIBUTE(next, context);
     }
 
-    private void ProcessedToNextLevel(int threadId) {
-        context.currentLevel[threadId] += 1;
-        context.currentLevelIndex[threadId] = 0;
+    private void ProcessedToNextLevel(Context context) {
+        context.currentLevel += 1;
+        context.currentLevelIndex = 0;
     }
 
-    private void SetRollbackLevel(int threadId) {
-        context.rollbackLevel[threadId] = context.targetRollbackLevel;
+    private void SetRollbackLevel(Context context) {
+        context.rollbackLevel = targetRollbackLevel;
     }
 
-    private void IdentifyRollbackLevel(int threadId) {
-        context.targetRollbackLevel = 0;
-        if (threadId == 0) {
+    private void IdentifyRollbackLevel(Context context) {
+        if (context.thisThreadId == 0) {
+            targetRollbackLevel = 0;
             for (int i = 0; i < context.totalThreads; i++) {
-                context.targetRollbackLevel = max(context.targetRollbackLevel, context.rollbackLevel[i]);
+                targetRollbackLevel = max(targetRollbackLevel, context.rollbackLevel);
             }
         }
     }
 
-    private void RollbackToCorrectLayerForRedo(int threadId) {
+    private void RollbackToCorrectLayerForRedo(Context context) {
         int level;
-        for (level = context.rollbackLevel[threadId]; level < context.currentLevel[threadId]; level++) {
-            context.scheduledOPs[threadId] -= getNumOPsByLevel(threadId, level);
+        for (level = context.rollbackLevel; level < context.currentLevel; level++) {
+            context.scheduledOPs -= getNumOPsByLevel(context, level);
         }
-        context.currentLevelIndex[threadId] = 0;
-        context.currentLevel[threadId] = context.rollbackLevel[threadId];
-        context.rollbackLevel[threadId] = 0;
+        context.currentLevelIndex = 0;
+        context.currentLevel = context.rollbackLevel;
+        context.rollbackLevel = 0;
     }
 
-    private int getNumOPsByLevel(int threadId, int level) {
+    private int getNumOPsByLevel(Context context, int level) {
         int ops = 0;
-//        if (context.layeredOCBucketGlobal.get(threadId) == null) {
-//            System.nanoTime();
-//        }
-        for (OperationChain operationChain : context.layeredOCBucketGlobal.get(threadId).get(level)) {
+        for (OperationChain operationChain : context.layeredOCBucketGlobal.get(level)) {
             ops += operationChain.getOperations().size();
         }
         return ops;
     }
 
     //TODO: mark operations of aborted transaction to be aborted.
-    private void MarkOperationsToAbort(int threadId) {
+    private void MarkOperationsToAbort(Context context) {
         boolean markAny = false;
-        for (ArrayList<OperationChain> operationChains : context.layeredOCBucketGlobal.get(threadId).values()) {
+        for (ArrayList<OperationChain> operationChains : context.layeredOCBucketGlobal.values()) {
             for (OperationChain operationChain : operationChains) {
                 for (Operation operation : operationChain.getOperations()) {
-                    markAny |= _MarkOperationsToAbort(threadId, operation);
+                    markAny |= _MarkOperationsToAbort(context, operation);
                 }
             }
             if (!markAny) {//current layer no one being marked.
-                context.rollbackLevel[threadId]++;
+                context.rollbackLevel++;
             }
         }
-        context.rollbackLevel[threadId] = min(context.rollbackLevel[threadId], context.currentLevel[threadId]);
+        context.rollbackLevel = min(context.rollbackLevel, context.currentLevel);
     }
 
     /**
      * Mark operations of an aborted transaction to abort.
      *
-     * @param threadId
+     * @param context
      * @param operation
      * @return
      */
-    private boolean _MarkOperationsToAbort(int threadId, Operation operation) {
+    private boolean _MarkOperationsToAbort(Context context, Operation operation) {
         long bid = operation.bid;
         boolean markAny = false;
         //identify bids to be aborted.
-        for (Operation op : context.abortedOperations[threadId]) {
+        for (Operation op : context.abortedOperations) {
             if (bid == op.bid) {
                 op.aborted = true;
                 markAny = true;
@@ -383,8 +384,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     }
 
     private OperationChain getOC(String tableName, String pKey) {
-
-        ConcurrentHashMap<String, OperationChain> holder = context.getHolder(tableName).rangeMap.get(getTaskId(pKey)).holder_v1;
+        ConcurrentHashMap<String, OperationChain> holder = getHolder(tableName).rangeMap.get(getTaskId(pKey)).holder_v1;
         return holder.computeIfAbsent(pKey, s -> new OperationChain(tableName, pKey));
     }
 
@@ -406,7 +406,7 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     }
 
     @Override
-    public boolean SubmitRequest(Request request) {
+    public boolean SubmitRequest(Context context, Request request) {
         long bid = request.txn_context.getBID();
         OperationChain oc = getOC(request.table_name, request.d_record.record_.GetPrimaryKey());
         Operation operation = new Operation(request.table_name, request.s_record, request.d_record, request.record_ref, bid, request.accessType,
@@ -417,20 +417,20 @@ public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
     }
 
     @Override
-    public void TxnSubmitBegin(int thread_Id) {
+    public void TxnSubmitBegin(Context context) {
     }
 
     @Override
-    public void TxnSubmitFinished(int thread_Id) {
+    public void TxnSubmitFinished(Context context) {
     }
 
     @Override
-    public boolean FINISHED(int threadId) {
-        return context.finished(threadId);
+    public boolean FINISHED(Context context) {
+        return context.finished();
     }
 
     @Override
-    protected void DISTRIBUTE(OperationChain task, int threadId) {
-        context.ready_oc[threadId] = task;
+    protected void DISTRIBUTE(OperationChain task, Context context) {
+        context.ready_oc = task;
     }
 }

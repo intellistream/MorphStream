@@ -62,11 +62,15 @@ public abstract class SpecialDataGenerator {
         // Step 2: update OCs dependencies graph for future data generation
         // Step 3: create txn with the selected OCs, the specific operations are generated inside.
         // Step 4: update the statistics such as dependency distribution to guide future data generation
-    };
+    }
+
+    ;
 
     protected abstract void dumpGeneratedDataToFile();
 
     protected void clearDataStructures() {
         this.dataConfig = null;
-    };
+    }
+
+    ;
 }

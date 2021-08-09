@@ -1,4 +1,5 @@
 package transaction;
+
 import index.high_scale_lib.ConcurrentHashMap;
 import transaction.scheduler.layered.struct.OperationChain;
 

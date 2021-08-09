@@ -1,13 +1,20 @@
 package transaction.scheduler;
 
-public interface IScheduler {
-    void INITIALIZE(int threadId);
-    void PROCESS(int threadId, long mark_ID);
-    void EXPLORE(int threadId);
-    boolean FINISHED(int threadId);
+public interface IScheduler<Context> {
+    void INITIALIZE(Context threadId);
+
+    void PROCESS(Context threadId, long mark_ID);
+
+    void EXPLORE(Context context);
+
+    boolean FINISHED(Context threadId);
+
     void RESET();
-    boolean SubmitRequest(Request request);
-    void TxnSubmitBegin(int thread_Id);
-    void TxnSubmitFinished(int thread_Id);
+
+    boolean SubmitRequest(Context context, Request request);
+
+    void TxnSubmitBegin(Context context);
+
+    void TxnSubmitFinished(Context context);
 
 }

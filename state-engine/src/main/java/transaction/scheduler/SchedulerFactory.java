@@ -1,6 +1,8 @@
 package transaction.scheduler;
 
 import transaction.scheduler.layered.BFSLayeredHashScheduler;
+import transaction.scheduler.layered.LayeredContext;
+import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.TPGScheduler;
 
 /**
@@ -16,15 +18,16 @@ public class SchedulerFactory {
         totalThread = tp;
         this.NUM_ITEMS = NUM_ITEMS;
     }
+
     public IScheduler CreateScheduler(SCHEDULER_TYPE schedulerType) {
 
         IScheduler scheduler = null;
         switch (schedulerType) {
             case BFS:
-                scheduler = new BFSLayeredHashScheduler(totalThread, NUM_ITEMS);
+                scheduler = new BFSLayeredHashScheduler<LayeredContext>(totalThread, NUM_ITEMS);
                 break;
             case TPG:
-                scheduler = new TPGScheduler(totalThread);
+                scheduler = new TPGScheduler<TPGContext>(totalThread);
                 break;
         }
         return scheduler;

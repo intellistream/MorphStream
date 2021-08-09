@@ -152,7 +152,7 @@ public class GSCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                    bolt = new GSBolt_ts(0, sink);
+                bolt = new GSBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore

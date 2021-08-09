@@ -28,7 +28,7 @@ public class GSBolt_Locks extends GSBolt {
     protected void write_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
         boolean success = write_request(event, txn_context[(int) (i - _bid)]);
-                if (success) {
+        if (success) {
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
             WRITE_CORE(event);
             END_ACCESS_TIME_MEASURE_ACC(thread_Id);

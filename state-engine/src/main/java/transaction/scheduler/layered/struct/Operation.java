@@ -21,6 +21,7 @@ public class Operation implements Comparable<Operation> {
     //required by READ_WRITE_and Condition.
     public final Function function;
     public final String table_name;
+    public final TableRecord d_record;
     private final Queue<Operation> dependents = new ConcurrentLinkedQueue<>();
     public List<DataBox> value_list;//required by write-only: the value_list to be used to update the d_record.
     //only update corresponding column.
@@ -30,7 +31,6 @@ public class Operation implements Comparable<Operation> {
     public volatile TableRecordRef records_ref;//for cross-record dependency.
     public volatile SchemaRecordRef record_ref;//required by read-only: the place holder of the reading d_record.
     public volatile TableRecord s_record;//only if it is different from d_record.
-    public final TableRecord d_record;
     public volatile TableRecord[] condition_records;
     public Condition condition;
     public int[] success;

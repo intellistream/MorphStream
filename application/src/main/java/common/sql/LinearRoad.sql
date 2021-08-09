@@ -5,7 +5,7 @@ CREATE TABLE CarLocStr
     exp_way INT, /* expressway: 0..10           */
     lane    INT, /* lane: 0,1,2,3               */
     dir     INT, /* direction: 0(east), 1(west) */
-    x-pos FLOAT  /* coordinate in express way   */
+    x-pos FLOAT /* coordinate in express way   */
 );
 
 CREATE VIEW CarSegStr

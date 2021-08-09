@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.scheduler.IScheduler;
+import transaction.scheduler.SchedulerContext;
 import transaction.scheduler.SchedulerFactory;
 
 /**
@@ -21,8 +22,6 @@ public final class TxnProcessingEngine {
      * @return time spend in tp evaluation.
      * @throws InterruptedException
      */
-    //    fast determine the corresponding instance. This design is for NUMA-awareness.
-    //one island one engine.
 
     //TODO: select which scheduler to initialize.
     private IScheduler scheduler;
@@ -50,19 +49,20 @@ public final class TxnProcessingEngine {
         return this.scheduler;
     }
 
-    public void start_evaluation(int threadId, long mark_ID, int num_events) {
+    public void start_evaluation(SchedulerContext context, long mark_ID, int num_events) {
+        int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-        scheduler.INITIALIZE(threadId);
+        scheduler.INITIALIZE(context);
         MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 
         do {
             MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-            scheduler.EXPLORE(threadId);
+            scheduler.EXPLORE(context);
             MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            scheduler.PROCESS(threadId, mark_ID);
+            scheduler.PROCESS(context, mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-        } while (!scheduler.FINISHED(threadId));
+        } while (!scheduler.FINISHED(context));
         scheduler.RESET();//
         MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
