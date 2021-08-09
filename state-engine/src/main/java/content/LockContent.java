@@ -1,6 +1,6 @@
 package content;
 
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import transaction.impl.TxnContext;
@@ -15,7 +15,7 @@ public abstract class LockContent implements Content {
 
     @Override
     public void RequestCommit(long timestamp, boolean[] is_ready) {
-        throw new UnsupportedOperationException();
+        System.exit(-1);
     }
 
     @Override
@@ -26,7 +26,7 @@ public abstract class LockContent implements Content {
     //not in use.
     @Override
     public void RequestAbort(long timestamp) {
-        throw new UnsupportedOperationException();
+        System.exit(-1);
     }
 
     @Override
@@ -40,7 +40,7 @@ public abstract class LockContent implements Content {
 //	}
 //
     @Override
-    public SchemaRecord ReadAccess(TxnContext context, MetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
 
@@ -51,7 +51,7 @@ public abstract class LockContent implements Content {
 
     @Override
     public void updateValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
-        throw new UnsupportedOperationException();
+        System.exit(-1);
     }
 
     @Override

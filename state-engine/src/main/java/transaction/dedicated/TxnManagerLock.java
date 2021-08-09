@@ -1,13 +1,11 @@
 package transaction.dedicated;
 
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import content.Content;
 import db.DatabaseException;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
-import profiler.Metrics;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -17,16 +15,15 @@ import transaction.impl.TxnContext;
 import java.util.LinkedList;
 
 import static common.CONTROL.enable_debug;
-import static common.meta.MetaTypes.AccessType.*;
-import static common.meta.MetaTypes.kMaxAccessNum;
+import static common.meta.CommonMetaTypes.AccessType.*;
+import static common.meta.CommonMetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
 
 /**
  * conventional two-phase locking with no-sync_ratio strategy from Cavalia.
  */
-public class TxnManagerLock extends TxnManagerDedicated {
+public class TxnManagerLock extends TxnManagerDedicatedLocked {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerLock.class);
-    private final Metrics metrics = Metrics.getInstance();
 
     public TxnManagerLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         super(storageManager, thisComponentId, thisTaskId, thread_count);
@@ -61,51 +58,6 @@ public class TxnManagerLock extends TxnManagerDedicated {
 
     @Override
     public boolean CommitTransaction(TxnContext txnContext) {
-//        BEGIN_TS_ALLOCATE_TIME_MEASURE(txnContext.thread_Id);
-////		BEGIN_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
-////#if defined(SCALABLE_TIMESTAMP)
-//        long max_rw_ts = 0;
-//        for (int i = 0; i < access_list_.access_count_; ++i) {
-//            Access access_ptr = access_list_.GetAccess(i);
-//            if (access_ptr.timestamp_ > max_rw_ts) {
-//                max_rw_ts = access_ptr.timestamp_;
-//            }
-//        }
-////#endif
-////		BEGIN_CC_TS_ALLOC_TIME_MEASURE(thread_id_);
-////        long start = System.nanoTime();
-//        long curr_epoch = Epoch.GetEpoch();
-////#if defined(SCALABLE_TIMESTAMP)
-//        long commit_ts = GenerateScalableTimestamp(curr_epoch, max_rw_ts);
-////#else
-////        long commit_ts = GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
-//
-//        END_TS_ALLOCATE_TIME_MEASURE(txnContext.thread_Id);
-////		END_CC_TS_ALLOC_TIME_MEASURE(thread_id_);
-//
-//        for (int i = 0; i < access_list_.access_count_; ++i) {
-//            Access access_ptr = access_list_.GetAccess(i);
-//            Content content_ref = access_ptr.access_record_.content_;
-//            if (access_ptr.access_type_ == READ_WRITE) {
-//                assert (commit_ts >= access_ptr.timestamp_);
-//                content_ref.SetTimestamp(commit_ts);
-//            } else if (access_ptr.access_type_ == INSERT_ONLY) {
-//                assert (commit_ts >= access_ptr.timestamp_);
-//                content_ref.SetTimestamp(commit_ts);
-//            } else if (access_ptr.access_type_ == DELETE_ONLY) {
-//                assert (commit_ts >= access_ptr.timestamp_);
-//                content_ref.SetTimestamp(commit_ts);
-//            }
-//        }
-        // commit.
-//#if defined(VALUE_LOGGING)
-//		logger_->CommitTransaction(this->thread_id_, curr_epoch, commit_ts, access_list_);
-//#elif defined(COMMAND_LOGGING)
-//		if (context->is_adhoc_ == true){
-//			logger_->CommitTransaction(this->thread_id_, curr_epoch, commit_ts, access_list_);
-//		}
-//		logger_->CommitTransaction(this->thread_id_, curr_epoch, commit_ts, context->txn_type_, param);
-//#endif
         // release locks.
         for (int i = 0; i < access_list_.access_count_; ++i) {
             Access access_ptr = access_list_.GetAccess(i);
@@ -157,7 +109,7 @@ public class TxnManagerLock extends TxnManagerDedicated {
 
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord
-            t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
+            t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_); //return the table record for modifying in the application layer.
         if (accessType == READ_ONLY) {
             // if cannot get lock_ratio, then return immediately.
@@ -180,7 +132,6 @@ public class TxnManagerLock extends TxnManagerDedicated {
                 this.AbortTransaction();
                 return false;
             } else {
-                MeasureTools.BEGIN_TP_CORE_TIME_MEASURE(txn_context.thread_Id);
                 /**
                  * 	 const RecordSchema *schema_ptr = t_record->record_->schema_ptr_;
                  char *local_data = MemAllocator::Alloc(schema_ptr->GetSchemaSize());

@@ -2,7 +2,7 @@ package content;
 
 import common.OrderLock;
 import common.RWLock;
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
@@ -46,7 +46,7 @@ public class LockContentImpl extends LockContent {
     }
 
     @Override
-    public SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, MetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, CommonMetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
 

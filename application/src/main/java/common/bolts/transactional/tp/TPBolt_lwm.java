@@ -31,7 +31,7 @@ public class TPBolt_lwm extends TPBolt_LA {
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
-                , context.getThisTaskId(), context.getGraph());
+                , context.getGraph());
     }
 
     @Override

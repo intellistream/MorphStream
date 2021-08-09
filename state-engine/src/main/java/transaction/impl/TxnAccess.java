@@ -1,6 +1,6 @@
 package transaction.impl;
 
-import common.meta.MetaTypes.AccessType;
+import common.meta.CommonMetaTypes.AccessType;
 import storage.SchemaRecord;
 import storage.TableRecord;
 

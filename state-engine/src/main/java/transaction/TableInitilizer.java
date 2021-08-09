@@ -7,6 +7,7 @@ import common.tools.FastZipfGenerator;
 import db.Database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import transaction.scheduler.SchedulerContext;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -91,6 +92,10 @@ public abstract class TableInitilizer {
     public abstract void loadDB(int thread_id, int NUMTasks);
 
     public abstract void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks);
+
+    public abstract void loadDB(SchedulerContext context, int thread_id, int NUMTasks);
+
+    public abstract void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUMTasks);
 
     public int get_pid(int partition_interval, int key) {
         return (int) Math.floor(key / (double) partition_interval);//NUM_ITEMS / tthread;

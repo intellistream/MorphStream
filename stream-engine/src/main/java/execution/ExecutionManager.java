@@ -13,7 +13,7 @@ import faulttolerance.Writer;
 import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.dedicated.ordered.TxnProcessingEngine;
+import transaction.TxnProcessingEngine;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -73,8 +73,8 @@ public class ExecutionManager {
 //            TxnProcessingEngine tp_engine = new TxnProcessingEngine(stage);
             tp_engine = TxnProcessingEngine.getInstance();
             if (integers != null) {
-                tp_engine.initilize(integers.size(), conf.getInt("app"));//TODO: use fixed number of partition?
-                tp_engine.engine_init(integers.get(0), integers.get(integers.size() - 1), integers.size(), conf.getInt("TP", 10), conf.getString("scheduler", "BL"));
+                int numberOfStates = conf.getInt("NUM_ITEMS");
+                tp_engine.engine_init(conf.getInt("tthread"), numberOfStates, conf.getString("scheduler", "BL"));
             }
         }
         executorThread thread = null;

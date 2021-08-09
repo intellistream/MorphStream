@@ -87,7 +87,7 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
         MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);//need to amortize.
         TXN_PROCESS(_bid);
         //end transaction processing.
-        MeasureTools.END_TRANSACTION_TIME_MEASURE(thread_Id);
+        MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
         POST_PROCESS(_bid, timestamp, combo_bid_size);
     }
 
@@ -109,9 +109,9 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
         LAL_PROCESS(_bid);
         PostLAL_process(_bid);
         //end transaction processing.
-        MeasureTools.END_TRANSACTION_TIME_MEASURE(thread_Id);
+        MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
         POST_PROCESS(_bid, timestamp, 1);//otherwise deadlock.
-        MeasureTools.END_TOTAL_TIME_MEASURE(thread_Id, 1);//otherwise deadlock.
+        MeasureTools.END_TOTAL_TIME_MEASURE(thread_Id);//otherwise deadlock.
     }
 
     @Override
@@ -159,9 +159,9 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
         //pre stream processing phase..
-        MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
+        MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);
         PRE_EXECUTE(in);
-        MeasureTools.END_PREPARE_TIME_MEASURE_TS(thread_Id);
+        MeasureTools.END_PREPARE_TIME_MEASURE(thread_Id);
         PRE_TXN_PROCESS(_bid, timestamp);
     }
 

@@ -16,6 +16,7 @@ import storage.datatype.IntDataBox;
 import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
+import transaction.scheduler.SchedulerContext;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -56,7 +57,7 @@ public class GSInitializer extends TableInitilizer {
         } else if (ratio_of_read == 1) {
             read_decision = new boolean[]{true, true, true, true, true, true, true, true};// all read.
         } else {
-            throw new UnsupportedOperationException();
+            System.exit(-1);
         }
         LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
         configure_store(scale_factor, theta, tthread, NUM_ITEMS);
@@ -124,6 +125,16 @@ public class GSInitializer extends TableInitilizer {
             insertMicroRecord(key, value, pid, spinlock_);
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+    }
+
+    @Override
+    public void loadDB(SchedulerContext context, int thread_id, int NUMTasks) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUMTasks) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

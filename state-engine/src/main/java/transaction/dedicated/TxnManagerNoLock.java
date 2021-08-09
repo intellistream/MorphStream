@@ -1,6 +1,6 @@
 package transaction.dedicated;
 
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecordRef;
@@ -25,7 +25,7 @@ public class TxnManagerNoLock extends TxnManagerLock {
 
     @Override
     protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord
-            t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
+            t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         record_ref.setRecord(t_record.record_); //return the table record for modifying in the application layer.
 //        Access access = access_list_.NewAccess();
 //        access.access_type_ = accessType;

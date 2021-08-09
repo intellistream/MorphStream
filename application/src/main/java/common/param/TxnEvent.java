@@ -5,9 +5,8 @@ public class TxnEvent {
     protected final int pid;
     protected final long[] bid_array;
     protected final int number_of_partitions;
-    public double[] index_time = new double[1];
     public double[] enqueue_time = new double[1];
-    public boolean[] success;
+    public int[] success;
     //embeded state.
     protected long timestamp;//emit timestamp
 
@@ -20,8 +19,8 @@ public class TxnEvent {
             this.bid_array[i] = Long.parseLong(bid_arrays[i].trim());
         }
         this.number_of_partitions = number_of_partitions;
-        success = new boolean[1];
-        success[0] = false;
+        success = new int[1];
+
     }
 
     public TxnEvent(long bid, int partition_id, long[] bid_array, int number_of_partitions) {
@@ -29,7 +28,8 @@ public class TxnEvent {
         this.pid = partition_id;
         this.bid_array = bid_array;
         this.number_of_partitions = number_of_partitions;
-        success = new boolean[1];
+        success = new int[1];
+
     }
 
     public long getBid() {

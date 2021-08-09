@@ -45,7 +45,9 @@ public class SLBolt_LA extends SLBolt {
         } else if (input_event instanceof TransactionEvent) {
             TRANSFER_LOCK_AHEAD((TransactionEvent) input_event, txn_context[0]);
         } else {
-            throw new UnsupportedOperationException();
+//            throw new UnsupportedOperationException();
+            LOG.error("Unsupported");
+            System.exit(-1);
         }
         END_LOCK_TIME_MEASURE(thread_Id);
         transactionManager.getOrderLock().advance();

@@ -19,7 +19,9 @@ public class Rankings implements Serializable {
 
     public Rankings(int topN) {
         if (topN < 1) {
-            throw new IllegalArgumentException("topN must be >= 1");
+            System.out.println("topN must be >= 1");
+            System.exit(-1);
+//            throw new IllegalArgumentException("topN must be >= 1");
         }
         maxSize = topN;
     }

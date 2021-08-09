@@ -1,77 +1,89 @@
 package benchmark.datagenerator;
 
 import common.collections.Configuration;
-import common.tools.ZipfGenerator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-/**
- * Generator Config that is tunable for comprehensive experiments
- */
-public class DataGeneratorConfig {
-    private static final Logger LOG = LoggerFactory.getLogger(DataGeneratorConfig.class);
-    public Integer tuplesPerBatch;
-    public Integer totalBatches;
-    public Integer numberOfDLevels;
-    public Boolean shufflingActive;
-    public Integer totalThreads;
-    public String scheduler;
-    public String fanoutDist;
-    public String idGenType;
-
-    public String rootPath;
-    public String idsPath;
-
-    public float[] dependenciesDistributionForLevels;
+public abstract class DataGeneratorConfig {
+    private Integer tuplesPerBatch;
+    private Integer totalBatches;
+    private Integer totalThreads;
+    private String scheduler;
+    private String rootPath;
+    private int nKeyStates;
+    private String idsPath;
+    private Boolean shufflingActive;
 
     public void initialize(Configuration config) {
-        this.tuplesPerBatch = config.getInt("totalEventsPerBatch");
-        this.totalBatches = config.getInt("numberOfBatches");
-        this.numberOfDLevels = config.getInt("numberOfDLevels");
-        this.shufflingActive = false;
-        this.totalThreads = config.getInt("tthread");
-        this.scheduler = config.getString("scheduler");
-        this.fanoutDist = config.getString("fanoutDist");
-        this.idGenType = config.getString("idGenType");
-        this.rootPath = config.getString("rootFilePath");
-
-        this.idsPath = this.rootPath;
-        this.updateDependencyLevels();
+        this.setTuplesPerBatch(config.getInt("totalEventsPerBatch"));
+        this.setTotalBatches(config.getInt("numberOfBatches"));
+        this.setTotalThreads(config.getInt("tthread"));
+        this.setScheduler(config.getString("scheduler"));
+        this.setRootPath(config.getString("rootFilePath"));
+        this.setnKeyStates(config.getInt("NUM_ITEMS"));
+        this.setIdsPath(this.getRootPath());
+        this.setShufflingActive(false);
     }
 
-    public void updateDependencyLevels() {
-
-        dependenciesDistributionForLevels = new float[numberOfDLevels];
-        if (fanoutDist.equals("uniform")) {
-            for (int index = 0; index < numberOfDLevels; index++) {
-                dependenciesDistributionForLevels[index] = 1f / (numberOfDLevels * 1.0f);
-            }
-        } else if (fanoutDist.equals("zipfinv")) {
-            ZipfGenerator zipf = new ZipfGenerator(numberOfDLevels, 1);
-            for (int index = 0; index < numberOfDLevels; index++) {
-                dependenciesDistributionForLevels[index] = (float) zipf.getProbability(numberOfDLevels - index);
-            }
-        } else if (fanoutDist.equals("zipf")) {
-            ZipfGenerator zipf = new ZipfGenerator(numberOfDLevels, 1);
-            for (int index = 0; index < numberOfDLevels; index++) {
-                dependenciesDistributionForLevels[index] = (float) zipf.getProbability(index + 1);
-            }
-        } else if (fanoutDist.equals("zipfcenter")) {
-            ZipfGenerator zipf = new ZipfGenerator(numberOfDLevels / 2, 1);
-            for (int index = 0; index < numberOfDLevels / 2; index++) {
-                dependenciesDistributionForLevels[index] = (float) zipf.getProbability(index + 1);
-            }
-            for (int index = numberOfDLevels / 2; index < numberOfDLevels; index++) {
-                dependenciesDistributionForLevels[index] = (float) zipf.getProbability(numberOfDLevels - index);
-            }
-        } else {
-            throw new UnsupportedOperationException("Invalid fanout scheme.");
-        }
-
-        LOG.info(String.format("totalEventsPerBatch: %d", tuplesPerBatch));
-        LOG.info(String.format("numberOfBatches: %d", totalBatches));
-        LOG.info(String.format("numberOfDLevels: %d", numberOfDLevels));
-        LOG.info(String.format("rootFilePath: %s", rootPath));
+    public Integer getTuplesPerBatch() {
+        return tuplesPerBatch;
     }
 
+    public void setTuplesPerBatch(Integer tuplesPerBatch) {
+        this.tuplesPerBatch = tuplesPerBatch;
+    }
+
+    public Integer getTotalBatches() {
+        return totalBatches;
+    }
+
+    public void setTotalBatches(Integer totalBatches) {
+        this.totalBatches = totalBatches;
+    }
+
+    public Integer getTotalThreads() {
+        return totalThreads;
+    }
+
+    public void setTotalThreads(Integer totalThreads) {
+        this.totalThreads = totalThreads;
+    }
+
+    public String getScheduler() {
+        return scheduler;
+    }
+
+    public void setScheduler(String scheduler) {
+        this.scheduler = scheduler;
+    }
+
+    public String getRootPath() {
+        return rootPath;
+    }
+
+    public void setRootPath(String rootPath) {
+        this.rootPath = rootPath;
+    }
+
+    public int getnKeyStates() {
+        return nKeyStates;
+    }
+
+    public void setnKeyStates(int nKeyStates) {
+        this.nKeyStates = nKeyStates;
+    }
+
+    public String getIdsPath() {
+        return idsPath;
+    }
+
+    public void setIdsPath(String idsPath) {
+        this.idsPath = idsPath;
+    }
+
+    public Boolean getShufflingActive() {
+        return shufflingActive;
+    }
+
+    public void setShufflingActive(Boolean shufflingActive) {
+        this.shufflingActive = shufflingActive;
+    }
 }

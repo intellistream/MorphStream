@@ -1,7 +1,7 @@
 package benchmark.datagenerator.apps.SL.output;
 
-import benchmark.datagenerator.apps.SL.SLDataOperationChain;
-import benchmark.datagenerator.apps.SL.SLDataTransaction;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
+import benchmark.datagenerator.apps.SL.Transaction.SLTransaction;
 import common.collections.OsUtils;
 
 import java.io.BufferedWriter;
@@ -46,7 +46,7 @@ public class FileOutputHandler implements IOutputHandler {
     }
 
     @Override
-    public void sinkTransactions(List<SLDataTransaction> dataTransactions) {
+    public void sinkTransactions(List<SLTransaction> dataTransactions) {
         BufferedWriter fileWriter = null;
         try {
             File file = new File(mRootPath + mTransactionsFileName);
@@ -55,9 +55,12 @@ public class FileOutputHandler implements IOutputHandler {
                 file.createNewFile();
 
             fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()));
-            for (int iter = 0; iter < 10; iter++)
-                for (int lop = 0; lop < dataTransactions.size(); lop++)
-                    fileWriter.write(dataTransactions.get(lop).toString(iter, dataTransactions.size()) + "\n");
+//            for (int iter = 0; iter < 10; iter++)
+//                for (int lop = 0; lop < dataTransactions.size(); lop++)
+//                    fileWriter.write(dataTransactions.get(lop).toString(iter, dataTransactions.size()) + "\n");
+//            fileWriter.close();
+            for (SLTransaction dataTransaction : dataTransactions)
+                fileWriter.write(dataTransaction.toString() + "\n");
             fileWriter.close();
 
         } catch (IOException e) {

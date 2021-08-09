@@ -16,7 +16,7 @@ import java.util.List;
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static common.meta.MetaTypes.AccessType.READ_WRITE;
+import static common.meta.CommonMetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.*;
 
 public abstract class SLBolt extends TransactionalBolt {

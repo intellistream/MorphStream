@@ -1,28 +1,25 @@
 package transaction.dedicated.ordered;
 
 import common.OrderLock;
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import db.DatabaseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
 import storage.TableRecord;
-import transaction.dedicated.TxnManagerDedicated;
+import transaction.dedicated.TxnManagerDedicatedLocked;
 import transaction.impl.TxnContext;
 
 import java.util.LinkedList;
 
-import static common.meta.MetaTypes.AccessType.*;
-import static common.meta.MetaTypes.kMaxAccessNum;
+import static common.meta.CommonMetaTypes.AccessType.*;
+import static common.meta.CommonMetaTypes.kMaxAccessNum;
 import static transaction.impl.TxnAccess.Access;
 
 /**
  * mimic of ACEP's LWM method.
  */
-public class TxnManagerLWM extends TxnManagerDedicated {
-    private static final Logger LOG = LoggerFactory.getLogger(TxnManagerLWM.class);
+public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     final OrderLock orderLock;
 
     public TxnManagerLWM(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
@@ -66,7 +63,7 @@ public class TxnManagerLWM extends TxnManagerDedicated {
      * @param txn_context
      * @param accessType
      */
-    private void InsertLock(TableRecord t_record, TxnContext txn_context, MetaTypes.AccessType accessType) {
+    private void InsertLock(TableRecord t_record, TxnContext txn_context, CommonMetaTypes.AccessType accessType) {
         switch (accessType) {
             case READ_ONLY:
 //				while (!t_record.content_.AcquireReadLock()) {
@@ -87,13 +84,13 @@ public class TxnManagerLWM extends TxnManagerDedicated {
 
     //The following makes sure the lock_ratio is added in event sequence as in ACEP.
     @Override
-    protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
+    protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         InsertLock(t_record, txn_context, accessType);
         return true;
     }
 
     @Override
-    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
+    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         if (accessType == READ_ONLY) {
             SchemaRecord local_record = t_record.content_.ReadAccess(txn_context, accessType);// return the correct version.
             Access access = access_list_.NewAccess();
@@ -120,7 +117,7 @@ public class TxnManagerLWM extends TxnManagerDedicated {
     }
 
     @Override
-    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) {
+    protected boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
         //Different from locking scheme, LWM returns only local copy... The actual install happens later at commit stage.
         if (accessType == READ_ONLY) {
             //The following makes sure the lock_ratio is added in event sequence

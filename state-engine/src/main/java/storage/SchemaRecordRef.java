@@ -1,7 +1,5 @@
 package storage;
 
-import java.util.concurrent.RejectedExecutionException;
-
 /**
  * A hack ref to SchemaRecord, simulating C++ pointer.
  */
@@ -15,18 +13,6 @@ public class SchemaRecordRef {
     }
 
     public SchemaRecord getRecord() {
-        try {
-            if (record == null) {
-                throw new RejectedExecutionException();
-            }
-        } catch (RejectedExecutionException e) {
-            System.out.println(record.getId());
-            System.out.println("The record has not being assigned yet!");
-//            e.printStackTrace();
-        }
-//        while (record == null) {
-//            System.out.println("The record has not being assigned yet!" + cnt);
-//        }
         return record;
     }
 

@@ -45,7 +45,7 @@ public class ShareTable extends BaseTable {
     @Override
     public void SelectRecords(int idx_id, String secondary_key, TableRecords records) {
 //        secondary_indexes_[idx_id].SearchRecords(secondary_key, records);
-        throw new UnsupportedOperationException();
+        System.exit(-1);
     }
 
     ///////////////////INSERT//////////////////

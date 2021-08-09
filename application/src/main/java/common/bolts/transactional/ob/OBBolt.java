@@ -19,7 +19,7 @@ import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static common.constants.OnlineBidingSystemConstants.Constant.NUM_ACCESSES_PER_BUY;
-import static common.meta.MetaTypes.AccessType.READ_WRITE;
+import static common.meta.CommonMetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 

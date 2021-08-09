@@ -20,6 +20,7 @@ import org.apache.log4j.LogManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.impl.TxnContext;
+import transaction.scheduler.SchedulerContext;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -216,11 +217,15 @@ public abstract class Operator implements IOperator {
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
+        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
     }
 
-    public void loadDB(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void loadDB(int thread_Id, ExecutionGraph graph) {
         graph.topology.tableinitilizer.loadDB(thread_Id, this.context.getNUMTasks());
+    }
+
+    public void loadDB(SchedulerContext schedulerContext, int thread_Id, ExecutionGraph graph) {
+        graph.topology.tableinitilizer.loadDB(schedulerContext, thread_Id, this.context.getNUMTasks());
     }
 
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {

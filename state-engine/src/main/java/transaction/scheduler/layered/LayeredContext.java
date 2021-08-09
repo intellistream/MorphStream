@@ -1,38 +1,55 @@
 package transaction.scheduler.layered;
 
-import index.high_scale_lib.ConcurrentHashMap;
 import transaction.scheduler.SchedulerContext;
+import transaction.scheduler.layered.struct.Operation;
+import transaction.scheduler.layered.struct.OperationChain;
 
-import java.util.function.Supplier;
-public class LayeredContext<V> extends SchedulerContext {
-    public int[] currentLevel;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
 
-    //if Hashed: threadID, levelID, listOCs.
-    //if RR: levelID, listOCs.
-    //if Shared: levelID, listOCs.
-    public ConcurrentHashMap<Integer, V> layeredOCBucketGlobal;
-    protected Supplier<V> supplier;
+public class LayeredContext extends SchedulerContext {
+    public HashMap<Integer, ArrayList<OperationChain>> layeredOCBucketGlobal;// <LevelID, ArrayDeque<OperationChain>
+    public int currentLevel;
+    public int currentLevelIndex;
     public int totalThreads;
+    protected int maxLevel;//total number of operations to process per thread.
+    protected int scheduledOPs;//current number of operations processed per thread.
+    protected int totalOsToSchedule;//total number of operations to process per thread.
+    protected OperationChain ready_oc;//ready operation chain per thread.
+    protected ArrayDeque<Operation> abortedOperations;//aborted operations per thread.
+    protected int rollbackLevel;
+    protected boolean aborted;//if any operation is aborted during processing.
 
-    public LayeredContext(int totalThreads, Supplier<V> supplier) {
-        layeredOCBucketGlobal = new ConcurrentHashMap<>();
-        currentLevel = new int[totalThreads];
-        this.supplier = supplier;
-    }
-    public V createContents() {
-        return supplier.get();
+    //TODO: Make it flexible to accept other applications.
+    //The table name is hard-coded.
+    public LayeredContext(int thisThreadId, int totalThreads) {
+        this.thisThreadId = thisThreadId;
+        this.totalThreads = totalThreads;
+        this.layeredOCBucketGlobal = new HashMap<>();
+        this.abortedOperations = new ArrayDeque<>();
     }
 
     @Override
     protected void reset() {
-        layeredOCBucketGlobal.clear();
-        for (int threadId = 0; threadId < totalThreads; threadId++) {
-            currentLevel[threadId] = 0;
-        }
+        currentLevel = 0;
+        totalOsToSchedule = 0;
+        scheduledOPs = 0;
     }
+
     @Override
-    protected boolean finished(int threadId) {
-        return false;
+    public void UpdateMapping(String key) {
+        //Not required. TODO: cleanup in future.
     }
+
+    public ArrayList<OperationChain> BFSearch() {
+        return layeredOCBucketGlobal.get(currentLevel);
+    }
+
+    @Override
+    protected boolean finished() {
+        return scheduledOPs == totalOsToSchedule && !aborted;
+    }
+
 }
 

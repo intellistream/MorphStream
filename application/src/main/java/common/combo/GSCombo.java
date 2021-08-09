@@ -152,22 +152,16 @@ public class GSCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                if (config.getBoolean("disable_pushdown", false))
-                    bolt = new GSBolt_ts_nopush(0, sink);
-                else
-                    bolt = new GSBolt_ts(0, sink);
+                bolt = new GSBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
                 bolt = new GSBolt_sstore(0);
                 break;
             }
-            case CCOption_OTS: {//ordered TS
-                bolt = new GSBolt_ots(0, sink);
-                break;
-            }
+
             default:
-                throw new UnsupportedOperationException("Please select correct CC option!");
+                LOG.error("Please select correct CC option!");
         }
         //do preparation.
         bolt.prepare(config, context, collector);

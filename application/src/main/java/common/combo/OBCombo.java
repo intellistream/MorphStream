@@ -106,7 +106,7 @@ public class OBCombo extends SPOUTCombo {
         String event_path = Event_Path
                 + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition);
         if (Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file_name))))
-            throw new UnsupportedOperationException();
+            System.exit(-1);
         Scanner sc;
         try {
             sc = new Scanner(new File(event_path + OsUtils.OS_wrapper(file_name)));
@@ -186,10 +186,7 @@ public class OBCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                if (config.getBoolean("disable_pushdown", false))
-                    bolt = new OBBolt_ts_nopush(0, sink);
-                else
-                    bolt = new OBBolt_ts(0, sink);
+                bolt = new OBBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore

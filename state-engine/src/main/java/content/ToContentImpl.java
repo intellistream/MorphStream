@@ -1,7 +1,7 @@
 package content;
 
 import common.SpinLock;
-import common.meta.MetaTypes;
+import common.meta.CommonMetaTypes;
 import content.common.RequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -149,7 +149,7 @@ public class ToContentImpl extends ToContent {
     }
 
     @Override
-    public SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, MetaTypes.AccessType accessType) {
+    public SchemaRecord ReadAccess(long ts, long mark_ID, boolean clean, CommonMetaTypes.AccessType accessType) {
         throw new UnsupportedOperationException();
     }
 

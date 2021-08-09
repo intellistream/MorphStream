@@ -1,0 +1,316 @@
+package transaction.scheduler.tpg;
+
+import common.meta.CommonMetaTypes;
+import content.T_StreamContent;
+import profiler.MeasureTools;
+import storage.SchemaRecord;
+import storage.SchemaRecordRef;
+import storage.TableRecord;
+import transaction.function.DEC;
+import transaction.function.INC;
+import transaction.impl.TxnContext;
+import transaction.scheduler.Request;
+import transaction.scheduler.Scheduler;
+import transaction.scheduler.tpg.struct.MetaTypes;
+import transaction.scheduler.tpg.struct.Operation;
+import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
+
+import java.util.*;
+
+import static common.meta.CommonMetaTypes.AccessType.GET;
+import static common.meta.CommonMetaTypes.AccessType.SET;
+
+/**
+ * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:
+ * 1. explore dependencies in TPG, and find out the ready/speculative operations
+ * 2. map operations to threads and put them into the queue of threads.
+ * 3. thread will find operations from its queue for execution.
+ * It's a shared data structure!
+ */
+    @lombok.extern.slf4j.Slf4j
+public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context, Operation> {
+    protected final int delta;//range of each partition. depends on the number of op in the stage.
+    public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
+    public final Map<Integer, Context> threadToContextMap;
+
+    public TPGScheduler(int tp, int NUM_ITEMS) {
+        delta = (int) Math.ceil(NUM_ITEMS / (double) tp); // Check id generation in DateGenerator.
+        this.tpg = new TaskPrecedenceGraph(tp);
+        ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
+        tpg.setExecutableListener(executableTaskListener);
+        threadToContextMap = new HashMap<>();
+    }
+
+    @Override
+    public void INITIALIZE(Context context) {
+        tpg.firstTimeExploreTPG(context);
+    }
+
+    /**
+     * // O1 -> (logical)  O2
+     * // T1: pickup O1. Transition O1 (ready - > execute) || notify O2 (speculative -> ready).
+     * // T2: pickup O2 (speculative -> executed)
+     * // T3: pickup O2
+     * fast explore dependencies in TPG and put ready/speculative operations into task queues.
+     *
+     * @param context
+     */
+    @Override
+    public void EXPLORE(Context context) {
+        while (context.batchedOperations.size() != 0) {
+            Operation remove = context.batchedOperations.remove();
+            remove.context.partitionStateManager.onProcessed(remove);
+        }
+        context.partitionStateManager.handleStateTransitions();
+    }
+
+    @Override
+    public boolean FINISHED(Context threadId) {
+        return tpg.isFinished();
+    }
+
+    @Override
+    public void RESET() {
+//        Controller.exec.shutdownNow();
+    }
+
+    /**
+     * Submit requests to target thread --> data shuffling is involved.
+     *
+     * @param context
+     * @param request
+     * @return
+     */
+    @Override
+    public boolean SubmitRequest(Context context, Request request) {
+        context.requests.push(request);
+        return false;
+    }
+
+    @Override
+    public void TxnSubmitBegin(Context context) {
+        context.requests.clear();
+    }
+
+    @Override
+    public void AddContext(int threadId, Context context) {
+        threadToContextMap.put(threadId, context);
+    }
+
+    private Operation[] constructGetOperation(TxnContext txn_context, String[] condition_sourceTable,
+                                              String[] condition_source, TableRecord[] condition_records, long bid) {
+        // read the s_record
+        Operation[] get_ops = new Operation[condition_source.length];
+        for (int index = 0; index < condition_source.length; index++) {
+            TableRecord s_record = condition_records[index];
+            String s_table_name = condition_sourceTable[index];
+            SchemaRecordRef tmp_src_value = new SchemaRecordRef();
+            get_ops[index] = new Operation(getTargetContext(s_record), s_table_name, txn_context, bid, CommonMetaTypes.AccessType.GET, s_record, tmp_src_value);
+        }
+        return get_ops;
+    }
+
+    @Override
+    public void TxnSubmitFinished(Context context) {
+        // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
+        List<Operation> operationGraph = new ArrayList<>();
+        for (Request request : context.requests) {
+            long bid = request.txn_context.getBID();
+
+            if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND)) {
+                // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
+                // 1. construct operations
+                // read source record that to help the update on destination record
+                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
+                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.function, request.condition, request.success);
+                // write the destination record, the write operation depends on the record returned by get_op
+
+                // 2. add data dependencies, parent op will notify children op after it was executed
+                for (Operation get_op : get_ops) {
+                    get_op.addChild(set_op, MetaTypes.DependencyType.FD);
+                    set_op.addParent(get_op, MetaTypes.DependencyType.FD);
+                    operationGraph.add(get_op);
+                }
+                operationGraph.add(set_op);
+            } else if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND_READ)) {
+                // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
+                // 1. construct operations
+                // read the s_record
+                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
+                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.record_ref, request.function, request.condition, request.success);
+
+                // 2. add data dependencies, parent op will notify children op after it was executed
+                for (Operation get_op : get_ops) {
+                    get_op.addChild(set_op, MetaTypes.DependencyType.FD);
+                    set_op.addParent(get_op, MetaTypes.DependencyType.FD);
+                    operationGraph.add(get_op);
+                }
+                operationGraph.add(set_op);
+            }
+        }
+
+        // 4. send operation graph to tpg for tpg construction
+        tpg.addTxn(operationGraph);//TODO: this is bad refactor.
+    }
+
+    private Context getTargetContext(TableRecord d_record) {
+        // the thread to submit the operation may not be the thread to execute it.
+        // we need to find the target context this thread is mapped to.
+        int threadId = getTaskId(d_record.record_.GetPrimaryKey());
+        return threadToContextMap.get(threadId);
+    }
+
+    private int getTaskId(String key) {
+        int _key = Integer.parseInt(key);
+        return _key / delta;
+    }
+
+    // DD: Transfer event processing
+    private void CT_Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
+        Queue<Operation> fd_parents = operation.getParents(MetaTypes.DependencyType.FD);
+        List<SchemaRecord> preValues = new ArrayList<>();
+        for (Operation parent : fd_parents) {
+            preValues.add(parent.record_ref.getRecord());
+        }
+
+        if (preValues.get(0) == null) {
+            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
+            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
+            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
+                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+            }
+            log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
+        }
+        if (preValues.get(1) == null) {
+            log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
+            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
+            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
+                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+            }
+            log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
+        }
+        final long sourceAccountBalance = preValues.get(0).getValues().get(1).getLong();
+        final long sourceAssetValue = preValues.get(1).getValues().get(1).getLong();
+        if (sourceAccountBalance > operation.condition.arg1
+                && sourceAccountBalance > operation.condition.arg2
+                && sourceAssetValue > operation.condition.arg3) {
+            // read
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+            // apply function
+            if (operation.function instanceof INC) {
+                tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
+            } else if (operation.function instanceof DEC) {
+                tempo_record.getValues().get(1).decLong(sourceAccountBalance, operation.function.delta_long);//compute.
+            } else
+                throw new UnsupportedOperationException();
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+        } else {
+            log.info("++++++ operation failed: "
+                    + sourceAccountBalance + "-" + operation.condition.arg1
+                    + " : " + sourceAccountBalance + "-" + operation.condition.arg2
+                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
+                    + " condition: " + operation.condition);
+        }
+    }
+
+    /**
+     * Used by tpgScheduler.
+     *
+     * @param threadId
+     * @param operation
+     * @param mark_ID
+     * @param clean
+     */
+    public void execute(int threadId, Operation operation, long mark_ID, boolean clean) {
+        log.trace("++++++execute: " + operation);
+        if (!(operation.getOperationState().equals(MetaTypes.OperationStateType.READY) || operation.getOperationState().equals(MetaTypes.OperationStateType.SPECULATIVE))) {
+            //otherwise, skip (those already been tagged as aborted).
+            return;
+        }
+        // the operation will only be executed when the state is in READY/SPECULATIVE,
+        if (operation.accessType.equals(GET)) {
+            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+        } else if (operation.accessType.equals(SET)) {
+            int success = operation.success[0];
+            CT_Transfer_Fun(operation, mark_ID, clean);
+            // operation success check
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            } else {
+                // check whether needs to return a read results of the operation
+                if (operation.record_ref != null) {
+                    operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException();
+        }
+        assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
+    }
+
+    @Override
+    public void PROCESS(Context context, long mark_ID) {
+        int cnt = 0;
+        int batch_size = 5;//TODO;
+        int threadId = context.thisThreadId;
+        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+
+        do {
+            Operation next = next(context);
+            if (next == null) {
+                break;
+            }
+            context.batchedOperations.push(next);
+            cnt++;
+            if (cnt > batch_size) {
+                break;
+            }
+        } while (true);
+        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+
+        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+        for (Operation operation : context.batchedOperations) {
+            execute(threadId, operation, mark_ID, false);
+        }
+        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+    }
+
+    /**
+     * Try to get task from local queue.
+     *
+     * @param context
+     * @return
+     */
+    public Operation next(Context context) {
+        return context.taskQueues.pollLast();
+    }
+
+
+    /**
+     * Distribute the operations to different threads with different strategies
+     * 1. greedy: simply execute all operations has picked up.
+     * 2. conserved: hash operations to threads based on the targeting key state
+     * 3. shared: put all operations in a pool and
+     *
+     * @param executableOperation
+     * @param context
+     */
+    @Override
+    protected void DISTRIBUTE(Operation executableOperation, Context context) {
+        if (executableOperation != null)
+            context.taskQueues.add(executableOperation);
+    }
+
+    /**
+     * Register an operation to queue.
+     */
+    public class ExecutableTaskListener {
+        public void onExecutable(Operation operation) {
+            DISTRIBUTE(operation, (Context) operation.context);//TODO: make it clear..
+        }
+    }
+}

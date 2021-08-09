@@ -18,6 +18,7 @@ import storage.datatype.IntDataBox;
 import storage.datatype.LongDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
+import transaction.scheduler.SchedulerContext;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -77,6 +78,16 @@ public class OBInitializer extends TableInitilizer {
             insertItemRecords(key, 100, pid, spinlock);
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+    }
+
+    @Override
+    public void loadDB(SchedulerContext context, int thread_id, int NUMTasks) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUMTasks) {
+        throw new UnsupportedOperationException();
     }
 
     /**

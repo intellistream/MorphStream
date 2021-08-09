@@ -1,8 +1,8 @@
 package benchmark.datagenerator.apps.SL.output;
 
 
-import benchmark.datagenerator.apps.SL.SLDataOperationChain;
-import benchmark.datagenerator.apps.SL.SLDataTransaction;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
+import benchmark.datagenerator.apps.SL.Transaction.SLTransaction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,8 +11,8 @@ import java.util.List;
 public class ConsoleOutputHandler implements IOutputHandler {
 
     @Override
-    public void sinkTransactions(List<SLDataTransaction> dataTransactions) {
-        for (SLDataTransaction dummyTransaction : dataTransactions) {
+    public void sinkTransactions(List<SLTransaction> dataTransactions) {
+        for (SLTransaction dummyTransaction : dataTransactions) {
             System.out.println(dummyTransaction.toString());
         }
     }

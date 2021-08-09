@@ -1,14 +1,21 @@
 package transaction.scheduler;
-import common.OperationChain;
-import java.util.Collection;
 
-/**
- * Author: Aqif Hamid
- * The customized execution scheduler abstraction.
- */
-public interface IScheduler {
-    void SUBMIT(int threadId, Collection<OperationChain> ocs);
-    OperationChain NEXT(int threadId);
-    void reset();
+public interface IScheduler<Context> {
+    void INITIALIZE(Context threadId);
+
+    void PROCESS(Context threadId, long mark_ID);
+
+    void EXPLORE(Context context);
+
+    boolean FINISHED(Context threadId);
+
+    void RESET();
+
+    boolean SubmitRequest(Context context, Request request);
+
+    void TxnSubmitBegin(Context context);
+
+    void TxnSubmitFinished(Context context);
+
+    void AddContext(int thisTaskId, Context context);
 }
-

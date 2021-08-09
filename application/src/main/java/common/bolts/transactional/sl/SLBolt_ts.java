@@ -13,6 +13,7 @@ import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import storage.SchemaRecord;
 import transaction.dedicated.ordered.TxnManagerTStream;
 import transaction.function.Condition;
 import transaction.function.DEC;
@@ -23,14 +24,17 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_latency_measurement;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 
 public class SLBolt_ts extends SLBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
-    private final static double write_useful_time = 3316;//write-compute time pre-measured.
+    //write-compute time pre-measured.
     ArrayDeque<TransactionEvent> transactionEvents;
-    private int depositeEvents;
+    ArrayDeque<DepositEvent> depositeEvents;
 
     public SLBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -45,43 +49,51 @@ public class SLBolt_ts extends SLBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        int numberOfStates = 10 * config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches") * 5;
+//        int numberOfStates = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
+        int numberOfStates = config.getInt("NUM_ITEMS");
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
-                numberOfStates, this.context.getThisComponent().getNumTasks());
+                numberOfStates, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
         transactionEvents = new ArrayDeque<>();
+        depositeEvents = new ArrayDeque<>();
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
-        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
+        loadDB(transactionManager.getSchedulerContext(),
+                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
         // Aqif: For TStream taskId increases by 1 and executorId is always 0.
     }
+
 
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         if (in.isMarker()) {
-            int readSize = transactionEvents.size();
+            int transSize = transactionEvents.size();
+            int depoSize = depositeEvents.size();
+            int num_events = transSize + depoSize;
+            /**
+             *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
+             */
+            {
+                MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
+                {
+                    transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
+                    TRANSFER_REQUEST_CORE();
+                }
+                MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
+                BEGIN_POST_TIME_MEASURE(thread_Id);
+                {
+                    TRANSFER_REQUEST_POST();
+                    DEPOSITE_REQUEST_POST();
+                }
+                END_POST_TIME_MEASURE_ACC(thread_Id);
 
-            MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
-
-            MeasureTools.BEGIN_TXN_PROCESSING_TIME_MEASURE(thread_Id);
-            transactionManager.start_evaluate(thread_Id, in.getBID());//start lazy evaluation in transaction manager.
-            MeasureTools.END_TXN_PROCESSING_TIME_MEASURE(thread_Id);
-
-            MeasureTools.BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-            TRANSFER_REQUEST_CORE();
-            MeasureTools.END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, write_useful_time, depositeEvents);
-
-            MeasureTools.END_TXN_TIME_MEASURE_TS(thread_Id, write_useful_time * depositeEvents);//overhead_total txn time
-
-            TRANSFER_REQUEST_POST();
-            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize + depositeEvents);
-
-            transactionEvents.clear();//all tuples in the holder is finished.
-            if (enable_profile) {
-                depositeEvents = 0;//all tuples in the holder is finished.
+                //all tuples in the holder is finished.
+                transactionEvents.clear();
+                depositeEvents.clear();
             }
+            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
         } else {
             execute_ts_normal(in);
         }
@@ -101,12 +113,9 @@ public class SLBolt_ts extends SLBolt {
                 TRANSFER_REQUEST_CONSTRUCT((TransactionEvent) event, txnContext);
             }
         }
-        MeasureTools.END_PRE_TXN_TIME_MEASURE(thread_Id);//includes post time deposite..
     }
 
     protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
-//        System.out.println(event.toString());
-//        MeasureTools.BEGIN_INDEX_TIME_MEASURE(txnContext.thread_Id);
 
         String[] srcTable = new String[]{"accounts", "bookEntries"};
         String[] srcID = new String[]{event.getSourceAccountId(), event.getSourceBookEntryId()};
@@ -120,8 +129,7 @@ public class SLBolt_ts extends SLBolt {
         INC increment2 = new INC(event.getBookEntryTransfer());
         Condition condition4 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
 
-//        MeasureTools.END_INDEX_TIME_MEASURE_ACC(txnContext.thread_Id, false);
-
+        transactionManager.BeginTransaction(txnContext);
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "accounts",
                 event.getSourceAccountId(), event.src_account_value,//to be fill up.
@@ -152,18 +160,23 @@ public class SLBolt_ts extends SLBolt {
                 srcTable, srcID,
                 condition4,
                 event.success);   //asynchronously return.
-        transactionEvents.add(event);
 
+        transactionManager.CommitTransaction(txnContext);
+
+        transactionEvents.add(event);
     }
 
     protected void DEPOSITE_REQUEST_CONSTRUCT(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()));// read and modify the account itself.
         transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()));// read and modify the asset itself.
-        MeasureTools.BEGIN_POST_TIME_MEASURE(thread_Id);
-        DEPOSITE_REQUEST_POST(event);
-        MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
-        depositeEvents++;
+        depositeEvents.add(event);
+    }
+
+    private void DEPOSITE_REQUEST_POST() throws InterruptedException {
+        for (DepositEvent event : depositeEvents) {
+            DEPOSITE_REQUEST_POST(event);
+        }
     }
 
     private void TRANSFER_REQUEST_POST() throws InterruptedException {
@@ -174,8 +187,21 @@ public class SLBolt_ts extends SLBolt {
 
     private void TRANSFER_REQUEST_CORE() throws InterruptedException {
         for (TransactionEvent event : transactionEvents) {
-            event.transaction_result = new TransactionResult(event, event.success[0],
-                    event.src_account_value.getRecord().getValues().get(1).getLong(), event.dst_account_value.getRecord().getValues().get(1).getLong());
+
+            SchemaRecord srcAccountValueRecord = event.src_account_value.getRecord();
+            SchemaRecord dstAccountValueRecord = event.dst_account_value.getRecord();
+
+            if (srcAccountValueRecord == null) {
+                LOG.error(event.getSourceAccountId());
+            }
+            if (dstAccountValueRecord == null) {
+                LOG.error(event.getTargetAccountId());
+            }
+
+            if (srcAccountValueRecord != null && dstAccountValueRecord != null)
+                event.transaction_result = new TransactionResult(event, event.success[0] == 4,
+                        srcAccountValueRecord.getValues().get(1).getLong(),
+                        dstAccountValueRecord.getValues().get(1).getLong());
         }
     }
 }
