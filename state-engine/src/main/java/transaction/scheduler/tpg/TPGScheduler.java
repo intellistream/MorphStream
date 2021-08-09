@@ -15,10 +15,7 @@ import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
 import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 import static common.meta.CommonMetaTypes.AccessType.GET;
 import static common.meta.CommonMetaTypes.AccessType.SET;
@@ -30,14 +27,18 @@ import static common.meta.CommonMetaTypes.AccessType.SET;
  * 3. thread will find operations from its queue for execution.
  * It's a shared data structure!
  */
-@lombok.extern.slf4j.Slf4j
+    @lombok.extern.slf4j.Slf4j
 public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context, Operation> {
+    protected final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
+    public final Map<Integer, Context> threadToContextMap;
 
-    public TPGScheduler(int tp) {
+    public TPGScheduler(int tp, int NUM_ITEMS) {
+        delta = (int) Math.ceil(NUM_ITEMS / (double) tp); // Check id generation in DateGenerator.
         this.tpg = new TaskPrecedenceGraph(tp);
         ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
         tpg.setExecutableListener(executableTaskListener);
+        threadToContextMap = new HashMap<>();
     }
 
     @Override
@@ -60,6 +61,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
             Operation remove = context.batchedOperations.remove();
             remove.context.partitionStateManager.onProcessed(remove);
         }
+        context.partitionStateManager.handleStateTransitions();
     }
 
     @Override
@@ -90,7 +92,12 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         context.requests.clear();
     }
 
-    private Operation[] constructGetOperation(Context context, TxnContext txn_context, String[] condition_sourceTable,
+    @Override
+    public void AddContext(int threadId, Context context) {
+        threadToContextMap.put(threadId, context);
+    }
+
+    private Operation[] constructGetOperation(TxnContext txn_context, String[] condition_sourceTable,
                                               String[] condition_source, TableRecord[] condition_records, long bid) {
         // read the s_record
         Operation[] get_ops = new Operation[condition_source.length];
@@ -98,7 +105,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
             TableRecord s_record = condition_records[index];
             String s_table_name = condition_sourceTable[index];
             SchemaRecordRef tmp_src_value = new SchemaRecordRef();
-            get_ops[index] = new Operation(context, s_table_name, txn_context, bid, CommonMetaTypes.AccessType.GET, s_record, tmp_src_value);
+            get_ops[index] = new Operation(getTargetContext(s_record), s_table_name, txn_context, bid, CommonMetaTypes.AccessType.GET, s_record, tmp_src_value);
         }
         return get_ops;
     }
@@ -109,12 +116,13 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         List<Operation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
             long bid = request.txn_context.getBID();
+
             if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND)) {
                 // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
                 // 1. construct operations
                 // read source record that to help the update on destination record
-                Operation[] get_ops = constructGetOperation(context, request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
-                Operation set_op = new Operation(context, request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.function, request.condition, request.success);
+                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
+                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.function, request.condition, request.success);
                 // write the destination record, the write operation depends on the record returned by get_op
 
                 // 2. add data dependencies, parent op will notify children op after it was executed
@@ -128,8 +136,8 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
                 // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
                 // 1. construct operations
                 // read the s_record
-                Operation[] get_ops = constructGetOperation(context, request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
-                Operation set_op = new Operation(request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.record_ref, request.function, request.condition, request.success);
+                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
+                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET, request.d_record, request.record_ref, request.function, request.condition, request.success);
 
                 // 2. add data dependencies, parent op will notify children op after it was executed
                 for (Operation get_op : get_ops) {
@@ -143,7 +151,18 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
 
         // 4. send operation graph to tpg for tpg construction
         tpg.addTxn(operationGraph);//TODO: this is bad refactor.
+    }
 
+    private Context getTargetContext(TableRecord d_record) {
+        // the thread to submit the operation may not be the thread to execute it.
+        // we need to find the target context this thread is mapped to.
+        int threadId = getTaskId(d_record.record_.GetPrimaryKey());
+        return threadToContextMap.get(threadId);
+    }
+
+    private int getTaskId(String key) {
+        int _key = Integer.parseInt(key);
+        return _key / delta;
     }
 
     // DD: Transfer event processing

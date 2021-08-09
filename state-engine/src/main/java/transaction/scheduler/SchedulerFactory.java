@@ -27,7 +27,7 @@ public class SchedulerFactory {
                 scheduler = new BFSLayeredHashScheduler<LayeredContext>(totalThread, NUM_ITEMS);
                 break;
             case TPG:
-                scheduler = new TPGScheduler<TPGContext>(totalThread);
+                scheduler = new TPGScheduler<TPGContext>(totalThread, NUM_ITEMS);
                 break;
         }
         return scheduler;

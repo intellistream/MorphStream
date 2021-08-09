@@ -16,46 +16,47 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class PartitionStateManager implements OperationStateListener, Runnable {
     public final ArrayList<String> partition; //  list of states being responsible for
-    public final HashMap<String, Queue<NotificationSignal>> stateTransitionQueueMap;
+//    public final HashMap<String, Queue<NotificationSignal>> stateTransitionQueueMap;
+    public final Queue<NotificationSignal> stateTransitionQueue;
     private TaskPrecedenceGraph.ShortCutListener shortCutListener;
 
     public PartitionStateManager() {
-        this.stateTransitionQueueMap = new HashMap<>();
+        this.stateTransitionQueue = new ConcurrentLinkedQueue<>();
         this.partition = new ArrayList<>();
     }
 
     @Override
     public void onParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-        stateTransitionQueueMap.get(operation.getOperationChainKey()).add(new OnParentUpdatedSignal(operation, dependencyType, parentState));//
+        stateTransitionQueue.add(new OnParentUpdatedSignal(operation, dependencyType, parentState));//
     }
 
     @Override
     public void onReadyParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-        stateTransitionQueueMap.get(operation.getOperationChainKey()).add(new OnReadyParentExecutedSignal(operation, dependencyType, parentState));//
+        stateTransitionQueue.add(new OnReadyParentExecutedSignal(operation, dependencyType, parentState));//
     }
 
     @Override
     public void onHeaderStateUpdated(Operation operation, MetaTypes.OperationStateType headerState) {
-        stateTransitionQueueMap.get(operation.getOperationChainKey()).add(new OnHeaderUpdatedSignal(operation, headerState));//
+        stateTransitionQueue.add(new OnHeaderUpdatedSignal(operation, headerState));//
     }
 
     @Override
     public void onDescendantStateUpdated(Operation operation, MetaTypes.OperationStateType descendantState) {
-        stateTransitionQueueMap.get(operation.getOperationChainKey()).add(new OnDescendantUpdatedSignal(operation, descendantState));//
+        stateTransitionQueue.add(new OnDescendantUpdatedSignal(operation, descendantState));//
     }
 
     @Override
     public void onProcessed(Operation operation) {
 //        PartitionStateManager partitionStateManager = getTargetStateManager(operation);
 //        if (partitionStateManager.equals(this)) {
-        stateTransitionQueueMap.get(operation.getOperationChainKey()).add(new OnProcessedSignal(operation, operation.isFailed));//
+        stateTransitionQueue.add(new OnProcessedSignal(operation, operation.isFailed));//
 //        } else {
 //            partitionStateManager.onProcessed(operation);
 //        }
     }
 
     public void onRootStart(Operation head) {
-        stateTransitionQueueMap.get(head.getOperationChainKey()).add(new OnRootSignal(head));//
+        stateTransitionQueue.add(new OnRootSignal(head));//
     }
 
     public void run() {
@@ -66,25 +67,23 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
 
     public void handleStateTransitions() {
 //        inTransition.compareAndSet(false, true);
-        for (Queue<NotificationSignal> stateTransitionQueue : stateTransitionQueueMap.values()) {
-            NotificationSignal signal = stateTransitionQueue.poll();
-            while (signal != null) {
-                Operation operation = signal.getTargetOperation();
-                if (signal instanceof OnProcessedSignal) {
-                    onProcessedTransition(operation, (OnProcessedSignal) signal);
-                } else if (signal instanceof OnParentUpdatedSignal) {
-                    onParentStateUpdatedTransition(operation, (OnParentUpdatedSignal) signal);
-                } else if (signal instanceof OnDescendantUpdatedSignal) {
-                    onDescendantUpdatedTransition(operation, (OnDescendantUpdatedSignal) signal);
-                } else if (signal instanceof OnHeaderUpdatedSignal) {
-                    onHeaderUpdatedTransition(operation, (OnHeaderUpdatedSignal) signal);
-                } else if (signal instanceof OnRootSignal) {
-                    onRootTransition(operation);
-                } else if (signal instanceof OnReadyParentExecutedSignal) {
-                    onReadyParentUpdatedTransition(operation);
-                }
-                signal = stateTransitionQueue.poll();
+        NotificationSignal signal = stateTransitionQueue.poll();
+        while (signal != null) {
+            Operation operation = signal.getTargetOperation();
+            if (signal instanceof OnProcessedSignal) {
+                onProcessedTransition(operation, (OnProcessedSignal) signal);
+            } else if (signal instanceof OnParentUpdatedSignal) {
+                onParentStateUpdatedTransition(operation, (OnParentUpdatedSignal) signal);
+            } else if (signal instanceof OnDescendantUpdatedSignal) {
+                onDescendantUpdatedTransition(operation, (OnDescendantUpdatedSignal) signal);
+            } else if (signal instanceof OnHeaderUpdatedSignal) {
+                onHeaderUpdatedTransition(operation, (OnHeaderUpdatedSignal) signal);
+            } else if (signal instanceof OnRootSignal) {
+                onRootTransition(operation);
+            } else if (signal instanceof OnReadyParentExecutedSignal) {
+                onReadyParentUpdatedTransition(operation);
             }
+            signal = stateTransitionQueue.poll();
         }
     }
 
@@ -215,7 +214,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     private void executedToCommittableAction(Operation operation) {
         // notify a number of speculative children to execute in parallel.
         Operation header = operation.getHeader();
-        operation.context.partitionStateManager.onDescendantStateUpdated(header, MetaTypes.OperationStateType.COMMITTABLE);
+        header.context.partitionStateManager.onDescendantStateUpdated(header, MetaTypes.OperationStateType.COMMITTABLE);
     }
 
     private void blockedToReadyAction(Operation operation) {
@@ -269,9 +268,9 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     public void initialize(TaskPrecedenceGraph.ShortCutListener shortCutListener) {
         // 1. set listener
         this.shortCutListener = shortCutListener;
-        // 2. initialize signal queues
-        for (String operationChainKey : partition) {
-            this.stateTransitionQueueMap.put(operationChainKey, new ConcurrentLinkedQueue<>());
-        }
+//        // 2. initialize signal queues
+//        for (String operationChainKey : partition) {
+//            this.stateTransitionQueue.put(operationChainKey, new ConcurrentLinkedQueue<>());
+//        }
     }
 }

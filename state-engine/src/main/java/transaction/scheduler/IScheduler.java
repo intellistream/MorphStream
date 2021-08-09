@@ -17,4 +17,5 @@ public interface IScheduler<Context> {
 
     void TxnSubmitFinished(Context context);
 
+    void AddContext(int thisTaskId, Context context);
 }

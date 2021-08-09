@@ -425,6 +425,11 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
     }
 
     @Override
+    public void AddContext(int thisTaskId, Context context) {
+        throw new UnsupportedOperationException("not supported in bfs");
+    }
+
+    @Override
     public boolean FINISHED(Context context) {
         return context.finished();
     }
