@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
-import static profiler.MeasureTools.*;
 
 public class SLBolt_ts_nopush extends SLBolt_ts {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_ts_nopush.class);
@@ -35,7 +34,7 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ACCOUNTS, this.context.getThisComponent().getNumTasks());
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ACCOUNTS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
         depositeEvents = new ArrayDeque<>();
     }
 

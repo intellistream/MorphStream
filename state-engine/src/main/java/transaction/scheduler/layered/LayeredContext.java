@@ -23,11 +23,13 @@ public class LayeredContext<V> extends SchedulerContext {
     protected int[] rollbackLevel;
     public int targetRollbackLevel;
     protected volatile boolean aborted;//if any operation is aborted during processing.
+    private final int threadID;
     public int totalThreads;
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
-    public LayeredContext(int totalThreads, Supplier<V> supplier) {
+    public LayeredContext(int threadID, int totalThreads, Supplier<V> supplier) {
+        this.threadID = threadID;
         this.totalThreads = totalThreads;
         this.supplier = supplier;
         layeredOCBucketGlobal = new ConcurrentHashMap<>();

@@ -51,7 +51,7 @@ public class OBBolt_ts extends OBBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         this.thisTaskId = thread_Id;
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks());
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {

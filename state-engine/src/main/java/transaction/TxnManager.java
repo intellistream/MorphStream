@@ -3,11 +3,9 @@ package transaction;
 import common.OrderLock;
 import common.PartitionedOrderLock;
 import common.meta.CommonMetaTypes;
-import db.Database;
 import db.DatabaseException;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
-import storage.SchemaRecords;
 import storage.TableRecordRef;
 import storage.datatype.DataBox;
 import transaction.function.Condition;
@@ -18,6 +16,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 
+/**
+ * Every thread has its own TxnManager.
+ */
 public interface TxnManager {
     OrderLock getOrderLock();//shared.
 
@@ -86,8 +87,6 @@ public interface TxnManager {
     void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException;
 
     boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
-
-
 
     boolean SelectKeyRecord(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException;
 

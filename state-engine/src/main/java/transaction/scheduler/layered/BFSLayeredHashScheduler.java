@@ -28,7 +28,7 @@ import static java.lang.Integer.min;
  */
 @lombok.extern.slf4j.Slf4j
 public class BFSLayeredHashScheduler extends Scheduler<OperationChain> {
-    protected int delta;//range of each partition. depends on the number of op in the stage.
+    protected final int delta;//range of each partition. depends on the number of op in the stage.
 
     public LayeredContext<HashMap<Integer, ArrayList<OperationChain>>> context;//<ThreadID, LevelID, ArrayDeque>
 

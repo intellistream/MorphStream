@@ -52,7 +52,7 @@ public class SLBolt_ts extends SLBolt {
 //        int numberOfStates = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         int numberOfStates = config.getInt("NUM_ITEMS");
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
-                numberOfStates, this.context.getThisComponent().getNumTasks());
+                numberOfStates, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
         transactionEvents = new ArrayDeque<>();
         depositeEvents = new ArrayDeque<>();
     }

@@ -32,28 +32,21 @@ public class TaskPrecedenceGraph {
     private static final Logger LOG = LoggerFactory.getLogger(Operation.class);
     private final ConcurrentHashMap<String, OperationChain> operationChains;// < state, OC>
     private final ConcurrentLinkedQueue<List<Operation>> transactions;//
-    private final Queue<Operation> readyQueue; // short cut data structure for dependency exploration
-    private final Queue<Operation> speculativeQueue; // short cut data structure for dependency exploration
     private final ShortCutListener shortCutListener;
     public static final AtomicInteger nPendingOperation = new AtomicInteger(0);
     private final AtomicInteger nExecutedOperation = new AtomicInteger(0);
     private TPGScheduler.ExecutableTaskListener executableTaskListener = null;
 
     public final static int Maximum_Speculation = 10;
-    private int totalThreads;
     CyclicBarrier barrier;
 
     /**
      * @param totalThreads
      */
     public TaskPrecedenceGraph(int totalThreads) {
-//        this.threadmapping = threadmappinging;
-        this.totalThreads = totalThreads;
         barrier = new CyclicBarrier(totalThreads);
         operationChains = new ConcurrentHashMap<>();
         transactions = new ConcurrentLinkedQueue<>();
-        readyQueue = new ConcurrentLinkedQueue<>();
-        speculativeQueue = new ConcurrentLinkedQueue<>();
         shortCutListener = new ShortCutListener();
     }
 
@@ -101,26 +94,6 @@ public class TaskPrecedenceGraph {
     }
 
     /**
-     * get operations from readyQueue and speculativeQueue.
-     *
-     * @return
-     */
-    public Operation exploreReady() {
-        LOG.trace("readyQueue size: " + readyQueue.size());
-        return readyQueue.poll();
-    }
-
-    /**
-     * get operations from readyQueue and speculativeQueue.
-     *
-     * @return
-     */
-    public Operation exploreSpeculative() {
-        LOG.trace("speculativeQueue size: " + speculativeQueue.size());
-        return speculativeQueue.poll();
-    }
-
-    /**
      * @param threadId
      */
     public void firstTimeExploreTPG(int threadId) {
@@ -159,13 +132,6 @@ public class TaskPrecedenceGraph {
      * Register an operation to queue.
      */
     public class ShortCutListener {
-        public void onExecutable(Operation operation, boolean isReady) {
-            if (isReady) {
-                readyQueue.add(operation);
-            } else {
-                speculativeQueue.add(operation);
-            }
-        }
 
         public void onExecutable(Operation operation, boolean isReady, int threadId) {
             executableTaskListener.onExecutable(operation, threadId);
@@ -186,7 +152,7 @@ public class TaskPrecedenceGraph {
      * expose an api to check whether all operations are in the final state i.e. aborted/committed
      */
     public boolean isFinished() {
-        LOG.debug("operations left to do:" + nPendingOperation.get());
+        LOG.trace("operations left to do:" + nPendingOperation.get());
         return nPendingOperation.get() == 0;
     }
 
