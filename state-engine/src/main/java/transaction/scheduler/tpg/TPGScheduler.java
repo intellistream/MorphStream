@@ -58,9 +58,8 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
     public void EXPLORE(Context context) {
         while (context.batchedOperations.size() != 0) {
             Operation remove = context.batchedOperations.remove();
-//            Controller.stateManagers.get(threadId).onProcessed(remove);
+            remove.context.partitionStateManager.onProcessed(remove);
         }
-
     }
 
     @Override
