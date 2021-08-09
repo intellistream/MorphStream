@@ -69,4 +69,8 @@ public abstract class SpecialDataGenerator {
     protected void clearDataStructures() {
         this.dataConfig = null;
     };
+
+    public void prepareForExecution() {
+        throw new UnsupportedOperationException("this is not support at abstract class");
+    }
 }

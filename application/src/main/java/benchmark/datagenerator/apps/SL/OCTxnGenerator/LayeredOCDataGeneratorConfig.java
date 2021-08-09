@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Generator Config that is tunable for comprehensive experiments
  */
-public class DataGeneratorConfigForBFS extends DataGeneratorConfig {
-    private static final Logger LOG = LoggerFactory.getLogger(DataGeneratorConfigForBFS.class);
+public class LayeredOCDataGeneratorConfig extends DataGeneratorConfig {
+    private static final Logger LOG = LoggerFactory.getLogger(LayeredOCDataGeneratorConfig.class);
     private Integer numberOfDLevels;
     private String fanoutDist;
     private String idGenType;

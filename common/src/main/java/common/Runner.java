@@ -87,6 +87,12 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--verbose"}, description = "whether print execution detail")
     public boolean verbose = false;
 
+    /**
+     * generator parameters
+     */
+    @Parameter(names = {"--generator"}, description = "Generator for TStream.")
+//    public String generator = "TPGGenerator";
+    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
     public int totalEventsPerBatch = 100000;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
@@ -102,6 +108,7 @@ public abstract class Runner implements IRunner {
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
     public String idGenType = "uniform";
+
     /**
      * Functional Parameters.
      */
@@ -133,6 +140,7 @@ public abstract class Runner implements IRunner {
         config.put("numberOfBatches", numberOfBatches);
         config.put("rootFilePath", rootPath);
         config.put("scheduler", scheduler);
+        config.put("generator", generator);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
         config.put("numberOfDLevels", numberOfDLevels);

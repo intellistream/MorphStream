@@ -3,6 +3,7 @@ package benchmark.datagenerator.apps.SL.OCTxnGenerator;
 import benchmark.datagenerator.SpecialDataGenerator;
 import benchmark.datagenerator.apps.SL.Transaction.SLTransaction;
 import benchmark.datagenerator.apps.SL.Transaction.SLTransferTransaction;
+import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
-public class SLDataGeneratorForBFS extends SpecialDataGenerator {
+public class LayeredOCDataGenerator extends SpecialDataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialDataGenerator.class);
 
     HashMap<Long, Integer> generatedAccountIds = new HashMap<>();
@@ -36,7 +37,7 @@ public class SLDataGeneratorForBFS extends SpecialDataGenerator {
     private long partitionOffset = 0;
     private int partitionId = 0;
 
-    protected DataGeneratorConfigForBFS dataConfig;
+    protected LayeredOCDataGeneratorConfig dataConfig;
 
 
     SLDataOperationChain srcAccOC = null;
@@ -44,7 +45,7 @@ public class SLDataGeneratorForBFS extends SpecialDataGenerator {
     SLDataOperationChain dstAccOC = null;
     SLDataOperationChain dstAstOC = null;
 
-    public SLDataGeneratorForBFS(DataGeneratorConfigForBFS dataConfig) {
+    public LayeredOCDataGenerator(LayeredOCDataGeneratorConfig dataConfig) {
         super(dataConfig);
         this.dataConfig = dataConfig;
         this.dataTransactions = new ArrayList<>(nTuples);
@@ -133,6 +134,29 @@ public class SLDataGeneratorForBFS extends SpecialDataGenerator {
         this.pickAccount = new boolean[dataConfig.getNumberOfDLevels()];
         // clear the data structure in super class
         super.clearDataStructures();
+    }
+
+    @Override
+    public void prepareForExecution() {
+        String statsFolderPattern = getDataConfig().getIdsPath()
+                + OsUtils.osWrapperPostFix("stats")
+                + OsUtils.osWrapperPostFix("scheduler = %s")
+                + OsUtils.osWrapperPostFix("depth = %d")
+                + OsUtils.osWrapperPostFix("threads = %d")
+                + OsUtils.osWrapperPostFix("total_batches = %d")
+                + OsUtils.osWrapperPostFix("events_per_batch = %d");
+
+        String statsFolderPath = String.format(statsFolderPattern,
+                dataConfig.getScheduler(),
+                dataConfig.getNumberOfDLevels(),
+                dataConfig.getTotalThreads(),
+                dataConfig.getTotalBatches(),
+                dataConfig.getTuplesPerBatch());
+
+        File file = new File(statsFolderPath + "iteration_0.csv");
+        if (!file.exists()) {
+            generateStream();
+        }
     }
 
     private void selectOCsForTransaction() {

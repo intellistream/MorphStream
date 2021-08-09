@@ -4,6 +4,7 @@ import benchmark.datagenerator.SpecialDataGenerator;
 import benchmark.datagenerator.apps.SL.Transaction.SLDepositTransaction;
 import benchmark.datagenerator.apps.SL.Transaction.SLTransaction;
 import benchmark.datagenerator.apps.SL.Transaction.SLTransferTransaction;
+import common.collections.OsUtils;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,8 +31,8 @@ import java.util.Random;
  *     Transaction will be aborted when balance will become negative. To systematically evaluate the effectiveness of \system in handling transaction aborts, we insert artificial abort in state transactions and vary its ratio in the workload.
  * \end{enumerate}
  */
-public class SLDataGeneratorForTPG extends SpecialDataGenerator {
-    private static final Logger LOG = LoggerFactory.getLogger(SLDataGeneratorForTPG.class);
+public class TPGDataGenerator extends SpecialDataGenerator {
+    private static final Logger LOG = LoggerFactory.getLogger(TPGDataGenerator.class);
 
     private final int Ratio_Of_Deposit;  // ratio of state access type i.e. deposit or transfer
     private final int State_Access_Skewness; // ratio of state access, following zipf distribution
@@ -44,7 +45,7 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
     private final ArrayList<Integer> generatedAcc = new ArrayList<>();
     private final ArrayList<Integer> generatedAst = new ArrayList<>();
     // independent transactions.
-    private final boolean isUnique = true;
+    private final boolean isUnique = false;
 
     HashMap<Long, Integer> nGeneratedAccountIds = new HashMap<>();
     HashMap<Long, Integer> nGeneratedAssetIds = new HashMap<>();
@@ -55,12 +56,12 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
 
     private int transactionId = 0;
 
-    public SLDataGeneratorForTPG(DataGeneratorConfigForTPG dataConfig) {
+    public TPGDataGenerator(TPGDataGeneratorConfig dataConfig) {
         super(dataConfig);
 
         // TODO: temporarily hard coded, will update later
         Ratio_Of_Deposit = 0;
-        State_Access_Skewness = 1;
+        State_Access_Skewness = 50;
         Transaction_Length = 4;
         Ratio_of_Transaction_Aborts = 0;
 
@@ -99,6 +100,26 @@ public class SLDataGeneratorForTPG extends SpecialDataGenerator {
             t = randomTransferEvent();
         }
         dataTransactions.add(t);
+    }
+
+    @Override
+    public void prepareForExecution() {
+        String statsFolderPattern = dataConfig.getIdsPath()
+                + OsUtils.osWrapperPostFix("stats")
+                + OsUtils.osWrapperPostFix("scheduler = %s")
+                + OsUtils.osWrapperPostFix("threads = %d")
+                + OsUtils.osWrapperPostFix("total_batches = %d")
+                + OsUtils.osWrapperPostFix("events_per_batch = %d");
+
+        String statsFolderPath = String.format(statsFolderPattern,
+                dataConfig.getScheduler(),
+                dataConfig.getTotalThreads(),
+                dataConfig.getTotalBatches(),
+                dataConfig.getTuplesPerBatch());
+        File file = new File(statsFolderPath + "iteration_0.csv");
+        if (!file.exists()) {
+            generateStream();
+        }
     }
 
     private SLTransaction randomTransferEvent() {
