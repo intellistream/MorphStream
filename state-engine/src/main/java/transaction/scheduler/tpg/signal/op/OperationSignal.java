@@ -1,5 +1,6 @@
-package transaction.scheduler.tpg.signal;
+package transaction.scheduler.tpg.signal.op;
 
+import transaction.scheduler.tpg.signal.NotificationSignal;
 import transaction.scheduler.tpg.struct.Operation;
 
 public abstract class OperationSignal implements NotificationSignal {

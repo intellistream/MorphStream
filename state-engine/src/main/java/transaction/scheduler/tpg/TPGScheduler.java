@@ -1,13 +1,8 @@
 package transaction.scheduler.tpg;
 
 import common.meta.CommonMetaTypes;
-import content.T_StreamContent;
 import profiler.MeasureTools;
-import storage.SchemaRecord;
-import storage.SchemaRecordRef;
 import storage.TableRecord;
-import transaction.function.DEC;
-import transaction.function.INC;
 import transaction.impl.TxnContext;
 import transaction.scheduler.Request;
 import transaction.scheduler.Scheduler;
@@ -204,7 +199,6 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
     public void PROCESS(Context context, long mark_ID) {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-
         OperationChain next = next(context);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
@@ -212,6 +206,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         for (Operation operation : next.getOperations()) {
             execute(threadId, operation, mark_ID, false);
         }
+        next.context.partitionStateManager.onOcExecuted(next);
         MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
     }
 

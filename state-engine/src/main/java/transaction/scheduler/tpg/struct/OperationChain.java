@@ -4,7 +4,6 @@ import transaction.dedicated.ordered.MyList;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 
-import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,10 +26,10 @@ public class OperationChain implements Comparable<OperationChain> {
     private final AtomicInteger oc_ld_children_count; // TODO: in original implementation, we ignored that one OC might have multiple dependent op on the other OC.
 
     // OperationChainKey -> OperationChain
-    private final HashMap<String, OperationChain> oc_fd_parents; // functional dependent operation chains
-    private final HashMap<String, OperationChain> oc_ld_parents; // logical dependent operation chains
-    private final HashMap<String, OperationChain> oc_fd_children; // functional dependent operation chains
-    private final HashMap<String, OperationChain> oc_ld_children; // logical dependent operation chains
+    private final HashMap<String, Operation> oc_fd_parents; // functional dependent operation chains
+    private final HashMap<String, Operation> oc_ld_parents; // logical dependent operation chains
+    private final HashMap<String, Operation> oc_fd_children; // functional dependent operation chains
+    private final HashMap<String, Operation> oc_ld_children; // logical dependent operation chains
 
     public OperationChain(String tableName, String primaryKey, TPGContext context) {
         this.tableName = tableName;
@@ -62,31 +61,45 @@ public class OperationChain implements Comparable<OperationChain> {
     public void addOperation(Operation op) {
         op.setOC(this);
         operations.add(op);
-        addParentOrChild(op, oc_fd_parents, oc_fd_parents_count, DependencyType.FD);
-        addParentOrChild(op, oc_ld_parents, oc_ld_parents_count, DependencyType.LD);
-        addParentOrChild(op, oc_fd_children, oc_fd_children_count, DependencyType.FD);
-        addParentOrChild(op, oc_ld_children, oc_ld_children_count, DependencyType.LD);
+        addParentOrChild(op, getOc_fd_parents(), getOc_fd_parents_count(), DependencyType.FD, false);
+        addParentOrChild(op, getOc_ld_parents(), getOc_ld_parents_count(), DependencyType.LD, false);
+        addParentOrChild(op, getOc_fd_children(), getOc_fd_children_count(), DependencyType.FD, true);
+        addParentOrChild(op, getOc_ld_children(), getOc_ld_children_count(), DependencyType.LD, true);
     }
 
     private void addParentOrChild(Operation op,
-                                  HashMap<String, OperationChain> oc_relation,
+                                  HashMap<String, Operation> oc_relation,
                                   AtomicInteger oc_relation_count,
-                                  DependencyType dependencyType) {
-        // add dependent OCs found from op.
-        Queue<Operation> parents = op.getParents(dependencyType);
-        for (Operation parent : parents) {
-            if (!parent.getOperationChainKey().equals(operationChainKey)) { // add to parent if not contained
-                oc_relation.putIfAbsent(parent.getOperationChainKey(), parent.getOC());
-                oc_relation_count.incrementAndGet();
+                                  DependencyType dependencyType,
+                                  boolean addChild) {
+        if (!addChild) {
+            // add dependent OCs found from op.
+            Queue<Operation> parents = op.getParents(dependencyType);
+            for (Operation parent : parents) {
+                if (!parent.getOperationChainKey().equals(operationChainKey)) { // add to parent if not contained
+                    Operation ret = oc_relation.putIfAbsent(parent.getOperationChainKey(), parent);
+                    if (ret == null)
+                        oc_relation_count.incrementAndGet();
+                }
+            }
+        } else {
+            // add dependent OCs found from op.
+            Queue<Operation> children = op.getChildren(dependencyType);
+            for (Operation child : children) {
+                if (!child.getOperationChainKey().equals(operationChainKey)) { // add to parent if not contained
+                    Operation ret = oc_relation.putIfAbsent(child.getOperationChainKey(), child);
+                    if (ret == null)
+                        oc_relation_count.incrementAndGet();
+                }
             }
         }
     }
 
     public boolean hasChildren() {
-        return oc_fd_children_count.get() == 0;
+        return getOc_fd_children_count().get() == 0;
     }
     public boolean hasParents() {
-        return oc_fd_parents_count.get() == 0;
+        return getOc_fd_parents_count().get() == 0;
     }
 
     public MyList<Operation> getOperations() {
@@ -103,37 +116,6 @@ public class OperationChain implements Comparable<OperationChain> {
             return String.format("act_%s", primaryKey);
         } else {
             return String.format("ast_%s", primaryKey);
-        }
-    }
-
-    /**
-     * Update TD of each operation in the operation chain
-     * <p>
-     * OC: O1 <- O2 O3. O2
-     */
-    public void updateTDDependencies() {
-        Operation prevOperation = null;
-        List<Operation> parentOperations = new ArrayList<>();
-        for (Operation curOperation : operations) {
-            if (prevOperation != null) {
-                parentOperations.add(prevOperation);
-                // if operations are in the same transaction, i.e. have the same bid,
-                // add the temporal dependency parent of the prevOperation i.e. all operations with the same bid have the same temporal dependent parent
-                if (curOperation.bid != prevOperation.bid) {
-                    for (Operation parentOperation : parentOperations) {
-                        curOperation.addParent(parentOperation, DependencyType.TD);
-                        parentOperation.addChild(curOperation, DependencyType.TD);
-                    }
-                    parentOperations.clear();
-                } else {
-                    Queue<Operation> prevParentOperations = prevOperation.getParents(DependencyType.TD);
-                    for (Operation prevParentOperation : prevParentOperations) {
-                        curOperation.addParent(prevParentOperation, DependencyType.TD);
-                        prevParentOperation.addChild(curOperation, DependencyType.TD);
-                    }
-                }
-            }
-            prevOperation = curOperation;
         }
     }
 
@@ -162,15 +144,47 @@ public class OperationChain implements Comparable<OperationChain> {
     public void updateDependencies(DependencyType dependencyType) {
         switch (dependencyType) {
             case FD: {
-                oc_fd_parents_count.decrementAndGet();
+                getOc_fd_parents_count().decrementAndGet();
                 break;
             }
             case LD: {
-                oc_ld_parents_count.decrementAndGet();
+                getOc_ld_parents_count().decrementAndGet();
                 break;
             }
             default:
                 throw new IllegalStateException("Unexpected value: " + dependencyType);
         }
+    }
+
+    public AtomicInteger getOc_fd_parents_count() {
+        return oc_fd_parents_count;
+    }
+
+    public AtomicInteger getOc_ld_parents_count() {
+        return oc_ld_parents_count;
+    }
+
+    public AtomicInteger getOc_fd_children_count() {
+        return oc_fd_children_count;
+    }
+
+    public AtomicInteger getOc_ld_children_count() {
+        return oc_ld_children_count;
+    }
+
+    public HashMap<String, Operation> getOc_fd_parents() {
+        return oc_fd_parents;
+    }
+
+    public HashMap<String, Operation> getOc_ld_parents() {
+        return oc_ld_parents;
+    }
+
+    public HashMap<String, Operation> getOc_fd_children() {
+        return oc_fd_children;
+    }
+
+    public HashMap<String, Operation> getOc_ld_children() {
+        return oc_ld_children;
     }
 }

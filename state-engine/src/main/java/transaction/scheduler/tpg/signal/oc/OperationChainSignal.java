@@ -1,24 +1,20 @@
-package transaction.scheduler.tpg.signal;
+package transaction.scheduler.tpg.signal.oc;
 
+import transaction.scheduler.tpg.signal.NotificationSignal;
 import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 import transaction.scheduler.tpg.struct.OperationChain;
 
 import javax.annotation.Nullable;
 
-public class OperationChainSignal implements NotificationSignal {
+public abstract class OperationChainSignal implements NotificationSignal {
     private final OperationChain targetOperationChain;
-    private final DependencyType dependencyType;
 
-    public OperationChainSignal(OperationChain targetOperationChain, @Nullable DependencyType dependencyType) {
+    public OperationChainSignal(OperationChain targetOperationChain) {
         this.targetOperationChain = targetOperationChain;
-        this.dependencyType = dependencyType;
     }
 
     public OperationChain getTargetOperationChain() {
         return targetOperationChain;
-    }
-    public DependencyType getDependencyType() {
-        return dependencyType;
     }
 }

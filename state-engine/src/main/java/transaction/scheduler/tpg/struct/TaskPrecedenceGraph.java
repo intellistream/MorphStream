@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.TPGScheduler;
-import transaction.scheduler.tpg.signal.OperationChainSignal;
 
 import java.util.List;
 import java.util.Queue;
@@ -30,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * -> Key: OperationChain [ Operation... ]
  */
 public class TaskPrecedenceGraph {
-    public static final AtomicInteger nPendingOperation = new AtomicInteger(0);
+    public final AtomicInteger nPendingOCs = new AtomicInteger(0);
     public final static int Maximum_Speculation = 10;
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(Operation.class);
@@ -64,7 +63,6 @@ public class TaskPrecedenceGraph {
         headerOperation.setReadyCandidate();
         for (int i = 0; i < operations.size(); i++) {
             Operation curOperation = operations.get(i);
-            nPendingOperation.incrementAndGet();
             if (i > 0)
                 curOperation.addParent(operations.get(i - 1), MetaTypes.DependencyType.LD);
             if (i < operations.size() - 1)
@@ -98,7 +96,7 @@ public class TaskPrecedenceGraph {
         for (String key : context.partitionStateManager.partition) {
             operationChains.computeIfPresent(key, (s, operationChain) -> {
                 if (!operationChain.hasParents()) {
-                    operationChain.context.partitionStateManager.onDependencyResolved(operationChain, new OperationChainSignal(operationChain, null));
+                    operationChain.context.partitionStateManager.onOcRootStart(operationChain);
                 }
                 return operationChain;
             });
@@ -114,7 +112,10 @@ public class TaskPrecedenceGraph {
         String table_name = operation.table_name;
         String primaryKey = operation.d_record.record_.GetPrimaryKey();
         String operationChainKey = operation.getOperationChainKey();
-        OperationChain retOc = operationChains.computeIfAbsent(operationChainKey, s -> new OperationChain(table_name, primaryKey, operation.context));
+        OperationChain retOc = operationChains.computeIfAbsent(operationChainKey, s -> {
+            nPendingOCs.incrementAndGet();
+            return new OperationChain(table_name, primaryKey, operation.context);
+        });
         retOc.addOperation(operation);
     }
 
@@ -126,8 +127,8 @@ public class TaskPrecedenceGraph {
      * expose an api to check whether all operations are in the final state i.e. aborted/committed
      */
     public boolean isFinished() {
-        LOG.trace("operations left to do:" + nPendingOperation.get());
-        return nPendingOperation.get() == 0;
+        LOG.trace("operations left to do:" + nPendingOCs.get());
+        return nPendingOCs.get() == 0;
     }
 
     /**
@@ -244,8 +245,13 @@ public class TaskPrecedenceGraph {
         }
 
         public void onOperationFinalized(Operation operation, boolean isCommitted) {
-            LOG.debug("npending: " + nPendingOperation.get());
-            nPendingOperation.decrementAndGet();
+            LOG.info("npending: " + nPendingOCs.get());
+            nPendingOCs.decrementAndGet();
+        }
+
+        public void onOCFinalized() {
+            LOG.info("npending: " + nPendingOCs.get());
+            nPendingOCs.decrementAndGet();
         }
 
         public void onOperationExecuted() {

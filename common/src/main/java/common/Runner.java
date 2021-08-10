@@ -26,8 +26,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 1_000_000;//
-//        public int NUM_ITEMS = 100;//
+//    public int NUM_ITEMS = 1_000_000;//
+        public int NUM_ITEMS = 100;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
     @Parameter(names = {"--scale_factor"}, description = "scale_factor")
@@ -94,7 +94,7 @@ public abstract class Runner implements IRunner {
 //    public String generator = "TPGGenerator";
     public String generator = "OCGenerator";
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
-    public int totalEventsPerBatch = 100_000;
+    public int totalEventsPerBatch = 10;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
     public int numberOfBatches = 1;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")

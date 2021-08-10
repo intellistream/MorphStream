@@ -1,4 +1,4 @@
-package transaction.scheduler.tpg.signal;
+package transaction.scheduler.tpg.signal.op;
 
 import transaction.scheduler.tpg.struct.Operation;
 

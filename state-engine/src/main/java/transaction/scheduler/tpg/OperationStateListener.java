@@ -5,7 +5,7 @@ import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
 
 public interface OperationStateListener {
-    void onParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState);
+    void onOpParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState);
 
     /**
      * this method will only be used in header operation, others should not use it.
@@ -13,7 +13,7 @@ public interface OperationStateListener {
      * @param operation
      * @param headerState
      */
-    void onHeaderStateUpdated(Operation operation, MetaTypes.OperationStateType headerState);
+    void onOpHeaderStateUpdated(Operation operation, MetaTypes.OperationStateType headerState);
 
     /**
      * this method will only be used in header operation, others should not use it.
@@ -21,14 +21,7 @@ public interface OperationStateListener {
      * @param operation
      * @param descendantState
      */
-    void onDescendantStateUpdated(Operation operation, MetaTypes.OperationStateType descendantState);
-
-    /**
-     * thread notify the operation execution results either success/failed, do state transition correspondingly
-     *
-     * @param operation
-     */
-    void onProcessed(Operation operation);
+    void onOpDescendantStateUpdated(Operation operation, MetaTypes.OperationStateType descendantState);
 
     /**
      * this method will only be used in header operation, others should not use it.
