@@ -5,7 +5,7 @@ import content.T_StreamContent;
 import storage.SchemaRecord;
 import transaction.function.DEC;
 import transaction.function.INC;
-import transaction.scheduler.tpg.struct.AbstractOperation;
+import transaction.scheduler.common.AbstractOperation;
 
 import java.util.Map;
 

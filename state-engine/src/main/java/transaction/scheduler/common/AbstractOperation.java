@@ -1,4 +1,4 @@
-package transaction.scheduler.tpg.struct;
+package transaction.scheduler.common;
 
 import common.meta.CommonMetaTypes;
 import org.slf4j.Logger;
@@ -52,8 +52,4 @@ public abstract class AbstractOperation {
         this.d_record = record;
         this.bid = bid;
     }
-
-
-    // **********************************Utilities**********************************
-
 }

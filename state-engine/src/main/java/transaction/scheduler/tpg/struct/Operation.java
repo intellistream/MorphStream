@@ -5,17 +5,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
-import storage.TableRecordRef;
-import storage.datatype.DataBox;
 import transaction.function.Condition;
 import transaction.function.Function;
 import transaction.impl.TxnContext;
+import transaction.scheduler.common.AbstractOperation;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 import transaction.scheduler.tpg.struct.MetaTypes.OperationStateType;
 
 import java.util.ArrayDeque;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;

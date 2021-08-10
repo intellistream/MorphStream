@@ -8,7 +8,7 @@ import storage.datatype.DataBox;
 import transaction.function.Condition;
 import transaction.function.Function;
 import transaction.impl.TxnContext;
-import transaction.scheduler.tpg.struct.AbstractOperation;
+import transaction.scheduler.common.AbstractOperation;
 
 import java.util.List;
 import java.util.Queue;
