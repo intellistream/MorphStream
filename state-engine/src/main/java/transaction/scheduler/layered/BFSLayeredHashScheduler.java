@@ -388,7 +388,7 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
         return holder.computeIfAbsent(pKey, s -> new OperationChain(tableName, pKey));
     }
 
-    private void checkDataDependencies(OperationChain dependent, Operation op, int thread_Id, String table_name,
+    private void checkDataDependencies(OperationChain dependent, Operation op, String table_name,
                                        String key, String[] condition_sourceTable, String[] condition_source) {
         for (int index = 0; index < condition_source.length; index++) {
             if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
@@ -412,7 +412,7 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
         Operation operation = new Operation(request.table_name, request.s_record, request.d_record, request.record_ref, bid, request.accessType,
                 request.function, request.condition_records, request.condition, request.txn_context, request.success);
         oc.addOperation(operation);
-        checkDataDependencies(oc, operation, request.txn_context.thread_Id, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        checkDataDependencies(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
         return true;
     }
 

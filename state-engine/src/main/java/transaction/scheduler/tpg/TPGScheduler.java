@@ -108,43 +108,20 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         List<Operation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
             long bid = request.txn_context.getBID();
-
+            Operation set_op = null;
             if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND)) {
-                // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
-                // 1. construct operations
-                // read source record that to help the update on destination record
-                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
-                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET,
+                set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET,
                         request.d_record, request.function, request.condition, request.condition_records, request.success);
-                // write the destination record, the write operation depends on the record returned by get_op
-
-                // 2. add data dependencies, parent op will notify children op after it was executed
-                for (Operation get_op : get_ops) {
-                    get_op.addChild(set_op, MetaTypes.DependencyType.FD);
-                    set_op.addParent(get_op, MetaTypes.DependencyType.FD);
-                    operationGraph.add(get_op);
-                }
-                operationGraph.add(set_op);
             } else if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND_READ)) {
-                // instead of use WRITE/READ/READ_WRITE primitives, we use GET/SET primitives with more flexibility.
-                // 1. construct operations
-                // read the s_record
-                Operation[] get_ops = constructGetOperation(request.txn_context, request.condition_sourceTable, request.condition_source, request.condition_records, bid);
-                Operation set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET,
+                set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
-
-                // 2. add data dependencies, parent op will notify children op after it was executed
-                for (Operation get_op : get_ops) {
-                    get_op.addChild(set_op, MetaTypes.DependencyType.FD);
-                    set_op.addParent(get_op, MetaTypes.DependencyType.FD);
-                    operationGraph.add(get_op);
-                }
-                operationGraph.add(set_op);
             }
+            operationGraph.add(set_op);
+            tpg.setupOperationChain(set_op, request);
         }
 
         // 4. send operation graph to tpg for tpg construction
-        tpg.addTxn(operationGraph);//TODO: this is bad refactor.
+        tpg.setupOperations(operationGraph);//TODO: this is bad refactor.
     }
 
     private Context getTargetContext(TableRecord d_record) {
@@ -202,12 +179,14 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         OperationChain next = next(context);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
-        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-        for (Operation operation : next.getOperations()) {
-            execute(threadId, operation, mark_ID, false);
+        if (next != null) {
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            for (Operation operation : next.getOperations()) {
+                execute(threadId, operation, mark_ID, false);
+            }
+            next.context.partitionStateManager.onOcExecuted(next);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
-        next.context.partitionStateManager.onOcExecuted(next);
-        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
     }
 
     /**

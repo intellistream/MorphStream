@@ -5,6 +5,7 @@ import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -16,7 +17,9 @@ public class OperationChain implements Comparable<OperationChain> {
     private final String primaryKey;
     private final String operationChainKey;
 
-    public final TPGContext context;
+    private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
+
+    public TPGContext context = null;
 
     private final MyList<Operation> operations;
 
@@ -31,11 +34,10 @@ public class OperationChain implements Comparable<OperationChain> {
     private final HashMap<String, Operation> oc_fd_children; // functional dependent operation chains
     private final HashMap<String, Operation> oc_ld_children; // logical dependent operation chains
 
-    public OperationChain(String tableName, String primaryKey, TPGContext context) {
+    public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
         this.operationChainKey = tableName + "|" + primaryKey;
-        this.context = context;
 
         this.operations = new MyList<>(tableName, primaryKey);
 
@@ -50,6 +52,12 @@ public class OperationChain implements Comparable<OperationChain> {
         this.oc_ld_children = new HashMap<>();
     }
 
+    private void setContext(TPGContext context) {
+        if (this.context == null) {
+            this.context = context;
+        }
+    }
+
     public String getTableName() {
         return tableName;
     }
@@ -61,10 +69,45 @@ public class OperationChain implements Comparable<OperationChain> {
     public void addOperation(Operation op) {
         op.setOC(this);
         operations.add(op);
-        addParentOrChild(op, getOc_fd_parents(), getOc_fd_parents_count(), DependencyType.FD, false);
-        addParentOrChild(op, getOc_ld_parents(), getOc_ld_parents_count(), DependencyType.LD, false);
-        addParentOrChild(op, getOc_fd_children(), getOc_fd_children_count(), DependencyType.FD, true);
-        addParentOrChild(op, getOc_ld_children(), getOc_ld_children_count(), DependencyType.LD, true);
+        setContext(op.context);
+    }
+
+    public void addPotentialChildren(OperationChain potentialChildren, Operation op) {
+        potentialChldrenInfo.add(new PotentialDependencyInfo(potentialChildren, op));
+    }
+
+    public void addParent(Operation targetOp, OperationChain parentOC) {
+        Iterator<Operation> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
+        while (iterator.hasNext()) {
+            Operation parentOp = iterator.next();
+            if (parentOp.bid < targetOp.bid) {
+                oc_fd_parents.putIfAbsent(parentOC.getOperationChainKey(), parentOp);
+
+                targetOp.addParent(parentOp, DependencyType.FD);
+                parentOp.addChild(targetOp, DependencyType.FD);
+
+                this.addParentOrChild(targetOp, getOc_fd_parents(), getOc_fd_parents_count(), DependencyType.FD, false);;
+                parentOC.addParentOrChild(parentOp, getOc_fd_children(), getOc_fd_children_count(), DependencyType.FD, true);;
+                break;
+            }
+        }
+    }
+
+    private String getOperationChainKey() {
+        return operationChainKey;
+    }
+
+    public void checkPotentialChildrenOnNewArrival(Operation newOp) {
+        List<PotentialDependencyInfo> processed = new ArrayList<>();
+
+        for (PotentialDependencyInfo pChildInfo : potentialChldrenInfo) {
+            if (newOp.bid < pChildInfo.op.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
+                pChildInfo.oc.addParent(pChildInfo.op, this);
+                processed.add(pChildInfo);
+            }
+        }
+        potentialChldrenInfo.removeAll(processed);
+        processed.clear();
     }
 
     private void addParentOrChild(Operation op,
@@ -186,5 +229,20 @@ public class OperationChain implements Comparable<OperationChain> {
 
     public HashMap<String, Operation> getOc_ld_children() {
         return oc_ld_children;
+    }
+
+    public class PotentialDependencyInfo implements Comparable<PotentialDependencyInfo> {
+        public OperationChain oc;
+        public Operation op;
+
+        public PotentialDependencyInfo(OperationChain oc, Operation op) {
+            this.oc = oc;
+            this.op = op;
+        }
+
+        @Override
+        public int compareTo(PotentialDependencyInfo o) {
+            return Long.compare(this.op.bid, o.op.bid);
+        }
     }
 }

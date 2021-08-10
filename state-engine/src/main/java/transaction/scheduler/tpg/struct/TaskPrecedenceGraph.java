@@ -1,7 +1,9 @@
 package transaction.scheduler.tpg.struct;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import transaction.scheduler.Request;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.TPGScheduler;
 
@@ -50,12 +52,17 @@ public class TaskPrecedenceGraph {
         shortCutListener = new ShortCutListener();
     }
 
+    public void setupOperationChain(Operation operation, Request request) {
+        OperationChain oc = addOperationToChain(operation);
+        checkDataDependencies(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+    }
+
     /**
      * Add operations of transactions to TPG, which tries to find out the temporal dependencies
      *
      * @param operations
      */
-    public void addTxn(List<Operation> operations) {
+    public void setupOperations(List<Operation> operations) {
         // add Logical dependnecies for those operations in the operation graph
         // two operations can have both data dependency and logical dependency.
         transactions.add(operations);
@@ -80,13 +87,12 @@ public class TaskPrecedenceGraph {
             // ld_spec_children/parents include the direct children/parents for convenience
             for (int offset = 1; offset < Maximum_Speculation + 1; offset++) {
                 int reversedOffset = (Maximum_Speculation + 1 - offset);
-                if (i - reversedOffset >= 0) // TODO: we should sort the queue to ensure the order and make sure the speculative operation can be identified.
+                if (i - reversedOffset >= 0)
                     curOperation.addParent(operations.get(i - reversedOffset), MetaTypes.DependencyType.SP_LD);
 //                if (i+offset < operations.size() && offset != Maximum_Speculation) // because speculation is emit from ready operation, it should eliminate itself for parallel execute
                 if (i + offset < operations.size())
                     curOperation.addChild(operations.get(i + offset), MetaTypes.DependencyType.SP_LD);
             }
-            addOperationToChain(curOperation);
         }
     }
 
@@ -95,6 +101,7 @@ public class TaskPrecedenceGraph {
         context.initialize(shortCutListener);
         for (String key : context.partitionStateManager.partition) {
             operationChains.computeIfPresent(key, (s, operationChain) -> {
+                // update functional dependencies and logical dependencies
                 if (!operationChain.hasParents()) {
                     operationChain.context.partitionStateManager.onOcRootStart(operationChain);
                 }
@@ -107,16 +114,41 @@ public class TaskPrecedenceGraph {
     /**
      * @param operation
      */
-    private void addOperationToChain(Operation operation) {
+    private OperationChain addOperationToChain(Operation operation) {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         String table_name = operation.table_name;
         String primaryKey = operation.d_record.record_.GetPrimaryKey();
         String operationChainKey = operation.getOperationChainKey();
-        OperationChain retOc = operationChains.computeIfAbsent(operationChainKey, s -> {
-            nPendingOCs.incrementAndGet();
-            return new OperationChain(table_name, primaryKey, operation.context);
-        });
+        OperationChain retOc = getOC(table_name, primaryKey, operationChainKey);
         retOc.addOperation(operation);
+        return retOc;
+    }
+
+    @NotNull
+    private OperationChain getOC(String table_name, String primaryKey, String operationChainKey) {
+        return operationChains.computeIfAbsent(operationChainKey, s -> {
+            nPendingOCs.incrementAndGet();
+            return new OperationChain(table_name, primaryKey);
+        });
+    }
+
+    private void checkDataDependencies(OperationChain curOC, Operation op, String table_name,
+                                       String key, String[] condition_sourceTable, String[] condition_source) {
+        for (int index = 0; index < condition_source.length; index++) {
+            if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
+                continue;// no need to check data dependency on a key itself.
+            String operationChainKey = condition_sourceTable[index] + "|" + condition_source[index];
+            OperationChain OCFromConditionSource = getOC(condition_sourceTable[index],
+                    condition_source[index], operationChainKey);
+            // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
+            if (OCFromConditionSource.getOperations().isEmpty() || OCFromConditionSource.getOperations().first().bid >= op.bid) {
+                OCFromConditionSource.addPotentialChildren(curOC, op);
+            } else {
+                // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
+                curOC.addParent(op, OCFromConditionSource); // record dependency
+            }
+        }
+        curOC.checkPotentialChildrenOnNewArrival(op);
     }
 
     public void setExecutableListener(TPGScheduler.ExecutableTaskListener executableTaskListener) {
