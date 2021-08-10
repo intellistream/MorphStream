@@ -28,7 +28,7 @@ import static common.meta.CommonMetaTypes.AccessType.SET;
  * 3. thread will find operations from its queue for execution.
  * It's a shared data structure!
  */
-    @lombok.extern.slf4j.Slf4j
+@lombok.extern.slf4j.Slf4j
 public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context, OperationChain> {
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
@@ -58,10 +58,6 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      */
     @Override
     public void EXPLORE(Context context) {
-        while (context.batchedOperations.size() != 0) {
-            Operation remove = context.batchedOperations.remove();
-            remove.context.partitionStateManager.onProcessed(remove);
-        }
         context.partitionStateManager.handleStateTransitions();
     }
 
@@ -168,55 +164,6 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         return _key / delta;
     }
 
-    // DD: Transfer event processing
-    private void CT_Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
-        SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
-        if (preValues == null) {
-            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
-            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
-            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
-                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
-            }
-            log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
-        }
-        if (preValues1 == null) {
-            log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
-            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
-            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
-                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
-            }
-            log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
-        }
-        final long sourceAccountBalance = preValues.getValues().get(1).getLong();
-        final long sourceAssetValue = preValues1.getValues().get(1).getLong();
-
-        if (sourceAccountBalance > operation.condition.arg1
-                && sourceAccountBalance > operation.condition.arg2
-                && sourceAssetValue > operation.condition.arg3) {
-            // read
-            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-            // apply function
-            if (operation.function instanceof INC) {
-                tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
-            } else if (operation.function instanceof DEC) {
-                tempo_record.getValues().get(1).decLong(sourceAccountBalance, operation.function.delta_long);//compute.
-            } else
-                throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
-        } else {
-            log.info("++++++ operation failed: "
-                    + sourceAccountBalance + "-" + operation.condition.arg1
-                    + " : " + sourceAccountBalance + "-" + operation.condition.arg2
-                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
-                    + " condition: " + operation.condition);
-        }
-    }
-
     /**
      * Used by tpgScheduler.
      *
@@ -255,26 +202,14 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
 
     @Override
     public void PROCESS(Context context, long mark_ID) {
-        int cnt = 0;
-        int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
 
-        do {
-            Operation next = next(context);
-            if (next == null) {
-                break;
-            }
-            context.batchedOperations.push(next);
-            cnt++;
-            if (cnt > batch_size) {
-                break;
-            }
-        } while (true);
+        OperationChain next = next(context);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-        for (Operation operation : context.batchedOperations) {
+        for (Operation operation : next.getOperations()) {
             execute(threadId, operation, mark_ID, false);
         }
         MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);

@@ -8,20 +8,15 @@ import storage.datatype.DataBox;
 import transaction.function.Condition;
 import transaction.function.Function;
 import transaction.impl.TxnContext;
+import transaction.scheduler.tpg.struct.AbstractOperation;
 
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 //contains the place-holder to fill, as well as timestamp (counter).
-public class Operation implements Comparable<Operation> {
-    public final CommonMetaTypes.AccessType accessType;
-    public final TxnContext txn_context;
-    public final long bid;
+public class Operation extends AbstractOperation implements Comparable<Operation> {
     //required by READ_WRITE_and Condition.
-    public final Function function;
-    public final String table_name;
-    public final TableRecord d_record;
     private final Queue<Operation> dependents = new ConcurrentLinkedQueue<>();
     public List<DataBox> value_list;//required by write-only: the value_list to be used to update the d_record.
     //only update corresponding column.
@@ -29,70 +24,33 @@ public class Operation implements Comparable<Operation> {
     public int column_id;
     //required by READ_WRITE.
     public volatile TableRecordRef records_ref;//for cross-record dependency.
-    public volatile SchemaRecordRef record_ref;//required by read-only: the place holder of the reading d_record.
     public volatile TableRecord s_record;//only if it is different from d_record.
-    public volatile TableRecord[] condition_records;
     public Condition condition;
-    public int[] success;
     public String name;
     public boolean aborted = false;
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref, Function function) {
-        this.table_name = table_name;
-        this.d_record = record;
-        this.bid = bid;
-        this.accessType = accessType;
-        this.txn_context = txn_context;
-        this.function = function;
-        this.s_record = d_record;
-        this.record_ref = record_ref;//this holds events' record_ref.
+        this(table_name, record, record, record_ref, bid, accessType, function, null, null, txn_context, null);
     }
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
-        this.table_name = table_name;
-        this.d_record = record;
-        this.bid = bid;
-        this.accessType = accessType;
-        this.txn_context = txn_context;
-        this.s_record = d_record;
-        this.function = null;
-        this.record_ref = record_ref;//this holds events' record_ref.
+        this(table_name, record, record, record_ref, bid, accessType, null, null, null, txn_context, null);
     }
 
-    public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, TableRecordRef record_ref) {
-        this.table_name = table_name;
-        this.d_record = record;
-        this.bid = bid;
-        this.accessType = accessType;
-        this.txn_context = txn_context;
-        this.s_record = d_record;
-        this.function = null;
-        this.records_ref = record_ref;//this holds events' record_ref.
+    public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, TableRecordRef records_ref) {
+        this(table_name, record, record, null, bid, accessType, null, null, null, txn_context, null);
+        this.records_ref = records_ref;//this holds events' record_ref.
     }
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, List<DataBox> value_list) {
-        this.table_name = table_name;
-        this.d_record = record;
-        this.bid = bid;
-        this.accessType = accessType;
-        this.txn_context = txn_context;
+        this(table_name, record, record, null, bid, accessType, null, null, null, txn_context, null);
         this.value_list = value_list;
-        this.s_record = d_record;
-        this.function = null;
-        this.record_ref = null;
     }
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, long value, int column_id) {
-        this.table_name = table_name;
-        this.d_record = record;
-        this.bid = bid;
-        this.accessType = accessType;
-        this.txn_context = txn_context;
+        this(table_name, record, record, null, bid, accessType, null, null, null, txn_context, null);
         this.value = value;
         this.column_id = column_id;
-        this.s_record = d_record;
-        this.function = null;
-        this.record_ref = null;
     }
 
     /**
@@ -108,15 +66,13 @@ public class Operation implements Comparable<Operation> {
      * @param column_id
      */
     public Operation(String table_name, TableRecord s_record, TableRecord d_record, long bid, CommonMetaTypes.AccessType accessType, Function function, TxnContext txn_context, int column_id) {
-        this.table_name = table_name;
-        this.bid = bid;
-        this.accessType = accessType;
-        this.txn_context = txn_context;
-        this.s_record = s_record;
-        this.d_record = d_record;
-        this.function = function;
-        this.record_ref = null;
+        this(table_name, s_record, d_record, null, bid, accessType, function, null, null, txn_context, null);
         this.column_id = column_id;
+    }
+
+    public Operation(String table_name, TableRecord d_record, long bid, CommonMetaTypes.AccessType accessType,
+                     Function function, TableRecord[] condition_records, Condition condition, TxnContext txn_context, int[] success) {
+        this(table_name, d_record, d_record, null, bid, accessType, function, condition_records, condition, txn_context, success);
     }
 
     /**
@@ -133,33 +89,10 @@ public class Operation implements Comparable<Operation> {
      * @param success
      */
     public Operation(String table_name, TableRecord s_record, TableRecord d_record, SchemaRecordRef record_ref, long bid,
-                     CommonMetaTypes.AccessType accessType, Function function, TableRecord[] condition_records, Condition condition, TxnContext txn_context, int[] success) {
-        this.table_name = table_name;
+                     CommonMetaTypes.AccessType accessType, Function function, TableRecord[] condition_records,
+                     Condition condition, TxnContext txn_context, int[] success) {
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, d_record, bid);
         this.s_record = s_record;
-        this.d_record = d_record;
-        this.bid = bid;
-        this.accessType = accessType;
-        this.txn_context = txn_context;
-        this.condition_records = condition_records;
-        this.function = function;
-        this.condition = condition;
-        this.success = success;
-        this.record_ref = record_ref;
-    }
-
-    public Operation(String table_name, TableRecord d_record, long bid, CommonMetaTypes.AccessType accessType,
-                     Function function, TableRecord[] condition_records, Condition condition, TxnContext txn_context, int[] success) {
-        this.table_name = table_name;
-        this.d_record = d_record;
-        this.bid = bid;
-        this.accessType = accessType;
-        this.txn_context = txn_context;
-        this.condition_records = condition_records;
-        this.function = function;
-        this.condition = condition;
-        this.success = success;
-        this.s_record = d_record;
-        this.record_ref = null;
     }
 
     /**

@@ -1,6 +1,8 @@
 package transaction.scheduler.tpg.struct;
 
 import common.meta.CommonMetaTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import storage.TableRecordRef;
@@ -9,39 +11,45 @@ import transaction.function.Condition;
 import transaction.function.Function;
 import transaction.impl.TxnContext;
 import transaction.scheduler.tpg.TPGContext;
+import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
+import transaction.scheduler.tpg.struct.MetaTypes.OperationStateType;
 
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
  */
-public class Operation extends OperationStateMachine implements Comparable<Operation> {
-    public final TableRecord d_record;
-    public final CommonMetaTypes.AccessType accessType;
-    public final TxnContext txn_context;
-    public final long bid;
-    //required by READ_WRITE_and Condition.
-    public final Function function;
-    public final String table_name;
+public class Operation extends AbstractOperation implements Comparable<Operation> {
+    public final static int NONE_CANDIDATE = 0;
+    public final static int SPECULATIVE_CANDIDATE = 1;
+    public final static int READY_CANDIDATE = 2;
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
     public final TPGContext context;
     private final String operationChainKey;
+
+    private final Queue<Operation> ld_descendant_operations;
+    private final Queue<Operation> fd_children; // the functional dependencies ops to be executed after this op.
+    private final Queue<Operation> td_children; // the functional dependencies ops to be executed after this op.
+    private final Queue<Operation> ld_children; // the functional dependencies ops to be executed after this op.
+    private final Queue<Operation> ld_spec_children; // speculative children to notify.
+    private final Queue<Operation> fd_parents; // the functional dependencies ops to be executed in advance
+    private final Queue<Operation> td_parents; // the functional dependencies ops to be executed in advance
+    private final Queue<Operation> ld_parents; // the functional dependencies ops to be executed in advance
+    private final Queue<Operation> ld_spec_parents; // speculative parents to wait, include the last ready op
+    private final OperationMetadata operationMetadata;
+    private final AtomicReference<OperationStateType> operationState;
     // operation id under a transaction.
-    // an operation id to indicate how many operations in front of this operation in the same transacion.
+    // an operation id to indicate how many operations in front of this operation in the same transaction.
     public int txn_op_id = 0;
-    public volatile TableRecordRef records_ref;//for cross-record dependency.
-    public volatile SchemaRecordRef record_ref;//required by read-only: the place holder of the reading d_record.
-    public List<DataBox> value_list;//required by write-only: the value_list to be used to update the d_record.
-    //only update corresponding column.
-    public long value;
-    //required by READ_WRITE.
-    public volatile TableRecord s_record;//only if it is different from d_record.
-    public volatile TableRecord[] condition_records;
-    public Condition condition;
-    public int[] success;
     public boolean isFailed;
     public String name;
 
     private OperationChain oc; // used for dependency resolved notification under greedy smart
+    private AbstractOperation ld_head_operation;
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
         this(null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
@@ -81,21 +89,29 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success) {
-        super();
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, bid);
         this.context = context;
-        this.table_name = table_name;
-        this.d_record = record;
-        this.bid = bid;
-        this.accessType = accessType;
-        this.txn_context = txn_context;
-        this.function = function;
         this.s_record = d_record;
-        this.record_ref = record_ref;//this holds events' record_ref.
-        this.condition = condition;
-        this.condition_records = condition_records;
-        this.success = success;
         this.operationChainKey = table_name + "|" + d_record.record_.GetPrimaryKey();
 
+        ld_head_operation = null;
+        ld_descendant_operations = new ArrayDeque<>();
+
+        // finctional dependencies
+        fd_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
+        fd_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // temporal dependencies
+        td_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
+        td_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // finctional dependencies
+        ld_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
+        ld_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // finctional dependencies
+        ld_spec_parents = new ArrayDeque<>(); // speculative parents to wait, include the last ready op
+        ld_spec_children = new ArrayDeque<>(); // speculative children to notify.
+
+        operationMetadata = new Operation.OperationMetadata();
+        operationState = new AtomicReference<>(OperationStateType.BLOCKED);
     }
 
 
@@ -149,5 +165,261 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
             throw new RuntimeException("the returned oc cannot be null");
         }
         return oc;
+    }
+
+    public <T extends AbstractOperation> ArrayDeque<T> getChildren(DependencyType type) {
+        if (type.equals(DependencyType.FD)) {
+            return (ArrayDeque<T>) fd_children;
+        } else if (type.equals(DependencyType.TD)) {
+            return (ArrayDeque<T>) td_children;
+        } else if (type.equals(DependencyType.LD)) {
+            return (ArrayDeque<T>) ld_children;
+        } else if (type.equals(DependencyType.SP_LD)) {
+            return (ArrayDeque<T>) ld_spec_children;
+        } else {
+            throw new RuntimeException("Unexpected dependency type: " + type);
+        }
+    }
+
+    public boolean isRoot() {
+        return operationMetadata.td_countdown[0].get() == 0 && operationMetadata.fd_countdown[0].get() == 0 && operationMetadata.ld_spec_countdown[0].get() == 0;
+    }
+
+    public void addParent(Operation operation, DependencyType type) {
+        if (type.equals(DependencyType.FD)) {
+            this.fd_parents.add(operation);
+            this.operationMetadata.fd_countdown[0].incrementAndGet();
+        } else if (type.equals(DependencyType.LD)) {
+            this.ld_parents.add(operation);
+            this.operationMetadata.ld_countdown[0].incrementAndGet();
+        } else if (type.equals(DependencyType.SP_LD)) {
+            this.ld_spec_parents.add(operation);
+            this.operationMetadata.ld_spec_countdown[0].incrementAndGet();
+        } else if (type.equals(DependencyType.TD)) {
+            this.td_parents.add(operation);
+            this.operationMetadata.td_countdown[0].incrementAndGet();
+            this.operationMetadata.td_countdown[1].incrementAndGet();
+        } else {
+            throw new RuntimeException("unsupported dependency type parent");
+        }
+    }
+
+    public void addChild(Operation operation, DependencyType type) {
+        if (type.equals(DependencyType.FD)) {
+            this.fd_children.add(operation);
+        } else if (type.equals(DependencyType.LD)) {
+            this.ld_children.clear();
+            this.ld_children.add(operation);
+        } else if (type.equals(DependencyType.SP_LD)) {
+            this.ld_spec_children.add(operation);
+        } else if (type.equals(DependencyType.TD)) {
+            this.td_children.add(operation);
+        } else {
+            throw new RuntimeException("unsupported dependency type children");
+        }
+    }
+
+    public void addHeader(Operation header) {
+        ld_head_operation = header;
+    }
+
+    public void addDescendant(Operation descendant) {
+        ld_descendant_operations.add(descendant);
+        operationMetadata.ld_descendant_countdown.incrementAndGet();
+        assert ld_descendant_operations.size() == operationMetadata.ld_descendant_countdown.get();
+    }
+
+    public boolean isReadyCandidate() {
+        return operationMetadata.is_spec_or_ready_candidate.get() == READY_CANDIDATE;
+    }
+
+    public boolean isSpeculativeCandidate() {
+        return operationMetadata.is_spec_or_ready_candidate.get() == SPECULATIVE_CANDIDATE;
+    }
+
+    public void stateTransition(OperationStateType state) {
+        LOG.debug(this + " : state transit " + operationState + " -> " + state);
+        operationState.getAndSet(state);
+    }
+
+    public OperationStateType getOperationState() {
+        return operationState.get();
+    }
+
+    // promote header to be the first ready candidate of the transaction
+    public void setReadyCandidate() {
+        operationMetadata.is_spec_or_ready_candidate.getAndSet(READY_CANDIDATE);
+    }
+
+    public void setSpeculativeCandidate() {
+        operationMetadata.is_spec_or_ready_candidate.compareAndSet(NONE_CANDIDATE, SPECULATIVE_CANDIDATE);
+    }
+
+    /**
+     * Modify CountDown Variables.
+     *
+     * @param dependencyType
+     * @param parentState
+     */
+    public void updateDependencies(DependencyType dependencyType, OperationStateType parentState) {
+        // update countdown
+        if (parentState.equals(OperationStateType.EXECUTED)) {
+            if (dependencyType.equals(DependencyType.TD)) {
+                operationMetadata.td_countdown[0].decrementAndGet();
+                assert operationMetadata.td_countdown[0].get() >= 0;
+            } else if (dependencyType.equals(DependencyType.FD)) {
+                operationMetadata.fd_countdown[0].decrementAndGet();
+                assert operationMetadata.fd_countdown[0].get() >= 0;
+            } else if (dependencyType.equals(DependencyType.SP_LD)) {
+                operationMetadata.ld_spec_countdown[0].decrementAndGet();
+            }
+        } else if (parentState.equals(OperationStateType.COMMITTED)) {
+            if (dependencyType.equals(DependencyType.TD)) {
+                operationMetadata.td_countdown[1].decrementAndGet();
+                assert operationMetadata.td_countdown[1].get() >= 0;
+            }
+        }
+    }
+
+    public void updateCommitCountdown() {
+        // update countdown
+        operationMetadata.ld_descendant_countdown.decrementAndGet();
+    }
+
+    public boolean trySpeculative(boolean isRollback) {
+        boolean isSpeculative = operationMetadata.td_countdown[0].get() == 0
+                && operationMetadata.fd_countdown[0].get() == 0
+                && operationMetadata.is_spec_or_ready_candidate.get() == SPECULATIVE_CANDIDATE;
+        if (isRollback)
+            isSpeculative = isSpeculative
+                    && this.getOperationState().equals(OperationStateType.EXECUTED);
+        else
+            isSpeculative = isSpeculative &&
+                    this.getOperationState().equals(OperationStateType.BLOCKED);
+        if (isSpeculative) {
+            stateTransition(OperationStateType.SPECULATIVE);
+        }
+        return isSpeculative;
+    }
+
+    public boolean tryReady(boolean isRollback) {
+        boolean isReady = operationMetadata.td_countdown[0].get() == 0
+                && operationMetadata.fd_countdown[0].get() == 0
+                && operationMetadata.ld_spec_countdown[0].get() == 0
+                && operationMetadata.is_spec_or_ready_candidate.get() == READY_CANDIDATE;
+        if (isRollback)
+            isReady = isReady
+                    && this.getOperationState().equals(OperationStateType.EXECUTED);
+        else
+            isReady = isReady
+                    && (this.getOperationState().equals(OperationStateType.BLOCKED));
+        if (isReady) {
+            stateTransition(OperationStateType.READY);
+        }
+        return isReady;
+    }
+
+    public boolean tryHeaderCommit() {
+        // header check whether all descendants are in committable, if so, commit.
+        if (!this.equals(ld_head_operation)) {
+            throw new RuntimeException("this can be only invoked by header.");
+        }
+        LOG.debug("++++++" + this + " check whether committable: " + ld_descendant_operations);
+        boolean readyToCommit = this.getOperationState().equals(OperationStateType.COMMITTABLE);
+        readyToCommit = readyToCommit && operationMetadata.ld_descendant_countdown.get() == 0;
+        if (readyToCommit) {
+            // notify all descendants to commit.
+            stateTransition(OperationStateType.COMMITTED);
+        }
+        return readyToCommit;
+    }
+
+    public boolean tryCommittable() {
+        LOG.debug("++++++" + this + " check committable:");
+        boolean isCommittable =
+                operationMetadata.td_countdown[1].get() == 0
+                        && this.getOperationState().equals(OperationStateType.EXECUTED);
+        LOG.debug("++++++" + this + " try commit results: " +
+                (operationMetadata.td_countdown[1].get() == 0)
+                + " | " + this.getOperationState().equals(OperationStateType.EXECUTED));
+        if (isCommittable) {
+            // EXECUTED->COMMITTABLE
+            stateTransition(OperationStateType.COMMITTABLE);
+        } else {
+            LOG.debug("++++++" + this + " committable failed");
+        }
+        LOG.debug("++++++" + this + " check committable end");
+        return isCommittable;
+    }
+
+    /**
+     * @param type
+     * @param <T>
+     * @return
+     */
+    public <T extends AbstractOperation> Queue<T> getParents(DependencyType type) {
+        if (type.equals(DependencyType.FD)) {
+            return (Queue<T>) fd_parents;
+        } else if (type.equals(DependencyType.TD)) {
+            return (Queue<T>) td_parents;
+        } else if (type.equals(DependencyType.LD)) {
+            return (Queue<T>) ld_parents;
+        } else {
+            throw new RuntimeException("Unexpected dependency type: " + type);
+        }
+    }
+
+    public <T extends AbstractOperation> T getHeader() {
+        return (T) ld_head_operation;
+    }
+
+    public <T extends AbstractOperation> ArrayDeque<T> getDescendants() {
+        return (ArrayDeque<T>) ld_descendant_operations;
+    }
+
+    public boolean isHeader() {
+        return this.equals(ld_head_operation);
+    }
+
+    private static class OperationMetadata {
+        // countdown to be executed parents and committed parents for state transition
+        public final AtomicInteger[] fd_countdown;
+        public final AtomicInteger[] td_countdown;
+        public final AtomicInteger[] ld_countdown;
+        public final AtomicInteger[] ld_spec_countdown;
+
+        // countdown to be committable descendants
+        public final AtomicInteger ld_descendant_countdown;
+
+        /**
+         * A flag to control the state transition from a BLOCKED operation
+         * it can be either SPEC/READY
+         * 0 cannot be ready or spec, this is for the safety consideration
+         * 1 can promote to a spec
+         * 2 can promote to a ready
+         */
+        public final AtomicInteger is_spec_or_ready_candidate;
+
+        public OperationMetadata() {
+            td_countdown = new AtomicInteger[2]; // countdown Idx0/1 when executed/committed
+            fd_countdown = new AtomicInteger[1]; // countdown when executed
+            ld_countdown = new AtomicInteger[1]; // countdown when executed
+            ld_spec_countdown = new AtomicInteger[1]; // countdown when executed
+
+            // initialize those atomic integer val/arr
+            initializeAtomicIntegerArr(td_countdown);
+            initializeAtomicIntegerArr(fd_countdown);
+            initializeAtomicIntegerArr(ld_countdown);
+            initializeAtomicIntegerArr(ld_spec_countdown);
+            ld_descendant_countdown = new AtomicInteger(0);
+
+            is_spec_or_ready_candidate = new AtomicInteger(NONE_CANDIDATE);
+        }
+
+        private void initializeAtomicIntegerArr(AtomicInteger[] arr) {
+            for (int i = 0; i < arr.length; i++) {
+                arr[i] = new AtomicInteger(0);
+            }
+        }
     }
 }
