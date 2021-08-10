@@ -2,7 +2,7 @@ package transaction.scheduler.tpg.signal;
 
 import transaction.scheduler.tpg.struct.Operation;
 
-public class OnProcessedSignal extends NotificationSignal {
+public class OnProcessedSignal extends OperationSignal {
     private final boolean isFailed;
 
     public OnProcessedSignal(Operation operation, boolean isFailed) {

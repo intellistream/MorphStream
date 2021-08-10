@@ -13,6 +13,7 @@ import transaction.scheduler.Request;
 import transaction.scheduler.Scheduler;
 import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
+import transaction.scheduler.tpg.struct.OperationChain;
 import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
 import java.util.*;
@@ -28,7 +29,7 @@ import static common.meta.CommonMetaTypes.AccessType.SET;
  * It's a shared data structure!
  */
     @lombok.extern.slf4j.Slf4j
-public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context, Operation> {
+public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context, OperationChain> {
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
     public final Map<Integer, Context> threadToContextMap;
@@ -169,32 +170,6 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
 
     // DD: Transfer event processing
     private void CT_Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-//        Queue<Operation> fd_parents = operation.getParents(MetaTypes.DependencyType.FD);
-//        List<SchemaRecord> preValues = new ArrayList<>();
-//        for (Operation parent : fd_parents) {
-//            preValues.add(parent.record_ref.getRecord());
-//        }
-//        System.out.println("read: " + (System.nanoTime() - start));
-
-//        if (preValues.get(0) == null) {
-//            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
-//            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
-//            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
-//                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
-//            }
-//            log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
-//        }
-//        if (preValues.get(1) == null) {
-//            log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
-//            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
-//            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
-//                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
-//            }
-//            log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
-//        }
-//        final long sourceAccountBalance = preValues.get(0).getValues().get(1).getLong();
-//        final long sourceAssetValue = preValues.get(1).getValues().get(1).getLong();
-
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
         if (preValues == null) {
@@ -311,8 +286,12 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      * @param context
      * @return
      */
-    public Operation next(Context context) {
-        return context.taskQueues.pollLast();
+    public OperationChain next(Context context) {
+        OperationChain operationChain = context.OCwithChildren.pollLast();
+        if (operationChain == null) {
+            return context.IsolatedOC.pollLast();
+        }
+        return operationChain;
     }
 
 
@@ -322,21 +301,24 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      * 2. conserved: hash operations to threads based on the targeting key state
      * 3. shared: put all operations in a pool and
      *
-     * @param executableOperation
+     * @param executableOperationChain
      * @param context
      */
     @Override
-    protected void DISTRIBUTE(Operation executableOperation, Context context) {
-        if (executableOperation != null)
-            context.taskQueues.add(executableOperation);
+    protected void DISTRIBUTE(OperationChain executableOperationChain, Context context) {
+        if (executableOperationChain != null)
+            if (!executableOperationChain.hasChildren())
+                context.IsolatedOC.add(executableOperationChain);
+            else
+                context.OCwithChildren.add(executableOperationChain);
     }
 
     /**
      * Register an operation to queue.
      */
     public class ExecutableTaskListener {
-        public void onExecutable(Operation operation) {
-            DISTRIBUTE(operation, (Context) operation.context);//TODO: make it clear..
+        public void onExecutable(OperationChain operationChain) {
+            DISTRIBUTE(operationChain, (Context) operationChain.context);//TODO: make it clear..
         }
     }
 }

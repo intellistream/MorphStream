@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.TPGScheduler;
+import transaction.scheduler.tpg.signal.OperationChainSignal;
 
 import java.util.List;
 import java.util.Queue;
@@ -63,7 +64,6 @@ public class TaskPrecedenceGraph {
         headerOperation.setReadyCandidate();
         for (int i = 0; i < operations.size(); i++) {
             Operation curOperation = operations.get(i);
-            curOperation.setExecutableOperationListener(shortCutListener);
             nPendingOperation.incrementAndGet();
             if (i > 0)
                 curOperation.addParent(operations.get(i - 1), MetaTypes.DependencyType.LD);
@@ -90,35 +90,15 @@ public class TaskPrecedenceGraph {
             }
             addOperationToChain(curOperation);
         }
-//        LOG.debug("++++++operations: " + operations);
     }
 
-//    /**
-//     * @param threadId
-//     */
-//    public void firstTimeExploreTPG(int threadId) {
-//        Controller.stateManagers.get(threadId).initialize(shortCutListener);
-//        for (String key : Controller.threadtoStateMapping.get(threadId)) {
-//            operationChains.computeIfPresent(key, (s, operationChain) -> {
-//                operationChain.updateTDDependencies();
-//                Operation head = operationChain.getOperations().first();
-//                if (head.isRoot()) {
-//                    head.context.partitionStateManager.onRootStart();
-//                }
-//                return operationChain;
-//            });
-//        }
-//        LOG.trace("++++++ end explore");
-//    }
 
     public <Context extends TPGContext> void firstTimeExploreTPG(Context context) {
         context.initialize(shortCutListener);
         for (String key : context.partitionStateManager.partition) {
             operationChains.computeIfPresent(key, (s, operationChain) -> {
-                operationChain.updateTDDependencies();
-                Operation head = operationChain.getOperations().first();
-                if (head.isRoot()) {
-                    head.context.partitionStateManager.onRootStart(head);
+                if (!operationChain.hasParents()) {
+                    operationChain.context.partitionStateManager.onDependencyResolved(operationChain, new OperationChainSignal(operationChain, null));
                 }
                 return operationChain;
             });
@@ -134,7 +114,7 @@ public class TaskPrecedenceGraph {
         String table_name = operation.table_name;
         String primaryKey = operation.d_record.record_.GetPrimaryKey();
         String operationChainKey = operation.getOperationChainKey();
-        OperationChain retOc = operationChains.computeIfAbsent(operationChainKey, s -> new OperationChain(table_name, primaryKey));
+        OperationChain retOc = operationChains.computeIfAbsent(operationChainKey, s -> new OperationChain(table_name, primaryKey, operation.context));
         retOc.addOperation(operation);
     }
 
@@ -259,9 +239,8 @@ public class TaskPrecedenceGraph {
      * Register an operation to queue.
      */
     public class ShortCutListener {
-
-        public void onExecutable(Operation operation, boolean isReady) {
-            executableTaskListener.onExecutable(operation);
+        public void onExecutable(OperationChain operationChain) {
+            executableTaskListener.onExecutable(operationChain);
         }
 
         public void onOperationFinalized(Operation operation, boolean isCommitted) {

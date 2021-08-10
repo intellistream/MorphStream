@@ -3,23 +3,25 @@ package transaction.scheduler.tpg;
 import transaction.scheduler.Request;
 import transaction.scheduler.SchedulerContext;
 import transaction.scheduler.tpg.struct.Operation;
+import transaction.scheduler.tpg.struct.OperationChain;
 import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
 import java.util.ArrayDeque;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class TPGContext extends SchedulerContext {
     public final PartitionStateManager partitionStateManager;
-    protected final ConcurrentLinkedDeque<Operation> taskQueues; // task queues to store operations for each thread
-    protected final ArrayDeque<Operation> batchedOperations;
     ArrayDeque<Request> requests;
+    protected final ConcurrentLinkedDeque<OperationChain> IsolatedOC;
+    protected final ConcurrentLinkedDeque<OperationChain> OCwithChildren;
 
     public TPGContext(int thisThreadId) {
         this.thisThreadId = thisThreadId;
-        taskQueues = new ConcurrentLinkedDeque<>();
-        batchedOperations = new ArrayDeque<>();
         partitionStateManager = new PartitionStateManager();
         requests = new ArrayDeque<>();
+        IsolatedOC = new ConcurrentLinkedDeque<>();
+        OCwithChildren = new ConcurrentLinkedDeque<>();
     }
 
     @Override

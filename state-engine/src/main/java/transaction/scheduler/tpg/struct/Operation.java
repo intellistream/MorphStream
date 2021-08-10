@@ -41,6 +41,8 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
     public boolean isFailed;
     public String name;
 
+    private OperationChain oc; // used for dependency resolved notification under greedy smart
+
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
         this(null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
     }
@@ -134,10 +136,18 @@ public class Operation extends OperationStateMachine implements Comparable<Opera
     /*********************************CREATED BY MYC****************************************/
 
 
-    public void setExecutableOperationListener(TaskPrecedenceGraph.ShortCutListener shortCutListener) {
-    }
-
     public String getOperationChainKey() {
         return operationChainKey;
+    }
+
+    public void setOC(OperationChain operationChain) {
+        this.oc = operationChain;
+    }
+
+    public OperationChain getOC() {
+        if (oc == null) {
+            throw new RuntimeException("the returned oc cannot be null");
+        }
+        return oc;
     }
 }

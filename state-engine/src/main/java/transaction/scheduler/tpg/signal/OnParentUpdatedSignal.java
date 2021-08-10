@@ -3,7 +3,7 @@ package transaction.scheduler.tpg.signal;
 import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
 
-public class OnParentUpdatedSignal extends NotificationSignal {
+public class OnParentUpdatedSignal extends OperationSignal {
     private final MetaTypes.DependencyType dependencyType;
     private final MetaTypes.OperationStateType parentState;
 

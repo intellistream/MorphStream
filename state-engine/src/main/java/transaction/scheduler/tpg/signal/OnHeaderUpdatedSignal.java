@@ -3,7 +3,7 @@ package transaction.scheduler.tpg.signal;
 import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
 
-public class OnHeaderUpdatedSignal extends NotificationSignal {
+public class OnHeaderUpdatedSignal extends OperationSignal {
     private final MetaTypes.OperationStateType headerState;
 
     public OnHeaderUpdatedSignal(Operation operation, MetaTypes.OperationStateType headerState) {

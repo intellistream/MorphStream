@@ -6,7 +6,7 @@ import transaction.scheduler.tpg.struct.Operation;
 /**
  * this signal is used for read operation to elect a new ready candidate.
  */
-public class OnReadyParentExecutedSignal extends NotificationSignal {
+public class OnReadyParentExecutedSignal extends OperationSignal {
     private final MetaTypes.DependencyType dependencyType;
     private final MetaTypes.OperationStateType parentState;
 

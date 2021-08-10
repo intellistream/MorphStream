@@ -2,12 +2,13 @@ package transaction.scheduler.tpg;
 
 import transaction.scheduler.tpg.signal.*;
 import transaction.scheduler.tpg.struct.MetaTypes;
+import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 import transaction.scheduler.tpg.struct.Operation;
+import transaction.scheduler.tpg.struct.OperationChain;
 import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -16,47 +17,43 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class PartitionStateManager implements OperationStateListener, Runnable {
     public final ArrayList<String> partition; //  list of states being responsible for
-    //    public final HashMap<String, Queue<NotificationSignal>> stateTransitionQueueMap;
-    public final Queue<NotificationSignal> stateTransitionQueue;
+    public final Queue<OperationSignal> opStateTransitionQueue;
+    public final Queue<OperationChainSignal> ocDependencyResolvedQueue;
     private TaskPrecedenceGraph.ShortCutListener shortCutListener;
 
     public PartitionStateManager() {
-        this.stateTransitionQueue = new ConcurrentLinkedQueue<>();
+        this.opStateTransitionQueue = new ConcurrentLinkedQueue<>();
+        this.ocDependencyResolvedQueue = new ConcurrentLinkedQueue<>();
         this.partition = new ArrayList<>();
     }
 
     @Override
-    public void onParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-        stateTransitionQueue.add(new OnParentUpdatedSignal(operation, dependencyType, parentState));//
+    public void onParentStateUpdated(Operation operation, DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
+        opStateTransitionQueue.add(new OnParentUpdatedSignal(operation, dependencyType, parentState));//
     }
 
     @Override
-    public void onReadyParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-        stateTransitionQueue.add(new OnReadyParentExecutedSignal(operation, dependencyType, parentState));//
+    public void onReadyParentStateUpdated(Operation operation, DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
+        opStateTransitionQueue.add(new OnReadyParentExecutedSignal(operation, dependencyType, parentState));//
     }
 
     @Override
     public void onHeaderStateUpdated(Operation operation, MetaTypes.OperationStateType headerState) {
-        stateTransitionQueue.add(new OnHeaderUpdatedSignal(operation, headerState));//
+        opStateTransitionQueue.add(new OnHeaderUpdatedSignal(operation, headerState));//
     }
 
     @Override
     public void onDescendantStateUpdated(Operation operation, MetaTypes.OperationStateType descendantState) {
-        stateTransitionQueue.add(new OnDescendantUpdatedSignal(operation, descendantState));//
+        opStateTransitionQueue.add(new OnDescendantUpdatedSignal(operation, descendantState));//
     }
 
     @Override
     public void onProcessed(Operation operation) {
-//        PartitionStateManager partitionStateManager = getTargetStateManager(operation);
-//        if (partitionStateManager.equals(this)) {
-        stateTransitionQueue.add(new OnProcessedSignal(operation, operation.isFailed));//
-//        } else {
-//            partitionStateManager.onProcessed(operation);
-//        }
+        opStateTransitionQueue.add(new OnProcessedSignal(operation, operation.isFailed));//
     }
 
     public void onRootStart(Operation head) {
-        stateTransitionQueue.add(new OnRootSignal(head));//
+        opStateTransitionQueue.add(new OnRootSignal(head));//
     }
 
     public void run() {
@@ -66,22 +63,28 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     }
 
     public void handleStateTransitions() {
-//        inTransition.compareAndSet(false, true);
-        NotificationSignal signal = stateTransitionQueue.poll();
-        while (signal != null) {
-            Operation operation = signal.getTargetOperation();
-            if (signal instanceof OnProcessedSignal) {
-                onProcessedTransition(operation, (OnProcessedSignal) signal);
-            } else if (signal instanceof OnParentUpdatedSignal) {
-                onParentStateUpdatedTransition(operation, (OnParentUpdatedSignal) signal);
-            } else if (signal instanceof OnDescendantUpdatedSignal) {
-                onDescendantUpdatedTransition(operation, (OnDescendantUpdatedSignal) signal);
-            } else if (signal instanceof OnHeaderUpdatedSignal) {
-                onHeaderUpdatedTransition(operation, (OnHeaderUpdatedSignal) signal);
+        OperationChainSignal ocSignal = ocDependencyResolvedQueue.poll();
+        while (ocSignal != null) {
+            OperationChain operationChain = ocSignal.getTargetOperationChain();
+            onDependencyResolved(operationChain, ocSignal);
+            ocSignal = ocDependencyResolvedQueue.poll();
+        }
+
+        OperationSignal opSignal = opStateTransitionQueue.poll();
+        while (opSignal != null) {
+            Operation operation = opSignal.getTargetOperation();
+            if (opSignal instanceof OnProcessedSignal) {
+                onProcessedTransition(operation, (OnProcessedSignal) opSignal);
+            } else if (opSignal instanceof OnParentUpdatedSignal) {
+                onParentStateUpdatedTransition(operation, (OnParentUpdatedSignal) opSignal);
+            } else if (opSignal instanceof OnDescendantUpdatedSignal) {
+                onDescendantUpdatedTransition(operation, (OnDescendantUpdatedSignal) opSignal);
+            } else if (opSignal instanceof OnHeaderUpdatedSignal) {
+                onHeaderUpdatedTransition(operation, (OnHeaderUpdatedSignal) opSignal);
             } else {
-                throw new UnsupportedOperationException("unknow signal received. " + signal);
+                throw new UnsupportedOperationException("unknow signal received. " + opSignal);
             }
-            signal = stateTransitionQueue.poll();
+            opSignal = opStateTransitionQueue.poll();
         }
     }
 
@@ -109,7 +112,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     }
 
     private void onParentStateUpdatedTransition(Operation operation, OnParentUpdatedSignal signal) {
-        MetaTypes.DependencyType dependencyType = signal.getType();
+        DependencyType dependencyType = signal.getType();
         MetaTypes.OperationStateType parentState = signal.getState();
         operation.updateDependencies(dependencyType, parentState);
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)) {
@@ -117,8 +120,8 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
         }
     }
 
-    private void inExecutedState(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-        if (dependencyType.equals(MetaTypes.DependencyType.TD)) {
+    private void inExecutedState(Operation operation, DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
+        if (dependencyType.equals(DependencyType.TD)) {
             if (parentState.equals(MetaTypes.OperationStateType.COMMITTED)) {
                 // when non ld parent is committed, the child should check whether to commit.
                 if (operation.tryCommittable()) {
@@ -156,9 +159,9 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
             }
         }
         // notify all td children committed
-        ArrayDeque<Operation> children = operation.getChildren(MetaTypes.DependencyType.TD);
+        ArrayDeque<Operation> children = operation.getChildren(DependencyType.TD);
         for (Operation child : children) {
-            child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.COMMITTED);
+            child.context.partitionStateManager.onParentStateUpdated(child, DependencyType.TD, MetaTypes.OperationStateType.COMMITTED);
         }
     }
 
@@ -168,25 +171,32 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
         header.context.partitionStateManager.onDescendantStateUpdated(header, MetaTypes.OperationStateType.COMMITTABLE);
     }
 
-    private void blockedToSpeculativeAction(Operation operation) {
-//        shortCutListener.onExecutable(operation, false);
-        shortCutListener.onExecutable(operation, false);
-    }
-
     private void executedAction(Operation operation) {
         // put child to the targeting state manager state transitiion queue.
-        ArrayDeque<Operation> children = operation.getChildren(MetaTypes.DependencyType.SP_LD);
+        ArrayDeque<Operation> children = operation.getChildren(DependencyType.SP_LD);
         if (operation.isReadyCandidate()) {
             // if is ready candidate and is executed, elect a new ready candidate
             if (!children.isEmpty()) {
                 Operation child = children.getLast();
-                child.context.partitionStateManager.onReadyParentStateUpdated(child, MetaTypes.DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
+                child.context.partitionStateManager.onReadyParentStateUpdated(child, DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
             }
         }
         // notify its ld speculative children to countdown, this countdown will only be used for ready candidate.
         // i.e. the read candidate will transit to ready when all its speculative countdown is 0;
         for (Operation child : children) {
-            child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
+            child.context.partitionStateManager.onParentStateUpdated(child, DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
+        }
+    }
+
+    public void onDependencyResolved(OperationChain operationChain, OperationChainSignal ocSignal) {
+        DependencyType dependencyType = ocSignal.getDependencyType();
+        if (dependencyType != null) {
+            operationChain.updateDependencies(dependencyType);
+            if (!operationChain.hasParents()) { // functional dependencies is 0, can proceed to be processed
+                shortCutListener.onExecutable(operationChain);
+            }
+        } else {
+            shortCutListener.onExecutable(operationChain);
         }
     }
 
