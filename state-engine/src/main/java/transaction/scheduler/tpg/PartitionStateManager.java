@@ -78,29 +78,11 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
                 onDescendantUpdatedTransition(operation, (OnDescendantUpdatedSignal) signal);
             } else if (signal instanceof OnHeaderUpdatedSignal) {
                 onHeaderUpdatedTransition(operation, (OnHeaderUpdatedSignal) signal);
-            } else if (signal instanceof OnRootSignal) {
-                onRootTransition(operation);
-            } else if (signal instanceof OnReadyParentExecutedSignal) {
-                onReadyParentUpdatedTransition(operation);
+            } else {
+                throw new UnsupportedOperationException("unknow signal received. " + signal);
             }
             signal = stateTransitionQueue.poll();
         }
-    }
-
-    private void onReadyParentUpdatedTransition(Operation operation) {
-        if (operation.getOperationState().equals(MetaTypes.OperationStateType.BLOCKED)) {
-            operation.setReadyCandidate();
-            if (operation.tryReady(false)) {
-                blockedToReadyAction(operation);
-            }
-        } else {
-            throw new RuntimeException("operation cannot transit to ready candidate + " + operation);
-        }
-    }
-
-    private void onRootTransition(Operation operation) {
-        operation.stateTransition(MetaTypes.OperationStateType.READY);
-        blockedToReadyAction(operation);
     }
 
     private void onHeaderUpdatedTransition(Operation descendant, OnHeaderUpdatedSignal signal) {
@@ -130,11 +112,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
         MetaTypes.DependencyType dependencyType = signal.getType();
         MetaTypes.OperationStateType parentState = signal.getState();
         operation.updateDependencies(dependencyType, parentState);
-        // normal state transition during execution
-        // **BLOCKED**
-        if (operation.getOperationState().equals(MetaTypes.OperationStateType.BLOCKED)) {
-            inBlockedState(operation, dependencyType, parentState);
-        } else if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)) {
+        if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)) {
             inExecutedState(operation, dependencyType, parentState);
         }
     }
@@ -150,33 +128,6 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
         }
     }
 
-    private void inBlockedState(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-        // BLOCKED->SPECULATIVE
-        if (parentState.equals(MetaTypes.OperationStateType.READY) && dependencyType.equals(MetaTypes.DependencyType.SP_LD)) {
-            operation.setSpeculativeCandidate();
-            if (operation.trySpeculative(false)) {
-                blockedToSpeculativeAction(operation);
-            }
-        } else if (parentState.equals(MetaTypes.OperationStateType.EXECUTED) && dependencyType.equals(MetaTypes.DependencyType.SP_LD)) {
-//                operation.setReadyCandidate();
-            if (operation.isReadyCandidate()) {
-                if (operation.tryReady(false)) {
-                    blockedToReadyAction(operation);
-                }
-            }
-        } else if (parentState.equals(MetaTypes.OperationStateType.EXECUTED)) {
-            // BLOCKED->READY or BLOCKED->SPECULATIVE
-            if (operation.isReadyCandidate()) {
-                if (operation.tryReady(false)) {
-                    blockedToReadyAction(operation);
-                }
-            } else if (operation.isSpeculativeCandidate()) {
-                if (operation.trySpeculative(false)) {
-                    blockedToSpeculativeAction(operation);
-                }
-            }
-        }
-    }
 
     private void onProcessedTransition(Operation operation, OnProcessedSignal signal) {
         if (signal.isFailed()) {
@@ -217,23 +168,6 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
         header.context.partitionStateManager.onDescendantStateUpdated(header, MetaTypes.OperationStateType.COMMITTABLE);
     }
 
-    private void blockedToReadyAction(Operation operation) {
-        // notify a number of speculative children to execute in parallel.
-//        shortCutListener.onExecutable(operation, true);
-        shortCutListener.onExecutable(operation, true);
-        ArrayDeque<Operation> children = operation.getChildren(MetaTypes.DependencyType.SP_LD);
-        // notify the size - 1 number of operations to speculative execute in parallel
-        // the last one keeps in blocked state for as a potential future ready candidate.
-        int last = children.size() - 1;
-        int curIdx = 0;
-        for (Operation child : children) {
-            if (curIdx != last) {
-                child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.SP_LD, MetaTypes.OperationStateType.READY);
-            }
-            curIdx++;
-        }
-    }
-
     private void blockedToSpeculativeAction(Operation operation) {
 //        shortCutListener.onExecutable(operation, false);
         shortCutListener.onExecutable(operation, false);
@@ -241,16 +175,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
 
     private void executedAction(Operation operation) {
         // put child to the targeting state manager state transitiion queue.
-        ArrayDeque<Operation> children = operation.getChildren(MetaTypes.DependencyType.TD);
-        for (Operation child : children) {
-//            getTargetStateManager(child).onParentStateUpdated(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.EXECUTED);
-            child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.EXECUTED);
-        }
-        children = operation.getChildren(MetaTypes.DependencyType.FD);
-        for (Operation child : children) {
-            child.context.partitionStateManager.onParentStateUpdated(child, MetaTypes.DependencyType.FD, MetaTypes.OperationStateType.EXECUTED);
-        }
-        children = operation.getChildren(MetaTypes.DependencyType.SP_LD);
+        ArrayDeque<Operation> children = operation.getChildren(MetaTypes.DependencyType.SP_LD);
         if (operation.isReadyCandidate()) {
             // if is ready candidate and is executed, elect a new ready candidate
             if (!children.isEmpty()) {
@@ -268,9 +193,5 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     public void initialize(TaskPrecedenceGraph.ShortCutListener shortCutListener) {
         // 1. set listener
         this.shortCutListener = shortCutListener;
-//        // 2. initialize signal queues
-//        for (String operationChainKey : partition) {
-//            this.stateTransitionQueue.put(operationChainKey, new ConcurrentLinkedQueue<>());
-//        }
     }
 }
