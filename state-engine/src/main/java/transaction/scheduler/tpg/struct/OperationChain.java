@@ -27,8 +27,8 @@ public class OperationChain implements Comparable<OperationChain> {
 
     private final AtomicInteger oc_fd_parents_count;
     private final AtomicInteger oc_ld_parents_count;
-    private final AtomicInteger oc_fd_children_count; // TODO: in original implementation, we ignored that one OC might have multiple dependent op on the other OC.
-    private final AtomicInteger oc_ld_children_count; // TODO: in original implementation, we ignored that one OC might have multiple dependent op on the other OC.
+    private final AtomicInteger oc_fd_children_count; // TODO: should be deleted after code clean
+    private final AtomicInteger oc_ld_children_count;
 
     // OperationChainKey -> OperationChain
     private final HashMap<String, OperationChain> oc_fd_parents; // functional dependent operation chains
@@ -74,20 +74,17 @@ public class OperationChain implements Comparable<OperationChain> {
         setContext(op.context);
     }
 
-    public void addPotentialChildren(OperationChain potentialChildren, Operation op) {
+    public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
         potentialChldrenInfo.add(new PotentialDependencyInfo(potentialChildren, op));
     }
 
-    public void addParent(Operation targetOp, OperationChain parentOC) {
+    public void addFDParent(Operation targetOp, OperationChain parentOC) {
         Iterator<Operation> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
         while (iterator.hasNext()) {
             Operation parentOp = iterator.next();
             if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
                 targetOp.addParent(parentOp, DependencyType.FD);
                 parentOp.addChild(targetOp, DependencyType.FD);
-
-                this.addParentOrChild(targetOp, DependencyType.FD, false);
-                parentOC.addParentOrChild(parentOp, DependencyType.FD, true);
                 break;
             }
         }
@@ -97,17 +94,63 @@ public class OperationChain implements Comparable<OperationChain> {
         return operationChainKey;
     }
 
-    public void checkPotentialChildrenOnNewArrival(Operation newOp) {
+    public void checkPotentialFDChildrenOnNewArrival(Operation newOp) {
         List<PotentialDependencyInfo> processed = new ArrayList<>();
 
         for (PotentialDependencyInfo pChildInfo : potentialChldrenInfo) {
             if (newOp.bid < pChildInfo.op.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
-                pChildInfo.potentialChildOC.addParent(pChildInfo.op, this);
+                pChildInfo.potentialChildOC.addFDParent(pChildInfo.op, this);
                 processed.add(pChildInfo);
             }
         }
         potentialChldrenInfo.removeAll(processed);
         processed.clear();
+    }
+
+    /**
+     *
+     * @param parentOrChildOC
+     * @param dependencyType XX dependency type
+     * @param addChild whether is to add a child
+     */
+    public void addParentOrChild(OperationChain parentOrChildOC,
+                                  DependencyType dependencyType,
+                                  boolean addChild) {
+        HashMap<String, OperationChain> oc_relation;
+        AtomicInteger oc_relation_count;
+        // add dependent OCs found from op.
+        if (!addChild) {
+            switch (dependencyType) {
+                case FD:
+                    oc_relation = getOc_fd_parents();
+                    oc_relation_count = getOc_fd_parents_count();
+                    break;
+                case LD:
+                    oc_relation = getOc_ld_parents();
+                    oc_relation_count = getOc_ld_parents_count();
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected value: " + dependencyType);
+            }
+        } else {
+            switch (dependencyType) {
+                case FD:
+                    oc_relation = getOc_fd_children();
+                    oc_relation_count = getOc_fd_children_count();
+                    break;
+                case LD:
+                    oc_relation = getOc_ld_parents();
+                    oc_relation_count = getOc_ld_parents_count();
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected value: " + dependencyType);
+            }
+        }
+        if (!parentOrChildOC.getOperationChainKey().equals(operationChainKey)) { // add to parent if not contained
+            OperationChain ret = oc_relation.putIfAbsent(parentOrChildOC.getOperationChainKey(), parentOrChildOC);
+            if (ret == null)
+                oc_relation_count.incrementAndGet();
+        }
     }
 
     /**
@@ -164,10 +207,10 @@ public class OperationChain implements Comparable<OperationChain> {
 
 
     public boolean hasChildren() {
-        return getOc_fd_children_count().get() != 0;
+        return getOc_fd_children_count().get() != 0 || getOc_ld_children_count().get() != 0;
     }
     public boolean hasParents() {
-        return getOc_fd_parents_count().get() != 0;
+        return getOc_fd_parents_count().get() != 0 || getOc_ld_parents_count().get() != 0;
     }
 
     public MyList<Operation> getOperations() {

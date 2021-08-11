@@ -215,6 +215,9 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
         for (OperationChain child : operationChain.getOc_fd_children().values()) {
             child.context.partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
         }
+        for (OperationChain child : operationChain.getOc_ld_children().values()) {
+            child.context.partitionStateManager.onOcParentExecuted(child, DependencyType.LD);
+        }
         operationChain.isExecuted = true;
         shortCutListener.onOCFinalized();
     }

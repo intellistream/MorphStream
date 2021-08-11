@@ -117,11 +117,11 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
             }
             operationGraph.add(set_op);
-            tpg.setupOperationChain(set_op, request);
+            tpg.setupOperationLDFD(set_op, request);
         }
 
         // 4. send operation graph to tpg for tpg construction
-        tpg.setupOperations(operationGraph);//TODO: this is bad refactor.
+        tpg.setupOperationLD(operationGraph);//TODO: this is bad refactor.
     }
 
     private Context getTargetContext(TableRecord d_record) {

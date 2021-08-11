@@ -52,17 +52,25 @@ public class TaskPrecedenceGraph {
         shortCutListener = new ShortCutListener();
     }
 
-    public void setupOperationChain(Operation operation, Request request) {
+    /**
+     * set up functional dependencies among operations
+     * @param operation
+     * @param request
+     */
+    public void setupOperationLDFD(Operation operation, Request request) {
+        // TD
         OperationChain oc = addOperationToChain(operation);
-        checkFunctionalDependencies(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        // FD
+        checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
     }
 
     /**
      * Add operations of transactions to TPG, which tries to find out the temporal dependencies
-     *
+     * Set up logical dependencies among operations
      * @param operations
      */
-    public void setupOperations(List<Operation> operations) {
+    public void setupOperationLD(List<Operation> operations) {
+        // LD
         // add Logical dependnecies for those operations in the operation graph
         // two operations can have both data dependency and logical dependency.
         transactions.add(operations);
@@ -89,7 +97,6 @@ public class TaskPrecedenceGraph {
                 int reversedOffset = (Maximum_Speculation + 1 - offset);
                 if (i - reversedOffset >= 0)
                     curOperation.addParent(operations.get(i - reversedOffset), MetaTypes.DependencyType.SP_LD);
-//                if (i+offset < operations.size() && offset != Maximum_Speculation) // because speculation is emit from ready operation, it should eliminate itself for parallel execute
                 if (i + offset < operations.size())
                     curOperation.addChild(operations.get(i + offset), MetaTypes.DependencyType.SP_LD);
             }
@@ -103,6 +110,7 @@ public class TaskPrecedenceGraph {
             operationChains.computeIfPresent(key, (s, operationChain) -> {
                 // update functional dependencies and logical dependencies
                 if (!operationChain.hasParents()) {
+                    System.out.println(operationChain);
                     operationChain.context.partitionStateManager.onOcRootStart(operationChain);
                 }
                 return operationChain;
@@ -132,8 +140,8 @@ public class TaskPrecedenceGraph {
         });
     }
 
-    private void checkFunctionalDependencies(OperationChain curOC, Operation op, String table_name,
-                                             String key, String[] condition_sourceTable, String[] condition_source) {
+    private void checkFD(OperationChain curOC, Operation op, String table_name,
+                         String key, String[] condition_sourceTable, String[] condition_source) {
         for (int index = 0; index < condition_source.length; index++) {
             if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                 continue;// no need to check data dependency on a key itself.
@@ -142,13 +150,13 @@ public class TaskPrecedenceGraph {
                     condition_source[index], operationChainKey);
             // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
             if (OCFromConditionSource.getOperations().isEmpty() || OCFromConditionSource.getOperations().first().bid >= op.bid) {
-                OCFromConditionSource.addPotentialChildren(curOC, op);
+                OCFromConditionSource.addPotentialFDChildren(curOC, op);
             } else {
                 // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
-                curOC.addParent(op, OCFromConditionSource); // record dependency
+                curOC.addFDParent(op, OCFromConditionSource); // record dependency
             }
         }
-        curOC.checkPotentialChildrenOnNewArrival(op);
+        curOC.checkPotentialFDChildrenOnNewArrival(op);
     }
 
     public void setExecutableListener(TPGScheduler.ExecutableTaskListener executableTaskListener) {
