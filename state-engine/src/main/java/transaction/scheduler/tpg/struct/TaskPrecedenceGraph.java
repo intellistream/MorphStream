@@ -282,7 +282,7 @@ public class TaskPrecedenceGraph {
         }
 
         public void onOCFinalized() {
-            LOG.info("npending: " + nPendingOCs.get());
+            LOG.debug("npending: " + nPendingOCs.get());
             nPendingOCs.decrementAndGet();
         }
 

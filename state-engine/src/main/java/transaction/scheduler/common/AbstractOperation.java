@@ -40,7 +40,8 @@ public abstract class AbstractOperation {
     public Condition condition;
     public int[] success;
 
-    public AbstractOperation(Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success, TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord record, long bid) {
+    public AbstractOperation(Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
+                             TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid) {
         this.function = function;
         this.table_name = table_name;
         this.record_ref = record_ref;//this holds events' record_ref.
@@ -49,7 +50,8 @@ public abstract class AbstractOperation {
         this.success = success;
         this.txn_context = txn_context;
         this.accessType = accessType;
-        this.d_record = record;
+        this.s_record = s_record;
+        this.d_record = d_record;
         this.bid = bid;
     }
 }

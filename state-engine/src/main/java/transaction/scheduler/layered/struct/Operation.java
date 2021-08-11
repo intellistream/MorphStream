@@ -91,8 +91,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public Operation(String table_name, TableRecord s_record, TableRecord d_record, SchemaRecordRef record_ref, long bid,
                      CommonMetaTypes.AccessType accessType, Function function, TableRecord[] condition_records,
                      Condition condition, TxnContext txn_context, int[] success) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, d_record, bid);
-        this.s_record = s_record;
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, s_record, d_record, bid);
     }
 
     /**

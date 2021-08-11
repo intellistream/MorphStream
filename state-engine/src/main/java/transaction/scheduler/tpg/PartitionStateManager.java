@@ -212,9 +212,10 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
     }
 
     private void ocExecutedTransition(OperationChain operationChain) {
-        for (Operation child : operationChain.getOc_fd_children().values()) {
-            child.context.partitionStateManager.onOcParentExecuted(child.getOC(), DependencyType.FD);
+        for (OperationChain child : operationChain.getOc_fd_children().values()) {
+            child.context.partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
         }
+        operationChain.isExecuted = true;
         shortCutListener.onOCFinalized();
     }
 

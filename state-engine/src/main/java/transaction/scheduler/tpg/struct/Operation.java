@@ -87,9 +87,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, bid);
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid);
         this.context = context;
-        this.s_record = d_record;
         this.operationChainKey = table_name + "|" + d_record.record_.GetPrimaryKey();
 
         ld_head_operation = null;

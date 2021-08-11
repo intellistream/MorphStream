@@ -146,10 +146,11 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      */
     public void execute(int threadId, Operation operation, long mark_ID, boolean clean) {
         log.trace("++++++execute: " + operation);
-        if (!(operation.getOperationState().equals(MetaTypes.OperationStateType.READY) || operation.getOperationState().equals(MetaTypes.OperationStateType.SPECULATIVE))) {
-            //otherwise, skip (those already been tagged as aborted).
-            return;
-        }
+        // TODO: temporarily comment out this, should be considered in transaction abort
+//        if (!(operation.getOperationState().equals(MetaTypes.OperationStateType.READY) || operation.getOperationState().equals(MetaTypes.OperationStateType.SPECULATIVE))) {
+//            //otherwise, skip (those already been tagged as aborted).
+//            return;
+//        }
         // the operation will only be executed when the state is in READY/SPECULATIVE,
         if (operation.accessType.equals(GET)) {
 //            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
