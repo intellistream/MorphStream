@@ -54,7 +54,7 @@ public class TaskPrecedenceGraph {
 
     public void setupOperationChain(Operation operation, Request request) {
         OperationChain oc = addOperationToChain(operation);
-        checkDataDependencies(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        checkFunctionalDependencies(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
     }
 
     /**
@@ -132,8 +132,8 @@ public class TaskPrecedenceGraph {
         });
     }
 
-    private void checkDataDependencies(OperationChain curOC, Operation op, String table_name,
-                                       String key, String[] condition_sourceTable, String[] condition_source) {
+    private void checkFunctionalDependencies(OperationChain curOC, Operation op, String table_name,
+                                             String key, String[] condition_sourceTable, String[] condition_source) {
         for (int index = 0; index < condition_source.length; index++) {
             if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                 continue;// no need to check data dependency on a key itself.
