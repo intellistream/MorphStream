@@ -5,7 +5,7 @@ import benchmark.TxnParam;
 public class MicroParam extends TxnParam {
     int[] keys;
 
-    //    List<DataBox>[] value_list;//Note, it should be arraylist instead of linkedlist as there's no add/remove later.
+    //    List<DataBox>[] value_list;//Note, it should be arraylist instead of linkedlist as there's no addOperation/remove later.
     public MicroParam(int numItems) {
         keys = new int[numItems];
 //        value_list = new ArrayList[numItems];

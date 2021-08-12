@@ -141,7 +141,7 @@ public class Writer {
     public synchronized void save_state_MMIO_shared(long msgId, long timeStampNano, int myiteration
             , String path, ExecutionNode executor, State state) throws IOException {
 //		collections.putIfAbsent(myiteration, new Collections(executor.operator, executor.operator.getNumTasks()));
-//		collections.GetAndUpdate(myiteration).add(msgId, timeStampNano, executor, myiteration, state.value_list());
+//		collections.GetAndUpdate(myiteration).addOperation(msgId, timeStampNano, executor, myiteration, state.value_list());
         collections.add(msgId, timeStampNano, executor, myiteration, state.value());
     }
 

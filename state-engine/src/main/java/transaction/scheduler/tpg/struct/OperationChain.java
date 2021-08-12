@@ -90,7 +90,7 @@ public class OperationChain implements Comparable<OperationChain> {
         }
     }
 
-    private String getOperationChainKey() {
+    public String getOperationChainKey() {
         return operationChainKey;
     }
 
@@ -111,98 +111,29 @@ public class OperationChain implements Comparable<OperationChain> {
      *
      * @param parentOrChildOC
      * @param dependencyType XX dependency type
-     * @param addChild whether is to add a child
+     * @param addChild whether is to addOperation a child
      */
     public void addParentOrChild(OperationChain parentOrChildOC,
                                   DependencyType dependencyType,
                                   boolean addChild) {
         HashMap<String, OperationChain> oc_relation;
         AtomicInteger oc_relation_count;
-        // add dependent OCs found from op.
-        if (!addChild) {
-            switch (dependencyType) {
-                case FD:
-                    oc_relation = getOc_fd_parents();
-                    oc_relation_count = getOc_fd_parents_count();
-                    break;
-                case LD:
-                    oc_relation = getOc_ld_parents();
-                    oc_relation_count = getOc_ld_parents_count();
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + dependencyType);
-            }
-        } else {
-            switch (dependencyType) {
-                case FD:
-                    oc_relation = getOc_fd_children();
-                    oc_relation_count = getOc_fd_children_count();
-                    break;
-                case LD:
-                    oc_relation = getOc_ld_parents();
-                    oc_relation_count = getOc_ld_parents_count();
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + dependencyType);
-            }
+        // addOperation dependent OCs found from op.
+        switch (dependencyType) {
+            case FD:
+                oc_relation = addChild ? getOc_fd_children() : getOc_fd_parents();
+                oc_relation_count = addChild ? getOc_fd_children_count() : getOc_fd_parents_count();
+                break;
+            case LD:
+                oc_relation = addChild ? getOc_ld_children() : getOc_ld_parents();
+                oc_relation_count = addChild ? getOc_ld_children_count() : getOc_ld_parents_count();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + dependencyType);
         }
-        if (!parentOrChildOC.getOperationChainKey().equals(operationChainKey)) { // add to parent if not contained
-            OperationChain ret = oc_relation.putIfAbsent(parentOrChildOC.getOperationChainKey(), parentOrChildOC);
-            if (ret == null)
-                oc_relation_count.incrementAndGet();
-        }
-    }
-
-    /**
-     *
-     * @param op the operation to find the XX_parents
-     * @param dependencyType XX dependency type
-     * @param addChild whether is to add a child
-     */
-    private void addParentOrChild(Operation op,
-                                  DependencyType dependencyType,
-                                  boolean addChild) {
-        HashMap<String, OperationChain> oc_relation;
-        AtomicInteger oc_relation_count;
-        // add dependent OCs found from op.
-        Queue<Operation> parentsOrChildren;
-        if (!addChild) {
-            switch (dependencyType) {
-                case FD:
-                    oc_relation = getOc_fd_parents();
-                    oc_relation_count = getOc_fd_parents_count();
-                    break;
-                case LD:
-                    oc_relation = getOc_ld_parents();
-                    oc_relation_count = getOc_ld_parents_count();
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + dependencyType);
-            }
-            parentsOrChildren = op.getParents(dependencyType);
-        } else {
-            switch (dependencyType) {
-                case FD:
-                    oc_relation = getOc_fd_children();
-                    oc_relation_count = getOc_fd_children_count();
-                    break;
-                case LD:
-                    oc_relation = getOc_ld_parents();
-                    oc_relation_count = getOc_ld_parents_count();
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + dependencyType);
-            }
-            // add dependent OCs found from op.
-            parentsOrChildren = op.getChildren(dependencyType);
-        }
-        for (Operation parentOrChild : parentsOrChildren) {
-            if (!parentOrChild.getOperationChainKey().equals(operationChainKey)) { // add to parent if not contained
-                OperationChain ret = oc_relation.putIfAbsent(parentOrChild.getOperationChainKey(), parentOrChild.getOC());
-                if (ret == null)
-                    oc_relation_count.incrementAndGet();
-            }
-        }
+        OperationChain ret = oc_relation.putIfAbsent(parentOrChildOC.getOperationChainKey(), parentOrChildOC);
+        if (ret == null)
+            oc_relation_count.incrementAndGet();
     }
 
 

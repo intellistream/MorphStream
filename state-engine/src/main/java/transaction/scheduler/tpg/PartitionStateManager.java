@@ -1,15 +1,12 @@
 package transaction.scheduler.tpg;
 
-import transaction.scheduler.tpg.signal.oc.OnExecutedSignal;
-import transaction.scheduler.tpg.signal.oc.OnParentExecutedSignal;
-import transaction.scheduler.tpg.signal.oc.OnRootSignal;
-import transaction.scheduler.tpg.signal.oc.OperationChainSignal;
+import transaction.scheduler.tpg.signal.og.OnExecutedSignal;
+import transaction.scheduler.tpg.signal.og.OnParentExecutedSignal;
+import transaction.scheduler.tpg.signal.og.OnRootSignal;
+import transaction.scheduler.tpg.signal.og.OperationGroupSignal;
 import transaction.scheduler.tpg.signal.op.*;
-import transaction.scheduler.tpg.struct.MetaTypes;
+import transaction.scheduler.tpg.struct.*;
 import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
-import transaction.scheduler.tpg.struct.Operation;
-import transaction.scheduler.tpg.struct.OperationChain;
-import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -19,15 +16,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Local to every TPGscheduler context.
  */
-public class PartitionStateManager implements OperationStateListener, Runnable, OperationChainStateListener {
+public class PartitionStateManager implements OperationStateListener, Runnable, OperationGroupStateListener {
     public final ArrayList<String> partition; //  list of states being responsible for
     public final Queue<OperationSignal> opSignalQueue;
-    public final Queue<OperationChainSignal> ocSignalQueue;
+    public final Queue<OperationGroupSignal> ogSignalQueue;
     private TaskPrecedenceGraph.ShortCutListener shortCutListener;
 
     public PartitionStateManager() {
         this.opSignalQueue = new ConcurrentLinkedQueue<>();
-        this.ocSignalQueue = new ConcurrentLinkedQueue<>();
+        this.ogSignalQueue = new ConcurrentLinkedQueue<>();
         this.partition = new ArrayList<>();
     }
 
@@ -58,18 +55,18 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
     }
 
     public void handleStateTransitions() {
-        OperationChainSignal ocSignal = ocSignalQueue.poll();
-        while (ocSignal != null) {
-            OperationChain operationChain = ocSignal.getTargetOperationChain();
-            if (ocSignal instanceof OnRootSignal) {
-                ocRootStartTransition(operationChain);
-            } else if (ocSignal instanceof OnExecutedSignal) {
-                ocExecutedTransition(operationChain);
-            } else if (ocSignal instanceof OnParentExecutedSignal) {
-                ocParentExecutedTransition(operationChain,
-                        ((OnParentExecutedSignal) ocSignal).getDependencyType());
+        OperationGroupSignal ogSignal = ogSignalQueue.poll();
+        while (ogSignal != null) {
+            OperationGroup operationGroup = ogSignal.getTargetOperationGroup();
+            if (ogSignal instanceof OnRootSignal) {
+                ogRootStartTransition(operationGroup);
+            } else if (ogSignal instanceof OnExecutedSignal) {
+                ogExecutedTransition(operationGroup);
+            } else if (ogSignal instanceof OnParentExecutedSignal) {
+                ogParentExecutedTransition(operationGroup,
+                        ((OnParentExecutedSignal) ogSignal).getDependencyType());
             }
-            ocSignal = ocSignalQueue.poll();
+            ogSignal = ogSignalQueue.poll();
         }
 
         OperationSignal opSignal = opSignalQueue.poll();
@@ -190,42 +187,43 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
         }
     }
 
-    /** OC related listener method and transitions **/
+    /** OC related listener method and transitions
+     * @param operationGroup**/
 
     @Override
-    public void onOcRootStart(OperationChain operationChain) {
-        ocSignalQueue.add(new OnRootSignal(operationChain));
-    }
-
-    @Override
-    public void onOcExecuted(OperationChain operationChain) {
-        ocSignalQueue.add(new OnExecutedSignal(operationChain));
+    public void onOgRootStart(OperationGroup operationGroup) {
+        ogSignalQueue.add(new OnRootSignal(operationGroup));
     }
 
     @Override
-    public void onOcParentExecuted(OperationChain operationChain, DependencyType dependencyType) {
-        ocSignalQueue.add(new OnParentExecutedSignal(operationChain, dependencyType));
+    public void onOgExecuted(OperationGroup operationGroup) {
+        ogSignalQueue.add(new OnExecutedSignal(operationGroup));
     }
 
-    private void ocRootStartTransition(OperationChain operationChain) {
-        shortCutListener.onExecutable(operationChain);
+    @Override
+    public void onOgParentExecuted(OperationGroup operationGroup, DependencyType dependencyType) {
+        ogSignalQueue.add(new OnParentExecutedSignal(operationGroup, dependencyType));
     }
 
-    private void ocExecutedTransition(OperationChain operationChain) {
-        for (OperationChain child : operationChain.getOc_fd_children().values()) {
-            child.context.partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
+    private void ogRootStartTransition(OperationGroup operationGroup) {
+        shortCutListener.onExecutable(operationGroup);
+    }
+
+    private void ogExecutedTransition(OperationGroup operationGroup) {
+        for (Operation child : operationGroup.getFd_children()) {
+            child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.FD);
         }
-        for (OperationChain child : operationChain.getOc_ld_children().values()) {
-            child.context.partitionStateManager.onOcParentExecuted(child, DependencyType.LD);
+        for (Operation child : operationGroup.getLd_children()) {
+            child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.LD);
         }
-        operationChain.isExecuted = true;
-        shortCutListener.onOCFinalized();
+        operationGroup.isExecuted = true;
+        shortCutListener.onOGFinalized();
     }
 
-    private void ocParentExecutedTransition(OperationChain operationChain, DependencyType dependencyType) {
-        operationChain.updateDependencies(dependencyType);
-        if (!operationChain.hasParents()) {
-            shortCutListener.onExecutable(operationChain);
+    private void ogParentExecutedTransition(OperationGroup operationGroup, DependencyType dependencyType) {
+        operationGroup.updateDependencies(dependencyType);
+        if (!operationGroup.hasParents()) {
+            shortCutListener.onExecutable(operationGroup);
         }
     }
 

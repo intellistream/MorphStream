@@ -133,7 +133,7 @@ public class ConcurrentAutoTable implements Serializable {
         return _cat._t.length;
     }
 
-    // Only add 'x' to some slot in table, hinted at by 'hash', if bits under
+    // Only addOperation 'x' to some slot in table, hinted at by 'hash', if bits under
     // the mask are all zero.  The sum can overflow or 'x' can contain bits in
     // the mask. Value is CAS'd so no counts are lost.  The CAS is retried until
     // it succeeds or bits are found under the mask.  Returned value_list is the old
@@ -180,7 +180,7 @@ public class ConcurrentAutoTable implements Serializable {
             return _unsafe.compareAndSwapLong(A, rawIndex(A, idx), old, nnn);
         }
 
-        // Only add 'x' to some slot in table, hinted at by 'hash', if bits under
+        // Only addOperation 'x' to some slot in table, hinted at by 'hash', if bits under
         // the mask are all zero.  The sum can overflow or 'x' can contain bits in
         // the mask.  Value is CAS'd so no counts are lost.  The CAS is attempted
         // ONCE.
@@ -231,7 +231,7 @@ public class ConcurrentAutoTable implements Serializable {
         }
 
         // Return the current sum of all things in the table, stripping off mask
-        // before the add.  Writers can be updating the table furiously, so the
+        // before the addOperation.  Writers can be updating the table furiously, so the
         // sum is only locally accurate.
         public long sum(long mask) {
             long sum = _sum_cache;

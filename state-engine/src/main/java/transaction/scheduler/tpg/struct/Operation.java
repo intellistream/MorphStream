@@ -47,6 +47,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public String name;
 
     private OperationChain oc; // used for dependency resolved notification under greedy smart
+    private OperationGroup og; // congratulations to OG!
     private AbstractOperation ld_head_operation;
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
@@ -164,6 +165,17 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         return oc;
     }
 
+    public void setOG(OperationGroup operationGroup) {
+        this.og = operationGroup;
+    }
+
+    public OperationGroup getOG() {
+        if (og == null) {
+            throw new RuntimeException("the returned oc cannot be null");
+        }
+        return og;
+    }
+
     public <T extends AbstractOperation> ArrayDeque<T> getChildren(DependencyType type) {
         if (type.equals(DependencyType.FD)) {
             return (ArrayDeque<T>) fd_children;
@@ -191,7 +203,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         } else if (type.equals(DependencyType.LD)) {
             this.ld_parents.add(operation);
             this.operationMetadata.ld_countdown[0].incrementAndGet();
-//            this.getOC().addParentOrChild(ope ration.getOC(), MetaTypes.DependencyType.LD, false);
+//            this.getOC().setupDependencies(operation.getOC(), MetaTypes.DependencyType.LD, false);
         } else if (type.equals(DependencyType.SP_LD)) {
             this.ld_spec_parents.add(operation);
             this.operationMetadata.ld_spec_countdown[0].incrementAndGet();
@@ -211,7 +223,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         } else if (type.equals(DependencyType.LD)) {
             this.ld_children.clear();
             this.ld_children.add(operation);
-//            this.getOC().addParentOrChild(operation.getOC(), DependencyType.LD, true);
+//            this.getOC().setupDependencies(operation.getOC(), DependencyType.LD, true);
         } else if (type.equals(DependencyType.SP_LD)) {
             this.ld_spec_children.add(operation);
         } else if (type.equals(DependencyType.TD)) {
@@ -381,6 +393,15 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     public boolean isHeader() {
         return this.equals(ld_head_operation);
+    }
+
+    /**
+     * check whether the operation has LD or FD
+     * @return
+     */
+    public boolean hasFDLDDependencies() {
+        return ld_parents.size() + fd_parents.size() >= 1;
+//        return operationMetadata.fd_countdown[0].get() + operationMetadata.td_countdown[0].get() > 1;
     }
 
     private static class OperationMetadata {

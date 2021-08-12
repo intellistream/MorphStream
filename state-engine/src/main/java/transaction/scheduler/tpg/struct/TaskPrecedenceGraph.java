@@ -36,6 +36,7 @@ public class TaskPrecedenceGraph {
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(Operation.class);
     private final ConcurrentHashMap<String, OperationChain> operationChains;// < state, OC>
+    private final ConcurrentHashMap<String, OperationGroup> operationGroups;
     private final ConcurrentLinkedQueue<List<Operation>> transactions;//
     private final ShortCutListener shortCutListener;
     private final AtomicInteger nExecutedOperation = new AtomicInteger(0);
@@ -48,6 +49,7 @@ public class TaskPrecedenceGraph {
     public TaskPrecedenceGraph(int totalThreads) {
         barrier = new CyclicBarrier(totalThreads);
         operationChains = new ConcurrentHashMap<>();
+        operationGroups = new ConcurrentHashMap<>();
         transactions = new ConcurrentLinkedQueue<>();
         shortCutListener = new ShortCutListener();
     }
@@ -60,7 +62,7 @@ public class TaskPrecedenceGraph {
     public void setupOperationLDFD(Operation operation, Request request) {
         // TD
         OperationChain oc = addOperationToChain(operation);
-        // FD
+        // FD TODO: this is actually a cross state TD, FD is hidden in each composited operation i.e. write(A, read(B)).
         checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
     }
 
@@ -71,7 +73,7 @@ public class TaskPrecedenceGraph {
      */
     public void setupOperationLD(List<Operation> operations) {
         // LD
-        // add Logical dependnecies for those operations in the operation graph
+        // addOperation Logical dependnecies for those operations in the operation graph
         // two operations can have both data dependency and logical dependency.
         transactions.add(operations);
         Operation headerOperation = operations.get(0);
@@ -83,15 +85,15 @@ public class TaskPrecedenceGraph {
             if (i < operations.size() - 1)
                 curOperation.addChild(operations.get(i + 1), MetaTypes.DependencyType.LD);
 
-            // add an operation id for the operation for the purpose of temporal dependency construction
+            // addOperation an operation id for the operation for the purpose of temporal dependency construction
             curOperation.set_op_id(i);
 
-            // add header for transaction commit and abort
+            // addOperation header for transaction commit and abort
             curOperation.addHeader(headerOperation);
-            // add all descendants to the descendant operation list
+            // addOperation all descendants to the descendant operation list
             headerOperation.addDescendant(curOperation);
 
-            // add speculative parents/children for speculative parallelization
+            // addOperation speculative parents/children for speculative parallelization
             // ld_spec_children/parents include the direct children/parents for convenience
             for (int offset = 1; offset < Maximum_Speculation + 1; offset++) {
                 int reversedOffset = (Maximum_Speculation + 1 - offset);
@@ -104,19 +106,54 @@ public class TaskPrecedenceGraph {
     }
 
 
+    /**
+     * During the first explore, we will group operations that can be executed sequentially following Temporal dependencies
+     * And all groups constructs a group graph.
+     * And then partition the group graph by cutting logical dependency edges.
+     * And then sorting operations in each partition to execute sequentially on each thread, such that they can be batched for execution.
+     * @param context
+     * @param <Context>
+     */
     public <Context extends TPGContext> void firstTimeExploreTPG(Context context) {
         context.initialize(shortCutListener);
         for (String key : context.partitionStateManager.partition) {
             operationChains.computeIfPresent(key, (s, operationChain) -> {
-                // update functional dependencies and logical dependencies
-                if (!operationChain.hasParents()) {
-                    System.out.println(operationChain);
-                    operationChain.context.partitionStateManager.onOcRootStart(operationChain);
+                // explore the operations in the operation chain and group operations with dependencies to the same group
+                // TODO: we can first ignore all LDs and try to form groups at first and then try to partially ignore some LDs to control speculative exploration
+                int id = 0;
+                OperationGroup prevOperationGroup = null;
+                OperationGroup operationGroup = createNewOperationGroup(operationChain, id);
+                for (Operation operation : operationChain.getOperations()) {
+                    if (!operation.hasFDLDDependencies()) {
+                        operationGroup.addOperation(operation);
+                    } else {
+                        if (operationGroup.getOperations().size() == 0) { // if this group is empty, put a header inside
+                            operationGroup.addOperation(operation);
+                        } else {
+                            if (id == 0 && !operationGroup.hasParents()) { // add the first operation group of the oc to the ready queue
+                                operationGroup.context.partitionStateManager.onOgRootStart(operationGroup);
+                            }
+                            id++;
+                            prevOperationGroup = operationGroup;
+                            operationGroup = createNewOperationGroup(operationChain, id);
+                            prevOperationGroup.setOGTDChild(operationGroup); // add child/parent relation
+                            operationGroup.setOGTDParent(prevOperationGroup);
+                            operationGroup.addOperation(operation);
+                        }
+                    }
                 }
                 return operationChain;
             });
         }
         LOG.trace("++++++ end explore");
+    }
+
+    @NotNull
+    private OperationGroup createNewOperationGroup(OperationChain operationChain, int id) {
+        String operationGroupId = operationChain.getOperationChainKey() + "|" + id;
+        OperationGroup operationGroup = new OperationGroup(operationGroupId);
+        operationGroups.put(operationGroupId, operationGroup);
+        return operationGroup;
     }
 
     /**
@@ -280,8 +317,8 @@ public class TaskPrecedenceGraph {
      * Register an operation to queue.
      */
     public class ShortCutListener {
-        public void onExecutable(OperationChain operationChain) {
-            executableTaskListener.onExecutable(operationChain);
+        public void onExecutable(OperationGroup operationGroup) {
+            executableTaskListener.onExecutable(operationGroup);
         }
 
         public void onOperationFinalized(Operation operation, boolean isCommitted) {
@@ -289,7 +326,7 @@ public class TaskPrecedenceGraph {
             nPendingOCs.decrementAndGet();
         }
 
-        public void onOCFinalized() {
+        public void onOGFinalized() {
             LOG.debug("npending: " + nPendingOCs.get());
             nPendingOCs.decrementAndGet();
         }

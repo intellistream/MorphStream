@@ -263,8 +263,8 @@ public class OutputCollector<T> {
     /**
      * @return the Task ids that received the tuples.
      * Currently spout and bolt emit are same... In the future, spout emit need to set up ACK..
-     * TODO: 1) add streamId to support multiple stream feature
-     * 2) add anchors (source/parent Brisk.execution.runtime.tuple) to support back-tracking for ack purpose.
+     * TODO: 1) addOperation streamId to support multiple stream feature
+     * 2) addOperation anchors (source/parent Brisk.execution.runtime.tuple) to support back-tracking for ack purpose.
      * @since 0.0.4 multiple stream ID added.
      * if left empty, use default stream Id instead.
      */

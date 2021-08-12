@@ -69,7 +69,7 @@ public class NonBlockingSetInt extends AbstractSet<Integer> implements Serializa
     }
 
     /**
-     * Add {@code i} to the set.  Uppercase {@link Integer} version of add,
+     * Add {@code i} to the set.  Uppercase {@link Integer} version of addOperation,
      * requires auto-unboxing.  When possible use the {@code int} version of
      * {@link #add(int)} for efficiency.
      *
@@ -270,7 +270,7 @@ public class NonBlockingSetInt extends AbstractSet<Integer> implements Serializa
             // If so we need to grow the bit vector.
             if ((i >> 6) >= _bits.length)
                 return install_larger_new_bits(i). // Install larger pile-o-bits (duh)
-                        help_copy().add(i);              // Finally, add to the new table
+                        help_copy().add(i);              // Finally, addOperation to the new table
             // Handle every 64th bit via using a nested array
             NBSI nbsi = this;         // The bit array being added into
             int j = i;                // The bit index being added

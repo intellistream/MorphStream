@@ -55,7 +55,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
                 instance.getScheduler().AddContext(thisTaskId, context);
                 break;
         }
-        // add the context to scheduler to for operations to threads assignment.
+        // addOperation the context to scheduler to for operations to threads assignment.
     }
 
     public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {

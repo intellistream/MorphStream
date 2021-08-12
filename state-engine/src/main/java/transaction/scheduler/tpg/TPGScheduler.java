@@ -6,10 +6,7 @@ import storage.TableRecord;
 import transaction.impl.TxnContext;
 import transaction.scheduler.Request;
 import transaction.scheduler.Scheduler;
-import transaction.scheduler.tpg.struct.MetaTypes;
-import transaction.scheduler.tpg.struct.Operation;
-import transaction.scheduler.tpg.struct.OperationChain;
-import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
+import transaction.scheduler.tpg.struct.*;
 
 import java.util.*;
 
@@ -24,7 +21,7 @@ import static common.meta.CommonMetaTypes.AccessType.SET;
  * It's a shared data structure!
  */
 @lombok.extern.slf4j.Slf4j
-public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context, OperationChain> {
+public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context, OperationGroup> {
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
     public final Map<Integer, Context> threadToContextMap;
@@ -177,7 +174,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
     public void PROCESS(Context context, long mark_ID) {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-        OperationChain next = next(context);
+        OperationGroup next = next(context);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
@@ -185,7 +182,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
             for (Operation operation : next.getOperations()) {
                 execute(threadId, operation, mark_ID, false);
             }
-            next.context.partitionStateManager.onOcExecuted(next);
+            next.context.partitionStateManager.onOgExecuted(next);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
     }
@@ -196,12 +193,12 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      * @param context
      * @return
      */
-    public OperationChain next(Context context) {
-        OperationChain operationChain = context.OCwithChildren.pollLast();
-        if (operationChain == null) {
-            return context.IsolatedOC.pollLast();
+    public OperationGroup next(Context context) {
+        OperationGroup operationGroup = context.OGwithChildren.pollLast();
+        if (operationGroup == null) {
+            return context.IsolatedOG.pollLast();
         }
-        return operationChain;
+        return operationGroup;
     }
 
 
@@ -210,25 +207,23 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      * 1. greedy: simply execute all operations has picked up.
      * 2. conserved: hash operations to threads based on the targeting key state
      * 3. shared: put all operations in a pool and
-     *
-     * @param executableOperationChain
+     *  @param executableOperationGroup
      * @param context
      */
-    @Override
-    protected void DISTRIBUTE(OperationChain executableOperationChain, Context context) {
-        if (executableOperationChain != null)
-            if (!executableOperationChain.hasChildren())
-                context.IsolatedOC.add(executableOperationChain);
+    protected void DISTRIBUTE(OperationGroup executableOperationGroup, Context context) {
+        if (executableOperationGroup != null)
+            if (!executableOperationGroup.hasChildren())
+                context.IsolatedOG.add(executableOperationGroup);
             else
-                context.OCwithChildren.add(executableOperationChain);
+                context.OGwithChildren.add(executableOperationGroup);
     }
 
     /**
      * Register an operation to queue.
      */
     public class ExecutableTaskListener {
-        public void onExecutable(OperationChain operationChain) {
-            DISTRIBUTE(operationChain, (Context) operationChain.context);//TODO: make it clear..
+        public void onExecutable(OperationGroup operationGroup) {
+            DISTRIBUTE(operationGroup, (Context) operationGroup.context);//TODO: make it clear..
         }
     }
 }

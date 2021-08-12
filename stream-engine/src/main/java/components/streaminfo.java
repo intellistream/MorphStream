@@ -16,7 +16,7 @@ public class streaminfo implements Serializable {
     private Fields fields;
 
     /**
-     * TODO: add direct output type in future.
+     * TODO: addOperation direct output type in future.
      *
      * @param fields
      * @param direct

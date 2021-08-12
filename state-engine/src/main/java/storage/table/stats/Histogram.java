@@ -30,7 +30,7 @@ public interface Histogram<T> {
     /**
      * Add a new value_list to the Histogram.
      *
-     * @param value the value_list to add
+     * @param value the value_list to addOperation
      */
     void add(T value);
 
