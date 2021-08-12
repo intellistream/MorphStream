@@ -7,6 +7,7 @@ import transaction.scheduler.Request;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.TPGScheduler;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.BrokenBarrierException;
@@ -31,12 +32,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * -> Key: OperationChain [ Operation... ]
  */
 public class TaskPrecedenceGraph {
-    public final AtomicInteger nPendingOCs = new AtomicInteger(0);
+    public final AtomicInteger nPendingOGs = new AtomicInteger(0);
     public final static int Maximum_Speculation = 10;
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(Operation.class);
     private final ConcurrentHashMap<String, OperationChain> operationChains;// < state, OC>
-    private final ConcurrentHashMap<String, OperationGroup> operationGroups;
+    private final ConcurrentHashMap<String, List<OperationGroup>> operationGroups;
     private final ConcurrentLinkedQueue<List<Operation>> transactions;//
     private final ShortCutListener shortCutListener;
     private final AtomicInteger nExecutedOperation = new AtomicInteger(0);
@@ -130,9 +131,6 @@ public class TaskPrecedenceGraph {
                         if (operationGroup.getOperations().size() == 0) { // if this group is empty, put a header inside
                             operationGroup.addOperation(operation);
                         } else {
-                            if (id == 0 && !operationGroup.hasParents()) { // add the first operation group of the oc to the ready queue
-                                operationGroup.context.partitionStateManager.onOgRootStart(operationGroup);
-                            }
                             id++;
                             prevOperationGroup = operationGroup;
                             operationGroup = createNewOperationGroup(operationChain, id);
@@ -145,14 +143,34 @@ public class TaskPrecedenceGraph {
                 return operationChain;
             });
         }
+        try {
+            barrier.await();
+        } catch (InterruptedException | BrokenBarrierException e) {
+            e.printStackTrace();
+        }
+        for (String key : context.partitionStateManager.partition) {
+            operationGroups.computeIfPresent(key, (s, operationGroupList) -> {
+                checkIsRoot(0, operationGroupList.get(0));
+                return operationGroupList;
+            });
+        }
         LOG.trace("++++++ end explore");
+    }
+
+    private void checkIsRoot(int id, OperationGroup operationGroup) {
+        if (id == 0 && !operationGroup.hasParents()) { // add the first operation group of the oc to the ready queue
+            System.out.println("add operation group: " + operationGroup);
+            operationGroup.context.partitionStateManager.onOgRootStart(operationGroup);
+        }
     }
 
     @NotNull
     private OperationGroup createNewOperationGroup(OperationChain operationChain, int id) {
-        String operationGroupId = operationChain.getOperationChainKey() + "|" + id;
+        String operationChainKey = operationChain.getOperationChainKey();
+        String operationGroupId = operationChainKey + "|" + id;
         OperationGroup operationGroup = new OperationGroup(operationGroupId);
-        operationGroups.put(operationGroupId, operationGroup);
+        operationGroups.get(operationChainKey).add(operationGroup);
+        nPendingOGs.incrementAndGet();
         return operationGroup;
     }
 
@@ -172,7 +190,7 @@ public class TaskPrecedenceGraph {
     @NotNull
     private OperationChain getOC(String table_name, String primaryKey, String operationChainKey) {
         return operationChains.computeIfAbsent(operationChainKey, s -> {
-            nPendingOCs.incrementAndGet();
+            operationGroups.computeIfAbsent(operationChainKey, b -> new ArrayList<>());
             return new OperationChain(table_name, primaryKey);
         });
     }
@@ -204,8 +222,8 @@ public class TaskPrecedenceGraph {
      * expose an api to check whether all operations are in the final state i.e. aborted/committed
      */
     public boolean isFinished() {
-        LOG.trace("operations left to do:" + nPendingOCs.get());
-        return nPendingOCs.get() == 0;
+        LOG.trace("operations left to do:" + nPendingOGs.get());
+        return nPendingOGs.get() == 0;
     }
 
     /**
@@ -322,13 +340,13 @@ public class TaskPrecedenceGraph {
         }
 
         public void onOperationFinalized(Operation operation, boolean isCommitted) {
-            LOG.info("npending: " + nPendingOCs.get());
-            nPendingOCs.decrementAndGet();
+            LOG.info("npending: " + nPendingOGs.get());
+            nPendingOGs.decrementAndGet();
         }
 
         public void onOGFinalized() {
-            LOG.debug("npending: " + nPendingOCs.get());
-            nPendingOCs.decrementAndGet();
+            LOG.debug("npending: " + nPendingOGs.get());
+            nPendingOGs.decrementAndGet();
         }
 
         public void onOperationExecuted() {

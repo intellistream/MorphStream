@@ -88,17 +88,17 @@ public class OperationGroup {
     public void setupDependencies(Operation op) {
         // addOperation dependent OCs found from op.
         Queue<Operation> parents = op.getParents(DependencyType.FD);
-        //            OperationGroup parentOG = parent.getOG();
-        //            parentOG.setFDChild(this);
-        //            setFDParent(parentOG);
         fd_parents.addAll(parents);
         fd_parents_count.addAndGet(parents.size());
         parents = op.getParents(DependencyType.LD);
-        //            OperationGroup parentOG = parent.getOG();
-        //            parentOG.setLDChild(this);
-        //            setLDParent(parentOG);
         ld_parents.addAll(parents);
         ld_parents_count.addAndGet(parents.size());
+        Queue<Operation> children = op.getChildren(DependencyType.FD);
+        fd_children.addAll(children);
+        fd_children_count.addAndGet(children.size());
+        children = op.getChildren(DependencyType.LD);
+        ld_children.addAll(children);
+        ld_children_count.addAndGet(children.size());
     }
 
 //    public void setFDParent(OperationGroup parentOG) {
@@ -144,6 +144,12 @@ public class OperationGroup {
         if (this.context == null) {
             this.context = context;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "OperationGroup{" +
+                "operationGroupId='" + operationGroupId + '}';
     }
 
     public AtomicInteger getFd_parents_count() {
