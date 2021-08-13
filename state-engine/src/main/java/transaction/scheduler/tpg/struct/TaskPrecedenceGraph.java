@@ -6,8 +6,10 @@ import org.slf4j.LoggerFactory;
 import transaction.scheduler.Request;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.TPGScheduler;
+import transaction.scheduler.tpg.TPGScheduler.ExecutableTaskListener;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.BrokenBarrierException;
@@ -33,6 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TaskPrecedenceGraph {
     public final AtomicInteger nPendingOGs = new AtomicInteger(0);
+    private final ConcurrentHashMap<String, OperationGroup> nPendingGroups;
+
     public final static int Maximum_Speculation = 10;
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(Operation.class);
@@ -42,7 +46,7 @@ public class TaskPrecedenceGraph {
     private final ShortCutListener shortCutListener;
     private final AtomicInteger nExecutedOperation = new AtomicInteger(0);
     CyclicBarrier barrier;
-    private TPGScheduler.ExecutableTaskListener executableTaskListener = null;
+    private ExecutableTaskListener executableTaskListener = null;
 
     /**
      * @param totalThreads
@@ -50,9 +54,10 @@ public class TaskPrecedenceGraph {
     public TaskPrecedenceGraph(int totalThreads) {
         barrier = new CyclicBarrier(totalThreads);
         operationChains = new ConcurrentHashMap<>();
-        operationGroups = new ConcurrentHashMap<>();
+        nPendingGroups = new ConcurrentHashMap<>();
         transactions = new ConcurrentLinkedQueue<>();
         shortCutListener = new ShortCutListener();
+        operationGroups = new ConcurrentHashMap<>();
     }
 
     /**
@@ -124,21 +129,19 @@ public class TaskPrecedenceGraph {
                 int id = 0;
                 OperationGroup prevOperationGroup = null;
                 OperationGroup operationGroup = createNewOperationGroup(operationChain, id);
-                for (Operation operation : operationChain.getOperations()) {
-                    if (!operation.hasFDLDDependencies()) {
-                        operationGroup.addOperation(operation);
-                    } else {
-                        if (operationGroup.getOperations().size() == 0) { // if this group is empty, put a header inside
-                            operationGroup.addOperation(operation);
-                        } else {
-                            id++;
-                            prevOperationGroup = operationGroup;
-                            operationGroup = createNewOperationGroup(operationChain, id);
-                            prevOperationGroup.setOGTDChild(operationGroup); // add child/parent relation
-                            operationGroup.setOGTDParent(prevOperationGroup);
-                            operationGroup.addOperation(operation);
-                        }
+                Iterator<Operation> itr = operationChain.getOperations().iterator();
+                Operation curOp = itr.next();
+                operationGroup.addOperation(curOp);
+                while (itr.hasNext()) {
+                    curOp = itr.next();
+                    if (curOp.hasFDLDDependencies()) {
+                        id++;
+                        prevOperationGroup = operationGroup;
+                        operationGroup = createNewOperationGroup(operationChain, id);
+                        prevOperationGroup.setOGTDChild(operationGroup); // add child/parent relation
+                        operationGroup.setOGTDParent(prevOperationGroup);
                     }
+                    operationGroup.addOperation(curOp);
                 }
                 return operationChain;
             });
@@ -159,7 +162,7 @@ public class TaskPrecedenceGraph {
 
     private void checkIsRoot(int id, OperationGroup operationGroup) {
         if (id == 0 && !operationGroup.hasParents()) { // add the first operation group of the oc to the ready queue
-            System.out.println("add operation group: " + operationGroup);
+//            System.out.println("add operation group: " + operationGroup);
             operationGroup.context.partitionStateManager.onOgRootStart(operationGroup);
         }
     }
@@ -170,6 +173,7 @@ public class TaskPrecedenceGraph {
         String operationGroupId = operationChainKey + "|" + id;
         OperationGroup operationGroup = new OperationGroup(operationGroupId);
         operationGroups.get(operationChainKey).add(operationGroup);
+        nPendingGroups.put(operationGroupId, operationGroup);
         nPendingOGs.incrementAndGet();
         return operationGroup;
     }
@@ -214,7 +218,7 @@ public class TaskPrecedenceGraph {
         curOC.checkPotentialFDChildrenOnNewArrival(op);
     }
 
-    public void setExecutableListener(TPGScheduler.ExecutableTaskListener executableTaskListener) {
+    public void setExecutableListener(ExecutableTaskListener executableTaskListener) {
         this.executableTaskListener = executableTaskListener;
     }
 
@@ -344,8 +348,9 @@ public class TaskPrecedenceGraph {
             nPendingOGs.decrementAndGet();
         }
 
-        public void onOGFinalized() {
+        public void onOGFinalized(String operationGroupId) {
             LOG.debug("npending: " + nPendingOGs.get());
+            nPendingGroups.remove(operationGroupId);
             nPendingOGs.decrementAndGet();
         }
 

@@ -149,7 +149,7 @@ public class OperationGroup {
     @Override
     public String toString() {
         return "OperationGroup{" +
-                "operationGroupId='" + operationGroupId + '}';
+                "operationGroupId='" + operationGroupId + "|" + isExecuted + '}';
     }
 
     public AtomicInteger getFd_parents_count() {

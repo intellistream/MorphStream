@@ -10,6 +10,7 @@ import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -81,7 +82,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
             } else if (opSignal instanceof OnHeaderUpdatedSignal) {
                 onHeaderUpdatedTransition(operation, (OnHeaderUpdatedSignal) opSignal);
             } else {
-                throw new UnsupportedOperationException("unknow signal received. " + opSignal);
+                throw new UnsupportedOperationException("unknown signal received. " + opSignal);
             }
             opSignal = opSignalQueue.poll();
         }
@@ -152,13 +153,13 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
         shortCutListener.onOperationFinalized(operation, true);
         if (operation.isHeader()) {
             // notify descendants to commit.
-            ArrayDeque<Operation> descendants = operation.getDescendants();
+            Queue<Operation> descendants = operation.getDescendants();
             for (Operation descendant : descendants) {
                 descendant.context.partitionStateManager.onOpHeaderStateUpdated(descendant, MetaTypes.OperationStateType.COMMITTED);
             }
         }
         // notify all td children committed
-        ArrayDeque<Operation> children = operation.getChildren(DependencyType.TD);
+        Queue<Operation> children = operation.getChildren(DependencyType.TD);
         for (Operation child : children) {
             child.context.partitionStateManager.onOpParentStateUpdated(child, DependencyType.TD, MetaTypes.OperationStateType.COMMITTED);
         }
@@ -172,7 +173,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
 
     private void executedTransition(Operation operation) {
         // put child to the targeting state manager state transitiion queue.
-        ArrayDeque<Operation> children = operation.getChildren(DependencyType.SP_LD);
+        Deque<Operation> children = operation.getChildren(DependencyType.SP_LD);
         if (operation.isReadyCandidate()) {
             // if is ready candidate and is executed, elect a new ready candidate
             if (!children.isEmpty()) {
@@ -217,7 +218,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
             child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.LD);
         }
         operationGroup.isExecuted = true;
-        shortCutListener.onOGFinalized();
+        shortCutListener.onOGFinalized(operationGroup.getOperationGroupId());
     }
 
     private void ogParentExecutedTransition(OperationGroup operationGroup, DependencyType dependencyType) {

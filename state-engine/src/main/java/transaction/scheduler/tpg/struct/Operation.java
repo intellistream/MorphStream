@@ -14,7 +14,10 @@ import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 import transaction.scheduler.tpg.struct.MetaTypes.OperationStateType;
 
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -30,7 +33,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private final String operationChainKey;
 
     private final Queue<Operation> ld_descendant_operations;
-    private final Queue<Operation> fd_children; // the functional dependencies ops to be executed after this op.
+    private final Queue<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
     private final Queue<Operation> td_children; // the functional dependencies ops to be executed after this op.
     private final Queue<Operation> ld_children; // the functional dependencies ops to be executed after this op.
     private final Queue<Operation> ld_spec_children; // speculative children to notify.
@@ -97,7 +100,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
         // finctional dependencies
         fd_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
-        fd_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        fd_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
         // temporal dependencies
         td_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
         td_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
@@ -176,15 +179,15 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         return og;
     }
 
-    public <T extends AbstractOperation> ArrayDeque<T> getChildren(DependencyType type) {
+    public <T extends AbstractOperation> Deque<T> getChildren(DependencyType type) {
         if (type.equals(DependencyType.FD)) {
-            return (ArrayDeque<T>) fd_children;
+            return (Deque<T>) fd_children;
         } else if (type.equals(DependencyType.TD)) {
-            return (ArrayDeque<T>) td_children;
+            return (Deque<T>) td_children;
         } else if (type.equals(DependencyType.LD)) {
-            return (ArrayDeque<T>) ld_children;
+            return (Deque<T>) ld_children;
         } else if (type.equals(DependencyType.SP_LD)) {
-            return (ArrayDeque<T>) ld_spec_children;
+            return (Deque<T>) ld_spec_children;
         } else {
             throw new RuntimeException("Unexpected dependency type: " + type);
         }
@@ -387,8 +390,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         return (T) ld_head_operation;
     }
 
-    public <T extends AbstractOperation> ArrayDeque<T> getDescendants() {
-        return (ArrayDeque<T>) ld_descendant_operations;
+    public <T extends AbstractOperation> Queue<T> getDescendants() {
+        return (Queue<T>) ld_descendant_operations;
     }
 
     public boolean isHeader() {
