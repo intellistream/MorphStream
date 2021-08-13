@@ -121,12 +121,12 @@ public class OperationChain implements Comparable<OperationChain> {
         // addOperation dependent OCs found from op.
         switch (dependencyType) {
             case FD:
-                oc_relation = addChild ? getOc_fd_children() : getOc_fd_parents();
-                oc_relation_count = addChild ? getOc_fd_children_count() : getOc_fd_parents_count();
+                oc_relation = addChild ? getOcFdChildren() : getOcFdParents();
+                oc_relation_count = addChild ? getOcFdChildrenCount() : getOcFdParentsCount();
                 break;
             case LD:
-                oc_relation = addChild ? getOc_ld_children() : getOc_ld_parents();
-                oc_relation_count = addChild ? getOc_ld_children_count() : getOc_ld_parents_count();
+                oc_relation = addChild ? getOcLdChildren() : getOcLdParents();
+                oc_relation_count = addChild ? getOcLdChildrenCount() : getOcLdParentsCount();
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + dependencyType);
@@ -137,13 +137,6 @@ public class OperationChain implements Comparable<OperationChain> {
     }
 
 
-    public boolean hasChildren() {
-        return getOc_fd_children_count().get() != 0 || getOc_ld_children_count().get() != 0;
-    }
-    public boolean hasParents() {
-        return getOc_fd_parents_count().get() != 0 || getOc_ld_parents_count().get() != 0;
-    }
-
     public MyList<Operation> getOperations() {
         return operations;
     }
@@ -151,14 +144,6 @@ public class OperationChain implements Comparable<OperationChain> {
     @Override
     public String toString() {
         return "{" + tableName + " " + primaryKey + "|" +  isExecuted + "}";//": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
-    }
-
-    public String getStringId() {
-        if (tableName.contains("accounts")) {
-            return String.format("act_%s", primaryKey);
-        } else {
-            return String.format("ast_%s", primaryKey);
-        }
     }
 
     @Override
@@ -183,50 +168,35 @@ public class OperationChain implements Comparable<OperationChain> {
             return -1;
     }
 
-    public void updateDependencies(DependencyType dependencyType) {
-        switch (dependencyType) {
-            case FD: {
-                getOc_fd_parents_count().decrementAndGet();
-                break;
-            }
-            case LD: {
-                getOc_ld_parents_count().decrementAndGet();
-                break;
-            }
-            default:
-                throw new IllegalStateException("Unexpected value: " + dependencyType);
-        }
-    }
-
-    public AtomicInteger getOc_fd_parents_count() {
+    public AtomicInteger getOcFdParentsCount() {
         return oc_fd_parents_count;
     }
 
-    public AtomicInteger getOc_ld_parents_count() {
+    public AtomicInteger getOcLdParentsCount() {
         return oc_ld_parents_count;
     }
 
-    public AtomicInteger getOc_fd_children_count() {
+    public AtomicInteger getOcFdChildrenCount() {
         return oc_fd_children_count;
     }
 
-    public AtomicInteger getOc_ld_children_count() {
+    public AtomicInteger getOcLdChildrenCount() {
         return oc_ld_children_count;
     }
 
-    public HashMap<String, OperationChain> getOc_fd_parents() {
+    public HashMap<String, OperationChain> getOcFdParents() {
         return oc_fd_parents;
     }
 
-    public HashMap<String, OperationChain> getOc_ld_parents() {
+    public HashMap<String, OperationChain> getOcLdParents() {
         return oc_ld_parents;
     }
 
-    public HashMap<String, OperationChain> getOc_fd_children() {
+    public HashMap<String, OperationChain> getOcFdChildren() {
         return oc_fd_children;
     }
 
-    public HashMap<String, OperationChain> getOc_ld_children() {
+    public HashMap<String, OperationChain> getOcLdChildren() {
         return oc_ld_children;
     }
 

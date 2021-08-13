@@ -52,10 +52,10 @@ public class OperationGroup {
         operationList.add(operation);
         // add countdown for scheduling
         operation.setOG(this);
-        if (operationList.size() == 1) { // this is the header of the operation group, try to find out the other types of dependencies
-            setContext(operation.context);
-            setupDependencies(operation);
-        }
+//        if (operationList.size() == 1) { // this is the header of the operation group, try to find out the other types of dependencies
+        setContext(operation.context);
+        setupDependencies(operation);
+//        }
     }
 
     public List<Operation> getOperations() {
@@ -67,18 +67,18 @@ public class OperationGroup {
     }
 
     public void setOGTDParent(OperationGroup operationGroup) {
-        setTd_parent(operationGroup);
+        setTdParent(operationGroup);
     }
 
     public void setOGTDChild(OperationGroup operationGroup) {
-        setTd_child(operationGroup);
+        setTdChild(operationGroup);
     }
 
     public boolean hasChildren() {
-        return getFd_children_count().get() != 0 || getLd_children_count().get() != 0;
+        return getFdChildrenCount().get() != 0 || getLdChildrenCount().get() != 0;
     }
     public boolean hasParents() {
-        return getFd_parents_count().get() != 0 || getLd_parents_count().get() != 0;
+        return getFdParentsCount().get() != 0 || getLdParentsCount().get() != 0;
     }
 
     /**
@@ -101,38 +101,14 @@ public class OperationGroup {
         ld_children_count.addAndGet(children.size());
     }
 
-//    public void setFDParent(OperationGroup parentOG) {
-//        OperationGroup ret = fd_parents.putIfAbsent(parentOG.getOperationGroupId(), parentOG);
-//        if (ret == null)
-//            fd_parents_count.incrementAndGet();
-//    }
-//
-//    public void setLDParent(OperationGroup parentOG) {
-//        OperationGroup ret = ld_parents.putIfAbsent(parentOG.getOperationGroupId(), parentOG);
-//        if (ret == null)
-//            ld_parents_count.incrementAndGet();
-//    }
-//
-//    public void setFDChild(OperationGroup parentOG) {
-//        OperationGroup ret = fd_parents.putIfAbsent(parentOG.getOperationGroupId(), parentOG);
-//        if (ret == null)
-//            fd_parents_count.incrementAndGet();
-//    }
-//
-//    public void setLDChild(OperationGroup parentOG) {
-//        OperationGroup ret = ld_parents.putIfAbsent(parentOG.getOperationGroupId(), parentOG);
-//        if (ret == null)
-//            ld_parents_count.incrementAndGet();
-//    }
-
     public void updateDependencies(DependencyType dependencyType) {
         switch (dependencyType) {
             case FD: {
-                getFd_parents_count().decrementAndGet();
+                getFdParentsCount().decrementAndGet();
                 break;
             }
             case LD: {
-                getLd_parents_count().decrementAndGet();
+                getLdParentsCount().decrementAndGet();
                 break;
             }
             default:
@@ -152,51 +128,51 @@ public class OperationGroup {
                 "operationGroupId='" + operationGroupId + "|" + isExecuted + '}';
     }
 
-    public AtomicInteger getFd_parents_count() {
+    public AtomicInteger getFdParentsCount() {
         return fd_parents_count;
     }
 
-    public AtomicInteger getLd_parents_count() {
+    public AtomicInteger getLdParentsCount() {
         return ld_parents_count;
     }
 
-    public AtomicInteger getFd_children_count() {
+    public AtomicInteger getFdChildrenCount() {
         return fd_children_count;
     }
 
-    public AtomicInteger getLd_children_count() {
+    public AtomicInteger getLdChildrenCount() {
         return ld_children_count;
     }
 
-    public List<Operation> getFd_parents() {
+    public List<Operation> getFdParents() {
         return fd_parents;
     }
 
-    public List<Operation> getLd_parents() {
+    public List<Operation> getLdParents() {
         return ld_parents;
     }
 
-    public List<Operation> getFd_children() {
+    public List<Operation> getFdChildren() {
         return fd_children;
     }
 
-    public List<Operation> getLd_children() {
+    public List<Operation> getLdChildren() {
         return ld_children;
     }
 
-    public OperationGroup getTd_parent() {
+    public OperationGroup getTdParent() {
         return td_parent;
     }
 
-    public void setTd_parent(OperationGroup td_parent) {
+    public void setTdParent(OperationGroup td_parent) {
         this.td_parent = td_parent;
     }
 
-    public OperationGroup getTd_child() {
+    public OperationGroup getTdChild() {
         return td_child;
     }
 
-    public void setTd_child(OperationGroup td_child) {
+    public void setTdChild(OperationGroup td_child) {
         this.td_child = td_child;
     }
 }

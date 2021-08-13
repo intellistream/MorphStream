@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.scheduler.Request;
 import transaction.scheduler.tpg.TPGContext;
-import transaction.scheduler.tpg.TPGScheduler;
 import transaction.scheduler.tpg.TPGScheduler.ExecutableTaskListener;
 
 import java.util.ArrayList;
@@ -127,7 +126,7 @@ public class TaskPrecedenceGraph {
                 // explore the operations in the operation chain and group operations with dependencies to the same group
                 // TODO: we can first ignore all LDs and try to form groups at first and then try to partially ignore some LDs to control speculative exploration
                 int id = 0;
-                OperationGroup prevOperationGroup = null;
+                OperationGroup prevOperationGroup;
                 OperationGroup operationGroup = createNewOperationGroup(operationChain, id);
                 Iterator<Operation> itr = operationChain.getOperations().iterator();
                 Operation curOp = itr.next();
@@ -153,15 +152,15 @@ public class TaskPrecedenceGraph {
         }
         for (String key : context.partitionStateManager.partition) {
             operationGroups.computeIfPresent(key, (s, operationGroupList) -> {
-                checkIsRoot(0, operationGroupList.get(0));
+                checkIsRoot(operationGroupList.get(0));
                 return operationGroupList;
             });
         }
         LOG.trace("++++++ end explore");
     }
 
-    private void checkIsRoot(int id, OperationGroup operationGroup) {
-        if (id == 0 && !operationGroup.hasParents()) { // add the first operation group of the oc to the ready queue
+    private void checkIsRoot(OperationGroup operationGroup) {
+        if (!operationGroup.hasParents()) { // add the first operation group of the oc to the ready queue
 //            System.out.println("add operation group: " + operationGroup);
             operationGroup.context.partitionStateManager.onOgRootStart(operationGroup);
         }

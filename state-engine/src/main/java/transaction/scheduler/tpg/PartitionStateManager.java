@@ -8,7 +8,6 @@ import transaction.scheduler.tpg.signal.op.*;
 import transaction.scheduler.tpg.struct.*;
 import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Queue;
@@ -211,10 +210,10 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
     }
 
     private void ogExecutedTransition(OperationGroup operationGroup) {
-        for (Operation child : operationGroup.getFd_children()) {
+        for (Operation child : operationGroup.getFdChildren()) {
             child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.FD);
         }
-        for (Operation child : operationGroup.getLd_children()) {
+        for (Operation child : operationGroup.getLdChildren()) {
             child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.LD);
         }
         operationGroup.isExecuted = true;
