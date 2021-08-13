@@ -204,8 +204,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             // get the operation chain and update the ld dependencies
 //            this.getOC().addParentOrChild(operation.getOC(), MetaTypes.DependencyType.FD, false);
         } else if (type.equals(DependencyType.LD)) {
-            this.ld_parents.add(operation);
-            this.operationMetadata.ld_countdown[0].incrementAndGet();
+//            this.ld_parents.add(operation);
+//            this.operationMetadata.ld_countdown[0].incrementAndGet();
 //            this.getOC().addParentOrChild(operation.getOC(), MetaTypes.DependencyType.LD, false);
         } else if (type.equals(DependencyType.SP_LD)) {
             this.ld_spec_parents.add(operation);
@@ -224,8 +224,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             this.fd_children.add(operation);
 //            this.getOC().addParentOrChild(operation.getOC(), DependencyType.FD, true);
         } else if (type.equals(DependencyType.LD)) {
-            this.ld_children.clear();
-            this.ld_children.add(operation);
+//            this.ld_children.clear();
+//            this.ld_children.add(operation);
 //            this.getOC().addParentOrChild(operation.getOC(), DependencyType.LD, true);
         } else if (type.equals(DependencyType.SP_LD)) {
             this.ld_spec_children.add(operation);

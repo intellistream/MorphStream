@@ -101,6 +101,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
 
     @Override
     public void TxnSubmitFinished(Context context) {
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<Operation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
@@ -114,11 +115,12 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
             }
             operationGraph.add(set_op);
-            tpg.setupOperationLDFD(set_op, request);
+            tpg.setupOperationTDFD(set_op, request);
         }
 
         // 4. send operation graph to tpg for tpg construction
         tpg.setupOperationLD(operationGraph);//TODO: this is bad refactor.
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
     private Context getTargetContext(TableRecord d_record) {

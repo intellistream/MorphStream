@@ -407,12 +407,14 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
 
     @Override
     public boolean SubmitRequest(Context context, Request request) {
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         long bid = request.txn_context.getBID();
         OperationChain oc = getOC(request.table_name, request.d_record.record_.GetPrimaryKey());
         Operation operation = new Operation(request.table_name, request.s_record, request.d_record, request.record_ref, bid, request.accessType,
                 request.function, request.condition_records, request.condition, request.txn_context, request.success);
         oc.addOperation(operation);
         checkDataDependencies(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         return true;
     }
 

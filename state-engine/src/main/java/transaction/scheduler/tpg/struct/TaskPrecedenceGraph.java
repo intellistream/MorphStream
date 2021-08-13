@@ -3,6 +3,7 @@ package transaction.scheduler.tpg.struct;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import transaction.scheduler.Request;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.TPGScheduler.ExecutableTaskListener;
@@ -64,7 +65,7 @@ public class TaskPrecedenceGraph {
      * @param operation
      * @param request
      */
-    public void setupOperationLDFD(Operation operation, Request request) {
+    public void setupOperationTDFD(Operation operation, Request request) {
         // TD
         OperationChain oc = addOperationToChain(operation);
         // FD TODO: this is actually a cross state TD, FD is hidden in each composited operation i.e. write(A, read(B)).

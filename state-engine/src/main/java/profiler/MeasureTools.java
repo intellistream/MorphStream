@@ -191,6 +191,16 @@ public class MeasureTools {
             COMPUTE_SCHEDULE_USEFUL(thread_id);
     }
 
+    public static void BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_CONSTRUCT_START(thread_id);
+    }
+
+    public static void END_TPG_CONSTRUCTION_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_CONSTRUCT(thread_id);
+    }
+
     private static void AverageTotalTimeBreakdownReport(File file, int tthread) {
         try {
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
@@ -252,10 +262,11 @@ public class MeasureTools {
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("SchedulerTimeBreakdownReport\n");
             log.info("===Scheduler Time Breakdown Report===");
-            fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\n");
-            log.info("thread_id\t explore_time\t next_time\t useful_time");
+            fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t construct_time\n");
+            log.info("thread_id\t explore_time\t next_time\t useful_time\t construct_time");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
+                                "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t"
@@ -263,6 +274,7 @@ public class MeasureTools {
                         , Scheduler_Record.Explore[threadId].getMean()
                         , Scheduler_Record.Next[threadId].getMean()
                         , Scheduler_Record.Useful[threadId].getMean()
+                        , Scheduler_Record.Construct[threadId].getMean()
                 );
                 fileWriter.write(output + "\n");
                 log.info(output);
