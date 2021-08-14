@@ -58,7 +58,7 @@ public class TaskPrecedenceGraph {
      * @param operation
      * @param request
      */
-    public void setupOperationLDFD(Operation operation, Request request) {
+    public void setupOperationTDFD(Operation operation, Request request) {
         // TD
         OperationChain oc = addOperationToChain(operation);
         // FD

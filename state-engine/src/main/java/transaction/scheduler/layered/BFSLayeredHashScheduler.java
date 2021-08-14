@@ -139,16 +139,6 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
 //        }
 //    }
 
-    private void CT_Depo_Fun(Operation operation, long mark_ID, boolean clean) {
-        SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
-        List<DataBox> values = srcRecord.getValues();
-        //apply function to modify..
-        SchemaRecord tempo_record;
-        tempo_record = new SchemaRecord(values);//tempo record
-        tempo_record.getValues().get(operation.column_id).incLong(operation.function.delta_long);//compute.
-        operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-    }
-
     //TODO: the following are mostly hard-coded.
     private void execute(Operation operation, long mark_ID, boolean clean) {
         if (operation.aborted) return;

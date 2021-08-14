@@ -1,6 +1,6 @@
 package transaction.scheduler.tpg;
 
-import common.meta.CommonMetaTypes;
+import common.meta.CommonMetaTypes.AccessType;
 import profiler.MeasureTools;
 import storage.TableRecord;
 import transaction.impl.TxnContext;
@@ -13,8 +13,7 @@ import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
 
 import java.util.*;
 
-import static common.meta.CommonMetaTypes.AccessType.GET;
-import static common.meta.CommonMetaTypes.AccessType.SET;
+import static common.meta.CommonMetaTypes.AccessType.*;
 
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:
@@ -97,7 +96,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
             TableRecord s_record = condition_records[index];
             String s_table_name = condition_sourceTable[index];
 //            SchemaRecordRef tmp_src_value = new SchemaRecordRef();
-            get_ops[index] = new Operation(getTargetContext(s_record), s_table_name, txn_context, bid, CommonMetaTypes.AccessType.GET, s_record);
+            get_ops[index] = new Operation(getTargetContext(s_record), s_table_name, txn_context, bid, AccessType.GET, s_record);
         }
         return get_ops;
     }
@@ -110,15 +109,19 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         for (Request request : context.requests) {
             long bid = request.txn_context.getBID();
             Operation set_op = null;
-            if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND)) {
-                set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET,
-                        request.d_record, request.function, request.condition, request.condition_records, request.success);
-            } else if (request.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND_READ)) {
-                set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, CommonMetaTypes.AccessType.SET,
-                        request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
+            switch (request.accessType) {
+                case READ_WRITE_COND: // they can use the same method for processing
+                case READ_WRITE:
+                    set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, request.condition, request.condition_records, request.success);
+                    break;
+                case READ_WRITE_COND_READ:
+                    set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
+                    break;
             }
             operationGraph.add(set_op);
-            tpg.setupOperationLDFD(set_op, request);
+            tpg.setupOperationTDFD(set_op, request);
         }
 
         // 4. send operation graph to tpg for tpg construction
@@ -154,23 +157,23 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
 //            return;
 //        }
         // the operation will only be executed when the state is in READY/SPECULATIVE,
-        if (operation.accessType.equals(GET)) {
-//            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            // do nothing but notify set operation that it is executable
-        } else if (operation.accessType.equals(SET)) {
-            int success = operation.success[0];
+        int success = operation.success[0];
+        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             CT_Transfer_Fun(operation, mark_ID, clean);
-            // operation success check
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            } else {
-                // check whether needs to return a read results of the operation
-                if (operation.record_ref != null) {
-                    operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-                }
+            // check whether needs to return a read results of the operation
+            if (operation.record_ref != null) {
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
+        } else if (operation.accessType.equals(READ_WRITE_COND)) {
+            CT_Transfer_Fun(operation, mark_ID, clean);
+        } else if (operation.accessType.equals(READ_WRITE)) {
+            CT_Depo_Fun(operation, mark_ID, clean);
         } else {
             throw new UnsupportedOperationException();
+        }
+        // operation success check, number of operation succeeded does not increase after execution
+        if (operation.success[0] == success) {
+            operation.isFailed = true;
         }
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
     }
