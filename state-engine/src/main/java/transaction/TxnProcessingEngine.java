@@ -51,9 +51,9 @@ public final class TxnProcessingEngine {
 
     public void start_evaluation(SchedulerContext context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         scheduler.INITIALIZE(context);
-        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 
         do {
             MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);

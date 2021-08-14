@@ -3,6 +3,7 @@ package transaction.scheduler.tpg.struct;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import transaction.scheduler.Request;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.TPGScheduler;
@@ -105,6 +106,8 @@ public class TaskPrecedenceGraph {
 
 
     public <Context extends TPGContext> void firstTimeExploreTPG(Context context) {
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+
         context.initialize(shortCutListener);
         for (String key : context.partitionStateManager.partition) {
             operationChains.computeIfPresent(key, (s, operationChain) -> {
@@ -116,6 +119,8 @@ public class TaskPrecedenceGraph {
                 return operationChain;
             });
         }
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+
         LOG.trace("++++++ end explore");
     }
 
