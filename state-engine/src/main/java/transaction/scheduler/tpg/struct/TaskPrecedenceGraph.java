@@ -121,6 +121,8 @@ public class TaskPrecedenceGraph {
      * @param <Context>
      */
     public <Context extends TPGContext> void firstTimeExploreTPG(Context context) {
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+
         context.initialize(shortCutListener);
         for (String key : context.partitionStateManager.partition) {
             operationChains.computeIfPresent(key, (s, operationChain) -> {
@@ -157,6 +159,8 @@ public class TaskPrecedenceGraph {
                 return operationGroupList;
             });
         }
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+
         LOG.trace("++++++ end explore");
     }
 
