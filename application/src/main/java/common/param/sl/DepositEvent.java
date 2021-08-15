@@ -5,6 +5,7 @@ import storage.SchemaRecordRef;
 import storage.TableRecordRef;
 import storage.datatype.DataBox;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class DepositEvent extends TxnEvent {
@@ -24,22 +25,6 @@ public class DepositEvent extends TxnEvent {
     //used in no-push.
     public TableRecordRef account_values = new TableRecordRef();
     public TableRecordRef asset_values = new TableRecordRef();
-
-    /**
-     * Creates a new DepositEvent.
-     */
-    public DepositEvent(
-            long bid, int partition_id, long[] bid_array, int number_of_partitions,
-            String accountId,
-            String bookEntryId,
-            long accountTransfer,
-            long bookEntryTransfer) {
-        super(bid, partition_id, bid_array, number_of_partitions);
-        this.accountId = accountId;
-        this.bookEntryId = bookEntryId;
-        this.accountTransfer = accountTransfer;
-        this.bookEntryTransfer = bookEntryTransfer;
-    }
 
     /**
      * Loading a DepositEvent.
@@ -100,5 +85,9 @@ public class DepositEvent extends TxnEvent {
                 + ", accountTransfer=" + accountTransfer
                 + ", bookEntryTransfer=" + bookEntryTransfer
                 + '}';
+    }
+
+    public DepositEvent cloneEvent() {
+        return new DepositEvent((int) bid, pid, Arrays.toString(bid_array), number_of_partitions, accountId, bookEntryId, accountTransfer, bookEntryTransfer);
     }
 }

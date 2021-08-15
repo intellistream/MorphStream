@@ -62,6 +62,7 @@ public class TaskPrecedenceGraph {
 
     /**
      * set up functional dependencies among operations
+     *
      * @param operation
      * @param request
      */
@@ -75,6 +76,7 @@ public class TaskPrecedenceGraph {
     /**
      * Add operations of transactions to TPG, which tries to find out the temporal dependencies
      * Set up logical dependencies among operations
+     *
      * @param operations
      */
     public void setupOperationLD(List<Operation> operations) {
@@ -117,6 +119,7 @@ public class TaskPrecedenceGraph {
      * And all groups constructs a group graph.
      * And then partition the group graph by cutting logical dependency edges.
      * And then sorting operations in each partition to execute sequentially on each thread, such that they can be batched for execution.
+     *
      * @param context
      * @param <Context>
      */
@@ -205,21 +208,23 @@ public class TaskPrecedenceGraph {
 
     private void checkFD(OperationChain curOC, Operation op, String table_name,
                          String key, String[] condition_sourceTable, String[] condition_source) {
-        for (int index = 0; index < condition_source.length; index++) {
-            if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
-                continue;// no need to check data dependency on a key itself.
-            String operationChainKey = condition_sourceTable[index] + "|" + condition_source[index];
-            OperationChain OCFromConditionSource = getOC(condition_sourceTable[index],
-                    condition_source[index], operationChainKey);
-            // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
-            if (OCFromConditionSource.getOperations().isEmpty() || OCFromConditionSource.getOperations().first().bid >= op.bid) {
-                OCFromConditionSource.addPotentialFDChildren(curOC, op);
-            } else {
-                // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
-                curOC.addFDParent(op, OCFromConditionSource); // record dependency
+        if (condition_source != null) {
+            for (int index = 0; index < condition_source.length; index++) {
+                if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
+                    continue;// no need to check data dependency on a key itself.
+                String operationChainKey = condition_sourceTable[index] + "|" + condition_source[index];
+                OperationChain OCFromConditionSource = getOC(condition_sourceTable[index],
+                        condition_source[index], operationChainKey);
+                // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
+                if (OCFromConditionSource.getOperations().isEmpty() || OCFromConditionSource.getOperations().first().bid >= op.bid) {
+                    OCFromConditionSource.addPotentialFDChildren(curOC, op);
+                } else {
+                    // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
+                    curOC.addFDParent(op, OCFromConditionSource); // record dependency
+                }
             }
+            curOC.checkPotentialFDChildrenOnNewArrival(op);
         }
-        curOC.checkPotentialFDChildrenOnNewArrival(op);
     }
 
     public void setExecutableListener(ExecutableTaskListener executableTaskListener) {

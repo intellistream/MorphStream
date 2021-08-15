@@ -91,8 +91,8 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
-//    public String generator = "TPGGenerator";
-    public String generator = "OCGenerator";
+    public String generator = "TPGGenerator";
+//    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
     public int totalEventsPerBatch = 100000;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")

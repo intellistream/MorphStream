@@ -1,9 +1,8 @@
 package benchmark.datagenerator.apps.SL.OCTxnGenerator;
 
-import benchmark.datagenerator.SpecialDataGenerator;
-import benchmark.datagenerator.apps.SL.Transaction.SLTransaction;
-import benchmark.datagenerator.apps.SL.Transaction.SLTransferTransaction;
-import common.collections.OsUtils;
+import benchmark.datagenerator.DataGenerator;
+import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
+import benchmark.datagenerator.apps.SL.Transaction.SLTransferEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +14,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
-public class LayeredOCDataGenerator extends SpecialDataGenerator {
-    private static final Logger LOG = LoggerFactory.getLogger(SpecialDataGenerator.class);
+/**
+ * This generator generates only "transfer" events with a layered data dependency configuration.
+ */
+public class LayeredOCDataGenerator extends DataGenerator {
+    private static final Logger LOG = LoggerFactory.getLogger(DataGenerator.class);
     private final Random randomGenerator = new Random();
     private final Random randomGeneratorForAccIds = new Random(12345678);
     private final Random randomGeneratorForAstIds = new Random(123456789);
@@ -29,7 +31,7 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
     SLDataOperationChain dstAstOC = null;
     private int totalAccountRecords = 0;
     private int totalAssetRecords = 0;
-    private ArrayList<SLTransaction> dataTransactions;
+    private ArrayList<SLEvent> dataTransactions;
     private HashMap<Integer, ArrayList<SLDataOperationChain>> accountOperationChainsByLevel;
     private HashMap<Integer, ArrayList<SLDataOperationChain>> assetsOperationChainsByLevel;
     private float[] accountLevelsDistribution;
@@ -53,6 +55,16 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
         this.partitionOffset = dataConfig.getnKeyStates() / dataConfig.getTotalThreads();
     }
 
+
+    /**
+     *
+     *  generate a set of operations, group them as OC and construct them as OC graph, then create txn from the created OCs.
+     *
+     *  Step 1: select OCs for txn according to the required OCs dependency distribution
+     *  Step 2: update OCs dependencies graph for future data generation
+     *  Step 3: create txn with the selected OCs, the specific operations are generated inside.
+     *  Step 4: update the statistics such as dependency distribution to guide future data generation
+     */
     @Override
     protected void generateTuple() {
         // Step 1: select OCs for txn according to the required OCs dependency distribution
@@ -62,7 +74,7 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
         updateOCDependencies();
 
         // Step 3: create txn with the selected OCs, the specific operations are generated inside.
-        SLTransaction t = new SLTransferTransaction(transactionId, srcAccOC.getId(), srcAstOC.getId(), dstAccOC.getId(), dstAstOC.getId());
+        SLEvent t = new SLTransferEvent(transactionId, srcAccOC.getId(), srcAstOC.getId(), dstAccOC.getId(), dstAstOC.getId());
         dataTransactions.add(t);
         transactionId++;
         if (transactionId % 100000 == 0)
@@ -73,7 +85,7 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
     }
 
     @Override
-    protected void dumpGeneratedDataToFile() {
+    public void dumpGeneratedDataToFile() {
         File file = new File(dataConfig.getRootPath());
         if (file.exists()) {
             LOG.info("Data already exists.. skipping data generation...");
@@ -96,9 +108,11 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
         }
 
         LOG.info("Dumping transactions...");
-        dataOutputHandler.sinkTransactions(dataTransactions);
-//         LOG.info(String.format("Dumping Dependency Edges..."));
-//        mDataOutputHandler.sinkDependenciesEdges(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
+        try {
+            dataOutputHandler.sinkEvents(dataTransactions);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         LOG.info("Dumping Dependency Vertices...");
         dataOutputHandler.sinkDependenciesVertices(accountOperationChainsByLevel, assetsOperationChainsByLevel);
         LOG.info("Dumping Dependency Vertices ids range...");
@@ -106,7 +120,7 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
     }
 
     @Override
-    protected void clearDataStructures() {
+    public void clearDataStructures() {
         if (dataTransactions != null) {
             dataTransactions.clear();
         }
@@ -128,29 +142,6 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
         this.pickAccount = new boolean[dataConfig.getNumberOfDLevels()];
         // clear the data structure in super class
         super.clearDataStructures();
-    }
-
-    @Override
-    public void prepareForExecution() {
-        String statsFolderPattern = getDataConfig().getIdsPath()
-                + OsUtils.osWrapperPostFix("stats")
-                + OsUtils.osWrapperPostFix("scheduler = %s")
-                + OsUtils.osWrapperPostFix("depth = %d")
-                + OsUtils.osWrapperPostFix("threads = %d")
-                + OsUtils.osWrapperPostFix("total_batches = %d")
-                + OsUtils.osWrapperPostFix("events_per_batch = %d");
-
-        String statsFolderPath = String.format(statsFolderPattern,
-                dataConfig.getScheduler(),
-                dataConfig.getNumberOfDLevels(),
-                dataConfig.getTotalThreads(),
-                dataConfig.getTotalBatches(),
-                dataConfig.getTuplesPerBatch());
-
-        File file = new File(statsFolderPath + "iteration_0.csv");
-        if (!file.exists()) {
-            generateStream();
-        }
     }
 
     private void selectOCsForTransaction() {

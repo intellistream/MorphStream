@@ -1,9 +1,9 @@
 package common.bolts.transactional.sl;
 
+import combo.SINKCombo;
 import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import common.sink.SINKCombo;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -108,9 +108,10 @@ public class SLBolt_ts extends SLBolt {
                 (event).setTimestamp(timestamp);
             if (event instanceof DepositEvent) {
                 DEPOSITE_REQUEST_CONSTRUCT((DepositEvent) event, txnContext);
-            } else {
+            } else if (event instanceof TransactionEvent) {
                 TRANSFER_REQUEST_CONSTRUCT((TransactionEvent) event, txnContext);
-            }
+            } else
+                throw new UnknownError();
         }
     }
 
@@ -168,8 +169,8 @@ public class SLBolt_ts extends SLBolt {
     protected void DEPOSITE_REQUEST_CONSTRUCT(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         transactionManager.BeginTransaction(txnContext);
-        transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()));// read and modify the account itself.
-        transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()));// read and modify the asset itself.
+        transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()), event.success);// read and modify the account itself.
+        transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()), event.success);// read and modify the asset itself.
         transactionManager.CommitTransaction(txnContext);
 
         depositeEvents.add(event);

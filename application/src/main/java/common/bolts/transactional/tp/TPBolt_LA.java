@@ -1,7 +1,7 @@
 package common.bolts.transactional.tp;
 
 import common.param.lr.LREvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import transaction.impl.TxnContext;

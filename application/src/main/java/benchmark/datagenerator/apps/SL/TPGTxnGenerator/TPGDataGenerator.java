@@ -1,10 +1,9 @@
 package benchmark.datagenerator.apps.SL.TPGTxnGenerator;
 
-import benchmark.datagenerator.SpecialDataGenerator;
-import benchmark.datagenerator.apps.SL.Transaction.SLDepositTransaction;
-import benchmark.datagenerator.apps.SL.Transaction.SLTransaction;
-import benchmark.datagenerator.apps.SL.Transaction.SLTransferTransaction;
-import common.collections.OsUtils;
+import benchmark.datagenerator.DataGenerator;
+import benchmark.datagenerator.apps.SL.Transaction.SLDepositEvent;
+import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
+import benchmark.datagenerator.apps.SL.Transaction.SLTransferEvent;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +30,7 @@ import java.util.Random;
  * Transaction will be aborted when balance will become negative. To systematically evaluate the effectiveness of \system in handling transaction aborts, we insert artificial abort in state transactions and vary its ratio in the workload.
  * \end{enumerate}
  */
-public class TPGDataGenerator extends SpecialDataGenerator {
+public class TPGDataGenerator extends DataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(TPGDataGenerator.class);
 
     private final int Ratio_Of_Deposit;  // ratio of state access type i.e. deposit or transfer
@@ -48,42 +47,25 @@ public class TPGDataGenerator extends SpecialDataGenerator {
     private final Random transactionTypeDecider = new Random(0); // the transaction type decider
     HashMap<Long, Integer> nGeneratedAccountIds = new HashMap<>();
     HashMap<Long, Integer> nGeneratedAssetIds = new HashMap<>();
-    private ArrayList<SLTransaction> dataTransactions;
-    private int transactionId = 0;
+    private ArrayList<SLEvent> events;
+    private int eventID = 0;
 
     public TPGDataGenerator(TPGDataGeneratorConfig dataConfig) {
         super(dataConfig);
 
         // TODO: temporarily hard coded, will update later
-        Ratio_Of_Deposit = 0;
+        Ratio_Of_Deposit = 50;//0-100 (%)
         State_Access_Skewness = 50;
         Transaction_Length = 4;
         Ratio_of_Transaction_Aborts = 0;
 
 
         int nKeyState = dataConfig.getnKeyStates();
-        dataTransactions = new ArrayList<>(nTuples);
+        events = new ArrayList<>(nTuples);
         // zipf state access generator
         accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
         assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
     }
-
-//    @Override
-//    public void generateStream() {
-//        // if file is already exist, skip generation
-//        if (isFileExist())
-//            return;
-//
-//        for (int tupleNumber = 0; tupleNumber < nTuples; tupleNumber++) {
-//            // by far only generate 1/10 tuples and replicate 10 times when dumping outside
-//            generateTuple();
-//        }
-//
-//        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
-//        dumpGeneratedDataToFile();
-//        LOG.info("Data Generation is done...");
-//        clearDataStructures();
-//    }
 
     public static void main(String[] args) {
         FastZipfGenerator fastZipfGenerator = new FastZipfGenerator(10, 1, 0);
@@ -91,38 +73,17 @@ public class TPGDataGenerator extends SpecialDataGenerator {
     }
 
     protected void generateTuple() {
-//         select keys in zipf distribution
-        SLTransaction t;
+        SLEvent event;
         int next = transactionTypeDecider.nextInt(100);
         if (next < Ratio_Of_Deposit) {
-            t = randomDepositEvent();
+            event = randomDepositEvent();
         } else {
-            t = randomTransferEvent();
+            event = randomTransferEvent();
         }
-        dataTransactions.add(t);
+        events.add(event);
     }
 
-    @Override
-    public void prepareForExecution() {
-        String statsFolderPattern = dataConfig.getIdsPath()
-                + OsUtils.osWrapperPostFix("stats")
-                + OsUtils.osWrapperPostFix("scheduler = %s")
-                + OsUtils.osWrapperPostFix("threads = %d")
-                + OsUtils.osWrapperPostFix("total_batches = %d")
-                + OsUtils.osWrapperPostFix("events_per_batch = %d");
-
-        String statsFolderPath = String.format(statsFolderPattern,
-                dataConfig.getScheduler(),
-                dataConfig.getTotalThreads(),
-                dataConfig.getTotalBatches(),
-                dataConfig.getTuplesPerBatch());
-        File file = new File(statsFolderPath + "iteration_0.csv");
-        if (!file.exists()) {
-            generateStream();
-        }
-    }
-
-    private SLTransaction randomTransferEvent() {
+    private SLEvent randomTransferEvent() {
         // make sure source and destination are different
         int srcAcc, dstAcc, srcAst, dstAst;
 
@@ -172,14 +133,14 @@ public class TPGDataGenerator extends SpecialDataGenerator {
         nGeneratedAssetIds.put((long) srcAst, nGeneratedAccountIds.getOrDefault((long) srcAst, 0) + 1);
         nGeneratedAssetIds.put((long) dstAst, nGeneratedAccountIds.getOrDefault((long) dstAst, 0) + 1);
 
-        SLTransaction t = new SLTransferTransaction(transactionId, srcAcc, srcAst, dstAcc, dstAst);
+        SLEvent t = new SLTransferEvent(eventID, srcAcc, srcAst, dstAcc, dstAst);
 
         // increase the timestamp i.e. transaction id
-        transactionId++;
+        eventID++;
         return t;
     }
 
-    private SLTransaction randomDepositEvent() {
+    private SLEvent randomDepositEvent() {
         int acc = accountZipf.next();
         int ast = assetZipf.next();
 
@@ -187,46 +148,44 @@ public class TPGDataGenerator extends SpecialDataGenerator {
         nGeneratedAccountIds.put((long) acc, nGeneratedAccountIds.getOrDefault((long) acc, 0) + 1);
         nGeneratedAssetIds.put((long) ast, nGeneratedAccountIds.getOrDefault((long) ast, 0) + 1);
 
-        SLTransaction t = new SLDepositTransaction(transactionId, acc, ast);
+        SLEvent t = new SLDepositEvent(eventID, acc, ast);
 
         // increase the timestamp i.e. transaction id
-        transactionId++;
+        eventID++;
         return t;
     }
 
-    protected void dumpGeneratedDataToFile() {
-        System.out.println("++++++" + nGeneratedAccountIds.size());
-        System.out.println("++++++" + nGeneratedAssetIds.size());
+    public void dumpGeneratedDataToFile() {
+        LOG.info("++++++" + nGeneratedAccountIds.size());
+        LOG.info("++++++" + nGeneratedAssetIds.size());
 
-        File file = new File(dataConfig.getRootPath());
-        if (file.exists()) {
-            LOG.info("Data already exists.. skipping data generation...");
-            return;
+        LOG.info("Dumping transactions...");
+        try {
+            dataOutputHandler.sinkEvents(events);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        file.mkdirs();
 
         File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
                 + String.format("_%d_%d.txt", dataConfig.getTuplesPerBatch(), dataConfig.getTotalBatches()));
         try {
             versionFile.createNewFile();
             FileWriter fileWriter = new FileWriter(versionFile);
+            fileWriter.write(String.format("Total number of threads  : %d\n", dataConfig.getTotalThreads()));
             fileWriter.write(String.format("Tuples per batch      : %d\n", dataConfig.getTuplesPerBatch()));
             fileWriter.write(String.format("Total batches         : %d\n", dataConfig.getTotalBatches()));
             fileWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        LOG.info("Dumping transactions...");
-        dataOutputHandler.sinkTransactions(dataTransactions);
     }
 
     @Override
-    protected void clearDataStructures() {
-        if (dataTransactions != null) {
-            dataTransactions.clear();
+    public void clearDataStructures() {
+        if (events != null) {
+            events.clear();
         }
-        dataTransactions = new ArrayList<>();
+        events = new ArrayList<>();
         // clear the data structure in super class
         super.clearDataStructures();
     }

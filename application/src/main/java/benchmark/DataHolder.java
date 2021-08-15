@@ -1,9 +1,10 @@
 package benchmark;
 
-import common.param.sl.TransactionEvent;
+import common.param.TxnEvent;
+
+import java.util.ArrayList;
 
 public class DataHolder {
-    public static TransactionEvent[] events = null;
-//    public static int[] accountIds = null;
-//    public static int[] assetIds = null;
+    public static ArrayList<TxnEvent> transferEvents = new ArrayList<>();
+    public static ArrayList<TxnEvent> depositEvents = new ArrayList<>();
 }

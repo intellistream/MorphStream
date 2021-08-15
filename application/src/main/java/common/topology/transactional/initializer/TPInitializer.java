@@ -16,6 +16,7 @@ import storage.table.RecordSchema;
 import transaction.TableInitilizer;
 import transaction.scheduler.SchedulerContext;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -145,17 +146,18 @@ public class TPInitializer extends TableInitilizer {
     }
 
     @Override
-    public boolean Prepared(String file) {
+    public boolean Generate() {
         return true;
+    }
+
+
+    @Override
+    protected void Load() throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void store(String file_name) {
-    }
-
-    @Override
-    public Object create_new_event(int num_p, int bid) {
-        return null;
     }
 
     protected String getConfigKey(String template) {

@@ -2,7 +2,7 @@ package common.bolts.transactional.sl;
 
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import transaction.impl.TxnContext;

@@ -73,7 +73,7 @@ public interface TxnManager {
 
     boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function, int column_id) throws DatabaseException;
 
-    boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function) throws DatabaseException;
+    boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, int[] success) throws DatabaseException;
 
     boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function) throws DatabaseException;
 

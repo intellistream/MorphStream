@@ -22,8 +22,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static common.CONTROL.enable_states_partition;
@@ -138,20 +136,26 @@ public class GSInitializer extends TableInitilizer {
     }
 
     @Override
-    public boolean Prepared(String file) throws IOException {
-        double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
-        this.number_partitions = Math.min(tthread, config.getInt("number_partitions"));
-        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
-        String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"))
-                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
-                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
-                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
-                + OsUtils.OS_wrapper("NUM_ACCESSES=" + NUM_ACCESSES)
-                + OsUtils.OS_wrapper("theta=" + theta)
-                + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
-        return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
+    public boolean Generate() throws IOException {
+//        double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
+//        this.number_partitions = Math.min(tthread, config.getInt("number_partitions"));
+//        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
+//        String event_path = Event_Path
+//                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
+//                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"))
+//                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
+//                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
+//                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
+//                + OsUtils.OS_wrapper("NUM_ACCESSES=" + NUM_ACCESSES)
+//                + OsUtils.OS_wrapper("theta=" + theta)
+//                + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
+//        return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected void Load() throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -203,12 +207,6 @@ public class GSInitializer extends TableInitilizer {
         return rt;
     }
 
-    @Override
-    public Object create_new_event(int number_partitions, int bid) {
-        boolean flag = next_read_decision();
-        return generateEvent(p, p_bid.clone(), number_partitions, bid, flag);
-    }
-
     /**
      * Generate events according to the given parition_id.
      *
@@ -252,7 +250,7 @@ public class GSInitializer extends TableInitilizer {
         RecordSchema s = MicroTableSchema();
         db.createTable(s, "MicroTable");
         try {
-            prepare_input_events("GS_Events");
+            prepare_input_events(config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
         } catch (IOException e) {
             e.printStackTrace();
         }

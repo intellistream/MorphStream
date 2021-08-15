@@ -3,7 +3,7 @@ package common.bolts.transactional.ob;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;

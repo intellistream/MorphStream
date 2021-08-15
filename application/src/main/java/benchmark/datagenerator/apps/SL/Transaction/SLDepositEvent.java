@@ -3,14 +3,14 @@ package benchmark.datagenerator.apps.SL.Transaction;
 /**
  * Streamledger deposit transaction, which write without dependency.
  */
-public class SLDepositTransaction extends SLTransaction {
+public class SLDepositEvent extends SLEvent {
     private int id;
     private int accountId;
     private int assetId;
     private int accountAmount;
     private int assetAmount;
 
-    public SLDepositTransaction(int id, int accountId, int assetId) {
+    public SLDepositEvent(int id, int accountId, int assetId) {
         this.id = id;
         this.accountId = accountId;
         this.assetId = assetId;
@@ -18,7 +18,7 @@ public class SLDepositTransaction extends SLTransaction {
         this.assetAmount = 10;
     }
 
-    public SLDepositTransaction(int accountId, int assetId, int accountAmount, int assetAmount) {
+    public SLDepositEvent(int accountId, int assetId, int accountAmount, int assetAmount) {
         this.accountId = accountId;
         this.assetId = assetId;
         this.accountAmount = accountAmount;

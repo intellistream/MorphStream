@@ -1,6 +1,6 @@
 package common.bolts.transactional.gs;
 
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import execution.ExecutionGraph;
 import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;

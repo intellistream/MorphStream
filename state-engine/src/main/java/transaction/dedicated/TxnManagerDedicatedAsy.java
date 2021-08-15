@@ -121,28 +121,28 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         }
     }
 
+    // Modify for deposit
+    @Override
+    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, int[] success) throws DatabaseException {
+        AccessType accessType = AccessType.READ_WRITE;
+        TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
+        if (s_record != null) {
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                    key, s_record, s_record, function, success, 1));
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function, int column_id) throws DatabaseException {
         AccessType accessType = AccessType.READ_WRITE;
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(source_key);
         if (s_record != null) {
             return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                    source_key, s_record, s_record, function, column_id));
+                    source_key, s_record, s_record, function, null, column_id));
         } else {
             log.info("No record is found:" + source_key);
-            return false;
-        }
-    }
-
-    // Modify for deposit
-    @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function) throws DatabaseException {
-        AccessType accessType = AccessType.READ_WRITE;
-        TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        if (s_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                    key, s_record, s_record, function, 1));
-        } else {
             return false;
         }
     }
