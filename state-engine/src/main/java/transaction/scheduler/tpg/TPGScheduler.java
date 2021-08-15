@@ -1,6 +1,5 @@
 package transaction.scheduler.tpg;
 
-import common.meta.CommonMetaTypes;
 import common.meta.CommonMetaTypes.AccessType;
 import profiler.MeasureTools;
 import storage.TableRecord;
@@ -8,6 +7,7 @@ import transaction.impl.TxnContext;
 import transaction.scheduler.Request;
 import transaction.scheduler.Scheduler;
 import transaction.scheduler.tpg.struct.*;
+import transaction.scheduler.tpg.struct.MetaTypes.OperationStateType;
 
 import java.util.*;
 
@@ -142,15 +142,14 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
     /**
      * Used by tpgScheduler.
      *
-     * @param threadId
      * @param operation
      * @param mark_ID
      * @param clean
      */
-    public void execute(int threadId, Operation operation, long mark_ID, boolean clean) {
+    public void execute(Operation operation, long mark_ID, boolean clean) {
         log.trace("++++++execute: " + operation);
-        // TODO: temporarily comment out this, should be considered in transaction abort
-//        if (!(operation.getOperationState().equals(MetaTypes.OperationStateType.READY) || operation.getOperationState().equals(MetaTypes.OperationStateType.SPECULATIVE))) {
+//        if (!(operation.getOperationState().equals(OperationStateType.READY) || operation.getOperationState().equals(OperationStateType.SPECULATIVE))) {
+//            log.trace("++++++failed: " + operation);
 //            //otherwise, skip (those already been tagged as aborted).
 //            return;
 //        }
@@ -172,7 +171,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         if (operation.success[0] == success) {
             operation.isFailed = true;
         }
-        assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
+        assert operation.getOperationState() != OperationStateType.EXECUTED;
     }
 
     @Override
@@ -185,7 +184,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         if (next != null) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             for (Operation operation : next.getOperations()) {
-                execute(threadId, operation, mark_ID, false);
+                execute(operation, mark_ID, false);
             }
             next.context.partitionStateManager.onOgExecuted(next);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);

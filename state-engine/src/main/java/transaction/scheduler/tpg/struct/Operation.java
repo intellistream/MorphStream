@@ -17,7 +17,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -26,7 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class Operation extends AbstractOperation implements Comparable<Operation> {
     public final static int NONE_CANDIDATE = 0;
-    public final static int SPECULATIVE_CANDIDATE = 1;
     public final static int READY_CANDIDATE = 2;
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
     public final TPGContext context;
@@ -161,13 +159,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         this.oc = operationChain;
     }
 
-    public OperationChain getOC() {
-        if (oc == null) {
-            throw new RuntimeException("the returned oc cannot be null");
-        }
-        return oc;
-    }
-
     public void setOG(OperationGroup operationGroup) {
         this.og = operationGroup;
     }
@@ -193,27 +184,19 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         }
     }
 
-    public boolean isRoot() {
-        return operationMetadata.td_countdown[0].get() == 0 && operationMetadata.fd_countdown[0].get() == 0 && operationMetadata.ld_spec_countdown[0].get() == 0;
-    }
-
     public void addParent(Operation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
             this.fd_parents.add(operation);
-            this.operationMetadata.fd_countdown[0].incrementAndGet();
+            this.operationMetadata.fd_countdown.incrementAndGet();
             // get the operation chain and update the ld dependencies
-//            this.getOC().addParentOrChild(operation.getOC(), MetaTypes.DependencyType.FD, false);
         } else if (type.equals(DependencyType.LD)) {
 //            this.ld_parents.add(operation);
 //            this.operationMetadata.ld_countdown[0].incrementAndGet();
-//            this.getOC().addParentOrChild(operation.getOC(), MetaTypes.DependencyType.LD, false);
         } else if (type.equals(DependencyType.SP_LD)) {
             this.ld_spec_parents.add(operation);
-            this.operationMetadata.ld_spec_countdown[0].incrementAndGet();
         } else if (type.equals(DependencyType.TD)) {
             this.td_parents.add(operation);
-            this.operationMetadata.td_countdown[0].incrementAndGet();
-            this.operationMetadata.td_countdown[1].incrementAndGet();
+            this.operationMetadata.td_countdown.incrementAndGet();
         } else {
             throw new RuntimeException("unsupported dependency type parent");
         }
@@ -222,11 +205,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public void addChild(Operation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
             this.fd_children.add(operation);
-//            this.getOC().addParentOrChild(operation.getOC(), DependencyType.FD, true);
         } else if (type.equals(DependencyType.LD)) {
 //            this.ld_children.clear();
 //            this.ld_children.add(operation);
-//            this.getOC().addParentOrChild(operation.getOC(), DependencyType.LD, true);
         } else if (type.equals(DependencyType.SP_LD)) {
             this.ld_spec_children.add(operation);
         } else if (type.equals(DependencyType.TD)) {
@@ -250,10 +231,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         return operationMetadata.is_spec_or_ready_candidate.get() == READY_CANDIDATE;
     }
 
-    public boolean isSpeculativeCandidate() {
-        return operationMetadata.is_spec_or_ready_candidate.get() == SPECULATIVE_CANDIDATE;
-    }
-
     public void stateTransition(OperationStateType state) {
         LOG.debug(this + " : state transit " + operationState + " -> " + state);
         operationState.getAndSet(state);
@@ -268,10 +245,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         operationMetadata.is_spec_or_ready_candidate.getAndSet(READY_CANDIDATE);
     }
 
-    public void setSpeculativeCandidate() {
-        operationMetadata.is_spec_or_ready_candidate.compareAndSet(NONE_CANDIDATE, SPECULATIVE_CANDIDATE);
-    }
-
     /**
      * Modify CountDown Variables.
      *
@@ -279,61 +252,20 @@ public class Operation extends AbstractOperation implements Comparable<Operation
      * @param parentState
      */
     public void updateDependencies(DependencyType dependencyType, OperationStateType parentState) {
-        // update countdown
-        if (parentState.equals(OperationStateType.EXECUTED)) {
-            if (dependencyType.equals(DependencyType.TD)) {
-                operationMetadata.td_countdown[0].decrementAndGet();
-                assert operationMetadata.td_countdown[0].get() >= 0;
-            } else if (dependencyType.equals(DependencyType.FD)) {
-                operationMetadata.fd_countdown[0].decrementAndGet();
-                assert operationMetadata.fd_countdown[0].get() >= 0;
-            } else if (dependencyType.equals(DependencyType.SP_LD)) {
-                operationMetadata.ld_spec_countdown[0].decrementAndGet();
-            }
-        } else if (parentState.equals(OperationStateType.COMMITTED)) {
-            if (dependencyType.equals(DependencyType.TD)) {
-                operationMetadata.td_countdown[1].decrementAndGet();
-                assert operationMetadata.td_countdown[1].get() >= 0;
-            }
+        assert parentState == OperationStateType.COMMITTED;
+        assert dependencyType.equals(DependencyType.TD) || dependencyType.equals(DependencyType.FD);
+        if (dependencyType.equals(DependencyType.TD)) {
+            operationMetadata.td_countdown.decrementAndGet();
+            assert operationMetadata.td_countdown.get() >= 0;
+        } else {
+            operationMetadata.td_countdown.decrementAndGet();
+            assert operationMetadata.td_countdown.get() >= 0;
         }
     }
 
     public void updateCommitCountdown() {
         // update countdown
         operationMetadata.ld_descendant_countdown.decrementAndGet();
-    }
-
-    public boolean trySpeculative(boolean isRollback) {
-        boolean isSpeculative = operationMetadata.td_countdown[0].get() == 0
-                && operationMetadata.fd_countdown[0].get() == 0
-                && operationMetadata.is_spec_or_ready_candidate.get() == SPECULATIVE_CANDIDATE;
-        if (isRollback)
-            isSpeculative = isSpeculative
-                    && this.getOperationState().equals(OperationStateType.EXECUTED);
-        else
-            isSpeculative = isSpeculative &&
-                    this.getOperationState().equals(OperationStateType.BLOCKED);
-        if (isSpeculative) {
-            stateTransition(OperationStateType.SPECULATIVE);
-        }
-        return isSpeculative;
-    }
-
-    public boolean tryReady(boolean isRollback) {
-        boolean isReady = operationMetadata.td_countdown[0].get() == 0
-                && operationMetadata.fd_countdown[0].get() == 0
-                && operationMetadata.ld_spec_countdown[0].get() == 0
-                && operationMetadata.is_spec_or_ready_candidate.get() == READY_CANDIDATE;
-        if (isRollback)
-            isReady = isReady
-                    && this.getOperationState().equals(OperationStateType.EXECUTED);
-        else
-            isReady = isReady
-                    && (this.getOperationState().equals(OperationStateType.BLOCKED));
-        if (isReady) {
-            stateTransition(OperationStateType.READY);
-        }
-        return isReady;
     }
 
     public boolean tryHeaderCommit() {
@@ -354,10 +286,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public boolean tryCommittable() {
         LOG.debug("++++++" + this + " check committable:");
         boolean isCommittable =
-                operationMetadata.td_countdown[1].get() == 0
-                        && this.getOperationState().equals(OperationStateType.EXECUTED);
+                operationMetadata.td_countdown.get() == 0
+                && operationMetadata.fd_countdown.get() == 0
+                && this.getOperationState().equals(OperationStateType.EXECUTED);
         LOG.debug("++++++" + this + " try commit results: " +
-                (operationMetadata.td_countdown[1].get() == 0)
+                (operationMetadata.td_countdown.get() == 0)
+                + " | " + (operationMetadata.fd_countdown.get() == 0)
                 + " | " + this.getOperationState().equals(OperationStateType.EXECUTED));
         if (isCommittable) {
             // EXECUTED->COMMITTABLE
@@ -409,12 +343,10 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     private static class OperationMetadata {
         // countdown to be executed parents and committed parents for state transition
-        public final AtomicInteger[] fd_countdown;
-        public final AtomicInteger[] td_countdown;
-        public final AtomicInteger[] ld_countdown;
-        public final AtomicInteger[] ld_spec_countdown;
+        public final AtomicInteger fd_countdown;
+        public final AtomicInteger td_countdown;
 
-        // countdown to be committable descendants
+        // header countdown to be committable descendants
         public final AtomicInteger ld_descendant_countdown;
 
         /**
@@ -427,25 +359,11 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         public final AtomicInteger is_spec_or_ready_candidate;
 
         public OperationMetadata() {
-            td_countdown = new AtomicInteger[2]; // countdown Idx0/1 when executed/committed
-            fd_countdown = new AtomicInteger[1]; // countdown when executed
-            ld_countdown = new AtomicInteger[1]; // countdown when executed
-            ld_spec_countdown = new AtomicInteger[1]; // countdown when executed
-
-            // initialize those atomic integer val/arr
-            initializeAtomicIntegerArr(td_countdown);
-            initializeAtomicIntegerArr(fd_countdown);
-            initializeAtomicIntegerArr(ld_countdown);
-            initializeAtomicIntegerArr(ld_spec_countdown);
+            td_countdown = new AtomicInteger(0); // countdown when committed
+            fd_countdown = new AtomicInteger(0); // countdown when committed
             ld_descendant_countdown = new AtomicInteger(0);
 
             is_spec_or_ready_candidate = new AtomicInteger(NONE_CANDIDATE);
-        }
-
-        private void initializeAtomicIntegerArr(AtomicInteger[] arr) {
-            for (int i = 0; i < arr.length; i++) {
-                arr[i] = new AtomicInteger(0);
-            }
         }
     }
 }

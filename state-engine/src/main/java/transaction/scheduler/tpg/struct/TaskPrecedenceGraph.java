@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TaskPrecedenceGraph {
     public final AtomicInteger nPendingOGs = new AtomicInteger(0);
+    public final AtomicInteger nPendingOPs = new AtomicInteger(0);
     private final ConcurrentHashMap<String, OperationGroup> nPendingGroups;
 
     public final static int Maximum_Speculation = 10;
@@ -88,6 +89,7 @@ public class TaskPrecedenceGraph {
         headerOperation.setReadyCandidate();
         for (int i = 0; i < operations.size(); i++) {
             Operation curOperation = operations.get(i);
+            nPendingOPs.incrementAndGet();
             if (i > 0)
                 curOperation.addParent(operations.get(i - 1), MetaTypes.DependencyType.LD);
             if (i < operations.size() - 1)
@@ -353,8 +355,8 @@ public class TaskPrecedenceGraph {
         }
 
         public void onOperationFinalized(Operation operation, boolean isCommitted) {
-            LOG.info("npending: " + nPendingOGs.get());
-            nPendingOGs.decrementAndGet();
+            LOG.debug("npending: " + nPendingOGs.get());
+            nPendingOPs.decrementAndGet();
         }
 
         public void onOGFinalized(String operationGroupId) {

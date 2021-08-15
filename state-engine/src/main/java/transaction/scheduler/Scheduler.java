@@ -51,15 +51,19 @@ public abstract class Scheduler<Context, Task> implements IScheduler<Context> {
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
+            increaseSuccessCounter(operation);
         } else {
             log.info("++++++ operation failed: "
                     + sourceAccountBalance + "-" + operation.condition.arg1
                     + " : " + sourceAccountBalance + "-" + operation.condition.arg2
                     + " : " + sourceAssetValue + "-" + operation.condition.arg3
                     + " condition: " + operation.condition);
+        }
+    }
+
+    private void increaseSuccessCounter(AbstractOperation operation) {
+        synchronized (operation.success) {
+            operation.success[0]++;
         }
     }
 
@@ -71,9 +75,7 @@ public abstract class Scheduler<Context, Task> implements IScheduler<Context> {
         tempo_record = new SchemaRecord(values);//tempo record
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-        synchronized (operation.success) {
-            operation.success[0]++;
-        }
+        increaseSuccessCounter(operation);
     }
 
     protected abstract void DISTRIBUTE(Task task, Context context);

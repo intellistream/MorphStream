@@ -70,12 +70,11 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
         }
 
         OperationSignal opSignal = opSignalQueue.poll();
+        // do transaction commit and transaction abort
         while (opSignal != null) {
             Operation operation = opSignal.getTargetOperation();
-            if (opSignal instanceof OnProcessedSignal) {
-                onProcessedTransition(operation, (OnProcessedSignal) opSignal);
-            } else if (opSignal instanceof OnParentUpdatedSignal) {
-                onParentStateUpdatedTransition(operation, (OnParentUpdatedSignal) opSignal);
+            if (opSignal instanceof OnParentUpdatedSignal) {
+                onParentStateCommittedTransition(operation, (OnParentUpdatedSignal) opSignal);
             } else if (opSignal instanceof OnDescendantUpdatedSignal) {
                 onDescendantUpdatedTransition(operation, (OnDescendantUpdatedSignal) opSignal);
             } else if (opSignal instanceof OnHeaderUpdatedSignal) {
@@ -93,6 +92,8 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
             if (headerState.equals(MetaTypes.OperationStateType.COMMITTED)) {
                 descendant.stateTransition(MetaTypes.OperationStateType.COMMITTED);
                 committedAction(descendant);
+            } else if (headerState.equals(MetaTypes.OperationStateType.ABORTED)) {
+                // TODO:
             }
         }
     }
@@ -110,7 +111,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
         }
     }
 
-    private void onParentStateUpdatedTransition(Operation operation, OnParentUpdatedSignal signal) {
+    private void onParentStateCommittedTransition(Operation operation, OnParentUpdatedSignal signal) {
         DependencyType dependencyType = signal.getType();
         MetaTypes.OperationStateType parentState = signal.getState();
         operation.updateDependencies(dependencyType, parentState);
@@ -161,6 +162,11 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
         Queue<Operation> children = operation.getChildren(DependencyType.TD);
         for (Operation child : children) {
             child.context.partitionStateManager.onOpParentStateUpdated(child, DependencyType.TD, MetaTypes.OperationStateType.COMMITTED);
+        }
+        // notify all FD children committed
+        children = operation.getChildren(DependencyType.FD);
+        for (Operation child : children) {
+            child.context.partitionStateManager.onOpParentStateUpdated(child, DependencyType.FD, MetaTypes.OperationStateType.COMMITTED);
         }
     }
 
@@ -217,6 +223,19 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
             child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.LD);
         }
         operationGroup.isExecuted = true;
+        // update status of each operation
+        for (Operation operation : operationGroup.getOperations()) {
+            if (!operation.isFailed) {
+                operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
+                if (operation.tryCommittable()) {
+                    executedToCommittableAction(operation);
+                }
+            } else {
+                operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
+                // update the operations in the operation group, delete the committable operations and redo the operation.
+
+            }
+        }
         shortCutListener.onOGFinalized(operationGroup.getOperationGroupId());
     }
 
