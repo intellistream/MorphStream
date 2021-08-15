@@ -148,11 +148,14 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      */
     public void execute(Operation operation, long mark_ID, boolean clean) {
         log.trace("++++++execute: " + operation);
-//        if (!(operation.getOperationState().equals(OperationStateType.READY) || operation.getOperationState().equals(OperationStateType.SPECULATIVE))) {
-//            log.trace("++++++failed: " + operation);
-//            //otherwise, skip (those already been tagged as aborted).
-//            return;
-//        }
+        // if the operation is in state aborted or committable or committed, we can bypass the execution
+        if (operation.getOperationState().equals(OperationStateType.ABORTED)
+                || operation.getOperationState().equals(OperationStateType.COMMITTABLE)
+                || operation.getOperationState().equals(OperationStateType.COMMITTED)) {
+            log.trace("++++++bypassed: " + operation);
+            //otherwise, skip (those already been tagged as aborted).
+            return;
+        }
         int success = operation.success[0];
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             CT_Transfer_Fun(operation, mark_ID, clean);

@@ -1,15 +1,13 @@
 package transaction.scheduler.tpg;
 
-import transaction.scheduler.tpg.signal.og.OnExecutedSignal;
-import transaction.scheduler.tpg.signal.og.OnParentExecutedSignal;
+import transaction.scheduler.tpg.signal.og.*;
 import transaction.scheduler.tpg.signal.og.OnRootSignal;
-import transaction.scheduler.tpg.signal.og.OperationGroupSignal;
 import transaction.scheduler.tpg.signal.op.*;
 import transaction.scheduler.tpg.struct.*;
 import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -65,12 +63,16 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
             } else if (ogSignal instanceof OnParentExecutedSignal) {
                 ogParentExecutedTransition(operationGroup,
                         ((OnParentExecutedSignal) ogSignal).getDependencyType());
+            } else if (ogSignal instanceof OnRollbackAndRedoSignal) {
+                ogRollbackAndRedoTransition(operationGroup, true);
+            } else if (ogSignal instanceof OnParentRollbackAndRedoSignal) {
+                ogRollbackAndRedoTransition(operationGroup, false);
             }
             ogSignal = ogSignalQueue.poll();
         }
 
-        OperationSignal opSignal = opSignalQueue.poll();
         // do transaction commit and transaction abort
+        OperationSignal opSignal = opSignalQueue.poll();
         while (opSignal != null) {
             Operation operation = opSignal.getTargetOperation();
             if (opSignal instanceof OnParentUpdatedSignal) {
@@ -93,9 +95,22 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
                 descendant.stateTransition(MetaTypes.OperationStateType.COMMITTED);
                 committedAction(descendant);
             } else if (headerState.equals(MetaTypes.OperationStateType.ABORTED)) {
-                // TODO:
+                descendant.stateTransition(MetaTypes.OperationStateType.ABORTED);
+                abortedAction(descendant);
             }
         }
+    }
+
+    private void abortedAction(Operation operation) {
+        shortCutListener.onOperationFinalized(operation, false);
+        if (operation.isHeader()) {
+            // notify descendants to commit.
+            Queue<Operation> descendants = operation.getDescendants();
+            for (Operation descendant : descendants) {
+                descendant.context.partitionStateManager.onOpHeaderStateUpdated(descendant, MetaTypes.OperationStateType.COMMITTED);
+            }
+        }
+        operation.getOG().context.partitionStateManager.onOgRollbackAndRedo(operation.getOG());
     }
 
     private void onDescendantUpdatedTransition(Operation header, OnDescendantUpdatedSignal signal) {
@@ -108,6 +123,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
             }
         } else if (descendantsState.equals(MetaTypes.OperationStateType.ABORTED)) {
             // TODO
+            abortedAction(header);
         }
     }
 
@@ -131,23 +147,6 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
         }
     }
 
-
-    private void onProcessedTransition(Operation operation, OnProcessedSignal signal) {
-        if (signal.isFailed()) {
-            // transit to aborted
-//            operation.stateTransition(OperationStateType.ABORTED);
-            System.out.println("++++++There will never be aborted operation" + operation);
-            throw new UnsupportedOperationException("There will never be aborted operation");
-            // TODO: notify children.
-        } else {
-            // transit to executed
-            operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
-            executedTransition(operation);
-            if (operation.tryCommittable()) {
-                executedToCommittableAction(operation);
-            }
-        }
-    }
 
     private void committedAction(Operation operation) {
         shortCutListener.onOperationFinalized(operation, true);
@@ -176,23 +175,6 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
         header.context.partitionStateManager.onOpDescendantStateUpdated(header, MetaTypes.OperationStateType.COMMITTABLE);
     }
 
-    private void executedTransition(Operation operation) {
-        // put child to the targeting state manager state transitiion queue.
-        Deque<Operation> children = operation.getChildren(DependencyType.SP_LD);
-        if (operation.isReadyCandidate()) {
-            // if is ready candidate and is executed, elect a new ready candidate
-            if (!children.isEmpty()) {
-                Operation child = children.getLast();
-                child.context.partitionStateManager.onReadyParentStateUpdated(child, DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
-            }
-        }
-        // notify its ld speculative children to countdown, this countdown will only be used for ready candidate.
-        // i.e. the read candidate will transit to ready when all its speculative countdown is 0;
-        for (Operation child : children) {
-            child.context.partitionStateManager.onOpParentStateUpdated(child, DependencyType.SP_LD, MetaTypes.OperationStateType.EXECUTED);
-        }
-    }
-
     /** OC related listener method and transitions
      * @param operationGroup**/
 
@@ -211,19 +193,22 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
         ogSignalQueue.add(new OnParentExecutedSignal(operationGroup, dependencyType));
     }
 
+    // TODO: rollback and redo
+    public void onOgRollbackAndRedo(OperationGroup operationGroup) {
+        ogSignalQueue.add(new OnRollbackAndRedoSignal(operationGroup));
+    }
+
+    public void onOgParentRollbackAndRedo(OperationGroup operationGroup, DependencyType dependencyType) {
+        ogSignalQueue.add(new OnParentRollbackAndRedoSignal(operationGroup, dependencyType));
+    }
+
     private void ogRootStartTransition(OperationGroup operationGroup) {
         shortCutListener.onExecutable(operationGroup);
     }
 
     private void ogExecutedTransition(OperationGroup operationGroup) {
-        for (Operation child : operationGroup.getFdChildren()) {
-            child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.FD);
-        }
-        for (Operation child : operationGroup.getLdChildren()) {
-            child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.LD);
-        }
-        operationGroup.isExecuted = true;
         // update status of each operation
+        operationGroup.isExecuted = true;
         for (Operation operation : operationGroup.getOperations()) {
             if (!operation.isFailed) {
                 operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
@@ -233,10 +218,53 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
             } else {
                 operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
                 // update the operations in the operation group, delete the committable operations and redo the operation.
-
+                // 1. operation notify header to abort
+                // 2. update operation group operations
+                // 3. operaion group notify children groups for rollback
+                Operation header = operation.getHeader();
+                header.context.partitionStateManager.onOpDescendantStateUpdated(operation, MetaTypes.OperationStateType.ABORTED);
+                operationGroup.isExecuted = false;
             }
         }
+
+        if (!operationGroup.isExecuted) {
+            return;
+        }
+
+        for (Operation child : operationGroup.getFdChildren()) {
+            child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.FD);
+        }
+        for (Operation child : operationGroup.getLdChildren()) {
+            child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.LD);
+        }
+
         shortCutListener.onOGFinalized(operationGroup.getOperationGroupId());
+    }
+
+    private void ogRollbackAndRedoTransition(OperationGroup operationGroup, boolean containsAbort) {
+        List<Operation> removedOperations = new ArrayList<>();
+        for (Operation operation : operationGroup.getOperations()) { //TODO: traverse can be optimized
+            if (operation.getOperationState().equals(MetaTypes.OperationStateType.COMMITTED)
+                || operation.getOperationState().equals(MetaTypes.OperationStateType.COMMITTABLE)
+                || operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+                removedOperations.add(operation);
+            }
+        }
+        operationGroup.removeOperations(removedOperations);
+        if (containsAbort) {
+            operationGroup.setupDependencies(containsAbort);
+            shortCutListener.onExecutable(operationGroup);
+        } else {
+            operationGroup.setupDependencies(containsAbort);
+        }
+
+        // notify its children rollback and redo
+        for (Operation child : operationGroup.getFdChildren()) {
+            child.context.partitionStateManager.onOgParentRollbackAndRedo(child.getOG(), DependencyType.FD);
+        }
+        for (Operation child : operationGroup.getLdChildren()) {
+            child.context.partitionStateManager.onOgParentRollbackAndRedo(child.getOG(), DependencyType.LD);
+        }
     }
 
     private void ogParentExecutedTransition(OperationGroup operationGroup, DependencyType dependencyType) {

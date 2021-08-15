@@ -101,6 +101,26 @@ public class OperationGroup {
         ld_children_count.addAndGet(children.size());
     }
 
+    public void setupDependencies(boolean containsAborted) {
+        for (Operation op : operationList) {
+            if (!containsAborted) {
+                // addOperation dependent OCs found from op.
+                Queue<Operation> parents = op.getParents(DependencyType.FD);
+                fd_parents.addAll(parents);
+                fd_parents_count.addAndGet(parents.size());
+                parents = op.getParents(DependencyType.LD);
+                ld_parents.addAll(parents);
+                ld_parents_count.addAndGet(parents.size());
+            }
+            Queue<Operation> children = op.getChildren(DependencyType.FD);
+            fd_children.addAll(children);
+            fd_children_count.addAndGet(children.size());
+            children = op.getChildren(DependencyType.LD);
+            ld_children.addAll(children);
+            ld_children_count.addAndGet(children.size());
+        }
+    }
+
     public void updateDependencies(DependencyType dependencyType) {
         switch (dependencyType) {
             case FD: {
@@ -174,5 +194,9 @@ public class OperationGroup {
 
     public void setTdChild(OperationGroup td_child) {
         this.td_child = td_child;
+    }
+
+    public void removeOperations(List<Operation> operations) {
+        operationList.removeAll(operations);
     }
 }
