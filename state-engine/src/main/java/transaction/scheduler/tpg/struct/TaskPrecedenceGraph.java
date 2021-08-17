@@ -361,7 +361,7 @@ public class TaskPrecedenceGraph {
         }
 
         public void onOperationFinalized(Operation operation, boolean isCommitted) {
-            LOG.info("npending: " + nPendingOPs.get());
+            LOG.debug("npending: " + nPendingOPs.get());
             nPendingOPs.decrementAndGet();
         }
 
