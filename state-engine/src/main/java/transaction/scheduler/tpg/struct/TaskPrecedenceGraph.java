@@ -243,8 +243,8 @@ public class TaskPrecedenceGraph {
     public boolean isFinished() {
         LOG.trace("operations left to do:" + nPendingOGs.get());
         LOG.trace("operations left to do:" + nPendingOPs.get());
-//        return nPendingOGs.get() == 0;
-        return nPendingOPs.get() == 0;
+        return nPendingOGs.get() == 0;
+//        return nPendingOPs.get() == 0;
     }
 
     /**

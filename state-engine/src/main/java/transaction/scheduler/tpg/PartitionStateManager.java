@@ -9,7 +9,9 @@ import transaction.scheduler.tpg.struct.MetaTypes.OperationStateType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -18,11 +20,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class PartitionStateManager implements OperationStateListener, Runnable, OperationGroupStateListener {
     public final ArrayList<String> partition; //  list of states being responsible for
     public final Queue<OperationSignal> opSignalQueue;
+    public final Map<PartitionStateManager, List<OperationSignal>> opSignalSendingBuffer;
+    public final Map<PartitionStateManager, List<OperationSignal>> opSignalReceivingBuffer;
     public final Queue<OperationGroupSignal> ogSignalQueue;
     private TaskPrecedenceGraph.ShortCutListener shortCutListener;
 
     public PartitionStateManager() {
         this.opSignalQueue = new ConcurrentLinkedQueue<>();
+        this.opSignalSendingBuffer = new ConcurrentHashMap<>();
+        this.opSignalReceivingBuffer = new ConcurrentHashMap<>();
         this.ogSignalQueue = new ConcurrentLinkedQueue<>();
         this.partition = new ArrayList<>();
     }

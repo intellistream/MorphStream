@@ -325,10 +325,10 @@ public class SLInitializer extends TableInitilizer {
             int npid = (int) (Long.valueOf(split[1]) / partitionOffset);
             int accountTransfer = 100;
             int accountEntryTransfer = 100;
-            if (count == 500 || count == 5000 || count == 50000) {
-                accountTransfer = 100000000;
-                accountEntryTransfer = 100000000;
-            }
+//            if (count == 500 || count == 5000 || count == 50000) {
+//                accountTransfer = 100000000;
+//                accountEntryTransfer = 100000000;
+//            }
 
             count++;
             TransactionEvent event = new TransactionEvent(
