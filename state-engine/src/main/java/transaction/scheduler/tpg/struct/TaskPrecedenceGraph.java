@@ -137,10 +137,14 @@ public class TaskPrecedenceGraph {
                 OperationGroup prevOperationGroup;
                 OperationGroup operationGroup = createNewOperationGroup(operationChain, id);
                 Iterator<Operation> itr = operationChain.getOperations().iterator();
+                Operation prevOp = null; // used for temporal dependency setup for each operation
                 Operation curOp = itr.next();
                 operationGroup.addOperation(curOp);
                 while (itr.hasNext()) {
+                    prevOp = curOp;
                     curOp = itr.next();
+                    curOp.addParent(prevOp, MetaTypes.DependencyType.TD);
+                    prevOp.addChild(curOp, MetaTypes.DependencyType.TD);
                     if (curOp.hasFDLDDependencies()) {
                         id++;
                         prevOperationGroup = operationGroup;
@@ -238,7 +242,9 @@ public class TaskPrecedenceGraph {
      */
     public boolean isFinished() {
         LOG.trace("operations left to do:" + nPendingOGs.get());
-        return nPendingOGs.get() == 0;
+        LOG.trace("operations left to do:" + nPendingOPs.get());
+//        return nPendingOGs.get() == 0;
+        return nPendingOPs.get() == 0;
     }
 
     /**
@@ -355,7 +361,7 @@ public class TaskPrecedenceGraph {
         }
 
         public void onOperationFinalized(Operation operation, boolean isCommitted) {
-            LOG.debug("npending: " + nPendingOGs.get());
+            LOG.info("npending: " + nPendingOPs.get());
             nPendingOPs.decrementAndGet();
         }
 

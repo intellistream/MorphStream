@@ -107,7 +107,8 @@ public class SLCombo extends SPOUTCombo {
             mybids[storageIndex] = event.getBid();
             myevents[storageIndex++] = event;
 
-            if (storageIndex == DataHolder.transferEvents.size() / tthread)
+//            if (storageIndex == DataHolder.transferEvents.size() / tthread)
+            if (storageIndex == num_events_per_thread)
                 break;
 
             index += tthread * combo_bid_size;

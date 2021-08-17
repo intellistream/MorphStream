@@ -18,8 +18,10 @@ public class OperationGroup {
 
     private final AtomicInteger fd_parents_count;
     private final AtomicInteger ld_parents_count;
+    private final AtomicInteger td_parents_count;
     private final AtomicInteger fd_children_count; // TODO: should be deleted after code clean
     private final AtomicInteger ld_children_count;
+    private final AtomicInteger td_children_count;
 
     // OperationChainKey -> OperationChain
     private final List<Operation> fd_parents; // functional dependent operation chains
@@ -27,6 +29,7 @@ public class OperationGroup {
     private final List<Operation> fd_children; // functional dependent operation chains
     private final List<Operation> ld_children; // logical dependent operation chains
 
+    // TD parents should be added
     private OperationGroup td_parent; // td will only have one parent og and one child og
     private OperationGroup td_child;
 
@@ -39,8 +42,10 @@ public class OperationGroup {
 
         this.fd_parents_count = new AtomicInteger(0);
         this.ld_parents_count = new AtomicInteger(0);
+        this.td_parents_count = new AtomicInteger(0);
         this.fd_children_count = new AtomicInteger(0);
         this.ld_children_count = new AtomicInteger(0);
+        this.td_children_count = new AtomicInteger(0);
 
         this.fd_parents = new ArrayList<>();
         this.ld_parents = new ArrayList<>();
@@ -54,7 +59,7 @@ public class OperationGroup {
         operation.setOG(this);
 //        if (operationList.size() == 1) { // this is the header of the operation group, try to find out the other types of dependencies
         setContext(operation.context);
-        setupDependencies(operation);
+        setupDependency(operation);
 //        }
     }
 
@@ -75,24 +80,38 @@ public class OperationGroup {
     }
 
     public boolean hasChildren() {
-        return getFdChildrenCount().get() != 0 || getLdChildrenCount().get() != 0;
+        return getFdChildrenCount().get() != 0 || getLdChildrenCount().get() != 0 || getTdChildrenCount().get() != 0;
     }
     public boolean hasParents() {
-        return getFdParentsCount().get() != 0 || getLdParentsCount().get() != 0;
+        return getFdParentsCount().get() != 0 || getLdParentsCount().get() != 0 || getTdParentsCount().get() != 0;
     }
 
     /**
      *
      * @param op the operation to find the XX_parents
      */
-    public void setupDependencies(Operation op) {
+    public void setupDependency(Operation op) {
         // addOperation dependent OCs found from op.
-        Queue<Operation> parents = op.getParents(DependencyType.FD);
-        fd_parents.addAll(parents);
-        fd_parents_count.addAndGet(parents.size());
-        parents = op.getParents(DependencyType.LD);
-        ld_parents.addAll(parents);
-        ld_parents_count.addAndGet(parents.size());
+        setupParent(op);
+        setupChild(op);
+    }
+
+    public void resetDependencies() {
+        fd_parents_count.set(0);
+        td_parents_count.set(0);
+        for (Operation parent : fd_parents) {
+            if (!parent.getOG().isExecuted) {
+                fd_parents_count.incrementAndGet();
+            }
+        }
+        if (td_parent != null) {
+            if (!td_parent.isExecuted) {
+                td_parents_count.set(1);
+            }
+        }
+    }
+
+    private void setupChild(Operation op) {
         Queue<Operation> children = op.getChildren(DependencyType.FD);
         fd_children.addAll(children);
         fd_children_count.addAndGet(children.size());
@@ -101,24 +120,13 @@ public class OperationGroup {
         ld_children_count.addAndGet(children.size());
     }
 
-    public void setupDependencies(boolean containsAborted) {
-        for (Operation op : operationList) {
-            if (!containsAborted) {
-                // addOperation dependent OCs found from op.
-                Queue<Operation> parents = op.getParents(DependencyType.FD);
-                fd_parents.addAll(parents);
-                fd_parents_count.addAndGet(parents.size());
-                parents = op.getParents(DependencyType.LD);
-                ld_parents.addAll(parents);
-                ld_parents_count.addAndGet(parents.size());
-            }
-            Queue<Operation> children = op.getChildren(DependencyType.FD);
-            fd_children.addAll(children);
-            fd_children_count.addAndGet(children.size());
-            children = op.getChildren(DependencyType.LD);
-            ld_children.addAll(children);
-            ld_children_count.addAndGet(children.size());
-        }
+    private void setupParent(Operation op) {
+        Queue<Operation> parents = op.getParents(DependencyType.FD);
+        fd_parents.addAll(parents);
+        fd_parents_count.addAndGet(parents.size());
+        parents = op.getParents(DependencyType.LD);
+        ld_parents.addAll(parents);
+        ld_parents_count.addAndGet(parents.size());
     }
 
     public void updateDependencies(DependencyType dependencyType) {
@@ -129,6 +137,10 @@ public class OperationGroup {
             }
             case LD: {
                 getLdParentsCount().decrementAndGet();
+                break;
+            }
+            case TD: {
+                getTdParentsCount().decrementAndGet();
                 break;
             }
             default:
@@ -186,6 +198,7 @@ public class OperationGroup {
 
     public void setTdParent(OperationGroup td_parent) {
         this.td_parent = td_parent;
+        getTdParentsCount().incrementAndGet();
     }
 
     public OperationGroup getTdChild() {
@@ -194,9 +207,18 @@ public class OperationGroup {
 
     public void setTdChild(OperationGroup td_child) {
         this.td_child = td_child;
+        getTdChildrenCount().incrementAndGet();
     }
 
     public void removeOperations(List<Operation> operations) {
         operationList.removeAll(operations);
+    }
+
+    public AtomicInteger getTdParentsCount() {
+        return td_parents_count;
+    }
+
+    public AtomicInteger getTdChildrenCount() {
+        return td_children_count;
     }
 }

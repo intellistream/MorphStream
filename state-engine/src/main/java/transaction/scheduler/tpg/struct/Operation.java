@@ -48,7 +48,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public String name;
 
     private OperationChain oc; // used for dependency resolved notification under greedy smart
-    private OperationGroup og; // congratulations to OG!
+    private OperationGroup og; // operation group the operation belongs to, it can be used for communication of operation groups.
     private AbstractOperation ld_head_operation;
 
     public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
@@ -227,10 +227,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         assert ld_descendant_operations.size() == operationMetadata.ld_descendant_countdown.get();
     }
 
-    public boolean isReadyCandidate() {
-        return operationMetadata.is_spec_or_ready_candidate.get() == READY_CANDIDATE;
-    }
-
     public void stateTransition(OperationStateType state) {
         LOG.debug(this + " : state transit " + operationState + " -> " + state);
         operationState.getAndSet(state);
@@ -245,6 +241,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         operationMetadata.is_spec_or_ready_candidate.getAndSet(READY_CANDIDATE);
     }
 
+    public boolean unRedoable() {
+        return getOperationState().equals(MetaTypes.OperationStateType.COMMITTED)
+                || getOperationState().equals(MetaTypes.OperationStateType.COMMITTABLE)
+                || getOperationState().equals(MetaTypes.OperationStateType.ABORTED);
+    }
+
     /**
      * Modify CountDown Variables.
      *
@@ -252,14 +254,14 @@ public class Operation extends AbstractOperation implements Comparable<Operation
      * @param parentState
      */
     public void updateDependencies(DependencyType dependencyType, OperationStateType parentState) {
-        assert parentState == OperationStateType.COMMITTED;
+        assert parentState == OperationStateType.COMMITTED || parentState == OperationStateType.ABORTED;
         assert dependencyType.equals(DependencyType.TD) || dependencyType.equals(DependencyType.FD);
         if (dependencyType.equals(DependencyType.TD)) {
             operationMetadata.td_countdown.decrementAndGet();
             assert operationMetadata.td_countdown.get() >= 0;
         } else {
-            operationMetadata.td_countdown.decrementAndGet();
-            assert operationMetadata.td_countdown.get() >= 0;
+            operationMetadata.fd_countdown.decrementAndGet();
+            assert operationMetadata.fd_countdown.get() >= 0;
         }
     }
 

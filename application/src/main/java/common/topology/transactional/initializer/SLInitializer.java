@@ -179,36 +179,6 @@ public class SLInitializer extends TableInitilizer {
     }
 
 
-    private int[] readRecordMaximumIds() {
-
-        File file = new File(dataRootPath + OsUtils.OS_wrapper("vertices_ids_range.txt"));
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        String[] idsRangeInfo = new String[0];
-        try {
-            idsRangeInfo = reader.readLine().split(",");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return new int[]{Integer.parseInt(idsRangeInfo[0].split("=")[1]), Integer.parseInt(idsRangeInfo[1].split("=")[1])};
-    }
-
-    private int getNextId(Random random) {
-        int id = 0;
-        if (idsGenType.equals("uniform")) {
-            id = random.nextInt(partitionOffset);
-        } else if (idsGenType.equals("normal")) {
-            id = (int) Math.floor(Math.abs(random.nextGaussian() / 3.5) * partitionOffset) % partitionOffset;
-        }
-        return id;
-    }
-
     /**
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
      * initial account value_list is 0...?
@@ -299,7 +269,7 @@ public class SLInitializer extends TableInitilizer {
         if (file.exists()) {
             LOG.info("Reading transfer events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-            loadTranferEvents(reader, tuplesPerBatch, totalBatches, shufflingActive);
+            loadTransferEvents(reader, tuplesPerBatch, totalBatches, shufflingActive);
             reader.close();
         }
 
@@ -346,24 +316,32 @@ public class SLInitializer extends TableInitilizer {
         }
     }
 
-    private void loadTranferEvents(BufferedReader reader, int tuplesPerBatch, int totalBatches, boolean shufflingActive) throws IOException {
+    private void loadTransferEvents(BufferedReader reader, int tuplesPerBatch, int totalBatches, boolean shufflingActive) throws IOException {
         String txn = reader.readLine();
         int count = 0;
         int p_bids[] = new int[tthread];
         while (txn != null) {
             String[] split = txn.split(",");
             int npid = (int) (Long.valueOf(split[1]) / partitionOffset);
+            int accountTransfer = 100;
+            int accountEntryTransfer = 100;
+            if (count == 500 || count == 5000 || count == 50000) {
+                accountTransfer = 100000000;
+                accountEntryTransfer = 100000000;
+            }
+
+            count++;
             TransactionEvent event = new TransactionEvent(
                     Integer.parseInt(split[0]), //bid
                     npid, //pid
-                    Arrays.toString(p_bids), //bid_array
+                    Arrays.toString(p_bids), //bid_arrary
                     4,//num_of_partition
                     split[1],//getSourceAccountId
                     split[2],//getSourceBookEntryId
                     split[3],//getTargetAccountId
                     split[4],//getTargetBookEntryId
-                    100,  //getAccountTransfer
-                    100  //getBookEntryTransfer
+                    accountTransfer,  //getAccountTransfer
+                    accountEntryTransfer  //getBookEntryTransfer
             );
             for (int x = 0; x < 4; x++)
                 p_bids[(npid + x) % tthread]++;

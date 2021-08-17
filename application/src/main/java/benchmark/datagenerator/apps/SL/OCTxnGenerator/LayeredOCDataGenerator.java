@@ -86,13 +86,6 @@ public class LayeredOCDataGenerator extends DataGenerator {
 
     @Override
     public void dumpGeneratedDataToFile() {
-        File file = new File(dataConfig.getRootPath());
-        if (file.exists()) {
-            LOG.info("Data already exists.. skipping data generation...");
-            return;
-        }
-        file.mkdirs();
-
         File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
                 + String.format("_%d_%d_%d.txt", dataConfig.getTuplesPerBatch(), dataConfig.getTotalBatches(), dataConfig.getNumberOfDLevels()));
         try {

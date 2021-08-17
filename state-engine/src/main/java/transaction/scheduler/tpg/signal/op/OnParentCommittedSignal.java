@@ -3,11 +3,11 @@ package transaction.scheduler.tpg.signal.op;
 import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
 
-public class OnParentUpdatedSignal extends OperationSignal {
+public class OnParentCommittedSignal extends OperationSignal {
     private final MetaTypes.DependencyType dependencyType;
     private final MetaTypes.OperationStateType parentState;
 
-    public OnParentUpdatedSignal(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
+    public OnParentCommittedSignal(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
         super(operation);
         this.dependencyType = dependencyType;
         this.parentState = parentState;
