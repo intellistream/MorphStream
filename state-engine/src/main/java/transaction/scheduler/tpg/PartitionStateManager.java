@@ -210,24 +210,24 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
 
     private void ogExecutedTransition(OperationGroup operationGroup) {
         // update status of each operation
-        operationGroup.isExecuted = true;
-        boolean isFailed = false;
-        for (Operation operation : operationGroup.getOperations()) {
-            // TODO: operation may be rollbacked when it is in the executable queue
-            if (!operation.isFailed) {
-                operation.stateTransition(OperationStateType.EXECUTED);
-                if (operation.tryCommittable()) {
-                    executedToCommittableAction(operation);
-                }
-            } else {
-                operation.stateTransition(OperationStateType.ABORTED);
-                executionFailedAction(operation);
-                isFailed = true;
-            }
-        }
+//        operationGroup.isExecuted = true;
+//        boolean isFailed = false;
+//        for (Operation operation : operationGroup.getOperations()) {
+//            // TODO: operation may be rollbacked when it is in the executable queue
+//            if (!operation.isFailed) {
+////                operation.stateTransition(OperationStateType.EXECUTED);
+////                if (operation.tryCommittable()) {
+////                    executedToCommittableAction(operation);
+////                }
+//            } else {
+//                operation.stateTransition(OperationStateType.ABORTED);
+//                executionFailedAction(operation);
+//                isFailed = true;
+//            }
+//        }
 
         // if is failed, do not need to notify the subsequent operations
-        if (isFailed) return;
+//        if (isFailed) return;
         for (Operation child : operationGroup.getFdChildren()) {
             child.context.partitionStateManager.onOgParentExecuted(child.getOG(), DependencyType.FD);
         }
@@ -347,13 +347,13 @@ public class PartitionStateManager implements OperationStateListener, Runnable, 
     private void rollbackOperations(OperationGroup operationGroup) {
         List<Operation> removedOperations = new ArrayList<>();
         for (Operation operation : operationGroup.getOperations()) { //TODO: traverse can be optimized
-            if (operation.unRedoable()) {
-                removedOperations.add(operation);
-            } else {
+//            if (operation.unRedoable()) {
+//                removedOperations.add(operation);
+//            } else {
                 operation.stateTransition(OperationStateType.BLOCKED); // otherwise it should always rollback to blocked
-            }
+//            }
         }
-        operationGroup.removeOperations(removedOperations);
+//        operationGroup.removeOperations(removedOperations);
     }
 
 //    private void removeUnrollbackableOperation(OperationGroup operationGroup) {

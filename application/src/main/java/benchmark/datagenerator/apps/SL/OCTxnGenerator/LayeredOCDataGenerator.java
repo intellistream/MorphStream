@@ -158,12 +158,12 @@ public class LayeredOCDataGenerator extends DataGenerator {
         // and select other three operations without parent and children i.e. totally independeny
         // this makes the txn in the level selectedLevel+1
         if (pickAccount[selectedLevel]) {
-            System.out.println("++++++ pick account as dependency");
+//            System.out.println("++++++ pick account as dependency");
             // pick a existing OC of a typical level from account oc chains map
             pickDependentAccOC(selectedLevel);
             createNewSrcAstOC();
         } else {
-            System.out.println("++++++ pick asset as dependency");
+//            System.out.println("++++++ pick asset as dependency");
             createNewSrcAccOC();
             pickDependentAstOC(selectedLevel);
         }
@@ -325,8 +325,8 @@ public class LayeredOCDataGenerator extends DataGenerator {
         srcAstOC = getRandomExistingOC(selectedLevel, assetsOperationChainsByLevel);
         if (srcAstOC == null)
             srcAstOC = getNewAssetOC();
-        else
-            System.out.println("++++++ pick an existing srcAstOC: " + srcAstOC.getStateId());
+//        else
+//            System.out.println("++++++ pick an existing srcAstOC: " + srcAstOC.getStateId());
         assignOCToThread();
     }
 
@@ -334,8 +334,8 @@ public class LayeredOCDataGenerator extends DataGenerator {
         srcAccOC = getRandomExistingOC(selectedLevel, accountOperationChainsByLevel);
         if (srcAccOC == null)
             srcAccOC = getNewAccountOC();
-        else
-            System.out.println("++++++ pick an existing dstAccOC: " + srcAccOC.getStateId());
+//        else
+//            System.out.println("++++++ pick an existing dstAccOC: " + srcAccOC.getStateId());
         assignOCToThread();
     }
 
@@ -343,16 +343,16 @@ public class LayeredOCDataGenerator extends DataGenerator {
         dstAstOC = getExistingIndependentDestOC(assetsOperationChainsByLevel, srcAccOC, srcAstOC);
         if (dstAstOC == null)
             dstAstOC = getNewAssetOC();
-        else
-            System.out.println("++++++ pick an existing dstAstOC: " + dstAstOC.getStateId());
+//        else
+//            System.out.println("++++++ pick an existing dstAstOC: " + dstAstOC.getStateId());
     }
 
     private void pickIndependentDstAccOC() {
         dstAccOC = getExistingIndependentDestOC(accountOperationChainsByLevel, srcAccOC, srcAstOC);
         if (dstAccOC == null)
             dstAccOC = getNewAccountOC();
-        else
-            System.out.println("++++++ pick an existing dstAccOC: " + dstAccOC.getStateId());
+//        else
+//            System.out.println("++++++ pick an existing dstAccOC: " + dstAccOC.getStateId());
         assignOCToThread();
     }
 
@@ -427,13 +427,13 @@ public class LayeredOCDataGenerator extends DataGenerator {
         if (dataConfig.getIdGenType().equals("uniform")) {
             id = getUniformId(randomGeneratorForIds, isAcc, range);
             while (mGeneratedIds.containsKey(id)) {
-                System.out.println("+++++ conflict");
+//                System.out.println("+++++ conflict");
                 id = getUniformId(randomGeneratorForIds, isAcc, range);
             }
         } else if (dataConfig.getIdGenType().equals("normal")) {
             id = getNormalId(randomGeneratorForIds, isAcc, range);
             while (mGeneratedIds.containsKey(id)) {
-                System.out.println("+++++ conflict");
+//                System.out.println("+++++ conflict");
                 id = getNormalId(randomGeneratorForIds, isAcc, range);
             }
         }
