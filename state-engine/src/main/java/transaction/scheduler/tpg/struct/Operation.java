@@ -9,6 +9,7 @@ import transaction.function.Condition;
 import transaction.function.Function;
 import transaction.impl.TxnContext;
 import transaction.scheduler.common.AbstractOperation;
+import transaction.scheduler.tpg.LayeredTPGContext;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 import transaction.scheduler.tpg.struct.MetaTypes.OperationStateType;
@@ -26,7 +27,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public final static int SPECULATIVE_CANDIDATE = 1;
     public final static int READY_CANDIDATE = 2;
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
-    public final TPGContext context;
+    public final LayeredTPGContext context;
     private final String operationChainKey;
 
     private final Queue<Operation> ld_descendant_operations;
@@ -66,23 +67,23 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
 
-    public <Context extends TPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+    public <Context extends LayeredTPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
     }
 
-    public <Context extends TPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+    public <Context extends LayeredTPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
     }
 
-    public <Context extends TPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+    public <Context extends LayeredTPGContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record,
                                                   SchemaRecordRef record_ref) {
         this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
 
-    public <Context extends TPGContext> Operation(
+    public <Context extends LayeredTPGContext> Operation(
             Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,

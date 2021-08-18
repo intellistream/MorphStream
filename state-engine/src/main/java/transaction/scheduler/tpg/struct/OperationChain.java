@@ -1,6 +1,7 @@
 package transaction.scheduler.tpg.struct;
 
 import transaction.dedicated.ordered.MyList;
+import transaction.scheduler.tpg.LayeredTPGContext;
 import transaction.scheduler.tpg.TPGContext;
 import transaction.scheduler.tpg.struct.MetaTypes.DependencyType;
 
@@ -19,7 +20,7 @@ public class OperationChain implements Comparable<OperationChain> {
 
     private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
 
-    public TPGContext context = null;
+    public LayeredTPGContext context = null;
 
     private final MyList<Operation> operations;
 
@@ -35,6 +36,9 @@ public class OperationChain implements Comparable<OperationChain> {
     private final HashMap<String, OperationChain> oc_ld_parents; // logical dependent operation chains
     private final HashMap<String, OperationChain> oc_fd_children; // functional dependent operation chains
     private final HashMap<String, OperationChain> oc_ld_children; // logical dependent operation chains
+
+    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
+    private int dependencyLevel = -1;
 
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
@@ -54,7 +58,7 @@ public class OperationChain implements Comparable<OperationChain> {
         this.oc_ld_children = new HashMap<>();
     }
 
-    private void setContext(TPGContext context) {
+    private void setContext(LayeredTPGContext context) {
         if (this.context == null) {
             this.context = context;
         }
@@ -312,5 +316,28 @@ public class OperationChain implements Comparable<OperationChain> {
         public int compareTo(PotentialDependencyInfo o) {
             return Long.compare(this.op.bid, o.op.bid);
         }
+    }
+
+    public synchronized boolean hasValidDependencyLevel() {
+        return isDependencyLevelCalculated;
+    }
+
+    public int getDependencyLevel() {
+        return dependencyLevel;
+    }
+
+    public synchronized void updateDependencyLevel() {
+        if (isDependencyLevelCalculated)
+            return;
+        dependencyLevel = 0;
+        for (OperationChain oc : oc_fd_parents.values()) {
+            if (!oc.hasValidDependencyLevel())
+                oc.updateDependencyLevel();
+
+            if (oc.getDependencyLevel() >= dependencyLevel) {
+                dependencyLevel = oc.getDependencyLevel() + 1;
+            }
+        }
+        isDependencyLevelCalculated = true;
     }
 }

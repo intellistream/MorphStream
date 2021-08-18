@@ -38,8 +38,4 @@ public class TPGContext extends SchedulerContext {
     protected void reset() {
 
     }
-
-    public void initialize(TaskPrecedenceGraph.ShortCutListener shortCutListener) {
-        partitionStateManager.initialize(shortCutListener);
-    }
 }

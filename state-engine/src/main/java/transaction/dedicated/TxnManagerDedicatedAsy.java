@@ -17,6 +17,7 @@ import transaction.scheduler.Request;
 import transaction.scheduler.SchedulerContext;
 import transaction.scheduler.SchedulerFactory;
 import transaction.scheduler.layered.LayeredContext;
+import transaction.scheduler.tpg.LayeredTPGContext;
 import transaction.scheduler.tpg.TPGContext;
 
 import java.util.LinkedList;
@@ -51,7 +52,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
                 context = new LayeredContext(thisTaskId, thread_count);
                 break;
             case TPG:
-                context = new TPGContext(thisTaskId);
+                context = new LayeredTPGContext(thisTaskId, thread_count);
                 instance.getScheduler().AddContext(thisTaskId, context);
                 break;
         }

@@ -1,15 +1,15 @@
 package transaction.scheduler.tpg;
 
-import common.meta.CommonMetaTypes.AccessType;
 import profiler.MeasureTools;
 import storage.TableRecord;
-import transaction.impl.TxnContext;
+import transaction.dedicated.ordered.MyList;
 import transaction.scheduler.Request;
 import transaction.scheduler.Scheduler;
 import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
 import transaction.scheduler.tpg.struct.OperationChain;
 import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
+import utils.SOURCE_CONTROL;
 
 import java.util.*;
 
@@ -23,7 +23,7 @@ import static common.meta.CommonMetaTypes.AccessType.*;
  * It's a shared data structure!
  */
 @lombok.extern.slf4j.Slf4j
-public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context, OperationChain> {
+public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<Context, OperationChain> {
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
     public final Map<Integer, Context> threadToContextMap;
@@ -31,14 +31,35 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
     public TPGScheduler(int tp, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) tp); // Check id generation in DateGenerator.
         this.tpg = new TaskPrecedenceGraph(tp);
-        ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
-        tpg.setExecutableListener(executableTaskListener);
         threadToContextMap = new HashMap<>();
     }
 
     @Override
     public void INITIALIZE(Context context) {
+        int threadId = context.thisThreadId;
         tpg.firstTimeExploreTPG(context);
+        SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+    }
+
+    /**
+     * Return the last operation chain of threadId at dLevel.
+     *
+     * @param context
+     * @return
+     */
+    protected OperationChain BFSearch(Context context) {
+        ArrayList<OperationChain> ocs = context.BFSearch(); //
+        OperationChain oc = null;
+        if (ocs != null && context.currentLevelIndex < ocs.size()) {
+            oc = ocs.get(context.currentLevelIndex++);
+            context.scheduledOPs += oc.getOperations().size();
+        }
+        return oc;
+    }
+
+    private void ProcessedToNextLevel(Context context) {
+        context.currentLevel += 1;
+        context.currentLevelIndex = 0;
     }
 
     /**
@@ -52,17 +73,31 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      */
     @Override
     public void EXPLORE(Context context) {
-        context.partitionStateManager.handleStateTransitions();
+        OperationChain next = BFSearch(context);
+        if (next == null && !context.finished()) {//current level is all processed at the current thread.
+            //Ready to proceed to next level
+            //Check if there's any aborts
+            while (next == null) {
+                ProcessedToNextLevel(context);
+                next = BFSearch(context);
+                SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                //all threads come to the current level.
+            }
+        }
+        DISTRIBUTE(next, context);
     }
 
     @Override
-    public boolean FINISHED(Context threadId) {
-        return tpg.isFinished();
+    public boolean FINISHED(Context context) {
+//        return tpg.isFinished();
+        return context.finished();
+
     }
 
     @Override
     public void RESET() {
 //        Controller.exec.shutdownNow();
+        SOURCE_CONTROL.getInstance().oneThreadCompleted();
     }
 
     /**
@@ -86,19 +121,6 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
     @Override
     public void AddContext(int threadId, Context context) {
         threadToContextMap.put(threadId, context);
-    }
-
-    private Operation[] constructGetOperation(TxnContext txn_context, String[] condition_sourceTable,
-                                              String[] condition_source, TableRecord[] condition_records, long bid) {
-        // read the s_record
-        Operation[] get_ops = new Operation[condition_source.length];
-        for (int index = 0; index < condition_source.length; index++) {
-            TableRecord s_record = condition_records[index];
-            String s_table_name = condition_sourceTable[index];
-//            SchemaRecordRef tmp_src_value = new SchemaRecordRef();
-            get_ops[index] = new Operation(getTargetContext(s_record), s_table_name, txn_context, bid, AccessType.GET, s_record);
-        }
-        return get_ops;
     }
 
     @Override
@@ -125,7 +147,7 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
         }
 
         // 4. send operation graph to tpg for tpg construction
-        tpg.setupOperationLD(operationGraph);//TODO: this is bad refactor.
+//        tpg.setupOperationLD(operationGraph);//TODO: this is bad refactor.
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
@@ -144,18 +166,12 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
     /**
      * Used by tpgScheduler.
      *
-     * @param threadId
      * @param operation
      * @param mark_ID
      * @param clean
      */
-    public void execute(int threadId, Operation operation, long mark_ID, boolean clean) {
+    public void execute(Operation operation, long mark_ID, boolean clean) {
         log.trace("++++++execute: " + operation);
-        // TODO: temporarily comment out this, should be considered in transaction abort
-//        if (!(operation.getOperationState().equals(MetaTypes.OperationStateType.READY) || operation.getOperationState().equals(MetaTypes.OperationStateType.SPECULATIVE))) {
-//            //otherwise, skip (those already been tagged as aborted).
-//            return;
-//        }
         // the operation will only be executed when the state is in READY/SPECULATIVE,
         int success = operation.success[0];
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
@@ -181,17 +197,31 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
     @Override
     public void PROCESS(Context context, long mark_ID) {
         int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
         OperationChain next = next(context);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            for (Operation operation : next.getOperations()) {
-                execute(threadId, operation, mark_ID, false);
-            }
-            next.context.partitionStateManager.onOcExecuted(next);
+            execute(context, next.getOperations(), mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            log.debug("finished execute current operation chain: " + next.toString());
+        }
+    }
+
+    /**
+     * Used by BFSScheduler.
+     *
+     * @param context
+     * @param operation_chain
+     * @param mark_ID
+     */
+    public void execute(Context context, MyList<Operation> operation_chain, long mark_ID) {
+        Operation operation = operation_chain.pollFirst();
+        while (operation != null) {
+            Operation finalOperation = operation;
+            execute(finalOperation, mark_ID, false);
+            operation = operation_chain.pollFirst();
         }
     }
 
@@ -201,12 +231,10 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      * @param context
      * @return
      */
-    public OperationChain next(Context context) {
-        OperationChain operationChain = context.OCwithChildren.pollLast();
-        if (operationChain == null) {
-            return context.IsolatedOC.pollLast();
-        }
-        return operationChain;
+    private OperationChain next(Context context) {
+        OperationChain operationChain = context.ready_oc;
+        context.ready_oc = null;
+        return operationChain;// if a null is returned, it means, we are done with this level!
     }
 
 
@@ -216,24 +244,11 @@ public class TPGScheduler<Context extends TPGContext> extends Scheduler<Context,
      * 2. conserved: hash operations to threads based on the targeting key state
      * 3. shared: put all operations in a pool and
      *
-     * @param executableOperationChain
-     * @param context
      */
     @Override
-    protected void DISTRIBUTE(OperationChain executableOperationChain, Context context) {
-        if (executableOperationChain != null)
-            if (!executableOperationChain.hasChildren())
-                context.IsolatedOC.add(executableOperationChain);
-            else
-                context.OCwithChildren.add(executableOperationChain);
+    protected void DISTRIBUTE(OperationChain task, Context context) {
+        context.ready_oc = task;
     }
 
-    /**
-     * Register an operation to queue.
-     */
-    public class ExecutableTaskListener {
-        public void onExecutable(OperationChain operationChain) {
-            DISTRIBUTE(operationChain, (Context) operationChain.context);//TODO: make it clear..
-        }
-    }
+
 }
