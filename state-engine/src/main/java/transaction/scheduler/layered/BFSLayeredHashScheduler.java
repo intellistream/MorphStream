@@ -67,7 +67,7 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
                 OCBucketThread.put(dependencyLevel, new ArrayList<>());
             OCBucketThread.get(dependencyLevel).add(oc);
         }
-        log.debug("localMaxDLevel" + localMaxDLevel);
+//        log.debug("localMaxDLevel" + localMaxDLevel);
         return localMaxDLevel;
     }
 
@@ -81,11 +81,13 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
 
     @Override
     public void INITIALIZE(Context context) {
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         int threadId = context.thisThreadId;
         Collection<Holder_in_range> tablesHolderInRange = getHolder().values();
         for (Holder_in_range tableHolderInRange : tablesHolderInRange) {//for each table.
             submit(context, tableHolderInRange.rangeMap.get(threadId).holder_v1.values());
         }
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
 
@@ -243,12 +245,10 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
-            System.out.println(next.getOperations());
-
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(context, next.getOperations(), mark_ID);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            log.debug("finished execute current operation chain: " + next.toString());
+//            log.debug("finished execute current operation chain: " + next.toString());
         }
     }
 
@@ -376,14 +376,8 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
         SOURCE_CONTROL.getInstance().oneThreadCompleted();
     }
 
-    //TODO: key divide by key range to determine responsible thread.
-    private int getTaskId(String key) {
-        Integer _key = Integer.valueOf(key);
-        return _key / delta;
-    }
-
     private OperationChain getOC(String tableName, String pKey) {
-        ConcurrentHashMap<String, OperationChain> holder = getHolder(tableName).rangeMap.get(getTaskId(pKey)).holder_v1;
+        ConcurrentHashMap<String, OperationChain> holder = getHolder(tableName).rangeMap.get(getTaskId(pKey, delta)).holder_v1;
         return holder.computeIfAbsent(pKey, s -> new OperationChain(tableName, pKey));
     }
 
@@ -406,12 +400,15 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
 
     @Override
     public boolean SubmitRequest(Context context, Request request) {
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         long bid = request.txn_context.getBID();
         OperationChain oc = getOC(request.table_name, request.d_record.record_.GetPrimaryKey());
         Operation operation = new Operation(request.table_name, request.s_record, request.d_record, request.record_ref, bid, request.accessType,
                 request.function, request.condition_records, request.condition, request.txn_context, request.success);
         oc.addOperation(operation);
         checkDataDependencies(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+
         return true;
     }
 

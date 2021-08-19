@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class LayeredTPGContext extends SchedulerContext {
 
-    public final PartitionStateManager partitionStateManager;
     ArrayDeque<Request> requests;
 
     public HashMap<Integer, ArrayList<OperationChain>> layeredOCBucketGlobal;// <LevelID, ArrayDeque<OperationChain>
@@ -24,7 +23,6 @@ public class LayeredTPGContext extends SchedulerContext {
     public int totalOsToSchedule;//total number of operations to process per thread.
     protected OperationChain ready_oc;//ready operation chain per thread.
     protected ArrayDeque<Operation> abortedOperations;//aborted operations per thread.
-    protected int rollbackLevel;
     protected boolean aborted;//if any operation is aborted during processing.
 
     //TODO: Make it flexible to accept other applications.
@@ -34,7 +32,6 @@ public class LayeredTPGContext extends SchedulerContext {
         this.totalThreads = totalThreads;
         this.layeredOCBucketGlobal = new HashMap<>();
         this.abortedOperations = new ArrayDeque<>();
-        partitionStateManager = new PartitionStateManager();
         requests = new ArrayDeque<>();
     }
 
@@ -48,7 +45,6 @@ public class LayeredTPGContext extends SchedulerContext {
     @Override
     public void UpdateMapping(String key) {
         //Not required. TODO: cleanup in future.
-        partitionStateManager.partition.add(key);
     }
 
     public ArrayList<OperationChain> BFSearch() {

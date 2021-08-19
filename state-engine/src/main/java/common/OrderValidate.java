@@ -15,7 +15,7 @@ public class OrderValidate implements Serializable {
     private static final long serialVersionUID = 905380243120316314L;
     //	private static OrderLock ourInstance = new OrderLock();
 //	SpinLock spinlock_ = new SpinLock();
-    //	public static OrderLock getHolder() {
+    //	public static OrderLock getOperationChains() {
 //		return ourInstance;
 //	}
 //	volatile int fid = 0;

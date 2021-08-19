@@ -190,16 +190,6 @@ public class SLInitializer extends TableInitilizer {
         return new int[]{Integer.parseInt(idsRangeInfo[0].split("=")[1]), Integer.parseInt(idsRangeInfo[1].split("=")[1])};
     }
 
-    private int getNextId(Random random) {
-        int id = 0;
-        if (idsGenType.equals("uniform")) {
-            id = random.nextInt(partitionOffset);
-        } else if (idsGenType.equals("normal")) {
-            id = (int) Math.floor(Math.abs(random.nextGaussian() / 3.5) * partitionOffset) % partitionOffset;
-        }
-        return id;
-    }
-
     /**
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
      * initial account value_list is 0...?

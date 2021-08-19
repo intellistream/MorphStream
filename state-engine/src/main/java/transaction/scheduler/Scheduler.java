@@ -2,7 +2,6 @@ package transaction.scheduler;
 
 
 import content.T_StreamContent;
-import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import transaction.function.DEC;
@@ -76,6 +75,12 @@ public abstract class Scheduler<Context, Task> implements IScheduler<Context> {
         synchronized (operation.success) {
             operation.success[0]++;
         }
+    }
+
+    //TODO: key divide by key range to determine responsible thread.
+    public static int getTaskId(String key, Integer delta) {
+        Integer _key = Integer.valueOf(key);
+        return _key / delta;
     }
 
     protected abstract void DISTRIBUTE(Task task, Context context);

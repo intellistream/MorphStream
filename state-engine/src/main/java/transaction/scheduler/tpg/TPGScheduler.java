@@ -1,11 +1,12 @@
 package transaction.scheduler.tpg;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import storage.TableRecord;
 import transaction.dedicated.ordered.MyList;
 import transaction.scheduler.Request;
 import transaction.scheduler.Scheduler;
-import transaction.scheduler.tpg.struct.MetaTypes;
 import transaction.scheduler.tpg.struct.Operation;
 import transaction.scheduler.tpg.struct.OperationChain;
 import transaction.scheduler.tpg.struct.TaskPrecedenceGraph;
@@ -22,15 +23,16 @@ import static common.meta.CommonMetaTypes.AccessType.*;
  * 3. thread will find operations from its queue for execution.
  * It's a shared data structure!
  */
-@lombok.extern.slf4j.Slf4j
+//@lombok.extern.slf4j.Slf4j
 public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<Context, OperationChain> {
+    private static final Logger log = LoggerFactory.getLogger(TPGScheduler.class);
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
     public final Map<Integer, Context> threadToContextMap;
 
-    public TPGScheduler(int tp, int NUM_ITEMS) {
-        delta = (int) Math.ceil(NUM_ITEMS / (double) tp); // Check id generation in DateGenerator.
-        this.tpg = new TaskPrecedenceGraph(tp);
+    public TPGScheduler(int totalThreads, int NUM_ITEMS) {
+        delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
+        this.tpg = new TaskPrecedenceGraph(totalThreads, delta);
         threadToContextMap = new HashMap<>();
     }
 
@@ -154,13 +156,8 @@ public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<C
     private Context getTargetContext(TableRecord d_record) {
         // the thread to submit the operation may not be the thread to execute it.
         // we need to find the target context this thread is mapped to.
-        int threadId = getTaskId(d_record.record_.GetPrimaryKey());
+        int threadId = getTaskId(d_record.record_.GetPrimaryKey(), delta);
         return threadToContextMap.get(threadId);
-    }
-
-    private int getTaskId(String key) {
-        int _key = Integer.parseInt(key);
-        return _key / delta;
     }
 
     /**
@@ -172,7 +169,7 @@ public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<C
      * @param clean
      */
     public void execute(int thisThreadId, Operation operation, long mark_ID, boolean clean) {
-        log.trace("++++++execute: " + operation);
+//        log.debug("++++++execute: " + operation);
 
         // the operation will only be executed when the state is in READY/SPECULATIVE,
         int success = operation.success[0];
@@ -193,7 +190,7 @@ public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<C
         if (operation.success[0] == success) {
             operation.isFailed = true;
         }
-        assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
+//        assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
 
     }
 
@@ -206,10 +203,9 @@ public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<C
 
         if (next != null) {
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            System.out.println(next.getOperations());
             execute(context, next.getOperations(), mark_ID);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            log.debug("finished execute current operation chain: " + next.toString());
+//            log.debug("finished execute current operation chain: " + next.toString());
         }
     }
 
