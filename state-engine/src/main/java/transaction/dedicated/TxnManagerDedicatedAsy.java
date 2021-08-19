@@ -16,7 +16,6 @@ import transaction.impl.TxnContext;
 import transaction.scheduler.Request;
 import transaction.scheduler.SchedulerContext;
 import transaction.scheduler.SchedulerFactory;
-import transaction.scheduler.layered.LayeredContext;
 import transaction.scheduler.tpg.LayeredTPGContext;
 import transaction.scheduler.tpg.TPGContext;
 
@@ -49,9 +48,10 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         SchedulerFactory.SCHEDULER_TYPE scheduler_type = SchedulerFactory.SCHEDULER_TYPE.valueOf(schedulerType);
         switch (scheduler_type) {
             case BFS:
-                context = new LayeredContext(thisTaskId, thread_count);
+                context = new LayeredTPGContext(thisTaskId, thread_count);
+                instance.getScheduler().AddContext(thisTaskId, context);
                 break;
-            case TPG:
+            case GS: // TODO
                 context = new LayeredTPGContext(thisTaskId, thread_count);
                 instance.getScheduler().AddContext(thisTaskId, context);
                 break;
