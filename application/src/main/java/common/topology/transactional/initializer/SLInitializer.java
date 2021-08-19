@@ -162,9 +162,7 @@ public class SLInitializer extends TableInitilizer {
             int pid = get_pid(partition_interval, key);
             String _key = String.valueOf(key);
             insertAccountRecord(_key, startingBalance, pid, spinlock);
-            context.UpdateMapping("accounts" + "|" + _key);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
-            context.UpdateMapping("bookEntries" + "|" + _key);
         }
         LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }

@@ -93,6 +93,7 @@ public class TaskPrecedenceGraph {
         }
         HashMap<Integer, ArrayList<OperationChain>> layeredOCBucketThread = context.layeredOCBucketGlobal;
         context.maxLevel = buildBucketPerThread(layeredOCBucketThread, ocs);
+        System.out.println(context.maxLevel);
     }
 
     /**

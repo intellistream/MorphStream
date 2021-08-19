@@ -15,6 +15,7 @@ import transaction.scheduler.tpg.struct.MetaTypes.OperationStateType;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -79,8 +80,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         this.operationChainKey = table_name + "|" + d_record.record_.GetPrimaryKey();
 
         // finctional dependencies
-        fd_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
-        fd_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        fd_parents = new ConcurrentLinkedQueue<>(); // the finctional dependnecies ops to be executed in advance
+        fd_children = new ConcurrentLinkedQueue<>(); // the finctional dependencies ops to be executed after this op.
         // temporal dependencies
         operationState = new AtomicReference<>(OperationStateType.BLOCKED);
     }
@@ -152,7 +153,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         if (type.equals(DependencyType.FD)) {
             this.fd_parents.add(operation);
             // get the operation chain and update the ld dependencies
-            this.getOC().addParentOrChild(operation.getOC(), MetaTypes.DependencyType.FD, false);
+//            this.getOC().addParentOrChild(operation.getOC(), MetaTypes.DependencyType.FD, false);
         } else {
             throw new RuntimeException("unsupported dependency type parent");
         }
@@ -161,7 +162,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public void addChild(Operation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
             this.fd_children.add(operation);
-            this.getOC().addParentOrChild(operation.getOC(), DependencyType.FD, true);
+//            this.getOC().addParentOrChild(operation.getOC(), DependencyType.FD, true);
         } else {
             throw new RuntimeException("unsupported dependency type children");
         }
