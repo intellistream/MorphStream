@@ -109,6 +109,11 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             return Long.compare(this.bid, operation.bid);
     }
 
+    @Override
+    public String toString() {
+        return String.valueOf(bid);
+    }
+
     public void setOc() {
     }
 

@@ -1,6 +1,5 @@
 package transaction.scheduler.layered;
 
-import content.T_StreamContent;
 import index.high_scale_lib.ConcurrentHashMap;
 import profiler.MeasureTools;
 import storage.SchemaRecord;
@@ -140,7 +139,8 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
 //    }
 
     //TODO: the following are mostly hard-coded.
-    private void execute(Operation operation, long mark_ID, boolean clean) {
+    private void execute(int thisThreadId, Operation operation, long mark_ID, boolean clean) {
+
         if (operation.aborted) return;
         if (operation.accessType == READS_ONLY) {
             operation.records_ref.setRecord(operation.d_record);
@@ -158,13 +158,13 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
         } else if (operation.accessType == READ_WRITE_COND) {//read, modify (depends on condition), write( depends on condition).
             //TODO: pass function here in future instead of hard-code it. Seems not trivial in Java, consider callable interface?
             int success = operation.success[0];
-            CT_Transfer_Fun(operation, mark_ID, clean);
+            CT_Transfer_Fun(thisThreadId, operation, mark_ID, clean);
             if (operation.success[0] == success) {//TODO: For test only!
                 operation.aborted = true;
             }
         } else if (operation.accessType == READ_WRITE_COND_READ) {
             int success = operation.success[0];
-            CT_Transfer_Fun(operation, mark_ID, clean);
+            CT_Transfer_Fun(thisThreadId, operation, mark_ID, clean);
             if (operation.success[0] == success) {
                 operation.aborted = true;
             } else {
@@ -206,6 +206,7 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
                 operation.record_ref.setRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             }
         }
+
     }
 
     /**
@@ -218,13 +219,19 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
     public void execute(Context context, MyList<Operation> operation_chain, long mark_ID) {
         Operation operation = operation_chain.pollFirst();
         while (operation != null) {
+
             Operation finalOperation = operation;
-            execute(finalOperation, mark_ID, false);
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+
+            execute(context.thisThreadId, finalOperation, mark_ID, false);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+
             if (operation.aborted) {
                 context.abortedOperations.push(operation);
                 context.aborted = true;
             }
             operation = operation_chain.pollFirst();
+
         }
     }
 
@@ -236,9 +243,11 @@ public class BFSLayeredHashScheduler<Context extends LayeredContext> extends Sch
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            System.out.println(next.getOperations());
+
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(context, next.getOperations(), mark_ID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             log.debug("finished execute current operation chain: " + next.toString());
         }
     }

@@ -166,22 +166,24 @@ public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<C
     /**
      * Used by tpgScheduler.
      *
+     * @param thisThreadId
      * @param operation
      * @param mark_ID
      * @param clean
      */
-    public void execute(Operation operation, long mark_ID, boolean clean) {
+    public void execute(int thisThreadId, Operation operation, long mark_ID, boolean clean) {
         log.trace("++++++execute: " + operation);
+
         // the operation will only be executed when the state is in READY/SPECULATIVE,
         int success = operation.success[0];
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
-            CT_Transfer_Fun(operation, mark_ID, clean);
+            CT_Transfer_Fun(thisThreadId, operation, mark_ID, clean);
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
-            CT_Transfer_Fun(operation, mark_ID, clean);
+            CT_Transfer_Fun(thisThreadId, operation, mark_ID, clean);
         } else if (operation.accessType.equals(READ_WRITE)) {
             CT_Depo_Fun(operation, mark_ID, clean);
         } else {
@@ -192,6 +194,7 @@ public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<C
             operation.isFailed = true;
         }
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
+
     }
 
     @Override
@@ -202,9 +205,10 @@ public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<C
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            System.out.println(next.getOperations());
             execute(context, next.getOperations(), mark_ID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             log.debug("finished execute current operation chain: " + next.toString());
         }
     }
@@ -220,7 +224,10 @@ public class TPGScheduler<Context extends LayeredTPGContext> extends Scheduler<C
         Operation operation = operation_chain.pollFirst();
         while (operation != null) {
             Operation finalOperation = operation;
-            execute(finalOperation, mark_ID, false);
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+            execute(context.thisThreadId, finalOperation, mark_ID, false);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+
             operation = operation_chain.pollFirst();
         }
     }

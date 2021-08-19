@@ -14,6 +14,8 @@ import static profiler.Metrics.*;
 @lombok.extern.slf4j.Slf4j
 public class MeasureTools {
 
+    public static int counter = 0;
+
     public static void Initialize() {
         Metrics.TxnRuntime.Initialize();
         Metrics.Runtime.Initialize();
@@ -182,6 +184,7 @@ public class MeasureTools {
     }
 
     public static void BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(int thread_id) {
+        counter++;
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_SCHEDULE_USEFUL_START(thread_id);
     }
@@ -259,6 +262,7 @@ public class MeasureTools {
 
     private static void SchedulerTimeBreakdownReport(File file, int tthread) {
         try {
+            System.out.println("++++++ counter: " + counter);
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("SchedulerTimeBreakdownReport\n");
             log.info("===Scheduler Time Breakdown Report===");

@@ -59,9 +59,9 @@ public final class TxnProcessingEngine {
             MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             scheduler.EXPLORE(context);
             MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             scheduler.PROCESS(context, mark_ID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         } while (!scheduler.FINISHED(context));
         scheduler.RESET();//
         MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);

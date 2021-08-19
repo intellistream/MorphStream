@@ -2,12 +2,12 @@ package transaction.scheduler;
 
 
 import content.T_StreamContent;
+import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import transaction.function.DEC;
 import transaction.function.INC;
 import transaction.scheduler.common.AbstractOperation;
-import transaction.scheduler.layered.struct.Operation;
 
 import java.util.List;
 import java.util.Map;
@@ -16,7 +16,8 @@ import java.util.Map;
 public abstract class Scheduler<Context, Task> implements IScheduler<Context> {
 
     // DD: Transfer event processing
-    protected void CT_Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void CT_Transfer_Fun(int thisThreadId, AbstractOperation operation, long previous_mark_ID, boolean clean) {
+
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
         if (preValues == null) {

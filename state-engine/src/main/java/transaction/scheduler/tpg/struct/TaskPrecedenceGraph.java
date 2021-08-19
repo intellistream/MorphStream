@@ -96,7 +96,7 @@ public class TaskPrecedenceGraph {
             }
         }
         submit(context, ocs);
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
 
         LOG.trace("++++++ end explore");
     }
