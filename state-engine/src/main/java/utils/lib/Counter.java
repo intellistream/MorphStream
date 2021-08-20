@@ -18,7 +18,7 @@ public class Counter extends ConcurrentAutoTable {
     // Add the given value_list to current counter value_list.  Concurrent updates will
     // not be lost, but addAndGet or getAndAdd are not implemented because but
     // the total counter value_list is not atomically updated.
-    //public void add( long x );
+    //public void addOperation( long x );
     //public void decrement();
     //public void increment();
     // Current value_list of the counter.  Since other threads are updating furiously

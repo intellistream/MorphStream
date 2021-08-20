@@ -81,7 +81,7 @@ public class MeasureSink_latency extends BaseSink {
 
     @Override
     public void execute(JumboTuple input) {
-        //	store.add(input);
+        //	store.addOperation(input);
         int bound = input.length;
         for (int i = 0; i < bound; i++) {
 //			read = (input.getString(0, i));

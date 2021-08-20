@@ -68,7 +68,7 @@ public class QueryPlan {
      */
     public void project(List<String> columnNames) throws QueryPlanException {
         if (!this.projectColumns.isEmpty()) {
-            throw new QueryPlanException("Cannot add more than one project operator to this query.");
+            throw new QueryPlanException("Cannot addOperation more than one project operator to this query.");
         }
         if (columnNames.isEmpty()) {
             throw new QueryPlanException("Cannot project no columns.");
@@ -211,7 +211,7 @@ public class QueryPlan {
             prevMap = map;
             map = this.minCostJoins(prevMap, pass1Map);
         }
-        // Get the lowest cost operator from the last pass, add GROUP BY and SELECT
+        // Get the lowest cost operator from the last pass, addOperation GROUP BY and SELECT
         // operators, and return an iterator on the final operator
         this.finalOperator = this.minCostOperator(map);
         this.addGroupBy();

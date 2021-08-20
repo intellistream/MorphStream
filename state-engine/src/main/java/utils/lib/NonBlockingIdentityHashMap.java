@@ -307,7 +307,7 @@ public class NonBlockingIdentityHashMap<TypeK, TypeV>
                 break;                  // Got it!
             // get and put must have the same key lookup logic!  Lest 'get' give
             // up looking too soon.
-            //topmap._reprobes.add(1);
+            //topmap._reprobes.addOperation(1);
             if (++reprobe_cnt >= reprobe_limit(len) || // too many probes or
                     key == TOMBSTONE) { // found a TOMBSTONE key, means no more keys
                 // We simply must have a new table to do a 'put'.  At this point a
@@ -455,7 +455,7 @@ public class NonBlockingIdentityHashMap<TypeK, TypeV>
         int i;                      // Convert to next largest power-of-2
         if (initial_sz > 1024 * 1024) initial_sz = 1024 * 1024;
         for (i = MIN_SIZE_LOG; (1 << i) < (initial_sz << 2); i++) ;
-        // Double size for K,V pairs, add 1 for CHM and 1 for hashes
+        // Double size for K,V pairs, addOperation 1 for CHM and 1 for hashes
         _kvs = new Object[((1 << i) << 1) + 2];
         _kvs[0] = new CHM(new Counter()); // CHM in slot 0
         _kvs[1] = new int[1 << i];          // Matching hash entries
@@ -757,7 +757,7 @@ public class NonBlockingIdentityHashMap<TypeK, TypeV>
      * removal, which removes the corresponding mapping from this map, via the
      * <tt>Iterator.remove</tt>, <tt>Collection.remove</tt>,
      * <tt>removeAll</tt>, <tt>retainAll</tt>, and <tt>clear</tt> operations.
-     * It does not support the <tt>add</tt> or <tt>addAll</tt> operations.
+     * It does not support the <tt>addOperation</tt> or <tt>addAll</tt> operations.
      *
      * <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator that
      * will never throw {@link ConcurrentModificationException}, and guarantees
@@ -806,7 +806,7 @@ public class NonBlockingIdentityHashMap<TypeK, TypeV>
      * and vice-versa.  The set supports element removal, which removes the
      * corresponding mapping from this map, via the <tt>Iterator.remove</tt>,
      * <tt>Set.remove</tt>, <tt>removeAll</tt>, <tt>retainAll</tt>, and
-     * <tt>clear</tt> operations.  It does not support the <tt>add</tt> or
+     * <tt>clear</tt> operations.  It does not support the <tt>addOperation</tt> or
      * <tt>addAll</tt> operations.
      *
      * <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator that
@@ -853,7 +853,7 @@ public class NonBlockingIdentityHashMap<TypeK, TypeV>
      * the corresponding mapping from the map, via the
      * <tt>Iterator.remove</tt>, <tt>Set.remove</tt>, <tt>removeAll</tt>,
      * <tt>retainAll</tt>, and <tt>clear</tt> operations.  It does not support
-     * the <tt>add</tt> or <tt>addAll</tt> operations.
+     * the <tt>addOperation</tt> or <tt>addAll</tt> operations.
      *
      * <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator
      * that will never throw {@link ConcurrentModificationException},
@@ -1107,7 +1107,7 @@ public class NonBlockingIdentityHashMap<TypeK, TypeV>
             newkvs = _newkvs;
             if (newkvs != null)      // See if resize is already in progress
                 return newkvs;          // Use the new table already
-            // Double size for K,V pairs, add 1 for CHM
+            // Double size for K,V pairs, addOperation 1 for CHM
             newkvs = new Object[((1 << log2) << 1) + 2]; // This can get expensive for big arrays
             newkvs[0] = new CHM(_size); // CHM in slot 0
             newkvs[1] = new int[1 << log2]; // hashes in slot 1

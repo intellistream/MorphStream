@@ -93,7 +93,7 @@ public class ProjectOperator extends QueryOperator {
                 throw new QueryPlanException("Cannot compute sum over a non-integer column: " + this.averageColumn + ".");
             }
         }
-        // make sure we add the correct columns to the output schema if we have aggregates in the
+        // make sure we addOperation the correct columns to the output schema if we have aggregates in the
         // projection
         if (this.hasAggregate) {
             if (this.hasCount) {
@@ -219,7 +219,7 @@ public class ProjectOperator extends QueryOperator {
                         SchemaRecord r = this.sourceIterator.next();
                         List<DataBox> recordValues = r.getValues();
                         // if the d_record is a MarkerRecord, that means we reached the end of a group... we reset
-                        // the aggregates and add the appropriate new d_record to the new Records
+                        // the aggregates and addOperation the appropriate new d_record to the new Records
                         if (r == this.markerRecord) {
                             if (ProjectOperator.this.hasCount) {
                                 int count = ProjectOperator.this.getAndResetCount();
@@ -261,8 +261,8 @@ public class ProjectOperator extends QueryOperator {
                             }
                         }
                     }
-                    // at the very end, we need to make sure we add all the aggregated records to the result
-                    // either because there was no group by or to add the last group we saw
+                    // at the very end, we need to make sure we addOperation all the aggregated records to the result
+                    // either because there was no group by or to addOperation the last group we saw
                     if (ProjectOperator.this.hasCount) {
                         int count = ProjectOperator.this.getAndResetCount();
                         this.baseValues.add(new IntDataBox(count));

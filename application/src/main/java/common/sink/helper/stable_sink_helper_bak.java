@@ -44,7 +44,7 @@ public class stable_sink_helper_bak extends helper {
 //                                + Event.split_expression + time);
                     strings.add(detailed);
 //                    } else {
-//                        strings.add(throughput);
+//                        strings.addOperation(throughput);
 //                    }
                     if (checkPoint == measure_times) {
 //                        if (!print)

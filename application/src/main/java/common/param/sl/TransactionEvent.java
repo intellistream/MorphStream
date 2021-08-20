@@ -33,25 +33,6 @@ public class TransactionEvent extends TxnEvent {
     /**
      * Creates a new TransactionEvent for the given accounts and book entries.
      */
-    public TransactionEvent(
-            long bid, int partition_id, long[] bid_array, int number_of_partitions,
-            String sourceAccountId,
-            String sourceBookEntryId,
-            String targetAccountId,
-            String targetBookEntryId,
-            long accountTransfer,
-            long bookEntryTransfer,
-            long minAccountBalance) {
-        super(bid, partition_id, bid_array, number_of_partitions);
-        this.sourceAccountId = sourceAccountId;
-        this.targetAccountId = targetAccountId;
-        this.sourceBookEntryId = sourceBookEntryId;
-        this.targetBookEntryId = targetBookEntryId;
-        this.accountTransfer = accountTransfer;
-        this.bookEntryTransfer = bookEntryTransfer;
-        this.minAccountBalance = minAccountBalance;
-    }
-
     public TransactionEvent(int bid, int partition_id, String bid_array, int num_of_partition,
                             String sourceAccountId,
                             String sourceBookEntryId,

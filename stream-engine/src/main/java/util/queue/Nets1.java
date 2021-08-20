@@ -190,7 +190,7 @@ class Nets1 extends Frame {
             if (st[i] == 0)
                 ttime = 0;
             tot_time += ttime;
-            //____Don't add waiting times for dropped packets
+            //____Don't addOperation waiting times for dropped packets
             double wtime = cdt[i] - cat[i] - st[i];
             if (st[i] == 0)
                 wtime = 0;

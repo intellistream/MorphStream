@@ -1,7 +1,7 @@
 package common.bolts.transactional.gs;
 
 import common.param.mb.MicroEvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Marker;

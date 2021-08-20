@@ -1,5 +1,6 @@
-package common.sink;
+package combo;
 
+import common.sink.MeasureSink;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

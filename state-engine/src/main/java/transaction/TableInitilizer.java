@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.context.SchedulerContext;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.SplittableRandom;
@@ -18,7 +18,6 @@ import static common.CONTROL.enable_states_partition;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.partioned_store;
 import static transaction.State.shared_store;
-import static utils.PartitionHelper.key_to_partition;
 
 public abstract class TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(TableInitilizer.class);
@@ -124,17 +123,12 @@ public abstract class TableInitilizer {
             int res = generator.next();
             //should not have duplicate keys.
             while (keys.contains(res) && !Thread.currentThread().isInterrupted()) {
-//                res++;//speed up the search for non-duplicate key.
-//                if (res == NUM_ITEMS) {
-//                    res = partition_id * interval;
-//                }
                 res = generator.next();
             }
             keys.add(res);
             param.set_keys(access_id, res);
             counter++;
             if (counter == access_per_partition) {
-//                pointer++;
                 pid++;
                 if (pid == tthread)
                     pid = 0;
@@ -143,58 +137,18 @@ public abstract class TableInitilizer {
         }
     }
 
-    public abstract boolean Prepared(String file) throws IOException;
+    public abstract boolean Generate() throws IOException;
 
-    public void prepare_input_events(String file_path, int total_events) throws IOException {
-
+    public void prepare_input_events(int total_events) throws IOException {
         db.getEventManager().ini(total_events);
-        int _number_partitions = number_partitions;
-
         //try to read from file or use user-defined generator for data preparation
-        if (!Prepared(file_path + tthread)) {
-            //if failed, create new one.
-            Object event;
-            for (int i = 0; i < total_events; i++) {
-                boolean multi_parition_txn_flag = multi_partion_decision[j];
-                j++;
-                if (j == 8)
-                    j = 0;
-
-                p = key_to_partition(p_generator.next());//randomly pick a starting point.
-                if (multi_parition_txn_flag) {//multi-partition
-                    event = create_new_event(_number_partitions, i);
-                    _number_partitions = Math.min(number_partitions, 2);
-                    for (int k = 0; k < _number_partitions; k++) {//depo input_event only allows 2 partition
-                        p_bid[p]++;
-                        p++;
-                        if (p == tthread)
-                            p = 0;
-                    }
-
-                } else {
-                    event = create_new_event(1, i);
-                    p_bid[p]++;
-                    p++;
-                    if (p == tthread)
-                        p = 0;
-                }
-                db.getEventManager().put(event, i);
-            }
-            store(file_path + tthread);
-        }
+        Generate();
+        Load();
         db.getEventManager().clear();
-
     }
 
-    public void prepare_input_events(String file_path) throws IOException {
-        prepare_input_events(file_path, config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
-    }
+    protected abstract void Load() throws IOException;
 
     public abstract void store(String file_path) throws IOException;
 
-    public Object create_new_event(String record, int bid) {
-        throw new UnsupportedOperationException();
-    }
-
-    public abstract Object create_new_event(int number_partitions, int bid);
 }
