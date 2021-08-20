@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.SplittableRandom;
 
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.partioned_store;
@@ -65,7 +66,7 @@ public abstract class TableInitilizer {
         } else {
             throw new UnsupportedOperationException();
         }
-        LOG.info("ratio_of_multi_partition: " + ratio_of_multi_partition + "\tDECISIONS: " + Arrays.toString(multi_partion_decision));
+        if(enable_log) LOG.info("ratio_of_multi_partition: " + ratio_of_multi_partition + "\tDECISIONS: " + Arrays.toString(multi_partion_decision));
         p_bid = new long[tthread];
         for (int i = 0; i < tthread; i++) {
             p_bid[i] = 0;

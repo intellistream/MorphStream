@@ -69,7 +69,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
     @Override
     protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
 //        record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
-//        LOG.info("LOCK FOR:" + t_record.record_.getValues().get(0)+" pid:"+txn_context.pid);
+//        if(enable_log) LOG.info("LOCK FOR:" + t_record.record_.getValues().get(0)+" pid:"+txn_context.pid);
         t_record.content_.LockPartitions();//it should always success.
         return true;
     }
@@ -86,7 +86,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
             access.timestamp_ = t_record.content_.GetTimestamp();
             return true;
         } else if (accessType == READ_WRITE) {
-            //LOG.info(txn_context.thisTaskId + " success to get orderLock" + DateTime.now());
+            //if(enable_log) LOG.info(txn_context.thisTaskId + " success to get orderLock" + DateTime.now());
 //            final SchemaRecord local_record = new SchemaRecord(t_record.record_);//copy from t_record to local_record.
             Access access = access_list_.NewAccess();
             access.access_type_ = READ_WRITE;
@@ -96,7 +96,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
             access.timestamp_ = t_record.content_.GetTimestamp();
             return true;
         } else if (accessType == DELETE_ONLY) {
-            //LOG.info(t_record.toString() + "is locked by deleter");
+            //if(enable_log) LOG.info(t_record.toString() + "is locked by deleter");
             t_record.record_.is_visible_ = false;
             Access access = access_list_.NewAccess();
             access.access_type_ = DELETE_ONLY;

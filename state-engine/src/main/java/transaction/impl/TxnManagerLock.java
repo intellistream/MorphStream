@@ -15,6 +15,7 @@ import transaction.context.TxnContext;
 import java.util.LinkedList;
 
 import static common.CONTROL.enable_debug;
+import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.*;
 import static content.common.CommonMetaTypes.kMaxAccessNum;
 import static transaction.context.TxnAccess.Access;
@@ -39,7 +40,7 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
                 this.AbortTransaction();
                 return false;
             } else {
-//				LOG.info(tb_record.toString() + "is locked by insertor");
+//				if(enable_log) LOG.info(tb_record.toString() + "is locked by insertor");
             }
             record.is_visible_ = true;
             Access access = access_list_.NewAccess();
@@ -128,7 +129,7 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
         } else if (accessType == READ_WRITE) {
             if (!t_record.content_.TryWriteLock()) {
                 if (enable_debug)
-                    LOG.info(Thread.currentThread().getName() + " failed to get lock_ratio" + DateTime.now());
+                    if(enable_log) LOG.info(Thread.currentThread().getName() + " failed to get lock_ratio" + DateTime.now());
                 this.AbortTransaction();
                 return false;
             } else {
@@ -162,7 +163,7 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
                 this.AbortTransaction();
                 return false;
             } else {
-                LOG.info(t_record.toString() + "is locked by deletor");
+                if(enable_log) LOG.info(t_record.toString() + "is locked by deletor");
                 t_record.record_.is_visible_ = false;
                 Access access = access_list_.NewAccess();
                 access.access_type_ = DELETE_ONLY;

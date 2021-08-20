@@ -14,9 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
-/**
- * This generator generates only "transfer" events with a layered data dependency configuration.
- */
+import static common.CONTROL.enable_log;
 public class LayeredOCDataGenerator extends DataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(DataGenerator.class);
     private final Random randomGenerator = new Random();
@@ -78,7 +76,7 @@ public class LayeredOCDataGenerator extends DataGenerator {
         dataTransactions.add(t);
         transactionId++;
         if (transactionId % 100000 == 0)
-            LOG.info(String.valueOf(transactionId));
+            if(enable_log) LOG.info(String.valueOf(transactionId));
 
         // Step 4: update the statistics such as dependency distribution to guide future data generation
         updateStats();
@@ -100,15 +98,15 @@ public class LayeredOCDataGenerator extends DataGenerator {
             e.printStackTrace();
         }
 
-        LOG.info("Dumping transactions...");
+        if(enable_log)  LOG.info("Dumping transactions...");
         try {
             dataOutputHandler.sinkEvents(dataTransactions);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        LOG.info("Dumping Dependency Vertices...");
+        if(enable_log) LOG.info("Dumping Dependency Vertices...");
         dataOutputHandler.sinkDependenciesVertices(accountOperationChainsByLevel, assetsOperationChainsByLevel);
-        LOG.info("Dumping Dependency Vertices ids range...");
+        if(enable_log) LOG.info("Dumping Dependency Vertices ids range...");
         dataOutputHandler.sinkDependenciesVerticesIdsRange(totalAccountRecords, totalAssetRecords);
     }
 

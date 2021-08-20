@@ -25,6 +25,8 @@ import queue.SPSCController;
 import java.io.Serializable;
 import java.util.*;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Created by shuhaozhang on 11/7/16.
  */
@@ -173,7 +175,7 @@ public abstract class PartitionController implements IPartitionController, Seria
 //        long start_offer_watermark = System.nanoTime();
         offer_create_marker(marker, targetTasks[0]);//only send to the first instance.
 //        long end = System.nanoTime();
-//        LOG.info("water_mark offer gaps:" + (end - start_offer_watermark) + " for bid:" + bid);
+//        if(enable_log) LOG.info("water_mark offer gaps:" + (end - start_offer_watermark) + " for bid:" + bid);
         return targetTasks.length;
     }
 
@@ -185,7 +187,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             offer_create_marker(marker, target);
         }
 //        long end = System.nanoTime();
-//        LOG.info("water_mark offer gaps:" + (end - start_offer_watermark) + " for bid:" + bid);
+//        if(enable_log) LOG.info("water_mark offer gaps:" + (end - start_offer_watermark) + " for bid:" + bid);
         return targetTasks.length;
     }
 
@@ -830,7 +832,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             if (p == 0) {
                 long bid = BIDGenerator.getInstance().getAndIncrement();
                 buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
-                LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
+                if(enable_log) LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
             }
             buffers[index].add(p, package_message(streamId, value));
             if (p + 1 == batch_size) {
@@ -866,7 +868,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             if (p == 0) {
                 long bid = BIDGenerator.getInstance().getAndIncrement();
                 buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
-//				LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
+//				if(enable_log) LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
             }
             buffers[index].add(p, package_message(streamId, value));
             if (p + 1 == batch_size) {

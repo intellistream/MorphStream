@@ -15,6 +15,7 @@ import profiler.Metrics;
 
 import java.util.Collection;
 
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_shared_state;
 import static controller.affinity.SequentialBinding.SequentialBindingInitilize;
 import static profiler.Metrics.POST_COMPUTE_COMPLEXITY;
@@ -45,13 +46,13 @@ public class TopologySubmitter {
         OM = new OptimizationManager(g, conf);//support different kinds of optimization module.
         if (enable_shared_state) {
             SequentialBindingInitilize();
-            LOG.info("DB initialize starts @" + DateTime.now());
+            if(enable_log) if(enable_log) LOG.info("DB initialize starts @" + DateTime.now());
             long start = System.nanoTime();
             int tthread = conf.getInt("tthread");
             g.topology.spinlock = new SpinLock[tthread];//number of threads -- number of cores -- number of partitions.
             g.topology.tableinitilizer = topology.txnTopology.initializeDB(g.topology.spinlock); //For simplicity, assume all table shares the same partition mapping.
             long end = System.nanoTime();
-            LOG.info("DB initialize takes:" + (end - start) / 1E6 + " ms");
+            if(enable_log) if(enable_log) LOG.info("DB initialize takes:" + (end - start) / 1E6 + " ms");
             OM.lanuch(topology.db);
         } else
             OM.lanuch(topology.db);

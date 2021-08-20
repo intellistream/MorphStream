@@ -114,7 +114,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext, ExecutionUnit
                 OCBucketThread.put(dependencyLevel, new ArrayList<>());
             OCBucketThread.get(dependencyLevel).add(oc);
         }
-//        LOG.debug("localMaxDLevel" + localMaxDLevel);
+//        if(enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
         return localMaxDLevel;
     }
 

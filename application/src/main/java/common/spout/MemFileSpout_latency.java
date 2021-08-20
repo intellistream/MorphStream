@@ -14,6 +14,8 @@ import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import static common.CONTROL.enable_log;
+
 public class MemFileSpout_latency extends AbstractSpout {
     private static final Logger LOG = LoggerFactory.getLogger(MemFileSpout_latency.class);
     private static final long serialVersionUID = -2394340130331865581L;
@@ -46,7 +48,7 @@ public class MemFileSpout_latency extends AbstractSpout {
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        LOG.info("Spout initialize is being called");
+        if(enable_log) LOG.info("Spout initialize is being called");
         long start = System.nanoTime();
         cnt = 0;
         counter = 0;
@@ -77,11 +79,11 @@ public class MemFileSpout_latency extends AbstractSpout {
             }
         }
         long pid = OsUtils.getPID();
-        LOG.info("JVM PID  = " + pid);
+        if(enable_log) LOG.info("JVM PID  = " + pid);
         int end_index = array_array.length * config.getInt("count_number", 1);
-        LOG.info("spout:" + this.taskId + " elements:" + end_index);
+        if(enable_log) LOG.info("spout:" + this.taskId + " elements:" + end_index);
         long end = System.nanoTime();
-        LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
+        if(enable_log) LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
         msgID_start = (long) (1E4 * (taskId));
         msgID_end = (long) (1E4 * (taskId + 1));
         msgID_counter = msgID_start;
@@ -131,7 +133,7 @@ public class MemFileSpout_latency extends AbstractSpout {
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         String jvmName = runtimeBean.getName();
         long pid = Long.valueOf(jvmName.split("@")[0]);
-        LOG.info("JVM PID  = " + pid);
+        if(enable_log) LOG.info("JVM PID  = " + pid);
         FileWriter fw;
         try {
             fw = new FileWriter(new File(config.getString("metrics.output")
@@ -181,7 +183,7 @@ public class MemFileSpout_latency extends AbstractSpout {
     }
 
     public void display() {
-        LOG.info("timestamp_counter:" + counter);
+        if(enable_log) LOG.info("timestamp_counter:" + counter);
     }
 }
 

@@ -11,6 +11,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_shared_state;
 
 /**
@@ -26,7 +27,7 @@ public abstract class TransactionTopology extends BasicTopology {
         assert enable_shared_state;
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
-        LOG.info(dateFormat.format(date)); //2016/11/16 12:08:43
+        if(enable_log) if(enable_log) LOG.info(dateFormat.format(date)); //2016/11/16 12:08:43
         this.db = new CavaliaDatabase(config.getString("metrics.output") + dateFormat.format(date));
     }
 

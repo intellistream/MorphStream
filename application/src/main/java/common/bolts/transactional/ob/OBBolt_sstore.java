@@ -14,6 +14,7 @@ import transaction.impl.ordered.TxnManagerSStore;
 
 import java.util.Map;
 
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
 import static profiler.MeasureTools.*;
 
@@ -35,7 +36,7 @@ public class OBBolt_sstore extends OBBolt_LA {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
         if (!enable_states_partition) {
-            LOG.info("Please enable `enable_states_partition` for PAT scheme");
+            if(enable_log) LOG.info("Please enable `enable_states_partition` for PAT scheme");
             System.exit(-1);
         }
     }

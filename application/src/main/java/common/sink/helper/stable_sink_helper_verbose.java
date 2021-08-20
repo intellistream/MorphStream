@@ -4,6 +4,8 @@ import common.helper.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Created by I309939 on 7/23/2016.
  */
@@ -31,7 +33,7 @@ public class stable_sink_helper_verbose extends helper {
                             + time + Event.split_expression + end;
             strings.add(detailed);
             if (end - starting > runtimeInNANO) {
-                LOG.info("finished measurement!");
+                if(enable_log) LOG.info("finished measurement!");
                 output(strings);
                 return true;
             }

@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Created by shuhaozhang on 17/7/16.
  * every executor owns its own input scheduler.
@@ -31,7 +33,7 @@ public class SequentialScheduler extends InputStreamController {
         size = LQ.size();
         current = 0;
         if (size == 0) {
-            LOG.info("MyQueue initialize wrong");
+            if(enable_log) LOG.info("MyQueue initialize wrong");
             System.exit(-1);
         }
     }

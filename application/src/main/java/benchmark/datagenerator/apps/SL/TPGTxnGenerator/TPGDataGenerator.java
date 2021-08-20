@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import static common.CONTROL.enable_log;
+
 /**
  * \textbf{Workload Configurations.}
  * We extend SL for workload sensitivity study by tweaking its workload generation for varying dependency characteristics. The default configuration and varying values of parameters are summarized in \tony{Table~\ref{}}.
@@ -156,15 +158,16 @@ public class TPGDataGenerator extends DataGenerator {
     }
 
     public void dumpGeneratedDataToFile() {
-        LOG.info("++++++" + nGeneratedAccountIds.size());
-        LOG.info("++++++" + nGeneratedAssetIds.size());
+        if(enable_log) LOG.info("++++++" + nGeneratedAccountIds.size());
+        if(enable_log) LOG.info("++++++" + nGeneratedAssetIds.size());
 
-        LOG.info("Dumping transactions...");
+        if(enable_log) LOG.info("Dumping transactions...");
         try {
             dataOutputHandler.sinkEvents(events);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        file.mkdirs();
 
         File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
                 + String.format("_%d_%d.txt", dataConfig.getTuplesPerBatch(), dataConfig.getTotalBatches()));

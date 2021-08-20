@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import static common.CONTROL.enable_log;
 import static common.Constants.*;
 
 /**
@@ -158,7 +159,7 @@ public class TopologyBuilder {
 
     public Topology createTopology(Database db, TransactionTopology txnTopology) {
         if (topology.getScheduler() == null) {
-            LOG.info("Tuple input scheduler is not set, use default scheduler instead!");
+            if(enable_log) if(enable_log) LOG.info("Tuple input scheduler is not set, use default scheduler instead!");
             topology.setScheduler(new SequentialScheduler());
         }
         if (db != null) {
@@ -170,7 +171,7 @@ public class TopologyBuilder {
 
     public Topology createTopology() {
         if (topology.getScheduler() == null) {
-            LOG.info("JumboTuple scheduler is not set, use default Brisk.execution.runtime.tuple scheduler instead!");
+            if(enable_log) if(enable_log) LOG.info("JumboTuple scheduler is not set, use default Brisk.execution.runtime.tuple scheduler instead!");
             topology.setScheduler(new SequentialScheduler());
         }
         return topology;

@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static common.CONTROL.enable_log;
+
 /**
  * @author mayconbordin
  */
@@ -60,7 +62,7 @@ public class OfflineTraining {
             }
             OfflineTraining filter = new OfflineTraining();
             filter.loadTraining(args[1]);
-            LOG.info("Num words: {}", filter.words.values().size());
+            if(enable_log) LOG.info("Num words: {}", filter.words.values().size());
         } else if (args[0].equals("train")) {
             if (args.length < 3) {
                 printUsage();
@@ -70,10 +72,10 @@ public class OfflineTraining {
             String outputPath = args[2];
             OfflineTraining filter = new OfflineTraining();
             List<String> trainingSet = Files.readLines(new File(inputPath + "/index"), Charset.defaultCharset());
-            LOG.info("Number of emails: {}", trainingSet.size());
+            if(enable_log) LOG.info("Number of emails: {}", trainingSet.size());
             for (int i = 0; i < trainingSet.size(); i++) {
                 if (i % 1000 == 0) {
-                    LOG.info("Training set {}", i);
+                    if(enable_log) LOG.info("Training set {}", i);
                 }
                 String[] train = trainingSet.get(i).split("\\s+");
                 boolean isSpam = train[0].toLowerCase().trim().equals("spam");
@@ -85,7 +87,7 @@ public class OfflineTraining {
             if (!result) {
                 LOG.error("Training object not saved.");
             } else {
-                LOG.info("Training object saved!");
+                if(enable_log) LOG.info("Training object saved!");
             }
         } else {
             printUsage();

@@ -1,10 +1,9 @@
-package scheduler.struct.dfs;
+package scheduler.struct;
 
 import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.context.SchedulerContext;
-import scheduler.struct.AbstractOperation;
 import scheduler.struct.MetaTypes.DependencyType;
 import scheduler.struct.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
@@ -17,16 +16,18 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static common.CONTROL.enable_log;
+
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
  */
-public class DFSOperation extends AbstractOperation implements Comparable<DFSOperation> {
+public class Operation extends AbstractOperation implements Comparable<Operation> {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
     public final SchedulerContext context;
     private final String operationChainKey;
 
-    private final Queue<DFSOperation> fd_children; // the functional dependencies ops to be executed after this op.
-    private final Queue<DFSOperation> fd_parents; // the functional dependencies ops to be executed in advance
+    private final Queue<Operation> fd_children; // the functional dependencies ops to be executed after this op.
+    private final Queue<Operation> fd_parents; // the functional dependencies ops to be executed in advance
     private final AtomicReference<OperationStateType> operationState;
     // operation id under a transaction.
     // an operation id to indicate how many operations in front of this operation in the same transaction.
@@ -34,42 +35,42 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
     public boolean isFailed;
     public String name;
 
-    private DFSOperationChain oc; // used for dependency resolved notification under greedy smart
+    private OperationChain oc; // used for dependency resolved notification under greedy smart
 
-    public DFSOperation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
+    public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
         this(null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
     }
 
     /****************************Defined by MYC*************************************/
 
-    public DFSOperation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
-                        Function function, Condition condition, int[] success) {
+    public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
+                     Function function, Condition condition, int[] success) {
         this(null, table_name, txn_context, bid, accessType, record, null, function, condition, null, success);
     }
 
-    public DFSOperation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
-                        SchemaRecordRef record_ref, Function function, Condition condition, int[] success) {
+    public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
+                     SchemaRecordRef record_ref, Function function, Condition condition, int[] success) {
         this(null, table_name, txn_context, bid, accessType, record, record_ref, function, condition, null, success);
     }
 
 
-    public <Context extends SchedulerContext> DFSOperation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                           CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
+    public <Context extends SchedulerContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                        CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
     }
 
-    public <Context extends SchedulerContext> DFSOperation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                           CommonMetaTypes.AccessType accessType, TableRecord d_record) {
+    public <Context extends SchedulerContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                        CommonMetaTypes.AccessType accessType, TableRecord d_record) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
     }
 
-    public <Context extends SchedulerContext> DFSOperation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                           CommonMetaTypes.AccessType accessType, TableRecord d_record,
-                                                           SchemaRecordRef record_ref) {
+    public <Context extends SchedulerContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                        CommonMetaTypes.AccessType accessType, TableRecord d_record,
+                                                        SchemaRecordRef record_ref) {
         this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
 
-    public <Context extends SchedulerContext> DFSOperation(
+    public <Context extends SchedulerContext> Operation(
             Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
@@ -97,7 +98,7 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
      * @return
      */
     @Override
-    public int compareTo(DFSOperation operation) {
+    public int compareTo(Operation operation) {
         if (this.bid == (operation.bid)) {
             if (this.d_record.getID() - operation.d_record.getID() == 0) {
                 return this.getTxn_op_id() - operation.getTxn_op_id();
@@ -127,14 +128,14 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
         return operationChainKey;
     }
 
-    public DFSOperationChain getOC() {
+    public OperationChain getOC() {
         if (oc == null) {
             throw new RuntimeException("the returned oc cannot be null");
         }
         return oc;
     }
 
-    public void setOC(DFSOperationChain operationChain) {
+    public void setOC(OperationChain operationChain) {
         this.oc = operationChain;
     }
 
@@ -147,7 +148,7 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
     }
 
 
-    public void addParent(DFSOperation operation, DependencyType type) {
+    public void addParent(Operation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
             this.fd_parents.add(operation);
             // get the operation chain and update the ld dependencies
@@ -157,7 +158,7 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
         }
     }
 
-    public void addChild(DFSOperation operation, DependencyType type) {
+    public void addChild(Operation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
             this.fd_children.add(operation);
 //            this.getOC().addParentOrChild(operation.getOC(), DependencyType.FD, true);
@@ -167,7 +168,7 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
     }
 
     public void stateTransition(OperationStateType state) {
-        LOG.debug(this + " : state transit " + operationState + " -> " + state);
+        if(enable_log) LOG.debug(this + " : state transit " + operationState + " -> " + state);
         operationState.getAndSet(state);
     }
 
@@ -187,5 +188,9 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
         } else {
             throw new RuntimeException("Unexpected dependency type: " + type);
         }
+    }
+
+    public void updateDependency() {
+        oc.updateDependency();
     }
 }

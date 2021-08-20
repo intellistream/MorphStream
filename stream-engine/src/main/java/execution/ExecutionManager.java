@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_shared_state;
 import static common.Constants.*;
 
@@ -96,7 +97,7 @@ public class ExecutionManager {
                             , conf, 0, latch); //TODO: schedule to numa node wisely.
                     break;
                 case virtualType:
-                    LOG.info("Won't launch virtual ground");
+                    if(enable_log) LOG.info("Won't launch virtual ground");
                     break;
                 default:
                     throw new UnhandledCaseException("type not recognized");
@@ -113,7 +114,7 @@ public class ExecutionManager {
             }
         }
         long end = System.currentTimeMillis();
-        LOG.info("It takes :" + (end - start) / 1000 + " seconds to finish launch the operators.");
+        if(enable_log) LOG.info("It takes :" + (end - start) / 1000 + " seconds to finish launch the operators.");
     }
 
     private executorThread launchSpout_InCore(ExecutionNode e, TopologyContext context, Configuration conf,
@@ -145,7 +146,7 @@ public class ExecutionManager {
 
     private executorThread launchSpout_SingleCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                                   int node, CountDownLatch latch) {
-        LOG.info("Launch" + e.getOP() + " on node:" + node);
+        if(enable_log) LOG.info("Launch" + e.getOP() + " on node:" + node);
         long[] cpu;
         if (!conf.getBoolean("NAV", true)) {
             cpu = AC.requirePerCore(node);
@@ -158,7 +159,7 @@ public class ExecutionManager {
 
     private executorThread launchBolt_SingleCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                                  int node, CountDownLatch latch) {
-        LOG.info("Launch bolt:" + e.getOP() + " on node:" + node);
+        if(enable_log) LOG.info("Launch bolt:" + e.getOP() + " on node:" + node);
         long[] cpu;
         if (!conf.getBoolean("NAV", true)) {
             cpu = AC.requirePerCore(node);
@@ -173,7 +174,7 @@ public class ExecutionManager {
      * It stops all execution threads as well.
      */
     public void exist() {
-        LOG.info("Execution stops.");
+        if(enable_log) LOG.info("Execution stops.");
         if (clock != null) {
             clock.close();
         }

@@ -9,6 +9,8 @@ import execution.runtime.tuple.impl.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static common.CONTROL.enable_log;
+
 public class LocalStateSpout extends AbstractSpout {
     private static final Logger LOG = LoggerFactory.getLogger(LocalStateSpout.class);
     private static final long serialVersionUID = -8358880222505243596L;
@@ -28,7 +30,7 @@ public class LocalStateSpout extends AbstractSpout {
         int tuple_size = config.getInt("size_tuple");
         DataSource dataSource = new DataSource(skew, false, tuple_size, false);
 //        parser = new ReceiveParser();
-        LOG.info("Use localSpout now");
+        if(enable_log) LOG.info("Use localSpout now");
     }
 
     @Override
