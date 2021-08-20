@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import static common.CONTROL.enable_log;
 import static transaction.State.configure_store;
 
 public class SLInitializer extends TableInitilizer {
@@ -130,7 +131,7 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -162,7 +163,7 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
 
@@ -273,7 +274,7 @@ public class SLInitializer extends TableInitilizer {
             DataHolder.events = new TransactionEvent[totalRecords];
             File file = new File(folder + "transactions.txt");
             if (file.exists()) {
-                LOG.info(String.format("Reading transactions..."));
+                if(enable_log) LOG.info(String.format("Reading transactions..."));
                 try {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
                     String txn = reader.readLine();
@@ -299,14 +300,14 @@ public class SLInitializer extends TableInitilizer {
                         DataHolder.events[count] = event;
                         count++;
                         if (count % 100000 == 0)
-                            LOG.info(String.format("%d transactions read...", count));
+                            if(enable_log) LOG.info(String.format("%d transactions read...", count));
                         txn = reader.readLine();
                     }
                     reader.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                LOG.info(String.format("Done reading transactions..."));
+                if(enable_log) LOG.info(String.format("Done reading transactions..."));
 
                 if (shufflingActive) {
                     Random random = new Random();

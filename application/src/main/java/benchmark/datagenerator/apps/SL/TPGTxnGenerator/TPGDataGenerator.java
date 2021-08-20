@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import static common.CONTROL.enable_log;
+
 /**
  * \textbf{Workload Configurations.}
  * We extend SL for workload sensitivity study by tweaking its workload generation for varying dependency characteristics. The default configuration and varying values of parameters are summarized in \tony{Table~\ref{}}.
@@ -79,9 +81,9 @@ public class TPGDataGenerator extends SpecialDataGenerator {
 //            generateTuple();
 //        }
 //
-//        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
+//        if(enable_log) LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
 //        dumpGeneratedDataToFile();
-//        LOG.info("Data Generation is done...");
+//        if(enable_log) LOG.info("Data Generation is done...");
 //        clearDataStructures();
 //    }
 
@@ -200,7 +202,7 @@ public class TPGDataGenerator extends SpecialDataGenerator {
 
         File file = new File(dataConfig.getRootPath());
         if (file.exists()) {
-            LOG.info("Data already exists.. skipping data generation...");
+            if(enable_log) LOG.info("Data already exists.. skipping data generation...");
             return;
         }
         file.mkdirs();
@@ -217,7 +219,7 @@ public class TPGDataGenerator extends SpecialDataGenerator {
             e.printStackTrace();
         }
 
-        LOG.info("Dumping transactions...");
+        if(enable_log) LOG.info("Dumping transactions...");
         dataOutputHandler.sinkTransactions(dataTransactions);
     }
 

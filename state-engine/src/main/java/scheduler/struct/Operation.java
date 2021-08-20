@@ -3,9 +3,7 @@ package scheduler.struct;
 import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scheduler.context.LayeredTPGContext;
 import scheduler.context.SchedulerContext;
-import scheduler.impl.layered.DFSScheduler;
 import scheduler.struct.MetaTypes.DependencyType;
 import scheduler.struct.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
@@ -14,10 +12,11 @@ import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
 
-import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static common.CONTROL.enable_log;
 
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
@@ -169,7 +168,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
     public void stateTransition(OperationStateType state) {
-        LOG.debug(this + " : state transit " + operationState + " -> " + state);
+        if(enable_log) LOG.debug(this + " : state transit " + operationState + " -> " + state);
         operationState.getAndSet(state);
     }
 

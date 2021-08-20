@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.HashMap;
 
+import static common.CONTROL.enable_log;
+
 public class MeasureSink_latency extends BaseSink {
     protected static final Logger LOG = LoggerFactory.getLogger(MeasureSink_latency.class);
     protected static final DescriptiveStatistics latency = new DescriptiveStatistics();
@@ -74,7 +76,7 @@ public class MeasureSink_latency extends BaseSink {
         double results = helper.execute(input.getBID());
         if (results != 0) {
             this.setResults(results);
-            LOG.info("Sink finished:" + results);
+            if(enable_log) LOG.info("Sink finished:" + results);
             check();
         }
     }
@@ -103,7 +105,7 @@ public class MeasureSink_latency extends BaseSink {
                 }
                 if (results != 0) {
                     this.setResults(results);
-                    LOG.info("Sink finished:" + results);
+                    if(enable_log) LOG.info("Sink finished:" + results);
                     check();
                 }
             }
@@ -116,7 +118,7 @@ public class MeasureSink_latency extends BaseSink {
     protected void check() {
         if (!profile) {
             for (int key = 0; key < num_msg; key++) {
-//                LOG.info("=====Process latency of msg====");
+//                if(enable_log) LOG.info("=====Process latency of msg====");
                 latency.addValue((latency_map[key] / 1E6));
             }
             try {
@@ -133,7 +135,7 @@ public class MeasureSink_latency extends BaseSink {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            LOG.info("Stop all threads sequentially");
+            if(enable_log) LOG.info("Stop all threads sequentially");
             context.Sequential_stopAll();
         }
     }

@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Properties;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Got datasource, and the corresponding spout executor has the split wrapper..
  * Created by I309939 on 7/29/2016.
@@ -36,11 +38,11 @@ public class utils {
                 int skew = Integer.parseInt(args[3]);
                 final boolean test = Boolean.parseBoolean(args[4]);
                 final boolean verbose = Boolean.parseBoolean(args[5]);
-//                LOG.info("Run producer with skew of:" + skew + ", tuple_size:" + tuple_size + ", verbose?" + verbose);
+//                if(enable_log) LOG.info("Run producer with skew of:" + skew + ", tuple_size:" + tuple_size + ", verbose?" + verbose);
                 DataSource dataSource = new DataSource("applications.helper.wrapper.StringStatesWrapper", skew, test, tuple_size, verbose);
                 if (test) {
                     final Event event = dataSource.generateEvent();
-                    LOG.info("Test output:" + Arrays.toString(event.getEvent().split(Event.split_expression)));
+                    if(enable_log) LOG.info("Test output:" + Arrays.toString(event.getEvent().split(Event.split_expression)));
                     return;
                 }
                 Producer<String, String> producer = new Producer<>(configure());
@@ -59,7 +61,7 @@ public class utils {
                 }
             }
 //            case 2: {//compatibility Brisk.topology killer.
-//                LOG.info("Run Storm killer");
+//                if(enable_log) LOG.info("Run Storm killer");
 //                kill_storm.kill();
 //            }
         }

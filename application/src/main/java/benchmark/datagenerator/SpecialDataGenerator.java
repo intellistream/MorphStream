@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Data generator for benchmarks, this class contains all common methods and attributes that can be used in each application
  */
@@ -37,9 +39,9 @@ public abstract class SpecialDataGenerator {
             generateTuple();
         }
 
-        LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
+        if(enable_log) LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
         dumpGeneratedDataToFile();
-        LOG.info("Data Generation is done...");
+        if(enable_log) LOG.info("Data Generation is done...");
         clearDataStructures();
         this.dataConfig = null;
     }
@@ -47,8 +49,8 @@ public abstract class SpecialDataGenerator {
     protected boolean isFileExist() {
         File file = new File(dataConfig.getRootPath());
         if (file.exists()) {
-            LOG.info("Data already exists.. skipping data generation...");
-            LOG.info(dataConfig.getRootPath());
+            if(enable_log) LOG.info("Data already exists.. skipping data generation...");
+            if(enable_log) LOG.info(dataConfig.getRootPath());
             return true;
         }
         return false;

@@ -60,19 +60,19 @@ public class TStreamRunner extends Runner {
     }
 
     public static void main(String[] args) {
-        log.info("Program Starts..");
+        if (enable_log) log.info("Program Starts..");
         TStreamRunner runner = new TStreamRunner();
         JCommander cmd = new JCommander(runner);
         try {
             cmd.parse(args);
         } catch (ParameterException ex) {
-            System.err.println("Argument error: " + ex.getMessage());
+            log.error("Argument error: " + ex.getMessage());
             cmd.usage();
         }
         try {
             runner.run();
         } catch (InterruptedException ex) {
-            log.error("Error in running topology locally", ex);
+            if (enable_log) log.error("Error in running topology locally", ex);
         }
     }
 
@@ -88,14 +88,14 @@ public class TStreamRunner extends Runner {
         sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
         long time_elapsed = (long) ((System.currentTimeMillis() - start) / 1E3 / 60);//in mins
         if (time_elapsed > 20) {
-            log.info("Program error, exist...");
+            if (enable_log) log.info("Program error, exist...");
             System.exit(-1);
         }
 
         submitter.getOM().join();
         submitter.getOM().getEM().exist();
         if (sinkThread.running) {
-            log.info("The application fails to stop normally, exist...");
+            if (enable_log) log.info("The application fails to stop normally, exist...");
             return -1;
         } else {
             if (enable_app_combo) {
@@ -138,13 +138,13 @@ public class TStreamRunner extends Runner {
         double rt = runTopologyLocally(topology, config);
         if (enable_profile) {
             if (rt != -1) {//returns normally.
-                log.info("finished measurement (k events/s):\t" + rt);
+                if (enable_log) log.info("finished measurement (k events/s):\t" + rt);
             }
             if (enable_shared_state) {
                 SpinLock[] spinlock = final_topology.spinlock;
                 for (SpinLock lock : spinlock) {
                     if (lock != null)
-                        log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
+                        if (enable_log) log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
                 }
 
                 // decide the output path of metrics.
@@ -156,8 +156,8 @@ public class TStreamRunner extends Runner {
 
                 String statsFolderPath = String.format(statsFolderPattern, tthread, numberOfBatches, totalEventsPerBatch);
                 File file = new File(statsFolderPath);
-                log.info("Dumping stats to...");
-                log.info(String.valueOf(file.getAbsoluteFile()));
+                if (enable_log) log.info("Dumping stats to...");
+                if (enable_log) log.info(String.valueOf(file.getAbsoluteFile()));
                 file.mkdirs();
 
                 if (file.exists())

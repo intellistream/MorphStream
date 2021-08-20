@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static common.CONTROL.enable_log;
+
 /**
  * This class is used for set up affinity of each thread in the system.
  * By default, one thread is pin to one CPU core.
@@ -59,7 +61,7 @@ public class AffinityController {
             return require();
         } else {
             int num_cpu = conf.getInt("num_cpu", 8);
-            LOG.info("num_cpu:" + num_cpu);
+            if(enable_log) LOG.info("num_cpu:" + num_cpu);
             if (node >= sockets) {
                 node = sockets - 1;//make sure less than maximum num_socket.
             }
@@ -70,7 +72,7 @@ public class AffinityController {
                     ArrayList<Integer> list = this.mapping_node[node];
                     cpus[i] = (list.get(cnt));
                 } catch (Exception e) {
-                    LOG.info("Not available CPUs...?" + e.getMessage());
+                    if(enable_log) LOG.info("Not available CPUs...?" + e.getMessage());
                     System.exit(-1);
                 }
                 cpu_pnt.put(node, (cnt + 1) % cores);
@@ -95,7 +97,7 @@ public class AffinityController {
             try {
                 cpus[0] = (this.mapping_node[node].get(cnt));
             } catch (Exception e) {
-                LOG.info("No available CPUs");
+                if(enable_log) LOG.info("No available CPUs");
                 System.exit(-1);
             }
             if ((conf.getBoolean("profile", false) || conf.getBoolean("NAV", false)) && cnt == 17) {

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.enable_log;
 
 public class MeasureSink_Txn extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(MeasureSink_Txn.class);
@@ -16,7 +17,7 @@ public class MeasureSink_Txn extends MeasureSink {
         results = helper.execute(input.getBID());
         if (results != 0) {
             this.setResults(results);
-            LOG.info("Sink finished:" + results);
+            if(enable_log) LOG.info("Sink finished:" + results);
             if (thisTaskId == graph.getSink().getExecutorID()) {
                 measure_end(results);
             }
@@ -32,7 +33,7 @@ public class MeasureSink_Txn extends MeasureSink {
 //				final Long stored_process_latency = latency_map.getOrDefault(msgId, 0L);
 //				if (process_latency > stored_process_latency)//pick the worst.
 //				{
-//				LOG.debug("msgID:" + msgId + " is at:\t" + process_latency / 1E6 + "\tms");
+//				if(enable_log) LOG.debug("msgID:" + msgId + " is at:\t" + process_latency / 1E6 + "\tms");
                         latency_map.add(process_latency);
 //				}
                     } catch (Exception e) {

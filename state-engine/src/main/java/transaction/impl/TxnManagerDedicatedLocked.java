@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 
+import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.kMaxAccessNum;
 
 /**
@@ -109,7 +110,7 @@ public abstract class TxnManagerDedicatedLocked implements TxnManager {
             assert !rt || record_.getRecord() != null;
             return rt;
         } else {
-            log.info("No record is found:" + primary_key);
+            if(enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }
@@ -120,7 +121,7 @@ public abstract class TxnManagerDedicatedLocked implements TxnManager {
             boolean rt = lock_aheadCC(txn_context, table_name, t_record, record_, access_type);
             return rt;
         } else {
-            log.info("No record is found:" + primary_key);
+            if(enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }
@@ -133,7 +134,7 @@ public abstract class TxnManagerDedicatedLocked implements TxnManager {
             boolean rt = SelectKeyRecord_noLockCC(txn_context, table_name, t_record, record_, access_type);
             return rt;
         } else {
-            log.info("No record is found:" + primary_key);
+            if(enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }

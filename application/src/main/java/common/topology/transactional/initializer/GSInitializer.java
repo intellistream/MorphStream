@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
 import static common.Constants.Event_Path;
 import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
@@ -59,7 +60,7 @@ public class GSInitializer extends TableInitilizer {
         } else {
             System.exit(-1);
         }
-        LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
+        if(enable_log) LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
         configure_store(scale_factor, theta, tthread, NUM_ITEMS);
     }
 
@@ -105,7 +106,7 @@ public class GSInitializer extends TableInitilizer {
             assert value.length() == VALUE_LEN;
             insertMicroRecord(key, value);
         }
-        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -124,7 +125,7 @@ public class GSInitializer extends TableInitilizer {
             assert value.length() == VALUE_LEN;
             insertMicroRecord(key, value, pid, spinlock_);
         }
-        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override

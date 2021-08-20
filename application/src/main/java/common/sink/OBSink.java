@@ -5,6 +5,8 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static common.CONTROL.enable_log;
+
 public class OBSink extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(OBSink.class);
     private static final long serialVersionUID = 5481794109405775823L;
@@ -26,7 +28,7 @@ public class OBSink extends MeasureSink {
     }
 
     public void display() {
-        LOG.info("Success: " + success + "(" + (success / (success + failure)) + ")");
-        LOG.info("Failure: " + failure + "(" + (failure / (success + failure)) + ")");
+        if(enable_log) LOG.info("Success: " + success + "(" + (success / (success + failure)) + ")");
+        if(enable_log) LOG.info("Failure: " + failure + "(" + (failure / (success + failure)) + ")");
     }
 }

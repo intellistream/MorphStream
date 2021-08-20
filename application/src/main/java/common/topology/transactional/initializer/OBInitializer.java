@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
 import static common.Constants.Event_Path;
 import static common.constants.OnlineBidingSystemConstants.Constant.*;
@@ -60,7 +61,7 @@ public class OBInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             insertItemRecords(key, 100);
         }
-        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -77,7 +78,7 @@ public class OBInitializer extends TableInitilizer {
             int pid = get_pid(partition_interval, key);
             insertItemRecords(key, 100, pid, spinlock);
         }
-        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override

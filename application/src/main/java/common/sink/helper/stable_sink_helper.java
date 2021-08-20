@@ -38,7 +38,7 @@ public class stable_sink_helper extends helper {
 //            if ((warm_end - warm_start) > warm_up)//test if warm up ended.
 //            {
 //                need_warm_up = false;
-//                LOG.info("Sink warm up phase finished");
+//                if(enable_log) LOG.info("Sink warm up phase finished");
 //            }
 //        } else {
         StartMeasurement();
