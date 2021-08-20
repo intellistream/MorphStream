@@ -88,8 +88,8 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext, ExecutionUnit
             for (SchedulingUnit oc : ocs) {
                 ((LayeredTPGContext) context).totalOsToSchedule += oc.getOperations().size();
             }
-            HashMap<Integer, ArrayList<SchedulingUnit>> layeredOCBucketThread = ((LayeredTPGContext) context).layeredOCBucketGlobal;
-            ((LayeredTPGContext) context).maxLevel = buildBucketPerThread(layeredOCBucketThread, ocs);
+            HashMap<Integer, ArrayList<SchedulingUnit>> layeredOCBucketPerThread = ((LayeredTPGContext) context).allocatedLayeredOCBucket;
+            ((LayeredTPGContext) context).maxLevel = buildBucketPerThread(layeredOCBucketPerThread, ocs);
             System.out.println(((LayeredTPGContext) context).maxLevel);
         }
     }
