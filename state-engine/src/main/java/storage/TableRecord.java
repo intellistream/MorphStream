@@ -1,7 +1,7 @@
 package storage;
 
-import common.SpinLock;
 import content.*;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.table.RowID;

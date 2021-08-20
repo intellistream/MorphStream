@@ -1,9 +1,9 @@
 package common.bolts.transactional.gs;
 
-import common.meta.CommonMetaTypes;
 import common.param.mb.MicroEvent;
 import common.sink.SINKCombo;
 import components.operators.api.TransactionalBolt;
+import content.common.CommonMetaTypes;
 import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
@@ -11,15 +11,15 @@ import org.slf4j.Logger;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.datatype.DataBox;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 import java.util.List;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
-import static common.meta.CommonMetaTypes.AccessType.READ_ONLY;
-import static common.meta.CommonMetaTypes.AccessType.READ_WRITE;
+import static content.common.CommonMetaTypes.AccessType.READ_ONLY;
+import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 

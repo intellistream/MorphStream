@@ -1,13 +1,13 @@
 package transaction;
 
-import benchmark.TxnParam;
-import common.SpinLock;
 import common.collections.Configuration;
 import common.tools.FastZipfGenerator;
+import content.common.TxnParam;
 import db.Database;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.scheduler.SchedulerContext;
+import scheduler.context.SchedulerContext;
 
 import java.io.IOException;
 import java.util.Arrays;

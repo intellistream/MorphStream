@@ -1,7 +1,5 @@
 package common.topology.transactional;
 
-import common.PartitionedOrderLock;
-import common.SpinLock;
 import common.bolts.transactional.ob.OBBolt_lwm;
 import common.bolts.transactional.ob.OBBolt_olb;
 import common.bolts.transactional.ob.OBBolt_sstore;
@@ -13,6 +11,8 @@ import components.Topology;
 import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
+import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;

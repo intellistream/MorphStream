@@ -1,9 +1,9 @@
 package content;
 
-import common.OrderLock;
+import lock.OrderLock;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 import java.util.List;
 import java.util.Map;

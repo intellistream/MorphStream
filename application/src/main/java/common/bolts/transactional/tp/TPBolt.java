@@ -12,7 +12,7 @@ import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import storage.datatype.DataBox;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +21,7 @@ import java.util.Map;
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static common.meta.CommonMetaTypes.AccessType.READ_WRITE;
+import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 

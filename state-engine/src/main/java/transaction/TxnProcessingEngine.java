@@ -3,9 +3,9 @@ package transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import transaction.scheduler.IScheduler;
-import transaction.scheduler.SchedulerContext;
-import transaction.scheduler.SchedulerFactory;
+import scheduler.SchedulerFactory;
+import scheduler.context.SchedulerContext;
+import scheduler.impl.IScheduler;
 
 /**
  * There is one TxnProcessingEngine of each stage.

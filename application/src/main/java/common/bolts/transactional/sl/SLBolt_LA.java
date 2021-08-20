@@ -5,7 +5,7 @@ import common.param.sl.TransactionEvent;
 import common.sink.SINKCombo;
 import db.DatabaseException;
 import org.slf4j.Logger;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 import static profiler.MeasureTools.*;
 

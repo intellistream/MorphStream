@@ -2,7 +2,7 @@ package profiler;
 
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
-import static common.meta.CommonMetaTypes.kMaxThreadNum;
+import static content.common.CommonMetaTypes.kMaxThreadNum;
 
 public class Metrics {
     public static int COMPUTE_COMPLEXITY = 10;//default setting. 1, 10, 100

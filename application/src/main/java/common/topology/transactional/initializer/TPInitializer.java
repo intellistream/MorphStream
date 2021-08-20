@@ -1,11 +1,12 @@
 package common.topology.transactional.initializer;
 
-import common.SpinLock;
 import common.collections.Configuration;
 import db.Database;
 import db.DatabaseException;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -14,7 +15,6 @@ import storage.datatype.HashSetDataBox;
 import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
-import transaction.scheduler.SchedulerContext;
 
 import java.util.ArrayList;
 import java.util.List;

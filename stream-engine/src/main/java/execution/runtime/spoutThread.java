@@ -1,12 +1,12 @@
 package execution.runtime;
 
-import common.Clock;
 import common.collections.Configuration;
 import components.context.TopologyContext;
 import components.operators.executor.BasicSpoutBatchExecutor;
 import db.DatabaseException;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
+import lock.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

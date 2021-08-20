@@ -1,6 +1,6 @@
 package db;
 
-import benchmark.TxnParam;
+import content.common.TxnParam;
 import operator.QueryPlan;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;

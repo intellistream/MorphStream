@@ -1,6 +1,6 @@
 package index;
 
-import common.RWLock;
+import lock.RWLock;
 import storage.TableRecord;
 
 /**

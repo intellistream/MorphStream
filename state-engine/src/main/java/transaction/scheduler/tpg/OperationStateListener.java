@@ -1,8 +1,8 @@
 package transaction.scheduler.tpg;
 
 
-import transaction.scheduler.tpg.struct.MetaTypes;
-import transaction.scheduler.tpg.struct.Operation;
+import scheduler.struct.MetaTypes;
+import scheduler.struct.Operation;
 
 public interface OperationStateListener {
     void onOpParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState);

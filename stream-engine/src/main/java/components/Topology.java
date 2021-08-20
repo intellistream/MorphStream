@@ -1,9 +1,9 @@
 package components;
 
-import common.SpinLock;
 import common.platform.Platform;
 import controller.input.InputStreamController;
 import db.Database;
+import lock.SpinLock;
 import topology.TransactionTopology;
 import transaction.TableInitilizer;
 

@@ -10,7 +10,7 @@ import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.dedicated.TxnManagerNoLock;
+import transaction.impl.TxnManagerNoLock;
 
 import java.util.Map;
 

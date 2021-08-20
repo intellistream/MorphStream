@@ -1,8 +1,8 @@
 package topology;
 
-import common.SpinLock;
 import common.collections.Configuration;
 import db.CavaliaDatabase;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.TableInitilizer;

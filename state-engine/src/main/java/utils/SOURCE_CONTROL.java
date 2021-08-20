@@ -1,6 +1,6 @@
 package utils;
 
-import common.SpinLock;
+import lock.SpinLock;
 
 import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import profiler.Metrics;
 import transaction.TxnManager;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 import utils.SOURCE_CONTROL;
 
 import java.util.concurrent.BrokenBarrierException;

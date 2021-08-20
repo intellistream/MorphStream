@@ -27,7 +27,7 @@ public abstract class Runner implements IRunner {
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 5_000_000;//
-//        public int NUM_ITEMS = 100;//
+    //        public int NUM_ITEMS = 100;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
     @Parameter(names = {"--scale_factor"}, description = "scale_factor")
@@ -61,7 +61,7 @@ public abstract class Runner implements IRunner {
     public boolean disable_pushdown = false;
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (seconds)")
     public double checkpoint_interval = 5;// default checkpoint interval.
-//    @Parameter(names = {"--TP"}, description = "TP threads")
+    //    @Parameter(names = {"--TP"}, description = "TP threads")
 //    public int TP = 4;// default TP threads
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 40;// default total execution threads
@@ -103,7 +103,7 @@ public abstract class Runner implements IRunner {
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
     public String scheduler = "BFS";
-//    public String scheduler = "GS";
+    //    public String scheduler = "GS";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")

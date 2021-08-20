@@ -1,9 +1,9 @@
 package content;
 
-import common.OrderLock;
-import common.meta.CommonMetaTypes;
+import content.common.CommonMetaTypes;
+import lock.OrderLock;
 import storage.SchemaRecord;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 public abstract class ToContent implements Content {
     @Override

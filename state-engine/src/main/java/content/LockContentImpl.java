@@ -1,12 +1,12 @@
 package content;
 
-import common.OrderLock;
-import common.RWLock;
-import common.meta.CommonMetaTypes;
+import content.common.CommonMetaTypes;
+import lock.OrderLock;
+import lock.RWLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 import java.util.concurrent.atomic.AtomicLong;
 

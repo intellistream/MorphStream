@@ -5,7 +5,7 @@ import execution.ExecutionGraph;
 import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.dedicated.ordered.TxnManagerLWM;
+import transaction.impl.ordered.TxnManagerLWM;
 
 public class GSBolt_lwm extends GSBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_lwm.class);

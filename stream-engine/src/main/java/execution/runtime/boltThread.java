@@ -1,6 +1,5 @@
 package execution.runtime;
 
-import common.Clock;
 import common.collections.Configuration;
 import components.context.TopologyContext;
 import components.operators.executor.BoltExecutor;
@@ -10,6 +9,7 @@ import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
+import lock.Clock;
 import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

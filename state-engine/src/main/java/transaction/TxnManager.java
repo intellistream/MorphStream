@@ -1,17 +1,17 @@
 package transaction;
 
-import common.OrderLock;
-import common.PartitionedOrderLock;
-import common.meta.CommonMetaTypes;
+import content.common.CommonMetaTypes;
 import db.DatabaseException;
+import lock.OrderLock;
+import lock.PartitionedOrderLock;
+import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.TableRecordRef;
 import storage.datatype.DataBox;
+import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
-import transaction.impl.TxnContext;
-import transaction.scheduler.SchedulerContext;
 
 import java.util.LinkedList;
 import java.util.List;

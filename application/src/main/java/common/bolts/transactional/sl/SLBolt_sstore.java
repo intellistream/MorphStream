@@ -11,8 +11,8 @@ import execution.runtime.collector.OutputCollector;
 import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.dedicated.ordered.TxnManagerSStore;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
+import transaction.impl.ordered.TxnManagerSStore;
 
 import java.util.Map;
 

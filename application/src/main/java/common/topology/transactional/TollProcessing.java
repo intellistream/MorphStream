@@ -1,7 +1,5 @@
 package common.topology.transactional;
 
-import common.PartitionedOrderLock;
-import common.SpinLock;
 import common.bolts.lr.DispatcherBolt;
 import common.bolts.transactional.tp.*;
 import common.collections.Configuration;
@@ -16,6 +14,8 @@ import components.grouping.FieldsGrouping;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
 import execution.runtime.tuple.impl.Fields;
+import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;

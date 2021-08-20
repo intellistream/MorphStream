@@ -1,7 +1,5 @@
 package common.topology.transactional;
 
-import common.PartitionedOrderLock;
-import common.SpinLock;
 import common.bolts.transactional.sl.SLBolt_lwm;
 import common.bolts.transactional.sl.SLBolt_olb;
 import common.bolts.transactional.sl.SLBolt_sstore;
@@ -13,6 +11,8 @@ import components.Topology;
 import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
+import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;
@@ -22,7 +22,6 @@ import java.util.Random;
 
 import static common.CONTROL.enable_app_combo;
 import static common.constants.StreamLedgerConstants.Conf.SL_THREADS;
-import static common.constants.StreamLedgerConstants.Constant.NUM_ACCOUNTS;
 import static common.constants.StreamLedgerConstants.PREFIX;
 import static utils.PartitionHelper.setPartition_interval;
 

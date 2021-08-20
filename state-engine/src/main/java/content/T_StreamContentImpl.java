@@ -1,10 +1,10 @@
 package content;
 
-import common.meta.CommonMetaTypes;
+import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 public class T_StreamContentImpl extends T_StreamContent {
     private static final Logger LOG = LoggerFactory.getLogger(T_StreamContentImpl.class);

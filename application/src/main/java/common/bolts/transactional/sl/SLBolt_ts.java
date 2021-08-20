@@ -14,11 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import storage.SchemaRecord;
-import transaction.dedicated.ordered.TxnManagerTStream;
+import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.DEC;
 import transaction.function.INC;
-import transaction.impl.TxnContext;
+import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
 import java.util.Map;

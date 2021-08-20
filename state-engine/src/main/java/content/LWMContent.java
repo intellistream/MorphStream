@@ -1,10 +1,10 @@
 package content;
 
-import common.OrderLock;
-import common.RWLock;
+import lock.OrderLock;
+import lock.RWLock;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 import java.util.List;
 import java.util.TreeMap;

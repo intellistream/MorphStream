@@ -1,6 +1,5 @@
 package execution;
 
-import common.Clock;
 import common.collections.Configuration;
 import components.context.TopologyContext;
 import components.exception.UnhandledCaseException;
@@ -10,6 +9,7 @@ import execution.runtime.boltThread;
 import execution.runtime.executorThread;
 import execution.runtime.spoutThread;
 import faulttolerance.Writer;
+import lock.Clock;
 import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

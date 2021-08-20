@@ -1,6 +1,6 @@
 package common.param;
 
-import benchmark.TxnParam;
+import content.common.TxnParam;
 
 public class MicroParam extends TxnParam {
     int[] keys;

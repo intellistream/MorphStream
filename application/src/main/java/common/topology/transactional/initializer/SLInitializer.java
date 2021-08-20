@@ -7,14 +7,15 @@ import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGenerator;
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
-import common.SpinLock;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.sl.TransactionEvent;
 import db.Database;
 import db.DatabaseException;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -22,7 +23,6 @@ import storage.datatype.LongDataBox;
 import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
-import transaction.scheduler.SchedulerContext;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -33,8 +33,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import static common.constants.StreamLedgerConstants.Constant.ACCOUNT_ID_PREFIX;
-import static common.constants.StreamLedgerConstants.Constant.BOOK_ENTRY_ID_PREFIX;
 import static transaction.State.configure_store;
 
 public class SLInitializer extends TableInitilizer {
