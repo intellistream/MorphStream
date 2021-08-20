@@ -10,9 +10,7 @@ import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 
-import static content.common.CommonMetaTypes.AccessType.*;
-
-public abstract class LayeredScheduler<Context extends LayeredTPGContext> extends Scheduler<Context, OperationChain> {
+public abstract class LayeredScheduler<Context extends LayeredTPGContext, OC extends OperationChain> extends Scheduler<Context, OC> {
 
     public LayeredScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -29,7 +27,7 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext> extend
     public void PROCESS(Context context, long mark_ID) {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-        OperationChain next = next(context);
+        OC next = next(context);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
         if (next != null) {
             execute(context, next.getOperations(), mark_ID);
@@ -61,8 +59,8 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext> extend
      * @param context
      * @return
      */
-    private OperationChain next(Context context) {
-        OperationChain operationChain = context.ready_oc;
+    private OC next(Context context) {
+        OC operationChain = (OC) context.ready_oc;
         context.ready_oc = null;
         return operationChain;// if a null is returned, it means, we are done with this level!
     }
@@ -74,7 +72,7 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext> extend
      * 3. shared: put all operations in a pool and
      */
     @Override
-    public void DISTRIBUTE(OperationChain task, Context context) {
+    public void DISTRIBUTE(OC task, Context context) {
         context.ready_oc = task;
     }
 
@@ -84,9 +82,9 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext> extend
      * @param context
      * @return
      */
-    protected OperationChain Next(Context context) {
-        ArrayList<OperationChain> ocs = context.OCSCurrentLayer(); //
-        OperationChain oc = null;
+    protected OC Next(Context context) {
+        ArrayList<OC> ocs = context.OCSCurrentLayer(); //
+        OC oc = null;
         if (ocs != null && context.currentLevelIndex < ocs.size()) {
             oc = ocs.get(context.currentLevelIndex++);
             context.scheduledOPs += oc.getOperations().size();

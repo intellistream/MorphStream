@@ -4,7 +4,9 @@ import scheduler.context.LayeredTPGContext;
 import scheduler.struct.MetaTypes;
 import scheduler.struct.Operation;
 import scheduler.struct.OperationChain;
+import scheduler.struct.dfs.DFSOperationChain;
 
+import java.util.Collection;
 import java.util.Queue;
 
 /**
@@ -14,7 +16,7 @@ import java.util.Queue;
  * 3. thread will find operations from its queue for execution.
  * It's a shared data structure!
  */
-public class DFSScheduler<Context extends LayeredTPGContext> extends LayeredScheduler<Context> {
+public class DFSScheduler<Context extends LayeredTPGContext, OC extends DFSOperationChain> extends LayeredScheduler<Context, OC> {
 
     public DFSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -27,7 +29,7 @@ public class DFSScheduler<Context extends LayeredTPGContext> extends LayeredSche
 
     @Override
     public void EXPLORE(Context context) {
-        OperationChain oc = Next(context);
+        OC oc = Next(context);
         while (oc == null) {
             if (context.finished())
                 break;
@@ -45,10 +47,11 @@ public class DFSScheduler<Context extends LayeredTPGContext> extends LayeredSche
      * @param context
      */
     @Override
-    protected void NOTIFY(OperationChain operationChain, Context context) {
+    protected void NOTIFY(OC operationChain, Context context) {
 //        context.partitionStateManager.onOcExecuted(operationChain);
         // TODO: operation chain need to be refactored for BFS, DFS, GS
-        for (OperationChain childOC : operationChain.getFDChildren()) {
+        Collection<OC> ocs = operationChain.getFDChildren();
+        for (OC childOC : ocs) {
             childOC.updateDependency();
         }
     }

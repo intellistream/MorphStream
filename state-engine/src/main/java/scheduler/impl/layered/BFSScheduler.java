@@ -2,6 +2,7 @@ package scheduler.impl.layered;
 
 import scheduler.context.LayeredTPGContext;
 import scheduler.struct.OperationChain;
+import scheduler.struct.dfs.DFSOperationChain;
 import utils.SOURCE_CONTROL;
 
 /**
@@ -11,7 +12,7 @@ import utils.SOURCE_CONTROL;
  * 3. thread will find operations from its queue for execution.
  * It's a shared data structure!
  */
-public class BFSScheduler<Context extends LayeredTPGContext> extends LayeredScheduler<Context> {
+public class BFSScheduler<Context extends LayeredTPGContext> extends LayeredScheduler<Context, OperationChain> {
 
     public BFSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);

@@ -33,6 +33,8 @@ public abstract class AbstractOperation {
     public volatile TableRecord[] condition_records;
     public Condition condition;
     public int[] success;
+    // an operation id to indicate how many operations in front of this operation in the same transaction.
+    public boolean isFailed;
 
     public AbstractOperation(Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
                              TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid) {
@@ -47,5 +49,24 @@ public abstract class AbstractOperation {
         this.s_record = s_record;
         this.d_record = d_record;
         this.bid = bid;
+    }
+
+    /**
+     * TODO: make it better.
+     * It has an assumption that no duplicate keys for the same BID. --> This helps a lot!
+     *
+     * @param operation
+     * @return
+     */
+    public int compareTo(Operation operation) {
+        if (this.bid == (operation.bid)) {
+            return this.d_record.getID() - operation.d_record.getID();
+        } else
+            return Long.compare(this.bid, operation.bid);
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(bid);
     }
 }

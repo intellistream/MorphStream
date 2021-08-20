@@ -9,6 +9,10 @@ import scheduler.Request;
 import scheduler.SchedulerFactory;
 import scheduler.context.LayeredTPGContext;
 import scheduler.context.SchedulerContext;
+import scheduler.struct.Operation;
+import scheduler.struct.OperationChain;
+import scheduler.struct.dfs.DFSOperation;
+import scheduler.struct.dfs.DFSOperationChain;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
@@ -47,15 +51,15 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         SchedulerFactory.SCHEDULER_TYPE scheduler_type = SchedulerFactory.SCHEDULER_TYPE.valueOf(schedulerType);
         switch (scheduler_type) {
             case BFS:
-                context = new LayeredTPGContext(thisTaskId, thread_count);
+                context = new LayeredTPGContext<Operation, OperationChain>(thisTaskId, thread_count);
                 instance.getScheduler().AddContext(thisTaskId, context);
                 break;
             case DFS: // TODO
-                context = new LayeredTPGContext(thisTaskId, thread_count);
+                context = new LayeredTPGContext<DFSOperation, DFSOperationChain>(thisTaskId, thread_count);
                 instance.getScheduler().AddContext(thisTaskId, context);
                 break;
             case GS: // TODO
-                context = new LayeredTPGContext(thisTaskId, thread_count);
+                context = new LayeredTPGContext<DFSOperation, DFSOperationChain>(thisTaskId, thread_count);
                 instance.getScheduler().AddContext(thisTaskId, context);
                 break;
             default:

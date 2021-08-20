@@ -4,6 +4,8 @@ import scheduler.context.LayeredTPGContext;
 import scheduler.impl.IScheduler;
 import scheduler.impl.layered.BFSScheduler;
 import scheduler.impl.layered.DFSScheduler;
+import scheduler.struct.Operation;
+import scheduler.struct.dfs.DFSOperationChain;
 
 /**
  * Author: Aqif Hamid
@@ -27,7 +29,7 @@ public class SchedulerFactory {
                 scheduler = new BFSScheduler<LayeredTPGContext>(totalThread, NUM_ITEMS);
                 break;
             case DFS: // TODO: add GS
-                scheduler = new DFSScheduler<LayeredTPGContext>(totalThread, NUM_ITEMS);
+                scheduler = new DFSScheduler<LayeredTPGContext, DFSOperationChain>(totalThread, NUM_ITEMS);
                 break;
         }
         return scheduler;

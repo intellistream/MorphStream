@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.LayeredTPGContext;
+import transaction.impl.ordered.MyList;
 import utils.lib.ConcurrentHashMap;
 
 import java.util.ArrayList;
@@ -31,9 +32,8 @@ import static scheduler.impl.Scheduler.getTaskId;
  */
 public class TaskPrecedenceGraph {
     // all parameters in this class should be thread safe.
-    private static final Logger LOG = LoggerFactory.getLogger(Operation.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
     protected final int delta;//range of each partition. depends on the number of op in the stage.
-    //    private final ConcurrentHashMap<String, ConcurrentHashMap<Integer, ConcurrentHashMap<String, OperationChain>>> operationChains;// table -> taskid -> < state, OC>
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
     CyclicBarrier barrier;
 
@@ -64,7 +64,7 @@ public class TaskPrecedenceGraph {
      * @param operation
      * @param request
      */
-    public void setupOperationTDFD(Operation operation, Request request) {
+    public void setupOperationTDFD(AbstractOperation operation, Request request) {
         // TD
         OperationChain oc = addOperationToChain(operation);
         // FD
@@ -79,7 +79,6 @@ public class TaskPrecedenceGraph {
             submit(context, tableOCs.threadOCsMap.get(threadId).holder_v1.values());
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-
 //        LOG.trace("++++++ end explore");
     }
 
@@ -119,30 +118,21 @@ public class TaskPrecedenceGraph {
     /**
      * @param operation
      */
-    private OperationChain addOperationToChain(Operation operation) {
+    private OperationChain addOperationToChain(AbstractOperation operation) {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         String table_name = operation.table_name;
         String primaryKey = operation.d_record.record_.GetPrimaryKey();
-//        String operationChainKey = operation.getOperationChainKey();
         OperationChain retOc = getOC(table_name, primaryKey);
         retOc.addOperation(operation);
         return retOc;
     }
-
-//    @NotNull
-//    private OperationChain getOC(String table_name, String primaryKey, String operationChainKey) {
-//        return operationChains.get(getTaskId(primaryKey, delta)).computeIfAbsent(operationChainKey, s -> {
-//            nPendingOCs.incrementAndGet();
-//            return new OperationChain(table_name, primaryKey);
-//        });
-//    }
 
     private OperationChain getOC(String tableName, String pKey) {
         ConcurrentHashMap<String, OperationChain> holder = getTableOCs(tableName).threadOCsMap.get(getTaskId(pKey, delta)).holder_v1;
         return holder.computeIfAbsent(pKey, s -> new OperationChain(tableName, pKey));
     }
 
-    private void checkFD(OperationChain curOC, Operation op, String table_name,
+    private void checkFD(OperationChain curOC, AbstractOperation op, String table_name,
                          String key, String[] condition_sourceTable, String[] condition_source) {
         for (int index = 0; index < condition_source.length; index++) {
             if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
@@ -150,7 +140,8 @@ public class TaskPrecedenceGraph {
             OperationChain OCFromConditionSource = getOC(condition_sourceTable[index],
                     condition_source[index]);
             // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
-            if (OCFromConditionSource.getOperations().isEmpty() || OCFromConditionSource.getOperations().first().bid >= op.bid) {
+            MyList<AbstractOperation> conditionedOps = OCFromConditionSource.getOperations();
+            if (OCFromConditionSource.getOperations().isEmpty() || conditionedOps.first().bid >= op.bid) {
                 OCFromConditionSource.addPotentialFDChildren(curOC, op);
             } else {
                 // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
