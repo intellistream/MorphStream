@@ -31,7 +31,7 @@ import static scheduler.impl.Scheduler.getTaskId;
  * |
  * -> Key: OperationChain [ Operation... ]
  */
-public class TaskPrecedenceGraph<SchedulingUnit extends OperationChain> {
+public class TaskPrecedenceGraph<Context extends SchedulerContext, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain> {
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
     protected final int delta;//range of each partition. depends on the number of op in the stage.
@@ -65,14 +65,14 @@ public class TaskPrecedenceGraph<SchedulingUnit extends OperationChain> {
      * @param operation
      * @param request
      */
-    public <Context extends SchedulerContext> void setupOperationTDFD(AbstractOperation operation, Request request, Context context) {
+    public void setupOperationTDFD(AbstractOperation operation, Request request, Context context) {
         // TD
         SchedulingUnit oc = addOperationToChain(operation, context);
         // FD
         checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source, context);
     }
 
-    public <Context extends LayeredTPGContext> void firstTimeExploreTPG(Context context) {
+    public void firstTimeExploreTPG(Context context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         int threadId = context.thisThreadId;
         Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
@@ -83,13 +83,15 @@ public class TaskPrecedenceGraph<SchedulingUnit extends OperationChain> {
 //        LOG.trace("++++++ end explore");
     }
 
-    private <Context extends LayeredTPGContext> void submit(Context context, Collection<SchedulingUnit> ocs) {
-        for (SchedulingUnit oc : ocs) {
-            context.totalOsToSchedule += oc.getOperations().size();
+    private void submit(Context context, Collection<SchedulingUnit> ocs) {
+        if (context instanceof LayeredTPGContext) {
+            for (SchedulingUnit oc : ocs) {
+                ((LayeredTPGContext) context).totalOsToSchedule += oc.getOperations().size();
+            }
+            HashMap<Integer, ArrayList<SchedulingUnit>> layeredOCBucketThread = ((LayeredTPGContext) context).layeredOCBucketGlobal;
+            ((LayeredTPGContext) context).maxLevel = buildBucketPerThread(layeredOCBucketThread, ocs);
+            System.out.println(((LayeredTPGContext) context).maxLevel);
         }
-        HashMap<Integer, ArrayList<SchedulingUnit>> layeredOCBucketThread = context.layeredOCBucketGlobal;
-        context.maxLevel = buildBucketPerThread(layeredOCBucketThread, ocs);
-        System.out.println(context.maxLevel);
     }
 
     /**
@@ -119,7 +121,7 @@ public class TaskPrecedenceGraph<SchedulingUnit extends OperationChain> {
     /**
      * @param operation
      */
-    private <Context extends SchedulerContext> SchedulingUnit addOperationToChain(AbstractOperation operation, Context context) {
+    private SchedulingUnit addOperationToChain(AbstractOperation operation, Context context) {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         String table_name = operation.table_name;
         String primaryKey = operation.d_record.record_.GetPrimaryKey();
@@ -129,13 +131,13 @@ public class TaskPrecedenceGraph<SchedulingUnit extends OperationChain> {
     }
 
 
-    private <Context extends SchedulerContext> SchedulingUnit getOC(String tableName, String pKey, Context context) {
+    private SchedulingUnit getOC(String tableName, String pKey, Context context) {
         ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(getTaskId(pKey, delta)).holder_v1;
         return holder.computeIfAbsent(pKey, s -> (SchedulingUnit) context.createTask(tableName, pKey));
     }
 
-    private <Context extends SchedulerContext> void checkFD(SchedulingUnit curOC, AbstractOperation op, String table_name,
-                                                            String key, String[] condition_sourceTable, String[] condition_source, Context context) {
+    private void checkFD(SchedulingUnit curOC, AbstractOperation op, String table_name,
+                         String key, String[] condition_sourceTable, String[] condition_source, Context context) {
         for (int index = 0; index < condition_source.length; index++) {
             if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                 continue;// no need to check data dependency on a key itself.

@@ -7,7 +7,6 @@ import scheduler.Request;
 import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.OperationChain;
-import scheduler.struct.bfs.BFSOperationChain;
 import scheduler.struct.TaskPrecedenceGraph;
 import storage.SchemaRecord;
 import storage.TableRecord;
@@ -25,7 +24,7 @@ import static content.common.CommonMetaTypes.AccessType.*;
 @lombok.extern.slf4j.Slf4j
 public abstract class Scheduler<Context extends SchedulerContext, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain> implements IScheduler<Context> {
     public final int delta;//range of each partition. depends on the number of op in the stage.
-    public final TaskPrecedenceGraph<SchedulingUnit> tpg; // TPG to be maintained in this global instance.
+    public final TaskPrecedenceGraph<Context, ExecutionUnit, SchedulingUnit> tpg; // TPG to be maintained in this global instance.
     public final Map<Integer, Context> threadToContextMap;
 
     public void start_evaluation(Context context, long mark_ID, int num_events) {

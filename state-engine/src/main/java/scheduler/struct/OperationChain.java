@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * We still call it OperationChain in TPG but with different representation
  * The OperationChain only tries to maintain a data structure for the ease of temporal dependencies construction.
  */
-public class OperationChain<ExecutionUnit extends AbstractOperation> implements Comparable<OperationChain> {
+public class OperationChain<ExecutionUnit extends AbstractOperation> implements Comparable<OperationChain<ExecutionUnit>> {
     public final String tableName;
     public final String primaryKey;
 
@@ -23,7 +23,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     private final MyList<ExecutionUnit> operations;
     protected final AtomicInteger ocFdParentsCount;
     // OperationChainKey -> OperationChain
-    protected final ConcurrentSkipListMap<OperationChain, ExecutionUnit> ocFdParents;
+    protected final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocFdParents;
     public boolean isExecuted = false;
 
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
@@ -45,11 +45,11 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         operations.add(op);
     }
 
-    public void addPotentialFDChildren(OperationChain potentialChildren, ExecutionUnit op) {
+    public void addPotentialFDChildren(OperationChain<ExecutionUnit> potentialChildren, ExecutionUnit op) {
         potentialChldrenInfo.add(new PotentialChildrenInfo(potentialChildren, op));
     }
 
-    public void addFDParent(ExecutionUnit targetOp, OperationChain parentOC) {
+    public void addFDParent(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC) {
         Iterator<ExecutionUnit> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
         while (iterator.hasNext()) {
             ExecutionUnit parentOp = iterator.next();
@@ -60,7 +60,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         }
     }
 
-    protected void setupDependency(ExecutionUnit targetOp, OperationChain parentOC, ExecutionUnit parentOp) {
+    protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
         this.ocFdParents.putIfAbsent(parentOC, parentOp);
         this.ocFdParentsCount.incrementAndGet();
     }
@@ -70,7 +70,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 
         for (PotentialChildrenInfo pChildInfo : potentialChldrenInfo) {
             if (newOp.bid < pChildInfo.childOp.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
-                pChildInfo.potentialChildOC.addFDParent(pChildInfo.childOp, (OperationChain) this);
+                pChildInfo.potentialChildOC.addFDParent(pChildInfo.childOp, this);
                 processed.add(pChildInfo);
             }
         }
@@ -91,7 +91,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        OperationChain that = (OperationChain) o;
+        OperationChain<ExecutionUnit> that = (OperationChain<ExecutionUnit>) o;
         return tableName.equals(that.tableName) &&
                 primaryKey.equals(that.primaryKey);
     }
@@ -126,7 +126,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         if (isDependencyLevelCalculated)
             return;
         dependencyLevel = 0;
-        for (OperationChain oc : ocFdParents.keySet()) {
+        for (OperationChain<ExecutionUnit> oc : ocFdParents.keySet()) {
             if (!oc.hasValidDependencyLevel())
                 oc.updateDependencyLevel();
 
@@ -138,10 +138,10 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
     public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {
-        public OperationChain potentialChildOC;
+        public OperationChain<ExecutionUnit> potentialChildOC;
         public ExecutionUnit childOp;
 
-        public PotentialChildrenInfo(OperationChain oc, ExecutionUnit op) {
+        public PotentialChildrenInfo(OperationChain<ExecutionUnit> oc, ExecutionUnit op) {
             this.potentialChildOC = oc;
             this.childOp = op;
         }
