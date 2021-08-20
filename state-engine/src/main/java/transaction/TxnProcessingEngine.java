@@ -7,6 +7,8 @@ import scheduler.SchedulerFactory;
 import scheduler.context.SchedulerContext;
 import scheduler.impl.IScheduler;
 
+import static common.CONTROL.enable_log;
+
 /**
  * There is one TxnProcessingEngine of each stage.
  * This is closely bundled with the start_ready map.
@@ -38,11 +40,11 @@ public final class TxnProcessingEngine {
 
     public void engine_init(int tthread, int NUM_ITEMS, String schedulerType) {
         scheduler = new SchedulerFactory(tthread, NUM_ITEMS).CreateScheduler(SchedulerFactory.SCHEDULER_TYPE.valueOf(schedulerType));
-        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
+        if(enable_log) LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
     }
 
     public void engine_shutdown() {
-        LOG.info("Shutdown Engine!");
+        if(enable_log) LOG.info("Shutdown Engine!");
     }
 
     public IScheduler getScheduler() {

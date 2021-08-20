@@ -4,6 +4,8 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static common.CONTROL.enable_log;
+
 public class PKSink extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(PKSink.class);
     private static final long serialVersionUID = 5481794109405775823L;
@@ -21,7 +23,7 @@ public class PKSink extends MeasureSink {
         results = helper.execute(input.getBID());
         if (results != 0) {
             this.setResults(results);
-            LOG.info("Sink finished:" + results);
+            if(enable_log) LOG.info("Sink finished:" + results);
             if (thisTaskId == graph.getSink().getExecutorID()) {
                 measure_end(results);
             }
@@ -29,6 +31,6 @@ public class PKSink extends MeasureSink {
     }
 
     public void display() {
-        LOG.info("Spikes: " + success + "(" + (success / (success + failure)) + ")");
+        if(enable_log) LOG.info("Spikes: " + success + "(" + (success / (success + failure)) + ")");
     }
 }

@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.Set;
 
 import static common.CONTROL.enable_debug;
+import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
 
 /**
@@ -521,7 +522,7 @@ public class OutputCollector<T> {
     public void ack(Tuple input, Marker marker) {
         final int executorID = executor.getExecutorID();
         if (enable_debug)
-            LOG.info(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " to " + input.getSourceComponent());
+            if(enable_log) LOG.info(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " to " + input.getSourceComponent());
         final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
         if (input.getBID() != totalEvents)
             src.op.callback(executorID, marker);

@@ -13,6 +13,8 @@ import java.util.Queue;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
+import static common.CONTROL.enable_log;
+
 //import static xerial.jnuma.Numa.newCPUBitMask;
 
 /**
@@ -64,11 +66,11 @@ public abstract class executorThread extends Thread {
 
     //    private long[] convertToCPUMasK(long[] cpu) {
 //        final long[] cpuMask = newCPUBitMask();
-//        LOG.info("Empty cpuMask:" + Arrays.toString(cpuMask));
+//        if(enable_log) LOG.info("Empty cpuMask:" + Arrays.toString(cpuMask));
 //        for (long i : cpu) {
 //            cpuMask[(int) (i / 64)] |= 1L << (i % 64); //Create a bit mask setting a single CPU on
 //        }
-//        LOG.info("Configured cpuMask:" + Arrays.toString(cpuMask));
+//        if(enable_log) LOG.info("Configured cpuMask:" + Arrays.toString(cpuMask));
 //        return cpuMask;
 //    }
     public void initilize_queue(int executorID) {
@@ -82,7 +84,7 @@ public abstract class executorThread extends Thread {
                 if (threadMap.get(c.getExecutorID()) != null) {
                     threadMap.get(c.getExecutorID()).suspend();
                 } else {
-                    LOG.info(c.getOP() + " do not have threads.");
+                    if(enable_log) LOG.info(c.getOP() + " do not have threads.");
                 }
             }
         }
@@ -94,7 +96,7 @@ public abstract class executorThread extends Thread {
                 if (threadMap.get(p.getExecutorID()) != null) {
                     threadMap.get(p.getExecutorID()).suspend();
                 } else {
-                    LOG.info(p.getOP() + " do not have threads.");
+                    if(enable_log) LOG.info(p.getOP() + " do not have threads.");
                 }
             }
         }
@@ -106,7 +108,7 @@ public abstract class executorThread extends Thread {
                 if (threadMap.get(c.getExecutorID()) != null) {
                     threadMap.get(c.getExecutorID()).resume();
                 } else {
-                    LOG.info(c.getOP() + " do not have threads.");
+                    if(enable_log) LOG.info(c.getOP() + " do not have threads.");
                 }
             }
         }
@@ -118,7 +120,7 @@ public abstract class executorThread extends Thread {
                 if (threadMap.get(p.getExecutorID()) != null) {
                     threadMap.get(p.getExecutorID()).resume();
                 } else {
-                    LOG.info(p.getOP() + " do not have threads.");
+                    if(enable_log) LOG.info(p.getOP() + " do not have threads.");
                 }
             }
         }

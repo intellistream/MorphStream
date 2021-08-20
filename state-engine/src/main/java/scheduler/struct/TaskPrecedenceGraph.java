@@ -112,7 +112,7 @@ public class TaskPrecedenceGraph {
                 OCBucketThread.put(dependencyLevel, new ArrayList<>());
             OCBucketThread.get(dependencyLevel).add(oc);
         }
-//        LOG.debug("localMaxDLevel" + localMaxDLevel);
+//        if(enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
         return localMaxDLevel;
     }
 

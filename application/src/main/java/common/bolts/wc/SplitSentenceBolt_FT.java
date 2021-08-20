@@ -80,7 +80,7 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         long pid = OsUtils.getPID();
-//		LOG.info("PID  = " + pid);
+//		if(enable_log) LOG.info("PID  = " + pid);
     }
 
     @Override

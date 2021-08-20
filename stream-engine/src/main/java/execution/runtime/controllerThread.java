@@ -3,6 +3,8 @@ package execution.runtime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static common.CONTROL.enable_log;
+
 /**
  * This can be used for monitor thread performance online.
  */
@@ -29,7 +31,7 @@ class controllerThread extends Thread {
 //        if (ExpectedRate > ObservedRate) {
 //            hostThread.incParallelism();
 //        }
-        LOG.info("current throughput of " + hostThread.executor.getOP() + observedRate);
+        if(enable_log) LOG.info("current throughput of " + hostThread.executor.getOP() + observedRate);
     }
 
     @Override

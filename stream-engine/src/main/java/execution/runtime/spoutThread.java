@@ -14,8 +14,7 @@ import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
-import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_app_combo;
+import static common.CONTROL.*;
 import static content.Content.*;
 
 /**
@@ -80,7 +79,7 @@ public class spoutThread extends executorThread {
             //do Loading
             sp.prepare(conf, context, collector);
             Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-            LOG.info("Operator:\t" + executor.getOP_full() + " is ready");
+            if(enable_log) LOG.info("Operator:\t" + executor.getOP_full() + " is ready");
             this.Ready(LOG);//Tell executor thread to proceed.
             latch.countDown();          //tells others I'm really ready.
             try {
@@ -97,7 +96,7 @@ public class spoutThread extends executorThread {
             }
             double actual_throughput = (cnt - this.executor.op.getEmpty()) * 1E6 / (end_emit - start_emit);
 
-            LOG.info(this.executor.getOP_full()
+            if(enable_log) LOG.info(this.executor.getOP_full()
                     + "\tfinished execution and exit with throughput (k input_event/s) of:\t"
                     + actual_throughput
                     + " on node: " + node

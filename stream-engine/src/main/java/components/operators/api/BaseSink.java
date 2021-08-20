@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+import static common.CONTROL.enable_log;
+
 public abstract class BaseSink extends unionBolt {
     protected static final int max_num_msg = (int) 1E5;
     protected static final int skip_msg = 0;
@@ -64,7 +66,7 @@ public abstract class BaseSink extends unionBolt {
     protected abstract Logger getLogger();
 
     protected void killTopology() {
-        LOG.info("Killing application");
+        if(enable_log) LOG.info("Killing application");
 //		System.exit(0);
     }
 

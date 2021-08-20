@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
+import static common.CONTROL.enable_log;
+
 public class LayeredOCDataGenerator extends SpecialDataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(SpecialDataGenerator.class);
     private final Random randomGenerator = new Random();
@@ -66,7 +68,7 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
         dataTransactions.add(t);
         transactionId++;
         if (transactionId % 100000 == 0)
-            LOG.info(String.valueOf(transactionId));
+            if(enable_log) LOG.info(String.valueOf(transactionId));
 
         // Step 4: update the statistics such as dependency distribution to guide future data generation
         updateStats();
@@ -76,7 +78,7 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
     protected void dumpGeneratedDataToFile() {
         File file = new File(dataConfig.getRootPath());
         if (file.exists()) {
-            LOG.info("Data already exists.. skipping data generation...");
+            if(enable_log) LOG.info("Data already exists.. skipping data generation...");
             return;
         }
         file.mkdirs();
@@ -95,13 +97,13 @@ public class LayeredOCDataGenerator extends SpecialDataGenerator {
             e.printStackTrace();
         }
 
-        LOG.info("Dumping transactions...");
+        if(enable_log) LOG.info("Dumping transactions...");
         dataOutputHandler.sinkTransactions(dataTransactions);
-//         LOG.info(String.format("Dumping Dependency Edges..."));
+//         if(enable_log) LOG.info(String.format("Dumping Dependency Edges..."));
 //        mDataOutputHandler.sinkDependenciesEdges(mAccountOperationChainsByLevel, mAssetsOperationChainsByLevel);
-        LOG.info("Dumping Dependency Vertices...");
+        if(enable_log) LOG.info("Dumping Dependency Vertices...");
         dataOutputHandler.sinkDependenciesVertices(accountOperationChainsByLevel, assetsOperationChainsByLevel);
-        LOG.info("Dumping Dependency Vertices ids range...");
+        if(enable_log) LOG.info("Dumping Dependency Vertices ids range...");
         dataOutputHandler.sinkDependenciesVerticesIdsRange(totalAccountRecords, totalAssetRecords);
     }
 

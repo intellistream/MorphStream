@@ -8,6 +8,8 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static common.CONTROL.enable_log;
+
 public class ConsoleSink extends BaseSink {
     private static final Logger LOG = LoggerFactory.getLogger(ConsoleSink.class);
     private static final long serialVersionUID = 3026838156176068865L;
@@ -54,7 +56,7 @@ public class ConsoleSink extends BaseSink {
                     }
                     processed1++;
                     if (processed1 % 10000 == 0) {
-                        LOG.info("RANK:" + input.getMsg(i).toString());
+                        if(enable_log) LOG.info("RANK:" + input.getMsg(i).toString());
                     }
                     break;
                 default:
@@ -66,7 +68,7 @@ public class ConsoleSink extends BaseSink {
                     }
                     processed2++;
                     if (processed2 % 10000 == 0) {
-                        LOG.info("MEDIAN:" + input.getMsg(i).toString());
+                        if(enable_log) LOG.info("MEDIAN:" + input.getMsg(i).toString());
                     }
                     break;
             }

@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_shared_state;
 
 /**
@@ -142,7 +143,7 @@ public class boltThread extends executorThread {
             if (expected_throughput == 0) {
                 expected_throughput = actual_throughput;
             }
-            LOG.info(this.executor.getOP_full()
+            if(enable_log) LOG.info(this.executor.getOP_full()
                             + "\tfinished execution and exist with throughput of:\t"
                             + actual_throughput + "(" + (actual_throughput / expected_throughput) + ")"
                             + " on node: " + node + " fetch miss rate:" + miss / (cnt + miss) * 100

@@ -56,7 +56,7 @@ public class OptimizationManager extends executorThread {
             e.printStackTrace();
         }
         //TODO: add optimization module here.
-        //LOG.info("Optimization manager exists");
+        //if(enable_log) LOG.info("Optimization manager exists");
     }
 
     @Override

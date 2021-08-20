@@ -44,7 +44,7 @@ public class TableRecord implements Comparable<TableRecord> {
     }
 
     public TableRecord(SchemaRecord record, int pid, SpinLock[] spinlock_) {
-//        LOG.info(record.GetPrimaryKey() + " belongs to pid:" + pid);
+//        if(enable_log) LOG.info(record.GetPrimaryKey() + " belongs to pid:" + pid);
         content_ = new SStoreContentImpl(spinlock_, pid);//every record has an associated partition (and a lock_ratio for sure..).
         record_ = record;
         size = sizeof(record);

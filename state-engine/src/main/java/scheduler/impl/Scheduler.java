@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.*;
 
 @lombok.extern.slf4j.Slf4j
@@ -57,20 +58,20 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
         if (preValues == null) {
-            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
-            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
+            if(enable_log) log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
+            if(enable_log) log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
-                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+                if(enable_log) log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
             }
-            log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
+            if(enable_log) log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
         }
         if (preValues1 == null) {
-            log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
-            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
+            if(enable_log) log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
+            if(enable_log) log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
-                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+                if(enable_log) log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
             }
-            log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
+            if(enable_log) log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
         }
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
         final long sourceAssetValue = preValues1.getValues().get(1).getLong();
@@ -93,7 +94,7 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
                 operation.success[0]++;
             }
         } else {
-            log.info("++++++ operation failed: "
+            if(enable_log) log.info("++++++ operation failed: "
                     + sourceAccountBalance + "-" + operation.condition.arg1
                     + " : " + sourceAccountBalance + "-" + operation.condition.arg2
                     + " : " + sourceAssetValue + "-" + operation.condition.arg3

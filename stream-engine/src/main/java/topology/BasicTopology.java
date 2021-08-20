@@ -9,6 +9,8 @@ import components.operators.api.BaseSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static common.CONTROL.enable_log;
+
 /**
  * The basic topology has only one spout and one sink, configured by the default
  * configuration keys.
@@ -32,7 +34,7 @@ public abstract class BasicTopology extends AbstractTopology {
         if (parserClass != null) {
             parser = (Parser) ClassLoaderUtils.newInstance(parserClass, "parser", LOG);
             parser.initialize(config);
-        } else LOG.info("No parser is initialized");
+        } else if(enable_log) if(enable_log) LOG.info("No parser is initialized");
     }
 
     @Override
