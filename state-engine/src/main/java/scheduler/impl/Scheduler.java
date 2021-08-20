@@ -6,7 +6,8 @@ import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
-import scheduler.struct.Operation;
+import scheduler.struct.OperationChain;
+import scheduler.struct.bfs.BFSOperationChain;
 import scheduler.struct.TaskPrecedenceGraph;
 import storage.SchemaRecord;
 import storage.TableRecord;
@@ -15,7 +16,6 @@ import transaction.function.DEC;
 import transaction.function.INC;
 import utils.SOURCE_CONTROL;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,19 +23,38 @@ import java.util.Map;
 import static content.common.CommonMetaTypes.AccessType.*;
 
 @lombok.extern.slf4j.Slf4j
-public abstract class Scheduler<Context extends SchedulerContext, Task> implements IScheduler<Context> {
+public abstract class Scheduler<Context extends SchedulerContext, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain> implements IScheduler<Context> {
     public final int delta;//range of each partition. depends on the number of op in the stage.
-    public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
+    public final TaskPrecedenceGraph<SchedulingUnit> tpg; // TPG to be maintained in this global instance.
     public final Map<Integer, Context> threadToContextMap;
+
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
+        int threadId = context.thisThreadId;
+//        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+        INITIALIZE(context);
+//        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+
+        do {
+            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+            EXPLORE(context);
+            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            PROCESS(context, mark_ID);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+        } while (!FINISHED(context));
+        RESET();//
+        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+    }
 
     protected Scheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
-        this.tpg = new TaskPrecedenceGraph(totalThreads, delta);
         threadToContextMap = new HashMap<>();
+        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta);
     }
 
     /**
      * state to thread mapping
+     *
      * @param key
      * @param delta
      * @return
@@ -52,7 +71,7 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
      * @param previous_mark_ID
      * @param clean
      */
-    protected void Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void Transfer_Fun(ExecutionUnit operation, long previous_mark_ID, boolean clean) {
 
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
@@ -108,7 +127,7 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
      * @param mark_ID
      * @param clean
      */
-    protected void Depo_Fun(AbstractOperation operation, long mark_ID, boolean clean) {
+    protected void Depo_Fun(ExecutionUnit operation, long mark_ID, boolean clean) {
         SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
         List<DataBox> values = srcRecord.getValues();
         //apply function to modify..
@@ -128,7 +147,7 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
      * @param mark_ID
      * @param clean
      */
-    public void execute(Operation operation, long mark_ID, boolean clean) {
+    public void execute(ExecutionUnit operation, long mark_ID, boolean clean) {
         int success = operation.success[0];
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             Transfer_Fun(operation, mark_ID, clean);
@@ -147,9 +166,9 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
         }
     }
 
-    protected abstract void DISTRIBUTE(Task task, Context context);
+    protected abstract void DISTRIBUTE(SchedulingUnit task, Context context);
 
-    protected abstract void NOTIFY(Task task, Context context);
+    protected abstract void NOTIFY(SchedulingUnit task, Context context);
 
     @Override
     public boolean FINISHED(Context context) {
@@ -180,32 +199,7 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
     }
 
     @Override
-    public void TxnSubmitFinished(Context context) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-        // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
-        List<Operation> operationGraph = new ArrayList<>();
-        for (Request request : context.requests) {
-            long bid = request.txn_context.getBID();
-            Operation set_op = null;
-            switch (request.accessType) {
-                case READ_WRITE_COND: // they can use the same method for processing
-                case READ_WRITE:
-                    set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.function, request.condition, request.condition_records, request.success);
-                    break;
-                case READ_WRITE_COND_READ:
-                    set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
-                    break;
-            }
-            operationGraph.add(set_op);
-            tpg.setupOperationTDFD(set_op, request);
-        }
-
-        // 4. send operation graph to tpg for tpg construction
-//        tpg.setupOperationLD(operationGraph);//TODO: this is bad refactor.
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-    }
+    public abstract void TxnSubmitFinished(Context context);
 
     @Override
     public void AddContext(int threadId, Context context) {

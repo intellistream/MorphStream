@@ -1,6 +1,7 @@
 package scheduler.struct;
 
 import content.common.CommonMetaTypes;
+import scheduler.struct.bfs.BFSOperation;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import storage.TableRecordRef;
@@ -58,7 +59,7 @@ public abstract class AbstractOperation {
      * @param operation
      * @return
      */
-    public int compareTo(Operation operation) {
+    public int compareTo(BFSOperation operation) {
         if (this.bid == (operation.bid)) {
             return this.d_record.getID() - operation.d_record.getID();
         } else

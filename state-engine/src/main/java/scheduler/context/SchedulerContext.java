@@ -2,17 +2,15 @@ package scheduler.context;
 
 import scheduler.Request;
 import scheduler.statemanager.PartitionStateManager;
-import scheduler.struct.OperationChain;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 
-public abstract class SchedulerContext {
+public abstract class SchedulerContext<SchedulingUnit> {
     public final PartitionStateManager partitionStateManager;
-    protected final ConcurrentLinkedDeque<OperationChain> IsolatedOC;
-    protected final ConcurrentLinkedDeque<OperationChain> OCwithChildren;
+    protected final ConcurrentLinkedDeque<SchedulingUnit> IsolatedOC;
+    protected final ConcurrentLinkedDeque<SchedulingUnit> OCwithChildren;
     public int thisThreadId;
     public ArrayDeque<Request> requests;
 
@@ -35,4 +33,5 @@ public abstract class SchedulerContext {
         requests.push(request);
     }
 
+    public abstract SchedulingUnit createTask(String tableName, String pKey);
 }

@@ -1,16 +1,16 @@
 package scheduler.signal.oc;
 
 import scheduler.signal.NotificationSignal;
-import scheduler.struct.OperationChain;
+import scheduler.struct.bfs.BFSOperationChain;
 
 public abstract class OperationChainSignal implements NotificationSignal {
-    private final OperationChain targetOperationChain;
+    private final BFSOperationChain targetOperationChain;
 
-    public OperationChainSignal(OperationChain targetOperationChain) {
+    public OperationChainSignal(BFSOperationChain targetOperationChain) {
         this.targetOperationChain = targetOperationChain;
     }
 
-    public OperationChain getTargetOperationChain() {
+    public BFSOperationChain getTargetOperationChain() {
         return targetOperationChain;
     }
 }

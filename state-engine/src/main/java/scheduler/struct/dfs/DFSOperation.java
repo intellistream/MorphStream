@@ -7,8 +7,6 @@ import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.MetaTypes.DependencyType;
 import scheduler.struct.MetaTypes.OperationStateType;
-import scheduler.struct.Operation;
-import scheduler.struct.OperationChain;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;

@@ -1,24 +1,24 @@
 package scheduler.context;
 
 import scheduler.struct.AbstractOperation;
-import scheduler.struct.Operation;
 import scheduler.struct.OperationChain;
+import scheduler.struct.bfs.BFSOperationChain;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class LayeredTPGContext<OP extends AbstractOperation, OC extends OperationChain> extends SchedulerContext {
+public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
 
-    public HashMap<Integer, ArrayList<OC>> layeredOCBucketGlobal;// <LevelID, ArrayDeque<OperationChain>
+    public HashMap<Integer, ArrayList<SchedulingUnit>> layeredOCBucketGlobal;// <LevelID, ArrayDeque<OperationChain>
     public int currentLevel;
     public int currentLevelIndex;
     public int totalThreads;
     public int maxLevel;//total number of operations to process per thread.
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.
-    public OC ready_oc;//ready operation chain per thread.
-    public ArrayDeque<OP> abortedOperations;//aborted operations per thread.
+    public SchedulingUnit ready_oc;//ready operation chain per thread.
+    public ArrayDeque<ExecutionUnit> abortedOperations;//aborted operations per thread.
     public boolean aborted;//if any operation is aborted during processing.
 
     //TODO: Make it flexible to accept other applications.
@@ -38,11 +38,17 @@ public class LayeredTPGContext<OP extends AbstractOperation, OC extends Operatio
         scheduledOPs = 0;
     }
 
-    public OC getReady_oc() {
+    @Override
+    public SchedulingUnit createTask(String tableName, String pKey) {
+        return (SchedulingUnit) new BFSOperationChain(tableName, pKey);
+    }
+
+
+    public SchedulingUnit getReady_oc() {
         return ready_oc;
     }
 
-    public ArrayList<OC> OCSCurrentLayer() {
+    public ArrayList<SchedulingUnit> OCSCurrentLayer() {
         return layeredOCBucketGlobal.get(currentLevel);
     }
 

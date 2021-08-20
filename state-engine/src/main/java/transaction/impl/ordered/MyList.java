@@ -2,7 +2,7 @@ package transaction.impl.ordered;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 
-public class MyList<O> extends ConcurrentSkipListSet<O> {
+public class MyList<ExecutionUnit> extends ConcurrentSkipListSet<ExecutionUnit> {
     private final String table_name;
     private final String primaryKey;
 

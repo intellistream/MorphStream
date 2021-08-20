@@ -2,10 +2,10 @@ package scheduler.statemanager;
 
 
 import scheduler.struct.MetaTypes;
-import scheduler.struct.Operation;
+import scheduler.struct.bfs.BFSOperation;
 
 public interface OperationStateListener {
-    void onOpParentStateUpdated(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState);
+    void onOpParentStateUpdated(BFSOperation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState);
 
     /**
      * this method will only be used in header operation, others should not use it.
@@ -13,7 +13,7 @@ public interface OperationStateListener {
      * @param operation
      * @param headerState
      */
-    void onOpHeaderStateUpdated(Operation operation, MetaTypes.OperationStateType headerState);
+    void onOpHeaderStateUpdated(BFSOperation operation, MetaTypes.OperationStateType headerState);
 
     /**
      * this method will only be used in header operation, others should not use it.
@@ -21,7 +21,7 @@ public interface OperationStateListener {
      * @param operation
      * @param descendantState
      */
-    void onOpDescendantStateUpdated(Operation operation, MetaTypes.OperationStateType descendantState);
+    void onOpDescendantStateUpdated(BFSOperation operation, MetaTypes.OperationStateType descendantState);
 
     /**
      * this method will only be used in header operation, others should not use it.
@@ -30,5 +30,5 @@ public interface OperationStateListener {
      * @param spLd
      * @param executed
      */
-    void onReadyParentStateUpdated(Operation child, MetaTypes.DependencyType spLd, MetaTypes.OperationStateType executed);
+    void onReadyParentStateUpdated(BFSOperation child, MetaTypes.DependencyType spLd, MetaTypes.OperationStateType executed);
 }

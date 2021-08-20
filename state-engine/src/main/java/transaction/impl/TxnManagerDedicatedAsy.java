@@ -6,17 +6,12 @@ import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
 import scheduler.Request;
-import scheduler.SchedulerFactory;
-import scheduler.context.LayeredTPGContext;
-import scheduler.context.SchedulerContext;
-import scheduler.struct.Operation;
-import scheduler.struct.OperationChain;
-import scheduler.struct.dfs.DFSOperation;
-import scheduler.struct.dfs.DFSOperationChain;
+import scheduler.context.*;
+import scheduler.impl.layered.BFSScheduler;
+import scheduler.impl.layered.DFSScheduler;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
-import transaction.TxnProcessingEngine;
 import transaction.context.TxnAccess;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
@@ -32,40 +27,42 @@ import static content.common.CommonMetaTypes.kMaxAccessNum;
  * TxnManagerDedicated is a thread-local structure.
  */
 @lombok.extern.slf4j.Slf4j
-public abstract class TxnManagerDedicatedAsy implements TxnManager {
+public abstract class TxnManagerDedicatedAsy extends TxnManager {
     protected final StorageManager storageManager_;
     protected final String thisComponentId;
     public SchedulerContext context;
-    protected TxnProcessingEngine instance;
+
     protected TxnAccess.AccessList access_list_ = new TxnAccess.AccessList(kMaxAccessNum);
     protected boolean is_first_access_;
     protected long thread_count_;
 
-    public TxnManagerDedicatedAsy(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, String schedulerType) {
+    public TxnManagerDedicatedAsy(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, int numberOfStates, String schedulerType) {
         this.storageManager_ = storageManager;
         this.thisComponentId = thisComponentId;
         thread_count_ = thread_count;
         is_first_access_ = true;
-        instance = TxnProcessingEngine.getInstance();
 
-        SchedulerFactory.SCHEDULER_TYPE scheduler_type = SchedulerFactory.SCHEDULER_TYPE.valueOf(schedulerType);
+        SCHEDULER_TYPE scheduler_type = SCHEDULER_TYPE.valueOf(schedulerType);
         switch (scheduler_type) {
             case BFS:
-                context = new LayeredTPGContext<Operation, OperationChain>(thisTaskId, thread_count);
-                instance.getScheduler().AddContext(thisTaskId, context);
+                scheduler = new BFSScheduler(thread_count, numberOfStates);
+                context = new BFSLayeredTPGContext(thisTaskId, thread_count);
+                scheduler.AddContext(thisTaskId, context);
                 break;
             case DFS: // TODO
-                context = new LayeredTPGContext<DFSOperation, DFSOperationChain>(thisTaskId, thread_count);
-                instance.getScheduler().AddContext(thisTaskId, context);
+                scheduler = new DFSScheduler(thread_count, numberOfStates);
+                context = new DFSLayeredTPGContext(thisTaskId, thread_count);
+                scheduler.AddContext(thisTaskId, context);
                 break;
             case GS: // TODO
-                context = new LayeredTPGContext<DFSOperation, DFSOperationChain>(thisTaskId, thread_count);
-                instance.getScheduler().AddContext(thisTaskId, context);
+                context = new GSLayeredTPGContext(thisTaskId, thread_count);
+                scheduler.AddContext(thisTaskId, context);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
         }
-        // add the context to scheduler to for operations to threads assignment.
+
+//        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
     }
 
     public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
@@ -87,7 +84,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         AccessType accessType = AccessType.WRITE_ONLY;
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
         } else {
             log.info("No record is found:" + primary_key);
             return false;
@@ -99,7 +96,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         AccessType accessType = AccessType.WRITE_ONLY;
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable));
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable));
         } else {
             log.info("No record is found:" + primary_key);
             return false;
@@ -110,7 +107,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         AccessType accessType = AccessType.READ_ONLY;
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
         } else {
             log.info("No record is found:" + primary_key);
             return false;
@@ -122,7 +119,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         AccessType accessType = AccessType.READS_ONLY;//read multiple versions.
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable));
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable));
         } else {
             log.info("No record is found:" + primary_key);
             return false;
@@ -134,7 +131,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         AccessType accessType = AccessType.READ_WRITE;
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(source_key);
         if (s_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     source_key, s_record, s_record, function, column_id));
         } else {
             log.info("No record is found:" + source_key);
@@ -148,7 +145,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         AccessType accessType = AccessType.READ_WRITE;
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     key, s_record, s_record, function, 1));
         } else {
             return false;
@@ -162,7 +159,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         condition_records[0] = s_record;
         if (s_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     key, s_record, s_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records, condition, success));
         } else {
             log.info("No record is found:" + key);
@@ -184,7 +181,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
         } else {
             log.info("No record is found:" + key);
@@ -197,7 +194,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         AccessType accessType = AccessType.READ_WRITE_READ;
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     key, s_record, s_record, function, record_ref));
         } else {
             log.info("No record is found:" + key);
@@ -222,7 +219,7 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return instance.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
@@ -232,12 +229,12 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
     }
 
     public void BeginTransaction(TxnContext txn_context) {
-        instance.getScheduler().TxnSubmitBegin(context);
+        scheduler.TxnSubmitBegin(context);
     }
 
     @Override
     public boolean CommitTransaction(TxnContext txn_context) {
-        instance.getScheduler().TxnSubmitFinished(context);
+        scheduler.TxnSubmitFinished(context);
         return true;
     }
 
