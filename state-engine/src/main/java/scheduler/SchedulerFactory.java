@@ -26,10 +26,10 @@ public class SchedulerFactory {
         IScheduler scheduler = null;
         switch (schedulerType) {
             case BFS:
-                scheduler = new BFSScheduler<LayeredTPGContext>(totalThread, NUM_ITEMS);
+                scheduler = new BFSScheduler<>(totalThread, NUM_ITEMS);
                 break;
             case DFS: // TODO: add GS
-                scheduler = new DFSScheduler<LayeredTPGContext, DFSOperationChain>(totalThread, NUM_ITEMS);
+                scheduler = new DFSScheduler<>(totalThread, NUM_ITEMS);
                 break;
         }
         return scheduler;

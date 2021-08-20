@@ -8,6 +8,7 @@ import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.Operation;
 import scheduler.struct.TaskPrecedenceGraph;
+import scheduler.struct.dfs.DFSOperation;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -25,12 +26,10 @@ import static content.common.CommonMetaTypes.AccessType.*;
 @lombok.extern.slf4j.Slf4j
 public abstract class Scheduler<Context extends SchedulerContext, Task> implements IScheduler<Context> {
     public final int delta;//range of each partition. depends on the number of op in the stage.
-    public final TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
     public final Map<Integer, Context> threadToContextMap;
 
     protected Scheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
-        this.tpg = new TaskPrecedenceGraph(totalThreads, delta);
         threadToContextMap = new HashMap<>();
     }
 
@@ -128,7 +127,7 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
      * @param mark_ID
      * @param clean
      */
-    public void execute(Operation operation, long mark_ID, boolean clean) {
+    public void execute(AbstractOperation operation, long mark_ID, boolean clean) {
         int success = operation.success[0];
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             Transfer_Fun(operation, mark_ID, clean);
@@ -177,34 +176,6 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
     @Override
     public void TxnSubmitBegin(Context context) {
         context.requests.clear();
-    }
-
-    @Override
-    public void TxnSubmitFinished(Context context) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-        // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
-        List<Operation> operationGraph = new ArrayList<>();
-        for (Request request : context.requests) {
-            long bid = request.txn_context.getBID();
-            Operation set_op = null;
-            switch (request.accessType) {
-                case READ_WRITE_COND: // they can use the same method for processing
-                case READ_WRITE:
-                    set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.function, request.condition, request.condition_records, request.success);
-                    break;
-                case READ_WRITE_COND_READ:
-                    set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
-                    break;
-            }
-            operationGraph.add(set_op);
-            tpg.setupOperationTDFD(set_op, request);
-        }
-
-        // 4. send operation graph to tpg for tpg construction
-//        tpg.setupOperationLD(operationGraph);//TODO: this is bad refactor.
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
     @Override

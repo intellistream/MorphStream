@@ -1,16 +1,23 @@
 package scheduler.impl.layered;
 
 import profiler.MeasureTools;
+import scheduler.Request;
 import scheduler.context.LayeredTPGContext;
 import scheduler.impl.Scheduler;
-import scheduler.struct.Operation;
+import scheduler.struct.AbstractOperation;
 import scheduler.struct.OperationChain;
+import scheduler.struct.TaskPrecedenceGraph;
+import scheduler.struct.dfs.DFSOperation;
+import scheduler.struct.dfs.DFSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public abstract class LayeredScheduler<Context extends LayeredTPGContext, OC extends OperationChain> extends Scheduler<Context, OC> {
+
+    public TaskPrecedenceGraph tpg; // TPG to be maintained in this global instance.
 
     public LayeredScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -42,10 +49,10 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext, OC ext
      * @param operation_chain
      * @param mark_ID
      */
-    public void execute(Context context, MyList<Operation> operation_chain, long mark_ID) {
-        Operation operation = operation_chain.pollFirst();
+    public void execute(Context context, MyList<AbstractOperation> operation_chain, long mark_ID) {
+        AbstractOperation operation = operation_chain.pollFirst();
         while (operation != null) {
-            Operation finalOperation = operation;
+            AbstractOperation finalOperation = operation;
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(finalOperation, mark_ID, false);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);

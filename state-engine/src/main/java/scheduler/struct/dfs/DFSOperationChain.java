@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class DFSOperationChain<OP extends DFSOperation, OC extends DFSOperationChain> extends OperationChain<OP, OC> implements Comparable<OC> {
     // OperationChainKey -> OperationChain
-    private final ConcurrentSkipListMap<OC, OP> ocFdChildren;
+    private final ConcurrentSkipListMap<OC, OP> ocFdChildren = new ConcurrentSkipListMap<>();
     public boolean isExecuted = false;
 
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
@@ -20,7 +20,9 @@ public class DFSOperationChain<OP extends DFSOperation, OC extends DFSOperationC
 
     public DFSOperationChain(String tableName, String primaryKey) {
         super(tableName, primaryKey);
-        this.ocFdChildren = new ConcurrentSkipListMap<>();
+    }
+
+    public DFSOperationChain() {
     }
 
     @Override
@@ -31,8 +33,8 @@ public class DFSOperationChain<OP extends DFSOperation, OC extends DFSOperationC
 
     @Override
     protected void setupDependency(OP targetOp, OC parentOC, OP parentOp) {
-        this.ocFdParents.putIfAbsent(parentOC, parentOp);
-        this.ocFdParentsCount.incrementAndGet();
+        this.getOcFdParents().putIfAbsent(parentOC, parentOp);
+        this.getOcFdParentsCount().incrementAndGet();
         parentOp.addChild(targetOp, MetaTypes.DependencyType.FD);
         parentOC.addFDChild(this, targetOp);
     }
@@ -42,7 +44,7 @@ public class DFSOperationChain<OP extends DFSOperation, OC extends DFSOperationC
     }
 
     public void updateDependency() {
-        ocFdParentsCount.decrementAndGet();
+        getOcFdParentsCount().decrementAndGet();
     }
 
     public Collection<OC> getFDChildren() {

@@ -5,13 +5,19 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.LayeredTPGContext;
+import scheduler.struct.dfs.DFSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.lib.ConcurrentHashMap;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;
+import java.util.function.Supplier;
 
 import static scheduler.impl.Scheduler.getTaskId;
 
@@ -30,24 +36,22 @@ import static scheduler.impl.Scheduler.getTaskId;
  * |
  * -> Key: OperationChain [ Operation... ]
  */
-public class TaskPrecedenceGraph {
+public class TaskPrecedenceGraph<OC extends OperationChain> {
+    Supplier<OC> supplier;
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
     CyclicBarrier barrier;
 
-    /**
-     * @param totalThreads
-     * @param delta
-     */
-    public TaskPrecedenceGraph(int totalThreads, int delta) {
+    public TaskPrecedenceGraph(int totalThreads, int delta, Supplier<OC> supplier) {
         barrier = new CyclicBarrier(totalThreads);
         this.delta = delta;
         //create holder.
         operationChains = new ConcurrentHashMap<>();
-        operationChains.put("accounts", new TableOCs(totalThreads));
-        operationChains.put("bookEntries", new TableOCs(totalThreads));
+        operationChains.put("accounts", new TableOCs<OC>(totalThreads));
+        operationChains.put("bookEntries", new TableOCs<OC>(totalThreads));
+        this.supplier = supplier;
     }
 
     public TableOCs getTableOCs(String table_name) {
@@ -66,7 +70,7 @@ public class TaskPrecedenceGraph {
      */
     public void setupOperationTDFD(AbstractOperation operation, Request request) {
         // TD
-        OperationChain oc = addOperationToChain(operation);
+        OC oc = addOperationToChain(operation);
         // FD
         checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
     }
@@ -76,19 +80,19 @@ public class TaskPrecedenceGraph {
         int threadId = context.thisThreadId;
         Collection<TableOCs> tableOCsList = getOperationChains().values();
         for (TableOCs tableOCs : tableOCsList) {//for each table.
-            submit(context, tableOCs.threadOCsMap.get(threadId).holder_v1.values());
+            ConcurrentHashMap<Integer, Holder> ocs = tableOCs.threadOCsMap;
+            submit(context, ocs.get(threadId).holder_v1.values());
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
 //        LOG.trace("++++++ end explore");
     }
 
-    private <Context extends LayeredTPGContext> void submit(Context context, Collection<OperationChain> ocs) {
-        for (OperationChain oc : ocs) {
+    private <Context extends LayeredTPGContext> void submit(Context context, Collection<OC> ocs) {
+        for (OC oc : ocs) {
             context.totalOsToSchedule += oc.getOperations().size();
         }
-        HashMap<Integer, ArrayList<OperationChain>> layeredOCBucketThread = context.layeredOCBucketGlobal;
+        HashMap<Integer, ArrayList<OC>> layeredOCBucketThread = context.layeredOCBucketGlobal;
         context.maxLevel = buildBucketPerThread(layeredOCBucketThread, ocs);
-        System.out.println(context.maxLevel);
     }
 
     /**
@@ -99,10 +103,10 @@ public class TaskPrecedenceGraph {
      * @param ocs
      * @return
      */
-    public int buildBucketPerThread(HashMap<Integer, ArrayList<OperationChain>> OCBucketThread,
-                                    Collection<OperationChain> ocs) {
+    public int buildBucketPerThread(HashMap<Integer, ArrayList<OC>> OCBucketThread,
+                                    Collection<OC> ocs) {
         int localMaxDLevel = 0;
-        for (OperationChain oc : ocs) {
+        for (OC oc : ocs) {
             oc.updateDependencyLevel();
             int dependencyLevel = oc.getDependencyLevel();
             if (localMaxDLevel < dependencyLevel)
@@ -118,26 +122,32 @@ public class TaskPrecedenceGraph {
     /**
      * @param operation
      */
-    private OperationChain addOperationToChain(AbstractOperation operation) {
+    private OC addOperationToChain(AbstractOperation operation) {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         String table_name = operation.table_name;
         String primaryKey = operation.d_record.record_.GetPrimaryKey();
-        OperationChain retOc = getOC(table_name, primaryKey);
+        OC retOc = getOC(table_name, primaryKey);
         retOc.addOperation(operation);
         return retOc;
     }
 
-    private OperationChain getOC(String tableName, String pKey) {
-        ConcurrentHashMap<String, OperationChain> holder = getTableOCs(tableName).threadOCsMap.get(getTaskId(pKey, delta)).holder_v1;
-        return holder.computeIfAbsent(pKey, s -> new OperationChain(tableName, pKey));
+    private OC getOC(String tableName, String pKey) {
+        ConcurrentHashMap<Integer, Holder> ocs = getTableOCs(tableName).threadOCsMap;
+        ConcurrentHashMap<String, OC> holder = ocs.get(getTaskId(pKey, delta)).holder_v1;
+        return holder.computeIfAbsent(pKey, s -> {
+            OC oc = supplier.get();
+            oc.initialize(tableName, pKey);
+            return oc;
+        });
+//        return holder.computeIfAbsent(pKey, s -> new DFSOperationChain(tableName, pKey));
     }
 
-    private void checkFD(OperationChain curOC, AbstractOperation op, String table_name,
+    private void checkFD(OC curOC, AbstractOperation op, String table_name,
                          String key, String[] condition_sourceTable, String[] condition_source) {
         for (int index = 0; index < condition_source.length; index++) {
             if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                 continue;// no need to check data dependency on a key itself.
-            OperationChain OCFromConditionSource = getOC(condition_sourceTable[index],
+            OC OCFromConditionSource = getOC(condition_sourceTable[index],
                     condition_source[index]);
             // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
             MyList<AbstractOperation> conditionedOps = OCFromConditionSource.getOperations();

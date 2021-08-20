@@ -12,26 +12,33 @@ import java.util.concurrent.atomic.AtomicInteger;
  * The OperationChain only tries to maintain a data structure for the ease of temporal dependencies construction.
  */
 public class OperationChain<OP extends AbstractOperation, OC extends OperationChain> implements Comparable<OC> {
-    public final String tableName;
-    public final String primaryKey;
+    private String tableName;
+    private String primaryKey;
 
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
 
-    private final MyList<OP> operations;
-    protected final AtomicInteger ocFdParentsCount;
+    private MyList<OP> operations;
+    private final AtomicInteger ocFdParentsCount = new AtomicInteger(0);
     // OperationChainKey -> OperationChain
-    protected final ConcurrentSkipListMap<OC, OP> ocFdParents;
+    private final ConcurrentSkipListMap<OC, OP> ocFdParents = new ConcurrentSkipListMap<>();
     public boolean isExecuted = false;
 
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
 
     public OperationChain(String tableName, String primaryKey) {
-        this.tableName = tableName;
-        this.primaryKey = primaryKey;
-        this.operations = new MyList<>(tableName, primaryKey);
-        this.ocFdParentsCount = new AtomicInteger(0);
-        this.ocFdParents = new ConcurrentSkipListMap<>();
+        this.setTableName(tableName);
+        this.setPrimaryKey(primaryKey);
+        this.setOperations(new MyList<>(tableName, primaryKey));
+    }
+
+    public OperationChain() {}
+
+
+    public void initialize(String tableName, String primaryKey) {
+        this.setTableName(tableName);
+        this.setPrimaryKey(primaryKey);
+        this.setOperations(new MyList<>(tableName, primaryKey));
     }
 
     public String getTableName() {
@@ -39,7 +46,7 @@ public class OperationChain<OP extends AbstractOperation, OC extends OperationCh
     }
 
     public void addOperation(OP op) {
-        operations.add(op);
+        getOperations().add(op);
     }
 
     public void addPotentialFDChildren(OC potentialChildren, OP op) {
@@ -58,8 +65,8 @@ public class OperationChain<OP extends AbstractOperation, OC extends OperationCh
     }
 
     protected void setupDependency(OP targetOp, OC parentOC, OP parentOp) {
-        this.ocFdParents.putIfAbsent(parentOC, parentOp);
-        this.ocFdParentsCount.incrementAndGet();
+        this.getOcFdParents().putIfAbsent(parentOC, parentOp);
+        this.getOcFdParentsCount().incrementAndGet();
     }
 
     public void checkPotentialFDChildrenOnNewArrival(OP newOp) {
@@ -81,7 +88,7 @@ public class OperationChain<OP extends AbstractOperation, OC extends OperationCh
 
     @Override
     public String toString() {
-        return "{" + tableName + " " + primaryKey + "}";//": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
+        return "{" + getTableName() + " " + getPrimaryKey() + "}";//": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
     }
 
     @Override
@@ -89,13 +96,13 @@ public class OperationChain<OP extends AbstractOperation, OC extends OperationCh
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         OC that = (OC) o;
-        return tableName.equals(that.tableName) &&
-                primaryKey.equals(that.primaryKey);
+        return getTableName().equals(that.getTableName()) &&
+                getPrimaryKey().equals(that.getPrimaryKey());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableName, primaryKey);
+        return Objects.hash(getTableName(), getPrimaryKey());
     }
 
     @Override
@@ -108,7 +115,7 @@ public class OperationChain<OP extends AbstractOperation, OC extends OperationCh
 
 
     public boolean hasParents() {
-        return ocFdParentsCount.get() > 0;
+        return getOcFdParentsCount().get() > 0;
     }
 
     public synchronized boolean hasValidDependencyLevel() {
@@ -123,7 +130,7 @@ public class OperationChain<OP extends AbstractOperation, OC extends OperationCh
         if (isDependencyLevelCalculated)
             return;
         dependencyLevel = 0;
-        for (OC oc : ocFdParents.keySet()) {
+        for (OC oc : getOcFdParents().keySet()) {
             if (!oc.hasValidDependencyLevel())
                 oc.updateDependencyLevel();
 
@@ -132,6 +139,30 @@ public class OperationChain<OP extends AbstractOperation, OC extends OperationCh
             }
         }
         isDependencyLevelCalculated = true;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public String getPrimaryKey() {
+        return primaryKey;
+    }
+
+    public void setPrimaryKey(String primaryKey) {
+        this.primaryKey = primaryKey;
+    }
+
+    public void setOperations(MyList<OP> operations) {
+        this.operations = operations;
+    }
+
+    public AtomicInteger getOcFdParentsCount() {
+        return ocFdParentsCount;
+    }
+
+    public ConcurrentSkipListMap<OC, OP> getOcFdParents() {
+        return ocFdParents;
     }
 
     public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {
