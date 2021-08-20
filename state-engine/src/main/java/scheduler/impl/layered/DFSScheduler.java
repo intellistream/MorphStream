@@ -1,7 +1,11 @@
 package scheduler.impl.layered;
 
 import scheduler.context.LayeredTPGContext;
+import scheduler.struct.MetaTypes;
+import scheduler.struct.Operation;
 import scheduler.struct.OperationChain;
+
+import java.util.Queue;
 
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:
@@ -30,7 +34,22 @@ public class DFSScheduler<Context extends LayeredTPGContext> extends LayeredSche
             ProcessedToNextLevel(context);
             oc = Next(context);
         }
-        while (oc != null && oc.blocked()) ; // Busy-Wait for dependency resolution
+        while (oc != null && oc.hasParents()) ; // Busy-Wait for dependency resolution
         DISTRIBUTE(oc, context);
+    }
+
+    /**
+     *  notify is handled by state manager of each thread
+     *
+     * @param operationChain
+     * @param context
+     */
+    @Override
+    protected void NOTIFY(OperationChain operationChain, Context context) {
+//        context.partitionStateManager.onOcExecuted(operationChain);
+        // TODO: operation chain need to be refactored for BFS, DFS, GS
+        for (OperationChain childOC : operationChain.getFDChildren()) {
+            childOC.updateDependency();
+        }
     }
 }

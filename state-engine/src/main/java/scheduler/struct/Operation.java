@@ -3,7 +3,9 @@ package scheduler.struct;
 import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scheduler.context.LayeredTPGContext;
 import scheduler.context.SchedulerContext;
+import scheduler.impl.layered.DFSScheduler;
 import scheduler.struct.MetaTypes.DependencyType;
 import scheduler.struct.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
@@ -138,9 +140,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         this.oc = operationChain;
     }
 
-    public <T extends AbstractOperation> ArrayDeque<T> getChildren(DependencyType type) {
+    public <T extends AbstractOperation> Queue<T> getChildren(DependencyType type) {
         if (type.equals(DependencyType.FD)) {
-            return (ArrayDeque<T>) fd_children;
+            return (Queue<T>) fd_children;
         } else {
             throw new RuntimeException("Unexpected dependency type: " + type);
         }
@@ -187,5 +189,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         } else {
             throw new RuntimeException("Unexpected dependency type: " + type);
         }
+    }
+
+    public void updateDependency() {
+        oc.updateDependency();
     }
 }

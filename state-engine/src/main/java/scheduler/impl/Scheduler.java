@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static content.common.CommonMetaTypes.AccessType.*;
+
 @lombok.extern.slf4j.Slf4j
 public abstract class Scheduler<Context extends SchedulerContext, Task> implements IScheduler<Context> {
     public final int delta;//range of each partition. depends on the number of op in the stage.
@@ -32,13 +34,24 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
         threadToContextMap = new HashMap<>();
     }
 
-    //TODO: key divide by key range to determine responsible thread.
+    /**
+     * state to thread mapping
+     * @param key
+     * @param delta
+     * @return
+     */
     public static int getTaskId(String key, Integer delta) {
         Integer _key = Integer.valueOf(key);
         return _key / delta;
     }
 
-    // DD: Transfer event processing
+    /**
+     * Transfer event processing
+     *
+     * @param operation
+     * @param previous_mark_ID
+     * @param clean
+     */
     protected void Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
 
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
@@ -88,6 +101,13 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
         }
     }
 
+    /**
+     * Deposite event processing
+     *
+     * @param operation
+     * @param mark_ID
+     * @param clean
+     */
     protected void Depo_Fun(AbstractOperation operation, long mark_ID, boolean clean) {
         SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
         List<DataBox> values = srcRecord.getValues();
@@ -101,7 +121,35 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
         }
     }
 
+    /**
+     * general operation execution entry method for all schedulers.
+     *
+     * @param operation
+     * @param mark_ID
+     * @param clean
+     */
+    public void execute(Operation operation, long mark_ID, boolean clean) {
+        int success = operation.success[0];
+        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
+            Transfer_Fun(operation, mark_ID, clean);
+            if (operation.record_ref != null) {
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            }
+        } else if (operation.accessType.equals(READ_WRITE_COND)) {
+            Transfer_Fun(operation, mark_ID, clean);
+        } else if (operation.accessType.equals(READ_WRITE)) {
+            Depo_Fun(operation, mark_ID, clean);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+        if (operation.success[0] == success) {
+            operation.isFailed = true;
+        }
+    }
+
     protected abstract void DISTRIBUTE(Task task, Context context);
+
+    protected abstract void NOTIFY(Task task, Context context);
 
     @Override
     public boolean FINISHED(Context context) {

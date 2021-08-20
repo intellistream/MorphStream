@@ -35,4 +35,9 @@ public class BFSScheduler<Context extends LayeredTPGContext> extends LayeredSche
         }
         DISTRIBUTE(next, context);
     }
+
+    @Override
+    protected void NOTIFY(OperationChain operationChain, Context context) {
+
+    }
 }

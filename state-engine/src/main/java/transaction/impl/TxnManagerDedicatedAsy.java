@@ -50,10 +50,16 @@ public abstract class TxnManagerDedicatedAsy implements TxnManager {
                 context = new LayeredTPGContext(thisTaskId, thread_count);
                 instance.getScheduler().AddContext(thisTaskId, context);
                 break;
+            case DFS: // TODO
+                context = new LayeredTPGContext(thisTaskId, thread_count);
+                instance.getScheduler().AddContext(thisTaskId, context);
+                break;
             case GS: // TODO
                 context = new LayeredTPGContext(thisTaskId, thread_count);
                 instance.getScheduler().AddContext(thisTaskId, context);
                 break;
+            default:
+                throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
         }
         // add the context to scheduler to for operations to threads assignment.
     }

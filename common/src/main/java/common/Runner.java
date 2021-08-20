@@ -26,7 +26,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 5_000_000;//
+    public int NUM_ITEMS = 1_000_000;//
     //        public int NUM_ITEMS = 100;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
@@ -64,7 +64,7 @@ public abstract class Runner implements IRunner {
     //    @Parameter(names = {"--TP"}, description = "TP threads")
 //    public int TP = 4;// default TP threads
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 40;// default total execution threads
+    public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_TStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
@@ -94,7 +94,7 @@ public abstract class Runner implements IRunner {
 //    public String generator = "TPGGenerator";
     public String generator = "OCGenerator";
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
-    public int totalEventsPerBatch = 1000000;
+    public int totalEventsPerBatch = 100000;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
     public int numberOfBatches = 1;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
@@ -102,7 +102,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BFS";
+//    public String scheduler = "BFS";
+    public String scheduler = "DFS";
     //    public String scheduler = "GS";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";

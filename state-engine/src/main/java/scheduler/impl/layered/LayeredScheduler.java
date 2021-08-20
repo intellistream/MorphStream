@@ -33,32 +33,7 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext> extend
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
         if (next != null) {
             execute(context, next.getOperations(), mark_ID);
-        }
-    }
-
-    /**
-     * Used by tpgScheduler.
-     *
-     * @param operation
-     * @param mark_ID
-     * @param clean
-     */
-    public void execute(Operation operation, long mark_ID, boolean clean) {
-        int success = operation.success[0];
-        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
-            Transfer_Fun(operation, mark_ID, clean);
-            if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-        } else if (operation.accessType.equals(READ_WRITE_COND)) {
-            Transfer_Fun(operation, mark_ID, clean);
-        } else if (operation.accessType.equals(READ_WRITE)) {
-            Depo_Fun(operation, mark_ID, clean);
-        } else {
-            throw new UnsupportedOperationException();
-        }
-        if (operation.success[0] == success) {
-            operation.isFailed = true;
+            NOTIFY(next, context);
         }
     }
 

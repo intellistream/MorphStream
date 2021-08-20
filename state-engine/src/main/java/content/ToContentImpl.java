@@ -112,7 +112,7 @@ public class ToContentImpl extends ToContent {
         if (timestamp < write_ts_) {
             // get the write entry that can be committed.
             RequestEntry entry = DebufferWriteRequest(timestamp);
-            // blocked read requests can be unblocked.
+            // hasParents read requests can be unblocked.
             UpdateBuffer();
             //delete entry;
             entry = null;
@@ -191,7 +191,7 @@ public class ToContentImpl extends ToContent {
                 if (read_ts_ < read_entry.timestamp_) {
                     read_ts_ = read_entry.timestamp_;
                 }
-                // inform the blocked threads.
+                // inform the hasParents threads.
                 read_entry.is_ready_[0] = true;
                 // destroy these read requests.
                 RequestEntry tmp_entry = read_entry;
