@@ -1,7 +1,5 @@
 package common.topology.transactional;
 
-import common.PartitionedOrderLock;
-import common.SpinLock;
 import common.bolts.transactional.gs.*;
 import common.collections.Configuration;
 import common.constants.GrepSumConstants.Component;
@@ -10,6 +8,8 @@ import components.Topology;
 import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
 import controller.input.scheduler.SequentialScheduler;
+import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.Metrics;

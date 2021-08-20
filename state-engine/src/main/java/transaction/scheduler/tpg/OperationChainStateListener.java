@@ -1,7 +1,7 @@
 package transaction.scheduler.tpg;
 
-import transaction.scheduler.tpg.struct.MetaTypes;
-import transaction.scheduler.tpg.struct.OperationChain;
+import scheduler.struct.MetaTypes;
+import scheduler.struct.OperationChain;
 
 public interface OperationChainStateListener {
 

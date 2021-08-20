@@ -1,6 +1,5 @@
 package components.operators.executor;
 
-import common.Clock;
 import common.collections.Configuration;
 import components.context.TopologyContext;
 import components.operators.api.Checkpointable;
@@ -12,6 +11,7 @@ import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.Writer;
+import lock.Clock;
 
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;

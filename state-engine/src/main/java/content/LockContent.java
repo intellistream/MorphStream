@@ -1,9 +1,9 @@
 package content;
 
-import common.meta.CommonMetaTypes;
+import content.common.CommonMetaTypes;
 import storage.SchemaRecord;
 import storage.datatype.DataBox;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 import java.util.List;
 

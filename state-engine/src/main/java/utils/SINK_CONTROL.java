@@ -1,6 +1,6 @@
 package utils;
 
-import common.SpinLock;
+import lock.SpinLock;
 
 import java.util.concurrent.locks.ReentrantLock;
 

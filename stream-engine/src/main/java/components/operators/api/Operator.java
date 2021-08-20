@@ -1,8 +1,5 @@
 package components.operators.api;
 
-import common.Clock;
-import common.OrderLock;
-import common.OrderValidate;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
@@ -15,12 +12,15 @@ import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.OutputFieldsDeclarer;
 import faulttolerance.State;
+import lock.Clock;
+import lock.OrderLock;
+import lock.OrderValidate;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.impl.TxnContext;
-import transaction.scheduler.SchedulerContext;
+import scheduler.context.SchedulerContext;
+import transaction.context.TxnContext;
 
 import java.io.Serializable;
 import java.util.HashMap;

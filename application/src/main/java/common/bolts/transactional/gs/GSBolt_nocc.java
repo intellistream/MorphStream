@@ -6,7 +6,7 @@ import db.DatabaseException;
 import execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.dedicated.TxnManagerNoLock;
+import transaction.impl.TxnManagerNoLock;
 
 import static profiler.MeasureTools.BEGIN_ACCESS_TIME_MEASURE;
 import static profiler.MeasureTools.END_ACCESS_TIME_MEASURE_ACC;

@@ -8,7 +8,7 @@ import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.dedicated.TxnManagerLock;
+import transaction.impl.TxnManagerLock;
 
 import static common.CONTROL.combo_bid_size;
 import static profiler.MeasureTools.*;

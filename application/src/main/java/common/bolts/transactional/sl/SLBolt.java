@@ -9,14 +9,14 @@ import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 import storage.datatype.DataBox;
-import transaction.impl.TxnContext;
+import transaction.context.TxnContext;
 
 import java.util.List;
 
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static common.meta.CommonMetaTypes.AccessType.READ_WRITE;
+import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.*;
 
 public abstract class SLBolt extends TransactionalBolt {

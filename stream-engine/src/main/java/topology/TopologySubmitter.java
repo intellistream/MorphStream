@@ -1,12 +1,12 @@
 package topology;
 
 import common.CONTROL;
-import common.SpinLock;
 import common.collections.Configuration;
 import components.Topology;
 import components.TopologyComponent;
 import components.exception.UnhandledCaseException;
 import execution.ExecutionGraph;
+import lock.SpinLock;
 import optimization.OptimizationManager;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;

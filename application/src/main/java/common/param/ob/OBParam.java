@@ -1,6 +1,6 @@
 package common.param.ob;
 
-import benchmark.TxnParam;
+import content.common.TxnParam;
 
 public class OBParam extends TxnParam {
     int[] itemID;
