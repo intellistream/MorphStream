@@ -87,7 +87,7 @@ public class TaskPrecedenceGraph<SchedulingUnit extends OperationChain> {
         for (SchedulingUnit oc : ocs) {
             context.totalOsToSchedule += oc.getOperations().size();
         }
-        HashMap<Integer, ArrayList<SchedulingUnit>> layeredOCBucketThread = context.layeredOCBucketGlobal;
+        HashMap<Integer, ArrayList<SchedulingUnit>> layeredOCBucketThread = context.allocatedLayeredOCBucket;
         context.maxLevel = buildBucketPerThread(layeredOCBucketThread, ocs);
         System.out.println(context.maxLevel);
     }

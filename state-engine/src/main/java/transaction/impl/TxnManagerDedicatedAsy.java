@@ -20,6 +20,7 @@ import transaction.function.Function;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 
 import static content.common.CommonMetaTypes.kMaxAccessNum;
 
@@ -42,15 +43,14 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         thread_count_ = thread_count;
         is_first_access_ = true;
 
+
         SCHEDULER_TYPE scheduler_type = SCHEDULER_TYPE.valueOf(schedulerType);
         switch (scheduler_type) {
             case BFS:
-                scheduler = new BFSScheduler(thread_count, numberOfStates);
                 context = new BFSLayeredTPGContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
             case DFS: // TODO
-                scheduler = new DFSScheduler(thread_count, numberOfStates);
                 context = new DFSLayeredTPGContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
@@ -61,7 +61,6 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
         }
-
 //        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
     }
 

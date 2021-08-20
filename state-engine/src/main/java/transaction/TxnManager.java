@@ -1,10 +1,27 @@
 package transaction;
 
+import scheduler.impl.IScheduler;
 import scheduler.impl.Scheduler;
+import scheduler.impl.layered.BFSScheduler;
+import scheduler.impl.layered.DFSScheduler;
 
 /**
  * Every thread has its own TxnManager.
  */
 public abstract class TxnManager implements ITxnManager {
-    protected Scheduler scheduler;
+    protected static Scheduler scheduler;
+
+    public static void CreateScheduler(String schedulerType, int threadCount, int numberOfStates) {
+
+        switch (schedulerType) {
+            case "BFS":
+                scheduler = new BFSScheduler(threadCount, numberOfStates);
+                break;
+            case "DFS": // TODO
+                scheduler = new DFSScheduler(threadCount, numberOfStates);
+                break;
+            default:
+                throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
+        }
+    }
 }

@@ -11,10 +11,12 @@ import execution.runtime.spoutThread;
 import faulttolerance.Writer;
 import lock.Clock;
 import optimization.OptimizationManager;
+import org.apache.zookeeper.txn.Txn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.context.DFSLayeredTPGContext;
 import scheduler.context.LayeredTPGContext;
+import transaction.TxnManager;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -73,18 +75,12 @@ public class ExecutionManager {
             List<Integer> integers = stage_map.get(stage);
 //            TxnProcessingEngine tp_engine = new TxnProcessingEngine(stage);
 //            tp_engine = TxnProcessingEngine.getInstance();
-//            if (integers != null) {
-//                int totalThread = conf.getInt("tthread");
-//                int numberOfStates = conf.getInt("NUM_ITEMS");
-////                tp_engine.engine_init(conf.getInt("tthread"), numberOfStates, conf.getString("scheduler", "BL"));
-//                SCHEDULER_TYPE schedulerType = SCHEDULER_TYPE.valueOf(conf.getString("scheduler", "BL"));
-//                switch (schedulerType) {
-//                    case BFS:
-//                        tp_engine = new TxnProcessingEngine<LayeredTPGContext>(totalThread, numberOfStates);
-//                    case DFS: // TODO: add GS
-//                        tp_engine = new TxnProcessingEngine<DFSLayeredTPGContext>(totalThread, numberOfStates);
-//                }
-//            }
+            if (integers != null) {
+                int totalThread = conf.getInt("tthread");
+                int numberOfStates = conf.getInt("NUM_ITEMS");
+                String schedulerType = conf.getString("scheduler");
+                TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates);
+            }
         }
         executorThread thread = null;
         long start = System.currentTimeMillis();

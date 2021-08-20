@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
 
-    public HashMap<Integer, ArrayList<SchedulingUnit>> layeredOCBucketGlobal;// <LevelID, ArrayDeque<OperationChain>
+    public HashMap<Integer, ArrayList<SchedulingUnit>> allocatedLayeredOCBucket;// <LevelID, ArrayDeque<OperationChain>
     public int currentLevel;
     public int currentLevelIndex;
     public int totalThreads;
@@ -26,7 +26,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     public LayeredTPGContext(int thisThreadId, int totalThreads) {
         super(thisThreadId);
         this.totalThreads = totalThreads;
-        this.layeredOCBucketGlobal = new HashMap<>();
+        this.allocatedLayeredOCBucket = new HashMap<>();
         this.abortedOperations = new ArrayDeque<>();
         requests = new ArrayDeque<>();
     }
@@ -49,7 +49,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     }
 
     public ArrayList<SchedulingUnit> OCSCurrentLayer() {
-        return layeredOCBucketGlobal.get(currentLevel);
+        return allocatedLayeredOCBucket.get(currentLevel);
     }
 
     @Override
