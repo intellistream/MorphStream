@@ -19,6 +19,7 @@ public class LayeredTPGContext<OP extends AbstractOperation, OC extends Operatio
     public int totalOsToSchedule;//total number of operations to process per thread.
     public OC ready_oc;//ready operation chain per thread.
     public ArrayDeque<OP> abortedOperations;//aborted operations per thread.
+    public int rollbackLevel;
     public boolean aborted;//if any operation is aborted during processing.
 
     //TODO: Make it flexible to accept other applications.

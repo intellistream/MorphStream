@@ -55,6 +55,10 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext, OC ext
             AbstractOperation finalOperation = operation;
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(finalOperation, mark_ID, false);
+            if (operation.aborted) {
+                context.abortedOperations.push(operation);
+                context.aborted = true;
+            }
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             operation = operation_chain.pollFirst();
         }

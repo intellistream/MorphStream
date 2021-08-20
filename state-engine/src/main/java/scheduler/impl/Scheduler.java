@@ -2,13 +2,9 @@ package scheduler.impl;
 
 
 import content.T_StreamContent;
-import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
-import scheduler.struct.Operation;
-import scheduler.struct.TaskPrecedenceGraph;
-import scheduler.struct.dfs.DFSOperation;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -16,7 +12,6 @@ import transaction.function.DEC;
 import transaction.function.INC;
 import utils.SOURCE_CONTROL;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,7 +137,7 @@ public abstract class Scheduler<Context extends SchedulerContext, Task> implemen
             throw new UnsupportedOperationException();
         }
         if (operation.success[0] == success) {
-            operation.isFailed = true;
+            operation.aborted = true;
         }
     }
 

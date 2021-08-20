@@ -7,10 +7,13 @@ import scheduler.struct.AbstractOperation;
 import scheduler.struct.Operation;
 import scheduler.struct.OperationChain;
 import scheduler.struct.TaskPrecedenceGraph;
+import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static java.lang.Integer.max;
+import static java.lang.Integer.min;
 
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:
@@ -21,6 +24,7 @@ import java.util.List;
  */
 public class BFSScheduler<Context extends LayeredTPGContext> extends LayeredScheduler<Context, OperationChain> {
 
+    public int targetRollbackLevel;//shared data structure.
 
     public BFSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -33,10 +37,33 @@ public class BFSScheduler<Context extends LayeredTPGContext> extends LayeredSche
         context.currentLevelIndex = 0;
     }
 
+    private void RollbackToCorrectLayerForRedo(Context context) {
+        int level;
+        for (level = context.rollbackLevel; level < context.currentLevel; level++) {
+            context.scheduledOPs -= getNumOPsByLevel(context, level);
+        }
+        context.currentLevelIndex = 0;
+        context.currentLevel = context.rollbackLevel;
+        context.rollbackLevel = 0;
+    }
+
+    private int getNumOPsByLevel(Context context, int level) {
+        int ops = 0;
+        HashMap<Integer, ArrayList<OperationChain>> ocs = context.layeredOCBucketGlobal;
+        for (OperationChain operationChain : ocs.get(level)) {
+            ops += operationChain.getOperations().size();
+        }
+        return ops;
+    }
+
     @Override
     public void EXPLORE(Context context) {
         OperationChain next = Next(context);
         if (next == null && !context.finished()) {//current level is all processed at the current thread.
+            //Check if there's any aborts
+            if (context.aborted) {
+                abortHandling(context);
+            }
             while (next == null) {
                 ProcessedToNextLevel(context);
                 next = Next(context);
@@ -46,6 +73,69 @@ public class BFSScheduler<Context extends LayeredTPGContext> extends LayeredSche
         }
         DISTRIBUTE(next, context);
     }
+
+    private void abortHandling(Context context) {
+        MarkOperationsToAbort(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        IdentifyRollbackLevel(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SetRollbackLevel(context);
+        RollbackToCorrectLayerForRedo(context);
+        context.aborted = false;
+    }
+
+    //TODO: mark operations of aborted transaction to be aborted.
+    private void MarkOperationsToAbort(Context context) {
+        boolean markAny = false;
+        Collection<ArrayList<OperationChain>> ocsList = context.layeredOCBucketGlobal.values();
+        for (ArrayList<OperationChain> operationChains : ocsList) {
+            for (OperationChain operationChain : operationChains) {
+                MyList<AbstractOperation> ops = operationChain.getOperations();
+                for (AbstractOperation operation : ops) {
+                    markAny |= _MarkOperationsToAbort(context, operation);
+                }
+            }
+            if (!markAny) {//current layer no one being marked.
+                context.rollbackLevel++;
+            }
+        }
+        context.rollbackLevel = min(context.rollbackLevel, context.currentLevel);
+    }
+
+    /**
+     * Mark operations of an aborted transaction to abort.
+     *
+     * @param context
+     * @param operation
+     * @return
+     */
+    private boolean _MarkOperationsToAbort(Context context, AbstractOperation operation) {
+        long bid = operation.bid;
+        boolean markAny = false;
+        //identify bids to be aborted.
+        ArrayDeque<AbstractOperation> ops = context.abortedOperations;
+        for (AbstractOperation op : ops) {
+            if (bid == op.bid) {
+                op.aborted = true;
+                markAny = true;
+            }
+        }
+        return markAny;
+    }
+
+    private void IdentifyRollbackLevel(Context context) {
+        if (context.thisThreadId == 0) {
+            targetRollbackLevel = 0;
+            for (int i = 0; i < context.totalThreads; i++) {
+                targetRollbackLevel = max(targetRollbackLevel, context.rollbackLevel);
+            }
+        }
+    }
+
+    private void SetRollbackLevel(Context context) {
+        context.rollbackLevel = targetRollbackLevel;
+    }
+
 
     @Override
     protected void NOTIFY(OperationChain operationChain, Context context) {
