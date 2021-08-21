@@ -1,7 +1,7 @@
 package common.bolts.transactional.gs;
 
 import common.param.mb.MicroEvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import components.operators.api.TransactionalBolt;
 import content.common.CommonMetaTypes;
 import db.DatabaseException;

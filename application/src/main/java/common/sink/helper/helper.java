@@ -70,7 +70,7 @@ public abstract class helper {
         print_pid = true;
         this.predict = predict;
         this.size = size;
-        if(enable_log) LOG.info("test duration," + duration + ", warm_up time: " + warm_up + "measure_times:" + measure_times);
+        if (enable_log) LOG.info("test duration," + duration + ", warm_up time: " + warm_up + "measure_times:" + measure_times);
     }
 
     public void StartMeasurement() {
@@ -100,13 +100,13 @@ public abstract class helper {
 //            if (checkPoint > 1)//skip the first few checkpoints for warm up purpose.
 //            {
             value_list.addValue(throughput);
-            if(enable_log) LOG.info("Sink@ " + thisTaskId + " current throughput@" + checkPoint + ":" + throughput);
+            if (enable_log) LOG.info("Sink@ " + thisTaskId + " current throughput@" + checkPoint + ":" + throughput);
 //            }
             local_index_e = 0; //clean counter
             if (checkPoint == measure_times) {
                 value_list.removeMostRecentValue();//drop the last checkpoints.
                 final double mean = value_list.getPercentile(50);
-                if(enable_log) LOG.info("Task:" + thisTaskId + " finished for (ms) " + sourceComponent + " :" + mean);
+                if (enable_log) LOG.info("Task:" + thisTaskId + " finished for (ms) " + sourceComponent + " :" + mean);
                 output(value_list.getValues());
                 return mean;
             }
@@ -117,12 +117,12 @@ public abstract class helper {
 
     void sink_pid() {
         long pid = OsUtils.getJVMID();
-        if(enable_log) LOG.info("JVM PID  = " + pid);
+        if (enable_log) LOG.info("JVM PID  = " + pid);
         FileWriter fw;
         BufferedWriter writer = null;
         File file = new File(metric_path);
         if (!file.mkdirs()) {
-            LOG.warn("Not able to create metrics directories");
+            if (enable_log) LOG.warn("Not able to create metrics directories");
         }
         try {
             fw = new FileWriter(String.format(sink_path, pid));
@@ -180,7 +180,7 @@ public abstract class helper {
             fw = new FileWriter(new File(throughput_path));
             writer = new BufferedWriter(fw);
             for (String s : strings) {
-                if(enable_log) LOG.info(s);
+                if (enable_log) LOG.info(s);
                 writer.write(s.concat("\n"));
             }
             writer.flush();
@@ -198,7 +198,7 @@ public abstract class helper {
             fw = new FileWriter(new File(throughput_path));
             writer = new BufferedWriter(fw);
             for (double s : strings) {
-//                if(enable_log) LOG.info(String.valueOf(s));
+//                if (enable_log) LOG.info(String.valueOf(s));
                 writer.write(String.valueOf(s).concat("\n"));
             }
             writer.flush();
@@ -216,7 +216,7 @@ public abstract class helper {
             fw = new FileWriter(new File(throughput_path));
             writer = new BufferedWriter(fw);
             for (Double s : strings) {
-//                if(enable_log) LOG.info(String.valueOf(s));
+//                if (enable_log) LOG.info(String.valueOf(s));
                 writer.write(String.valueOf(s).concat("\n"));
             }
             writer.flush();

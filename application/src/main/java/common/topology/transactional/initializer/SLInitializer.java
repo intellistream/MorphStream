@@ -1,14 +1,16 @@
 package common.topology.transactional.initializer;
 
 import benchmark.DataHolder;
+import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
-import benchmark.datagenerator.SpecialDataGenerator;
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGenerator;
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.param.TxnEvent;
+import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import db.Database;
 import db.DatabaseException;
@@ -45,7 +47,8 @@ public class SLInitializer extends TableInitilizer {
     private final int startingBalance = 1000000;
     private final int partitionOffset;
     private String dataRootPath;
-    private SpecialDataGenerator dataGenerator;
+    private DataGenerator dataGenerator;
+    private DataGeneratorConfig dataConfig;
 
     public SLInitializer(Database db, String dataRootPath, int numberOfStates, double scale_factor, double theta, int tthread, Configuration config) {
         super(db, scale_factor, theta, tthread, config);
@@ -55,8 +58,6 @@ public class SLInitializer extends TableInitilizer {
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         idsGenType = config.getString("idGenType");
         this.partitionOffset = this.numberOfStates / tthread;
-
-//        Controller.setExec(tthread);
 
         String generatorType = config.getString("generator");
         switch (generatorType) {
@@ -69,6 +70,8 @@ public class SLInitializer extends TableInitilizer {
             default:
                 throw new IllegalStateException("Unexpected value: " + generatorType);
         }
+
+        dataConfig = dataGenerator.getDataConfig();
     }
 
     protected void createLayeredOCGenerator(Configuration config) {
@@ -89,6 +92,12 @@ public class SLInitializer extends TableInitilizer {
         dataGenerator = new TPGDataGenerator(dataConfig);
     }
 
+    /**
+     * Control the input file path.
+     * TODO: think carefully which configuration shall vary.
+     *
+     * @param dataConfig
+     */
     private void configurePath(DataGeneratorConfig dataConfig) {
         MessageDigest digest;
         String subFolder = null;
@@ -97,9 +106,11 @@ public class SLInitializer extends TableInitilizer {
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(
                             digest.digest(
-                                    String.format("%d_%d",
+                                    String.format("%d_%d_%d",
                                                     dataConfig.getTotalThreads(),
-                                                    dataConfig.getTuplesPerBatch() * dataConfig.getTotalBatches())
+                                                    dataConfig.getTuplesPerBatch(),
+                                                    dataConfig.getTotalBatches()
+                                            )
                                             .getBytes(StandardCharsets.UTF_8))));
         } catch (Exception e) {
             e.printStackTrace();
@@ -131,7 +142,7 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -163,7 +174,7 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
 
@@ -250,17 +261,44 @@ public class SLInitializer extends TableInitilizer {
     }
 
     @Override
-    public boolean Prepared(String fileN) {
+    public boolean Generate() {
+        String folder = dataConfig.getRootPath();
+        File file = new File(folder);
+        if (file.exists()) {
+            if (enable_log) LOG.info("Data already exists.. skipping data generation...");
+            return false;
+        }
+        file.mkdirs();
 
-        int tuplesPerBatch = dataGenerator.getDataConfig().getTuplesPerBatch();
-        int totalBatches = dataGenerator.getDataConfig().getTotalBatches();
-        boolean shufflingActive = dataGenerator.getDataConfig().getShufflingActive();
-        String folder = dataGenerator.getDataConfig().getRootPath();
-
-        dataGenerator.prepareForExecution();
-
-        loadTransactionEvents(tuplesPerBatch, totalBatches, shufflingActive, folder);
+        dataGenerator.generateStream();//prepare input events.
+        if (enable_log) LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
+        dataGenerator.dumpGeneratedDataToFile();
+        if (enable_log) LOG.info("Data Generation is done...");
+        dataGenerator.clearDataStructures();
         return true;
+    }
+
+    @Override
+    protected void Load() throws IOException {
+        int tuplesPerBatch = dataConfig.getTuplesPerBatch();
+        int totalBatches = dataConfig.getTotalBatches();
+        boolean shufflingActive = dataConfig.getShufflingActive();
+        String folder = dataConfig.getRootPath();
+        File file = new File(folder + "transferEvents.txt");
+        if (file.exists()) {
+            if (enable_log) LOG.info("Reading transfer events...");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            loadTransferEvents(reader, tuplesPerBatch, totalBatches, shufflingActive);
+            reader.close();
+        }
+
+        file = new File(folder + "depositEvents.txt");
+        if (file.exists()) {
+            if (enable_log) LOG.info("Reading deposit events...");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            loadDepositEvents(reader, tuplesPerBatch, totalBatches, shufflingActive);
+            reader.close();
+        }
     }
 
     @Override
@@ -268,71 +306,90 @@ public class SLInitializer extends TableInitilizer {
 
     }
 
-    protected void loadTransactionEvents(int tuplesPerBatch, int totalBatches, boolean shufflingActive, String folder) {
+    private void loadDepositEvents(BufferedReader reader, int tuplesPerBatch, int totalBatches, boolean shufflingActive) throws IOException {
+        String txn = reader.readLine();
+        int count = 0;
+        int p_bids[] = new int[tthread];
+        while (txn != null) {
+            String[] split = txn.split(",");
+            int npid = (int) (Long.valueOf(split[1]) / partitionOffset);
+            DepositEvent event = new DepositEvent(
+                    Integer.parseInt(split[0]), //bid
+                    npid, //pid
+                    Arrays.toString(p_bids), //bid_array
+                    2,//num_of_partition
+                    split[1],//getSourceAccountId
+                    split[2],//getSourceBookEntryId
+                    100,  //getAccountDeposit
+                    100  //getBookEntryDeposit
+            );
+            for (int x = 0; x < 4; x++)
+                p_bids[(npid + x) % tthread]++;
+            DataHolder.depositEvents.add(event);
+            if (enable_log) LOG.debug(String.format("%d deposit read...", count));
+            txn = reader.readLine();
+        }
+        if (enable_log) LOG.info("Done reading transfer events...");
+        if (shufflingActive) {
+            shuffleEvents(DataHolder.depositEvents, tuplesPerBatch, totalBatches);
+        }
+    }
 
-        if (DataHolder.events == null) {
-            DataHolder.events = new TransactionEvent[totalRecords];
-            File file = new File(folder + "transactions.txt");
-            if (file.exists()) {
-                if(enable_log) LOG.info(String.format("Reading transactions..."));
-                try {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-                    String txn = reader.readLine();
-                    int count = 0;
-                    int p_bids[] = new int[tthread];
-                    while (txn != null) {
-                        String[] split = txn.split(",");
-                        int npid = (int) (Long.valueOf(split[1]) / partitionOffset);
-                        TransactionEvent event = new TransactionEvent(
-                                Integer.parseInt(split[0]), //bid
-                                npid, //pid
-                                Arrays.toString(p_bids), //bid_array
-                                4,//num_of_partition
-                                split[1],//getSourceAccountId
-                                split[2],//getSourceBookEntryId
-                                split[3],//getTargetAccountId
-                                split[4],//getTargetBookEntryId
-                                100,  //getAccountTransfer
-                                100  //getBookEntryTransfer
-                        );
-                        for (int x = 0; x < 4; x++)
-                            p_bids[(npid + x) % tthread]++;
-                        DataHolder.events[count] = event;
-                        count++;
-                        if (count % 100000 == 0)
-                            if(enable_log) LOG.info(String.format("%d transactions read...", count));
-                        txn = reader.readLine();
-                    }
-                    reader.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if(enable_log) LOG.info(String.format("Done reading transactions..."));
+    private void loadTransferEvents(BufferedReader reader, int tuplesPerBatch, int totalBatches, boolean shufflingActive) throws IOException {
+        String txn = reader.readLine();
+        int count = 0;
+        int p_bids[] = new int[tthread];
+        while (txn != null) {
+            String[] split = txn.split(",");
+            int npid = (int) (Long.valueOf(split[1]) / partitionOffset);
+            int accountTransfer = 100;
+            int accountEntryTransfer = 100;
+//            if (count == 500 || count == 5000 || count == 50000) {
+//                accountTransfer = 100000000;
+//                accountEntryTransfer = 100000000;
+//            }
 
-                if (shufflingActive) {
-                    Random random = new Random();
-                    int index;
-                    TransactionEvent temp;
-                    for (int lop = 0; lop < totalBatches; lop++) {
-                        int start = lop * tuplesPerBatch;
-                        int end = (lop + 1) * tuplesPerBatch;
+            count++;
+            TransactionEvent event = new TransactionEvent(
+                    Integer.parseInt(split[0]), //bid
+                    npid, //pid
+                    Arrays.toString(p_bids), //bid_arrary
+                    4,//num_of_partition
+                    split[1],//getSourceAccountId
+                    split[2],//getSourceBookEntryId
+                    split[3],//getTargetAccountId
+                    split[4],//getTargetBookEntryId
+                    accountTransfer,  //getAccountTransfer
+                    accountEntryTransfer  //getBookEntryTransfer
+            );
+            for (int x = 0; x < 4; x++)
+                p_bids[(npid + x) % tthread]++;
+            DataHolder.transferEvents.add(event);
+            if (enable_log) LOG.debug(String.format("%d transactions read...", count));
+            txn = reader.readLine();
+        }
+        if (enable_log) LOG.info("Done reading transfer events...");
+        if (shufflingActive) {
+            shuffleEvents(DataHolder.transferEvents, tuplesPerBatch, totalBatches);
+        }
+    }
 
-                        for (int i = end - 1; i > start; i--) {
-                            index = start + random.nextInt(i - start + 1);
-                            temp = DataHolder.events[index];
-                            DataHolder.events[index] = DataHolder.events[i];
-                            DataHolder.events[i] = temp;
-                        }
-                    }
-                }
+    private void shuffleEvents(ArrayList<TxnEvent> txnEvents, int tuplesPerBatch, int totalBatches) {
+        Random random = new Random();
+        int index;
+        TxnEvent temp;
+        for (int lop = 0; lop < totalBatches; lop++) {
+            int start = lop * tuplesPerBatch;
+            int end = (lop + 1) * tuplesPerBatch;
+            for (int i = end - 1; i > start; i--) {
+                index = start + random.nextInt(i - start + 1);
+                temp = txnEvents.get(index);
+                txnEvents.set(index, txnEvents.get(i));
+                txnEvents.set(i, temp);
             }
         }
     }
 
-    @Override
-    public Object create_new_event(int num_p, int bid) {
-        return null;
-    }
 
     public void creates_Table(Configuration config) {
         RecordSchema s = AccountsScheme();
@@ -340,7 +397,7 @@ public class SLInitializer extends TableInitilizer {
         RecordSchema b = BookEntryScheme();
         db.createTable(b, "bookEntries");
         try {
-            prepare_input_events("SL_Events", config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
+            prepare_input_events(config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
         } catch (IOException e) {
             e.printStackTrace();
         }

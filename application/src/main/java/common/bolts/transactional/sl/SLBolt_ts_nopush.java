@@ -2,7 +2,7 @@ package common.bolts.transactional.sl;
 
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import components.context.TopologyContext;
 import content.T_StreamContent;
 import db.DatabaseException;
@@ -120,20 +120,20 @@ public class SLBolt_ts_nopush extends SLBolt_ts {
         SchemaRecord preValues = event.src_account_values.getRecord().content_.readPreValues(event.getBid());
         SchemaRecord preValues1 = event.src_asset_values.getRecord().content_.readPreValues(event.getBid());
         if (preValues == null) {
-            if(enable_log) LOG.info("Failed to read condition records[0]" + event.src_account_values.getRecord().getID());
-            if(enable_log) LOG.info("Its version size:" + ((T_StreamContent) event.src_account_values.getRecord().content_).versions.size());
+            if (enable_log) LOG.info("Failed to read condition records[0]" + event.src_account_values.getRecord().getID());
+            if (enable_log) LOG.info("Its version size:" + ((T_StreamContent) event.src_account_values.getRecord().content_).versions.size());
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) event.src_account_values.getRecord().content_).versions.entrySet()) {
-                if(enable_log) LOG.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + event.getBid());
+                if (enable_log) LOG.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + event.getBid());
             }
-            if(enable_log) LOG.info("TRY reading:" + event.src_account_values.getRecord().content_.readPreValues(event.getBid()));//not modified in last round);
+            if (enable_log) LOG.info("TRY reading:" + event.src_account_values.getRecord().content_.readPreValues(event.getBid()));//not modified in last round);
         }
         if (preValues1 == null) {
-            if(enable_log) LOG.info("Failed to read condition records[1]" + event.src_asset_values.getRecord().getID());
-            if(enable_log) LOG.info("Its version size:" + ((T_StreamContent) event.src_asset_values.getRecord().content_).versions.size());
+            if (enable_log) LOG.info("Failed to read condition records[1]" + event.src_asset_values.getRecord().getID());
+            if (enable_log) LOG.info("Its version size:" + ((T_StreamContent) event.src_asset_values.getRecord().content_).versions.size());
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) event.src_asset_values.getRecord().content_).versions.entrySet()) {
-                if(enable_log) LOG.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + event.getBid());
+                if (enable_log) LOG.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + event.getBid());
             }
-            if(enable_log) LOG.info("TRY reading:" + ((T_StreamContent) event.src_asset_values.getRecord().content_).versions.get(event.getBid()));//not modified in last round);
+            if (enable_log) LOG.info("TRY reading:" + ((T_StreamContent) event.src_asset_values.getRecord().content_).versions.get(event.getBid()));//not modified in last round);
         }
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
         final long sourceAssetValue = preValues1.getValues().get(1).getLong();

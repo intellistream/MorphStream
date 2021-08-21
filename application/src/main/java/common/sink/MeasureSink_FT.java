@@ -24,7 +24,7 @@ public class MeasureSink_FT extends MeasureSink {
             results = helper.execute(input.getBID());
             if (results != 0) {
                 this.setResults(results);
-                if(enable_log) LOG.info("Sink finished:" + results);
+                if (enable_log) LOG.info("Sink finished:" + results);
                 if (thisTaskId == graph.getSink().getExecutorID()) {
                     measure_end(results);
                 }

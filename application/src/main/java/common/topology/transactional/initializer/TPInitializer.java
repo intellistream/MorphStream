@@ -16,6 +16,7 @@ import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +47,7 @@ public class TPInitializer extends TableInitilizer {
             insertSpeedRecord(_key, 0, pid, spinlock);
             insertCntRecord(_key, 0, pid, spinlock);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -74,7 +75,7 @@ public class TPInitializer extends TableInitilizer {
             insertSpeedRecord(_key, 0);
             insertCntRecord(_key);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     private void insertCntRecord(String key, int value, int pid, SpinLock[] spinlock) {
@@ -146,17 +147,18 @@ public class TPInitializer extends TableInitilizer {
     }
 
     @Override
-    public boolean Prepared(String file) {
+    public boolean Generate() {
         return true;
+    }
+
+
+    @Override
+    protected void Load() throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void store(String file_name) {
-    }
-
-    @Override
-    public Object create_new_event(int num_p, int bid) {
-        return null;
     }
 
     protected String getConfigKey(String template) {

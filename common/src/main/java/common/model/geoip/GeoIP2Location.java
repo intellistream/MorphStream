@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 
+import static common.CONTROL.enable_log;
+
 /**
  * @author mayconbordin
  */
@@ -22,7 +24,7 @@ public class GeoIP2Location implements IPLocation {
             File database = new File(System.getProperty("user.home").concat("/Documents/data/app/").concat(dbPath));
             reader = new DatabaseReader.Builder(database).build();
         } catch (IOException ex) {
-            LOG.error("Unable to load MaxMind database", ex);
+            if (enable_log) LOG.error("Unable to load MaxMind database", ex);
             throw new RuntimeException("Unable to load MaxMind database");
         }
     }
@@ -38,7 +40,7 @@ public class GeoIP2Location implements IPLocation {
             location.setIp(ip);
             return location;
         } catch (IOException | GeoIp2Exception ex) {
-            //LOG.DEBUG("Unable to resolve ip location", ex);
+            //if (enable_log) LOG.DEBUG("Unable to resolve ip location", ex);
         }
         return null;
     }

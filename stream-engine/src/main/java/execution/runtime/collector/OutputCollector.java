@@ -264,8 +264,8 @@ public class OutputCollector<T> {
     /**
      * @return the Task ids that received the tuples.
      * Currently spout and bolt emit are same... In the future, spout emit need to set up ACK..
-     * TODO: 1) add streamId to support multiple stream feature
-     * 2) add anchors (source/parent Brisk.execution.runtime.tuple) to support back-tracking for ack purpose.
+     * TODO: 1) addOperation streamId to support multiple stream feature
+     * 2) addOperation anchors (source/parent Brisk.execution.runtime.tuple) to support back-tracking for ack purpose.
      * @since 0.0.4 multiple stream ID added.
      * if left empty, use default stream Id instead.
      */
@@ -502,7 +502,7 @@ public class OutputCollector<T> {
     public void ack(JumboTuple input, Marker marker) {
         assert this.executor.isLeafNode();
 //		final int executorID = executor.getExecutorID();
-//		//LOG.DEBUG(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " from " + input.getSourceTask());
+//		//if (enable_log) LOG.DEBUG(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " from " + input.getSourceTask());
 //		final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
 //		src.op.callback(executorID, marker);
         //non-blocking ack.
@@ -522,7 +522,7 @@ public class OutputCollector<T> {
     public void ack(Tuple input, Marker marker) {
         final int executorID = executor.getExecutorID();
         if (enable_debug)
-            if(enable_log) LOG.info(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " to " + input.getSourceComponent());
+            if (enable_log) LOG.info(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " to " + input.getSourceComponent());
         final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
         if (input.getBID() != totalEvents)
             src.op.callback(executorID, marker);

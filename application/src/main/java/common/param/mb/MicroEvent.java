@@ -22,7 +22,7 @@ public class MicroEvent extends TxnEvent {
     private final boolean flag;//true: read, false: write.
     public int sum;
     public int[] result = new int[NUM_ACCESSES];
-    private List<DataBox>[] value;//Note, it should be arraylist instead of linkedlist as there's no add/remove later.
+    private List<DataBox>[] value;//Note, it should be arraylist instead of linkedlist as there's no addOperation/remove later.
     //    public double[] useful_ratio = new double[1];
 
     /**
@@ -88,7 +88,7 @@ public class MicroEvent extends TxnEvent {
     }
 
     public void setValues(int[] keys) {
-        value = new ArrayList[NUM_ACCESSES];//Note, it should be arraylist instead of linkedlist as there's no add/remove later.
+        value = new ArrayList[NUM_ACCESSES];//Note, it should be arraylist instead of linkedlist as there's no addOperation/remove later.
         for (int access_id = 0; access_id < NUM_ACCESSES; ++access_id) {
             set_values(access_id, keys[access_id]);
         }

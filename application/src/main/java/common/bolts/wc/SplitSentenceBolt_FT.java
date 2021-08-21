@@ -80,7 +80,7 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         long pid = OsUtils.getPID();
-//		if(enable_log) LOG.info("PID  = " + pid);
+//		if (enable_log) LOG.info("PID  = " + pid);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
         final boolean check = checkpoint_forward(sourceId);//simply forward marker when it is ready.
         if (check) {
             this.collector.broadcast_marker(bid, marker);//bolt needs to broadcast_marker
-            //LOG.DEBUG(this.getContext().getThisComponentId() + this.getContext().getThisTaskId() + " broadcast marker with id:" + marker.msgId + "@" + DateTime.now());
+            // if (enable_log) LOG.DEBUG(this.getContext().getThisComponentId() + this.getContext().getThisTaskId() + " broadcast marker with id:" + marker.msgId + "@" + DateTime.now());
         }
     }
 
@@ -111,9 +111,9 @@ public class SplitSentenceBolt_FT extends splitBolt implements Checkpointable {
 
     @Override
     public void ack_checkpoint(Marker marker) {
-//		//LOG.DEBUG("Received ack from all consumers.");
+//		//if (enable_log) LOG.DEBUG("Received ack from all consumers.");
         //Do something to clear past state. (optional)
-//		//LOG.DEBUG("Broadcast ack to all producers.");
+//		//if (enable_log) LOG.DEBUG("Broadcast ack to all producers.");
         this.collector.broadcast_ack(marker);//bolt needs to broadcast_ack
     }
 

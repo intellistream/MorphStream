@@ -107,7 +107,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
             assert !rt || record_.getRecord() != null;
             return rt;
         } else {
-            if(enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }
@@ -118,7 +118,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
             boolean rt = lock_aheadCC(txn_context, table_name, t_record, record_, access_type);
             return rt;
         } else {
-            if(enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }
@@ -131,7 +131,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
             boolean rt = SelectKeyRecord_noLockCC(txn_context, table_name, t_record, record_, access_type);
             return rt;
         } else {
-            if(enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }

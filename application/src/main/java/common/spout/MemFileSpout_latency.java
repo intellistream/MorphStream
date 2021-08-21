@@ -48,7 +48,7 @@ public class MemFileSpout_latency extends AbstractSpout {
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        if(enable_log) LOG.info("Spout initialize is being called");
+        if (enable_log) LOG.info("Spout initialize is being called");
         long start = System.nanoTime();
         cnt = 0;
         counter = 0;
@@ -79,11 +79,11 @@ public class MemFileSpout_latency extends AbstractSpout {
             }
         }
         long pid = OsUtils.getPID();
-        if(enable_log) LOG.info("JVM PID  = " + pid);
+        if (enable_log) LOG.info("JVM PID  = " + pid);
         int end_index = array_array.length * config.getInt("count_number", 1);
-        if(enable_log) LOG.info("spout:" + this.taskId + " elements:" + end_index);
+        if (enable_log) LOG.info("spout:" + this.taskId + " elements:" + end_index);
         long end = System.nanoTime();
-        if(enable_log) LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
+        if (enable_log) LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
         msgID_start = (long) (1E4 * (taskId));
         msgID_end = (long) (1E4 * (taskId + 1));
         msgID_counter = msgID_start;
@@ -133,7 +133,7 @@ public class MemFileSpout_latency extends AbstractSpout {
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         String jvmName = runtimeBean.getName();
         long pid = Long.valueOf(jvmName.split("@")[0]);
-        if(enable_log) LOG.info("JVM PID  = " + pid);
+        if (enable_log) LOG.info("JVM PID  = " + pid);
         FileWriter fw;
         try {
             fw = new FileWriter(new File(config.getString("metrics.output")
@@ -183,7 +183,7 @@ public class MemFileSpout_latency extends AbstractSpout {
     }
 
     public void display() {
-        if(enable_log) LOG.info("timestamp_counter:" + counter);
+        if (enable_log) LOG.info("timestamp_counter:" + counter);
     }
 }
 

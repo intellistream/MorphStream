@@ -39,7 +39,7 @@ public class AppDriver {
         public Topology getTopology(String topologyName, Configuration config) {
             try {
                 Constructor c = cls.getConstructor(String.class, Configuration.class);
-//                if(enable_log) LOG.info("Loaded topology {}", cls.getCanonicalName());
+//                if (enable_log) LOG.info("Loaded topology {}", cls.getCanonicalName());
                 AbstractTopology topology = (AbstractTopology) c.newInstance(topologyName, config);
                 topology.initialize();
                 return topology.buildTopology();

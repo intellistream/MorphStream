@@ -61,7 +61,7 @@ public class ShufflePartitionController extends PartitionController {
 //		for (int e : partition_ratio.keySet()) {
 //			int v = 1;//run 1 time then turn.
 //			for (int i = 0; i < v; i++) {
-//				extendedTargetId.add(e);
+//				extendedTargetId.addOperation(e);
 //			}
 //		}
     }

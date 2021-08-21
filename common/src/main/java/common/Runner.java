@@ -120,7 +120,7 @@ public abstract class Runner implements IRunner {
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
-        if(enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
+        if (enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
     }
 
     public Properties loadProperties(String filename) throws IOException {

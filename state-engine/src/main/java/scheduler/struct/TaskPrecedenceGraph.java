@@ -80,7 +80,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext, ExecutionUnit
             submit(context, tableOCs.threadOCsMap.get(threadId).holder_v1.values());
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-//        LOG.trace("++++++ end explore");
+//        if (enable_log) LOG.trace("++++++ end explore");
     }
 
     private void submit(Context context, Collection<SchedulingUnit> ocs) {
@@ -114,7 +114,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext, ExecutionUnit
                 OCBucketThread.put(dependencyLevel, new ArrayList<>());
             OCBucketThread.get(dependencyLevel).add(oc);
         }
-//        if(enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
+//        if (enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
         return localMaxDLevel;
     }
 

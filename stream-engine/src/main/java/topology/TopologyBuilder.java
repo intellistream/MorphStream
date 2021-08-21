@@ -42,7 +42,7 @@ public class TopologyBuilder {
     }
 
     /**
-     * add spout to Brisk.topology
+     * addOperation spout to Brisk.topology
      *
      * @param id
      * @param s
@@ -69,7 +69,7 @@ public class TopologyBuilder {
     }
 
     /**
-     * add bolt with shuffle Grouping to parent
+     * addOperation bolt with shuffle Grouping to parent
      *
      * @param id
      * @param b
@@ -159,7 +159,7 @@ public class TopologyBuilder {
 
     public Topology createTopology(Database db, TransactionTopology txnTopology) {
         if (topology.getScheduler() == null) {
-            if(enable_log) if(enable_log) LOG.info("Tuple input scheduler is not set, use default scheduler instead!");
+            if (enable_log) LOG.info("Tuple input scheduler is not set, use default scheduler instead!");
             topology.setScheduler(new SequentialScheduler());
         }
         if (db != null) {
@@ -171,7 +171,7 @@ public class TopologyBuilder {
 
     public Topology createTopology() {
         if (topology.getScheduler() == null) {
-            if(enable_log) if(enable_log) LOG.info("JumboTuple scheduler is not set, use default Brisk.execution.runtime.tuple scheduler instead!");
+            if (enable_log) LOG.info("JumboTuple scheduler is not set, use default Brisk.execution.runtime.tuple scheduler instead!");
             topology.setScheduler(new SequentialScheduler());
         }
         return topology;

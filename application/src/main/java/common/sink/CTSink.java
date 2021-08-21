@@ -28,7 +28,7 @@ public class CTSink extends MeasureSink {
     }
 
     public void display() {
-        if(enable_log) LOG.info("Success: " + success + "(" + (success / (success + failure)) + ")");
-        if(enable_log) LOG.info("Failure: " + failure + "(" + (failure / (success + failure)) + ")");
+        if (enable_log) LOG.info("Success: " + success + "(" + (success / (success + failure)) + ")");
+        if (enable_log) LOG.info("Failure: " + failure + "(" + (failure / (success + failure)) + ")");
     }
 }

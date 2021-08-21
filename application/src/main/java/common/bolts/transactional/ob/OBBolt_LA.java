@@ -4,11 +4,12 @@ import common.param.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import transaction.context.TxnContext;
 
+import static common.CONTROL.enable_log;
 import static profiler.MeasureTools.*;
 
 public abstract class OBBolt_LA extends OBBolt {
@@ -26,7 +27,7 @@ public abstract class OBBolt_LA extends OBBolt {
         } else if (event instanceof ToppingEvent) {
             TOPPING_REQUEST_LOCKAHEAD((ToppingEvent) event, txn_context[(int) (i - _bid)]);
         } else {
-            LOG.error("Wrong");
+            if (enable_log) LOG.error("Wrong");
             System.exit(-1);
         }
     }

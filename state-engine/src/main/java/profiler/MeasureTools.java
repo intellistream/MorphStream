@@ -209,9 +209,9 @@ public class MeasureTools {
         try {
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("AverageTotalTimeBreakdownReport\n");
-            if(enable_log) log.info("===Average Total Time Breakdown Report===");
+            if (enable_log) log.info("===Average Total Time Breakdown Report===");
             fileWriter.write("thread_id\t total_time\t stream_process\t txn_process\t overheads\n");
-            if(enable_log) log.info("thread_id\t total_time\t stream_process\t txn_process\t overheads");
+            if (enable_log) log.info("thread_id\t total_time\t stream_process\t txn_process\t overheads");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
                                 "%-10.2f\t" +
@@ -225,7 +225,7 @@ public class MeasureTools {
                         , Total_Record.overhead_total[threadId].getMean()
                 );
                 fileWriter.write(output + "\n");
-                if(enable_log) log.info(output);
+                if (enable_log) log.info(output);
             }
             fileWriter.close();
         } catch (Exception e) {
@@ -237,9 +237,9 @@ public class MeasureTools {
         try {
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("TransactionBreakdownRatioReport\n");
-            if(enable_log) log.info("===TXN BREAKDOWN===");
+            if (enable_log) log.info("===TXN BREAKDOWN===");
             fileWriter.write("thread_id\t index_ratio\t useful_ratio\t sync_ratio\t lock_ratio\n");
-            if(enable_log) log.info("thread_id\t index_ratio\t useful_ratio\t sync_ratio\t lock_ratio");
+            if (enable_log) log.info("thread_id\t index_ratio\t useful_ratio\t sync_ratio\t lock_ratio");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
                                 "%-10.2f\t" +
@@ -253,7 +253,7 @@ public class MeasureTools {
                         , ccOption == CCOption_TStream ? 0 : Transaction_Record.lock_ratio[threadId].getMean()
                 );
                 fileWriter.write(output + "\n");
-                if(enable_log) log.info(output);
+                if (enable_log) log.info(output);
             }
             fileWriter.close();
         } catch (Exception e) {
@@ -266,9 +266,9 @@ public class MeasureTools {
             System.out.println("++++++ counter: " + counter);
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("SchedulerTimeBreakdownReport\n");
-            if(enable_log) log.info("===Scheduler Time Breakdown Report===");
+            if (enable_log) log.info("===Scheduler Time Breakdown Report===");
             fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t construct_time\n");
-            if(enable_log) log.info("thread_id\t explore_time\t next_time\t useful_time\t construct_time");
+            if (enable_log) log.info("thread_id\t explore_time\t next_time\t useful_time\t construct_time");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
                                 "%-10.2f\t" +
@@ -282,7 +282,7 @@ public class MeasureTools {
                         , Scheduler_Record.Construct[threadId].getMean()
                 );
                 fileWriter.write(output + "\n");
-                if(enable_log) log.info(output);
+                if (enable_log) log.info(output);
             }
             fileWriter.close();
         } catch (Exception e) {

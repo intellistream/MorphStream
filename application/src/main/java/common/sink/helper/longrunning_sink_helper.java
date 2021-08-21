@@ -52,7 +52,7 @@ public class longrunning_sink_helper extends helper {
                     strings.add(String.valueOf((atomic_index_e.get() * 1000000.0 / (end - start))));
                     atomic_index_e.set(0);//clean atomic_index_e
                     if (checkPoint == measure_times) {
-                        if(enable_log) LOG.info("finished measurement!");
+                        if (enable_log) LOG.info("finished measurement!");
                         output(strings);
                         return 1;
                     }

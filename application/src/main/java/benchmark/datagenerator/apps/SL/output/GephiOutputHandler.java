@@ -15,10 +15,6 @@ public class GephiOutputHandler extends FileOutputHandler {
         super(rootPath);
     }
 
-    public GephiOutputHandler(String rootPath, String transactionsFileName, String dependenciesEdgesFileName, String dependenciesVerticesFileName) {
-        super(rootPath, transactionsFileName, dependenciesEdgesFileName, dependenciesVerticesFileName);
-    }
-
     @Override
     public void sinkDependenciesEdges(HashMap<Integer, ArrayList<SLDataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<SLDataOperationChain>> allAssetOperationChains) {
         FileWriter fileWriter = null;

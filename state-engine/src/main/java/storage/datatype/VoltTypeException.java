@@ -25,7 +25,7 @@ package storage.datatype;
  * cases.
  */
 // Derive this from RuntimeException for now so we don't have to go back
-// and add checked exception handling all everywhere /lazy
+// and addOperation checked exception handling all everywhere /lazy
 public class VoltTypeException extends RuntimeException {
     private static final long serialVersionUID = -7774100755422441459L;
 

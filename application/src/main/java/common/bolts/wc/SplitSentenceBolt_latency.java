@@ -38,7 +38,7 @@ public class SplitSentenceBolt_latency extends splitBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         long pid = OsUtils.getPID();
-//		if(enable_log) LOG.info("PID  = " + pid);
+//		if (enable_log) LOG.info("PID  = " + pid);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class SplitSentenceBolt_latency extends splitBolt {
                     char[] word = new char[len];
                     System.arraycopy(value, index, word, 0, len);
                     collector.emit_nowait(word, msgID, TimeStamp);
-//					ll.add(word);
+//					ll.addOperation(word);
                     index = c + 1;
                 }
             }

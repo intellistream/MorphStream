@@ -4,7 +4,7 @@ import common.param.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -84,7 +84,7 @@ public class OBBolt_ts extends OBBolt {
         for (int i = 0; i < NUM_ACCESSES_PER_BUY; i++) {
             //it simply constructs the operations and return.
             //condition on itself.
-            transactionManager.Asy_ModifyRecord(//TODO: add atomicity preserving later.
+            transactionManager.Asy_ModifyRecord(//TODO: addOperation atomicity preserving later.
                     txnContext,
                     "goods",
                     String.valueOf(event.getItemId()[i]),

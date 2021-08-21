@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * A database table. Allows the user to add, delete, update, and get records.
+ * A database table. Allows the user to addOperation, delete, update, and get records.
  * A table has an associated schema, stats, and page allocator. The first page
  * in the page allocator is a header page that serializes the schema, and each
  * subsequent page is a data page containing the table records.

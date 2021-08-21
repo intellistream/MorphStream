@@ -40,7 +40,7 @@ public class UniformedScheduler extends InputStreamController {
                 //Integer[] queueId = Arrays.copyOf(integerP1C1QueueHashMap.keySet().toArray(),integerP1C1QueueHashMap.fieldSize(),Integer[].class);
                 int q_index = qids[j % queueIdLength];
                 if (queueIdLength > 1)
-                    //LOG.DEBUG("Uniformed shoulder, queue index:" + q_index);
+                    //if (enable_log) LOG.DEBUG("Uniformed shoulder, queue index:" + q_index);
 //                for (int b = 0; b < batch; b++) {
 //                    t[b] = fetchFromqueue((P1C1Queue) getRQ().GetAndUpdate(streamId).GetAndUpdate(q_index));
 //                }

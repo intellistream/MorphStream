@@ -54,7 +54,7 @@ public class SPSCController extends QueueController {
             Queue queue = outputQueue.get(executor);
             if (queue != null) {
 //                if(queue instanceof P1C1Queue)
-                if(enable_log) LOG.info("relax_reset the old queue");
+                if (enable_log) LOG.info("relax_reset the old queue");
                 queue.clear();
                 System.gc();
             }

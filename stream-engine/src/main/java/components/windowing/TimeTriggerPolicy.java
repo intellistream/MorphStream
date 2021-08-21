@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.*;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Invokes {@link TriggerHandler#onTrigger()} after the duration.
  */
@@ -78,7 +80,7 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
             try {
                 executorFuture.get();
             } catch (InterruptedException | ExecutionException ex) {
-                LOG.error("Got exception ", ex);
+                if (enable_log) LOG.error("Got exception ", ex);
 //				throw new Exception(ex);
             }
         }
@@ -96,7 +98,7 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
                 evictionPolicy.setContext(new DefaultEvictionContext(now, null, null, duration));
                 handler.onTrigger();
             } catch (Throwable th) {
-                LOG.error("handler.onTrigger failed ", th);
+                if (enable_log) LOG.error("handler.onTrigger failed ", th);
                 /*
                  * propagate it so that Task gets canceled and the exception
                  * can be retrieved from executorFuture.GetAndUpdate()

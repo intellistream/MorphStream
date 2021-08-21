@@ -86,7 +86,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (t_record != null) {
             return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
         } else {
-            if(enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }
@@ -98,7 +98,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (t_record != null) {
             return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable));
         } else {
-            if(enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }
@@ -109,7 +109,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (t_record != null) {
             return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
         } else {
-            if(enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }
@@ -121,7 +121,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (t_record != null) {
             return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable));
         } else {
-            if(enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
     }
@@ -134,7 +134,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     source_key, s_record, s_record, function, column_id));
         } else {
-            if(enable_log) log.info("No record is found:" + source_key);
+            if (enable_log) log.info("No record is found:" + source_key);
             return false;
         }
     }
@@ -162,7 +162,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     key, s_record, s_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records, condition, success));
         } else {
-            if(enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info("No record is found:" + key);
             return false;
         }
     }
@@ -184,7 +184,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
         } else {
-            if(enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info("No record is found:" + key);
             return false;
         }
     }
@@ -197,7 +197,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                     key, s_record, s_record, function, record_ref));
         } else {
-            if(enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info("No record is found:" + key);
             return false;
         }
     }
@@ -213,7 +213,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
             if (condition_records[i] == null) {
-                if(enable_log) log.info("No record is found for condition source:" + condition_source[i]);
+                if (enable_log) log.info("No record is found for condition source:" + condition_source[i]);
                 return false;
             }
         }
@@ -223,7 +223,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                     key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
-            if(enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info("No record is found:" + key);
             return false;
         }
     }

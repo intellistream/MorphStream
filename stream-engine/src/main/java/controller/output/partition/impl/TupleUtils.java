@@ -39,7 +39,7 @@ public final class TupleUtils {
 //		}
 //
 //		if (tickFreqSecs > 0) {
-//			if(enable_log) LOG.info("Enabling tick tuple with interval [{}]", tickFreqSecs);
+//			if (enable_log) LOG.info("Enabling tick tuple with interval [{}]", tickFreqSecs);
 //			conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, tickFreqSecs);
 //		}
 //

@@ -143,7 +143,7 @@ public class boltThread extends executorThread {
             if (expected_throughput == 0) {
                 expected_throughput = actual_throughput;
             }
-            if(enable_log) LOG.info(this.executor.getOP_full()
+            if (enable_log) LOG.info(this.executor.getOP_full()
                             + "\tfinished execution and exist with throughput of:\t"
                             + actual_throughput + "(" + (actual_throughput / expected_throughput) + ")"
                             + " on node: " + node + " fetch miss rate:" + miss / (cnt + miss) * 100
@@ -160,7 +160,7 @@ public class boltThread extends executorThread {
      * Get input from upstream bolts, this is a unique function of bolt thread.
      * TODO: need a txn module to determine the fetch sequence.
      *
-     * @since 0.0.7 we add a tuple txn module so that we can support customized txn rules in Brisk.execution.runtime.tuple fetching.
+     * @since 0.0.7 we addOperation a tuple txn module so that we can support customized txn rules in Brisk.execution.runtime.tuple fetching.
      */
     private Object fetchResult() {
         return scheduler.fetchResults();

@@ -228,7 +228,7 @@ public abstract class Operator implements IOperator {
     }
 
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        if(enable_log) LOG.info("The operator" + executor.getOP() + "does not require initialization");
+        if (enable_log) LOG.info("The operator" + executor.getOP() + "does not require initialization");
     }
 
     /**
@@ -241,7 +241,7 @@ public abstract class Operator implements IOperator {
     private void base_initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         if (LOG == null) {
             LOG = LoggerFactory.getLogger(Operator.class);
-            if(enable_log) LOG.info("The operator has no LOG, creates a default one for it here.");
+            if (enable_log) LOG.info("The operator has no LOG, creates a default one for it here.");
         }
         if (OsUtils.isMac()) {
             LogManager.getLogger(LOG.getName()).setLevel(Level.DEBUG);
@@ -250,7 +250,7 @@ public abstract class Operator implements IOperator {
         }
         if (this instanceof Checkpointable) {
             if (state == null) {
-                if(enable_log) LOG.info("The operator" + executor.getOP() + " is declared as checkpointable " +
+                if (enable_log) LOG.info("The operator" + executor.getOP() + " is declared as checkpointable " +
                         "but no state is initialized");
             } else {
                 if (!enable_app_combo) {

@@ -22,7 +22,7 @@ public abstract class LWMContent implements Content {
 //
 //
 //		public void AddLock(XLock lock_ratio) {
-//			locks.add(lock_ratio);
+//			locks.addOperation(lock_ratio);
 //			AddLWM();
 //		}
 //

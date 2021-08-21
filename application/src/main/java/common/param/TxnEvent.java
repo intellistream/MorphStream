@@ -1,5 +1,9 @@
 package common.param;
 
+import common.param.sl.TransactionEvent;
+
+import java.util.Arrays;
+
 public class TxnEvent {
     protected final long bid;//as msg id.
     protected final int pid;
@@ -54,5 +58,9 @@ public class TxnEvent {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public TxnEvent cloneEvent() {
+        return new TxnEvent((int) bid, pid, Arrays.toString(bid_array), number_of_partitions);
     }
 }

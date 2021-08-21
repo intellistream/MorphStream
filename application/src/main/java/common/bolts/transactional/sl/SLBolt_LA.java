@@ -2,11 +2,12 @@ package common.bolts.transactional.sl;
 
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import transaction.context.TxnContext;
 
+import static common.CONTROL.enable_log;
 import static profiler.MeasureTools.*;
 
 public class SLBolt_LA extends SLBolt {
@@ -46,7 +47,7 @@ public class SLBolt_LA extends SLBolt {
             TRANSFER_LOCK_AHEAD((TransactionEvent) input_event, txn_context[0]);
         } else {
 //            throw new UnsupportedOperationException();
-            LOG.error("Unsupported");
+            if (enable_log) LOG.error("Unsupported");
             System.exit(-1);
         }
         END_LOCK_TIME_MEASURE(thread_Id);

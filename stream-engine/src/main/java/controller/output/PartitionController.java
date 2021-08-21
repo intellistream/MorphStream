@@ -97,7 +97,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             for (ExecutionNode src : operator.getExecutorList()) {
                 collections[(src.getExecutorID() - firt_executor_Id)] = new Collections(src.getExecutorID(), downExecutor_list, batch_size);
             }
-            LOG.trace("MPSC implementation -- Queue is shared among multiple executors of the same producer.");
+            if (enable_log) LOG.trace("MPSC implementation -- Queue is shared among multiple executors of the same producer.");
             controller = new MPSCController(downExecutor_list);
         } else {
             firt_executor_Id = executionNode.getExecutorID();
@@ -105,7 +105,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             context = new TopologyContext[1];
             collections[0] = new Collections(firt_executor_Id, downExecutor_list, batch_size);
 
-            LOG.trace("SPSC implementation -- Queue is unique to each producer and consumer");
+            if (enable_log) LOG.trace("SPSC implementation -- Queue is unique to each producer and consumer");
             controller = new SPSCController(downExecutor_list);
         }
         PartitionController.profile = profile;
@@ -175,7 +175,7 @@ public abstract class PartitionController implements IPartitionController, Seria
 //        long start_offer_watermark = System.nanoTime();
         offer_create_marker(marker, targetTasks[0]);//only send to the first instance.
 //        long end = System.nanoTime();
-//        if(enable_log) LOG.info("water_mark offer gaps:" + (end - start_offer_watermark) + " for bid:" + bid);
+//        if (enable_log) LOG.info("water_mark offer gaps:" + (end - start_offer_watermark) + " for bid:" + bid);
         return targetTasks.length;
     }
 
@@ -187,7 +187,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             offer_create_marker(marker, target);
         }
 //        long end = System.nanoTime();
-//        if(enable_log) LOG.info("water_mark offer gaps:" + (end - start_offer_watermark) + " for bid:" + bid);
+//        if (enable_log) LOG.info("water_mark offer gaps:" + (end - start_offer_watermark) + " for bid:" + bid);
         return targetTasks.length;
     }
 
@@ -235,7 +235,7 @@ public abstract class PartitionController implements IPartitionController, Seria
         } while (!Thread.interrupted()); //clear interrupted flag
 //		throw new InterruptedException();
 //        while (!queue.offer(e)) {
-//			//LOG.DEBUG("queue full.. sync_ratio...");
+//			//if (enable_log) LOG.DEBUG("queue full.. sync_ratio...");
 //            synchronized (queue) {
 //                queue.sync_ratio(1);
 //            }
@@ -382,22 +382,22 @@ public abstract class PartitionController implements IPartitionController, Seria
     }
 
     protected boolean force_offer(int srcId, int targetId, String streamId, long bid, Object... output) {
-//		JumboTuple tuple = collections[srcId - firt_executor_Id].add(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
+//		JumboTuple tuple = collections[srcId - firt_executor_Id].addOperation(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
         return _offer(new Tuple(bid, srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
     }
 
     protected boolean force_offer(int srcId, int targetId, String streamId, long msg_id, long[] bid, Object... output) {
-//		JumboTuple tuple = collections[srcId - firt_executor_Id].add(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
+//		JumboTuple tuple = collections[srcId - firt_executor_Id].addOperation(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
         return _offer(new Tuple(msg_id, bid, srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
     }
 
     protected boolean force_offer(int srcId, int targetId, String streamId, long bid, char[] output) {
-//		JumboTuple tuple = collections[srcId - firt_executor_Id].add(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
+//		JumboTuple tuple = collections[srcId - firt_executor_Id].addOperation(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
         return _offer(new Tuple(bid, srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
     }
 
     protected boolean force_offer(int srcId, int targetId, String streamId, long bid, StreamValues output) {
-//		JumboTuple tuple = collections[srcId - firt_executor_Id].add(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
+//		JumboTuple tuple = collections[srcId - firt_executor_Id].addOperation(targetId, streamId, bid, context[srcId - firt_executor_Id], output);
         return _offer(new Tuple(bid, srcId, context[srcId - firt_executor_Id], package_message(streamId, output)), targetId);
     }
 
@@ -598,7 +598,7 @@ public abstract class PartitionController implements IPartitionController, Seria
 //		return lock_ratio.getBID();
 //	}
 //	public void addGap(long bid) {
-//		gap.add(bid);
+//		gap.addOperation(bid);
 //	}
     @Override
     public int emit_inorder_push(Meta meta, String streamId, long bid, LinkedList<Long> gap) {
@@ -832,7 +832,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             if (p == 0) {
                 long bid = BIDGenerator.getInstance().getAndIncrement();
                 buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
-                if(enable_log) LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
+                if (enable_log) LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
             }
             buffers[index].add(p, package_message(streamId, value));
             if (p + 1 == batch_size) {
@@ -868,7 +868,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             if (p == 0) {
                 long bid = BIDGenerator.getInstance().getAndIncrement();
                 buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
-//				if(enable_log) LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
+//				if (enable_log) LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
             }
             buffers[index].add(p, package_message(streamId, value));
             if (p + 1 == batch_size) {

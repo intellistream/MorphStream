@@ -81,7 +81,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //	 */
 //	public ObjectHistogram(ObjectHistogram<X> other) {
 //		assert (other != null);
-//		this.add(other);
+//		this.addOperation(other);
 //	}
 
     /**
@@ -107,7 +107,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
             }
         }
         this.num_samples += count;
-        // If we already have this value_list in our histogram, then add the new
+        // If we already have this value_list in our histogram, then addOperation the new
         // count to its existing overhead_total
         Long existing = this.histogram.get(value);
         if (existing != null) {
@@ -148,7 +148,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //					}
 //				} // WHILE
 //				if (ctr > 0) {
-//					//LOG.DEBUG("Removed " + ctr + " zero entries from histogram");
+//					//if (enable_log) LOG.DEBUG("Removed " + ctr + " zero entries from histogram");
 //				}
 //			} // SYNCHRONIZED
 //		}
@@ -255,7 +255,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //		Set<X> ret = new HashSet<X>();
 //		for (Entry<X, Long> e : this.histogram.entrySet()) {
 //			if (e.getValue().longValue() == count) {
-//				ret.add(e.getKey());
+//				ret.addOperation(e.getKey());
 //			}
 //		} // FOR
 //		return (ret);
@@ -685,7 +685,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //					JSONArray arr = object.getJSONArray(element.name());
 //					for (int i = 0, cnt = arr.length(); i < cnt; i++) {
 //						Object val = VoltTypeUtil.getObjectFromString(this.value_type, arr.getString(i));
-//						set.add(val);
+//						set.addOperation(val);
 //					} // FOR
 //				} else if (field_name.endsWith("_value")) {
 //					if (object.isNull(element.name())) {

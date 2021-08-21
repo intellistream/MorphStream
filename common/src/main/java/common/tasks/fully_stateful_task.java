@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Random;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Created by I309939 on 7/30/2016.
  */
@@ -20,7 +22,7 @@ public class fully_stateful_task extends stateful_task {
     public fully_stateful_task(int in_core_complexity, int size_state) {
         this.in_core_complexity = in_core_complexity;
         this.size_state = size_state;
-        LOG.warn(Thread.currentThread().getName() + ":" + "Fully stateful task with state size:" + size_state);
+        if (enable_log) LOG.warn(Thread.currentThread().getName() + ":" + "Fully stateful task with state size:" + size_state);
     }
 
     public ArrayList<KB_object> getMap() {

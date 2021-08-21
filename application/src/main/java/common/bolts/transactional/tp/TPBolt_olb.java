@@ -1,6 +1,6 @@
 package common.bolts.transactional.tp;
 
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;

@@ -93,7 +93,7 @@ public class OrderLock implements Serializable {
 /*
         while (!this.counter.compareAndSet(counter, counter)) {
             if (enable_debug)
-                LOG.trace("BLOCK WAITING FOR " + counter + " CURRENT COUNTER:" + this.counter + " Thread:" + Thread.currentThread().getName());
+                if (enable_log) LOG.trace("BLOCK WAITING FOR " + counter + " CURRENT COUNTER:" + this.counter + " Thread:" + Thread.currentThread().getName());
             synchronized (this.counter) {//this overhead is too high.
                 if(!wasSignalled) {
                     this.counter.sync_ratio(1);
@@ -126,7 +126,7 @@ public class OrderLock implements Serializable {
 /*
         long value = counter.incrementAndGet();//allow next batch to proceed.
         if (enable_debug)
-            LOG.trace("ADVANCE BID to:" + value + " Thread:" + Thread.currentThread().getName());
+            if (enable_log) LOG.trace("ADVANCE BID to:" + value + " Thread:" + Thread.currentThread().getName());
         synchronized (this.counter) {
             wasSignalled = true;
             this.counter.notifyAll();
@@ -134,8 +134,8 @@ public class OrderLock implements Serializable {
 */
         long value = counter.incrementAndGet();//allow next batch to proceed.
         if (enable_debug)
-            if(enable_log) LOG.info("ADVANCE BID to:" + value + " Thread:" + Thread.currentThread().getName());
-//		//LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter+ " @ "+ DateTime.now());
+            if (enable_log) LOG.info("ADVANCE BID to:" + value + " Thread:" + Thread.currentThread().getName());
+//		//if (enable_log) LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter+ " @ "+ DateTime.now());
 //		if (joinedOperators(txn_context)) {
 ////			advanceFID();//allow next operator to proceed.
 //

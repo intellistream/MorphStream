@@ -29,14 +29,14 @@ public class stable_sink_helper_multisink extends helper {
             if (print) {
                 final String detailed = "checkpoint" + Event.split_expression + checkPoint + Event.split_expression + "throughput" + Event.split_expression + throughput
                         + Event.split_expression + time + Event.split_expression + end;
-                //  if(enable_log) LOG.info(detailed);
+                //  if (enable_log) LOG.info(detailed);
                 strings.add(detailed);
             } else {
                 strings.add(throughput);
             }
             if (checkPoint == measure_times) {
                 if (!print)
-//                    if(enable_log) LOG.info("finished measurement!" + calculateAverage(strings));
+//                    if (enable_log) LOG.info("finished measurement!" + calculateAverage(strings));
                     output(strings);
                 return true;
             }

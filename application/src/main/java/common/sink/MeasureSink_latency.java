@@ -76,14 +76,14 @@ public class MeasureSink_latency extends BaseSink {
         double results = helper.execute(input.getBID());
         if (results != 0) {
             this.setResults(results);
-            if(enable_log) LOG.info("Sink finished:" + results);
+            if (enable_log) LOG.info("Sink finished:" + results);
             check();
         }
     }
 
     @Override
     public void execute(JumboTuple input) {
-        //	store.add(input);
+        //	store.addOperation(input);
         int bound = input.length;
         for (int i = 0; i < bound; i++) {
 //			read = (input.getString(0, i));
@@ -99,13 +99,13 @@ public class MeasureSink_latency extends BaseSink {
 //				final Long stored_process_latency = latency_map.getOrDefault(msgId, 0L);
 //				if (process_latency > stored_process_latency)//pick the worst.
 //				{
-                    //LOG.DEBUG("msgID:" + msgId + " is at:\t" + process_latency / 1E6 + "\tms");
+                    //if (enable_log) LOG.DEBUG("msgID:" + msgId + " is at:\t" + process_latency / 1E6 + "\tms");
                     latency_map[(int) msgId] = process_latency;
 //				}
                 }
                 if (results != 0) {
                     this.setResults(results);
-                    if(enable_log) LOG.info("Sink finished:" + results);
+                    if (enable_log) LOG.info("Sink finished:" + results);
                     check();
                 }
             }
@@ -118,7 +118,7 @@ public class MeasureSink_latency extends BaseSink {
     protected void check() {
         if (!profile) {
             for (int key = 0; key < num_msg; key++) {
-//                if(enable_log) LOG.info("=====Process latency of msg====");
+//                if (enable_log) LOG.info("=====Process latency of msg====");
                 latency.addValue((latency_map[key] / 1E6));
             }
             try {
@@ -135,7 +135,7 @@ public class MeasureSink_latency extends BaseSink {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(enable_log) LOG.info("Stop all threads sequentially");
+            if (enable_log) LOG.info("Stop all threads sequentially");
             context.Sequential_stopAll();
         }
     }

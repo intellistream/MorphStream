@@ -1,9 +1,8 @@
-package common.combo;
+package combo;
 
 import common.CONTROL;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.sink.SINKCombo;
 import common.tools.FastZipfGenerator;
 import components.context.TopologyContext;
 import components.operators.api.TransactionalBolt;
@@ -47,7 +46,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public SINKCombo sink = new SINKCombo();
     protected int totalEventsPerBatch = 0;
     protected int numberOfBatches = 0;
-    TransactionalBolt bolt;//compose the bolt here.
+    protected TransactionalBolt bolt;//compose the bolt here.
     int start_measure;
 
 //    event = new TransactionEvent(
@@ -81,11 +80,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                     sink.start();
             }
             if (counter < num_events_per_thread) {
-
                 Object event = myevents[counter];
-//                if(event==null){
-//                    LOG.error("?");
-//                }
                 long bid = mybids[counter];
                 if (CONTROL.enable_latency_measurement)
                     generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
@@ -128,13 +123,13 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        if(enable_log) LOG.info("Spout initialize is being called");
+        if (enable_log) LOG.info("Spout initialize is being called");
         long start = System.nanoTime();
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
         long pid = OsUtils.getPID();
-        if(enable_log) LOG.info("JVM PID  = " + pid);
+        if (enable_log) LOG.info("JVM PID  = " + pid);
         long end = System.nanoTime();
-        if(enable_log) LOG.info("spout initialize takes (ms):" + (end - start) / 1E6);
+        if (enable_log) LOG.info("spout initialize takes (ms):" + (end - start) / 1E6);
         ccOption = config.getInt("CCOption", 0);
         bid = 0;
         counter = 0;
@@ -156,9 +151,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
         num_events_per_thread = batch_number_per_wm * numberOfBatches;
 
-        if(enable_log) LOG.info("total events per batch... " + totalEventsPerBatch);
-        if(enable_log) LOG.info("events per thread... " + num_events_per_thread);
-        if(enable_log) LOG.info("batch_number_per_wm (watermark events length)= " + batch_number_per_wm);
+        if (enable_log) LOG.info("total events per batch... " + totalEventsPerBatch);
+        if (enable_log) LOG.info("events per thread... " + num_events_per_thread);
+        if (enable_log) LOG.info("batch_number_per_wm (watermark events length)= " + batch_number_per_wm);
 
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.

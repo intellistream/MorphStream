@@ -40,12 +40,12 @@ public abstract class AbstractTopology {
         if (config.getBoolean("verbose")) {
             final String[] split = spoutClass.split("\\.");
             spoutClass = "applications.spout." + "verbose." + split[2];
-            if(enable_log) if(enable_log) LOG.info("spout class:" + spoutClass);
+            if (enable_log) LOG.info("spout class:" + spoutClass);
         }
 //        if (enable_latency_measurement) {
 //            final String[] split = spoutClass.split("\\.");
 //            spoutClass = "applications.spout." + split[2] + "_latency";
-//            if(enable_log) if(enable_log) LOG.info("spout class:" + spoutClass);
+//            if (enable_log) LOG.info("spout class:" + spoutClass);
 //        }
         AbstractSpout spout;
         spout = (AbstractSpout) ClassLoaderUtils.newInstance(spoutClass, "spout", getLogger());
@@ -66,12 +66,12 @@ public abstract class AbstractTopology {
         if (config.getBoolean("verbose")) {
             final String[] split = sinkClass.split("\\.");
             sinkClass = "applications.sink." + "verbose." + split[2];
-            if(enable_log) if(enable_log) LOG.info("sink class:" + sinkClass);
+            if (enable_log) LOG.info("sink class:" + sinkClass);
         }
 //        if (enable_latency_measurement) {
 //            final String[] split = sinkClass.split("\\.");
 //            sinkClass = "applications.sink." + split[2] + "_latency";
-//            if(enable_log) if(enable_log) LOG.info("sink class:" + sinkClass);
+//            if (enable_log) LOG.info("sink class:" + sinkClass);
 //        }
         if (sinkClass == null)
             sinkClass = config.getString(String.format(configKey, configPrefix));

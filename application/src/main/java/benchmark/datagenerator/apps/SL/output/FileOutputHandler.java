@@ -1,7 +1,8 @@
 package benchmark.datagenerator.apps.SL.output;
 
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
-import benchmark.datagenerator.apps.SL.Transaction.SLTransaction;
+import benchmark.datagenerator.apps.SL.Transaction.SLDepositEvent;
+import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
 import common.collections.OsUtils;
 
 import java.io.BufferedWriter;
@@ -14,23 +15,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static common.CONTROL.enable_log;
+
+@lombok.extern.slf4j.Slf4j
 public class FileOutputHandler implements IOutputHandler {
 
     protected String mRootPath;
-    protected String mTransactionsFileName;
+    protected String transferEventFileName;
+    protected String depositEventFileName;
     protected String mDependencyEdgesFileName;
     protected String mDependencyVerticesFileName;
 
     public FileOutputHandler(String rootPath) {
-        this(rootPath, null, null, null);
+        this(rootPath, null, null, null, null);
     }
 
-    public FileOutputHandler(String rootPath, String transactionsFileName, String dependencyFileName, String dependencyVerticesFileName) {
+    public FileOutputHandler(String rootPath, String transferEventFileName, String depositEventFileName, String dependencyFileName, String dependencyVerticesFileName) {
         mRootPath = rootPath;
 
-        mTransactionsFileName = transactionsFileName;
-        if (mTransactionsFileName == null) {
-            mTransactionsFileName = "transactions.txt";
+        if (transferEventFileName == null) {
+            this.transferEventFileName = "transferEvents.txt";
+        } else
+            this.transferEventFileName = transferEventFileName;
+
+        this.depositEventFileName = depositEventFileName;
+        if (depositEventFileName == null) {
+            this.depositEventFileName = "depositEvents.txt";
         }
 
         mDependencyEdgesFileName = dependencyFileName;
@@ -45,28 +55,28 @@ public class FileOutputHandler implements IOutputHandler {
 
     }
 
+
     @Override
-    public void sinkTransactions(List<SLTransaction> dataTransactions) {
-        BufferedWriter fileWriter = null;
-        try {
-            File file = new File(mRootPath + mTransactionsFileName);
-            System.out.println(String.format("Transactions path is %s", mRootPath + mTransactionsFileName));
-            if (!file.exists())
-                file.createNewFile();
-
-            fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()));
-//            for (int iter = 0; iter < 10; iter++)
-//                for (int lop = 0; lop < dataTransactions.size(); lop++)
-//                    fileWriter.write(dataTransactions.get(lop).toString(iter, dataTransactions.size()) + "\n");
-//            fileWriter.close();
-            for (SLTransaction dataTransaction : dataTransactions)
-                fileWriter.write(dataTransaction.toString() + "\n");
-            fileWriter.close();
-
-        } catch (IOException e) {
-            System.out.println("An error occurred while storing transactions.");
-            e.printStackTrace();
+    public void sinkEvents(List<SLEvent> events) throws IOException {
+        if (enable_log) log.info(String.format("transferEventFile path is %s", mRootPath + transferEventFileName));
+        BufferedWriter transferEventBufferedWriter = CreateWriter(transferEventFileName);
+        if (enable_log) log.info(String.format("depositEventFile path is %s", mRootPath + depositEventFileName));
+        BufferedWriter depositEventBufferedWriter = CreateWriter(depositEventFileName);
+        for (SLEvent event : events) {
+            if (event instanceof SLDepositEvent) {
+                depositEventBufferedWriter.write(event + "\n");
+            } else
+                transferEventBufferedWriter.write(event + "\n");
         }
+        transferEventBufferedWriter.close();
+        depositEventBufferedWriter.close();
+    }
+
+    private BufferedWriter CreateWriter(String FileName) throws IOException {
+        File file = new File(mRootPath + FileName);
+        if (!file.exists())
+            file.createNewFile();
+        return Files.newBufferedWriter(Paths.get(file.getPath()));
     }
 
     @Override

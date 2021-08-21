@@ -1,7 +1,7 @@
 package common.bolts.transactional.ob;
 
 import common.param.TxnEvent;
-import common.sink.SINKCombo;
+import combo.SINKCombo;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -36,7 +36,7 @@ public class OBBolt_sstore extends OBBolt_LA {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
         if (!enable_states_partition) {
-            if(enable_log) LOG.info("Please enable `enable_states_partition` for PAT scheme");
+            if (enable_log) LOG.info("Please enable `enable_states_partition` for PAT scheme");
             System.exit(-1);
         }
     }

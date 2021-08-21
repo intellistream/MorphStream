@@ -3,7 +3,7 @@ package benchmark.datagenerator.apps.SL.Transaction;
 /**
  * Streamledger related transaction data
  */
-public class SLTransferTransaction extends SLTransaction {
+public class SLTransferEvent extends SLEvent {
     private int id;
     private int sourceAccountId;
     private int destinationAccountId;
@@ -14,7 +14,7 @@ public class SLTransferTransaction extends SLTransaction {
     private int sourceAssetAmount;
     private int destinationAssetAmount;
 
-    public SLTransferTransaction(int id, int sourceAccountId, int sourceAssetId, int destinationAccountId, int destinationAssetId) {
+    public SLTransferEvent(int id, int sourceAccountId, int sourceAssetId, int destinationAccountId, int destinationAssetId) {
         this.id = id;
         this.sourceAccountId = sourceAccountId;
         this.destinationAccountId = destinationAccountId;
@@ -26,7 +26,7 @@ public class SLTransferTransaction extends SLTransaction {
         this.destinationAssetAmount = 10;
     }
 
-    public SLTransferTransaction(int sourceAccountId, int sourceAssetId, int destinationAccountId, int destinationAssetId, int sourceAccountAmount, int sourceAssetAmount, int destinationAssetAmount, int destinationAccountAmount) {
+    public SLTransferEvent(int sourceAccountId, int sourceAssetId, int destinationAccountId, int destinationAssetId, int sourceAccountAmount, int sourceAssetAmount, int destinationAssetAmount, int destinationAccountAmount) {
         this.sourceAccountId = sourceAccountId;
         this.destinationAccountId = destinationAccountId;
         this.sourceAssetId = sourceAssetId;

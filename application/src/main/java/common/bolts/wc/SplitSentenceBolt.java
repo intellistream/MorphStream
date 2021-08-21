@@ -38,7 +38,7 @@ public class SplitSentenceBolt extends splitBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         long pid = OsUtils.getPID();
-//		if(enable_log) LOG.info("PID  = " + pid);
+//		if (enable_log) LOG.info("PID  = " + pid);
     }
 
     @Override

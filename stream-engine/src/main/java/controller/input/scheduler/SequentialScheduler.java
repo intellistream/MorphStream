@@ -33,7 +33,7 @@ public class SequentialScheduler extends InputStreamController {
         size = LQ.size();
         current = 0;
         if (size == 0) {
-            if(enable_log) LOG.info("MyQueue initialize wrong");
+            if (enable_log) LOG.info("MyQueue initialize wrong");
             System.exit(-1);
         }
     }

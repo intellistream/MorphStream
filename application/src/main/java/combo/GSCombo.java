@@ -1,4 +1,4 @@
-package common.combo;
+package combo;
 
 import common.bolts.transactional.gs.*;
 import common.collections.Configuration;
@@ -83,7 +83,7 @@ public class GSCombo extends SPOUTCombo {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        if(enable_log) LOG.info("Thread:" + taskId + " finished loading events (" + test_num_events_per_thread + ") in " + (System.nanoTime() - start) / 1E6 + " ms");
+        if (enable_log) LOG.info("Thread:" + taskId + " finished loading events (" + test_num_events_per_thread + ") in " + (System.nanoTime() - start) / 1E6 + " ms");
         if (enable_debug)
             show_stats();
     }
@@ -161,7 +161,7 @@ public class GSCombo extends SPOUTCombo {
             }
 
             default:
-                LOG.error("Please select correct CC option!");
+                if (enable_log) LOG.error("Please select correct CC option!");
         }
         //do preparation.
         bolt.prepare(config, context, collector);
