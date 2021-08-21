@@ -167,7 +167,6 @@ public class TPGDataGenerator extends DataGenerator {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        file.mkdirs();
 
         File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
                 + String.format("_%d_%d.txt", dataConfig.getTuplesPerBatch(), dataConfig.getTotalBatches()));
