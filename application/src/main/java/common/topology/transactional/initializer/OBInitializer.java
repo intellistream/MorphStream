@@ -59,7 +59,7 @@ public class OBInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             insertItemRecords(key, 100);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class OBInitializer extends TableInitilizer {
             int pid = get_pid(partition_interval, key);
             insertItemRecords(key, 100, pid, spinlock);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override

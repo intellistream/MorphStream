@@ -86,7 +86,7 @@ public class Writer {
             out.put(data);
         } else {
             byte[] data = SerializationUtils.serialize(state.value());
-//			if(enable_log) LOG.info("state size:" + data.length);
+//			if (enable_log) LOG.info("state size:" + data.length);
             //LOG.DEBUG(path + " save state with marker Id:" + msgId + " size to store:" + data.length);
             out = new RandomAccessFile(file
                     + OsUtils.OS_wrapper(path + "@" + timeStampNano), "rw")
@@ -167,7 +167,7 @@ public class Writer {
             state[index] = state_value;
             cnt++;
             if (cnt == numTasks) {
-                if(enable_log) LOG.info("iteration" + myiteration + " ready to write to disk by: " + executor.getOP_full());
+                if (enable_log) LOG.info("iteration" + myiteration + " ready to write to disk by: " + executor.getOP_full());
                 if (!reliable) {
                     save_state_MMIO_synchronize(executor);
                 }
@@ -180,7 +180,7 @@ public class Writer {
                 objectOut.writeObject(state);
                 objectOut.close();
                 byte[] data = baos.toByteArray();
-                if(enable_log) LOG.info("save state with marker Id:" + msgId + " size to store:" + data.length);
+                if (enable_log) LOG.info("save state with marker Id:" + msgId + " size to store:" + data.length);
                 out = new RandomAccessFile(file
                         + OsUtils.OS_wrapper(operator.getId() + "@" + timeStampNano), "rw")
                         .getChannel().map(FileChannel.MapMode.READ_WRITE, 0, data.length);

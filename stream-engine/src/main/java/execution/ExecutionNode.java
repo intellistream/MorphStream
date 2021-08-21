@@ -223,7 +223,7 @@ public class ExecutionNode implements Serializable {
                             final Queue queue = this.getController()
                                     .getPartitionController(streamId, op.getId())
                                     .get_queue(downstream_executor.getExecutorID());
-//                        if(enable_log) LOG.info("Set queue for downstream executor:" + downstream_executor);
+//                        if (enable_log) LOG.info("Set queue for downstream executor:" + downstream_executor);
                             downstream_executor.inputStreamController.setReceive_queue(
                                     streamId,
                                     executorID,//executorId refers the upstream of downstream executor...
@@ -231,7 +231,7 @@ public class ExecutionNode implements Serializable {
                         }
                     }
                 } else {
-                    if(enable_log) LOG.info("Executor:" + this.getOP_full() + " have no children! for stream " + streamId);
+                    if (enable_log) LOG.info("Executor:" + this.getOP_full() + " have no children! for stream " + streamId);
                 }
             }
         }

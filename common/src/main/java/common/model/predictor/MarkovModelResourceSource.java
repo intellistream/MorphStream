@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 
+import static common.CONTROL.enable_log;
+
 /**
  * @author mayconbordin
  */
@@ -25,7 +27,7 @@ public class MarkovModelResourceSource implements IMarkovModelSource {
             URL url = Resources.getResource(key);
             return Resources.toString(url, charset);
         } catch (IOException ex) {
-            LOG.error("Unable to load markov model from resource " + key, ex);
+            if (enable_log) LOG.error("Unable to load markov model from resource " + key, ex);
             return null;
         }
     }

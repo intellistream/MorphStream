@@ -33,7 +33,7 @@ public class stable_sink_helper_verbose extends helper {
                             + time + Event.split_expression + end;
             strings.add(detailed);
             if (end - starting > runtimeInNANO) {
-                if(enable_log) LOG.info("finished measurement!");
+                if (enable_log) LOG.info("finished measurement!");
                 output(strings);
                 return true;
             }

@@ -41,7 +41,7 @@ public class WordCountBolt extends MapBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         long pid = OsUtils.getPID();
-//		if(enable_log) LOG.info("PID  = " + pid);
+//		if (enable_log) LOG.info("PID  = " + pid);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class WordCountBolt extends MapBolt {
         size_state = counts.size();
 //		}
 //
-        if(enable_log) LOG.info("Num of Tasks:" + this.getContext().getNUMTasks() + ", State size: " + size_state);
+        if (enable_log) LOG.info("Num of Tasks:" + this.getContext().getNUMTasks() + ", State size: " + size_state);
 //		for (Map.Entry<String, MutableLong> entry : counts.entrySet()) {
 //			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
 //		}

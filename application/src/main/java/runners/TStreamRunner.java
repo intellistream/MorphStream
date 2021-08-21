@@ -66,7 +66,7 @@ public class TStreamRunner extends Runner {
         try {
             cmd.parse(args);
         } catch (ParameterException ex) {
-            log.error("Argument error: " + ex.getMessage());
+            if (enable_log) log.error("Argument error: " + ex.getMessage());
             cmd.usage();
         }
         try {

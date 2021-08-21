@@ -24,7 +24,7 @@ public class SequentialBinding {
     }
 
     public static int next_cpu_for_db() {
-        if(enable_log) LOG.info("next_cpu_for_db:" + cpu_for_db);
+        if (enable_log) LOG.info("next_cpu_for_db:" + cpu_for_db);
         return cpu_for_db++;
     }
 

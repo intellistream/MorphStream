@@ -143,7 +143,7 @@ public class boltThread extends executorThread {
             if (expected_throughput == 0) {
                 expected_throughput = actual_throughput;
             }
-            if(enable_log) LOG.info(this.executor.getOP_full()
+            if (enable_log) LOG.info(this.executor.getOP_full()
                             + "\tfinished execution and exist with throughput of:\t"
                             + actual_throughput + "(" + (actual_throughput / expected_throughput) + ")"
                             + " on node: " + node + " fetch miss rate:" + miss / (cnt + miss) * 100

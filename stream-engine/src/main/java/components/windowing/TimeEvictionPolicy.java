@@ -3,6 +3,8 @@ package components.windowing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Eviction policy that evicts events based on time duration.
  */
@@ -58,7 +60,7 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T, EvictionContext>
             } else {
                 delta = context.getReferenceTime() - prevContext.getReferenceTime() - context.getSlidingInterval();
                 if (Math.abs(delta) > 100) {
-                    LOG.warn("Possible clock drift or long running computation in window; " +
+                    if (enable_log) LOG.warn("Possible clock drift or long running computation in window; " +
                                     "Previous eviction time: {}, current eviction time: {}",
                             prevContext.getReferenceTime(),
                             context.getReferenceTime());

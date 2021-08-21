@@ -65,7 +65,7 @@ public class OrderValidate implements Serializable {
     public boolean try_fill_gap(Long g) {
         if (getBID() == g) {
             bid.incrementAndGet();//allow next batch to proceed.
-            //LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter + " @ " + DateTime.now());
+            //if (enable_log) LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter + " @ " + DateTime.now());
             return true;
         }
         return false;
@@ -83,7 +83,7 @@ public class OrderValidate implements Serializable {
     public void advance() {
 //		try_fill_gap();
         bid.incrementAndGet();//allow next batch to proceed.
-        //LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter + " @ " + DateTime.now());
+        //if (enable_log) LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter + " @ " + DateTime.now());
 //		if (joinedOperators(txn_context)) {
 ////			advanceFID();//allow next operator to proceed.
 //

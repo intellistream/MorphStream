@@ -71,7 +71,7 @@ public class MeasureSink extends BaseSink {
         SINK_CONTROL.getInstance().config();
         tthread = this.config.getInt("tthread");
         exe = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
-        if(enable_log) LOG.info("expected last events = " + exe);
+        if (enable_log) LOG.info("expected last events = " + exe);
     }
 
     @Override
@@ -103,7 +103,7 @@ public class MeasureSink extends BaseSink {
             double results = helper.EndMeasurement(cnt);
             this.setResults(results);
             if (!enable_engine)//performance measure for TStream is different.
-                if(enable_log) LOG.info("Received:" + cnt + " throughput:" + results);
+                if (enable_log) LOG.info("Received:" + cnt + " throughput:" + results);
             if (thisTaskId == graph.getSink().getExecutorID()) {
                 measure_end(results);
             }
@@ -116,7 +116,7 @@ public class MeasureSink extends BaseSink {
      * @param results
      */
     protected void measure_end(double results) {
-        if(enable_log) LOG.info(Thread.currentThread().getName() + " obtains lock");
+        if (enable_log) LOG.info(Thread.currentThread().getName() + " obtains lock");
         if (enable_latency_measurement) {
             StringBuilder sb = new StringBuilder();
             for (Long entry : latency_map) {
@@ -140,10 +140,10 @@ public class MeasureSink extends BaseSink {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(enable_log) LOG.info(sb.toString());
+            if (enable_log) LOG.info(sb.toString());
         }
         SINK_CONTROL.getInstance().throughput = results;
-        if(enable_log) LOG.info("Thread:" + thisTaskId + " is going to stop all threads sequentially");
+        if (enable_log) LOG.info("Thread:" + thisTaskId + " is going to stop all threads sequentially");
         context.Sequential_stopAll();
         SINK_CONTROL.getInstance().unlock();
     }

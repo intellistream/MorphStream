@@ -21,7 +21,7 @@ public class Clock implements Closeable {
 
     public Clock(double checkpoint_interval) {
         gap = (long) (checkpoint_interval * (long) 1E3);//checkpoint_interval=0.1 -- 100ms by default.
-        if(enable_log) LOG.info("Clock advance interval:" + checkpoint_interval);
+        if (enable_log) LOG.info("Clock advance interval:" + checkpoint_interval);
         create_time = System.nanoTime();
         timer = new Timer();
     }
@@ -31,14 +31,14 @@ public class Clock implements Closeable {
             @Override
             public void run() {
                 iteration++;
-//				if(enable_log) LOG.info("Advance iteration" + iteration + " @" + DateTime.now());
+//				if (enable_log) LOG.info("Advance iteration" + iteration + " @" + DateTime.now());
             }
         }, 2 * gap, gap);
     }
 
     public synchronized boolean tick(int myiteration) {
         //            if (iteration - myiteration > 2) {
-        //                if(enable_log) LOG.info("System cannot tolerate current spout speed, gaps at " + (iteration - myiteration) * gap / 1E3 + " s, finished measurement (k events/s) -1");
+        //                if (enable_log) LOG.info("System cannot tolerate current spout speed, gaps at " + (iteration - myiteration) * gap / 1E3 + " s, finished measurement (k events/s) -1");
         //                System.exit(-1);
         //            }
         //			final long call_time = System.nanoTime();

@@ -66,7 +66,7 @@ public abstract class TableInitilizer {
         } else {
             throw new UnsupportedOperationException();
         }
-        if(enable_log) LOG.info("ratio_of_multi_partition: " + ratio_of_multi_partition + "\tDECISIONS: " + Arrays.toString(multi_partion_decision));
+        if (enable_log) LOG.info("ratio_of_multi_partition: " + ratio_of_multi_partition + "\tDECISIONS: " + Arrays.toString(multi_partion_decision));
         p_bid = new long[tthread];
         for (int i = 0; i < tthread; i++) {
             p_bid[i] = 0;

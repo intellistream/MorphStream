@@ -142,7 +142,7 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -174,7 +174,7 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
 
@@ -265,15 +265,15 @@ public class SLInitializer extends TableInitilizer {
         String folder = dataConfig.getRootPath();
         File file = new File(folder);
         if (file.exists()) {
-            if(enable_log) LOG.info("Data already exists.. skipping data generation...");
+            if (enable_log) LOG.info("Data already exists.. skipping data generation...");
             return false;
         }
         file.mkdirs();
 
         dataGenerator.generateStream();//prepare input events.
-        if(enable_log) LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
+        if (enable_log) LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
         dataGenerator.dumpGeneratedDataToFile();
-        if(enable_log) LOG.info("Data Generation is done...");
+        if (enable_log) LOG.info("Data Generation is done...");
         dataGenerator.clearDataStructures();
         return true;
     }
@@ -286,7 +286,7 @@ public class SLInitializer extends TableInitilizer {
         String folder = dataConfig.getRootPath();
         File file = new File(folder + "transferEvents.txt");
         if (file.exists()) {
-            if(enable_log) LOG.info("Reading transfer events...");
+            if (enable_log) LOG.info("Reading transfer events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
             loadTransferEvents(reader, tuplesPerBatch, totalBatches, shufflingActive);
             reader.close();
@@ -294,7 +294,7 @@ public class SLInitializer extends TableInitilizer {
 
         file = new File(folder + "depositEvents.txt");
         if (file.exists()) {
-            if(enable_log) LOG.info("Reading deposit events...");
+            if (enable_log) LOG.info("Reading deposit events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
             loadDepositEvents(reader, tuplesPerBatch, totalBatches, shufflingActive);
             reader.close();
@@ -326,10 +326,10 @@ public class SLInitializer extends TableInitilizer {
             for (int x = 0; x < 4; x++)
                 p_bids[(npid + x) % tthread]++;
             DataHolder.depositEvents.add(event);
-            LOG.debug(String.format("%d deposit read...", count));
+            if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();
         }
-        LOG.info("Done reading transfer events...");
+        if (enable_log) LOG.info("Done reading transfer events...");
         if (shufflingActive) {
             shuffleEvents(DataHolder.depositEvents, tuplesPerBatch, totalBatches);
         }
@@ -365,10 +365,10 @@ public class SLInitializer extends TableInitilizer {
             for (int x = 0; x < 4; x++)
                 p_bids[(npid + x) % tthread]++;
             DataHolder.transferEvents.add(event);
-            if(enable_log) LOG.debug(String.format("%d transactions read...", count));
+            if (enable_log) LOG.debug(String.format("%d transactions read...", count));
             txn = reader.readLine();
         }
-        if(enable_log) LOG.info("Done reading transfer events...");
+        if (enable_log) LOG.info("Done reading transfer events...");
         if (shufflingActive) {
             shuffleEvents(DataHolder.transferEvents, tuplesPerBatch, totalBatches);
         }

@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import static common.CONTROL.enable_log;
+
 /**
  * @author maycon
  */
@@ -135,10 +137,10 @@ public class CDRDataGenerator {
                 countryMap.put((String) json.get("code"), (String) json.get("dial_code"));
             }
         } catch (IOException ex) {
-            LOG.error("Error reading country codes file", ex);
+            if (enable_log) LOG.error("Error reading country codes file", ex);
             System.exit(-1);
         } catch (ParseException ex) {
-            LOG.error("Error parsing country codes file", ex);
+            if (enable_log) LOG.error("Error parsing country codes file", ex);
             System.exit(-1);
         } catch (Exception ex) {
             System.out.println("Error!!!!" + ex.getMessage());

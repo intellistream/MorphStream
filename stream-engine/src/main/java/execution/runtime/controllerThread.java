@@ -31,7 +31,7 @@ class controllerThread extends Thread {
 //        if (ExpectedRate > ObservedRate) {
 //            hostThread.incParallelism();
 //        }
-        if(enable_log) LOG.info("current throughput of " + hostThread.executor.getOP() + observedRate);
+        if (enable_log) LOG.info("current throughput of " + hostThread.executor.getOP() + observedRate);
     }
 
     @Override

@@ -59,7 +59,7 @@ public class WordCountBolt_FT extends MapBolt implements Checkpointable {
         for (int i = 0; i < bound; i++) {
             final Marker marker = in.getMarker(i);
             if (marker != null) {
-                //LOG.DEBUG(this.getContext().getThisTaskId() + " receive marker:" + marker.msgId + "from " + in.getSourceTask());
+                //if (enable_log) LOG.DEBUG(this.getContext().getThisTaskId() + " receive marker:" + marker.msgId + "from " + in.getSourceTask());
                 forward_checkpoint(in.getSourceTask(), bid, marker);
                 continue;
             }
@@ -74,7 +74,7 @@ public class WordCountBolt_FT extends MapBolt implements Checkpointable {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         long pid = OsUtils.getPID();
-//		if(enable_log) LOG.info("PID  = " + pid);
+//		if (enable_log) LOG.info("PID  = " + pid);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class WordCountBolt_FT extends MapBolt implements Checkpointable {
         final boolean check = checkpoint_store((Serializable) counts, sourceId, marker);//call forward_checkpoint.
         if (check) {
             this.collector.broadcast_marker(bid, marker);//bolt needs to broadcast_marker
-            //LOG.DEBUG(this.getContext().getThisComponentId() + this.getContext().getThisTaskId() + " broadcast marker with id:" + marker.msgId + "@" + DateTime.now());
+            //if (enable_log) LOG.DEBUG(this.getContext().getThisComponentId() + this.getContext().getThisTaskId() + " broadcast marker with id:" + marker.msgId + "@" + DateTime.now());
         }
     }
 
@@ -106,9 +106,9 @@ public class WordCountBolt_FT extends MapBolt implements Checkpointable {
 
     @Override
     public void ack_checkpoint(Marker marker) {
-//		//LOG.DEBUG(this.getContext().getThisTaskId() + " received ack from all consumers.");
+//		//if (enable_log) LOG.DEBUG(this.getContext().getThisTaskId() + " received ack from all consumers.");
         //Do something to clear past state. (optional)
-//		//LOG.DEBUG(this.getContext().getThisTaskId() + " broadcast ack to all producers.");
+//		//if (enable_log) LOG.DEBUG(this.getContext().getThisTaskId() + " broadcast ack to all producers.");
         this.collector.broadcast_ack(marker);//bolt needs to broadcast_ack
     }
 

@@ -57,10 +57,10 @@ public class LayeredOCDataGeneratorConfig extends DataGeneratorConfig {
             throw new UnsupportedOperationException("Invalid fanout scheme.");
         }
 
-        if(enable_log) LOG.info(String.format("totalEventsPerBatch: %d", getTuplesPerBatch()));
-        if(enable_log) LOG.info(String.format("numberOfBatches: %d", getTotalBatches()));
-        if(enable_log) LOG.info(String.format("numberOfDLevels: %d", getNumberOfDLevels()));
-        if(enable_log) LOG.info(String.format("rootFilePath: %s", getRootPath()));
+        if (enable_log) LOG.info(String.format("totalEventsPerBatch: %d", getTuplesPerBatch()));
+        if (enable_log) LOG.info(String.format("numberOfBatches: %d", getTotalBatches()));
+        if (enable_log) LOG.info(String.format("numberOfDLevels: %d", getNumberOfDLevels()));
+        if (enable_log) LOG.info(String.format("rootFilePath: %s", getRootPath()));
     }
 
     public Integer getNumberOfDLevels() {

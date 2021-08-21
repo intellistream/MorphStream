@@ -83,10 +83,10 @@ public class ExecutionGraph extends RawExecutionGraph {
         topology.clean_executorInformation();
         global_tuple_scheduler = graph.global_tuple_scheduler;
         if (compressRatio == -1) {
-            if(enable_log) LOG.info("automatically decide the compress ratio");
+            if (enable_log) LOG.info("automatically decide the compress ratio");
             compressRatio = (int) Math.max(5, Math.ceil(graph.getExecutionNodeArrayList().size() / 36.0));
         }
-        if(enable_log) LOG.info("Creates the compressed graph with compressRatio:" + compressRatio);
+        if (enable_log) LOG.info("Creates the compressed graph with compressRatio:" + compressRatio);
         Configuration(topology, compressRatio, conf, topology.getPlatform());
     }
 
@@ -107,7 +107,7 @@ public class ExecutionGraph extends RawExecutionGraph {
                 addRecord_RebuildRelationships(tr, compressRatio, p);
             } else {
                 if (!tr.toCompress) {
-                    if(enable_log) LOG.info("Exe:" + tr.getId() + "not able to allocate in last round, do not compress it.");
+                    if (enable_log) LOG.info("Exe:" + tr.getId() + "not able to allocate in last round, do not compress it.");
                 }
                 addRecord(tr, p);
             }
@@ -199,7 +199,7 @@ public class ExecutionGraph extends RawExecutionGraph {
 
     private void addRecord_RebuildRelationships(TopologyComponent operator, int compressRatio, Platform p) {
         if (compressRatio < 1) {
-            if(enable_log) LOG.info("compressRatio must be greater than 1, and your setting:" + compressRatio);
+            if (enable_log) LOG.info("compressRatio must be greater than 1, and your setting:" + compressRatio);
             System.exit(-1);
         }
 //		int numTasks = 0;
@@ -328,7 +328,7 @@ public class ExecutionGraph extends RawExecutionGraph {
             return new PartialKeyGroupingController(srcOP, childOP
                     , downExecutor_list, srcOP.get_output_fields(streamId), g.getFields(), batch, executor, conf.getBoolean("profile", false), conf);
         } else {
-            if(enable_log) LOG.info("Create partition controller error: not supported yet!");
+            if (enable_log) LOG.info("Create partition controller error: not supported yet!");
             return null;
         }
     }
@@ -347,7 +347,7 @@ public class ExecutionGraph extends RawExecutionGraph {
                 } else if (global_tuple_scheduler instanceof UniformedScheduler) {
                     executor.setInputStreamController(new UniformedScheduler());
                 } else {
-                    LOG.error("Unknown input scheduler!");
+                    if (enable_log) LOG.error("Unknown input scheduler!");
                 }
             }
         }

@@ -47,7 +47,7 @@ public class TPInitializer extends TableInitilizer {
             insertSpeedRecord(_key, 0, pid, spinlock);
             insertCntRecord(_key, 0, pid, spinlock);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class TPInitializer extends TableInitilizer {
             insertSpeedRecord(_key, 0);
             insertCntRecord(_key);
         }
-        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     private void insertCntRecord(String key, int value, int pid, SpinLock[] spinlock) {

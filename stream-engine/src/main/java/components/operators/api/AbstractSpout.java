@@ -125,12 +125,12 @@ public abstract class AbstractSpout extends Operator {
             }
         }
         long pid = OsUtils.getJVMID();
-        if(enable_log) LOG.info("JVM PID  = " + pid);
+        if (enable_log) LOG.info("JVM PID  = " + pid);
         FileWriter fw;
         BufferedWriter writer = null;
         File file = new File(config.getString("metrics.output"));
         if (!file.mkdirs()) {
-            LOG.warn("Not able to create metrics directories");
+            if (enable_log) LOG.warn("Not able to create metrics directories");
         }
         String sink_path = config.getString("metrics.output") + OsUtils.OS_wrapper("sink_threadId.txt");
         try {
@@ -150,9 +150,9 @@ public abstract class AbstractSpout extends Operator {
             e.printStackTrace();
         }
         int end_index = array.size() * config.getInt("count_number", 1);
-        if(enable_log) LOG.info("spout:" + this.taskId + " elements:" + end_index);
+        if (enable_log) LOG.info("spout:" + this.taskId + " elements:" + end_index);
         long end = System.nanoTime();
-        if(enable_log) LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
+        if (enable_log) LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
     }
 
     /**

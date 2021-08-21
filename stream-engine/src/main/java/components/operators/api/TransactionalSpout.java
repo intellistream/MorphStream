@@ -85,7 +85,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     @Override
     public void forward_checkpoint(int sourceTask, String streamId, long bid, Marker marker) throws InterruptedException {
         if (clock.tick(myiteration) && success) {//emit marker tuple
-            if(enable_log) LOG.info(executor.getOP_full() + " emit marker of: " + myiteration + " @" + DateTime.now() + " SOURCE_CONTROL: " + bid);
+            if (enable_log) LOG.info(executor.getOP_full() + " emit marker of: " + myiteration + " @" + DateTime.now() + " SOURCE_CONTROL: " + bid);
             collector.create_marker_boardcast(boardcast_time, streamId, bid, myiteration);
             boardcast_time = System.nanoTime();
             myiteration++;
@@ -100,12 +100,11 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public void ack_checkpoint(Marker marker) {
         //Do something to clear past state. (optional)
         success = true;//I can emit next marker.
-        if (enable_debug)
-            LOG.trace("task_size: " + epoch_size * NUM_ACCESSES);
+        if (enable_debug) LOG.trace("task_size: " + epoch_size * NUM_ACCESSES);
         long elapsed_time = System.nanoTime() - boardcast_time;//the time elapsed for the system to handle the previous epoch.
         double actual_system_throughput = epoch_size * 1E9 / elapsed_time;//events/ s
 //        if (epoch_size != 0)
-//            if(enable_log) LOG.info("finished measurement (k events/s):" + actual_system_throughput / 1E3);
+//            if (enable_log) LOG.info("finished measurement (k events/s):" + actual_system_throughput / 1E3);
 //        if (enable_admission_control) {
 //            target_Hz = actual_system_throughput * checkpoint_interval_sec;//target Hz.
 //            control = 0;

@@ -66,7 +66,7 @@ public abstract class BaseSink extends unionBolt {
     protected abstract Logger getLogger();
 
     protected void killTopology() {
-        if(enable_log) LOG.info("Killing application");
+        if (enable_log) LOG.info("Killing application");
 //		System.exit(0);
     }
 

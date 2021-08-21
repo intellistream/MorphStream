@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static common.CONTROL.enable_log;
+
 @lombok.extern.slf4j.Slf4j
 public class FileOutputHandler implements IOutputHandler {
 
@@ -56,9 +58,9 @@ public class FileOutputHandler implements IOutputHandler {
 
     @Override
     public void sinkEvents(List<SLEvent> events) throws IOException {
-        log.info(String.format("transferEventFile path is %s", mRootPath + transferEventFileName));
+        if (enable_log) log.info(String.format("transferEventFile path is %s", mRootPath + transferEventFileName));
         BufferedWriter transferEventBufferedWriter = CreateWriter(transferEventFileName);
-        log.info(String.format("depositEventFile path is %s", mRootPath + depositEventFileName));
+        if (enable_log) log.info(String.format("depositEventFile path is %s", mRootPath + depositEventFileName));
         BufferedWriter depositEventBufferedWriter = CreateWriter(depositEventFileName);
         for (SLEvent event : events) {
             if (event instanceof SLDepositEvent) {

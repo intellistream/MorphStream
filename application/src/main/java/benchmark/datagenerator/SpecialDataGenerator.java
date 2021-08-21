@@ -39,9 +39,9 @@ public abstract class SpecialDataGenerator {
             generateTuple();
         }
 
-        if(enable_log) LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
+        if (enable_log) LOG.info(String.format("Data Generator will dump data at %s.", dataConfig.getRootPath()));
         dumpGeneratedDataToFile();
-        if(enable_log) LOG.info("Data Generation is done...");
+        if (enable_log) LOG.info("Data Generation is done...");
         clearDataStructures();
         this.dataConfig = null;
     }
@@ -49,8 +49,8 @@ public abstract class SpecialDataGenerator {
     protected boolean isFileExist() {
         File file = new File(dataConfig.getRootPath());
         if (file.exists()) {
-            if(enable_log) LOG.info("Data already exists.. skipping data generation...");
-            if(enable_log) LOG.info(dataConfig.getRootPath());
+            if (enable_log) LOG.info("Data already exists.. skipping data generation...");
+            if (enable_log) LOG.info(dataConfig.getRootPath());
             return true;
         }
         return false;

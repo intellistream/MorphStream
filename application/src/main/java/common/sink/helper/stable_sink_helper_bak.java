@@ -42,7 +42,7 @@ public class stable_sink_helper_bak extends helper {
                                     + "compute delay" + Event.split_expression
                                     + compute_delay + Event.split_expression
                                     + time + Event.split_expression + end;
-//                        if(enable_log) LOG.info("checkpoint" + Event.split_expression + String.valueOf(checkPoint) + "throughput" + Event.split_expression + throughput
+//                        if (enable_log) LOG.info("checkpoint" + Event.split_expression + String.valueOf(checkPoint) + "throughput" + Event.split_expression + throughput
 //                                + Event.split_expression + time);
                     strings.add(detailed);
 //                    } else {
@@ -50,9 +50,9 @@ public class stable_sink_helper_bak extends helper {
 //                    }
                     if (checkPoint == measure_times) {
 //                        if (!print)
-//                            if(enable_log) LOG.info("finished measurement!" + calculateAverage(strings));
+//                            if (enable_log) LOG.info("finished measurement!" + calculateAverage(strings));
 //                        else
-                        if(enable_log) LOG.info("finished measurement!");
+                        if (enable_log) LOG.info("finished measurement!");
                         output(strings);
                         return true;
                     }

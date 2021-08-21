@@ -24,7 +24,7 @@ public class MeasureSink_Txn_latency extends MeasureSink_latency {
             }
             if (results != 0) {
                 this.setResults(results);
-                if(enable_log) LOG.info("Sink finished:" + results);
+                if (enable_log) LOG.info("Sink finished:" + results);
                 check();
             }
         }
@@ -52,7 +52,7 @@ public class MeasureSink_Txn_latency extends MeasureSink_latency {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(enable_log) LOG.info("Stop all threads sequentially");
+            if (enable_log) LOG.info("Stop all threads sequentially");
             context.Sequential_stopAll();
         }
     }

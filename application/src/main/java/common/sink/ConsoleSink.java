@@ -56,7 +56,7 @@ public class ConsoleSink extends BaseSink {
                     }
                     processed1++;
                     if (processed1 % 10000 == 0) {
-                        if(enable_log) LOG.info("RANK:" + input.getMsg(i).toString());
+                        if (enable_log) LOG.info("RANK:" + input.getMsg(i).toString());
                     }
                     break;
                 default:
@@ -68,7 +68,7 @@ public class ConsoleSink extends BaseSink {
                     }
                     processed2++;
                     if (processed2 % 10000 == 0) {
-                        if(enable_log) LOG.info("MEDIAN:" + input.getMsg(i).toString());
+                        if (enable_log) LOG.info("MEDIAN:" + input.getMsg(i).toString());
                     }
                     break;
             }

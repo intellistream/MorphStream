@@ -23,7 +23,7 @@ public class PKSink extends MeasureSink {
         results = helper.execute(input.getBID());
         if (results != 0) {
             this.setResults(results);
-            if(enable_log) LOG.info("Sink finished:" + results);
+            if (enable_log) LOG.info("Sink finished:" + results);
             if (thisTaskId == graph.getSink().getExecutorID()) {
                 measure_end(results);
             }
@@ -31,6 +31,6 @@ public class PKSink extends MeasureSink {
     }
 
     public void display() {
-        if(enable_log) LOG.info("Spikes: " + success + "(" + (success / (success + failure)) + ")");
+        if (enable_log) LOG.info("Spikes: " + success + "(" + (success / (success + failure)) + ")");
     }
 }

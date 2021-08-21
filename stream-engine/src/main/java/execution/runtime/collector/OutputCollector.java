@@ -502,7 +502,7 @@ public class OutputCollector<T> {
     public void ack(JumboTuple input, Marker marker) {
         assert this.executor.isLeafNode();
 //		final int executorID = executor.getExecutorID();
-//		//LOG.DEBUG(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " from " + input.getSourceTask());
+//		//if (enable_log) LOG.DEBUG(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " from " + input.getSourceTask());
 //		final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
 //		src.op.callback(executorID, marker);
         //non-blocking ack.
@@ -522,7 +522,7 @@ public class OutputCollector<T> {
     public void ack(Tuple input, Marker marker) {
         final int executorID = executor.getExecutorID();
         if (enable_debug)
-            if(enable_log) LOG.info(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " to " + input.getSourceComponent());
+            if (enable_log) LOG.info(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " to " + input.getSourceComponent());
         final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
         if (input.getBID() != totalEvents)
             src.op.callback(executorID, marker);

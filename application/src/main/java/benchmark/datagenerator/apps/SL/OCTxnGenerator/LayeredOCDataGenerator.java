@@ -76,7 +76,7 @@ public class LayeredOCDataGenerator extends DataGenerator {
         dataTransactions.add(t);
         transactionId++;
         if (transactionId % 100000 == 0)
-            if(enable_log) LOG.info(String.valueOf(transactionId));
+            if (enable_log) LOG.info(String.valueOf(transactionId));
 
         // Step 4: update the statistics such as dependency distribution to guide future data generation
         updateStats();
@@ -98,15 +98,15 @@ public class LayeredOCDataGenerator extends DataGenerator {
             e.printStackTrace();
         }
 
-        if(enable_log)  LOG.info("Dumping transactions...");
+        if (enable_log)  LOG.info("Dumping transactions...");
         try {
             dataOutputHandler.sinkEvents(dataTransactions);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if(enable_log) LOG.info("Dumping Dependency Vertices...");
+        if (enable_log) LOG.info("Dumping Dependency Vertices...");
         dataOutputHandler.sinkDependenciesVertices(accountOperationChainsByLevel, assetsOperationChainsByLevel);
-        if(enable_log) LOG.info("Dumping Dependency Vertices ids range...");
+        if (enable_log) LOG.info("Dumping Dependency Vertices ids range...");
         dataOutputHandler.sinkDependenciesVerticesIdsRange(totalAccountRecords, totalAssetRecords);
     }
 

@@ -157,9 +157,9 @@ public class DispatcherBolt extends filterBolt implements Checkpointable {
 
     @Override
     public void ack_checkpoint(Marker marker) {
-//		//LOG.DEBUG(this.getContext().getThisTaskId() + " received ack from all consumers.");
+		//if (enable_log) LOG.DEBUG(this.getContext().getThisTaskId() + " received ack from all consumers.");
         //Do something to clear past state. (optional)
-//		//LOG.DEBUG(this.getContext().getThisTaskId() + " broadcast ack to all producers.");
+//		//if (enable_log) LOG.DEBUG(this.getContext().getThisTaskId() + " broadcast ack to all producers.");
         this.collector.broadcast_ack(marker);//bolt needs to broadcast_ack
     }
 

@@ -123,13 +123,13 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        if(enable_log) LOG.info("Spout initialize is being called");
+        if (enable_log) LOG.info("Spout initialize is being called");
         long start = System.nanoTime();
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
         long pid = OsUtils.getPID();
-        if(enable_log) LOG.info("JVM PID  = " + pid);
+        if (enable_log) LOG.info("JVM PID  = " + pid);
         long end = System.nanoTime();
-        if(enable_log) LOG.info("spout initialize takes (ms):" + (end - start) / 1E6);
+        if (enable_log) LOG.info("spout initialize takes (ms):" + (end - start) / 1E6);
         ccOption = config.getInt("CCOption", 0);
         bid = 0;
         counter = 0;
@@ -151,9 +151,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
         num_events_per_thread = batch_number_per_wm * numberOfBatches;
 
-        if(enable_log) LOG.info("total events per batch... " + totalEventsPerBatch);
-        if(enable_log) LOG.info("events per thread... " + num_events_per_thread);
-        if(enable_log) LOG.info("batch_number_per_wm (watermark events length)= " + batch_number_per_wm);
+        if (enable_log) LOG.info("total events per batch... " + totalEventsPerBatch);
+        if (enable_log) LOG.info("events per thread... " + num_events_per_thread);
+        if (enable_log) LOG.info("batch_number_per_wm (watermark events length)= " + batch_number_per_wm);
 
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.

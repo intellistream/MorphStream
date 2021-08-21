@@ -148,7 +148,7 @@ public class ObjectHistogram<X> implements Histogram<X> {
 //					}
 //				} // WHILE
 //				if (ctr > 0) {
-//					//LOG.DEBUG("Removed " + ctr + " zero entries from histogram");
+//					//if (enable_log) LOG.DEBUG("Removed " + ctr + " zero entries from histogram");
 //				}
 //			} // SYNCHRONIZED
 //		}

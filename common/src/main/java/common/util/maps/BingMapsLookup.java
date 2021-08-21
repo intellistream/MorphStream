@@ -12,6 +12,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import static common.CONTROL.enable_log;
+
 public final class BingMapsLookup {
     private static final Logger LOG = LoggerFactory.getLogger(BingMapsLookup.class);
     private static final String BING_MAPS_URL_START = "http://dev.virtualearth.net/REST/v1/Locations/";
@@ -30,7 +32,7 @@ public final class BingMapsLookup {
                 .append(longitude)
                 .append(BING_MAPS_URL_MIDDLE_JSON)
                 .append(BING_MAPS_API_KEY);
-        //LOG.DEBUG("BingMapsURL==>{}", bingMapsURL.toString());
+        //if (enable_log) LOG.DEBUG("BingMapsURL==>{}", bingMapsURL.toString());
         HttpURLConnection httpURLConnection;
         InputStream inputStream = null;
         try {
@@ -41,14 +43,14 @@ public final class BingMapsLookup {
                 return getStateFromJSONResponse(inputStream);
             }
         } catch (final Throwable throwable) {
-            LOG.error(throwable.getMessage(), throwable);
+            if (enable_log) LOG.error(throwable.getMessage(), throwable);
             throwable.printStackTrace();
         } finally {
             if (null != inputStream) {
                 try {
                     inputStream.close();
                 } catch (final IOException ioException) {
-                    LOG.error(ioException.getMessage(), ioException);
+                    if (enable_log) LOG.error(ioException.getMessage(), ioException);
                     ioException.printStackTrace();
                 }
             }
@@ -69,13 +71,13 @@ public final class BingMapsLookup {
                     final List<Map<String, Object>> resources = (List<Map<String, Object>>) resourceSets.get(0).get("resources");
                     if (resources != null && resources.size() > 0) {
                         final Map<String, Object> address = (Map<String, Object>) resources.get(0).get("address");
-                        //LOG.DEBUG("State==>{}", address.get("adminDistrict"));
+                        //if (enable_log) LOG.DEBUG("State==>{}", address.get("adminDistrict"));
                         return Optional.of((String) address.get("adminDistrict"));
                     }
                 }
             }
         } catch (final IOException ioException) {
-            LOG.error(ioException.getMessage(), ioException);
+            if (enable_log) LOG.error(ioException.getMessage(), ioException);
             ioException.printStackTrace();
         }
         return Optional.absent();

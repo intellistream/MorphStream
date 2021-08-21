@@ -104,8 +104,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BFS";
-//    public String scheduler = "DFS";
+//    public String scheduler = "BFS";
+    public String scheduler = "DFS";
     //    public String scheduler = "GS";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
@@ -120,7 +120,7 @@ public abstract class Runner implements IRunner {
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
-        if(enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
+        if (enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
     }
 
     public Properties loadProperties(String filename) throws IOException {

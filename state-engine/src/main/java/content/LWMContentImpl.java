@@ -90,7 +90,7 @@ public class LWMContentImpl extends LWMContent {
                 while (bid > GetLWM() && !Thread.currentThread().isInterrupted()) {
 //					retry_count++;
 //					if (retry_count > 100) {
-//						LOG.error("Retry:" + retry_count + " ts: " + ts + " lwm:" + lwm);
+//						if (enable_log) LOG.error("Retry:" + retry_count + " ts: " + ts + " lwm:" + lwm);
 //					}
                 }
                 break;
@@ -98,7 +98,7 @@ public class LWMContentImpl extends LWMContent {
                 while (bid != GetLWM() && !Thread.currentThread().isInterrupted()) {
 //					retry_count++;
 //					if (retry_count > 100) {
-//						LOG.error("Retry:" + retry_count + " ts: " + ts + " lwm:" + lwm);
+//						if (enable_log) LOG.error("Retry:" + retry_count + " ts: " + ts + " lwm:" + lwm);
 //					}
                 }
                 break;

@@ -169,7 +169,7 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
     }
 
     public void stateTransition(OperationStateType state) {
-        if(enable_log) LOG.debug(this + " : state transit " + operationState + " -> " + state);
+        if (enable_log) LOG.debug(this + " : state transit " + operationState + " -> " + state);
         operationState.getAndSet(state);
     }
 

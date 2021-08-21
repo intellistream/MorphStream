@@ -62,7 +62,7 @@ public class OfflineTraining {
             }
             OfflineTraining filter = new OfflineTraining();
             filter.loadTraining(args[1]);
-            if(enable_log) LOG.info("Num words: {}", filter.words.values().size());
+            if (enable_log) LOG.info("Num words: {}", filter.words.values().size());
         } else if (args[0].equals("train")) {
             if (args.length < 3) {
                 printUsage();
@@ -72,10 +72,10 @@ public class OfflineTraining {
             String outputPath = args[2];
             OfflineTraining filter = new OfflineTraining();
             List<String> trainingSet = Files.readLines(new File(inputPath + "/index"), Charset.defaultCharset());
-            if(enable_log) LOG.info("Number of emails: {}", trainingSet.size());
+            if (enable_log) LOG.info("Number of emails: {}", trainingSet.size());
             for (int i = 0; i < trainingSet.size(); i++) {
                 if (i % 1000 == 0) {
-                    if(enable_log) LOG.info("Training set {}", i);
+                    if (enable_log) LOG.info("Training set {}", i);
                 }
                 String[] train = trainingSet.get(i).split("\\s+");
                 boolean isSpam = train[0].toLowerCase().trim().equals("spam");
@@ -85,9 +85,9 @@ public class OfflineTraining {
             filter.finalizeTraining();
             boolean result = filter.saveTraining(outputPath);
             if (!result) {
-                LOG.error("Training object not saved.");
+                if (enable_log) LOG.error("Training object not saved.");
             } else {
-                if(enable_log) LOG.info("Training object saved!");
+                if (enable_log) LOG.info("Training object saved!");
             }
         } else {
             printUsage();
@@ -134,9 +134,9 @@ public class OfflineTraining {
             output.close();
             return true;
         } catch (FileNotFoundException ex) {
-            LOG.error("The output file path was not found", ex);
+            if (enable_log) LOG.error("The output file path was not found", ex);
         } catch (KryoException ex) {
-            LOG.error("Serialization error", ex);
+            if (enable_log) LOG.error("Serialization error", ex);
         }
         return false;
     }
@@ -149,9 +149,9 @@ public class OfflineTraining {
             words = object;
             return true;
         } catch (FileNotFoundException ex) {
-            LOG.error("The input file path was not found", ex);
+            if (enable_log) LOG.error("The input file path was not found", ex);
         } catch (KryoException ex) {
-            LOG.error("Deserialization error", ex);
+            if (enable_log) LOG.error("Deserialization error", ex);
         }
         return false;
     }

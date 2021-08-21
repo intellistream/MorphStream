@@ -10,6 +10,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Class that encapsulates the data and parsing logic for a partition log record (json) in a log file
  * Log record json structure sent from logstash:
@@ -72,7 +74,7 @@ public class LogEntry {
             } catch (ParseException ignored) {
             }
         }
-        LOG.error("Could not parse timestamp for log");
+        if (enable_log) LOG.error("Could not parse timestamp for log");
         return null;
     }
 

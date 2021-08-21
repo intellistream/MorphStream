@@ -158,10 +158,10 @@ public class TPGDataGenerator extends DataGenerator {
     }
 
     public void dumpGeneratedDataToFile() {
-        if(enable_log) LOG.info("++++++" + nGeneratedAccountIds.size());
-        if(enable_log) LOG.info("++++++" + nGeneratedAssetIds.size());
+        if (enable_log) LOG.info("++++++" + nGeneratedAccountIds.size());
+        if (enable_log) LOG.info("++++++" + nGeneratedAssetIds.size());
 
-        if(enable_log) LOG.info("Dumping transactions...");
+        if (enable_log) LOG.info("Dumping transactions...");
         try {
             dataOutputHandler.sinkEvents(events);
         } catch (IOException e) {

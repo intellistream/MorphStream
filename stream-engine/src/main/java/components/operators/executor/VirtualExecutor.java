@@ -77,7 +77,7 @@ public class VirtualExecutor implements IExecutor {
     }
 
     public void execute(JumboTuple in) throws InterruptedException {
-        if(enable_log) LOG.info("Should not being called.");
+        if (enable_log) LOG.info("Should not being called.");
     }
 
     public boolean isStateful() {

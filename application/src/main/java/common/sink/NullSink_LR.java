@@ -64,7 +64,7 @@ public class NullSink_LR extends BaseSink {
                     index_e1++;
                     if (index_e1 == 1 && read1) {
                         end_index1 = config.getInt("end_index1");
-                        if(enable_log) LOG.info("end_index1:" + end_index1);
+                        if (enable_log) LOG.info("end_index1:" + end_index1);
                         start_true = System.nanoTime();
                         read1 = false;
                     }
@@ -73,7 +73,7 @@ public class NullSink_LR extends BaseSink {
                     index_e2++;
                     if (index_e2 == 1 && read2) {
                         end_index2 = config.getInt("end_index2");
-                        if(enable_log) LOG.info("end_index2:" + end_index2);
+                        if (enable_log) LOG.info("end_index2:" + end_index2);
                         read2 = false;
                     }
                     break;
@@ -81,7 +81,7 @@ public class NullSink_LR extends BaseSink {
                     index_e3++;
                     if (index_e3 == 1 && read3) {
                         end_index3 = config.getInt("end_index3");
-                        if(enable_log) LOG.info("end_index3:" + end_index3);
+                        if (enable_log) LOG.info("end_index3:" + end_index3);
                         read3 = false;
                     }
                     break;
@@ -89,17 +89,17 @@ public class NullSink_LR extends BaseSink {
                     index_e4++;
                     if (index_e4 == 1 && read4) {
                         end_index4 = config.getInt("end_index4");
-                        if(enable_log) LOG.info("end_index4:" + end_index4);
+                        if (enable_log) LOG.info("end_index4:" + end_index4);
                         read4 = false;
                     }
                     break;
             }
             if (in.getMsg(i) != null) {
 //            if (index_e1 > 10000)
-//                if(enable_log) LOG.info("index_e1:" + index_e1);
-//            if(enable_log) LOG.info("index_e2:" + index_e2);
-//            if(enable_log) LOG.info("index_e3:" + index_e3);
-//            if(enable_log) LOG.info("index_e4:" + index_e4);
+//                if (enable_log) LOG.info("index_e1:" + index_e1);
+//            if (enable_log) LOG.info("index_e2:" + index_e2);
+//            if (enable_log) LOG.info("index_e3:" + index_e3);
+//            if (enable_log) LOG.info("index_e4:" + index_e4);
                 if (index_e1 >= end_index1 && index_e2 >= end_index2 && index_e3 >= end_index3 && index_e4 >= end_index4) {//320M
                     end = System.nanoTime();
                     try {

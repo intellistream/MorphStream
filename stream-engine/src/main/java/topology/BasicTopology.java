@@ -34,7 +34,7 @@ public abstract class BasicTopology extends AbstractTopology {
         if (parserClass != null) {
             parser = (Parser) ClassLoaderUtils.newInstance(parserClass, "parser", LOG);
             parser.initialize(config);
-        } else if(enable_log) if(enable_log) LOG.info("No parser is initialized");
+        } else if (enable_log) LOG.info("No parser is initialized");
     }
 
     @Override

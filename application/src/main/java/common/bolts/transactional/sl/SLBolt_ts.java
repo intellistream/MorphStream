@@ -24,8 +24,7 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.*;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 
@@ -195,10 +194,10 @@ public class SLBolt_ts extends SLBolt {
             SchemaRecord dstAccountValueRecord = event.dst_account_value.getRecord();
 
             if (srcAccountValueRecord == null) {
-                LOG.error(event.getSourceAccountId());
+                if (enable_log) LOG.error(event.getSourceAccountId());
             }
             if (dstAccountValueRecord == null) {
-                LOG.error(event.getTargetAccountId());
+                if (enable_log) LOG.error(event.getTargetAccountId());
             }
 
             if (srcAccountValueRecord != null && dstAccountValueRecord != null)

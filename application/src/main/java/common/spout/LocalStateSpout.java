@@ -30,7 +30,7 @@ public class LocalStateSpout extends AbstractSpout {
         int tuple_size = config.getInt("size_tuple");
         DataSource dataSource = new DataSource(skew, false, tuple_size, false);
 //        parser = new ReceiveParser();
-        if(enable_log) LOG.info("Use localSpout now");
+        if (enable_log) LOG.info("Use localSpout now");
     }
 
     @Override
