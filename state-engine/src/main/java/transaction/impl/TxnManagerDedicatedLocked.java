@@ -9,7 +9,6 @@ import scheduler.context.SchedulerContext;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
-import transaction.TxnProcessingEngine;
 import transaction.context.TxnAccess;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
@@ -26,11 +25,10 @@ import static content.common.CommonMetaTypes.kMaxAccessNum;
  * TxnManagerDedicated is a thread-local structure.
  */
 @lombok.extern.slf4j.Slf4j
-public abstract class TxnManagerDedicatedLocked implements TxnManager {
+public abstract class TxnManagerDedicatedLocked extends TxnManager {
     protected final StorageManager storageManager_;
     protected final String thisComponentId;
     private final long thread_id_;
-    protected TxnProcessingEngine instance;
     protected TxnAccess.AccessList access_list_ = new TxnAccess.AccessList(kMaxAccessNum);
     protected TableRecords t_records_ = new TableRecords(64);
     protected boolean is_first_access_;
@@ -45,7 +43,6 @@ public abstract class TxnManagerDedicatedLocked implements TxnManager {
         thread_id_ = thisTaskId;
         thread_count_ = thread_count;
         is_first_access_ = true;
-        instance = TxnProcessingEngine.getInstance();
     }
 
     public long GenerateScalableTimestamp(long curr_epoch, long max_rw_ts) {

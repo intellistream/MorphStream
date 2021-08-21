@@ -17,7 +17,7 @@ import static transaction.context.TxnAccess.Access;
 public class TxnManagerTStream extends TxnManagerDedicatedAsy {
 
     public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw, String schedulerType) {
-        super(storageManager, thisComponentId, thisTaskId, thread_countw, schedulerType);
+        super(storageManager, thisComponentId, thisTaskId, thread_countw,numberOfStates, schedulerType);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
     @Override
     public void start_evaluate(int thread_Id, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-        instance.start_evaluation(context, mark_ID, num_events);
+        scheduler.start_evaluation(context, mark_ID, num_events);
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
 }

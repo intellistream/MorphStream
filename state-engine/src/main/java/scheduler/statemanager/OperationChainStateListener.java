@@ -1,13 +1,13 @@
 package scheduler.statemanager;
 
 import scheduler.struct.MetaTypes;
-import scheduler.struct.OperationChain;
+import scheduler.struct.bfs.BFSOperationChain;
 
 public interface OperationChainStateListener {
 
-    void onOcRootStart(OperationChain operationChain);
+    void onOcRootStart(BFSOperationChain operationChain);
 
-    void onOcExecuted(OperationChain operationChain);
+    void onOcExecuted(BFSOperationChain operationChain);
 
-    void onOcParentExecuted(OperationChain operationChain, MetaTypes.DependencyType dependencyType);
+    void onOcParentExecuted(BFSOperationChain operationChain, MetaTypes.DependencyType dependencyType);
 }

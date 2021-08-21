@@ -4,14 +4,9 @@ import scheduler.signal.oc.OnExecutedSignal;
 import scheduler.signal.oc.OnParentExecutedSignal;
 import scheduler.signal.oc.OnRootSignal;
 import scheduler.signal.oc.OperationChainSignal;
-import scheduler.struct.MetaTypes;
 import scheduler.struct.MetaTypes.DependencyType;
-import scheduler.struct.MetaTypes.OperationStateType;
-import scheduler.struct.Operation;
-import scheduler.struct.OperationChain;
-import scheduler.struct.TaskPrecedenceGraph;
+import scheduler.struct.bfs.BFSOperationChain;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -37,7 +32,7 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
     public void handleStateTransitions() {
         OperationChainSignal ocSignal = ocSignalQueue.poll();
         while (ocSignal != null) {
-            OperationChain operationChain = ocSignal.getTargetOperationChain();
+            BFSOperationChain operationChain = ocSignal.getTargetOperationChain();
             if (ocSignal instanceof OnRootSignal) {
                 ocRootStartTransition(operationChain);
             } else if (ocSignal instanceof OnExecutedSignal) {
@@ -54,28 +49,28 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
     /** OC related listener method and transitions **/
 
     @Override
-    public void onOcRootStart(OperationChain operationChain) {
+    public void onOcRootStart(BFSOperationChain operationChain) {
         ocSignalQueue.add(new OnRootSignal(operationChain));
     }
 
     @Override
-    public void onOcExecuted(OperationChain operationChain) {
+    public void onOcExecuted(BFSOperationChain operationChain) {
         ocSignalQueue.add(new OnExecutedSignal(operationChain));
     }
 
     @Override
-    public void onOcParentExecuted(OperationChain operationChain, DependencyType dependencyType) {
+    public void onOcParentExecuted(BFSOperationChain operationChain, DependencyType dependencyType) {
         ocSignalQueue.add(new OnParentExecutedSignal(operationChain, dependencyType));
     }
 
-    private void ocRootStartTransition(OperationChain operationChain) {
+    private void ocRootStartTransition(BFSOperationChain operationChain) {
     }
 
-    private void ocExecutedTransition(OperationChain operationChain) {
+    private void ocExecutedTransition(BFSOperationChain operationChain) {
         operationChain.isExecuted = true;
     }
 
-    private void ocParentExecutedTransition(OperationChain operationChain, DependencyType dependencyType) {
+    private void ocParentExecutedTransition(BFSOperationChain operationChain, DependencyType dependencyType) {
     }
 
     public void initialize() {

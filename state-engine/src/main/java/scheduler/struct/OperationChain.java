@@ -2,26 +2,28 @@ package scheduler.struct;
 
 import transaction.impl.ordered.MyList;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * We still call it OperationChain in TPG but with different representation
- * The operationchain only tries to maintain a data structure for the ease of temporal dependencies construction.
+ * The OperationChain only tries to maintain a data structure for the ease of temporal dependencies construction.
  */
-public class OperationChain implements Comparable<OperationChain> {
-    private final String tableName;
-    private final String primaryKey;
+public class OperationChain<ExecutionUnit extends AbstractOperation> implements Comparable<OperationChain<ExecutionUnit>> {
+    public final String tableName;
+    public final String primaryKey;
 
-    private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
 
-    private final MyList<Operation> operations;
-    private final AtomicInteger ocFdParentsCount;
+    private final MyList<ExecutionUnit> operations;
+    protected final AtomicInteger ocFdParentsCount;
     // OperationChainKey -> OperationChain
-    private final ConcurrentSkipListMap<OperationChain, Operation> ocFdParents;
-    private final ConcurrentSkipListMap<OperationChain, Operation> ocFdChildren;
+    protected final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocFdParents;
     public boolean isExecuted = false;
 
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
@@ -30,52 +32,45 @@ public class OperationChain implements Comparable<OperationChain> {
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
-
         this.operations = new MyList<>(tableName, primaryKey);
-
         this.ocFdParentsCount = new AtomicInteger(0);
-
         this.ocFdParents = new ConcurrentSkipListMap<>();
-        this.ocFdChildren = new ConcurrentSkipListMap<>();
     }
 
     public String getTableName() {
         return tableName;
     }
 
-    public void addOperation(Operation op) {
-        op.setOC(this);
+    public void addOperation(ExecutionUnit op) {
         operations.add(op);
     }
 
-    public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
-        potentialChldrenInfo.add(new PotentialDependencyInfo(potentialChildren, op));
+    public void addPotentialFDChildren(OperationChain<ExecutionUnit> potentialChildren, ExecutionUnit op) {
+        potentialChldrenInfo.add(new PotentialChildrenInfo(potentialChildren, op));
     }
 
-    public void addFDParent(Operation targetOp, OperationChain parentOC) {
-        Iterator<Operation> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
+    public void addFDParent(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC) {
+        Iterator<ExecutionUnit> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
         while (iterator.hasNext()) {
-            Operation parentOp = iterator.next();
+            ExecutionUnit parentOp = iterator.next();
             if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
-                this.ocFdParents.putIfAbsent(parentOC, parentOp);
-                this.ocFdParentsCount.incrementAndGet();
-                parentOp.addChild(targetOp, MetaTypes.DependencyType.FD);
-                parentOC.addFDChild(this, targetOp);
+                setupDependency(targetOp, parentOC, parentOp);
                 break;
             }
         }
     }
 
-    private void addFDChild(OperationChain childOC, Operation childOp) {
-        this.ocFdChildren.putIfAbsent(childOC, childOp);
+    protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
+        this.ocFdParents.putIfAbsent(parentOC, parentOp);
+        this.ocFdParentsCount.incrementAndGet();
     }
 
-    public void checkPotentialFDChildrenOnNewArrival(Operation newOp) {
-        List<PotentialDependencyInfo> processed = new ArrayList<>();
+    public void checkPotentialFDChildrenOnNewArrival(ExecutionUnit newOp) {
+        List<PotentialChildrenInfo> processed = new ArrayList<>();
 
-        for (PotentialDependencyInfo pChildInfo : potentialChldrenInfo) {
-            if (newOp.bid < pChildInfo.op.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
-                pChildInfo.potentialChildOC.addFDParent(pChildInfo.op, this);
+        for (PotentialChildrenInfo pChildInfo : potentialChldrenInfo) {
+            if (newOp.bid < pChildInfo.childOp.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
+                pChildInfo.potentialChildOC.addFDParent(pChildInfo.childOp, this);
                 processed.add(pChildInfo);
             }
         }
@@ -83,7 +78,7 @@ public class OperationChain implements Comparable<OperationChain> {
         processed.clear();
     }
 
-    public MyList<Operation> getOperations() {
+    public MyList<ExecutionUnit> getOperations() {
         return operations;
     }
 
@@ -96,7 +91,7 @@ public class OperationChain implements Comparable<OperationChain> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        OperationChain that = (OperationChain) o;
+        OperationChain<ExecutionUnit> that = (OperationChain<ExecutionUnit>) o;
         return tableName.equals(that.tableName) &&
                 primaryKey.equals(that.primaryKey);
     }
@@ -131,7 +126,7 @@ public class OperationChain implements Comparable<OperationChain> {
         if (isDependencyLevelCalculated)
             return;
         dependencyLevel = 0;
-        for (OperationChain oc : ocFdParents.keySet()) {
+        for (OperationChain<ExecutionUnit> oc : ocFdParents.keySet()) {
             if (!oc.hasValidDependencyLevel())
                 oc.updateDependencyLevel();
 
@@ -142,26 +137,18 @@ public class OperationChain implements Comparable<OperationChain> {
         isDependencyLevelCalculated = true;
     }
 
-    public void updateDependency() {
-        ocFdParentsCount.decrementAndGet();
-    }
+    public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {
+        public OperationChain<ExecutionUnit> potentialChildOC;
+        public ExecutionUnit childOp;
 
-    public Collection<OperationChain> getFDChildren() {
-        return ocFdChildren.keySet();
-    }
-
-    public class PotentialDependencyInfo implements Comparable<PotentialDependencyInfo> {
-        public OperationChain potentialChildOC;
-        public Operation op;
-
-        public PotentialDependencyInfo(OperationChain oc, Operation op) {
+        public PotentialChildrenInfo(OperationChain<ExecutionUnit> oc, ExecutionUnit op) {
             this.potentialChildOC = oc;
-            this.op = op;
+            this.childOp = op;
         }
 
         @Override
-        public int compareTo(PotentialDependencyInfo o) {
-            return Long.compare(this.op.bid, o.op.bid);
+        public int compareTo(PotentialChildrenInfo o) {
+            return Long.compare(this.childOp.bid, o.childOp.bid);
         }
     }
 }
