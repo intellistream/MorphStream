@@ -1,5 +1,6 @@
 package scheduler.struct.dfs;
 
+import scheduler.struct.MetaTypes;
 import scheduler.struct.OperationChain;
 
 import java.util.Collection;
@@ -19,6 +20,19 @@ public class DFSOperationChain extends OperationChain<DFSOperation> {
 
     public Collection<DFSOperationChain> getFDChildren() {
         return ocFdChildren.keySet();
+    }
+
+    @Override
+    protected void setupDependency(DFSOperation targetOp, OperationChain<DFSOperation> parentOC, DFSOperation parentOp) {
+        this.ocFdParents.putIfAbsent(parentOC, parentOp);
+        this.ocFdParentsCount.incrementAndGet();
+        parentOp.addChild(targetOp, MetaTypes.DependencyType.FD);
+        // add child for parent OC
+        if (parentOC instanceof DFSOperationChain) {
+            ((DFSOperationChain) parentOC).ocFdChildren.putIfAbsent(this, targetOp);
+        } else {
+            throw new UnsupportedOperationException("Wrong operation chain type: " + parentOC);
+        }
     }
 
     public void updateDependency() {
