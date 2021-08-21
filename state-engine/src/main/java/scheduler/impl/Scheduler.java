@@ -161,7 +161,7 @@ public abstract class Scheduler<Context extends SchedulerContext, ExecutionUnit 
             throw new UnsupportedOperationException();
         }
         if (operation.success[0] == success) {
-            operation.isFailed = true;
+            operation.aborted = true;
         }
     }
 

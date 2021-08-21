@@ -85,8 +85,8 @@ public class Request {
                    TableRecord s_record,
                    TableRecord d_record,
                    Function function,
-                   int[] success, int column_id) {
-        this(txn_context, accessType, table_name, src_key, s_record, d_record, function, null, null, null, null, null, success, column_id, null);
+                   int column_id) {
+        this(txn_context, accessType, table_name, src_key, s_record, d_record, function, null, null, null, null, null, null, column_id, null);
     }
 
     public Request(TxnContext txn_context,
