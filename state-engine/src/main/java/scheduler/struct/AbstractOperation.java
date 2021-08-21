@@ -35,7 +35,7 @@ public abstract class AbstractOperation {
     public Condition condition;
     public int[] success;
     // an operation id to indicate how many operations in front of this operation in the same transaction.
-    public boolean aborted = false;
+    public boolean isFailed;
 
     public AbstractOperation(Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
                              TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid) {
