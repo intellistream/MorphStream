@@ -10,6 +10,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Abstract AbstractSpout is a special partition-pass Operator.
  */
@@ -123,7 +125,7 @@ public abstract class AbstractSpout extends Operator {
             }
         }
         long pid = OsUtils.getJVMID();
-        LOG.info("JVM PID  = " + pid);
+        if(enable_log) LOG.info("JVM PID  = " + pid);
         FileWriter fw;
         BufferedWriter writer = null;
         File file = new File(config.getString("metrics.output"));
@@ -148,9 +150,9 @@ public abstract class AbstractSpout extends Operator {
             e.printStackTrace();
         }
         int end_index = array.size() * config.getInt("count_number", 1);
-        LOG.info("spout:" + this.taskId + " elements:" + end_index);
+        if(enable_log) LOG.info("spout:" + this.taskId + " elements:" + end_index);
         long end = System.nanoTime();
-        LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
+        if(enable_log) LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
     }
 
     /**

@@ -15,6 +15,7 @@ import transaction.impl.TxnManagerDedicatedLocked;
 
 import java.util.LinkedList;
 
+import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.*;
 import static content.common.CommonMetaTypes.kMaxAccessNum;
 import static transaction.context.TxnAccess.Access;
@@ -96,7 +97,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
             access.timestamp_ = t_record.content_.GetTimestamp();
             return true;
         } else if (accessType == READ_WRITE) {
-            //LOG.info(txn_context.thisTaskId + " success to get orderLock" + DateTime.now());
+            //if(enable_log) LOG.info(txn_context.thisTaskId + " success to get orderLock" + DateTime.now());
 //            final SchemaRecord local_record = new SchemaRecord(t_record.record_);//copy from t_record to local_record.
             Access access = access_list_.NewAccess();
             access.access_type_ = READ_WRITE;
@@ -106,7 +107,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
             access.timestamp_ = t_record.content_.GetTimestamp();
             return true;
         } else if (accessType == DELETE_ONLY) {
-            LOG.info(t_record.toString() + "is locked by deleter");
+            if(enable_log) LOG.info(t_record.toString() + "is locked by deleter");
             t_record.record_.is_visible_ = false;
             Access access = access_list_.NewAccess();
             access.access_type_ = DELETE_ONLY;
@@ -140,7 +141,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
             while (!t_record.content_.TryWriteLock()) {
                 txn_context.is_retry_ = true;
             }
-            //LOG.info(txn_context.thisTaskId + " success to get orderLock" + DateTime.now());
+            //if(enable_log) LOG.info(txn_context.thisTaskId + " success to get orderLock" + DateTime.now());
             final SchemaRecord local_record = new SchemaRecord(t_record.record_);//copy from t_record to local_record.
             Access access = access_list_.NewAccess();
             access.access_type_ = READ_WRITE;
@@ -155,7 +156,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
                 txn_context.is_retry_ = true;
             }
 //            orderLock.advance();
-            LOG.info(t_record.toString() + "is locked by deleter");
+            if(enable_log) LOG.info(t_record.toString() + "is locked by deleter");
             t_record.record_.is_visible_ = false;
             Access access = access_list_.NewAccess();
             access.access_type_ = DELETE_ONLY;

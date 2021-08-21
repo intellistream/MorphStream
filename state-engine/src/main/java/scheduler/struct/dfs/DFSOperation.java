@@ -17,6 +17,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static common.CONTROL.enable_log;
+
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
  */
@@ -167,7 +169,7 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
     }
 
     public void stateTransition(OperationStateType state) {
-        LOG.debug(this + " : state transit " + operationState + " -> " + state);
+        if(enable_log) LOG.debug(this + " : state transit " + operationState + " -> " + state);
         operationState.getAndSet(state);
     }
 

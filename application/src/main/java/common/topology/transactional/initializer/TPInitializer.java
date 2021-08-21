@@ -19,6 +19,7 @@ import transaction.TableInitilizer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static common.CONTROL.enable_log;
 import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static utils.PartitionHelper.getPartition_interval;
 
@@ -45,7 +46,7 @@ public class TPInitializer extends TableInitilizer {
             insertSpeedRecord(_key, 0, pid, spinlock);
             insertCntRecord(_key, 0, pid, spinlock);
         }
-        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -73,7 +74,7 @@ public class TPInitializer extends TableInitilizer {
             insertSpeedRecord(_key, 0);
             insertCntRecord(_key);
         }
-        LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if(enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     private void insertCntRecord(String key, int value, int pid, SpinLock[] spinlock) {

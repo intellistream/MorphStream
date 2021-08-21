@@ -12,6 +12,8 @@ import topology.TopologyBuilder;
 
 import java.util.Map;
 
+import static common.CONTROL.enable_log;
+
 public class VirtualExecutor implements IExecutor {
     private static final Logger LOG = LoggerFactory.getLogger(TopologyBuilder.class);
     private static final long serialVersionUID = 6833979263182987686L;
@@ -75,7 +77,7 @@ public class VirtualExecutor implements IExecutor {
     }
 
     public void execute(JumboTuple in) throws InterruptedException {
-        LOG.info("Should not being called.");
+        if(enable_log) LOG.info("Should not being called.");
     }
 
     public boolean isStateful() {

@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
+import static common.CONTROL.enable_log;
+
 public class SequentialBinding {
     private static final Logger LOG = LoggerFactory.getLogger(SequentialBinding.class);
     static int socket = 0;
@@ -22,7 +24,7 @@ public class SequentialBinding {
     }
 
     public static int next_cpu_for_db() {
-        LOG.info("next_cpu_for_db:" + cpu_for_db);
+        if(enable_log) LOG.info("next_cpu_for_db:" + cpu_for_db);
         return cpu_for_db++;
     }
 

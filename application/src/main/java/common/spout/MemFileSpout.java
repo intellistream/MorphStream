@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 
+import static common.CONTROL.enable_log;
+
 public class MemFileSpout extends AbstractSpout {
     private static final Logger LOG = LoggerFactory.getLogger(MemFileSpout.class);
     private static final long serialVersionUID = -2394340130331865581L;
@@ -37,7 +39,7 @@ public class MemFileSpout extends AbstractSpout {
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        LOG.info("Spout initialize is being called");
+        if(enable_log) LOG.info("Spout initialize is being called");
         cnt = 0;
         counter = 0;
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
@@ -55,7 +57,7 @@ public class MemFileSpout extends AbstractSpout {
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         String jvmName = runtimeBean.getName();
         long pid = Long.valueOf(jvmName.split("@")[0]);
-        LOG.info("JVM PID  = " + pid);
+        if(enable_log) LOG.info("JVM PID  = " + pid);
         FileWriter fw;
         try {
             fw = new FileWriter(new File(config.getString("metrics.output")
@@ -95,6 +97,6 @@ public class MemFileSpout extends AbstractSpout {
     }
 
     public void display() {
-        LOG.info("timestamp_counter:" + counter);
+        if(enable_log) LOG.info("timestamp_counter:" + counter);
     }
 }

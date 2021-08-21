@@ -22,6 +22,7 @@ import utils.SOURCE_CONTROL;
 import java.io.FileNotFoundException;
 import java.util.concurrent.BrokenBarrierException;
 
+import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static content.Content.CCOption_SStore;
 import static content.Content.CCOption_TStream;
@@ -127,13 +128,13 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        LOG.info("Spout initialize is being called");
+        if(enable_log) LOG.info("Spout initialize is being called");
         long start = System.nanoTime();
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
         long pid = OsUtils.getPID();
-        LOG.info("JVM PID  = " + pid);
+        if(enable_log) LOG.info("JVM PID  = " + pid);
         long end = System.nanoTime();
-        LOG.info("spout initialize takes (ms):" + (end - start) / 1E6);
+        if(enable_log) LOG.info("spout initialize takes (ms):" + (end - start) / 1E6);
         ccOption = config.getInt("CCOption", 0);
         bid = 0;
         counter = 0;
@@ -155,9 +156,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
         num_events_per_thread = batch_number_per_wm * numberOfBatches;
 
-        LOG.info("total events per batch... " + totalEventsPerBatch);
-        LOG.info("events per thread... " + num_events_per_thread);
-        LOG.info("batch_number_per_wm (watermark events length)= " + batch_number_per_wm);
+        if(enable_log) LOG.info("total events per batch... " + totalEventsPerBatch);
+        if(enable_log) LOG.info("events per thread... " + num_events_per_thread);
+        if(enable_log) LOG.info("batch_number_per_wm (watermark events length)= " + batch_number_per_wm);
 
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.

@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
+import static common.CONTROL.enable_log;
+
 public abstract class Runner implements IRunner {
     private static final Logger LOG = LoggerFactory.getLogger(Runner.class);
     protected static String CFG_PATH = null;
@@ -118,7 +120,7 @@ public abstract class Runner implements IRunner {
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
-        LOG.info(String.format("Metric folder path %s.", metric_path));
+        if(enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
     }
 
     public Properties loadProperties(String filename) throws IOException {

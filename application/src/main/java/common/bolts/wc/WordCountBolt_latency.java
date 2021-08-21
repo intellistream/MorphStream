@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static common.CONTROL.enable_log;
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
 
@@ -39,7 +40,7 @@ public class WordCountBolt_latency extends MapBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         long pid = OsUtils.getPID();
-//		LOG.info("PID  = " + pid);
+//		if(enable_log) LOG.info("PID  = " + pid);
     }
 
     @Override
@@ -98,7 +99,7 @@ public class WordCountBolt_latency extends MapBolt {
         size_state = counts.size();
 //		}
 //
-        LOG.info("Num of Tasks:" + this.getContext().getNUMTasks() + ", State size: " + size_state);
+        if(enable_log) LOG.info("Num of Tasks:" + this.getContext().getNUMTasks() + ", State size: " + size_state);
 //		for (Map.Entry<String, MutableLong> entry : counts.entrySet()) {
 //			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
 //		}

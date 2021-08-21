@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Queue;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Created by shuhaozhang on 11/7/16.
  * There's one PC per pair of "downstream, downstream operator".
@@ -52,7 +54,7 @@ public class SPSCController extends QueueController {
             Queue queue = outputQueue.get(executor);
             if (queue != null) {
 //                if(queue instanceof P1C1Queue)
-                LOG.info("relax_reset the old queue");
+                if(enable_log) LOG.info("relax_reset the old queue");
                 queue.clear();
                 System.gc();
             }
