@@ -41,7 +41,7 @@ public class TopologyBuilder {
     }
 
     /**
-     * add spout to Brisk.topology
+     * addOperation spout to Brisk.topology
      *
      * @param id
      * @param s
@@ -68,7 +68,7 @@ public class TopologyBuilder {
     }
 
     /**
-     * add bolt with shuffle Grouping to parent
+     * addOperation bolt with shuffle Grouping to parent
      *
      * @param id
      * @param b

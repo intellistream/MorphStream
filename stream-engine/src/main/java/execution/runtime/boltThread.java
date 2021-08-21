@@ -159,7 +159,7 @@ public class boltThread extends executorThread {
      * Get input from upstream bolts, this is a unique function of bolt thread.
      * TODO: need a txn module to determine the fetch sequence.
      *
-     * @since 0.0.7 we add a tuple txn module so that we can support customized txn rules in Brisk.execution.runtime.tuple fetching.
+     * @since 0.0.7 we addOperation a tuple txn module so that we can support customized txn rules in Brisk.execution.runtime.tuple fetching.
      */
     private Object fetchResult() {
         return scheduler.fetchResults();

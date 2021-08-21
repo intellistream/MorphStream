@@ -172,7 +172,7 @@ public enum VoltType {
     // Is this type visible to JDBC?
     private final boolean m_jdbcVisible;
     // JDBC getTypeInfo values
-    // If we add yet more stuff to this for MySQL or ODBC or something,
+    // If we addOperation yet more stuff to this for MySQL or ODBC or something,
     // it might be time to consider some sort of data-driven type specification
     // mechanism.
     private final int m_dataType;

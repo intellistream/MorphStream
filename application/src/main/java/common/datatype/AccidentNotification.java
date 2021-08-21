@@ -28,7 +28,7 @@ import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
  * An {@link AccidentNotification} represent an alert that must be sent to vehicle approaching an accident.
  * <p/>
  * Accident notifications do have the following attributes: TYPE=1, TIME, EMIT, SEG, VID<br />
- * (the VID attribute is not part of the LRB specification; we need to add it to know the consumer of the notification)
+ * (the VID attribute is not part of the LRB specification; we need to addOperation it to know the consumer of the notification)
  * <ul>
  * <li>TYPE: the tuple type ID</li>
  * <li>TIME: the timestamp of the {@link PositionReport} that triggered the accident notification to be generated (in

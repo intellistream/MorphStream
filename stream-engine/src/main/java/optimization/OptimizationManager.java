@@ -55,7 +55,7 @@ public class OptimizationManager extends executorThread {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        //TODO: add optimization module here.
+        //TODO: addOperation optimization module here.
         //LOG.info("Optimization manager exists");
     }
 

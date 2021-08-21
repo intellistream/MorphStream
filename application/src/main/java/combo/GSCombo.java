@@ -1,4 +1,4 @@
-package common.combo;
+package combo;
 
 import common.bolts.transactional.gs.*;
 import common.collections.Configuration;

@@ -1,9 +1,8 @@
-package common.combo;
+package combo;
 
 import common.CONTROL;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.sink.SINKCombo;
 import common.tools.FastZipfGenerator;
 import components.context.TopologyContext;
 import components.operators.api.TransactionalBolt;
@@ -46,7 +45,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public SINKCombo sink = new SINKCombo();
     protected int totalEventsPerBatch = 0;
     protected int numberOfBatches = 0;
-    TransactionalBolt bolt;//compose the bolt here.
+    protected TransactionalBolt bolt;//compose the bolt here.
     int start_measure;
 
 //    event = new TransactionEvent(
@@ -80,11 +79,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                     sink.start();
             }
             if (counter < num_events_per_thread) {
-
                 Object event = myevents[counter];
-//                if(event==null){
-//                    LOG.error("?");
-//                }
                 long bid = mybids[counter];
                 if (CONTROL.enable_latency_measurement)
                     generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());

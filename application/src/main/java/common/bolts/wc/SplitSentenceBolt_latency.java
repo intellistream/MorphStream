@@ -72,7 +72,7 @@ public class SplitSentenceBolt_latency extends splitBolt {
                     char[] word = new char[len];
                     System.arraycopy(value, index, word, 0, len);
                     collector.emit_nowait(word, msgID, TimeStamp);
-//					ll.add(word);
+//					ll.addOperation(word);
                     index = c + 1;
                 }
             }

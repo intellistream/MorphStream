@@ -517,7 +517,7 @@ public class NonBlockingHashMapLong<TypeV>
      * removal, which removes the corresponding mapping from this map, via the
      * <tt>Iterator.remove</tt>, <tt>Collection.remove</tt>,
      * <tt>removeAll</tt>, <tt>retainAll</tt>, and <tt>clear</tt> operations.
-     * It does not support the <tt>add</tt> or <tt>addAll</tt> operations.
+     * It does not support the <tt>addOperation</tt> or <tt>addAll</tt> operations.
      *
      * <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator that
      * will never throw {@link ConcurrentModificationException}, and guarantees
@@ -564,7 +564,7 @@ public class NonBlockingHashMapLong<TypeV>
      * the corresponding mapping from this map, via the
      * <tt>Iterator.remove</tt>, <tt>Set.remove</tt>, <tt>removeAll</tt>,
      * <tt>retainAll</tt>, and <tt>clear</tt> operations.  It does not support
-     * the <tt>add</tt> or <tt>addAll</tt> operations.
+     * the <tt>addOperation</tt> or <tt>addAll</tt> operations.
      *
      * <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator that
      * will never throw {@link ConcurrentModificationException}, and guarantees
@@ -604,7 +604,7 @@ public class NonBlockingHashMapLong<TypeV>
      * the corresponding mapping from the map, via the
      * <tt>Iterator.remove</tt>, <tt>Set.remove</tt>, <tt>removeAll</tt>,
      * <tt>retainAll</tt>, and <tt>clear</tt> operations.  It does not support
-     * the <tt>add</tt> or <tt>addAll</tt> operations.
+     * the <tt>addOperation</tt> or <tt>addAll</tt> operations.
      *
      * <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator
      * that will never throw {@link ConcurrentModificationException},
@@ -897,7 +897,7 @@ public class NonBlockingHashMapLong<TypeV>
                     break;                // Got it!
                 // get and put must have the same key lookup logic!  Lest 'get' give
                 // up looking too soon.
-                //topmap._reprobes.add(1);
+                //topmap._reprobes.addOperation(1);
                 if (++reprobe_cnt >= reprobe_limit(len)) {
                     // We simply must have a new table to do a 'put'.  At this point a
                     // 'get' will also go to the new table (if any).  We do not need

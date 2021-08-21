@@ -24,8 +24,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static common.CONTROL.enable_states_partition;
@@ -197,23 +195,19 @@ public class OBInitializer extends TableInitilizer {
     }
 
     @Override
-    public Object create_new_event(int num_p, int bid) {
-        int flag = next_decision3();
-        if (flag == 0) {
-            return randomBuyEvents(p, p_bid.clone(), num_p, bid, rnd);
-        } else if (flag == 1) {
-            return randomAlertEvents(p, p_bid.clone(), num_p, bid, rnd);//(AlertEvent) in.getValue(0);
-        } else {
-            return randomToppingEvents(p, p_bid.clone(), num_p, bid, rnd);//(AlertEvent) in.getValue(0);
-        }
+    public boolean Generate() throws IOException {
+//        String event_path = Event_Path
+//                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition);
+//        return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
+        throw new UnsupportedOperationException();
     }
 
+
     @Override
-    public boolean Prepared(String file) throws IOException {
-        String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition);
-        return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
+    protected void Load() throws IOException {
+        throw new UnsupportedOperationException();
     }
+
 
     @Override
     public void store(String file_name) throws IOException {
@@ -283,7 +277,7 @@ public class OBInitializer extends TableInitilizer {
         RecordSchema s = Goods();
         db.createTable(s, "goods");
         try {
-            prepare_input_events("OB_Events");
+            prepare_input_events(config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
         } catch (IOException e) {
             e.printStackTrace();
         }

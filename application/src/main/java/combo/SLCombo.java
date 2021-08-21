@@ -1,4 +1,4 @@
-package common.combo;
+package combo;
 
 import benchmark.DataHolder;
 import common.bolts.transactional.sl.*;
@@ -100,18 +100,30 @@ public class SLCombo extends SPOUTCombo {
     @Override
     public void loadEvent(String filePath, Configuration config, TopologyContext context, OutputCollector collector) {
         int storageIndex = 0;
-        for (int index = taskId; index < DataHolder.events.length; ) {
-            TransactionEvent event = DataHolder.events[index].cloneEvent();
+
+        //Load Transfer Events.
+        for (int index = taskId; index < DataHolder.transferEvents.size(); ) {
+            TxnEvent event = DataHolder.transferEvents.get(index).cloneEvent();
+            mybids[storageIndex] = event.getBid();
+            myevents[storageIndex++] = event;
+
+//            if (storageIndex == DataHolder.transferEvents.size() / tthread)
+            if (storageIndex == num_events_per_thread)
+                break;
+
+            index += tthread * combo_bid_size;
+        }
+
+        //Load Deposit Events.
+        for (int index = taskId; index < DataHolder.depositEvents.size(); ) {
+            TxnEvent event = DataHolder.depositEvents.get(index).cloneEvent();
             mybids[storageIndex] = event.getBid();
             myevents[storageIndex++] = event;
 
             if (storageIndex == num_events_per_thread)
                 break;
 
-            if (storageIndex % batch_number_per_wm == 0)
-                index = (((index / totalEventsPerBatch) + 1) * totalEventsPerBatch) + taskId;
-            else
-                index += tthread * combo_bid_size;
+            index += tthread * combo_bid_size;
         }
         if (enable_debug)
             show_stats();
