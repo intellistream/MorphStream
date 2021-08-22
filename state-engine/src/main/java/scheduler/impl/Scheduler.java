@@ -148,6 +148,9 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
      * @param clean
      */
     public void execute(ExecutionUnit operation, long mark_ID, boolean clean) {
+        if (operation.aborted) {
+            return; // return if the operation is already aborted
+        }
         int success = operation.success[0];
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             Transfer_Fun(operation, mark_ID, clean);
@@ -162,7 +165,7 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
             throw new UnsupportedOperationException();
         }
         if (operation.success[0] == success) {
-            operation.aborted = true;
+            operation.isFailed = true;
         }
     }
 
