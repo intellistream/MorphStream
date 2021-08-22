@@ -7,7 +7,6 @@ import scheduler.impl.Scheduler;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
 import transaction.impl.ordered.MyList;
-import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,7 +99,7 @@ public class GSScheduler extends Scheduler<GSTPGContext, GSOperation, GSOperatio
     }
 
     /**
-     * Used by BFSScheduler.
+     * Used by GSScheduler.
      *
      * @param context
      * @param operation_chain

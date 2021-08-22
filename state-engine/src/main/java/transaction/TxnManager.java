@@ -1,6 +1,5 @@
 package transaction;
 
-import scheduler.impl.IScheduler;
 import scheduler.impl.Scheduler;
 import scheduler.impl.layered.BFSScheduler;
 import scheduler.impl.layered.DFSScheduler;

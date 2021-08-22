@@ -1,10 +1,8 @@
 package scheduler.context;
 
 import scheduler.Request;
-import scheduler.statemanager.PartitionStateManager;
 
 import java.util.ArrayDeque;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
 
 public abstract class SchedulerContext<SchedulingUnit> {

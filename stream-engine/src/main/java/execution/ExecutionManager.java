@@ -11,11 +11,8 @@ import execution.runtime.spoutThread;
 import faulttolerance.Writer;
 import lock.Clock;
 import optimization.OptimizationManager;
-import org.apache.zookeeper.txn.Txn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scheduler.context.DFSLayeredTPGContext;
-import scheduler.context.LayeredTPGContext;
 import transaction.TxnManager;
 
 import java.util.HashMap;

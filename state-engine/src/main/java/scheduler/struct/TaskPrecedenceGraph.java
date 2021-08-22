@@ -11,9 +11,7 @@ import scheduler.struct.gs.GSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.lib.ConcurrentHashMap;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.concurrent.CyclicBarrier;
 
 import static scheduler.impl.Scheduler.getTaskId;
