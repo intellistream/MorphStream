@@ -1,9 +1,11 @@
 package scheduler.signal.oc;
 
-import scheduler.struct.bfs.BFSOperationChain;
+import scheduler.struct.AbstractOperation;
+import scheduler.struct.OperationChain;
 
-public class OnRootSignal extends OperationChainSignal {
-    public OnRootSignal(BFSOperationChain targetOperationChain) {
+public class OnRootSignal<OP extends AbstractOperation, OC extends OperationChain<OP>>
+        extends OperationChainSignal<OP, OC> {
+    public OnRootSignal(OC targetOperationChain) {
         super(targetOperationChain);
     }
 }

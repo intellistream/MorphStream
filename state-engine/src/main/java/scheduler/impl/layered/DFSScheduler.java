@@ -37,7 +37,7 @@ public class DFSScheduler extends LayeredScheduler<DFSLayeredTPGContext, DFSOper
             ProcessedToNextLevel(context);
             oc = Next(context);
         }
-        while (oc != null && oc.hasParents()) ; // Busy-Wait for dependency resolution
+        while (oc != null && oc.hasParents()); // Busy-Wait for dependency resolution
         DISTRIBUTE(oc, context);
     }
 

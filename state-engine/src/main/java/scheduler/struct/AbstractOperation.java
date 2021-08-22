@@ -52,20 +52,6 @@ public abstract class AbstractOperation {
         this.bid = bid;
     }
 
-    /**
-     * TODO: make it better.
-     * It has an assumption that no duplicate keys for the same BID. --> This helps a lot!
-     *
-     * @param operation
-     * @return
-     */
-    public int compareTo(BFSOperation operation) {
-        if (this.bid == (operation.bid)) {
-            return this.d_record.getID() - operation.d_record.getID();
-        } else
-            return Long.compare(this.bid, operation.bid);
-    }
-
     @Override
     public String toString() {
         return String.valueOf(bid);

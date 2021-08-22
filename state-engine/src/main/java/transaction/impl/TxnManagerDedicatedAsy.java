@@ -56,7 +56,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 scheduler.AddContext(thisTaskId, context);
                 break;
             case GS: // TODO
-                context = new GSLayeredTPGContext(thisTaskId, thread_count);
+                context = new GSTPGContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
             default:

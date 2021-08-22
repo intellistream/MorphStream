@@ -1,11 +1,9 @@
 package scheduler.struct;
 
+import scheduler.struct.gs.GSOperationChain;
 import transaction.impl.ordered.MyList;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,7 +18,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
 
-    private final MyList<ExecutionUnit> operations;
+    protected final MyList<ExecutionUnit> operations;
     protected final AtomicInteger ocFdParentsCount;
     // OperationChainKey -> OperationChain
     protected final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocFdParents;
@@ -108,7 +106,6 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         else
             return -1;
     }
-
 
     public boolean hasParents() {
         return ocFdParentsCount.get() > 0;

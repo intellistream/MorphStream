@@ -4,6 +4,7 @@ import scheduler.impl.IScheduler;
 import scheduler.impl.Scheduler;
 import scheduler.impl.layered.BFSScheduler;
 import scheduler.impl.layered.DFSScheduler;
+import scheduler.impl.nonlayered.GSScheduler;
 
 /**
  * Every thread has its own TxnManager.
@@ -19,6 +20,9 @@ public abstract class TxnManager implements ITxnManager {
                 break;
             case "DFS": // TODO
                 scheduler = new DFSScheduler(threadCount, numberOfStates);
+                break;
+            case "GS":
+                scheduler = new GSScheduler(threadCount, numberOfStates);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);

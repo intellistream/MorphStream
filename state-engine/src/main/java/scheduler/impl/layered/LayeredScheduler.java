@@ -10,7 +10,7 @@ import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 
-public abstract class LayeredScheduler<Context extends LayeredTPGContext, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain>
+public abstract class LayeredScheduler<Context extends LayeredTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>>
         extends Scheduler<Context, ExecutionUnit, SchedulingUnit> {
 
     public LayeredScheduler(int totalThreads, int NUM_ITEMS) {
@@ -49,14 +49,6 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext, Execut
             execute(operation, mark_ID, false);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
-//        ExecutionUnit operation = operation_chain.pollFirst();
-//        while (operation != null) {
-//            ExecutionUnit finalOperation = operation;
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-//            execute(finalOperation, mark_ID, false);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-//            operation = operation_chain.pollFirst();
-//        }
     }
 
     /**
