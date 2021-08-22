@@ -129,17 +129,6 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
         return operationChainKey;
     }
 
-    public DFSOperationChain getOC() {
-        if (oc == null) {
-            throw new RuntimeException("the returned oc cannot be null");
-        }
-        return oc;
-    }
-
-    public void setOC(DFSOperationChain operationChain) {
-        this.oc = operationChain;
-    }
-
     public <T extends AbstractOperation> Queue<T> getChildren(DependencyType type) {
         if (type.equals(DependencyType.FD)) {
             return (Queue<T>) fd_children;
@@ -149,16 +138,6 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
     }
 
 
-    public void addParent(DFSOperation operation, DependencyType type) {
-        if (type.equals(DependencyType.FD)) {
-            this.fd_parents.add(operation);
-            // get the operation chain and update the ld dependencies
-//            this.getOC().addParentOrChild(operation.getOC(), MetaTypes.DependencyType.FD, false);
-        } else {
-            throw new RuntimeException("unsupported dependency type parent");
-        }
-    }
-
     public void addChild(DFSOperation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
             this.fd_children.add(operation);
@@ -166,11 +145,6 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
         } else {
             throw new RuntimeException("unsupported dependency type children");
         }
-    }
-
-    public void stateTransition(OperationStateType state) {
-        if (enable_log) LOG.debug(this + " : state transit " + operationState + " -> " + state);
-        operationState.getAndSet(state);
     }
 
     public OperationStateType getOperationState() {

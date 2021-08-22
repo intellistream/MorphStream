@@ -1,26 +1,27 @@
 package scheduler.statemanager;
 
+import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.signal.oc.OnExecutedSignal;
 import scheduler.signal.oc.OnParentExecutedSignal;
 import scheduler.signal.oc.OnRootSignal;
 import scheduler.signal.oc.OperationChainSignal;
 import scheduler.struct.MetaTypes.DependencyType;
-import scheduler.struct.bfs.BFSOperationChain;
+import scheduler.struct.OperationChain;
+import scheduler.struct.gs.GSOperation;
+import scheduler.struct.gs.GSOperationChain;
 
-import java.util.ArrayList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Local to every TPGscheduler context.
+ * Local to every TPGScheduler context.
  */
-public class PartitionStateManager implements Runnable, OperationChainStateListener {
-    public final ArrayList<String> partition; //  list of states being responsible for
-    public final Queue<OperationChainSignal> ocSignalQueue;
+public class PartitionStateManager implements Runnable, OperationChainStateListener<GSOperation, GSOperationChain> {
+    public final Queue<OperationChainSignal<GSOperation, GSOperationChain>> ocSignalQueue;
+    private GSScheduler.ExecutableTaskListener executableTaskListener;
 
     public PartitionStateManager() {
         this.ocSignalQueue = new ConcurrentLinkedQueue<>();
-        this.partition = new ArrayList<>();
     }
 
     public void run() {
@@ -29,50 +30,62 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
         }
     }
 
+    @Override
+    public void onOcRootStart(GSOperationChain operationChain) {
+        ocSignalQueue.add(new OnRootSignal<>(operationChain));
+    }
+
+    @Override
+    public void onOcExecuted(GSOperationChain operationChain) {
+        ocSignalQueue.add(new OnExecutedSignal<>(operationChain));
+    }
+
+    @Override
+    public void onOcParentExecuted(GSOperationChain operationChain, DependencyType dependencyType) {
+        ocSignalQueue.add(new OnParentExecutedSignal<>(operationChain, dependencyType));
+    }
+
     public void handleStateTransitions() {
-        OperationChainSignal ocSignal = ocSignalQueue.poll();
+        OperationChainSignal<GSOperation, GSOperationChain> ocSignal = ocSignalQueue.poll();
         while (ocSignal != null) {
-            BFSOperationChain operationChain = ocSignal.getTargetOperationChain();
+            GSOperationChain operationChain = ocSignal.getTargetOperationChain();
             if (ocSignal instanceof OnRootSignal) {
                 ocRootStartTransition(operationChain);
             } else if (ocSignal instanceof OnExecutedSignal) {
                 ocExecutedTransition(operationChain);
             } else if (ocSignal instanceof OnParentExecutedSignal) {
-                ocParentExecutedTransition(operationChain,
-                        ((OnParentExecutedSignal) ocSignal).getDependencyType());
+                ocParentExecutedTransition(operationChain
+                );
             }
             ocSignal = ocSignalQueue.poll();
         }
     }
 
-
-    /** OC related listener method and transitions **/
-
-    @Override
-    public void onOcRootStart(BFSOperationChain operationChain) {
-        ocSignalQueue.add(new OnRootSignal(operationChain));
+    private void ocRootStartTransition(GSOperationChain operationChain) {
+        executableTaskListener.onExecutable(operationChain);
     }
 
-    @Override
-    public void onOcExecuted(BFSOperationChain operationChain) {
-        ocSignalQueue.add(new OnExecutedSignal(operationChain));
-    }
 
-    @Override
-    public void onOcParentExecuted(BFSOperationChain operationChain, DependencyType dependencyType) {
-        ocSignalQueue.add(new OnParentExecutedSignal(operationChain, dependencyType));
-    }
-
-    private void ocRootStartTransition(BFSOperationChain operationChain) {
-    }
-
-    private void ocExecutedTransition(BFSOperationChain operationChain) {
+    private void ocExecutedTransition(GSOperationChain operationChain) {
         operationChain.isExecuted = true;
+        for (GSOperationChain child : operationChain.getFDChildren()) {
+            child.context.partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
+        }
+//        for (OperationChain<GSOperation> child : operationChain.getFDParents()) { // TODO: update parents children set for priority adjustment
+//            ((GSOperationChain) child).context.partitionStateManager.onOcParentExecuted((GSOperationChain) child, DependencyType.FD);
+//        }
+        executableTaskListener.onOCFinalized(operationChain);
     }
 
-    private void ocParentExecutedTransition(BFSOperationChain operationChain, DependencyType dependencyType) {
+    private void ocParentExecutedTransition(GSOperationChain operationChain) {
+        operationChain.updateDependency();
+        if (!operationChain.hasParents()) {
+            executableTaskListener.onExecutable(operationChain); // TODO: to generalize this part
+        }
     }
 
-    public void initialize() {
+    public void initialize(GSScheduler.ExecutableTaskListener executableTaskListener) {
+        // 1. set listener
+        this.executableTaskListener = executableTaskListener;
     }
 }

@@ -6,9 +6,10 @@ import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
 import scheduler.Request;
-import scheduler.context.*;
-import scheduler.impl.layered.BFSScheduler;
-import scheduler.impl.layered.DFSScheduler;
+import scheduler.context.BFSLayeredTPGContext;
+import scheduler.context.DFSLayeredTPGContext;
+import scheduler.context.GSTPGContext;
+import scheduler.context.SchedulerContext;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
@@ -20,7 +21,6 @@ import transaction.function.Function;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.kMaxAccessNum;
@@ -56,7 +56,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 scheduler.AddContext(thisTaskId, context);
                 break;
             case GS: // TODO
-                context = new GSLayeredTPGContext(thisTaskId, thread_count);
+                context = new GSTPGContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
             default:

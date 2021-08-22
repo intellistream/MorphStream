@@ -53,4 +53,19 @@ public class BFSOperation extends AbstractOperation implements Comparable<BFSOpe
             TableRecord[] condition_records, int[] success) {
         super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid);
     }
+
+    /**
+     * TODO: make it better.
+     * It has an assumption that no duplicate keys for the same BID. --> This helps a lot!
+     *
+     * @param operation
+     * @return
+     */
+    @Override
+    public int compareTo(BFSOperation operation) {
+        if (this.bid == (operation.bid)) {
+            return this.d_record.getID() - operation.d_record.getID();
+        } else
+            return Long.compare(this.bid, operation.bid);
+    }
 }

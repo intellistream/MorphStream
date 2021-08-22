@@ -20,7 +20,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
 
-    private final MyList<ExecutionUnit> operations;
+    protected final MyList<ExecutionUnit> operations;
     protected final AtomicInteger ocFdParentsCount;
     // OperationChainKey -> OperationChain
     protected final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocFdParents;
@@ -108,7 +108,6 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         else
             return -1;
     }
-
 
     public boolean hasParents() {
         return ocFdParentsCount.get() > 0;

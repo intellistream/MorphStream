@@ -6,6 +6,7 @@ import scheduler.struct.bfs.BFSOperationChain;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
@@ -15,8 +16,6 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     public int currentLevelIndex;
     public int totalThreads;
     public int maxLevel;//total number of operations to process per thread.
-    public int scheduledOPs;//current number of operations processed per thread.
-    public int totalOsToSchedule;//total number of operations to process per thread.
     public SchedulingUnit ready_oc;//ready operation chain per thread.
     public ArrayDeque<ExecutionUnit> abortedOperations;//aborted operations per thread.
     public boolean aborted;//if any operation is aborted during processing.
@@ -43,11 +42,6 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
         return (SchedulingUnit) new BFSOperationChain(tableName, pKey);
     }
 
-
-    public SchedulingUnit getReady_oc() {
-        return ready_oc;
-    }
-
     public ArrayList<SchedulingUnit> OCSCurrentLayer() {
         return allocatedLayeredOCBucket.get(currentLevel);
     }
@@ -57,4 +51,27 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
         return scheduledOPs == totalOsToSchedule && !aborted;
     }
 
+
+    /**
+     * Build buckets with submitted ocs.
+     * Return the local maximal dependency level.
+     *
+     * @param ocs
+     * @return
+     */
+    public void buildBucketPerThread(Collection<SchedulingUnit> ocs) {
+        int localMaxDLevel = 0;
+        for (SchedulingUnit oc : ocs) {
+            oc.updateDependencyLevel();
+            int dependencyLevel = oc.getDependencyLevel();
+            if (localMaxDLevel < dependencyLevel)
+                localMaxDLevel = dependencyLevel;
+            if (!allocatedLayeredOCBucket.containsKey(dependencyLevel))
+                allocatedLayeredOCBucket.put(dependencyLevel, new ArrayList<>());
+            allocatedLayeredOCBucket.get(dependencyLevel).add(oc);
+        }
+//        if (enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
+        this.maxLevel = localMaxDLevel;
+//        return localMaxDLevel;
+    }
 };
