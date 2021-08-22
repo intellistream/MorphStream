@@ -2,37 +2,32 @@ package scheduler.context;
 
 import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.statemanager.PartitionStateManager;
-import scheduler.struct.AbstractOperation;
-import scheduler.struct.OperationChain;
-import scheduler.struct.bfs.BFSOperationChain;
-import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
 
 import java.util.ArrayDeque;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class GSTPGContext extends SchedulerContext<GSOperationChain> {
 
     public final PartitionStateManager partitionStateManager;
-    public ConcurrentLinkedDeque<GSOperationChain> IsolatedOC;
-    public ConcurrentLinkedDeque<GSOperationChain> OCwithChildren;
+//    public ConcurrentLinkedDeque<GSOperationChain> IsolatedOC;
+//    public ConcurrentLinkedDeque<GSOperationChain> OCwithChildren;
+    public ArrayDeque<GSOperationChain> IsolatedOC;
+    public ArrayDeque<GSOperationChain> OCwithChildren;
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
     public GSTPGContext(int thisThreadId, int totalThreads) {
         super(thisThreadId);
         partitionStateManager = new PartitionStateManager();
-        IsolatedOC = new ConcurrentLinkedDeque<>();
-        OCwithChildren = new ConcurrentLinkedDeque<>();
+        IsolatedOC = new ArrayDeque<>();
+        OCwithChildren = new ArrayDeque<>();
         requests = new ArrayDeque<>();
     }
 
     @Override
     protected void reset() {
-        IsolatedOC = new ConcurrentLinkedDeque<>();
-        OCwithChildren = new ConcurrentLinkedDeque<>();
+        IsolatedOC = new ArrayDeque<>();
+        OCwithChildren = new ArrayDeque<>();
         totalOsToSchedule = 0;
         scheduledOPs = 0;
     }
