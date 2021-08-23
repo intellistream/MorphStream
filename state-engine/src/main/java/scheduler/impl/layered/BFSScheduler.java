@@ -1,5 +1,7 @@
 package scheduler.impl.layered;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContext;
@@ -10,6 +12,8 @@ import utils.SOURCE_CONTROL;
 import java.util.ArrayList;
 import java.util.List;
 
+import static common.CONTROL.enable_log;
+
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:
  * 1. explore dependencies in TPG, and find out the ready/speculative operations
@@ -18,6 +22,7 @@ import java.util.List;
  * It's a shared data structure!
  */
 public class BFSScheduler extends LayeredScheduler<BFSLayeredTPGContext, BFSOperation, BFSOperationChain> {
+    private static final Logger LOG = LoggerFactory.getLogger(BFSScheduler.class);
 
     public BFSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -32,17 +37,15 @@ public class BFSScheduler extends LayeredScheduler<BFSLayeredTPGContext, BFSOper
     public void EXPLORE(BFSLayeredTPGContext context) {
         BFSOperationChain next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
-            //Check if there's any aborts
-            if (needAbortHandling.get()) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreadsAbort();
-                System.out.println("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
-                abortHandling(context);
-            }
             while (next == null) {
-                ProcessedToNextLevel(context);
-                next = Next(context);
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 //all threads come to the current level.
+                if (needAbortHandling.get()) {
+                    if(enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
+                    abortHandling(context);
+                }
+                ProcessedToNextLevel(context);
+                next = Next(context);
             }
         }
         DISTRIBUTE(next, context);

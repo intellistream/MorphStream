@@ -1,5 +1,7 @@
 package scheduler.impl.layered;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.context.LayeredTPGContext;
 import scheduler.impl.Scheduler;
@@ -12,12 +14,13 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import static common.CONTROL.enable_log;
 import static java.lang.Integer.min;
 
 public abstract class LayeredScheduler<Context extends LayeredTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>>
         extends Scheduler<Context, ExecutionUnit, SchedulingUnit> {
+    private static final Logger LOG = LoggerFactory.getLogger(LayeredScheduler.class);
 
     public int targetRollbackLevel = 0;//shared data structure.
 
@@ -120,6 +123,7 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
 
     private void ResumeExecution(Context context) {
         context.rollbackLevel = -1;
+        context.isRollbacked = false;
 //        if (context.thisThreadId == 0) { // TODO: what should we do to optimize this part?
         if (needAbortHandling.compareAndSet(true, false)) {
             failedOperations.clear();
@@ -147,6 +151,8 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         if (context.rollbackLevel == -1 || context.rollbackLevel > context.currentLevel) { // the thread does not contain aborted operations
             context.rollbackLevel = context.currentLevel;
         }
+        context.isRollbacked = true;
+        if (enable_log) LOG.debug("enter this method: " + context.thisThreadId);
     }
 
     /**
@@ -173,13 +179,14 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         if (context.thisThreadId == 0) {
             targetRollbackLevel = Integer.MAX_VALUE;
             for (int i = 0; i < context.totalThreads; i++) { // find the first level that contains aborted operations
+                if (enable_log) LOG.debug("is thread rollbacked: " + threadToContextMap.get(i).thisThreadId + " | " + threadToContextMap.get(i).isRollbacked);
                 targetRollbackLevel = min(targetRollbackLevel, threadToContextMap.get(i).rollbackLevel);
             }
         }
     }
 
     private void SetRollbackLevel(Context context) {
-        System.out.println("++++++ rollback at: " + targetRollbackLevel);
+        if (enable_log) LOG.debug("++++++ rollback at: " + targetRollbackLevel);
         context.rollbackLevel = targetRollbackLevel;
     }
 
@@ -189,7 +196,8 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
             context.scheduledOPs -= getNumOPsByLevel(context, level);
         }
         context.currentLevelIndex = 0;
-        context.currentLevel = context.rollbackLevel - 1;
+        // it needs to rollback to the level -1, because aborthandling has immediately followed up with ProcessedToNextLevel
+        context.currentLevel = context.rollbackLevel-1;
     }
 
     private int getNumOPsByLevel(Context context, int level) {

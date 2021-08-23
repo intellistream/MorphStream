@@ -18,6 +18,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     public int maxLevel;//total number of operations to process per thread.
     public SchedulingUnit ready_oc;//ready operation chain per thread.
     public int rollbackLevel = -1; // initialized to 0 if thread not required to be rollbacked.
+    public boolean isRollbacked = false; // initialized to 0 if thread not required to be rollbacked.
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
