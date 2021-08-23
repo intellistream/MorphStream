@@ -6,6 +6,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.enable_log;
 import static common.IRunner.CCOption_TStream;
@@ -15,7 +16,7 @@ import static profiler.Metrics.*;
 @lombok.extern.slf4j.Slf4j
 public class MeasureTools {
 
-    public static int counter = 0;
+    public static AtomicInteger counter = new AtomicInteger(0);
 
     public static void Initialize() {
         Metrics.TxnRuntime.Initialize();
@@ -185,7 +186,7 @@ public class MeasureTools {
     }
 
     public static void BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(int thread_id) {
-        counter++;
+        counter.incrementAndGet();
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_SCHEDULE_USEFUL_START(thread_id);
     }

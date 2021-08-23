@@ -345,7 +345,7 @@ public class SLInitializer extends TableInitilizer {
             int accountTransfer = 100;
             int accountEntryTransfer = 100;
 //            if (count == 500 || count == 5000 || count == 50000) {
-            if (count == 50) {
+            if (count == 25 || count == 50) {
                 accountTransfer = 100000000;
                 accountEntryTransfer = 100000000;
             }

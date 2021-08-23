@@ -31,9 +31,11 @@ public class BFSScheduler extends LayeredScheduler<BFSLayeredTPGContext, BFSOper
     @Override
     public void EXPLORE(BFSLayeredTPGContext context) {
         BFSOperationChain next = Next(context);
-        if (next == null && !context.finished()) {//current level is all processed at the current thread.
+        if (next == null && !context.finished()) { //current level is all processed at the current thread.
             //Check if there's any aborts
-            if (context.needAbortHandling) {
+            if (needAbortHandling.get()) {
+                SOURCE_CONTROL.getInstance().waitForOtherThreadsAbort();
+                System.out.println("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
                 abortHandling(context);
             }
             while (next == null) {

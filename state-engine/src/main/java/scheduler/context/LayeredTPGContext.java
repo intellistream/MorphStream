@@ -17,8 +17,6 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     public int totalThreads;
     public int maxLevel;//total number of operations to process per thread.
     public SchedulingUnit ready_oc;//ready operation chain per thread.
-    public ArrayDeque<ExecutionUnit> abortedOperations;//aborted operations per thread.
-    public boolean needAbortHandling = false;//if any operation is aborted during processing.
     public int rollbackLevel = -1; // initialized to 0 if thread not required to be rollbacked.
 
     //TODO: Make it flexible to accept other applications.
@@ -27,7 +25,6 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
         super(thisThreadId);
         this.totalThreads = totalThreads;
         this.allocatedLayeredOCBucket = new HashMap<>();
-        this.abortedOperations = new ArrayDeque<>();
         requests = new ArrayDeque<>();
     }
 
@@ -49,7 +46,8 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
 
     @Override
     public boolean finished() {
-        return scheduledOPs == totalOsToSchedule && !needAbortHandling;
+//        return scheduledOPs == totalOsToSchedule && !needAbortHandling; // not sure whether we need to check this condition.
+        return scheduledOPs == totalOsToSchedule;
     }
 
 

@@ -10,16 +10,23 @@ import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Integer.min;
 
 public abstract class LayeredScheduler<Context extends LayeredTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>>
         extends Scheduler<Context, ExecutionUnit, SchedulingUnit> {
 
-    public int targetRollbackLevel;//shared data structure.
+    public int targetRollbackLevel = 0;//shared data structure.
+
+    public ConcurrentLinkedDeque<ExecutionUnit> failedOperations;//aborted operations per thread.
+    public AtomicBoolean needAbortHandling = new AtomicBoolean(false);//if any operation is aborted during processing.
 
     public LayeredScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
+        this.failedOperations = new ConcurrentLinkedDeque<>();
     }
 
     @Override
@@ -53,8 +60,8 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
             if (operation.isFailed && !operation.aborted) {
-                context.abortedOperations.push(operation);
-                context.needAbortHandling = true;
+                failedOperations.push(operation);
+                needAbortHandling.compareAndSet(false,true);
             }
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
@@ -112,9 +119,12 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
     }
 
     private void ResumeExecution(Context context) {
-        context.needAbortHandling = false;
         context.rollbackLevel = -1;
-        context.abortedOperations.clear();
+//        if (context.thisThreadId == 0) { // TODO: what should we do to optimize this part?
+        if (needAbortHandling.compareAndSet(true, false)) {
+            failedOperations.clear();
+        }
+//        }
     }
 
     //TODO: mark operations of aborted transaction to be aborted.
@@ -130,18 +140,13 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
                     markAny |= _MarkOperationsToAbort(context, operation);
                 }
             }
-//            if (!markAny) {//current layer no one being marked.
-//                context.rollbackLevel++;
-//            }
-            if (markAny) { // current layer contains operations to abort, try to abort the this layer.
+            if (markAny && context.rollbackLevel == -1) { // current layer contains operations to abort, try to abort this layer.
                 context.rollbackLevel = curLevel;
-                break;
             }
         }
-        if (context.rollbackLevel == -1) { // the thread does not contain aborted operations
+        if (context.rollbackLevel == -1 || context.rollbackLevel > context.currentLevel) { // the thread does not contain aborted operations
             context.rollbackLevel = context.currentLevel;
         }
-        System.out.println(context.thisThreadId + " | " + context.rollbackLevel);
     }
 
     /**
@@ -155,9 +160,9 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         long bid = operation.bid;
         boolean markAny = false;
         //identify bids to be aborted.
-        for (ExecutionUnit op : context.abortedOperations) {
-            if (bid == op.bid) {
-                op.aborted = true;
+        for (ExecutionUnit failedOp : failedOperations) {
+            if (bid == failedOp.bid) {
+                operation.aborted = true;
                 markAny = true;
             }
         }
@@ -180,11 +185,11 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
 
     private void RollbackToCorrectLayerForRedo(Context context) {
         int level;
-        for (level = context.rollbackLevel; level < context.currentLevel; level++) {
+        for (level = context.rollbackLevel; level <= context.currentLevel; level++) {
             context.scheduledOPs -= getNumOPsByLevel(context, level);
         }
         context.currentLevelIndex = 0;
-        context.currentLevel = context.rollbackLevel;
+        context.currentLevel = context.rollbackLevel - 1;
     }
 
     private int getNumOPsByLevel(Context context, int level) {

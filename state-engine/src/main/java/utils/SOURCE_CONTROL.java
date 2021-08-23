@@ -31,6 +31,7 @@ public class SOURCE_CONTROL {
         endBarrier = new CyclicBarrier(number_threads);
         finalEndBarrier = new CyclicBarrier(number_threads);
         dLevelEndBarrier = new Phaser(number_threads);
+        Phaser abortBarrier = new Phaser(number_threads);
         iteration = new HashMap<>();
         for (int i = 0; i < number_threads; i++) {
             iteration.put(i, 0);
@@ -68,6 +69,15 @@ public class SOURCE_CONTROL {
 
     public void waitForOtherThreads() {
         try {
+            dLevelEndBarrier.arriveAndAwaitAdvance();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void waitForOtherThreadsAbort() {
+        try {
+            System.out.println("phase: " + dLevelEndBarrier.getPhase());
             dLevelEndBarrier.arriveAndAwaitAdvance();
         } catch (Exception ex) {
             ex.printStackTrace();
