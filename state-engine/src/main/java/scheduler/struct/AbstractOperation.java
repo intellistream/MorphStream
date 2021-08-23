@@ -34,8 +34,8 @@ public abstract class AbstractOperation {
     public volatile TableRecord[] condition_records;
     public Condition condition;
     public int[] success;
-    public boolean isFailed = false; // whether the operation is failed, this is used to detect transaction abort
-    public boolean aborted = false; // whether the operation is aborted, this is used to mark the operation as aborted to avoid re-execute
+    // an operation id to indicate how many operations in front of this operation in the same transaction.
+    public boolean aborted;
 
     public AbstractOperation(Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
                              TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid) {
