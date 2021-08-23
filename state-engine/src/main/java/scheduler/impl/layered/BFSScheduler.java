@@ -34,7 +34,6 @@ public class BFSScheduler extends LayeredScheduler<BFSLayeredTPGContext, BFSOper
         if (next == null && !context.finished()) {//current level is all processed at the current thread.
             //Check if there's any aborts
             if (context.needAbortHandling) {
-                System.out.println("++++++ aborted at level: " + context.currentLevel);
                 abortHandling(context);
             }
             while (next == null) {

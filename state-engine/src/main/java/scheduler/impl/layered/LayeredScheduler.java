@@ -108,7 +108,13 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
         SetRollbackLevel(context);
         RollbackToCorrectLayerForRedo(context);
+        ResumeExecution(context);
+    }
+
+    private void ResumeExecution(Context context) {
         context.needAbortHandling = false;
+        context.rollbackLevel = -1;
+        context.abortedOperations.clear();
     }
 
     //TODO: mark operations of aborted transaction to be aborted.
@@ -132,7 +138,9 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
                 break;
             }
         }
-        context.rollbackLevel = min(context.rollbackLevel, context.currentLevel);
+        if (context.rollbackLevel == -1) { // the thread does not contain aborted operations
+            context.rollbackLevel = context.currentLevel;
+        }
         System.out.println(context.thisThreadId + " | " + context.rollbackLevel);
     }
 
@@ -159,14 +167,14 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
     private void IdentifyRollbackLevel(Context context) {
         if (context.thisThreadId == 0) {
             targetRollbackLevel = Integer.MAX_VALUE;
-            for (int i = 0; i < context.totalThreads; i++) {
+            for (int i = 0; i < context.totalThreads; i++) { // find the first level that contains aborted operations
                 targetRollbackLevel = min(targetRollbackLevel, threadToContextMap.get(i).rollbackLevel);
             }
         }
     }
 
     private void SetRollbackLevel(Context context) {
-        System.out.println("rollback at: " + targetRollbackLevel);
+        System.out.println("++++++ rollback at: " + targetRollbackLevel);
         context.rollbackLevel = targetRollbackLevel;
     }
 
@@ -177,12 +185,11 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         }
         context.currentLevelIndex = 0;
         context.currentLevel = context.rollbackLevel;
-        context.rollbackLevel = 0;
     }
 
     private int getNumOPsByLevel(Context context, int level) {
         int ops = 0;
-        if (context.allocatedLayeredOCBucket.containsKey(level)) {
+        if (context.allocatedLayeredOCBucket.containsKey(level)) { // oc level may not be sequential
             for (SchedulingUnit operationChain : context.allocatedLayeredOCBucket.get(level)) {
                 ops += operationChain.getOperations().size();
             }

@@ -19,7 +19,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     public SchedulingUnit ready_oc;//ready operation chain per thread.
     public ArrayDeque<ExecutionUnit> abortedOperations;//aborted operations per thread.
     public boolean needAbortHandling = false;//if any operation is aborted during processing.
-    public int rollbackLevel;
+    public int rollbackLevel = -1; // initialized to 0 if thread not required to be rollbacked.
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
