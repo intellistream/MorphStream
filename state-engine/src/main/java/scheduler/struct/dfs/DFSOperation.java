@@ -33,6 +33,7 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
     // operation id under a transaction.
     // an operation id to indicate how many operations in front of this operation in the same transaction.
     public int txn_op_id = 0;
+    public boolean isFailed;
     public String name;
 
     private DFSOperationChain oc; // used for dependency resolved notification under greedy smart

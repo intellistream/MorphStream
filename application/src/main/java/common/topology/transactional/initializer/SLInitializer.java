@@ -349,7 +349,6 @@ public class SLInitializer extends TableInitilizer {
                 accountTransfer = 100000000;
                 accountEntryTransfer = 100000000;
             }
-
             count++;
             TransactionEvent event = new TransactionEvent(
                     Integer.parseInt(split[0]), //bid
