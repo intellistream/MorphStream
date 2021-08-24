@@ -9,8 +9,6 @@ import java.util.ArrayDeque;
 public class GSTPGContext extends SchedulerContext<GSOperationChain> {
 
     public final PartitionStateManager partitionStateManager;
-//    public ConcurrentLinkedDeque<GSOperationChain> IsolatedOC;
-//    public ConcurrentLinkedDeque<GSOperationChain> OCwithChildren;
     public ArrayDeque<GSOperationChain> IsolatedOC;
     public ArrayDeque<GSOperationChain> OCwithChildren;
 

@@ -149,7 +149,6 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
      */
     public void execute(ExecutionUnit operation, long mark_ID, boolean clean) {
         if (operation.aborted) {
-            System.out.println(operation);
             return; // return if the operation is already aborted
         }
 

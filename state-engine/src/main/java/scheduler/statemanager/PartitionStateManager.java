@@ -1,12 +1,8 @@
 package scheduler.statemanager;
 
 import scheduler.impl.nonlayered.GSScheduler;
-import scheduler.signal.oc.OnExecutedSignal;
-import scheduler.signal.oc.OnParentExecutedSignal;
-import scheduler.signal.oc.OnRootSignal;
-import scheduler.signal.oc.OperationChainSignal;
+import scheduler.signal.oc.*;
 import scheduler.struct.MetaTypes.DependencyType;
-import scheduler.struct.OperationChain;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
 
@@ -45,6 +41,14 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
         ocSignalQueue.add(new OnParentExecutedSignal<>(operationChain, dependencyType));
     }
 
+    public void onOcNeedAbortHandling(GSOperationChain operationChain, GSOperation abortedOp) {
+        ocSignalQueue.add(new OnNeedAbortHandlingSignal<>(operationChain, abortedOp));
+    }
+
+    public void onOcRollbackAndRedo(GSOperationChain operationChain) {
+        ocSignalQueue.add(new OnRollbackAndRedoSignal<>(operationChain));
+    }
+
     public void handleStateTransitions() {
         OperationChainSignal<GSOperation, GSOperationChain> ocSignal = ocSignalQueue.poll();
         while (ocSignal != null) {
@@ -54,33 +58,77 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
             } else if (ocSignal instanceof OnExecutedSignal) {
                 ocExecutedTransition(operationChain);
             } else if (ocSignal instanceof OnParentExecutedSignal) {
-                ocParentExecutedTransition(operationChain
-                );
+                ocParentExecutedTransition(operationChain);
+            } else if (ocSignal instanceof OnNeedAbortHandlingSignal) {
+                ocAbortHandlingTransition(operationChain, ((OnNeedAbortHandlingSignal<GSOperation, GSOperationChain>) ocSignal).getOperation());
+            } else if (ocSignal instanceof OnRollbackAndRedoSignal) {
+                ocRollbackAndRedoTransition(operationChain);
             }
             ocSignal = ocSignalQueue.poll();
         }
     }
 
     private void ocRootStartTransition(GSOperationChain operationChain) {
-        executableTaskListener.onExecutable(operationChain);
+        executableTaskListener.onOCExecutable(operationChain);
     }
 
 
     private void ocExecutedTransition(GSOperationChain operationChain) {
-        operationChain.isExecuted = true;
-        for (GSOperationChain child : operationChain.getFDChildren()) {
-            child.context.partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
+        if (!operationChain.needAbortHandling) {
+            operationChain.isExecuted = true;
+            for (GSOperationChain child : operationChain.getFDChildren()) {
+                child.context.partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
+            }
+            executableTaskListener.onOCFinalized(operationChain);
+        } else {
+            scheduleAbortHandling(operationChain);
         }
-//        for (OperationChain<GSOperation> child : operationChain.getFDParents()) { // TODO: update parents children set for priority adjustment
-//            ((GSOperationChain) child).context.partitionStateManager.onOcParentExecuted((GSOperationChain) child, DependencyType.FD);
-//        }
-        executableTaskListener.onOCFinalized(operationChain);
+    }
+
+    private void scheduleAbortHandling(GSOperationChain operationChain) {
+        // mark aborted operations and notify OC contains header operation to abort
+        // notify children to rollback and redo if it is executed
+        for (GSOperation failedOp : operationChain.failedOperations) {
+            for (GSOperation abortedOp : failedOp.getHeader().getDescendants()) {
+                abortedOp.context.partitionStateManager.onOcNeedAbortHandling(abortedOp.getOC(), abortedOp);
+            }
+        }
+        operationChain.needAbortHandling = false;
+        operationChain.failedOperations.clear();
+    }
+
+    private void ocAbortHandlingTransition(GSOperationChain operationChain, GSOperation abortedOp) {
+        abortedOp.aborted = true;
+        if (operationChain.isExecuted) {
+            operationChain.isExecuted = false;
+            notifyChildrenRollbackAndRedo(operationChain);
+            executableTaskListener.onOCRollbacked(operationChain);
+        }
+        if (!operationChain.hasParents()) {
+            executableTaskListener.onOCExecutable(operationChain);
+        }
     }
 
     private void ocParentExecutedTransition(GSOperationChain operationChain) {
         operationChain.updateDependency();
         if (!operationChain.hasParents()) {
-            executableTaskListener.onExecutable(operationChain); // TODO: to generalize this part
+            executableTaskListener.onOCExecutable(operationChain);
+        }
+    }
+
+    private void ocRollbackAndRedoTransition(GSOperationChain operationChain) {
+        if (operationChain.isExecuted) {
+            operationChain.isExecuted = false;
+            operationChain.rollbackDependency();
+            notifyChildrenRollbackAndRedo(operationChain);
+            executableTaskListener.onOCRollbacked(operationChain);
+        }
+    }
+
+    private void notifyChildrenRollbackAndRedo(GSOperationChain operationChain) {
+        // notify children to rollback and redo
+        for (GSOperationChain child : operationChain.getFDChildren()) {
+            child.context.partitionStateManager.onOcRollbackAndRedo(child);
         }
     }
 

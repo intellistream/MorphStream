@@ -65,11 +65,12 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
      * @param operation
      * @param request
      */
-    public void setupOperationTDFD(ExecutionUnit operation, Request request, Context context) {
+    public SchedulingUnit setupOperationTDFD(ExecutionUnit operation, Request request, Context context) {
         // TD
         SchedulingUnit oc = addOperationToChain(operation, context);
         // FD
         checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source, context);
+        return oc;
     }
 
     public void firstTimeExploreTPG(Context context) {
