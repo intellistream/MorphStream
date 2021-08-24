@@ -1,6 +1,9 @@
 package profiler;
 
 import common.CONTROL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scheduler.impl.layered.DFSScheduler;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -8,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static common.CONTROL.enable_debug;
 import static common.CONTROL.enable_log;
 import static common.IRunner.CCOption_TStream;
 import static java.nio.file.StandardOpenOption.APPEND;
@@ -15,7 +19,7 @@ import static profiler.Metrics.*;
 
 @lombok.extern.slf4j.Slf4j
 public class MeasureTools {
-
+    private static final Logger LOG = LoggerFactory.getLogger(MeasureTools.class);
     public static AtomicInteger counter = new AtomicInteger(0);
 
     public static void Initialize() {
@@ -186,7 +190,7 @@ public class MeasureTools {
     }
 
     public static void BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(int thread_id) {
-        counter.incrementAndGet();
+        if (enable_debug) counter.incrementAndGet();
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_SCHEDULE_USEFUL_START(thread_id);
     }
@@ -264,7 +268,7 @@ public class MeasureTools {
 
     private static void SchedulerTimeBreakdownReport(File file, int tthread) {
         try {
-            System.out.println("++++++ counter: " + counter);
+            if (enable_debug) LOG.info("++++++ counter: " + counter);
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("SchedulerTimeBreakdownReport\n");
             if (enable_log) log.info("===Scheduler Time Breakdown Report===");

@@ -2,6 +2,7 @@ package common;
 
 public interface CONTROL {
     boolean enable_log = true;
+    boolean enable_debug = false;//some critical debug section.
     int kMaxThreadNum = 40;
     int MeasureStart = 0;//10_000;//server needs at least 10,000 to compile, so skip them.
     int MeasureBound = 1_000;
@@ -22,7 +23,6 @@ public interface CONTROL {
     //    boolean enable_admission_control = enable_latency_measurement;//only enable for TStream
     //profile related.
     boolean enable_profile = true;//enable this only when we want to test for breakdown.
-    boolean enable_debug = false;//some critical debug section.
     //engine related.
     boolean enable_engine = true;//1. enable TP_engine. Always enabled. There's no meaning if we disable engine for T-Stream.
     boolean enable_numa_placement = true;//thread placement. always on.

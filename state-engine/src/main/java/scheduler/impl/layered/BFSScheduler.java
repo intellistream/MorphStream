@@ -88,7 +88,7 @@ public class BFSScheduler extends LayeredScheduler<BFSLayeredTPGContext, BFSOper
     }
 
     @Override
-    protected void checkCorrectness(BFSOperation operation) {
+    protected void checkTransactionAbort(BFSOperation operation) {
         if (operation.isFailed && !operation.aborted) {
             needAbortHandling.compareAndSet(false,true);
             failedOperations.push(operation); // operation need to wait until the last abort has completed

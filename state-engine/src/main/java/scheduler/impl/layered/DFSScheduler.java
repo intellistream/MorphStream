@@ -101,9 +101,8 @@ public class DFSScheduler extends LayeredScheduler<DFSLayeredTPGContext, DFSOper
     }
 
     @Override
-    protected void checkCorrectness(DFSOperation operation) {
+    protected void checkTransactionAbort(DFSOperation operation) {
         if (operation.isFailed && !operation.aborted) {
-            System.out.println(operation);
             for (DFSOperation failedOp : failedOperations) {
                 if (failedOp.bid == operation.bid) {
                     return;

@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 
-import static common.CONTROL.enable_debug;
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_log;
 
 /**
@@ -214,7 +214,7 @@ public abstract class State<E extends Serializable> implements Serializable {
         consumer_ack.put(callee, true);
 //        executor.earlier_clean_state(marker);
         if (all_dst_ack()) {
-            if (enable_debug) LOG.info(executor.getOP_full() + " received ack from all consumers.");
+            if (enable_log) LOG.info(executor.getOP_full() + " received ack from all consumers.");
             dst_state_init(executor);
             executor.clean_state(marker);
         }

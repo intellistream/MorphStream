@@ -14,7 +14,7 @@ import transaction.impl.ordered.TxnManagerSStore;
 
 import java.util.Map;
 
-import static common.CONTROL.enable_debug;
+import static common.CONTROL.enable_log;
 import static profiler.MeasureTools.*;
 
 /**
@@ -59,6 +59,6 @@ public class TPBolt_SSTORE extends TPBolt_LA {
         END_LOCK_TIME_MEASURE(thread_Id);
         LA_UNLOCKALL(transactionManager, tthread);
         END_WAIT_TIME_MEASURE(thread_Id);
-        if (enable_debug) LOG.trace(thread_Id + " finished event " + _bid + " with pid of: " + _pid);
+        if (enable_log) LOG.trace(thread_Id + " finished event " + _bid + " with pid of: " + _pid);
     }
 }

@@ -59,12 +59,12 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         for (ExecutionUnit operation : operation_chain) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
-            checkCorrectness(operation);
+            checkTransactionAbort(operation);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
     }
 
-    protected void checkCorrectness(ExecutionUnit operation) {
+    protected void checkTransactionAbort(ExecutionUnit operation) {
         throw new UnsupportedOperationException("not supported at abstract class");
     }
 

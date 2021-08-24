@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static common.CONTROL.enable_debug;
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_log;
 
 /**
@@ -92,7 +92,7 @@ public class OrderLock implements Serializable {
 
 /*
         while (!this.counter.compareAndSet(counter, counter)) {
-            if (enable_debug)
+            if (enable_log)
                 if (enable_log) LOG.trace("BLOCK WAITING FOR " + counter + " CURRENT COUNTER:" + this.counter + " Thread:" + Thread.currentThread().getName());
             synchronized (this.counter) {//this overhead is too high.
                 if(!wasSignalled) {
@@ -125,7 +125,7 @@ public class OrderLock implements Serializable {
 
 /*
         long value = counter.incrementAndGet();//allow next batch to proceed.
-        if (enable_debug)
+        if (enable_log)
             if (enable_log) LOG.trace("ADVANCE BID to:" + value + " Thread:" + Thread.currentThread().getName());
         synchronized (this.counter) {
             wasSignalled = true;
@@ -133,7 +133,7 @@ public class OrderLock implements Serializable {
         }
 */
         long value = counter.incrementAndGet();//allow next batch to proceed.
-        if (enable_debug)
+        if (enable_log)
             if (enable_log) LOG.info("ADVANCE BID to:" + value + " Thread:" + Thread.currentThread().getName());
 //		//if (enable_log) LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter+ " @ "+ DateTime.now());
 //		if (joinedOperators(txn_context)) {
