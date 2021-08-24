@@ -7,12 +7,14 @@ import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContext;
 import scheduler.struct.bfs.BFSOperation;
 import scheduler.struct.bfs.BFSOperationChain;
+import scheduler.struct.dfs.DFSOperation;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static common.CONTROL.enable_log;
+import static java.lang.Integer.min;
 
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:
@@ -23,6 +25,7 @@ import static common.CONTROL.enable_log;
  */
 public class BFSScheduler extends LayeredScheduler<BFSLayeredTPGContext, BFSOperation, BFSOperationChain> {
     private static final Logger LOG = LoggerFactory.getLogger(BFSScheduler.class);
+    public int targetRollbackLevel = 0;//shared data structure.
 
     public BFSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -82,5 +85,71 @@ public class BFSScheduler extends LayeredScheduler<BFSLayeredTPGContext, BFSOper
         // 4. send operation graph to tpg for tpg construction
 //        tpg.setupOperationLD(operationGraph);//TODO: this is bad refactor.
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+    }
+
+    @Override
+    protected void checkCorrectness(BFSOperation operation) {
+        if (operation.isFailed && !operation.aborted) {
+            needAbortHandling.compareAndSet(false,true);
+            failedOperations.push(operation); // operation need to wait until the last abort has completed
+        }
+    }
+
+    @Override
+    protected void abortHandling(BFSLayeredTPGContext context) {
+        MarkOperationsToAbort(context);
+
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        IdentifyRollbackLevel(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SetRollbackLevel(context);
+
+        RollbackToCorrectLayerForRedo(context);
+        ResumeExecution(context);
+    }
+
+    protected void IdentifyRollbackLevel(BFSLayeredTPGContext context) {
+        if (context.thisThreadId == 0) {
+            targetRollbackLevel = Integer.MAX_VALUE;
+            for (int i = 0; i < context.totalThreads; i++) { // find the first level that contains aborted operations
+                if (enable_log) LOG.debug("is thread rollbacked: " + threadToContextMap.get(i).thisThreadId + " | " + threadToContextMap.get(i).isRollbacked);
+                targetRollbackLevel = min(targetRollbackLevel, threadToContextMap.get(i).rollbackLevel);
+            }
+        }
+    }
+
+    protected void SetRollbackLevel(BFSLayeredTPGContext context) {
+        if (enable_log) LOG.debug("++++++ rollback at: " + targetRollbackLevel);
+        context.rollbackLevel = targetRollbackLevel;
+    }
+
+    protected void ResumeExecution(BFSLayeredTPGContext context) {
+        context.rollbackLevel = -1;
+        context.isRollbacked = false;
+//        if (context.thisThreadId == 0) { // TODO: what should we do to optimize this part?
+        if (needAbortHandling.compareAndSet(true, false)) {
+            failedOperations.clear();
+        }
+//        }
+    }
+
+    protected void RollbackToCorrectLayerForRedo(BFSLayeredTPGContext context) {
+        int level;
+        for (level = context.rollbackLevel; level <= context.currentLevel; level++) {
+            context.scheduledOPs -= getNumOPsByLevel(context, level);
+        }
+        context.currentLevelIndex = 0;
+        // it needs to rollback to the level -1, because aborthandling has immediately followed up with ProcessedToNextLevel
+        context.currentLevel = context.rollbackLevel-1;
+    }
+
+    protected int getNumOPsByLevel(BFSLayeredTPGContext context, int level) {
+        int ops = 0;
+        if (context.allocatedLayeredOCBucket.containsKey(level)) { // oc level may not be sequential
+            for (BFSOperationChain operationChain : context.allocatedLayeredOCBucket.get(level)) {
+                ops += operationChain.getOperations().size();
+            }
+        }
+        return ops;
     }
 }

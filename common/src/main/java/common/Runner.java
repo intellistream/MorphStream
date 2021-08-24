@@ -96,7 +96,7 @@ public abstract class Runner implements IRunner {
 //    public String generator = "TPGGenerator";
     public String generator = "OCGenerator";
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
-    public int totalEventsPerBatch = 100000;
+    public int totalEventsPerBatch = 1000000;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
     public int numberOfBatches = 1;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
@@ -105,8 +105,8 @@ public abstract class Runner implements IRunner {
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
 //    public String scheduler = "BFS";
-//    public String scheduler = "DFS";
-        public String scheduler = "GS";
+    public String scheduler = "DFS";
+//        public String scheduler = "GS";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")

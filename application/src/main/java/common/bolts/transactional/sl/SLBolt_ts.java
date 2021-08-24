@@ -194,10 +194,10 @@ public class SLBolt_ts extends SLBolt {
             SchemaRecord dstAccountValueRecord = event.dst_account_value.getRecord();
 
             if (srcAccountValueRecord == null) {
-                if (enable_log) LOG.error(event.getSourceAccountId());
+                if (enable_log) LOG.error(event.getBid() + " | " + event.getSourceAccountId());
             }
             if (dstAccountValueRecord == null) {
-                if (enable_log) LOG.error(event.getTargetAccountId());
+                if (enable_log) LOG.error(event.getBid() + " | " + event.getTargetAccountId());
             }
 
             if (srcAccountValueRecord != null && dstAccountValueRecord != null)

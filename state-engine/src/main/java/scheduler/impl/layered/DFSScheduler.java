@@ -1,14 +1,18 @@
 package scheduler.impl.layered;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.DFSLayeredTPGContext;
 import scheduler.struct.dfs.DFSOperation;
 import scheduler.struct.dfs.DFSOperationChain;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:
@@ -18,6 +22,8 @@ import java.util.List;
  * It's a shared data structure!
  */
 public class DFSScheduler extends LayeredScheduler<DFSLayeredTPGContext, DFSOperation, DFSOperationChain> {
+    private static final Logger LOG = LoggerFactory.getLogger(DFSScheduler.class);
+
 
     public DFSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -32,12 +38,21 @@ public class DFSScheduler extends LayeredScheduler<DFSLayeredTPGContext, DFSOper
     public void EXPLORE(DFSLayeredTPGContext context) {
         DFSOperationChain oc = Next(context);
         while (oc == null) {
+            //all threads come to the current level.
+            if (needAbortHandling.get()) {
+                abortHandling(context);
+            }
             if (context.finished())
                 break;
             ProcessedToNextLevel(context);
             oc = Next(context);
         }
-        while (oc != null && oc.hasParents()); // Busy-Wait for dependency resolution
+        while (oc != null && oc.hasParents()) {
+            // Busy-Wait for dependency resolution
+             if (needAbortHandling.get()) {
+                return; // skip this busy wait when abort happens
+             }
+        }
         DISTRIBUTE(oc, context);
     }
 
@@ -50,7 +65,7 @@ public class DFSScheduler extends LayeredScheduler<DFSLayeredTPGContext, DFSOper
     @Override
     protected void NOTIFY(DFSOperationChain operationChain, DFSLayeredTPGContext context) {
 //        context.partitionStateManager.onOcExecuted(operationChain);
-        // TODO: operation chain need to be refactored for BFS, DFS, GS
+        operationChain.isExecuted = true; // set operation chain to be executed, which is used for further rollback
         Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
         for (DFSOperationChain childOC : ocs) {
             childOC.updateDependency();
@@ -83,5 +98,63 @@ public class DFSScheduler extends LayeredScheduler<DFSLayeredTPGContext, DFSOper
         // 4. send operation graph to tpg for tpg construction
 //        tpg.setupOperationLD(operationGraph);//TODO: this is bad refactor.
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+    }
+
+    @Override
+    protected void checkCorrectness(DFSOperation operation) {
+        if (operation.isFailed && !operation.aborted) {
+            System.out.println(operation);
+            for (DFSOperation failedOp : failedOperations) {
+                if (failedOp.bid == operation.bid) {
+                    return;
+                }
+            }
+            needAbortHandling.compareAndSet(false,true);
+            failedOperations.push(operation); // operation need to wait until the last abort has completed
+        }
+    }
+
+    @Override
+    protected void abortHandling(DFSLayeredTPGContext context) {
+        MarkOperationsToAbort(context);
+        RollbackToCorrectLayerForRedo(context);
+        ResumeExecution(context);
+    }
+
+    protected void ResumeExecution(DFSLayeredTPGContext context) {
+        context.rollbackLevel = -1;
+        context.isRollbacked = false;
+
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        needAbortHandling.compareAndSet(true, false);
+        failedOperations.clear();
+        LOG.debug("resume: " + context.thisThreadId);
+    }
+
+    protected void RollbackToCorrectLayerForRedo(DFSLayeredTPGContext context) {
+        int level;
+        for (level = context.rollbackLevel; level <= context.currentLevel; level++) {
+            context.scheduledOPs -= getNumOPsByLevel(context, level);
+        }
+        context.currentLevelIndex = 0;
+        // it needs to rollback to the level -1, because aborthandling has immediately followed up with ProcessedToNextLevel
+        context.currentLevel = context.rollbackLevel-1;
+    }
+
+    protected int getNumOPsByLevel(DFSLayeredTPGContext context, int level) {
+        int ops = 0;
+        if (context.allocatedLayeredOCBucket.containsKey(level)) { // oc level may not be sequential
+            for (DFSOperationChain operationChain : context.allocatedLayeredOCBucket.get(level)) {
+                ops += operationChain.getOperations().size();
+                if (operationChain.isExecuted) { // rollback children counter if the parent has been rollback
+                    operationChain.isExecuted = false;
+                    Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
+                    for (DFSOperationChain childOC : ocs) {
+                        childOC.rollbackDependency();
+                    }
+                }
+            }
+        }
+        return ops;
     }
 }

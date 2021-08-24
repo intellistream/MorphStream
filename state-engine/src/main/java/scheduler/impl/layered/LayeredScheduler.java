@@ -16,13 +16,10 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static common.CONTROL.enable_log;
-import static java.lang.Integer.min;
 
 public abstract class LayeredScheduler<Context extends LayeredTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>>
         extends Scheduler<Context, ExecutionUnit, SchedulingUnit> {
     private static final Logger LOG = LoggerFactory.getLogger(LayeredScheduler.class);
-
-    public int targetRollbackLevel = 0;//shared data structure.
 
     public ConcurrentLinkedDeque<ExecutionUnit> failedOperations;//aborted operations per thread.
     public AtomicBoolean needAbortHandling = new AtomicBoolean(false);//if any operation is aborted during processing.
@@ -62,12 +59,13 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         for (ExecutionUnit operation : operation_chain) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
-            if (operation.isFailed && !operation.aborted) {
-                failedOperations.push(operation);
-                needAbortHandling.compareAndSet(false,true);
-            }
+            checkCorrectness(operation);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
+    }
+
+    protected void checkCorrectness(ExecutionUnit operation) {
+        throw new UnsupportedOperationException("not supported at abstract class");
     }
 
     /**
@@ -112,27 +110,10 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
     /********************abort handling methods********************/
 
     protected void abortHandling(Context context) {
-        MarkOperationsToAbort(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
-        IdentifyRollbackLevel(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
-        SetRollbackLevel(context);
-        RollbackToCorrectLayerForRedo(context);
-        ResumeExecution(context);
-    }
-
-    private void ResumeExecution(Context context) {
-        context.rollbackLevel = -1;
-        context.isRollbacked = false;
-//        if (context.thisThreadId == 0) { // TODO: what should we do to optimize this part?
-        if (needAbortHandling.compareAndSet(true, false)) {
-            failedOperations.clear();
-        }
-//        }
     }
 
     //TODO: mark operations of aborted transaction to be aborted.
-    private void MarkOperationsToAbort(Context context) {
+    protected void MarkOperationsToAbort(Context context) {
         boolean markAny = false;
         ArrayList<SchedulingUnit> operationChains;
         int curLevel;
@@ -152,7 +133,7 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
             context.rollbackLevel = context.currentLevel;
         }
         context.isRollbacked = true;
-        if (enable_log) LOG.debug("enter this method: " + context.thisThreadId);
+        if (enable_log) LOG.debug("++++++ rollback at level: " + context.thisThreadId + " | " + context.rollbackLevel);
     }
 
     /**
@@ -173,40 +154,5 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
             }
         }
         return markAny;
-    }
-
-    private void IdentifyRollbackLevel(Context context) {
-        if (context.thisThreadId == 0) {
-            targetRollbackLevel = Integer.MAX_VALUE;
-            for (int i = 0; i < context.totalThreads; i++) { // find the first level that contains aborted operations
-                if (enable_log) LOG.debug("is thread rollbacked: " + threadToContextMap.get(i).thisThreadId + " | " + threadToContextMap.get(i).isRollbacked);
-                targetRollbackLevel = min(targetRollbackLevel, threadToContextMap.get(i).rollbackLevel);
-            }
-        }
-    }
-
-    private void SetRollbackLevel(Context context) {
-        if (enable_log) LOG.debug("++++++ rollback at: " + targetRollbackLevel);
-        context.rollbackLevel = targetRollbackLevel;
-    }
-
-    private void RollbackToCorrectLayerForRedo(Context context) {
-        int level;
-        for (level = context.rollbackLevel; level <= context.currentLevel; level++) {
-            context.scheduledOPs -= getNumOPsByLevel(context, level);
-        }
-        context.currentLevelIndex = 0;
-        // it needs to rollback to the level -1, because aborthandling has immediately followed up with ProcessedToNextLevel
-        context.currentLevel = context.rollbackLevel-1;
-    }
-
-    private int getNumOPsByLevel(Context context, int level) {
-        int ops = 0;
-        if (context.allocatedLayeredOCBucket.containsKey(level)) { // oc level may not be sequential
-            for (SchedulingUnit operationChain : context.allocatedLayeredOCBucket.get(level)) {
-                ops += operationChain.getOperations().size();
-            }
-        }
-        return ops;
     }
 }
