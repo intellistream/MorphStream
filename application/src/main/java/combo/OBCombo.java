@@ -160,7 +160,7 @@ public class OBCombo extends SPOUTCombo {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        if (enable_debug)
+        if (enable_log)
             show_stats();
     }
 

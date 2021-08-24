@@ -33,7 +33,7 @@ public class SLBolt_ts extends SLBolt {
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
     ArrayDeque<TransactionEvent> transactionEvents;
-    ArrayDeque<DepositEvent> depositeEvents;
+    ArrayDeque<DepositEvent> depositEvents;
 
     public SLBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -52,7 +52,7 @@ public class SLBolt_ts extends SLBolt {
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
                 numberOfStates, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
         transactionEvents = new ArrayDeque<>();
-        depositeEvents = new ArrayDeque<>();
+        depositEvents = new ArrayDeque<>();
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
@@ -68,7 +68,7 @@ public class SLBolt_ts extends SLBolt {
 
         if (in.isMarker()) {
             int transSize = transactionEvents.size();
-            int depoSize = depositeEvents.size();
+            int depoSize = depositEvents.size();
             int num_events = transSize + depoSize;
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -89,7 +89,7 @@ public class SLBolt_ts extends SLBolt {
 
                 //all tuples in the holder is finished.
                 transactionEvents.clear();
-                depositeEvents.clear();
+                depositEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
         } else {
@@ -172,11 +172,11 @@ public class SLBolt_ts extends SLBolt {
         transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()));// read and modify the asset itself.
         transactionManager.CommitTransaction(txnContext);
 
-        depositeEvents.add(event);
+        depositEvents.add(event);
     }
 
     private void DEPOSITE_REQUEST_POST() throws InterruptedException {
-        for (DepositEvent event : depositeEvents) {
+        for (DepositEvent event : depositEvents) {
             DEPOSITE_REQUEST_POST(event);
         }
     }
@@ -194,10 +194,10 @@ public class SLBolt_ts extends SLBolt {
             SchemaRecord dstAccountValueRecord = event.dst_account_value.getRecord();
 
             if (srcAccountValueRecord == null) {
-                if (enable_log) LOG.error(event.getSourceAccountId());
+                if (enable_log) LOG.error(event.getBid() + " | " + event.getSourceAccountId());
             }
             if (dstAccountValueRecord == null) {
-                if (enable_log) LOG.error(event.getTargetAccountId());
+                if (enable_log) LOG.error(event.getBid() + " | " + event.getTargetAccountId());
             }
 
             if (srcAccountValueRecord != null && dstAccountValueRecord != null)

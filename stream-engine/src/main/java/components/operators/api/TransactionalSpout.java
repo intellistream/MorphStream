@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedWriter;
 import java.util.ArrayList;
 
-import static common.CONTROL.enable_debug;
+import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static profiler.Metrics.NUM_ACCESSES;
@@ -100,7 +100,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public void ack_checkpoint(Marker marker) {
         //Do something to clear past state. (optional)
         success = true;//I can emit next marker.
-        if (enable_debug) LOG.trace("task_size: " + epoch_size * NUM_ACCESSES);
+        if (enable_log) LOG.trace("task_size: " + epoch_size * NUM_ACCESSES);
         long elapsed_time = System.nanoTime() - boardcast_time;//the time elapsed for the system to handle the previous epoch.
         double actual_system_throughput = epoch_size * 1E9 / elapsed_time;//events/ s
 //        if (epoch_size != 0)

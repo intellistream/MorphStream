@@ -74,6 +74,15 @@ public class SOURCE_CONTROL {
         }
     }
 
+    public void waitForOtherThreadsAbort() {
+        try {
+            System.out.println("phase: " + dLevelEndBarrier.getPhase());
+            dLevelEndBarrier.arriveAndAwaitAdvance();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
     public void oneThreadCompleted() {
         dLevelEndBarrier.arriveAndDeregister();
     }

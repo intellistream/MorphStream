@@ -39,4 +39,7 @@ public class DFSOperationChain extends OperationChain<DFSOperation> {
         ocFdParentsCount.decrementAndGet();
     }
 
+    public void rollbackDependency() {
+        ocFdParentsCount.incrementAndGet();
+    }
 }

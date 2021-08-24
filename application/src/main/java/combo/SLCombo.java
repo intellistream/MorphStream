@@ -125,8 +125,8 @@ public class SLCombo extends SPOUTCombo {
 
             index += tthread * combo_bid_size;
         }
-        if (enable_debug)
-            show_stats();
+//        if (enable_log) // TODO: this is to be generalized
+//            show_stats();
     }
 
     @Override
