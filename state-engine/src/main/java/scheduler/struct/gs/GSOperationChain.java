@@ -1,5 +1,6 @@
 package scheduler.struct.gs;
 
+import org.apache.hadoop.util.hash.Hash;
 import scheduler.context.GSTPGContext;
 import scheduler.struct.MetaTypes;
 import scheduler.struct.OperationChain;
@@ -7,7 +8,9 @@ import scheduler.struct.bfs.BFSOperation;
 import scheduler.struct.dfs.DFSOperation;
 import scheduler.struct.dfs.DFSOperationChain;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
@@ -17,6 +20,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 public class GSOperationChain extends OperationChain<GSOperation> {
     public GSTPGContext context = null;
     private final ConcurrentSkipListMap<GSOperationChain, GSOperation> ocFdChildren;
+    public boolean needAbortHandling = false; // The abort handling in GS should be residing in each operation chain
+    public Queue<GSOperation> failedOperations = new ArrayDeque<>();
 
 
     public GSOperationChain(String tableName, String primaryKey) {
@@ -63,5 +68,9 @@ public class GSOperationChain extends OperationChain<GSOperation> {
 
     public boolean hasChildren() {
         return !ocFdChildren.isEmpty();
+    }
+
+    public void rollbackDependency() {
+        ocFdParentsCount.incrementAndGet();
     }
 }

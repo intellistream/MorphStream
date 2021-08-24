@@ -25,8 +25,15 @@ import java.util.concurrent.atomic.AtomicReference;
 public class GSOperation extends AbstractOperation implements Comparable<GSOperation> {
     public final GSTPGContext context;
 
+    public int txnOpId = 0;
+
     private final Queue<GSOperation> fd_children; // the functional dependencies ops to be executed after this op.
     private final Queue<GSOperation> fd_parents; // the functional dependencies ops to be executed in advance
+
+    // logical dependencies are to be stored for the purpose of abort handling
+    private GSOperation ld_head_operation = null; // the logical dependencies ops to be executed after this op.
+    private final Queue<GSOperation> ld_descendant_operations; // the logical dependencies ops to be executed in advance
+    private GSOperationChain oc; // used for dependency resolved notification under greedy smart
 
     public GSOperation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
         this(null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
@@ -73,6 +80,7 @@ public class GSOperation extends AbstractOperation implements Comparable<GSOpera
         // finctional dependencies
         fd_parents = new ConcurrentLinkedQueue<>(); // the finctional dependnecies ops to be executed in advance
         fd_children = new ConcurrentLinkedQueue<>(); // the finctional dependencies ops to be executed after this op.
+        ld_descendant_operations = new ConcurrentLinkedQueue<>();
         // temporal dependencies
         AtomicReference<OperationStateType> operationState = new AtomicReference<>(OperationStateType.BLOCKED);
     }
@@ -92,17 +100,44 @@ public class GSOperation extends AbstractOperation implements Comparable<GSOpera
             return Long.compare(this.bid, operation.bid);
     }
 
-    /*********************************CREATED BY MYC****************************************/
-
-
-    public <T extends AbstractOperation> Queue<T> getChildren(DependencyType type) {
-        if (type.equals(DependencyType.FD)) {
-            return (Queue<T>) fd_children;
-        } else {
-            throw new RuntimeException("Unexpected dependency type: " + type);
-        }
+    @Override
+    public String toString() {
+        return bid + "|" + txnOpId;
     }
 
+    public void setOC(GSOperationChain operationChain) {
+        this.oc = operationChain;
+    }
+
+    public GSOperationChain getOC() {
+        return oc;
+    }
+
+    public void setTxnOpId(int txnOpId) {
+        this.txnOpId = txnOpId;
+    }
+
+    public int getTxnOpId() {
+        return txnOpId;
+    }
+
+    /*********************************Dependencies setup****************************************/
+
+    public void addHeader(GSOperation header) {
+        ld_head_operation = header;
+    }
+
+    public void addDescendant(GSOperation descendant) {
+        ld_descendant_operations.add(descendant);
+    }
+
+    public GSOperation getHeader() {
+        return ld_head_operation;
+    }
+
+    public Queue<GSOperation> getDescendants() {
+        return ld_descendant_operations;
+    }
 
     public void addChild(GSOperation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
@@ -113,14 +148,21 @@ public class GSOperation extends AbstractOperation implements Comparable<GSOpera
     }
 
 
+    public Queue<GSOperation> getChildren(DependencyType type) {
+        if (type.equals(DependencyType.FD)) {
+            return fd_children;
+        } else {
+            throw new RuntimeException("Unexpected dependency type: " + type);
+        }
+    }
+
     /**
      * @param type
-     * @param <T>
      * @return
      */
-    public <T extends AbstractOperation> Queue<T> getParents(DependencyType type) {
+    public Queue<GSOperation> getParents(DependencyType type) {
         if (type.equals(DependencyType.FD)) {
-            return (Queue<T>) fd_parents;
+            return fd_parents;
         } else {
             throw new RuntimeException("Unexpected dependency type: " + type);
         }

@@ -38,7 +38,7 @@ public class DFSScheduler extends LayeredScheduler<DFSLayeredTPGContext, DFSOper
     public void EXPLORE(DFSLayeredTPGContext context) {
         DFSOperationChain oc = Next(context);
         while (oc == null) {
-            //all threads come to the current level.
+            // current thread finishes the current level
             if (needAbortHandling.get()) {
                 abortHandling(context);
             }

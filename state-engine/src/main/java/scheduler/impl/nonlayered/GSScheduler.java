@@ -1,9 +1,11 @@
 package scheduler.impl.nonlayered;
 
+import org.jetbrains.annotations.NotNull;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContext;
 import scheduler.impl.Scheduler;
+import scheduler.struct.bfs.BFSOperation;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
 import transaction.impl.ordered.MyList;
@@ -54,26 +56,41 @@ public class GSScheduler extends Scheduler<GSTPGContext, GSOperation, GSOperatio
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<GSOperation> operationGraph = new ArrayList<>();
+        int txnOpId = 0;
+        GSOperation headerOperation = null;
         for (Request request : context.requests) {
-            long bid = request.txn_context.getBID();
-            GSOperation set_op = null;
-            switch (request.accessType) {
-                case READ_WRITE_COND: // they can use the same method for processing
-                case READ_WRITE:
-                    set_op = new GSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.function, request.condition, request.condition_records, request.success);
-                    break;
-                case READ_WRITE_COND_READ:
-                    set_op = new GSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
-                    break;
-            }
-            operationGraph.add(set_op);
-            tpg.setupOperationTDFD(set_op, request, context);
+            GSOperation set_op = constructOp(context, operationGraph, request);
+            if (txnOpId == 0)
+                headerOperation = set_op;
+            // addOperation an operation id for the operation for the purpose of temporal dependency construction
+            set_op.setTxnOpId(txnOpId++);
+            set_op.addHeader(headerOperation);
+            headerOperation.addDescendant(set_op);
         }
-        // 4. send operation graph to tpg for tpg construction
-//        tpg.setupOperationLD(operationGraph);//TODO: this is bad refactor.
+        // set logical dependencies among all operation in the same transaction
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+    }
+
+    @NotNull
+    private GSOperation constructOp(GSTPGContext context, List<GSOperation> operationGraph, Request request) {
+        long bid = request.txn_context.getBID();
+        GSOperation set_op;
+        switch (request.accessType) {
+            case READ_WRITE_COND: // they can use the same method for processing
+            case READ_WRITE:
+                set_op = new GSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                        request.d_record, request.function, request.condition, request.condition_records, request.success);
+                break;
+            case READ_WRITE_COND_READ:
+                set_op = new GSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                        request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
+                break;
+            default:
+                throw new RuntimeException("Unexpected operation");
+        }
+        operationGraph.add(set_op);
+        set_op.setOC(tpg.setupOperationTDFD(set_op, request, context));
+        return set_op;
     }
 
     @Override
@@ -84,12 +101,8 @@ public class GSScheduler extends Scheduler<GSTPGContext, GSOperation, GSOperatio
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            for (GSOperation operation : next.getOperations()) {
-                execute(operation, mark_ID, false);
-            }
+            execute(context, next, mark_ID);
             NOTIFY(next, context);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
     }
 
@@ -102,14 +115,23 @@ public class GSScheduler extends Scheduler<GSTPGContext, GSOperation, GSOperatio
      * Used by GSScheduler.
      *
      * @param context
-     * @param operation_chain
+     * @param operationChain
      * @param mark_ID
      */
-    public void execute(GSTPGContext context, MyList<GSOperation> operation_chain, long mark_ID) {
-        for (GSOperation operation : operation_chain) {
+    public void execute(GSTPGContext context, GSOperationChain operationChain, long mark_ID) {
+        MyList<GSOperation> operation_chain_list = operationChain.getOperations();
+        for (GSOperation operation : operation_chain_list) {
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
+            checkTransactionAbort(operation, operationChain);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+        }
+    }
+
+    protected void checkTransactionAbort(GSOperation operation, GSOperationChain operationChain) {
+        if (operation.isFailed && !operation.aborted) {
+            operationChain.needAbortHandling = true;
+            operationChain.failedOperations.add(operation);
         }
     }
 
@@ -135,22 +157,26 @@ public class GSScheduler extends Scheduler<GSTPGContext, GSOperation, GSOperatio
      */
     @Override
     public void DISTRIBUTE(GSOperationChain task, GSTPGContext context) {
-        if (task != null)
-            if (!task.hasChildren())
+        if (task != null) {
+            if (!task.hasChildren()) {
                 context.IsolatedOC.add(task);
-            else
+            } else {
                 context.OCwithChildren.add(task);
+            }
+        }
     }
 
     /**
      * Register an operation to queue.
      */
     public class ExecutableTaskListener {
-        public void onExecutable(GSOperationChain operationChain) {
+        public void onOCExecutable(GSOperationChain operationChain) {
             DISTRIBUTE(operationChain, operationChain.context);//TODO: make it clear..
         }
-
         public void onOCFinalized(GSOperationChain operationChain) {
+            operationChain.context.scheduledOPs += operationChain.getOperations().size();
+        }
+        public void onOCRollbacked(GSOperationChain operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }
     }

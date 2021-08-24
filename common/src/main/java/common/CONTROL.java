@@ -2,7 +2,7 @@ package common;
 
 public interface CONTROL {
     boolean enable_log = true;
-    boolean enable_debug = false;//some critical debug section.
+    boolean enable_debug = true;//some critical debug section.
     int kMaxThreadNum = 40;
     int MeasureStart = 0;//10_000;//server needs at least 10,000 to compile, so skip them.
     int MeasureBound = 1_000;
