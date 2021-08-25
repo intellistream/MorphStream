@@ -93,6 +93,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.tony</groupId>
+            <artifactId>affinity</artifactId>
+            <version>3.21ea80-SNAPSHOT</version>
+            <!--<scope>compile</scope>-->
+        </dependency>
+
+        <dependency>
             <groupId>org.knowm.xchart</groupId>
             <artifactId>xchart</artifactId>
             <version>3.5.0</version>

@@ -12,6 +12,7 @@
         <module>state-engine</module>
         <module>stream-engine</module>
         <module>application</module>
+        <module>affinity</module>
     </modules>
 
     <build>
