@@ -116,7 +116,7 @@ public class boltThread extends executorThread {
     public void run() {
         try {
             Thread.currentThread().setName("Operator:" + executor.getOP() + "\tExecutor ID:" + executor.getExecutorID());
-
+            binding();
             initilize_queue(this.executor.getExecutorID());
             //do preparation.
             bolt.prepare(conf, context, collector);

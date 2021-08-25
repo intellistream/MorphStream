@@ -73,8 +73,8 @@ public class spoutThread extends executorThread {
     @Override
     public void run() {
         try {
-
             Thread.currentThread().setName("Operator:" + executor.getOP() + "\tExecutor ID:" + executor.getExecutorID());
+            binding();
             initilize_queue(this.executor.getExecutorID());
             //do Loading
             sp.prepare(conf, context, collector);
@@ -109,4 +109,5 @@ public class spoutThread extends executorThread {
         }
 
     }
+
 }

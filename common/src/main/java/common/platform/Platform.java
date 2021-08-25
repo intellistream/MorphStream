@@ -93,8 +93,8 @@ public class Platform implements Serializable {
                     node_6,
                     node_7};
         } else {
-            //a simple single-socket 4-core machine.
-            int cores = 4;
+            //a simple single-socket 24-core machine.
+            int cores = 24;
             Integer[] no_0 = new Integer[cores];
             for (int lop = 0; lop < cores; lop++) {
                 no_0[lop] = lop;

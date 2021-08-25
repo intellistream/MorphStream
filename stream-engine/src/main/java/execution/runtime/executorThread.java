@@ -14,8 +14,8 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
 import static common.CONTROL.enable_log;
-
-//import static xerial.jnuma.Numa.newCPUBitMask;
+import static controller.affinity.SequentialBinding.next_cpu;
+import static net.openhft.affinity.Affinity.setAffinity;
 
 /**
  * Created by shuhaozhang on 12/7/16.
@@ -187,5 +187,16 @@ public abstract class executorThread extends Thread {
     void Ready(Logger LOG) {
         //LOG.DEBUG("BasicBoltBatchExecutor:" + executor.getExecutorID() + " is set to ready");
         ready = true;
+    }
+
+    /**
+     * This will be called only once when thread is launching..
+     *
+     * @return
+     */
+    protected void binding() {
+        int cpu = next_cpu();
+        setAffinity(cpu);
+        LOG.info("Successfully bind " + executor.getOP() + " on cpu: " + cpu);
     }
 }

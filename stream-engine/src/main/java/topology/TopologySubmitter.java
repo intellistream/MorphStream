@@ -17,7 +17,6 @@ import java.util.Collection;
 
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_shared_state;
-import static controller.affinity.SequentialBinding.SequentialBindingInitilize;
 import static profiler.Metrics.POST_COMPUTE_COMPLEXITY;
 
 public class TopologySubmitter {
@@ -45,7 +44,6 @@ public class TopologySubmitter {
         //launch
         OM = new OptimizationManager(g, conf);//support different kinds of optimization module.
         if (enable_shared_state) {
-            SequentialBindingInitilize();
             if (enable_log) LOG.info("DB initialize starts @" + DateTime.now());
             long start = System.nanoTime();
             int tthread = conf.getInt("tthread");
