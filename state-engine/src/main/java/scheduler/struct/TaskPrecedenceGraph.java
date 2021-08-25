@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
-import scheduler.context.GSTPGContext;
+import scheduler.context.AbstractGSTPGContext;
 import scheduler.context.LayeredTPGContext;
 import scheduler.context.SchedulerContext;
-import scheduler.struct.gs.GSOperationChain;
+import scheduler.struct.gs.AbstractGSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.lib.ConcurrentHashMap;
 
@@ -91,16 +91,18 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
             }
             ((LayeredTPGContext) context).buildBucketPerThread(ocs);
             System.out.println(((LayeredTPGContext) context).maxLevel);
-        } else if (context instanceof GSTPGContext) {
+        } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : ocs) {
                 context.totalOsToSchedule += oc.getOperations().size();
-                if (!((GSOperationChain) oc).context.equals(context)) {
+                if (!((AbstractGSOperationChain) oc).context.equals(context)) {
                     throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
                 }
                 if (!oc.hasParents()) {
-                    ((GSTPGContext) context).partitionStateManager.onOcRootStart((GSOperationChain) oc);
+                    ((AbstractGSTPGContext) context).getListener().onOcRootStart(oc);
                 }
             }
+        } else {
+            throw new UnsupportedOperationException("Unsupported.");
         }
     }
 

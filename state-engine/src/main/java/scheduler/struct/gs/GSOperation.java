@@ -1,14 +1,10 @@
 package scheduler.struct.gs;
 
 import content.common.CommonMetaTypes;
-import scheduler.context.GSTPGContext;
-import scheduler.context.SchedulerContext;
+import scheduler.context.AbstractGSTPGContext;
 import scheduler.struct.AbstractOperation;
-import scheduler.struct.MetaTypes;
 import scheduler.struct.MetaTypes.DependencyType;
 import scheduler.struct.MetaTypes.OperationStateType;
-import scheduler.struct.bfs.BFSOperation;
-import scheduler.struct.dfs.DFSOperation;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;
@@ -23,17 +19,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * contains the place-holder to fill, as well as timestamp (counter).
  */
 public class GSOperation extends AbstractOperation implements Comparable<GSOperation> {
-    public final GSTPGContext context;
-
-    public int txnOpId = 0;
+    public final AbstractGSTPGContext context;
 
     private final Queue<GSOperation> fd_children; // the functional dependencies ops to be executed after this op.
     private final Queue<GSOperation> fd_parents; // the functional dependencies ops to be executed in advance
-
-    // logical dependencies are to be stored for the purpose of abort handling
-    private GSOperation ld_head_operation = null; // the logical dependencies ops to be executed after this op.
-    private final Queue<GSOperation> ld_descendant_operations; // the logical dependencies ops to be executed in advance
-    private GSOperationChain oc; // used for dependency resolved notification under greedy smart
 
     public GSOperation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
         this(null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
@@ -52,23 +41,23 @@ public class GSOperation extends AbstractOperation implements Comparable<GSOpera
     }
 
 
-    public <Context extends GSTPGContext> GSOperation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                          CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
+    public <Context extends AbstractGSTPGContext> GSOperation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                              CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
     }
 
-    public <Context extends GSTPGContext> GSOperation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                          CommonMetaTypes.AccessType accessType, TableRecord d_record) {
+    public <Context extends AbstractGSTPGContext> GSOperation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                              CommonMetaTypes.AccessType accessType, TableRecord d_record) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
     }
 
-    public <Context extends GSTPGContext> GSOperation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                          CommonMetaTypes.AccessType accessType, TableRecord d_record,
-                                                          SchemaRecordRef record_ref) {
+    public <Context extends AbstractGSTPGContext> GSOperation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                              CommonMetaTypes.AccessType accessType, TableRecord d_record,
+                                                              SchemaRecordRef record_ref) {
         this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
 
-    public <Context extends GSTPGContext> GSOperation(
+    public <Context extends AbstractGSTPGContext> GSOperation(
             Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
@@ -80,7 +69,7 @@ public class GSOperation extends AbstractOperation implements Comparable<GSOpera
         // finctional dependencies
         fd_parents = new ConcurrentLinkedQueue<>(); // the finctional dependnecies ops to be executed in advance
         fd_children = new ConcurrentLinkedQueue<>(); // the finctional dependencies ops to be executed after this op.
-        ld_descendant_operations = new ConcurrentLinkedQueue<>();
+//        ld_descendant_operations = new ConcurrentLinkedQueue<>();
         // temporal dependencies
         AtomicReference<OperationStateType> operationState = new AtomicReference<>(OperationStateType.BLOCKED);
     }
@@ -102,42 +91,10 @@ public class GSOperation extends AbstractOperation implements Comparable<GSOpera
 
     @Override
     public String toString() {
-        return bid + "|" + txnOpId;
-    }
-
-    public void setOC(GSOperationChain operationChain) {
-        this.oc = operationChain;
-    }
-
-    public GSOperationChain getOC() {
-        return oc;
-    }
-
-    public void setTxnOpId(int txnOpId) {
-        this.txnOpId = txnOpId;
-    }
-
-    public int getTxnOpId() {
-        return txnOpId;
+        return String.valueOf(bid);
     }
 
     /*********************************Dependencies setup****************************************/
-
-    public void addHeader(GSOperation header) {
-        ld_head_operation = header;
-    }
-
-    public void addDescendant(GSOperation descendant) {
-        ld_descendant_operations.add(descendant);
-    }
-
-    public GSOperation getHeader() {
-        return ld_head_operation;
-    }
-
-    public Queue<GSOperation> getDescendants() {
-        return ld_descendant_operations;
-    }
 
     public void addChild(GSOperation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {

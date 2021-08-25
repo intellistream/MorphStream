@@ -2,7 +2,6 @@ package scheduler.context;
 
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.OperationChain;
-import scheduler.struct.bfs.BFSOperationChain;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -17,8 +16,6 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     public int totalThreads;
     public int maxLevel;//total number of operations to process per thread.
     public SchedulingUnit ready_oc;//ready operation chain per thread.
-    public int rollbackLevel = -1; // initialized to 0 if thread not required to be rollbacked.
-    public boolean isRollbacked = false; // initialized to 0 if thread not required to be rollbacked.
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
@@ -38,7 +35,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
 
     @Override
     public SchedulingUnit createTask(String tableName, String pKey) {
-        return (SchedulingUnit) new BFSOperationChain(tableName, pKey);
+        throw new UnsupportedOperationException("Unsupported.");
     }
 
     public ArrayList<SchedulingUnit> OCSCurrentLayer() {
