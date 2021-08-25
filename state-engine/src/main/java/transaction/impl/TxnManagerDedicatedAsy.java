@@ -6,10 +6,7 @@ import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
 import scheduler.Request;
-import scheduler.context.BFSLayeredTPGContext;
-import scheduler.context.DFSLayeredTPGContext;
-import scheduler.context.GSTPGContext;
-import scheduler.context.SchedulerContext;
+import scheduler.context.*;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
@@ -51,12 +48,24 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 context = new BFSLayeredTPGContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case DFS: // TODO
+            case BFSA:
+                context = new BFSLayeredTPGContextWithAbort(thisTaskId, thread_count);
+                scheduler.AddContext(thisTaskId, context);
+                break;
+            case DFS:
                 context = new DFSLayeredTPGContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case GS: // TODO
+            case DFSA:
+                context = new DFSLayeredTPGContextWithAbort(thisTaskId, thread_count);
+                scheduler.AddContext(thisTaskId, context);
+                break;
+            case GS:
                 context = new GSTPGContext(thisTaskId, thread_count);
+                scheduler.AddContext(thisTaskId, context);
+                break;
+            case GSA:
+                context = new GSTPGContextWithAbort(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
             default:

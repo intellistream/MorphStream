@@ -25,8 +25,11 @@ public interface ITxnManager {
 
     enum SCHEDULER_TYPE {
         BFS,
+        BFSA,
         DFS,
-        GS
+        DFSA,
+        GS,
+        GSA
     }
 
     OrderLock getOrderLock();//shared.

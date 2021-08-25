@@ -2,6 +2,7 @@
 /stream-engine/target/
 /state-engine/target/
 /application/target/
+/affinity/target/
 /.idea/
 /application/application.iml
 /common/common.iml

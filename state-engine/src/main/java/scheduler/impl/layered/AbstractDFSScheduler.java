@@ -18,10 +18,10 @@ import java.util.List;
  * 3. thread will find operations from its queue for execution.
  * It's a shared data structure!
  */
-public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
+public class AbstractDFSScheduler<Context extends DFSLayeredTPGContext> extends LayeredScheduler<Context, DFSOperation, DFSOperationChain> {
 
 
-    public DFSScheduler(int totalThreads, int NUM_ITEMS) {
+    public AbstractDFSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
     }
 
@@ -31,7 +31,7 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
     }
 
     @Override
-    public void EXPLORE(DFSLayeredTPGContext context) {
+    public void EXPLORE(Context context) {
         DFSOperationChain oc = Next(context);
         while (oc == null) {
             if (context.finished())
@@ -50,7 +50,7 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
      * @param context
      */
     @Override
-    protected void NOTIFY(DFSOperationChain operationChain, DFSLayeredTPGContext context) {
+    protected void NOTIFY(DFSOperationChain operationChain, Context context) {
 //        context.partitionStateManager.onOcExecuted(operationChain);
         operationChain.isExecuted = true; // set operation chain to be executed, which is used for further rollback
         Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
@@ -60,7 +60,7 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
     }
 
     @Override
-    public void TxnSubmitFinished(DFSLayeredTPGContext context) {
+    public void TxnSubmitFinished(Context context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<DFSOperation> operationGraph = new ArrayList<>();
