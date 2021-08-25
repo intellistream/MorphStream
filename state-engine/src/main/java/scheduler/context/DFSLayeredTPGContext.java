@@ -12,15 +12,7 @@ public class DFSLayeredTPGContext extends LayeredTPGContext<DFSOperation, DFSOpe
     }
 
     @Override
-    protected void reset() {
-        currentLevel = 0;
-        totalOsToSchedule = 0;
-        scheduledOPs = 0;
-    }
-
-    @Override
     public DFSOperationChain createTask(String tableName, String pKey) {
         return new DFSOperationChain(tableName, pKey);
     }
-
-};
+}

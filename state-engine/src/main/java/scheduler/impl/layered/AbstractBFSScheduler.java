@@ -4,6 +4,9 @@ import org.jetbrains.annotations.Nullable;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContext;
+import scheduler.context.LayeredTPGContext;
+import scheduler.struct.AbstractOperation;
+import scheduler.struct.OperationChain;
 import scheduler.struct.bfs.BFSOperation;
 import scheduler.struct.bfs.BFSOperationChain;
 import utils.SOURCE_CONTROL;
@@ -18,19 +21,19 @@ import java.util.List;
  * 3. thread will find operations from its queue for execution.
  * It's a shared data structure!
  */
-public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
+public class AbstractBFSScheduler<Context extends BFSLayeredTPGContext> extends LayeredScheduler<Context, BFSOperation, BFSOperationChain> {
 
-    public BFSScheduler(int totalThreads, int NUM_ITEMS) {
+    public AbstractBFSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
     }
 
-    private void ProcessedToNextLevel(BFSLayeredTPGContext context) {
+    private void ProcessedToNextLevel(Context context) {
         context.currentLevel += 1;
         context.currentLevelIndex = 0;
     }
 
     @Override
-    public void EXPLORE(BFSLayeredTPGContext context) {
+    public void EXPLORE(Context context) {
         BFSOperationChain next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
             while (next == null) {
@@ -43,11 +46,11 @@ public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
     }
 
     @Override
-    protected void NOTIFY(BFSOperationChain operationChain, BFSLayeredTPGContext context) {
+    protected void NOTIFY(BFSOperationChain operationChain, Context context) {
     }
 
     @Override
-    public void TxnSubmitFinished(BFSLayeredTPGContext context) {
+    public void TxnSubmitFinished(Context context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<BFSOperation> operationGraph = new ArrayList<>();

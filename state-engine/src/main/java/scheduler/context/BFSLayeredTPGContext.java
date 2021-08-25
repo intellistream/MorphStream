@@ -12,15 +12,7 @@ public class BFSLayeredTPGContext extends LayeredTPGContext<BFSOperation, BFSOpe
     }
 
     @Override
-    protected void reset() {
-        currentLevel = 0;
-        totalOsToSchedule = 0;
-        scheduledOPs = 0;
-    }
-
-    @Override
     public BFSOperationChain createTask(String tableName, String pKey) {
         return new BFSOperationChain(tableName, pKey);
     }
-
 };
