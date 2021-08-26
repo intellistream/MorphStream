@@ -38,9 +38,9 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
             MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             EXPLORE(context);
             MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             PROCESS(context, mark_ID);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
         RESET();//
         MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);

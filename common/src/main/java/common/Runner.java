@@ -47,7 +47,6 @@ public abstract class Runner implements IRunner {
     /**
      * System Tuning Parameters.
      */
-
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
@@ -96,7 +95,7 @@ public abstract class Runner implements IRunner {
 //    public String generator = "TPGGenerator";
     public String generator = "OCGenerator";
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
-    public int totalEventsPerBatch = 1200000;
+    public int totalEventsPerBatch = 983040;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
     public int numberOfBatches = 1;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
@@ -105,10 +104,10 @@ public abstract class Runner implements IRunner {
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
 //    public String scheduler = "BFS";
-    public String scheduler = "BFSA";
+//    public String scheduler = "BFSA";
 //    public String scheduler = "DFS";
 //    public String scheduler = "DFSA";
-//    public String scheduler = "GS";
+    public String scheduler = "GS";
 //    public String scheduler = "GSA";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
