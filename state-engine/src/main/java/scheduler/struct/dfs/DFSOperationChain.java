@@ -26,7 +26,6 @@ public class DFSOperationChain extends OperationChain<DFSOperation> {
     protected void setupDependency(DFSOperation targetOp, OperationChain<DFSOperation> parentOC, DFSOperation parentOp) {
         this.ocFdParents.putIfAbsent(parentOC, parentOp);
         this.ocFdParentsCount.incrementAndGet();
-        parentOp.addChild(targetOp, MetaTypes.DependencyType.FD);
         // add child for parent OC
         if (parentOC instanceof DFSOperationChain) {
             ((DFSOperationChain) parentOC).ocFdChildren.putIfAbsent(this, targetOp);

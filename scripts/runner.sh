@@ -25,26 +25,27 @@ function runTStream() {
 function baselineEvaluation() {
   ResetParameters
   for scheduler in BFS DFS GS
+  do
+      for events in 983040
       do
-          for events in 983040
-          do
-              runTStream
-          done
+          runTStream
       done
+  done
 }
 
 # run basic experiment for different algorithms
 function withAbortEvaluation() {
   ResetParameters
   for scheduler in BFSA DFSA GSA
+  do
+      for events in 983040
       do
-          for events in 983040
-          do
-              runTStream
-          done
+          runTStream
       done
+  done
 }
 
 # TODO: more data generator properties are to be exposed
 
 baselineEvaluation
+withAbortEvaluation
