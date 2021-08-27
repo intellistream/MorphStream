@@ -3,7 +3,6 @@ package profiler;
 import common.CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scheduler.impl.layered.DFSScheduler;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -307,7 +306,18 @@ public class MeasureTools {
         }
     }
 
-    public static void METRICS_REPORT(int ccOption, File file, int tthread) {
+    private static void WriteThroughputReport(File file, double throughput) {
+        try {
+            BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
+            fileWriter.write("Throughput: " + throughput + "\n");
+            fileWriter.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void METRICS_REPORT(int ccOption, File file, int tthread, double throughput) {
+        WriteThroughputReport(file, throughput);
         AverageTotalTimeBreakdownReport(file, tthread);
         if (ccOption == CCOption_TStream) {//extra info
             SchedulerTimeBreakdownReport(file, tthread);
