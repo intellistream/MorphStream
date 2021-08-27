@@ -26,7 +26,6 @@ import static content.common.CommonMetaTypes.AccessType.*;
 public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> implements IScheduler<Context> {
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context, SchedulingUnit, ExecutionUnit> tpg; // TPG to be maintained in this global instance.
-    public final Map<Integer, Context> threadToContextMap;
 
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
@@ -48,20 +47,7 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
 
     protected Scheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
-        threadToContextMap = new HashMap<>();
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta);
-    }
-
-    /**
-     * state to thread mapping
-     *
-     * @param key
-     * @param delta
-     * @return
-     */
-    public static int getTaskId(String key, Integer delta) {
-        Integer _key = Integer.valueOf(key);
-        return _key / delta;
     }
 
     /**
@@ -207,14 +193,25 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
 
     @Override
     public void AddContext(int threadId, Context context) {
-        threadToContextMap.put(threadId, context);
+        tpg.threadToContextMap.put(threadId, context);
     }
 
-    @Override
+    /**
+     * state to thread mapping
+     *
+     * @param key
+     * @param delta
+     * @return
+     */
+    public static int getTaskId(String key, Integer delta) {
+        Integer _key = Integer.valueOf(key);
+        return _key / delta;
+    }
+
     public Context getTargetContext(TableRecord d_record) {
         // the thread to submit the operation may not be the thread to execute it.
         // we need to find the target context this thread is mapped to.
         int threadId = getTaskId(d_record.record_.GetPrimaryKey(), delta);
-        return threadToContextMap.get(threadId);
+        return tpg.threadToContextMap.get(threadId);
     }
 }

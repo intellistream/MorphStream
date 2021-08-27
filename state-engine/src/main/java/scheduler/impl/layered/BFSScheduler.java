@@ -53,7 +53,6 @@ public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
         List<BFSOperation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
             BFSOperation set_op = constructOp(operationGraph, request);
-            tpg.setupOperationTDFD(set_op, request, context);
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
@@ -74,6 +73,7 @@ public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
                 break;
         }
         operationGraph.add(set_op);
+        tpg.setupOperationTDFD(set_op, request);
         return set_op;
     }
 }

@@ -3,6 +3,7 @@ package scheduler.context;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
 import scheduler.statemanager.OperationChainStateListener;
 import scheduler.statemanager.PartitionStateManagerWithAbort;
+import scheduler.struct.gs.GSOperationChain;
 import scheduler.struct.gs.GSOperationChainWithAbort;
 import scheduler.struct.gs.GSOperationWithAbort;
 
@@ -21,7 +22,9 @@ public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithA
 
     @Override
     public GSOperationChainWithAbort createTask(String tableName, String pKey) {
-        return new GSOperationChainWithAbort(tableName, pKey);
+        GSOperationChainWithAbort oc = new GSOperationChainWithAbort(tableName, pKey);
+        oc.setContext(this);
+        return oc;
     }
 
     public void initialize(GSSchedulerWithAbort.ExecutableTaskListener executableTaskListener) {

@@ -98,9 +98,6 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         // mark aborted operations and notify OC contains header operation to abort
         // notify children to rollback and redo if it is executed
         for (GSOperationWithAbort failedOp : operationChain.failedOperations) {
-//            for (GSOperationWithAbort abortedOp : failedOp.getHeader().getDescendants()) {
-//                abortedOp.context.partitionStateManager.onOcNeedAbortHandling(abortedOp.getOC(), abortedOp);
-//            }
             ((GSTPGContextWithAbort) failedOp.getHeader().context).partitionStateManager.onHeaderStartAbortHandling(failedOp.getHeader().getOC(), failedOp.getHeader());
         }
         operationChain.needAbortHandling = false;

@@ -51,32 +51,5 @@ public class AbstractBFSScheduler<Context extends BFSLayeredTPGContext> extends 
 
     @Override
     public void TxnSubmitFinished(Context context) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-        // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
-        List<BFSOperation> operationGraph = new ArrayList<>();
-        for (Request request : context.requests) {
-            BFSOperation set_op = constructOp(operationGraph, request);
-            tpg.setupOperationTDFD(set_op, request, context);
-        }
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-    }
-
-    @Nullable
-    private BFSOperation constructOp(List<BFSOperation> operationGraph, Request request) {
-        long bid = request.txn_context.getBID();
-        BFSOperation set_op = null;
-        switch (request.accessType) {
-            case READ_WRITE_COND: // they can use the same method for processing
-            case READ_WRITE:
-                set_op = new BFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
-                        request.d_record, request.function, request.condition, request.condition_records, request.success);
-                break;
-            case READ_WRITE_COND_READ:
-                set_op = new BFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
-                        request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
-                break;
-        }
-        operationGraph.add(set_op);
-        return set_op;
     }
 }

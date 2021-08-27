@@ -54,11 +54,6 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
         throw new UnsupportedOperationException("Unsupported.");
     }
 
-    @NotNull
-    private ExecutionUnit constructOp(Context context, List<ExecutionUnit> operationGraph, Request request) {
-        throw new UnsupportedOperationException("Unsupported.");
-    }
-
     @Override
     public void PROCESS(Context context, long mark_ID) {
         int threadId = context.thisThreadId;
@@ -68,7 +63,9 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
 
         if (next != null) {
             execute(context, next, mark_ID);
+            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
             NOTIFY(next, context);
+            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }
     }
 
@@ -87,9 +84,9 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
     public void execute(Context context, SchedulingUnit operationChain, long mark_ID) {
         MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
         for (ExecutionUnit operation : operation_chain_list) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
     }
 

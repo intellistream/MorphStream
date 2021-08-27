@@ -32,7 +32,9 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
         if (next != null) {
             execute(context, next.getOperations(), mark_ID);
+            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
             NOTIFY(next, context);
+            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }
     }
 
@@ -45,9 +47,9 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
      */
     public void execute(Context context, MyList<ExecutionUnit> operation_chain, long mark_ID) {
         for (ExecutionUnit operation : operation_chain) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
     }
 

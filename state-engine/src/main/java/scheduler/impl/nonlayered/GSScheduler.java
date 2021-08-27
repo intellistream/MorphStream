@@ -59,14 +59,14 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<GSOperation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
-            GSOperation set_op = constructOp(context, operationGraph, request);
+            GSOperation set_op = constructOp(operationGraph, request);
         }
         // set logical dependencies among all operation in the same transaction
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
     @NotNull
-    private GSOperation constructOp(GSTPGContext context, List<GSOperation> operationGraph, Request request) {
+    private GSOperation constructOp(List<GSOperation> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         GSOperation set_op;
         switch (request.accessType) {
@@ -83,7 +83,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
                 throw new RuntimeException("Unexpected operation");
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op, request, context);
+        tpg.setupOperationTDFD(set_op, request);
         return set_op;
     }
 

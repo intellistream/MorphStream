@@ -210,6 +210,16 @@ public class MeasureTools {
             COMPUTE_CONSTRUCT(thread_id);
     }
 
+    public static void BEGIN_NOTIFY_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_NOTIFY_START(thread_id);
+    }
+
+    public static void END_NOTIFY_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_NOTIFY(thread_id);
+    }
+
     private static void AverageTotalTimeBreakdownReport(File file, int tthread) {
         try {
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
@@ -273,9 +283,10 @@ public class MeasureTools {
             fileWriter.write("SchedulerTimeBreakdownReport\n");
             if (enable_log) log.info("===Scheduler Time Breakdown Report===");
             fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t construct_time\n");
-            if (enable_log) log.info("thread_id\t explore_time\t next_time\t useful_time\t construct_time");
+            if (enable_log) log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
+                                "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t" +
@@ -284,6 +295,7 @@ public class MeasureTools {
                         , Scheduler_Record.Explore[threadId].getMean()
                         , Scheduler_Record.Next[threadId].getMean()
                         , Scheduler_Record.Useful[threadId].getMean()
+                        , Scheduler_Record.Noitfy[threadId].getMean()
                         , Scheduler_Record.Construct[threadId].getMean()
                 );
                 fileWriter.write(output + "\n");
