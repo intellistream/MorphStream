@@ -11,7 +11,7 @@ function ResetParameters() {
 }
 
 function runTStream() {
-  java -Xms60g -Xmx60g -jar -d64 application-0.0.1-jar-with-dependencies.jar \
+  java -Xms60g -Xmx60g -jar -d64 application-0.0.2-jar-with-dependencies.jar \
     --numberOfDLevels $numberOfDLevels \
     --tthread $tthread \
     --totalEventsPerBatch $events \
