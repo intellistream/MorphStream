@@ -22,19 +22,14 @@ public abstract class AbstractGSOperationChain<ExecutionUnit extends GSOperation
 
     public void addOperation(ExecutionUnit op) {
         operations.add(op);
-        setContext(op.context);
     }
 
     public <T extends AbstractGSOperationChain> Collection<T> getFDChildren() {
         return (Collection<T>) ocFdChildren.keySet();
     }
 
-    public Collection<OperationChain<ExecutionUnit>> getFDParents() {
-        return ocFdParents.keySet();
-    }
 
-
-    private void setContext(AbstractGSTPGContext context) {
+    public void setContext(AbstractGSTPGContext context) {
         if (this.context == null) {
             this.context = context;
         }
@@ -44,7 +39,6 @@ public abstract class AbstractGSOperationChain<ExecutionUnit extends GSOperation
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
         this.ocFdParents.putIfAbsent(parentOC, parentOp);
         this.ocFdParentsCount.incrementAndGet();
-        parentOp.addChild(targetOp, MetaTypes.DependencyType.FD);
         // add child for parent OC
         if (parentOC instanceof AbstractGSOperationChain) {
             ((AbstractGSOperationChain) parentOC).ocFdChildren.putIfAbsent(this, targetOp);

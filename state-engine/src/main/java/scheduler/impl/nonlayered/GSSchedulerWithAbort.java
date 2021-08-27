@@ -57,7 +57,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         int txnOpId = 0;
          GSOperationWithAbort headerOperation = null;
         for (Request request : context.requests) {
-             GSOperationWithAbort set_op = constructOp(context, operationGraph, request);
+             GSOperationWithAbort set_op = constructOp(operationGraph, request);
             if (txnOpId == 0)
                 headerOperation = set_op;
             // addOperation an operation id for the operation for the purpose of temporal dependency construction
@@ -70,7 +70,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     }
 
     @NotNull
-    private  GSOperationWithAbort constructOp(GSTPGContextWithAbort context, List<GSOperationWithAbort> operationGraph, Request request) {
+    private  GSOperationWithAbort constructOp(List<GSOperationWithAbort> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
          GSOperationWithAbort set_op;
         switch (request.accessType) {
@@ -87,7 +87,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
                 throw new RuntimeException("Unexpected operation");
         }
         operationGraph.add(set_op);
-        set_op.setOC(tpg.setupOperationTDFD(set_op, request, context));
+        set_op.setOC(tpg.setupOperationTDFD(set_op, request));
         return set_op;
     }
 
@@ -106,10 +106,10 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     public void execute(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
         MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
         for (GSOperationWithAbort operation : operation_chain_list) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
             checkTransactionAbort(operation, operationChain);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
     }
 

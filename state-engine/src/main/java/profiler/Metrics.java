@@ -26,10 +26,12 @@ public class Metrics {
         double next_time = Scheduler.Next[thread_id] / (double) num_events;
         double useful_time = Scheduler.Useful[thread_id] / (double) num_events;
         double construct_time = Scheduler.Construct[thread_id] / (double) num_events;
+        double notify_time = Scheduler.Notify[thread_id] / (double) num_events;
         Scheduler_Record.Explore[thread_id].addValue(explore_time);
         Scheduler_Record.Next[thread_id].addValue(next_time);
         Scheduler_Record.Useful[thread_id].addValue(useful_time);
         Scheduler_Record.Construct[thread_id].addValue(construct_time);
+        Scheduler_Record.Noitfy[thread_id].addValue(notify_time);
     }
 
     public static void RECORD_TIME(int thread_id) {
@@ -182,6 +184,14 @@ public class Metrics {
         Scheduler.Construct[thread_id] += System.nanoTime() - Scheduler.ConstructStart[thread_id];
     }
 
+    public static void COMPUTE_NOTIFY_START(int thread_id) {
+        Scheduler.NotifyStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_NOTIFY(int thread_id) {
+        Scheduler.Notify[thread_id] += System.nanoTime() - Scheduler.NotifyStart[thread_id];
+    }
+
     static class TxnRuntime {
         public static long[] IndexStart = new long[kMaxThreadNum];
         public static long[] Index = new long[kMaxThreadNum];
@@ -278,6 +288,8 @@ public class Metrics {
         public static long[] ExploreStart = new long[kMaxThreadNum];
         public static long[] ConstructStart = new long[kMaxThreadNum];
         public static long[] Construct = new long[kMaxThreadNum];
+        public static long[] NotifyStart = new long[kMaxThreadNum];
+        public static long[] Notify = new long[kMaxThreadNum];
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
@@ -289,6 +301,8 @@ public class Metrics {
                 Explore[i] = 0;
                 ConstructStart[i] = 0;
                 Construct[i] = 0;
+                NotifyStart[i] = 0;
+                Notify[i] = 0;
             }
         }
     }
@@ -298,6 +312,7 @@ public class Metrics {
         public static DescriptiveStatistics[] Explore = new DescriptiveStatistics[kMaxThreadNum];//EXPLORE.
         public static DescriptiveStatistics[] Useful = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
         public static DescriptiveStatistics[] Construct = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
+        public static DescriptiveStatistics[] Noitfy = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
@@ -305,6 +320,7 @@ public class Metrics {
                 Explore[i] = new DescriptiveStatistics();
                 Useful[i] = new DescriptiveStatistics();
                 Construct[i] = new DescriptiveStatistics();
+                Noitfy[i] = new DescriptiveStatistics();
             }
         }
     }

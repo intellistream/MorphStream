@@ -1,18 +1,26 @@
 package scheduler.struct.bfs;
 
 import content.common.CommonMetaTypes;
+import scheduler.context.AbstractGSTPGContext;
 import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
+import scheduler.struct.MetaTypes;
+import scheduler.struct.gs.GSOperation;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
 
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
  */
 public class BFSOperation extends AbstractOperation implements Comparable<BFSOperation> {
+
     public BFSOperation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
         this(null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
     }

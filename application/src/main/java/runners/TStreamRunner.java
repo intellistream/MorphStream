@@ -150,11 +150,12 @@ public class TStreamRunner extends Runner {
                 // decide the output path of metrics.
                 String statsFolderPattern = OsUtils.osWrapperPostFix(rootPath)
                         + OsUtils.osWrapperPostFix("stats")
+                        + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
                         + OsUtils.osWrapperPostFix("total_batches = %d")
                         + OsUtils.osWrapperPostFix("events_per_batch = %d");
 
-                String statsFolderPath = String.format(statsFolderPattern, tthread, numberOfBatches, totalEventsPerBatch);
+                String statsFolderPath = String.format(statsFolderPattern, scheduler, tthread, numberOfBatches, totalEventsPerBatch);
                 File file = new File(statsFolderPath);
                 if (enable_log) log.info("Dumping stats to...");
                 if (enable_log) log.info(String.valueOf(file.getAbsoluteFile()));
@@ -167,7 +168,7 @@ public class TStreamRunner extends Runner {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread);
+                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread, rt);
             }
         }//end of profile.
     }

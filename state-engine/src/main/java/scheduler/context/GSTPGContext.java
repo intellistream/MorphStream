@@ -25,7 +25,9 @@ public class GSTPGContext
 
     @Override
     public GSOperationChain createTask(String tableName, String pKey) {
-        return new GSOperationChain(tableName, pKey);
+        GSOperationChain oc = new GSOperationChain(tableName, pKey);
+        oc.setContext(this);
+        return oc;
     }
 
     public void initialize(GSScheduler.ExecutableTaskListener executableTaskListener) {

@@ -12,6 +12,8 @@ import transaction.impl.ordered.MyList;
 import utils.lib.ConcurrentHashMap;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 
 import static scheduler.impl.Scheduler.getTaskId;
@@ -37,6 +39,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
     CyclicBarrier barrier;
+    public final Map<Integer, Context> threadToContextMap;
 
     /**
      * @param totalThreads
@@ -49,6 +52,8 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         operationChains = new ConcurrentHashMap<>();
         operationChains.put("accounts", new TableOCs<>(totalThreads));
         operationChains.put("bookEntries", new TableOCs<>(totalThreads));
+
+        threadToContextMap = new HashMap<>();
     }
 
     public TableOCs<SchedulingUnit> getTableOCs(String table_name) {
@@ -65,11 +70,11 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
      * @param operation
      * @param request
      */
-    public SchedulingUnit setupOperationTDFD(ExecutionUnit operation, Request request, Context context) {
+    public SchedulingUnit setupOperationTDFD(ExecutionUnit operation, Request request) {
         // TD
-        SchedulingUnit oc = addOperationToChain(operation, context);
+        SchedulingUnit oc = addOperationToChain(operation);
         // FD
-        checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source, context);
+        checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
         return oc;
     }
 
@@ -109,27 +114,28 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
     /**
      * @param operation
      */
-    private SchedulingUnit addOperationToChain(ExecutionUnit operation, Context context) {
+    private SchedulingUnit addOperationToChain(ExecutionUnit operation) {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         String table_name = operation.table_name;
         String primaryKey = operation.d_record.record_.GetPrimaryKey();
-        SchedulingUnit retOc = getOC(table_name, primaryKey, context);
+        SchedulingUnit retOc = getOC(table_name, primaryKey);
         retOc.addOperation(operation);
         return retOc;
     }
 
 
-    private SchedulingUnit getOC(String tableName, String pKey, Context context) {
-        ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(getTaskId(pKey, delta)).holder_v1;
-        return holder.computeIfAbsent(pKey, s -> context.createTask(tableName, pKey));
+    private SchedulingUnit getOC(String tableName, String pKey) {
+        int threadId = getTaskId(pKey, delta);
+        ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
+        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
     }
 
     private void checkFD(SchedulingUnit curOC, ExecutionUnit op, String table_name,
-                         String key, String[] condition_sourceTable, String[] condition_source, Context context) {
+                         String key, String[] condition_sourceTable, String[] condition_source) {
         for (int index = 0; index < condition_source.length; index++) {
             if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                 continue;// no need to check data dependency on a key itself.
-            SchedulingUnit OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index], context);
+            SchedulingUnit OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index]);
             // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
             MyList<ExecutionUnit> conditionedOps = OCFromConditionSource.getOperations();
             if (OCFromConditionSource.getOperations().isEmpty() || conditionedOps.first().bid >= op.bid) {

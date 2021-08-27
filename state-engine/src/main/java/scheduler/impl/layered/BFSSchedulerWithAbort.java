@@ -73,10 +73,10 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
     @Override
     public void execute(BFSLayeredTPGContextWithAbort context, MyList<BFSOperation> operation_chain, long mark_ID) {
         for (BFSOperation operation : operation_chain) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
             checkTransactionAbort(operation);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
     }
 
@@ -91,7 +91,6 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         List<BFSOperation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
             BFSOperation set_op = constructOp(operationGraph, request);
-            tpg.setupOperationTDFD(set_op, request, context);
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
@@ -112,6 +111,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
                 break;
         }
         operationGraph.add(set_op);
+        tpg.setupOperationTDFD(set_op, request);
         return set_op;
     }
 
@@ -182,8 +182,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         if (context.thisThreadId == 0) {
             targetRollbackLevel = Integer.MAX_VALUE;
             for (int i = 0; i < context.totalThreads; i++) { // find the first level that contains aborted operations
-                if (enable_log) LOG.debug("is thread rollbacked: " + threadToContextMap.get(i).thisThreadId + " | " + threadToContextMap.get(i).isRollbacked);
-                targetRollbackLevel = min(targetRollbackLevel, threadToContextMap.get(i).rollbackLevel);
+                targetRollbackLevel = min(targetRollbackLevel, tpg.threadToContextMap.get(i).rollbackLevel);
             }
         }
     }

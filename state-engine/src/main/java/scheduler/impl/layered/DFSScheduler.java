@@ -66,7 +66,6 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
         List<DFSOperation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
             DFSOperation set_op = constructOp(operationGraph, request);
-            tpg.setupOperationTDFD(set_op, request, context);
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
@@ -87,6 +86,7 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
                 break;
         }
         operationGraph.add(set_op);
+        tpg.setupOperationTDFD(set_op, request);
         return set_op;
     }
 }

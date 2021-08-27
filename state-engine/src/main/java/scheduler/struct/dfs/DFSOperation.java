@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
+import scheduler.struct.MetaTypes;
 import scheduler.struct.MetaTypes.DependencyType;
 import scheduler.struct.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
@@ -24,12 +25,7 @@ import static common.CONTROL.enable_log;
  */
 public class DFSOperation extends AbstractOperation implements Comparable<DFSOperation> {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
-    public final SchedulerContext context;
-    private final String operationChainKey;
 
-    private final Queue<DFSOperation> fd_children; // the functional dependencies ops to be executed after this op.
-    private final Queue<DFSOperation> fd_parents; // the functional dependencies ops to be executed in advance
-    private final AtomicReference<OperationStateType> operationState;
     // operation id under a transaction.
     // an operation id to indicate how many operations in front of this operation in the same transaction.
     public int txn_op_id = 0;
@@ -76,14 +72,6 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success) {
         super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid);
-        this.context = context;
-        this.operationChainKey = table_name + "|" + d_record.record_.GetPrimaryKey();
-
-        // finctional dependencies
-        fd_parents = new ConcurrentLinkedQueue<>(); // the finctional dependnecies ops to be executed in advance
-        fd_children = new ConcurrentLinkedQueue<>(); // the finctional dependencies ops to be executed after this op.
-        // temporal dependencies
-        operationState = new AtomicReference<>(OperationStateType.BLOCKED);
     }
 
 
@@ -110,57 +98,12 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
 
     @Override
     public String toString() {
-        return bid + "|" + txn_op_id + "|" + String.format("%-15s", this.getOperationState());
-    }
-
-    public void set_op_id(int op_id) {
-        this.txn_op_id = op_id;
+        return bid + "|" + txn_op_id;
     }
 
     public int getTxn_op_id() {
         return txn_op_id;
     }
 
-    /*********************************CREATED BY MYC****************************************/
 
-
-    public String getOperationChainKey() {
-        return operationChainKey;
-    }
-
-    public <T extends AbstractOperation> Queue<T> getChildren(DependencyType type) {
-        if (type.equals(DependencyType.FD)) {
-            return (Queue<T>) fd_children;
-        } else {
-            throw new RuntimeException("Unexpected dependency type: " + type);
-        }
-    }
-
-
-    public void addChild(DFSOperation operation, DependencyType type) {
-        if (type.equals(DependencyType.FD)) {
-            this.fd_children.add(operation);
-//            this.getOC().addParentOrChild(operation.getOC(), DependencyType.FD, true);
-        } else {
-            throw new RuntimeException("unsupported dependency type children");
-        }
-    }
-
-    public OperationStateType getOperationState() {
-        return operationState.get();
-    }
-
-
-    /**
-     * @param type
-     * @param <T>
-     * @return
-     */
-    public <T extends AbstractOperation> Queue<T> getParents(DependencyType type) {
-        if (type.equals(DependencyType.FD)) {
-            return (Queue<T>) fd_parents;
-        } else {
-            throw new RuntimeException("Unexpected dependency type: " + type);
-        }
-    }
 }

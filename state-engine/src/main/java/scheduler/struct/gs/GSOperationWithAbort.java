@@ -14,6 +14,7 @@ import transaction.function.Function;
 public class GSOperationWithAbort extends GSOperation {
     public int txnOpId = 0;
 
+    public final AbstractGSTPGContext context;
     // logical dependencies are to be stored for the purpose of abort handling
     private GSOperationWithAbort ld_head_operation = null; // the logical dependencies ops to be executed after this op.
     private GSOperationChainWithAbort oc; // used for dependency resolved notification under greedy smart
@@ -57,6 +58,7 @@ public class GSOperationWithAbort extends GSOperation {
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success) {
         super(context, table_name, txn_context, bid, accessType, record, record_ref, function, condition, condition_records, success);
+        this.context = context;
     }
 
     public void setOC(GSOperationChainWithAbort operationChain) {

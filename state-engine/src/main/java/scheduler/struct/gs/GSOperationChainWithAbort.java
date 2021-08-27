@@ -26,18 +26,11 @@ public class GSOperationChainWithAbort extends AbstractGSOperationChain<GSOperat
 
     public void addOperation(GSOperationWithAbort op) {
         operations.add(op);
-        setContext(op.context);
     }
 
     @Override
     public Collection<GSOperationChainWithAbort> getFDChildren() {
         return super.getFDChildren();
-    }
-
-    private void setContext(AbstractGSTPGContext context) {
-        if (this.context == null) {
-            this.context = context;
-        }
     }
 
     public void addDescendant(GSOperationWithAbort header, GSOperationWithAbort descendant) {

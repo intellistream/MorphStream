@@ -77,10 +77,10 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
     @Override
     public void execute(DFSLayeredTPGContextWithAbort context, MyList<DFSOperation> operation_chain, long mark_ID) {
         for (DFSOperation operation : operation_chain) {
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
             checkTransactionAbort(operation);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
     }
 
@@ -107,7 +107,6 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         List<DFSOperation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
             DFSOperation set_op = constructOp(operationGraph, request);
-            tpg.setupOperationTDFD(set_op, request, context);
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
@@ -128,6 +127,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
                 break;
         }
         operationGraph.add(set_op);
+        tpg.setupOperationTDFD(set_op, request);
         return set_op;
     }
 
