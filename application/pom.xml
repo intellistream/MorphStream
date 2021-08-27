@@ -23,7 +23,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>runners.BenchmarkRunner</mainClass>
+                            <mainClass>runners.TStreamRunner</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
