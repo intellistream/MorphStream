@@ -1,24 +1,15 @@
-package scheduler.struct.dfs;
+package scheduler.struct.layered.dfs;
 
 import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
-import scheduler.struct.MetaTypes;
-import scheduler.struct.MetaTypes.DependencyType;
-import scheduler.struct.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
-
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static common.CONTROL.enable_log;
 
 /**
  * contains the place-holder to fill, as well as timestamp (counter).

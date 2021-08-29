@@ -1,7 +1,6 @@
 package scheduler.struct;
 
 import content.common.CommonMetaTypes;
-import scheduler.struct.bfs.BFSOperation;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import storage.TableRecordRef;

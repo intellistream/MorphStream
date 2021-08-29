@@ -5,12 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
-import scheduler.context.BFSLayeredTPGContextWithAbort;
 import scheduler.context.DFSLayeredTPGContextWithAbort;
-import scheduler.struct.bfs.BFSOperation;
-import scheduler.struct.bfs.BFSOperationChain;
-import scheduler.struct.dfs.DFSOperation;
-import scheduler.struct.dfs.DFSOperationChain;
+import scheduler.struct.layered.dfs.DFSOperation;
+import scheduler.struct.layered.dfs.DFSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 

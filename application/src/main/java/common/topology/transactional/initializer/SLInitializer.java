@@ -103,15 +103,23 @@ public class SLInitializer extends TableInitilizer {
         String subFolder = null;
         try {
             digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes;
+            if (dataConfig instanceof LayeredOCDataGeneratorConfig) {
+                bytes = digest.digest(String.format("%d_%d_%d_%d",
+                            dataConfig.getTotalThreads(),
+                            dataConfig.getTuplesPerBatch(),
+                            dataConfig.getTotalBatches(),
+                            ((LayeredOCDataGeneratorConfig) dataConfig).getNumberOfDLevels())
+                        .getBytes(StandardCharsets.UTF_8));
+            } else {
+                bytes = digest.digest(String.format("%d_%d_%d",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTuplesPerBatch(),
+                                dataConfig.getTotalBatches())
+                        .getBytes(StandardCharsets.UTF_8));
+            }
             subFolder = OsUtils.osWrapperPostFix(
-                    DatatypeConverter.printHexBinary(
-                            digest.digest(
-                                    String.format("%d_%d_%d",
-                                                    dataConfig.getTotalThreads(),
-                                                    dataConfig.getTuplesPerBatch(),
-                                                    dataConfig.getTotalBatches()
-                                            )
-                                            .getBytes(StandardCharsets.UTF_8))));
+                    DatatypeConverter.printHexBinary(bytes));
         } catch (Exception e) {
             e.printStackTrace();
         }

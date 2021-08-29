@@ -1,7 +1,7 @@
 package scheduler.signal.op;
 
 import scheduler.struct.MetaTypes;
-import scheduler.struct.bfs.BFSOperation;
+import scheduler.struct.layered.bfs.BFSOperation;
 
 /**
  * this signal is used for read operation to elect a new ready candidate.

@@ -2,7 +2,7 @@ package scheduler.statemanager;
 
 
 import scheduler.struct.MetaTypes;
-import scheduler.struct.bfs.BFSOperation;
+import scheduler.struct.layered.bfs.BFSOperation;
 
 public interface OperationStateListener {
     void onOpParentStateUpdated(BFSOperation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState);

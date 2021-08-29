@@ -1,7 +1,7 @@
 package scheduler.signal.op;
 
 import scheduler.struct.MetaTypes;
-import scheduler.struct.bfs.BFSOperation;
+import scheduler.struct.layered.bfs.BFSOperation;
 
 public class OnDescendantUpdatedSignal extends OperationSignal {
     private final MetaTypes.OperationStateType descendantState;
