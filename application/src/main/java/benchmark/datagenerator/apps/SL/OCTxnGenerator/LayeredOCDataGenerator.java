@@ -75,11 +75,18 @@ public class LayeredOCDataGenerator extends DataGenerator {
         SLEvent t = new SLTransferEvent(transactionId, srcAccOC.getId(), srcAstOC.getId(), dstAccOC.getId(), dstAstOC.getId());
         dataTransactions.add(t);
         transactionId++;
-        if (transactionId % 100000 == 0)
+        if (transactionId % 100000 == 0) {
             if (enable_log) LOG.info(String.valueOf(transactionId));
+            for (int lop = 0; lop < ocLevelsDistribution.length; lop++) {
+                System.out.print(lop + ": " + ocLevelsDistribution[lop] + "; ");
+            }
+            LOG.info(" ");
+        }
 
         // Step 4: update the statistics such as dependency distribution to guide future data generation
         updateStats();
+
+
     }
 
     @Override

@@ -144,9 +144,11 @@ public class SLInitializer extends TableInitilizer {
         } else {
             right_bound = (thread_id + 1) * partition_interval;
         }
+        int pid;
+        String _key;
         for (int key = left_bound; key < right_bound; key++) {
-            int pid = get_pid(partition_interval, key);
-            String _key = String.valueOf(key);
+            pid = get_pid(partition_interval, key);
+            _key = String.valueOf(key);
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
@@ -176,9 +178,11 @@ public class SLInitializer extends TableInitilizer {
         } else {
             right_bound = (thread_id + 1) * partition_interval;
         }
+        int pid;
+        String _key;
         for (int key = left_bound; key < right_bound; key++) {
-            int pid = get_pid(partition_interval, key);
-            String _key = String.valueOf(key);
+            pid = get_pid(partition_interval, key);
+            _key = String.valueOf(key);
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }

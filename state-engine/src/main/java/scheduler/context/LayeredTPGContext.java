@@ -58,9 +58,10 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
      */
     public void buildBucketPerThread(Collection<SchedulingUnit> ocs) {
         int localMaxDLevel = 0;
+        int dependencyLevel;
         for (SchedulingUnit oc : ocs) {
             oc.updateDependencyLevel();
-            int dependencyLevel = oc.getDependencyLevel();
+            dependencyLevel = oc.getDependencyLevel();
             if (localMaxDLevel < dependencyLevel)
                 localMaxDLevel = dependencyLevel;
             if (!allocatedLayeredOCBucket.containsKey(dependencyLevel))

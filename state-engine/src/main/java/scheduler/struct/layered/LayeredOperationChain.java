@@ -35,7 +35,7 @@ public abstract class LayeredOperationChain<ExecutionUnit extends AbstractOperat
         if (isDependencyLevelCalculated)
             return;
         dependencyLevel = 0;
-        for (LayeredOperationChain<ExecutionUnit> parent : getFDParents()) {
+        for (LayeredOperationChain parent : getFDParents()) {
             if (!parent.hasValidDependencyLevel()) {
                 parent.updateDependencyLevel();
             }

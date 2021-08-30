@@ -55,9 +55,10 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<GSOperationWithAbort> operationGraph = new ArrayList<>();
         int txnOpId = 0;
-         GSOperationWithAbort headerOperation = null;
+        GSOperationWithAbort headerOperation = null;
+        GSOperationWithAbort set_op;
         for (Request request : context.requests) {
-             GSOperationWithAbort set_op = constructOp(operationGraph, request);
+            set_op = constructOp(operationGraph, request);
             if (txnOpId == 0)
                 headerOperation = set_op;
             // addOperation an operation id for the operation for the purpose of temporal dependency construction
@@ -72,7 +73,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     @NotNull
     private  GSOperationWithAbort constructOp(List<GSOperationWithAbort> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
-         GSOperationWithAbort set_op;
+        GSOperationWithAbort set_op;
         switch (request.accessType) {
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:

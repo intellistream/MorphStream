@@ -103,13 +103,12 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<DFSOperation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
-            DFSOperation set_op = constructOp(operationGraph, request);
+            constructOp(operationGraph, request);
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
-    @Nullable
-    private DFSOperation constructOp(List<DFSOperation> operationGraph, Request request) {
+    private void constructOp(List<DFSOperation> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         DFSOperation set_op = null;
         switch (request.accessType) {
@@ -125,7 +124,6 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         }
         operationGraph.add(set_op);
         tpg.setupOperationTDFD(set_op, request);
-        return set_op;
     }
 
     protected void checkTransactionAbort(DFSOperation operation) {
