@@ -24,10 +24,6 @@ public class GeneratorSpout extends AbstractSpout {
     }
 
     @Override
-    public void cleanup() {
-    }
-
-    @Override
     public void nextTuple() throws InterruptedException {
         collector.emit_bid(DEFAULT_STREAM_ID, callGenerator.receive());
     }

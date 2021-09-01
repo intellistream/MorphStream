@@ -5,6 +5,8 @@ import content.common.CommonMetaTypes.AccessType;
 import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scheduler.Request;
 import scheduler.context.*;
 import storage.*;
@@ -25,8 +27,9 @@ import static content.common.CommonMetaTypes.kMaxAccessNum;
 /**
  * TxnManagerDedicated is a thread-local structure.
  */
-@lombok.extern.slf4j.Slf4j
 public abstract class TxnManagerDedicatedAsy extends TxnManager {
+    private static final Logger log = LoggerFactory.getLogger(TxnManagerDedicatedAsy.class);
+
     protected final StorageManager storageManager_;
     protected final String thisComponentId;
     public SchedulerContext context;

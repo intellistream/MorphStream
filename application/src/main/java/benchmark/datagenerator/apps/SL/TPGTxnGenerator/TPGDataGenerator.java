@@ -169,13 +169,12 @@ public class TPGDataGenerator extends DataGenerator {
         }
 
         File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
-                + String.format("_%d_%d.txt", dataConfig.getTuplesPerBatch(), dataConfig.getTotalBatches()));
+                + String.format("_%d_%d.txt", dataConfig.getTotalEvents()));
         try {
             versionFile.createNewFile();
             FileWriter fileWriter = new FileWriter(versionFile);
             fileWriter.write(String.format("Total number of threads  : %d\n", dataConfig.getTotalThreads()));
-            fileWriter.write(String.format("Tuples per batch      : %d\n", dataConfig.getTuplesPerBatch()));
-            fileWriter.write(String.format("Total batches         : %d\n", dataConfig.getTotalBatches()));
+            fileWriter.write(String.format("Total Events      : %d\n", dataConfig.getTotalEvents()));
             fileWriter.close();
         } catch (IOException e) {
             e.printStackTrace();

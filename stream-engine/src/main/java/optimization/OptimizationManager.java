@@ -33,7 +33,7 @@ public class OptimizationManager extends executorThread {
     }
 
     /**
-     * Only naive distribute is supported in TStreamPlus.
+     * Only naive distribute is supported in TStream.
      *
      * @param db
      * @throws UnhandledCaseException

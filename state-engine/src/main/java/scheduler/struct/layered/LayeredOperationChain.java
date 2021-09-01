@@ -3,7 +3,7 @@ package scheduler.struct.layered;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.OperationChain;
 
-import java.util.*;
+import java.util.Collection;
 
 /**
  * We still call it OperationChain in TPG but with different representation

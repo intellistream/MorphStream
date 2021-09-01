@@ -27,8 +27,8 @@ import static utils.PartitionHelper.getPartition_interval;
 public class TPInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(TPInitializer.class);
 
-    public TPInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
-        super(db, scale_factor, theta, tthread, config);
+    public TPInitializer(Database db, double theta, int tthread, Configuration config) {
+        super(db, theta, tthread, config);
     }
 
     @Override
@@ -47,7 +47,8 @@ public class TPInitializer extends TableInitilizer {
             insertSpeedRecord(_key, 0, pid, spinlock);
             insertCntRecord(_key, 0, pid, spinlock);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -75,7 +76,8 @@ public class TPInitializer extends TableInitilizer {
             insertSpeedRecord(_key, 0);
             insertCntRecord(_key);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     private void insertCntRecord(String key, int value, int pid, SpinLock[] spinlock) {

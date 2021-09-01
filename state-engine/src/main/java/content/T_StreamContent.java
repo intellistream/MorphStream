@@ -114,19 +114,6 @@ public abstract class T_StreamContent implements Content {
     }
 
     public SchemaRecord readValues(long ts, long previous_mark_ID, boolean clean) {
-//        if (enable_mvcc) {
-////            spinlock_.lock_ratio();
-//            SchemaRecord rt = versions.get(ts);//return exact record.
-//
-//            if (rt == null) {
-//                rt = versions.lowerEntry(ts).getValue();
-//            }
-//
-//            if (clean)
-//                clean_map(previous_mark_ID);
-////            spinlock_.unlock();
-//            return rt;
-//        } else
         return record;
     }
 

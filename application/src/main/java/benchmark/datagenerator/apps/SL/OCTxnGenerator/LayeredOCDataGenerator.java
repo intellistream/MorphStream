@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Random;
 
 import static common.CONTROL.enable_log;
+
 public class LayeredOCDataGenerator extends DataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(DataGenerator.class);
     private final Random randomGenerator = new Random();
@@ -55,13 +56,12 @@ public class LayeredOCDataGenerator extends DataGenerator {
 
 
     /**
-     *
-     *  generate a set of operations, group them as OC and construct them as OC graph, then create txn from the created OCs.
-     *
-     *  Step 1: select OCs for txn according to the required OCs dependency distribution
-     *  Step 2: update OCs dependencies graph for future data generation
-     *  Step 3: create txn with the selected OCs, the specific operations are generated inside.
-     *  Step 4: update the statistics such as dependency distribution to guide future data generation
+     * generate a set of operations, group them as OC and construct them as OC graph, then create txn from the created OCs.
+     * <p>
+     * Step 1: select OCs for txn according to the required OCs dependency distribution
+     * Step 2: update OCs dependencies graph for future data generation
+     * Step 3: create txn with the selected OCs, the specific operations are generated inside.
+     * Step 4: update the statistics such as dependency distribution to guide future data generation
      */
     @Override
     protected void generateTuple() {
@@ -78,9 +78,8 @@ public class LayeredOCDataGenerator extends DataGenerator {
         if (transactionId % 100000 == 0) {
             if (enable_log) LOG.info(String.valueOf(transactionId));
             for (int lop = 0; lop < ocLevelsDistribution.length; lop++) {
-                System.out.print(lop + ": " + ocLevelsDistribution[lop] + "; ");
+                if (enable_log) LOG.info(lop + ": " + ocLevelsDistribution[lop] + "; ");
             }
-            LOG.info(" ");
         }
 
         // Step 4: update the statistics such as dependency distribution to guide future data generation
@@ -92,12 +91,11 @@ public class LayeredOCDataGenerator extends DataGenerator {
     @Override
     public void dumpGeneratedDataToFile() {
         File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
-                + String.format("_%d_%d_%d.txt", dataConfig.getTuplesPerBatch(), dataConfig.getTotalBatches(), dataConfig.getNumberOfDLevels()));
+                + String.format("_%d_%d.txt", dataConfig.getTotalEvents(), dataConfig.getNumberOfDLevels()));
         try {
             versionFile.createNewFile();
             FileWriter fileWriter = new FileWriter(versionFile);
-            fileWriter.write(String.format("Tuples per batch      : %d\n", dataConfig.getTuplesPerBatch()));
-            fileWriter.write(String.format("Total batches         : %d\n", dataConfig.getTotalBatches()));
+            fileWriter.write(String.format("Tuples per batch      : %d\n", dataConfig.getTotalEvents()));
             fileWriter.write(String.format("Dependency depth      : %d\n", dataConfig.getNumberOfDLevels()));
             fileWriter.write(String.format("%s\n", Arrays.toString(ocLevelsDistribution)));
             fileWriter.close();
@@ -105,7 +103,7 @@ public class LayeredOCDataGenerator extends DataGenerator {
             e.printStackTrace();
         }
 
-        if (enable_log)  LOG.info("Dumping transactions...");
+        if (enable_log) LOG.info("Dumping transactions...");
         try {
             dataOutputHandler.sinkEvents(dataTransactions);
         } catch (IOException e) {

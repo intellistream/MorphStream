@@ -1,12 +1,10 @@
 package common.bolts.transactional.gs;
 
-import common.param.mb.MicroEvent;
 import combo.SINKCombo;
+import common.param.mb.MicroEvent;
 import db.DatabaseException;
 import execution.ExecutionGraph;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.context.TxnContext;
@@ -29,12 +27,12 @@ public class GSBolt_ts extends GSBolt {
 
     public GSBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public GSBolt_ts(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     /**
@@ -123,13 +121,7 @@ public class GSBolt_ts extends GSBolt {
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
             READ_REQUEST_CORE();
             END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, write_useful_time, writeEvents);//overhead_total compute time.
-
             READ_POST();
-            if (!enable_app_combo) {
-                final Marker marker = in.getMarker();
-                this.collector.ack(in, marker);//tell spout it has finished transaction processing.
-            } else {
-            }
             //post_process for events left-over.
             END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize + writeEvents);
             EventsHolder.clear();//all tuples in the EventsHolder are finished.

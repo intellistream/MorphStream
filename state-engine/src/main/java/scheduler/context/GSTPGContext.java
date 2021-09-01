@@ -16,7 +16,7 @@ public class GSTPGContext
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
     public GSTPGContext(int thisThreadId, int totalThreads) {
-        super(thisThreadId, totalThreads);
+        super(thisThreadId);
         partitionStateManager = new PartitionStateManager();
         IsolatedOC = new ArrayDeque<>();
         OCwithChildren = new ArrayDeque<>();

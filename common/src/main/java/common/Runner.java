@@ -29,11 +29,8 @@ public abstract class Runner implements IRunner {
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 5_000_000;//
-    //        public int NUM_ITEMS = 100;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
-    @Parameter(names = {"--scale_factor"}, description = "scale_factor")
-    public double scale_factor = 1; //<=1
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
     public double ratio_of_read = 0.0; //<=1
     @Parameter(names = {"--ratio_of_multi_partition"}, description = "ratio_of_multi_partition")
@@ -58,18 +55,24 @@ public abstract class Runner implements IRunner {
     /**
      * TStream Specific Parameters.
      */
-    @Parameter(names = {"--disable_pushufflingActiveshdown"}, description = "Push down write operations to engine, it is enabled by default.")
-    public boolean disable_pushdown = false;
-    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (seconds)")
-    public double checkpoint_interval = 5;// default checkpoint interval.
-    //    @Parameter(names = {"--TP"}, description = "TP threads")
-//    public int TP = 4;// default TP threads
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 24;// default total execution threads
+    public int tthread = 2;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_TStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
+    @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
+//    public String scheduler = "BFS";
+//        public String scheduler = "BFSA";
+//    public String scheduler = "DFS";
+//    public String scheduler = "DFSA";
+//    public String scheduler = "GS";
+    public String scheduler = "GSA";
+    @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
+    public String fanoutDist = "uniform";
+    @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
+    public String idGenType = "uniform";
+
     /**
      * Benchmarking Specific Parameters.
      */
@@ -78,7 +81,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--measure"}, description = "enable measurement")
     public boolean enable_measurement = false;
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("tstreamplus") + OsUtils.OS_wrapper("data");
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("TStream") + OsUtils.OS_wrapper("data");
     @Parameter(names = {"-mp"}, description = "Metric path", required = false)
     public String metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
     @Parameter(names = {"--machine"}, description = "which machine to use? 0 (default): a simple one-socket machine with four cores. Add your machine specification accordingly and select them by change this specification")
@@ -91,35 +94,16 @@ public abstract class Runner implements IRunner {
     /**
      * generator parameters
      */
+    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
+    public int checkpoint_interval = 50_000;//
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
 //    public String generator = "TPGGenerator";
     public String generator = "OCGenerator";
-    @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
-//    public int totalEventsPerBatch = 100000;
-    public int totalEventsPerBatch = 983040;
-    @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
-    public int numberOfBatches = 1;
+    @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
+    public int totalEvents = 100_000;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 8;
-    @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
-    public Integer iterationNumber = 0;
-    @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BFS";
-//    public String scheduler = "BFSA";
-//    public String scheduler = "DFS";
-//    public String scheduler = "DFSA";
-//    public String scheduler = "GS";
-//    public String scheduler = "GSA";
-    @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
-    public String fanoutDist = "uniform";
-    @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
-    public String idGenType = "uniform";
 
-    /**
-     * Functional Parameters.
-     */
-    @Parameter(names = {"--fault_tolerance"}, description = "Enable or disable fault tolerance, it is disabled by default.")
-    boolean enable_fault_tolerance = false;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -135,15 +119,12 @@ public abstract class Runner implements IRunner {
     }
 
     public void initializeCfg(HashMap<String, Object> config) {
-        config.put("enable_fault_tolerance", enable_fault_tolerance);
         config.put("queue_size", queue_size);
-        config.put("disable_pushdown", disable_pushdown);
         config.put("common", application);
         config.put("ratio_of_multi_partition", ratio_of_multi_partition);
         config.put("number_partitions", number_partitions);
         config.put("machine", machine);
-        config.put("totalEventsPerBatch", totalEventsPerBatch);
-        config.put("numberOfBatches", numberOfBatches);
+        config.put("totalEvents", totalEvents);
         config.put("rootFilePath", rootPath);
         config.put("scheduler", scheduler);
         config.put("generator", generator);
@@ -157,7 +138,6 @@ public abstract class Runner implements IRunner {
             config.put("partition", enable_partition);
         config.put("measure", enable_measurement);
         config.put("checkpoint", checkpoint_interval);
-//        config.put("TP", TP);
         config.put("tthread", tthread);
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);
@@ -166,7 +146,6 @@ public abstract class Runner implements IRunner {
         config.put("CCOption", CCOption);
         config.put("linked", linked);
         config.put("shared", shared);
-        config.put("scale_factor", scale_factor);
         config.put("ratio_of_read", ratio_of_read);
         config.put("theta", theta);
 

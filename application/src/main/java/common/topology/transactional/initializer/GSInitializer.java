@@ -41,8 +41,8 @@ public class GSInitializer extends TableInitilizer {
     protected transient boolean[] read_decision;
     int i = 0;
 
-    public GSInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
-        super(db, scale_factor, theta, tthread, config);
+    public GSInitializer(Database db, double theta, int tthread, Configuration config) {
+        super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(NUM_ITEMS / (double) tthread);//NUM_ITEMS / tthread;
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         if (ratio_of_read == 0) {
@@ -58,8 +58,9 @@ public class GSInitializer extends TableInitilizer {
         } else {
             System.exit(-1);
         }
-        if (enable_log) LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
-        configure_store(scale_factor, theta, tthread, NUM_ITEMS);
+        if (enable_log)
+            LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
+        configure_store(theta, tthread, NUM_ITEMS);
     }
 
     /**
@@ -104,7 +105,8 @@ public class GSInitializer extends TableInitilizer {
             assert value.length() == VALUE_LEN;
             insertMicroRecord(key, value);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -123,7 +125,8 @@ public class GSInitializer extends TableInitilizer {
             assert value.length() == VALUE_LEN;
             insertMicroRecord(key, value, pid, spinlock_);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -143,7 +146,7 @@ public class GSInitializer extends TableInitilizer {
 //        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
 //        String event_path = Event_Path
 //                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-//                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"))
+//                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEvents") * )
 //                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
 //                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
 //                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
@@ -166,7 +169,7 @@ public class GSInitializer extends TableInitilizer {
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         String event_path = Event_Path
                 + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"))
+                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEvents"))
                 + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
                 + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
                 + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
@@ -251,7 +254,7 @@ public class GSInitializer extends TableInitilizer {
         RecordSchema s = MicroTableSchema();
         db.createTable(s, "MicroTable");
         try {
-            prepare_input_events(config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
+            prepare_input_events(config.getInt("totalEvents"));
         } catch (IOException e) {
             e.printStackTrace();
         }

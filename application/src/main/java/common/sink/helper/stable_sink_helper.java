@@ -13,12 +13,12 @@ public class stable_sink_helper extends helper {
 
     //    private int size;
     public stable_sink_helper(Logger LOG, int runtime, String metric_path, double predict, int size, int thisTaskId, boolean measure) {
-        super(runtime, predict, size, metric_path, thisTaskId, measure);
+        super(runtime, predict, size, metric_path, thisTaskId);
         need_warm_up = true;
     }
 
     public stable_sink_helper(Logger LOG, int runtime, String metric_path, double predict, int size, int thisTaskId) {
-        super(runtime, predict, size, metric_path, thisTaskId, false);
+        super(runtime, predict, size, metric_path, thisTaskId);
         need_warm_up = true;
     }
 

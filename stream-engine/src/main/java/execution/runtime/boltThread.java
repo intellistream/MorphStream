@@ -9,7 +9,6 @@ import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
-import lock.Clock;
 import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,18 +44,16 @@ public class boltThread extends executorThread {
      * @param latch
      * @param optimizationManager
      * @param threadMap
-     * @param clock
      */
     public boltThread(ExecutionNode e, TopologyContext context, Configuration conf, long[] cpu
             , int node, CountDownLatch latch, OptimizationManager optimizationManager
-            , HashMap<Integer, executorThread> threadMap, Clock clock) {
+            , HashMap<Integer, executorThread> threadMap) {
         super(e, conf, context, cpu, node, latch, threadMap);
         bolt = (BoltExecutor) e.op;
         scheduler = e.getInputStreamController();
-        this.collector = new OutputCollector(e, context, conf.getInt("totalEventsPerBatch") * conf.getInt("numberOfBatches"));
+        this.collector = new OutputCollector(e, context, conf.getInt("totalEvents"));
         batch = conf.getInt("batch", 100);
         bolt.setExecutionNode(e);
-        bolt.setclock(clock);
     }
 
     /**

@@ -7,7 +7,6 @@ import components.operators.api.BaseWindowedBolt;
 import components.windowing.*;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 
 import java.util.Collection;
@@ -165,17 +164,4 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
         return res;
     }
 
-    @Override
-    public void cleanup() {
-//		if (waterMarkEventGenerator != null) {
-//			waterMarkEventGenerator.shutdown();
-//		}
-        windowManager.shutdown();
-        _op.cleanup();
-    }
-
-    @Override
-    public void callback(int callee, Marker marker) {
-        //Not implemented yet.
-    }
 }

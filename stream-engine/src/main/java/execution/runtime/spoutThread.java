@@ -6,7 +6,6 @@ import components.operators.executor.BasicSpoutBatchExecutor;
 import db.DatabaseException;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
-import lock.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,17 +32,15 @@ public class spoutThread extends executorThread {
      * @param node
      * @param latch
      * @param threadMap
-     * @param clock
      */
     public spoutThread(ExecutionNode e, TopologyContext context, Configuration conf, long[] cpu,
                        int node, CountDownLatch latch,
-                       HashMap<Integer, executorThread> threadMap, Clock clock) {
+                       HashMap<Integer, executorThread> threadMap) {
         super(e, conf, context, cpu, node, latch, threadMap);
         this.sp = (BasicSpoutBatchExecutor) e.op;
-        this.collector = new OutputCollector(e, context, conf.getInt("totalEventsPerBatch") * conf.getInt("numberOfBatches"));
+        this.collector = new OutputCollector(e, context, conf.getInt("totalEvents"));
         batch = conf.getInt("batch", 100);
         sp.setExecutionNode(e);
-        sp.setclock(clock);
         switch (conf.getInt("CCOption", 0)) {
             case CCOption_OrderLOCK://Ordered lock_ratio
             case CCOption_LWM://LWM

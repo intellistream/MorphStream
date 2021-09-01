@@ -1,8 +1,8 @@
 package common.bolts.transactional.sl;
 
+import combo.SINKCombo;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import combo.SINKCombo;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import transaction.context.TxnContext;

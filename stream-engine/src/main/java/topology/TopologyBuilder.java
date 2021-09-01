@@ -171,7 +171,8 @@ public class TopologyBuilder {
 
     public Topology createTopology() {
         if (topology.getScheduler() == null) {
-            if (enable_log) LOG.info("JumboTuple scheduler is not set, use default Brisk.execution.runtime.tuple scheduler instead!");
+            if (enable_log)
+                LOG.info("JumboTuple scheduler is not set, use default Brisk.execution.runtime.tuple scheduler instead!");
             topology.setScheduler(new SequentialScheduler());
         }
         return topology;

@@ -60,10 +60,6 @@ public class FileSpout extends AbstractSpout {
     }
 
     @Override
-    public void cleanup() {
-    }
-
-    @Override
     public void nextTuple() throws InterruptedException {
         if (cnt-- > 0) {//make sure no gc due to queue full.
 //            if (input.getMeasure() != null)

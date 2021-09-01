@@ -11,12 +11,12 @@ public abstract class BaseOperator extends AbstractBolt {
     private static final long serialVersionUID = 9120945392080191838L;
 
     protected BaseOperator(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity,
-                           boolean byP, double event_frequency, double w) {
-        super(log, input_selectivity, output_selectivity, byP, event_frequency, w);
+                           double w) {
+        super(log, input_selectivity, output_selectivity, w);
     }
 
     protected BaseOperator(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity,
-                           double branch_selectivity, double read_selectivity, double event_frequency, double w) {
-        super(log, input_selectivity, output_selectivity, branch_selectivity, read_selectivity, event_frequency, w);
+                           double branch_selectivity, double read_selectivity, double w) {
+        super(log, input_selectivity, output_selectivity, branch_selectivity, read_selectivity, w);
     }
 }

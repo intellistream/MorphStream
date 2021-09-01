@@ -8,8 +8,6 @@ import db.Database;
 import execution.runtime.boltThread;
 import execution.runtime.executorThread;
 import execution.runtime.spoutThread;
-import faulttolerance.Writer;
-import lock.Clock;
 import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,13 +27,12 @@ import static common.Constants.*;
  */
 public class ExecutionManager {
     private final static Logger LOG = LoggerFactory.getLogger(ExecutionManager.class);
-    public static Clock clock = null;
     public final HashMap<Integer, executorThread> ThreadMap = new HashMap<>();
     public final AffinityController AC;
     private final OptimizationManager optimizationManager;
     private final ExecutionGraph g;
 
-     public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager) {
+    public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager) {
         this.g = g;
         AC = new AffinityController(conf);
         this.optimizationManager = optimizationManager;
@@ -52,16 +49,6 @@ public class ExecutionManager {
     public void distributeTasks(Configuration conf,
                                 CountDownLatch latch, Database db) throws UnhandledCaseException {
         g.build_inputScheduler();
-        clock = new Clock(conf.getDouble("checkpoint", 1));
-        if (conf.getBoolean("enable_fault_tolerance", false)) {
-            Writer writer = null;
-            for (ExecutionNode e : g.getExecutionNodeArrayList()) {
-                if (e.isFirst_executor()) {
-                    writer = new Writer(e.operator, e.operator.getNumTasks());
-                }
-                e.configureWriter(writer);
-            }
-        }
         //TODO: support multi-stages later.
         if (enable_shared_state) {
             HashMap<Integer, List<Integer>> stage_map = new HashMap<>();//Stages --> Executors.
@@ -119,7 +106,7 @@ public class ExecutionManager {
 
         spoutThread st;
         st = new spoutThread(e, context, conf, cores, node, latch,
-                ThreadMap, clock);
+                ThreadMap);
         st.setDaemon(true);
         if (!(conf.getBoolean("monte", false) || conf.getBoolean("simulation", false))) {
             st.start();
@@ -132,7 +119,7 @@ public class ExecutionManager {
                                              int node, long[] cores, CountDownLatch latch) {
         boltThread wt;
         wt = new boltThread(e, context, conf, cores, node, latch,
-                optimizationManager, ThreadMap, clock);
+                optimizationManager, ThreadMap);
         wt.setDaemon(true);
         if (!(conf.getBoolean("monte", false) || conf.getBoolean("simulation", false))) {
             wt.start();
@@ -172,12 +159,7 @@ public class ExecutionManager {
      */
     public void exist() {
         if (enable_log) LOG.info("Execution stops.");
-        if (clock != null) {
-            clock.close();
-        }
         this.getSinkThread().getContext().Sequential_stopAll();
-//        if (enable_shared_state && tp_engine != null)
-//            tp_engine.engine_shutdown();
     }
 
     public executorThread getSinkThread() {

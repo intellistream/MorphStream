@@ -25,17 +25,14 @@ public class MeasureSink extends BaseSink {
     private static final DescriptiveStatistics latency = new DescriptiveStatistics();
     private static final long serialVersionUID = 6249684803036342603L;
     protected static String directory;
-
-
     protected final ArrayDeque<Long> latency_map = new ArrayDeque();
-    public int batch_number_per_wm;
+    public int checkpoint_interval;
     protected stable_sink_helper helper;
     protected int ccOption;
     protected int tthread;
     int cnt = 0;
     long start;
-
-    private int exe;
+    private int totalEvents;
 
     public MeasureSink() {
         super(new HashMap<>());
@@ -62,16 +59,16 @@ public class MeasureSink extends BaseSink {
                 , thisTaskId
                 , config.getBoolean("measure", false));
 
-        directory = STAT_Path + OsUtils.OS_wrapper("TstreamPlus")
+        directory = STAT_Path
                 + OsUtils.OS_wrapper(configPrefix)
-                + OsUtils.OS_wrapper(String.valueOf(config.getDouble("checkpoint")));
+                + OsUtils.OS_wrapper(String.valueOf(config.getInt("checkpoint")));
         File file = new File(directory);
         if (!file.mkdirs()) {
         }
         SINK_CONTROL.getInstance().config();
         tthread = this.config.getInt("tthread");
-        exe = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
-        if (enable_log) LOG.info("expected last events = " + exe);
+        totalEvents = config.getInt("totalEvents");
+        if (enable_log) LOG.info("expected last events = " + totalEvents);
     }
 
     @Override
@@ -85,10 +82,10 @@ public class MeasureSink extends BaseSink {
             if (cnt == 0) {
                 start = System.nanoTime();
             } else {
-                if (cnt % batch_number_per_wm == 0) {
+                if (cnt % checkpoint_interval == 0) {
                     final long end = System.nanoTime();
                     final long process_latency = end - start;//ns
-                    latency_map.add(process_latency / batch_number_per_wm);
+                    latency_map.add(process_latency / checkpoint_interval);
                     start = end;
                 }
             }
@@ -99,7 +96,7 @@ public class MeasureSink extends BaseSink {
     protected void check(int cnt, Tuple input) {
         if (cnt == 0) {
             helper.StartMeasurement();
-        } else if (cnt == (exe - 40 * 10 - 1)) {
+        } else if (cnt == (totalEvents - 40 * 10 - 1)) {
             double results = helper.EndMeasurement(cnt);
             this.setResults(results);
             if (!enable_engine)//performance measure for TStream is different.

@@ -17,7 +17,7 @@ public abstract class DataGenerator {
 
     public DataGenerator(DataGeneratorConfig dataConfig) {
         this.dataConfig = dataConfig;
-        this.nTuples = dataConfig.getTuplesPerBatch() * dataConfig.getTotalBatches();
+        this.nTuples = dataConfig.getTotalEvents();
         this.dataOutputHandler = new GephiOutputHandler(dataConfig.getRootPath());
     }
 

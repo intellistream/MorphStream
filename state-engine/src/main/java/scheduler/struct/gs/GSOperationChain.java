@@ -1,15 +1,6 @@
 package scheduler.struct.gs;
 
-import scheduler.context.GSTPGContext;
-import scheduler.struct.AbstractOperation;
-import scheduler.struct.MetaTypes;
-import scheduler.struct.OperationChain;
-
-import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * We still call it OperationChain in TPG but with different representation

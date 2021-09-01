@@ -1,13 +1,12 @@
 package common.bolts.transactional.tp;
 
-import common.param.lr.LREvent;
 import combo.SINKCombo;
+import common.param.lr.LREvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Tuple;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.impl.TxnManagerNoLock;
@@ -27,12 +26,12 @@ public class TPBolt_nocc extends TPBolt {
 
     public TPBolt_nocc(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public TPBolt_nocc(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {

@@ -1,7 +1,5 @@
 package scheduler.struct.gs;
 
-import scheduler.context.AbstractGSTPGContext;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Queue;

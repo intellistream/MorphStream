@@ -13,11 +13,16 @@ public abstract class SchedulerContext<SchedulingUnit> {
 
     protected SchedulerContext(int thisThreadId) {
         this.thisThreadId = thisThreadId;
+        requests = new ArrayDeque<>();
     }
 
     public abstract boolean finished();
 
-    protected abstract void reset();
+    public void reset() {
+        requests.clear();
+        scheduledOPs = 0;
+        totalOsToSchedule = 0;
+    }
 
     public void push(Request request) {
         requests.push(request);

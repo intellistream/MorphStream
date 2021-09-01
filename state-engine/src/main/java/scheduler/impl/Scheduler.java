@@ -2,6 +2,8 @@ package scheduler.impl;
 
 
 import content.T_StreamContent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.SchedulerContext;
@@ -15,17 +17,33 @@ import transaction.function.DEC;
 import transaction.function.INC;
 import utils.SOURCE_CONTROL;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.*;
 
-@lombok.extern.slf4j.Slf4j
 public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> implements IScheduler<Context> {
+    private static final Logger log = LoggerFactory.getLogger(Scheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context, SchedulingUnit, ExecutionUnit> tpg; // TPG to be maintained in this global instance.
+
+    protected Scheduler(int totalThreads, int NUM_ITEMS) {
+        delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
+        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta);
+    }
+
+    /**
+     * state to thread mapping
+     *
+     * @param key
+     * @param delta
+     * @return
+     */
+    public static int getTaskId(String key, Integer delta) {
+        Integer _key = Integer.valueOf(key);
+        return _key / delta;
+    }
 
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
@@ -41,13 +59,8 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
             PROCESS(context, mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
-        RESET();//
+        RESET(context);//
         MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
-    }
-
-    protected Scheduler(int totalThreads, int NUM_ITEMS) {
-        delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
-        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta);
     }
 
     /**
@@ -62,20 +75,28 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
         if (preValues == null) {
-            if (enable_log) log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
-            if (enable_log) log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
+            if (enable_log)
+                log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
+            if (enable_log)
+                log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
-                if (enable_log) log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+                if (enable_log)
+                    log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
             }
-            if (enable_log) log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
+            if (enable_log)
+                log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
         }
         if (preValues1 == null) {
-            if (enable_log) log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
-            if (enable_log) log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
+            if (enable_log)
+                log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
+            if (enable_log)
+                log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
             for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
-                if (enable_log) log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+                if (enable_log)
+                    log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
             }
-            if (enable_log) log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
+            if (enable_log)
+                log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
         }
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
         final long sourceAssetValue = preValues1.getValues().get(1).getLong();
@@ -179,8 +200,10 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
     }
 
     @Override
-    public void RESET() {
+    public void RESET(Context context) {
         SOURCE_CONTROL.getInstance().oneThreadCompleted();
+        context.reset();
+        tpg.reset();
     }
 
     @Override
@@ -194,18 +217,6 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
     @Override
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);
-    }
-
-    /**
-     * state to thread mapping
-     *
-     * @param key
-     * @param delta
-     * @return
-     */
-    public static int getTaskId(String key, Integer delta) {
-        Integer _key = Integer.valueOf(key);
-        return _key / delta;
     }
 
     public Context getTargetContext(TableRecord d_record) {

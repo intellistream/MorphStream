@@ -1,6 +1,5 @@
 package scheduler.impl.layered;
 
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -57,9 +56,9 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         }
         while (oc != null && oc.hasParents()) {
             // Busy-Wait for dependency resolution
-             if (needAbortHandling.get()) {
+            if (needAbortHandling.get()) {
                 return; // skip this busy wait when abort happens
-             }
+            }
         }
         DISTRIBUTE(oc, context);
     }
@@ -133,7 +132,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
                     return;
                 }
             }
-            needAbortHandling.compareAndSet(false,true);
+            needAbortHandling.compareAndSet(false, true);
             failedOperations.push(operation); // operation need to wait until the last abort has completed
         }
     }
@@ -204,7 +203,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         }
         context.currentLevelIndex = 0;
         // it needs to rollback to the level -1, because aborthandling has immediately followed up with ProcessedToNextLevel
-        context.currentLevel = context.rollbackLevel-1;
+        context.currentLevel = context.rollbackLevel - 1;
     }
 
     protected int getNumOPsByLevel(DFSLayeredTPGContextWithAbort context, int level) {

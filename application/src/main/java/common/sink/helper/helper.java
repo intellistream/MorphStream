@@ -31,11 +31,7 @@ public abstract class helper {
     final double warm_up;
     final String sink_path;
     final String metric_path;
-    private final boolean measure;
     private final int thisTaskId;
-    private final long predict_sum = 0;
-    private final long actual_sum = 0;
-    private final long current_bid = 0;
     public double predict;//predicted throughput.
     public double size;
     /**
@@ -50,12 +46,11 @@ public abstract class helper {
     private long previous_bid = 0;
     private int local_index_e;
 
-    public helper(int runtime, double predict, int size, String metric_path, int thisTaskId, boolean measure) {
+    public helper(int runtime, double predict, int size, String metric_path, int thisTaskId) {
         this.runtimeInSEC = runtime;
         this.runtimeInNANO = (long) ((runtime * 1E9));//used in verbose model, test for longer time.
         duration = Double.parseDouble(String.valueOf(runtime)) * 1E9;
         this.thisTaskId = thisTaskId;
-        this.measure = measure;
         measure_interval = 1 * 1E9;//per 1 second
         measure_times = (int) (duration / measure_interval);
         warm_up = 2 * 1E9;//warm up 1 seconds.
@@ -70,7 +65,8 @@ public abstract class helper {
         print_pid = true;
         this.predict = predict;
         this.size = size;
-        if (enable_log) LOG.info("test duration," + duration + ", warm_up time: " + warm_up + "measure_times:" + measure_times);
+        if (enable_log)
+            LOG.info("test duration," + duration + ", warm_up time: " + warm_up + "measure_times:" + measure_times);
     }
 
     public void StartMeasurement() {

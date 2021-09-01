@@ -1,8 +1,6 @@
 package scheduler.statemanager;
 
-import scheduler.context.GSTPGContext;
 import scheduler.context.GSTPGContextWithAbort;
-import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
 import scheduler.signal.oc.*;
 import scheduler.struct.MetaTypes.DependencyType;

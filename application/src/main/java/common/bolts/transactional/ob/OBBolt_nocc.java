@@ -1,15 +1,14 @@
 package common.bolts.transactional.ob;
 
+import combo.SINKCombo;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
-import combo.SINKCombo;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Tuple;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.impl.TxnManagerNoLock;
@@ -25,7 +24,7 @@ public class OBBolt_nocc extends OBBolt {
 
     public OBBolt_nocc(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     @Override

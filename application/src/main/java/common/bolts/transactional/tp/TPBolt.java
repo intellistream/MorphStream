@@ -1,10 +1,10 @@
 package common.bolts.transactional.tp;
 
+import combo.SINKCombo;
 import common.datatype.TollNotification;
 import common.datatype.util.AvgValue;
 import common.datatype.util.SegmentIdentifier;
 import common.param.lr.LREvent;
-import combo.SINKCombo;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;

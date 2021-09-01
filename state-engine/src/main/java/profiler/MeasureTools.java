@@ -16,9 +16,8 @@ import static common.IRunner.CCOption_TStream;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static profiler.Metrics.*;
 
-@lombok.extern.slf4j.Slf4j
 public class MeasureTools {
-    private static final Logger LOG = LoggerFactory.getLogger(MeasureTools.class);
+    private static final Logger log = LoggerFactory.getLogger(MeasureTools.class);
     public static AtomicInteger counter = new AtomicInteger(0);
 
     public static void Initialize() {
@@ -277,12 +276,13 @@ public class MeasureTools {
 
     private static void SchedulerTimeBreakdownReport(File file, int tthread) {
         try {
-            if (enable_debug) LOG.info("++++++ counter: " + counter);
+            if (enable_debug) log.info("++++++ counter: " + counter);
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("SchedulerTimeBreakdownReport\n");
             if (enable_log) log.info("===Scheduler Time Breakdown Report===");
             fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t construct_time\n");
-            if (enable_log) log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time");
+            if (enable_log)
+                log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
                                 "%-10.2f\t" +

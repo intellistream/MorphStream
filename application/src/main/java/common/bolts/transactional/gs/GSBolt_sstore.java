@@ -1,12 +1,11 @@
 package common.bolts.transactional.gs;
 
-import common.param.mb.MicroEvent;
 import combo.SINKCombo;
+import common.param.mb.MicroEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.context.TxnContext;
@@ -27,12 +26,12 @@ public class GSBolt_sstore extends GSBolt_LA {
 
     public GSBolt_sstore(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public GSBolt_sstore(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     @Override

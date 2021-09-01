@@ -1,6 +1,5 @@
 package scheduler.impl.nonlayered;
 
-import org.jetbrains.annotations.NotNull;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContext;
@@ -49,11 +48,6 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
     }
 
     @Override
-    public void RESET() {
-//        Controller.exec.shutdownNow();
-    }
-
-    @Override
     public void TxnSubmitFinished(GSTPGContext context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
@@ -92,9 +86,11 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         public void onOCExecutable(GSOperationChain operationChain) {
             DISTRIBUTE(operationChain, (GSTPGContext) operationChain.context);//TODO: make it clear..
         }
+
         public void onOCFinalized(GSOperationChain operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }
+
         public void onOCRollbacked(GSOperationChain operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }

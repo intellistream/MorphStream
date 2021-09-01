@@ -46,13 +46,6 @@ public class MemFileSpout extends AbstractSpout {
         load_input();
     }
 
-    /**
-     * relax_reset source messages.
-     */
-    @Override
-    public void cleanup() {
-    }
-
     private void spout_pid() {
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         String jvmName = runtimeBean.getName();
@@ -81,15 +74,6 @@ public class MemFileSpout extends AbstractSpout {
     @Override
     public void nextTuple() throws InterruptedException {
         collector.emit(0, array.get(counter));
-        counter++;
-        if (counter == array.size()) {
-            counter = 0;
-        }
-    }
-
-    @Override
-    public void nextTuple_nonblocking() throws InterruptedException {
-        collector.emit_nowait(array.get(counter));
         counter++;
         if (counter == array.size()) {
             counter = 0;

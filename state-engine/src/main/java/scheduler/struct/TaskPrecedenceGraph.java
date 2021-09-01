@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 
+import static common.CONTROL.enable_log;
 import static scheduler.impl.Scheduler.getTaskId;
 
 /**
@@ -36,10 +37,18 @@ import static scheduler.impl.Scheduler.getTaskId;
 public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit>, SchedulingUnit extends OperationChain<ExecutionUnit>, ExecutionUnit extends AbstractOperation> {
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
-    protected final int delta;//range of each partition. depends on the number of op in the stage.
-    private final ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
-    CyclicBarrier barrier;
     public final Map<Integer, Context> threadToContextMap;
+    private final int totalThreads;
+    protected final int delta;//range of each partition. depends on the number of op in the stage.
+    private ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
+    CyclicBarrier barrier;
+
+    public void reset() {
+        //reset holder.
+        operationChains = new ConcurrentHashMap<>();
+        operationChains.put("accounts", new TableOCs<>(totalThreads));
+        operationChains.put("bookEntries", new TableOCs<>(totalThreads));
+    }
 
     /**
      * @param totalThreads
@@ -47,12 +56,12 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
      */
     public TaskPrecedenceGraph(int totalThreads, int delta) {
         barrier = new CyclicBarrier(totalThreads);
+        this.totalThreads = totalThreads;
         this.delta = delta;
         //create holder.
         operationChains = new ConcurrentHashMap<>();
         operationChains.put("accounts", new TableOCs<>(totalThreads));
         operationChains.put("bookEntries", new TableOCs<>(totalThreads));
-
         threadToContextMap = new HashMap<>();
     }
 
@@ -86,7 +95,6 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
             submit(context, tableOCs.threadOCsMap.get(threadId).holder_v1.values());
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-//        if (enable_log) LOG.trace("++++++ end explore");
     }
 
     private void submit(Context context, Collection<SchedulingUnit> ocs) {
@@ -95,7 +103,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
                 context.totalOsToSchedule += oc.getOperations().size();
             }
             ((LayeredTPGContext) context).buildBucketPerThread(ocs);
-            System.out.println(((LayeredTPGContext) context).maxLevel);
+            if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : ocs) {
                 context.totalOsToSchedule += oc.getOperations().size();
@@ -147,4 +155,5 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         }
         curOC.checkPotentialFDChildrenOnNewArrival(op);
     }
+
 }

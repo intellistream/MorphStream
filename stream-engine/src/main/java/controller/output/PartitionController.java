@@ -97,7 +97,8 @@ public abstract class PartitionController implements IPartitionController, Seria
             for (ExecutionNode src : operator.getExecutorList()) {
                 collections[(src.getExecutorID() - firt_executor_Id)] = new Collections(src.getExecutorID(), downExecutor_list, batch_size);
             }
-            if (enable_log) LOG.trace("MPSC implementation -- Queue is shared among multiple executors of the same producer.");
+            if (enable_log)
+                LOG.trace("MPSC implementation -- Queue is shared among multiple executors of the same producer.");
             controller = new MPSCController(downExecutor_list);
         } else {
             firt_executor_Id = executionNode.getExecutorID();

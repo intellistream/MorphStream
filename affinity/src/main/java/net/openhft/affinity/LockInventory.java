@@ -18,7 +18,6 @@
 package net.openhft.affinity;
 
 import net.openhft.affinity.impl.NullAffinity;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +44,7 @@ class LockInventory {
         set(cpuLayout);
     }
 
-    public static String dumpLocks(@NotNull AffinityLock[] locks) {
+    public static String dumpLocks(AffinityLock[] locks) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < locks.length; i++) {
             AffinityLock al = locks[i];

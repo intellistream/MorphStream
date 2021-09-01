@@ -42,7 +42,8 @@ public class utils {
                 DataSource dataSource = new DataSource("applications.helper.wrapper.StringStatesWrapper", skew, test, tuple_size, verbose);
                 if (test) {
                     final Event event = dataSource.generateEvent();
-                    if (enable_log) LOG.info("Test output:" + Arrays.toString(event.getEvent().split(Event.split_expression)));
+                    if (enable_log)
+                        LOG.info("Test output:" + Arrays.toString(event.getEvent().split(Event.split_expression)));
                     return;
                 }
                 Producer<String, String> producer = new Producer<>(configure());

@@ -18,8 +18,6 @@
 package net.openhft.affinity.impl;
 
 import net.openhft.affinity.CpuLayout;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
@@ -33,13 +31,12 @@ import static java.lang.Integer.parseInt;
 public class VanillaCpuLayout implements CpuLayout {
     public static final int MAX_CPUS_SUPPORTED = 256;
 
-    @NotNull
     private final List<CpuInfo> cpuDetails;
     private final int sockets;
     private final int coresPerSocket;
     private final int threadsPerCore;
 
-    VanillaCpuLayout(@NotNull List<CpuInfo> cpuDetails) {
+    VanillaCpuLayout(List<CpuInfo> cpuDetails) {
         this.cpuDetails = cpuDetails;
         SortedSet<Integer> sockets = new TreeSet<>(),
                 cores = new TreeSet<>(),
@@ -65,20 +62,20 @@ public class VanillaCpuLayout implements CpuLayout {
         }
     }
 
-    @NotNull
+
     public static VanillaCpuLayout fromProperties(String fileName) throws IOException {
         return fromProperties(openFile(fileName));
     }
 
-    @NotNull
+
     public static VanillaCpuLayout fromProperties(InputStream is) throws IOException {
         Properties prop = new Properties();
         prop.load(is);
         return fromProperties(prop);
     }
 
-    @NotNull
-    public static VanillaCpuLayout fromProperties(@NotNull Properties prop) {
+
+    public static VanillaCpuLayout fromProperties(Properties prop) {
         List<CpuInfo> cpuDetails = new ArrayList<>();
         for (int i = 0; i < MAX_CPUS_SUPPORTED; i++) {
             String line = prop.getProperty("" + i);
@@ -91,12 +88,10 @@ public class VanillaCpuLayout implements CpuLayout {
         return new VanillaCpuLayout(cpuDetails);
     }
 
-    @NotNull
     public static VanillaCpuLayout fromCpuInfo() throws IOException {
         return fromCpuInfo("/proc/cpuinfo");
     }
 
-    @NotNull
     public static VanillaCpuLayout fromCpuInfo(String filename) throws IOException {
         return fromCpuInfo(openFile(filename));
     }
@@ -112,7 +107,6 @@ public class VanillaCpuLayout implements CpuLayout {
         }
     }
 
-    @NotNull
     public static VanillaCpuLayout fromCpuInfo(InputStream is) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
         String line;
@@ -176,7 +170,6 @@ public class VanillaCpuLayout implements CpuLayout {
         return cpuDetails.get(cpuId).threadId;
     }
 
-    @NotNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -188,7 +181,7 @@ public class VanillaCpuLayout implements CpuLayout {
     }
 
     @Override
-    public boolean equals(@Nullable Object o) {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -222,7 +215,7 @@ public class VanillaCpuLayout implements CpuLayout {
             this.threadId = threadId;
         }
 
-        @NotNull
+
         @Override
         public String toString() {
             return "CpuInfo{" +
@@ -233,7 +226,7 @@ public class VanillaCpuLayout implements CpuLayout {
         }
 
         @Override
-        public boolean equals(@Nullable Object o) {
+        public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 

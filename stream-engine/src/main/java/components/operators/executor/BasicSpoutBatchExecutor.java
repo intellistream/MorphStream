@@ -4,7 +4,6 @@ import components.context.TopologyContext;
 import components.operators.api.AbstractSpout;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
-import execution.runtime.tuple.impl.Marker;
 
 import java.util.Map;
 
@@ -45,15 +44,6 @@ public class BasicSpoutBatchExecutor extends SpoutExecutor {
     @Override
     public double getResults() {
         return _op.getResults();
-    }
-
-    @Override
-    public void cleanup() {
-    }
-
-    @Override
-    public void callback(int callee, Marker marker) {
-        _op.callback(callee, marker);
     }
 
     public void bulk_emit(int batch) throws InterruptedException {

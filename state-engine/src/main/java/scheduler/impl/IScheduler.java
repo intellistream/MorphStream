@@ -1,8 +1,6 @@
 package scheduler.impl;
 
 import scheduler.Request;
-import scheduler.context.SchedulerContext;
-import storage.TableRecord;
 
 public interface IScheduler<Context> {
     void INITIALIZE(Context threadId);
@@ -13,7 +11,7 @@ public interface IScheduler<Context> {
 
     boolean FINISHED(Context threadId);
 
-    void RESET();
+    void RESET(Context context);
 
     boolean SubmitRequest(Context context, Request request);
 

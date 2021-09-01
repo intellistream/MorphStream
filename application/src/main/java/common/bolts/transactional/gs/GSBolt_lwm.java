@@ -2,7 +2,6 @@ package common.bolts.transactional.gs;
 
 import combo.SINKCombo;
 import execution.ExecutionGraph;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.impl.ordered.TxnManagerLWM;
@@ -13,12 +12,12 @@ public class GSBolt_lwm extends GSBolt_LA {
 
     public GSBolt_lwm(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public GSBolt_lwm(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     @Override

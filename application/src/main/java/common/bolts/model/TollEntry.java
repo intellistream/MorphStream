@@ -16,7 +16,7 @@
  * limitations under the License.
  * #_
  */
-package common.bolts.lr.model;
+package common.bolts.model;
 
 import java.io.Serializable;
 

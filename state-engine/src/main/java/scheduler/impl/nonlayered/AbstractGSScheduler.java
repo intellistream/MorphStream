@@ -39,11 +39,6 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
     }
 
     @Override
-    public void RESET() {
-//        Controller.exec.shutdownNow();
-    }
-
-    @Override
     public void TxnSubmitFinished(Context context) {
         throw new UnsupportedOperationException("Unsupported.");
     }
@@ -61,7 +56,7 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
             NOTIFY(next, context);
             MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }
-    }
+     }
 
     @Override
     protected void NOTIFY(SchedulingUnit task, Context context) {

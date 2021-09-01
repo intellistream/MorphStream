@@ -14,17 +14,17 @@ public abstract class unionBolt extends BaseOperator {
 
     // private static final Logger LOG = LoggerFactory.getLogger(unionBolt.class);
     public unionBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity) {
-        super(log, input_selectivity, output_selectivity, false, 0, 1);
+        super(log, input_selectivity, output_selectivity, 1);
     }
 
     protected unionBolt(Logger log) {
         super(log, null,
-                null, false, 0, 1);
+                null, 1);
     }
 
     protected unionBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity,
                         double branch_selectivity, double read_selectivity) {
-        super(log, input_selectivity, output_selectivity, branch_selectivity, read_selectivity, 0, 0);
+        super(log, input_selectivity, output_selectivity, branch_selectivity, read_selectivity, 0);
     }
 
     public String output_type() {

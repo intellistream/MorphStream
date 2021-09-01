@@ -8,7 +8,6 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_log;
 
 /**
  * Order lock_ratio should be globally shared.

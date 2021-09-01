@@ -13,19 +13,19 @@ public abstract class filterBolt extends BaseOperator {
     private static final long serialVersionUID = 234241824251364743L;
 
     protected filterBolt() {
-        super(null, null, null, 0.5, 1, 0, 1);
+        super(null, null, null, 0.5, 1, 1);
     }
 
     protected filterBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity) {
-        super(log, input_selectivity, output_selectivity, false, 0, 1);
+        super(log, input_selectivity, output_selectivity, 1);
     }
 
     protected filterBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity, double read_selectivity) {
-        super(log, input_selectivity, output_selectivity, 1, read_selectivity, 0, 1);
+        super(log, input_selectivity, output_selectivity, 1, read_selectivity, 1);
     }
 
     protected filterBolt(Logger log, Map<String, Double> output_selectivity) {
-        super(log, null, output_selectivity, false, 0, 1);
+        super(log, null, output_selectivity, 1);
     }
 
     public String output_type() {

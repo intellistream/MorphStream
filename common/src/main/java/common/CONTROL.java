@@ -14,10 +14,7 @@ public interface CONTROL {
     //db related.
     boolean enable_shared_state = true;//this is for transactional state mgmt.
     boolean enable_states_partition = true;//must be enabled for PAT/SSTORE.
-    boolean enable_TSTREAM = true;
-    //pre- and post -compute
-    boolean enable_pre_compute = false;//not in use.
-    boolean enable_post_compute = true;
+
     //latency related.
     boolean enable_latency_measurement = false;//
     //    boolean enable_admission_control = enable_latency_measurement;//only enable for TStream
@@ -31,9 +28,5 @@ public interface CONTROL {
     int island = -1;//-1 stands for one engine per core; -2 stands for one engine per socket.
     int CORE_PER_SOCKET = 2;//configure this for NUMA placement please.
     int NUM_OF_SOCKETS = 1;//configure this for NUMA placement please.
-    //single engine with work-stealing.
-    boolean enable_work_stealing = true; // won't affect is island=-1 under partition.
-    boolean enable_mvcc = false;// mvcc is only required in StreamLedger for cross-dependency reading.
     boolean enable_speculative = false;//work in future!
-//    boolean enable_pushdown = false;//enabled by default.
 }

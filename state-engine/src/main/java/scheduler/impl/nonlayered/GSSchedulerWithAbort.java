@@ -1,6 +1,5 @@
 package scheduler.impl.nonlayered;
 
-import org.jetbrains.annotations.NotNull;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContextWithAbort;
@@ -45,11 +44,6 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     }
 
     @Override
-    public void RESET() {
-//        Controller.exec.shutdownNow();
-    }
-
-    @Override
     public void TxnSubmitFinished(GSTPGContextWithAbort context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
@@ -70,8 +64,8 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
-    @NotNull
-    private  GSOperationWithAbort constructOp(List<GSOperationWithAbort> operationGraph, Request request) {
+
+    private GSOperationWithAbort constructOp(List<GSOperationWithAbort> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         GSOperationWithAbort set_op;
         switch (request.accessType) {
@@ -128,9 +122,11 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         public void onOCExecutable(GSOperationChainWithAbort operationChain) {
             DISTRIBUTE(operationChain, (GSTPGContextWithAbort) operationChain.context);
         }
+
         public void onOCFinalized(GSOperationChainWithAbort operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }
+
         public void onOCRollbacked(GSOperationChainWithAbort operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }

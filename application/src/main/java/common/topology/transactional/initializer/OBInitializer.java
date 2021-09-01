@@ -41,9 +41,9 @@ public class OBInitializer extends TableInitilizer {
     protected int[] triple_decision = new int[]{0, 0, 0, 0, 0, 0, 1, 2};//6:1:1 buy, alert, topping_handle.
     private int i = 0;
 
-    public OBInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
-        super(db, scale_factor, theta, tthread, config);
-        configure_store(scale_factor, theta, tthread, NUM_ITEMS);
+    public OBInitializer(Database db, double theta, int tthread, Configuration config) {
+        super(db, theta, tthread, config);
+        configure_store(theta, tthread, NUM_ITEMS);
     }
 
     @Override
@@ -59,7 +59,8 @@ public class OBInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             insertItemRecords(key, 100);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -76,7 +77,8 @@ public class OBInitializer extends TableInitilizer {
             int pid = get_pid(partition_interval, key);
             insertItemRecords(key, 100, pid, spinlock);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -278,7 +280,7 @@ public class OBInitializer extends TableInitilizer {
         RecordSchema s = Goods();
         db.createTable(s, "goods");
         try {
-            prepare_input_events(config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
+            prepare_input_events(config.getInt("totalEvents"));
         } catch (IOException e) {
             e.printStackTrace();
         }

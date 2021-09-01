@@ -23,7 +23,6 @@ import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.LongByReference;
 import net.openhft.affinity.IAffinity;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +94,6 @@ public enum WindowsJNAAffinity implements IAffinity {
         currentAffinity.set((BitSet) affinity.clone());
     }
 
-    @Nullable
     private BitSet getAffinity0() {
         final CLibrary lib = CLibrary.INSTANCE;
         final LongByReference cpuset1 = new LongByReference(0);

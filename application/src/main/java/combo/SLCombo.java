@@ -14,10 +14,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_shared_state;
 import static content.Content.*;
 
-//TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class SLCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(SLCombo.class);
     private static final long serialVersionUID = -2394340130331865581L;
@@ -100,14 +100,11 @@ public class SLCombo extends SPOUTCombo {
     @Override
     public void loadEvent(String filePath, Configuration config, TopologyContext context, OutputCollector collector) {
         int storageIndex = 0;
-
         //Load Transfer Events.
         for (int index = taskId; index < DataHolder.transferEvents.size(); ) {
             TxnEvent event = DataHolder.transferEvents.get(index).cloneEvent();
             mybids[storageIndex] = event.getBid();
             myevents[storageIndex++] = event;
-
-//            if (storageIndex == DataHolder.transferEvents.size() / tthread)
             if (storageIndex == num_events_per_thread)
                 break;
 
@@ -119,14 +116,10 @@ public class SLCombo extends SPOUTCombo {
             TxnEvent event = DataHolder.depositEvents.get(index).cloneEvent();
             mybids[storageIndex] = event.getBid();
             myevents[storageIndex++] = event;
-
             if (storageIndex == num_events_per_thread)
                 break;
-
             index += tthread * combo_bid_size;
         }
-//        if (enable_log) // TODO: this is to be generalized
-//            show_stats();
     }
 
     @Override
@@ -153,10 +146,7 @@ public class SLCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                if (config.getBoolean("disable_pushdown", false))
-                    bolt = new SLBolt_ts_nopush(0, sink);
-                else
-                    bolt = new SLBolt_ts(0, sink);
+                bolt = new SLBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
@@ -170,7 +160,5 @@ public class SLCombo extends SPOUTCombo {
         if (enable_shared_state)
             bolt.loadDB(config, context, collector);
         loadEvent(config.getString("rootFilePath"), config, context, collector);
-//        loadEvent("SL_Events" + tthread, config, context, collector);
-//        bolt.sink.batch_number_per_wm = batch_number_per_wm;
     }
 }

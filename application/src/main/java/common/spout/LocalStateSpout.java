@@ -34,10 +34,6 @@ public class LocalStateSpout extends AbstractSpout {
     }
 
     @Override
-    public void cleanup() {
-    }
-
-    @Override
     public void nextTuple() {
 //        final MicroEvent input_event = dataSource.generateEvent();
 //        final String msg = input_event.getEvent();

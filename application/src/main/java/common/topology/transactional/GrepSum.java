@@ -40,11 +40,10 @@ public class GrepSum extends TransactionTopology {
      * @return TableInitilizer
      */
     public TableInitilizer initializeDB(SpinLock[] spinlock_) {
-        double scale_factor = config.getDouble("scale_factor", 1);
         double theta = config.getDouble("theta", 1);
         int tthread = config.getInt("tthread");
         setPartition_interval((int) (Math.ceil(Metrics.NUM_ITEMS / (double) tthread)), tthread);
-        TableInitilizer ini = new GSInitializer(db, scale_factor, theta, tthread, config);
+        TableInitilizer ini = new GSInitializer(db, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)

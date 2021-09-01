@@ -50,12 +50,12 @@ public class SLInitializer extends TableInitilizer {
     private DataGenerator dataGenerator;
     private DataGeneratorConfig dataConfig;
 
-    public SLInitializer(Database db, String dataRootPath, int numberOfStates, double scale_factor, double theta, int tthread, Configuration config) {
-        super(db, scale_factor, theta, tthread, config);
+    public SLInitializer(Database db, String dataRootPath, int numberOfStates, double theta, int tthread, Configuration config) {
+        super(db, theta, tthread, config);
         this.numberOfStates = numberOfStates;
         this.dataRootPath = dataRootPath;
-        configure_store(scale_factor, theta, tthread, this.numberOfStates);
-        totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
+        configure_store(theta, tthread, this.numberOfStates);
+        totalRecords = config.getInt("totalEvents");
         idsGenType = config.getString("idGenType");
         this.partitionOffset = this.numberOfStates / tthread;
 
@@ -105,17 +105,15 @@ public class SLInitializer extends TableInitilizer {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
             if (dataConfig instanceof LayeredOCDataGeneratorConfig) {
-                bytes = digest.digest(String.format("%d_%d_%d_%d",
-                            dataConfig.getTotalThreads(),
-                            dataConfig.getTuplesPerBatch(),
-                            dataConfig.getTotalBatches(),
-                            ((LayeredOCDataGeneratorConfig) dataConfig).getNumberOfDLevels())
-                        .getBytes(StandardCharsets.UTF_8));
-            } else {
                 bytes = digest.digest(String.format("%d_%d_%d",
                                 dataConfig.getTotalThreads(),
-                                dataConfig.getTuplesPerBatch(),
-                                dataConfig.getTotalBatches())
+                                dataConfig.getTotalEvents(),
+                                ((LayeredOCDataGeneratorConfig) dataConfig).getNumberOfDLevels())
+                        .getBytes(StandardCharsets.UTF_8));
+            } else {
+                bytes = digest.digest(String.format("%d_%d",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTotalEvents())
                         .getBytes(StandardCharsets.UTF_8));
             }
             subFolder = OsUtils.osWrapperPostFix(
@@ -152,7 +150,8 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -186,7 +185,8 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
 
@@ -292,15 +292,14 @@ public class SLInitializer extends TableInitilizer {
 
     @Override
     protected void Load() throws IOException {
-        int tuplesPerBatch = dataConfig.getTuplesPerBatch();
-        int totalBatches = dataConfig.getTotalBatches();
+        int totalEvents = dataConfig.getTotalEvents();
         boolean shufflingActive = dataConfig.getShufflingActive();
         String folder = dataConfig.getRootPath();
         File file = new File(folder + "transferEvents.txt");
         if (file.exists()) {
             if (enable_log) LOG.info("Reading transfer events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-            loadTransferEvents(reader, tuplesPerBatch, totalBatches, shufflingActive);
+            loadTransferEvents(reader, totalEvents, shufflingActive);
             reader.close();
         }
 
@@ -308,7 +307,7 @@ public class SLInitializer extends TableInitilizer {
         if (file.exists()) {
             if (enable_log) LOG.info("Reading deposit events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-            loadDepositEvents(reader, tuplesPerBatch, totalBatches, shufflingActive);
+            loadDepositEvents(reader, totalEvents, shufflingActive);
             reader.close();
         }
     }
@@ -318,7 +317,7 @@ public class SLInitializer extends TableInitilizer {
 
     }
 
-    private void loadDepositEvents(BufferedReader reader, int tuplesPerBatch, int totalBatches, boolean shufflingActive) throws IOException {
+    private void loadDepositEvents(BufferedReader reader, int tuplesPerBatch, boolean shufflingActive) throws IOException {
         String txn = reader.readLine();
         int count = 0;
         int p_bids[] = new int[tthread];
@@ -343,11 +342,11 @@ public class SLInitializer extends TableInitilizer {
         }
         if (enable_log) LOG.info("Done reading transfer events...");
         if (shufflingActive) {
-            shuffleEvents(DataHolder.depositEvents, tuplesPerBatch, totalBatches);
+            shuffleEvents(DataHolder.depositEvents, tuplesPerBatch);
         }
     }
 
-    private void loadTransferEvents(BufferedReader reader, int tuplesPerBatch, int totalBatches, boolean shufflingActive) throws IOException {
+    private void loadTransferEvents(BufferedReader reader, int totalEvents, boolean shufflingActive) throws IOException {
         String txn = reader.readLine();
         int count = 0;
         int p_bids[] = new int[tthread];
@@ -382,23 +381,19 @@ public class SLInitializer extends TableInitilizer {
         }
         if (enable_log) LOG.info("Done reading transfer events...");
         if (shufflingActive) {
-            shuffleEvents(DataHolder.transferEvents, tuplesPerBatch, totalBatches);
+            shuffleEvents(DataHolder.transferEvents, totalEvents);
         }
     }
 
-    private void shuffleEvents(ArrayList<TxnEvent> txnEvents, int tuplesPerBatch, int totalBatches) {
+    private void shuffleEvents(ArrayList<TxnEvent> txnEvents, int totalEvents) {
         Random random = new Random();
         int index;
         TxnEvent temp;
-        for (int lop = 0; lop < totalBatches; lop++) {
-            int start = lop * tuplesPerBatch;
-            int end = (lop + 1) * tuplesPerBatch;
-            for (int i = end - 1; i > start; i--) {
-                index = start + random.nextInt(i - start + 1);
-                temp = txnEvents.get(index);
-                txnEvents.set(index, txnEvents.get(i));
-                txnEvents.set(i, temp);
-            }
+        for (int i = totalEvents - 1; i > 0; i--) {
+            index = random.nextInt(i + 1);
+            temp = txnEvents.get(index);
+            txnEvents.set(index, txnEvents.get(i));
+            txnEvents.set(i, temp);
         }
     }
 
@@ -409,7 +404,7 @@ public class SLInitializer extends TableInitilizer {
         RecordSchema b = BookEntryScheme();
         db.createTable(b, "bookEntries");
         try {
-            prepare_input_events(config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
+            prepare_input_events(config.getInt("totalEvents"));
         } catch (IOException e) {
             e.printStackTrace();
         }

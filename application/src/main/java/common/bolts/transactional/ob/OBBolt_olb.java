@@ -4,7 +4,6 @@ import combo.SINKCombo;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.impl.ordered.TxnManagerOrderLockBlocking;
@@ -16,12 +15,12 @@ public class OBBolt_olb extends OBBolt_LA {
 
     public OBBolt_olb(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public OBBolt_olb(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     @Override
