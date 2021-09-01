@@ -19,7 +19,6 @@ package net.openhft.affinity.impl;
 
 import com.sun.jna.*;
 import com.sun.jna.ptr.IntByReference;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.BitSet;
@@ -48,7 +47,6 @@ public class LinuxHelper {
     }
 
     public static
-    @NotNull
     cpu_set_t sched_getaffinity() {
         final CLibrary lib = CLibrary.INSTANCE;
         final cpu_set_t cpuset = new cpu_set_t();

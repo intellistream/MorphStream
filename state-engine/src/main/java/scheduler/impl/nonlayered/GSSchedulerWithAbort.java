@@ -1,6 +1,5 @@
 package scheduler.impl.nonlayered;
 
-import org.jetbrains.annotations.NotNull;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContextWithAbort;
@@ -70,7 +69,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
-    @NotNull
+    
     private  GSOperationWithAbort constructOp(List<GSOperationWithAbort> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         GSOperationWithAbort set_op;

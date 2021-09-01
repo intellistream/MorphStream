@@ -17,9 +17,6 @@ import static common.CONTROL.enable_log;
 import static controller.affinity.SequentialBinding.next_cpu;
 import static net.openhft.affinity.Affinity.setAffinity;
 
-/**
- * Created by shuhaozhang on 12/7/16.
- */
 public abstract class executorThread extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(executorThread.class);
     public final ExecutionNode executor;
@@ -64,15 +61,6 @@ public abstract class executorThread extends Thread {
         this.context = context;
     }
 
-    //    private long[] convertToCPUMasK(long[] cpu) {
-//        final long[] cpuMask = newCPUBitMask();
-//        if (enable_log) LOG.info("Empty cpuMask:" + Arrays.toString(cpuMask));
-//        for (long i : cpu) {
-//            cpuMask[(int) (i / 64)] |= 1L << (i % 64); //Create a bit mask setting a single CPU on
-//        }
-//        if (enable_log) LOG.info("Configured cpuMask:" + Arrays.toString(cpuMask));
-//        return cpuMask;
-//    }
     public void initilize_queue(int executorID) {
         allocate_OutputQueue();
         assign_InputQueue();

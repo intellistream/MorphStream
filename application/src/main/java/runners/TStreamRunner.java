@@ -21,6 +21,8 @@ import components.exception.UnhandledCaseException;
 import execution.ExecutionNode;
 import execution.runtime.executorThread;
 import lock.SpinLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import topology.TopologySubmitter;
 import utils.SINK_CONTROL;
@@ -40,8 +42,9 @@ import static content.T_StreamContentImpl.T_STREAMCONTENT;
 import static content.common.ContentCommon.content_type;
 import static profiler.MeasureTools.METRICS_REPORT;
 
-@lombok.extern.slf4j.Slf4j
+
 public class TStreamRunner extends Runner {
+    private static final Logger log = LoggerFactory.getLogger(TStreamRunner.class);
     private static Topology final_topology;
     private final AppDriver driver;
     private final Configuration config = new Configuration();

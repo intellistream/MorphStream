@@ -19,8 +19,6 @@ package net.openhft.affinity;
 
 import net.openhft.affinity.impl.NoCpuLayout;
 import net.openhft.affinity.impl.VanillaCpuLayout;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +81,7 @@ public class AffinityLock implements Closeable {
      */
     private final LockInventory lockInventory;
     boolean bound = false;
-    @Nullable
+    
     Thread assignedThread;
     Throwable boundHere;
     private boolean resetAffinity = true;
@@ -102,14 +100,14 @@ public class AffinityLock implements Closeable {
      *
      * @param cpuLayout for this application to use for this machine.
      */
-    public static void cpuLayout(@NotNull CpuLayout cpuLayout) {
+    public static void cpuLayout( CpuLayout cpuLayout) {
         LOCK_INVENTORY.set(cpuLayout);
     }
 
     /**
      * @return The current CpuLayout for the application.
      */
-    @NotNull
+    
     public static CpuLayout cpuLayout() {
         return LOCK_INVENTORY.getCpuLayout();
     }
@@ -293,7 +291,7 @@ public class AffinityLock implements Closeable {
         return acquireCore(bind, ANY_CPU, AffinityStrategies.ANY);
     }
 
-    private static AffinityLock acquireLock(boolean bind, int cpuId, @NotNull AffinityStrategy... strategies) {
+    private static AffinityLock acquireLock(boolean bind, int cpuId,  AffinityStrategy... strategies) {
         return LOCK_INVENTORY.acquireLock(bind, cpuId, strategies);
     }
 
@@ -309,14 +307,14 @@ public class AffinityLock implements Closeable {
         return LOCK_INVENTORY.tryAcquireLock(bind, cpuId);
     }
 
-    private static AffinityLock acquireCore(boolean bind, int cpuId, @NotNull AffinityStrategy... strategies) {
+    private static AffinityLock acquireCore(boolean bind, int cpuId,  AffinityStrategy... strategies) {
         return LOCK_INVENTORY.acquireCore(bind, cpuId, strategies);
     }
 
     /**
      * @return All the current locks as a String.
      */
-    @NotNull
+    
     public static String dumpLocks() {
         return LOCK_INVENTORY.dumpLocks();
     }

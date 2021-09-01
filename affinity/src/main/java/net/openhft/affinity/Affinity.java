@@ -18,7 +18,6 @@
 package net.openhft.affinity;
 
 import net.openhft.affinity.impl.*;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +35,6 @@ import java.util.BitSet;
 public enum Affinity {
     ; // none
     static final Logger LOGGER = LoggerFactory.getLogger(Affinity.class);
-    @NotNull
     private static final IAffinity AFFINITY_IMPL;
     private static Boolean JNAAvailable;
 

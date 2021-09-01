@@ -65,7 +65,7 @@ public abstract class Runner implements IRunner {
     //    @Parameter(names = {"--TP"}, description = "TP threads")
 //    public int TP = 4;// default TP threads
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 24;// default total execution threads
+    public int tthread = 2;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_TStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
@@ -96,9 +96,9 @@ public abstract class Runner implements IRunner {
     public String generator = "OCGenerator";
     @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
 //    public int totalEventsPerBatch = 100000;
-    public int totalEventsPerBatch = 983040;
+    public int totalEventsPerBatch = 1000;
     @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
-    public int numberOfBatches = 1;
+    public int numberOfBatches = 10;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 8;
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")

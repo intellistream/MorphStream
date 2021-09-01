@@ -16,10 +16,6 @@
  */
 
 package net.openhft.affinity;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -32,9 +28,9 @@ import java.util.concurrent.ThreadFactory;
 public class AffinityThreadFactory implements ThreadFactory {
     private final String name;
     private final boolean daemon;
-    @NotNull
+    
     private final AffinityStrategy[] strategies;
-    @Nullable
+    
     private AffinityLock lastAffinityLock = null;
     private int id = 1;
 
@@ -42,15 +38,15 @@ public class AffinityThreadFactory implements ThreadFactory {
         this(name, true, strategies);
     }
 
-    public AffinityThreadFactory(String name, boolean daemon, @NotNull AffinityStrategy... strategies) {
+    public AffinityThreadFactory(String name, boolean daemon,  AffinityStrategy... strategies) {
         this.name = name;
         this.daemon = daemon;
         this.strategies = strategies.length == 0 ? new AffinityStrategy[]{AffinityStrategies.ANY} : strategies;
     }
 
-    @NotNull
+    
     @Override
-    public synchronized Thread newThread(@NotNull final Runnable r) {
+    public synchronized Thread newThread( final Runnable r) {
         String name2 = id <= 1 ? name : (name + '-' + id);
         id++;
         Thread t = new Thread(new Runnable() {

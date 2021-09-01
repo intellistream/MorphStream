@@ -4,6 +4,9 @@ import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
 import benchmark.datagenerator.apps.SL.Transaction.SLDepositEvent;
 import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
 import common.collections.OsUtils;
+import components.operators.api.TransactionalBolt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,9 +20,8 @@ import java.util.List;
 
 import static common.CONTROL.enable_log;
 
-@lombok.extern.slf4j.Slf4j
 public class FileOutputHandler implements IOutputHandler {
-
+    protected static final Logger log = LoggerFactory.getLogger(FileOutputHandler.class);
     protected String mRootPath;
     protected String transferEventFileName;
     protected String depositEventFileName;

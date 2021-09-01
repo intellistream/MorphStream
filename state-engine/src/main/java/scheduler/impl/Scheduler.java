@@ -2,6 +2,8 @@ package scheduler.impl;
 
 
 import content.T_StreamContent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.SchedulerContext;
@@ -13,6 +15,7 @@ import storage.TableRecord;
 import storage.datatype.DataBox;
 import transaction.function.DEC;
 import transaction.function.INC;
+import transaction.impl.TxnManagerDedicatedAsy;
 import utils.SOURCE_CONTROL;
 
 import java.util.HashMap;
@@ -22,8 +25,8 @@ import java.util.Map;
 import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.*;
 
-@lombok.extern.slf4j.Slf4j
 public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> implements IScheduler<Context> {
+    private static final Logger log = LoggerFactory.getLogger(Scheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context, SchedulingUnit, ExecutionUnit> tpg; // TPG to be maintained in this global instance.
 

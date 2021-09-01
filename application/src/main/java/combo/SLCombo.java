@@ -17,7 +17,6 @@ import java.util.ArrayDeque;
 import static common.CONTROL.*;
 import static content.Content.*;
 
-//TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class SLCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(SLCombo.class);
     private static final long serialVersionUID = -2394340130331865581L;
@@ -170,7 +169,5 @@ public class SLCombo extends SPOUTCombo {
         if (enable_shared_state)
             bolt.loadDB(config, context, collector);
         loadEvent(config.getString("rootFilePath"), config, context, collector);
-//        loadEvent("SL_Events" + tthread, config, context, collector);
-//        bolt.sink.batch_number_per_wm = batch_number_per_wm;
     }
 }
