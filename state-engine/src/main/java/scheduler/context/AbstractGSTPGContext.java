@@ -17,15 +17,13 @@ public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, Sc
         super(thisThreadId);
         IsolatedOC = new ArrayDeque<>();
         OCwithChildren = new ArrayDeque<>();
-        requests = new ArrayDeque<>();
     }
 
     @Override
     public void reset() {
+        super.reset();
         IsolatedOC.clear();
         OCwithChildren.clear();
-        totalOsToSchedule = 0;
-        scheduledOPs = 0;
     }
 
     @Override

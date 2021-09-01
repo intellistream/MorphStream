@@ -203,6 +203,7 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
     public void RESET(Context context) {
         SOURCE_CONTROL.getInstance().oneThreadCompleted();
         context.reset();
+        tpg.reset();
     }
 
     @Override

@@ -38,9 +38,17 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
     public final Map<Integer, Context> threadToContextMap;
+    private final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
-    private final ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
+    private ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
     CyclicBarrier barrier;
+
+    public void reset() {
+        //reset holder.
+        operationChains = new ConcurrentHashMap<>();
+        operationChains.put("accounts", new TableOCs<>(totalThreads));
+        operationChains.put("bookEntries", new TableOCs<>(totalThreads));
+    }
 
     /**
      * @param totalThreads
@@ -48,12 +56,12 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
      */
     public TaskPrecedenceGraph(int totalThreads, int delta) {
         barrier = new CyclicBarrier(totalThreads);
+        this.totalThreads = totalThreads;
         this.delta = delta;
         //create holder.
         operationChains = new ConcurrentHashMap<>();
         operationChains.put("accounts", new TableOCs<>(totalThreads));
         operationChains.put("bookEntries", new TableOCs<>(totalThreads));
-
         threadToContextMap = new HashMap<>();
     }
 
@@ -87,7 +95,6 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
             submit(context, tableOCs.threadOCsMap.get(threadId).holder_v1.values());
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-//        if (enable_log) LOG.trace("++++++ end explore");
     }
 
     private void submit(Context context, Collection<SchedulingUnit> ocs) {
@@ -148,4 +155,5 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         }
         curOC.checkPotentialFDChildrenOnNewArrival(op);
     }
+
 }

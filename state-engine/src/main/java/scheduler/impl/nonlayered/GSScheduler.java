@@ -48,11 +48,6 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
     }
 
     @Override
-    public void RESET(GSTPGContext context) {
-
-    }
-
-    @Override
     public void TxnSubmitFinished(GSTPGContext context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency

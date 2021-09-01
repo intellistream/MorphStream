@@ -44,11 +44,6 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     }
 
     @Override
-    public void RESET(GSTPGContextWithAbort context) {
-//        Controller.exec.shutdownNow();
-    }
-
-    @Override
     public void TxnSubmitFinished(GSTPGContextWithAbort context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency

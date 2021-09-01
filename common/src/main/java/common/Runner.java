@@ -62,12 +62,12 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BFS";
-    //    public String scheduler = "BFSA";
+//    public String scheduler = "BFS";
+//        public String scheduler = "BFSA";
 //    public String scheduler = "DFS";
 //    public String scheduler = "DFSA";
 //    public String scheduler = "GS";
-//    public String scheduler = "GSA";
+    public String scheduler = "GSA";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
@@ -95,7 +95,7 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 10_000;//
+    public int checkpoint_interval = 50_000;//
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
 //    public String generator = "TPGGenerator";
     public String generator = "OCGenerator";

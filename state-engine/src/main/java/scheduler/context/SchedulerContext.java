@@ -13,6 +13,7 @@ public abstract class SchedulerContext<SchedulingUnit> {
 
     protected SchedulerContext(int thisThreadId) {
         this.thisThreadId = thisThreadId;
+        requests = new ArrayDeque<>();
     }
 
     public abstract boolean finished();
