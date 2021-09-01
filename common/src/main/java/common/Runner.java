@@ -58,12 +58,9 @@ public abstract class Runner implements IRunner {
     /**
      * TStream Specific Parameters.
      */
-    @Parameter(names = {"--disable_pushufflingActiveshdown"}, description = "Push down write operations to engine, it is enabled by default.")
-    public boolean disable_pushdown = false;
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (seconds)")
     public double checkpoint_interval = 5;// default checkpoint interval.
-    //    @Parameter(names = {"--TP"}, description = "TP threads")
-//    public int TP = 4;// default TP threads
+
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 2;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
@@ -105,7 +102,7 @@ public abstract class Runner implements IRunner {
     public Integer iterationNumber = 0;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
     public String scheduler = "BFS";
-//    public String scheduler = "BFSA";
+    //    public String scheduler = "BFSA";
 //    public String scheduler = "DFS";
 //    public String scheduler = "DFSA";
 //    public String scheduler = "GS";
@@ -137,7 +134,6 @@ public abstract class Runner implements IRunner {
     public void initializeCfg(HashMap<String, Object> config) {
         config.put("enable_fault_tolerance", enable_fault_tolerance);
         config.put("queue_size", queue_size);
-        config.put("disable_pushdown", disable_pushdown);
         config.put("common", application);
         config.put("ratio_of_multi_partition", ratio_of_multi_partition);
         config.put("number_partitions", number_partitions);

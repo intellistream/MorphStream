@@ -36,10 +36,10 @@ import static scheduler.impl.Scheduler.getTaskId;
 public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit>, SchedulingUnit extends OperationChain<ExecutionUnit>, ExecutionUnit extends AbstractOperation> {
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
+    public final Map<Integer, Context> threadToContextMap;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
     CyclicBarrier barrier;
-    public final Map<Integer, Context> threadToContextMap;
 
     /**
      * @param totalThreads

@@ -11,7 +11,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_log;
 
 /**
  * @param <E> actual contents

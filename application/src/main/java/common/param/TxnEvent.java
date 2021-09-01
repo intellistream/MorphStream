@@ -1,7 +1,5 @@
 package common.param;
 
-import common.param.sl.TransactionEvent;
-
 import java.util.Arrays;
 
 public class TxnEvent {

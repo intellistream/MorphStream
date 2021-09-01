@@ -281,7 +281,8 @@ public class MeasureTools {
             fileWriter.write("SchedulerTimeBreakdownReport\n");
             if (enable_log) log.info("===Scheduler Time Breakdown Report===");
             fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t construct_time\n");
-            if (enable_log) log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time");
+            if (enable_log)
+                log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
                                 "%-10.2f\t" +

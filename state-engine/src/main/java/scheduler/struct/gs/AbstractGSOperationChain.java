@@ -1,7 +1,6 @@
 package scheduler.struct.gs;
 
 import scheduler.context.AbstractGSTPGContext;
-import scheduler.struct.MetaTypes;
 import scheduler.struct.OperationChain;
 
 import java.util.Collection;
@@ -12,8 +11,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * The OperationChain only tries to maintain a data structure for the ease of temporal dependencies construction.
  */
 public abstract class AbstractGSOperationChain<ExecutionUnit extends GSOperation> extends OperationChain<ExecutionUnit> {
-    public AbstractGSTPGContext context = null;
     protected final ConcurrentSkipListMap<AbstractGSOperationChain, ExecutionUnit> ocFdChildren;
+    public AbstractGSTPGContext context = null;
 
     public AbstractGSOperationChain(String tableName, String primaryKey) {
         super(tableName, primaryKey);

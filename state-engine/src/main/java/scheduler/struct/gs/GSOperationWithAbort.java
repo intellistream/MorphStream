@@ -12,9 +12,8 @@ import transaction.function.Function;
  * contains the place-holder to fill, as well as timestamp (counter).
  */
 public class GSOperationWithAbort extends GSOperation {
-    public int txnOpId = 0;
-
     public final AbstractGSTPGContext context;
+    public int txnOpId = 0;
     // logical dependencies are to be stored for the purpose of abort handling
     private GSOperationWithAbort ld_head_operation = null; // the logical dependencies ops to be executed after this op.
     private GSOperationChainWithAbort oc; // used for dependency resolved notification under greedy smart
@@ -42,13 +41,13 @@ public class GSOperationWithAbort extends GSOperation {
     }
 
     public <Context extends AbstractGSTPGContext> GSOperationWithAbort(Context context, String table_name, TxnContext txn_context, long bid,
-                                                               CommonMetaTypes.AccessType accessType, TableRecord d_record) {
+                                                                       CommonMetaTypes.AccessType accessType, TableRecord d_record) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
     }
 
     public <Context extends AbstractGSTPGContext> GSOperationWithAbort(Context context, String table_name, TxnContext txn_context, long bid,
-                                                               CommonMetaTypes.AccessType accessType, TableRecord d_record,
-                                                               SchemaRecordRef record_ref) {
+                                                                       CommonMetaTypes.AccessType accessType, TableRecord d_record,
+                                                                       SchemaRecordRef record_ref) {
         this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
 
@@ -61,20 +60,20 @@ public class GSOperationWithAbort extends GSOperation {
         this.context = context;
     }
 
-    public void setOC(GSOperationChainWithAbort operationChain) {
-        this.oc = operationChain;
-    }
-
     public GSOperationChainWithAbort getOC() {
         return oc;
     }
 
-    public void setTxnOpId(int txnOpId) {
-        this.txnOpId = txnOpId;
+    public void setOC(GSOperationChainWithAbort operationChain) {
+        this.oc = operationChain;
     }
 
     public int getTxnOpId() {
         return txnOpId;
+    }
+
+    public void setTxnOpId(int txnOpId) {
+        this.txnOpId = txnOpId;
     }
 
     /*********************************Dependencies setup****************************************/

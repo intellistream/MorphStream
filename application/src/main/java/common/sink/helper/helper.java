@@ -70,7 +70,8 @@ public abstract class helper {
         print_pid = true;
         this.predict = predict;
         this.size = size;
-        if (enable_log) LOG.info("test duration," + duration + ", warm_up time: " + warm_up + "measure_times:" + measure_times);
+        if (enable_log)
+            LOG.info("test duration," + duration + ", warm_up time: " + warm_up + "measure_times:" + measure_times);
     }
 
     public void StartMeasurement() {

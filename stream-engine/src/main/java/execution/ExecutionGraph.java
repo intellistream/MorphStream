@@ -107,7 +107,8 @@ public class ExecutionGraph extends RawExecutionGraph {
                 addRecord_RebuildRelationships(tr, compressRatio, p);
             } else {
                 if (!tr.toCompress) {
-                    if (enable_log) LOG.info("Exe:" + tr.getId() + "not able to allocate in last round, do not compress it.");
+                    if (enable_log)
+                        LOG.info("Exe:" + tr.getId() + "not able to allocate in last round, do not compress it.");
                 }
                 addRecord(tr, p);
             }

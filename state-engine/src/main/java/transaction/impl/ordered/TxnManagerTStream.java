@@ -17,7 +17,7 @@ import static transaction.context.TxnAccess.Access;
 public class TxnManagerTStream extends TxnManagerDedicatedAsy {
 
     public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw, String schedulerType) {
-        super(storageManager, thisComponentId, thisTaskId, thread_countw,numberOfStates, schedulerType);
+        super(storageManager, thisComponentId, thisTaskId, thread_countw, numberOfStates, schedulerType);
     }
 
     @Override

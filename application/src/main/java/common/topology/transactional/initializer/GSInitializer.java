@@ -58,7 +58,8 @@ public class GSInitializer extends TableInitilizer {
         } else {
             System.exit(-1);
         }
-        if (enable_log) LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
+        if (enable_log)
+            LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
         configure_store(scale_factor, theta, tthread, NUM_ITEMS);
     }
 
@@ -104,7 +105,8 @@ public class GSInitializer extends TableInitilizer {
             assert value.length() == VALUE_LEN;
             insertMicroRecord(key, value);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -123,7 +125,8 @@ public class GSInitializer extends TableInitilizer {
             assert value.length() == VALUE_LEN;
             insertMicroRecord(key, value, pid, spinlock_);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override

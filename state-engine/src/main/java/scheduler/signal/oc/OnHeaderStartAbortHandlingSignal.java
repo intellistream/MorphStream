@@ -6,6 +6,7 @@ import scheduler.struct.OperationChain;
 public class OnHeaderStartAbortHandlingSignal<OP extends AbstractOperation, OC extends OperationChain<OP>>
         extends OperationChainSignal<OP, OC> {
     private final OP abortedOp;
+
     public OnHeaderStartAbortHandlingSignal(OC targetOperationChain, OP abortedOp) {
         super(targetOperationChain);
         this.abortedOp = abortedOp;

@@ -1,4 +1,5 @@
 package net.openhft.affinity.lockchecker;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,7 +147,7 @@ public class FileLockBasedLockChecker extends FileBasedLockChecker {
         return content.substring(0, content.indexOf("\n"));
     }
 
-    
+
     @Override
     protected File toFile(int id) {
         File file = super.toFile(id);

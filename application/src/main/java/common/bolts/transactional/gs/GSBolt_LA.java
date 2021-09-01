@@ -1,7 +1,7 @@
 package common.bolts.transactional.gs;
 
-import common.param.mb.MicroEvent;
 import combo.SINKCombo;
+import common.param.mb.MicroEvent;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import transaction.context.TxnContext;

@@ -62,20 +62,20 @@ public class VanillaCpuLayout implements CpuLayout {
         }
     }
 
-    
+
     public static VanillaCpuLayout fromProperties(String fileName) throws IOException {
         return fromProperties(openFile(fileName));
     }
 
-    
+
     public static VanillaCpuLayout fromProperties(InputStream is) throws IOException {
         Properties prop = new Properties();
         prop.load(is);
         return fromProperties(prop);
     }
 
-    
-    public static VanillaCpuLayout fromProperties( Properties prop) {
+
+    public static VanillaCpuLayout fromProperties(Properties prop) {
         List<CpuInfo> cpuDetails = new ArrayList<>();
         for (int i = 0; i < MAX_CPUS_SUPPORTED; i++) {
             String line = prop.getProperty("" + i);
@@ -215,7 +215,7 @@ public class VanillaCpuLayout implements CpuLayout {
             this.threadId = threadId;
         }
 
-        
+
         @Override
         public String toString() {
             return "CpuInfo{" +
@@ -226,7 +226,7 @@ public class VanillaCpuLayout implements CpuLayout {
         }
 
         @Override
-        public boolean equals( Object o) {
+        public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 

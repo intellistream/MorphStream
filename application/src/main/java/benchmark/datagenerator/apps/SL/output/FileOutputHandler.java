@@ -4,7 +4,6 @@ import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
 import benchmark.datagenerator.apps.SL.Transaction.SLDepositEvent;
 import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
 import common.collections.OsUtils;
-import components.operators.api.TransactionalBolt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

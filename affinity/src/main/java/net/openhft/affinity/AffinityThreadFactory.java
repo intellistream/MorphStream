@@ -16,6 +16,7 @@
  */
 
 package net.openhft.affinity;
+
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -28,9 +29,9 @@ import java.util.concurrent.ThreadFactory;
 public class AffinityThreadFactory implements ThreadFactory {
     private final String name;
     private final boolean daemon;
-    
+
     private final AffinityStrategy[] strategies;
-    
+
     private AffinityLock lastAffinityLock = null;
     private int id = 1;
 
@@ -38,15 +39,15 @@ public class AffinityThreadFactory implements ThreadFactory {
         this(name, true, strategies);
     }
 
-    public AffinityThreadFactory(String name, boolean daemon,  AffinityStrategy... strategies) {
+    public AffinityThreadFactory(String name, boolean daemon, AffinityStrategy... strategies) {
         this.name = name;
         this.daemon = daemon;
         this.strategies = strategies.length == 0 ? new AffinityStrategy[]{AffinityStrategies.ANY} : strategies;
     }
 
-    
+
     @Override
-    public synchronized Thread newThread( final Runnable r) {
+    public synchronized Thread newThread(final Runnable r) {
         String name2 = id <= 1 ? name : (name + '-' + id);
         id++;
         Thread t = new Thread(new Runnable() {

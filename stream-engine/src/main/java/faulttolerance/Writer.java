@@ -167,7 +167,8 @@ public class Writer {
             state[index] = state_value;
             cnt++;
             if (cnt == numTasks) {
-                if (enable_log) LOG.info("iteration" + myiteration + " ready to write to disk by: " + executor.getOP_full());
+                if (enable_log)
+                    LOG.info("iteration" + myiteration + " ready to write to disk by: " + executor.getOP_full());
                 if (!reliable) {
                     save_state_MMIO_synchronize(executor);
                 }

@@ -14,7 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_shared_state;
 import static content.Content.*;
 
 public class SLCombo extends SPOUTCombo {
@@ -152,10 +153,7 @@ public class SLCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                if (config.getBoolean("disable_pushdown", false))
-                    bolt = new SLBolt_ts_nopush(0, sink);
-                else
-                    bolt = new SLBolt_ts(0, sink);
+                bolt = new SLBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore

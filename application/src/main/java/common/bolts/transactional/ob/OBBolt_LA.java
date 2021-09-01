@@ -1,10 +1,10 @@
 package common.bolts.transactional.ob;
 
+import combo.SINKCombo;
 import common.param.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
-import combo.SINKCombo;
 import db.DatabaseException;
 import org.slf4j.Logger;
 import transaction.context.TxnContext;

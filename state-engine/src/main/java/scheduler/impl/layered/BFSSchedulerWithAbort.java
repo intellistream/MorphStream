@@ -1,4 +1,5 @@
 package scheduler.impl.layered;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -27,10 +28,9 @@ import static java.lang.Integer.min;
  */
 public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGContextWithAbort> {
     private static final Logger LOG = LoggerFactory.getLogger(BFSSchedulerWithAbort.class);
-    public int targetRollbackLevel = 0;//shared data structure.
-
     public final ConcurrentLinkedDeque<BFSOperation> failedOperations = new ConcurrentLinkedDeque<>();//aborted operations per thread.
     public final AtomicBoolean needAbortHandling = new AtomicBoolean(false);//if any operation is aborted during processing.
+    public int targetRollbackLevel = 0;//shared data structure.
 
     public BFSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -49,7 +49,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 //all threads come to the current level.
                 if (needAbortHandling.get()) {
-                    if(enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
+                    if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
                     abortHandling(context);
                 }
                 ProcessedToNextLevel(context);
@@ -111,7 +111,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
 
     protected void checkTransactionAbort(BFSOperation operation) {
         if (operation.isFailed && !operation.aborted) {
-            needAbortHandling.compareAndSet(false,true);
+            needAbortHandling.compareAndSet(false, true);
             failedOperations.push(operation); // operation need to wait until the last abort has completed
         }
     }
@@ -203,7 +203,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         }
         context.currentLevelIndex = 0;
         // it needs to rollback to the level -1, because aborthandling has immediately followed up with ProcessedToNextLevel
-        context.currentLevel = context.rollbackLevel-1;
+        context.currentLevel = context.rollbackLevel - 1;
     }
 
     protected int getNumOPsByLevel(BFSLayeredTPGContextWithAbort context, int level) {

@@ -15,7 +15,6 @@ import transaction.context.TxnContext;
 import java.util.LinkedList;
 
 import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.*;
 import static content.common.CommonMetaTypes.kMaxAccessNum;
 import static transaction.context.TxnAccess.Access;
@@ -129,7 +128,8 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
         } else if (accessType == READ_WRITE) {
             if (!t_record.content_.TryWriteLock()) {
                 if (enable_log)
-                    if (enable_log) LOG.info(Thread.currentThread().getName() + " failed to get lock_ratio" + DateTime.now());
+                    if (enable_log)
+                        LOG.info(Thread.currentThread().getName() + " failed to get lock_ratio" + DateTime.now());
                 this.AbortTransaction();
                 return false;
             } else {

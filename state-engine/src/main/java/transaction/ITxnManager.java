@@ -5,7 +5,6 @@ import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
 import scheduler.context.SchedulerContext;
-import scheduler.impl.IScheduler;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.TableRecordRef;
@@ -23,19 +22,9 @@ import java.util.concurrent.BrokenBarrierException;
  */
 public interface ITxnManager {
 
-    enum SCHEDULER_TYPE {
-        BFS,
-        BFSA,
-        DFS,
-        DFSA,
-        GS,
-        GSA
-    }
-
     OrderLock getOrderLock();//shared.
 
     PartitionedOrderLock.LOCK getOrderLock(int p_id);//partitioned. Global ordering can not be partitioned.
-    //Used by native T-Stream.
 
     /**
      * Read-only
@@ -50,6 +39,7 @@ public interface ITxnManager {
      * @throws DatabaseException
      */
     boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, double[] enqueue_time) throws DatabaseException;
+    //Used by native T-Stream.
 
     /**
      * Read-only
@@ -111,4 +101,13 @@ public interface ITxnManager {
     boolean CommitTransaction(TxnContext txn_context);
 
     SchedulerContext getSchedulerContext();
+
+    enum SCHEDULER_TYPE {
+        BFS,
+        BFSA,
+        DFS,
+        DFSA,
+        GS,
+        GSA
+    }
 }

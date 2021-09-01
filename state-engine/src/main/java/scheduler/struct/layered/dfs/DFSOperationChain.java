@@ -1,7 +1,7 @@
 package scheduler.struct.layered.dfs;
 
-import scheduler.struct.layered.LayeredOperationChain;
 import scheduler.struct.OperationChain;
+import scheduler.struct.layered.LayeredOperationChain;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentSkipListMap;

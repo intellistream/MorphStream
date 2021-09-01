@@ -3,17 +3,11 @@ package scheduler.struct.gs;
 import content.common.CommonMetaTypes;
 import scheduler.context.AbstractGSTPGContext;
 import scheduler.struct.AbstractOperation;
-import scheduler.struct.MetaTypes.DependencyType;
-import scheduler.struct.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
-
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * contains the place-holder to fill, as well as timestamp (counter).

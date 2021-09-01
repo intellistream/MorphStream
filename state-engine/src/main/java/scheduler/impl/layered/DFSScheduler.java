@@ -1,4 +1,5 @@
 package scheduler.impl.layered;
+
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.DFSLayeredTPGContext;
@@ -37,7 +38,7 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
             ProcessedToNextLevel(context);
             oc = Next(context);
         }
-        while (oc != null && oc.hasParents());
+        while (oc != null && oc.hasParents()) ;
         DISTRIBUTE(oc, context);
     }
 

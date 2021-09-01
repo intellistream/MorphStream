@@ -81,7 +81,7 @@ public class AffinityLock implements Closeable {
      */
     private final LockInventory lockInventory;
     boolean bound = false;
-    
+
     Thread assignedThread;
     Throwable boundHere;
     private boolean resetAffinity = true;
@@ -100,14 +100,14 @@ public class AffinityLock implements Closeable {
      *
      * @param cpuLayout for this application to use for this machine.
      */
-    public static void cpuLayout( CpuLayout cpuLayout) {
+    public static void cpuLayout(CpuLayout cpuLayout) {
         LOCK_INVENTORY.set(cpuLayout);
     }
 
     /**
      * @return The current CpuLayout for the application.
      */
-    
+
     public static CpuLayout cpuLayout() {
         return LOCK_INVENTORY.getCpuLayout();
     }
@@ -130,7 +130,7 @@ public class AffinityLock implements Closeable {
         reservedAffinity = reservedAffinity.trim();
         long[] longs = new long[1 + (reservedAffinity.length() - 1) / 16];
         int end = reservedAffinity.length();
-        for(int i = 0; i < longs.length ; i++) {
+        for (int i = 0; i < longs.length; i++) {
             int begin = Math.max(0, end - 16);
             longs[i] = Long.parseLong(reservedAffinity.substring(begin, end), 16);
             end = begin;
@@ -190,11 +190,9 @@ public class AffinityLock implements Closeable {
      * @return A handle for an affinity lock, or nolock if no available CPU in the array
      */
     public static AffinityLock acquireLock(int[] cpus) {
-        for( int cpu : cpus )
-        {
+        for (int cpu : cpus) {
             AffinityLock lock = tryAcquireLock(true, cpu);
-            if(lock != null)
-            {
+            if (lock != null) {
                 LOGGER.info("Acquired lock on CPU {}", cpu);
                 return lock;
             }
@@ -291,7 +289,7 @@ public class AffinityLock implements Closeable {
         return acquireCore(bind, ANY_CPU, AffinityStrategies.ANY);
     }
 
-    private static AffinityLock acquireLock(boolean bind, int cpuId,  AffinityStrategy... strategies) {
+    private static AffinityLock acquireLock(boolean bind, int cpuId, AffinityStrategy... strategies) {
         return LOCK_INVENTORY.acquireLock(bind, cpuId, strategies);
     }
 
@@ -299,7 +297,7 @@ public class AffinityLock implements Closeable {
      * Try to acquire a lock on the specified core
      * Returns lock if successful, or null if cpu cannot be acquired
      *
-     * @param bind - if true, bind the current thread; if false, reserve a cpu which can be bound later
+     * @param bind  - if true, bind the current thread; if false, reserve a cpu which can be bound later
      * @param cpuId - the cpu to lock
      * @return - A handle to an affinity lock on success; null if failed to lock
      */
@@ -307,14 +305,14 @@ public class AffinityLock implements Closeable {
         return LOCK_INVENTORY.tryAcquireLock(bind, cpuId);
     }
 
-    private static AffinityLock acquireCore(boolean bind, int cpuId,  AffinityStrategy... strategies) {
+    private static AffinityLock acquireCore(boolean bind, int cpuId, AffinityStrategy... strategies) {
         return LOCK_INVENTORY.acquireCore(bind, cpuId, strategies);
     }
 
     /**
      * @return All the current locks as a String.
      */
-    
+
     public static String dumpLocks() {
         return LOCK_INVENTORY.dumpLocks();
     }

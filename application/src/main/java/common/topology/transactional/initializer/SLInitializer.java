@@ -106,10 +106,10 @@ public class SLInitializer extends TableInitilizer {
             byte[] bytes;
             if (dataConfig instanceof LayeredOCDataGeneratorConfig) {
                 bytes = digest.digest(String.format("%d_%d_%d_%d",
-                            dataConfig.getTotalThreads(),
-                            dataConfig.getTuplesPerBatch(),
-                            dataConfig.getTotalBatches(),
-                            ((LayeredOCDataGeneratorConfig) dataConfig).getNumberOfDLevels())
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTuplesPerBatch(),
+                                dataConfig.getTotalBatches(),
+                                ((LayeredOCDataGeneratorConfig) dataConfig).getNumberOfDLevels())
                         .getBytes(StandardCharsets.UTF_8));
             } else {
                 bytes = digest.digest(String.format("%d_%d_%d",
@@ -152,7 +152,8 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     @Override
@@ -186,7 +187,8 @@ public class SLInitializer extends TableInitilizer {
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
-        if (enable_log) LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
 

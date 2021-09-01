@@ -2,10 +2,13 @@ package scheduler.statemanager;
 
 import scheduler.context.GSTPGContext;
 import scheduler.impl.nonlayered.GSScheduler;
-import scheduler.signal.oc.*;
+import scheduler.signal.oc.OnExecutedSignal;
+import scheduler.signal.oc.OnParentExecutedSignal;
+import scheduler.signal.oc.OnRootSignal;
+import scheduler.signal.oc.OperationChainSignal;
 import scheduler.struct.MetaTypes.DependencyType;
-import scheduler.struct.gs.GSOperationChain;
 import scheduler.struct.gs.GSOperation;
+import scheduler.struct.gs.GSOperationChain;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;

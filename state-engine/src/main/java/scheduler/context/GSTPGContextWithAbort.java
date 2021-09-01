@@ -3,11 +3,8 @@ package scheduler.context;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
 import scheduler.statemanager.OperationChainStateListener;
 import scheduler.statemanager.PartitionStateManagerWithAbort;
-import scheduler.struct.gs.GSOperationChain;
 import scheduler.struct.gs.GSOperationChainWithAbort;
 import scheduler.struct.gs.GSOperationWithAbort;
-
-import java.util.ArrayDeque;
 
 public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithAbort, GSOperationChainWithAbort> {
 

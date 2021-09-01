@@ -1,4 +1,5 @@
 package scheduler.impl.nonlayered;
+
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContext;
@@ -90,9 +91,11 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         public void onOCExecutable(GSOperationChain operationChain) {
             DISTRIBUTE(operationChain, (GSTPGContext) operationChain.context);//TODO: make it clear..
         }
+
         public void onOCFinalized(GSOperationChain operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }
+
         public void onOCRollbacked(GSOperationChain operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }

@@ -69,8 +69,8 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
-    
-    private  GSOperationWithAbort constructOp(List<GSOperationWithAbort> operationGraph, Request request) {
+
+    private GSOperationWithAbort constructOp(List<GSOperationWithAbort> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         GSOperationWithAbort set_op;
         switch (request.accessType) {
@@ -127,9 +127,11 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         public void onOCExecutable(GSOperationChainWithAbort operationChain) {
             DISTRIBUTE(operationChain, (GSTPGContextWithAbort) operationChain.context);
         }
+
         public void onOCFinalized(GSOperationChainWithAbort operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }
+
         public void onOCRollbacked(GSOperationChainWithAbort operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }

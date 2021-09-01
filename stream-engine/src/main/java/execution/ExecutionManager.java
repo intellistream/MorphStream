@@ -35,7 +35,7 @@ public class ExecutionManager {
     private final OptimizationManager optimizationManager;
     private final ExecutionGraph g;
 
-     public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager) {
+    public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager) {
         this.g = g;
         AC = new AffinityController(conf);
         this.optimizationManager = optimizationManager;

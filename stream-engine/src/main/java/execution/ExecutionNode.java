@@ -231,7 +231,8 @@ public class ExecutionNode implements Serializable {
                         }
                     }
                 } else {
-                    if (enable_log) LOG.info("Executor:" + this.getOP_full() + " have no children! for stream " + streamId);
+                    if (enable_log)
+                        LOG.info("Executor:" + this.getOP_full() + " have no children! for stream " + streamId);
                 }
             }
         }

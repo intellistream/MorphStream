@@ -1,7 +1,7 @@
 package common.bolts.transactional.ob;
 
-import common.param.TxnEvent;
 import combo.SINKCombo;
+import common.param.TxnEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;

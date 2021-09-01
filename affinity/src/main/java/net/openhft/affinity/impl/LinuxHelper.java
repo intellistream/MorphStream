@@ -46,8 +46,7 @@ public class LinuxHelper {
         version = ver;
     }
 
-    public static
-    cpu_set_t sched_getaffinity() {
+    public static cpu_set_t sched_getaffinity() {
         final CLibrary lib = CLibrary.INSTANCE;
         final cpu_set_t cpuset = new cpu_set_t();
         final int size = version.isSameOrNewer(VERSION_2_6) ? cpu_set_t.SIZE_OF_CPU_SET_T : NativeLong.SIZE;
@@ -64,10 +63,10 @@ public class LinuxHelper {
         return cpuset;
     }
 
-	public static void sched_setaffinity(final BitSet affinity) {
-		sched_setaffinity(0, affinity);
-	}
-	
+    public static void sched_setaffinity(final BitSet affinity) {
+        sched_setaffinity(0, affinity);
+    }
+
     public static void sched_setaffinity(final int pid, final BitSet affinity) {
         final CLibrary lib = CLibrary.INSTANCE;
         final cpu_set_t cpuset = new cpu_set_t();

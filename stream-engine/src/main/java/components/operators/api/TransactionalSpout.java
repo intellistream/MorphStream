@@ -10,7 +10,6 @@ import java.io.BufferedWriter;
 import java.util.ArrayList;
 
 import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static profiler.Metrics.NUM_ACCESSES;
 
@@ -49,8 +48,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
 
     /**
      * THIS IS USED ONLY WHEN "enable_app_combo" is true.
-     * <p>
-     * Everytime, a thread emits "batch_size" batches, it emits a signal to trigger txn processing.
+     * Everytime a thread emits "batch_size" tuples, it emits a signal to trigger txn processing.
      *
      * @param counter
      */
@@ -85,7 +83,8 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     @Override
     public void forward_checkpoint(int sourceTask, String streamId, long bid, Marker marker) throws InterruptedException {
         if (clock.tick(myiteration) && success) {//emit marker tuple
-            if (enable_log) LOG.info(executor.getOP_full() + " emit marker of: " + myiteration + " @" + DateTime.now() + " SOURCE_CONTROL: " + bid);
+            if (enable_log)
+                LOG.info(executor.getOP_full() + " emit marker of: " + myiteration + " @" + DateTime.now() + " SOURCE_CONTROL: " + bid);
             collector.create_marker_boardcast(boardcast_time, streamId, bid, myiteration);
             boardcast_time = System.nanoTime();
             myiteration++;

@@ -34,7 +34,7 @@ public class AbstractDFSScheduler<Context extends DFSLayeredTPGContext> extends 
             ProcessedToNextLevel(context);
             oc = Next(context);
         }
-        while (oc != null && oc.hasParents());
+        while (oc != null && oc.hasParents()) ;
         DISTRIBUTE(oc, context);
     }
 
@@ -55,5 +55,6 @@ public class AbstractDFSScheduler<Context extends DFSLayeredTPGContext> extends 
     }
 
     @Override
-    public void TxnSubmitFinished(Context context) {}
+    public void TxnSubmitFinished(Context context) {
+    }
 }
