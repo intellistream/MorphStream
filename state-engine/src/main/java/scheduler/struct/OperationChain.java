@@ -2,10 +2,7 @@ package scheduler.struct;
 
 import transaction.impl.ordered.MyList;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,9 +22,6 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     // OperationChainKey -> OperationChain
     protected final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocFdParents;
     public boolean isExecuted = false;
-
-    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
-    private int dependencyLevel = -1;
 
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
@@ -63,6 +57,9 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
         this.ocFdParents.putIfAbsent(parentOC, parentOp);
         this.ocFdParentsCount.incrementAndGet();
+        if (parentOC.ocFdParents.containsKey(this)) {
+            throw new RuntimeException("cyclic in the tpg;");
+        }
     }
 
     public void checkPotentialFDChildrenOnNewArrival(ExecutionUnit newOp) {
@@ -109,31 +106,12 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
             return -1;
     }
 
+    public <T extends OperationChain> Collection<T> getFDParents() {
+        return (Collection<T>) ocFdParents.keySet();
+    }
+
     public boolean hasParents() {
         return ocFdParentsCount.get() > 0;
-    }
-
-    public synchronized boolean hasValidDependencyLevel() {
-        return isDependencyLevelCalculated;
-    }
-
-    public int getDependencyLevel() {
-        return dependencyLevel;
-    }
-
-    public synchronized void updateDependencyLevel() {
-        if (isDependencyLevelCalculated)
-            return;
-        dependencyLevel = 0;
-        for (OperationChain<ExecutionUnit> oc : ocFdParents.keySet()) {
-            if (!oc.hasValidDependencyLevel())
-                oc.updateDependencyLevel();
-
-            if (oc.getDependencyLevel() >= dependencyLevel) {
-                dependencyLevel = oc.getDependencyLevel() + 1;
-            }
-        }
-        isDependencyLevelCalculated = true;
     }
 
     public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {

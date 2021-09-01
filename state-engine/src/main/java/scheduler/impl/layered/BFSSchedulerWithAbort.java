@@ -6,10 +6,8 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContextWithAbort;
-import scheduler.context.DFSLayeredTPGContextWithAbort;
-import scheduler.struct.bfs.BFSOperation;
-import scheduler.struct.bfs.BFSOperationChain;
-import scheduler.struct.dfs.DFSOperation;
+import scheduler.struct.layered.bfs.BFSOperation;
+import scheduler.struct.layered.bfs.BFSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 
@@ -90,13 +88,12 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<BFSOperation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
-            BFSOperation set_op = constructOp(operationGraph, request);
+            constructOp(operationGraph, request);
         }
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
-    @Nullable
-    private BFSOperation constructOp(List<BFSOperation> operationGraph, Request request) {
+    private void constructOp(List<BFSOperation> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         BFSOperation set_op = null;
         switch (request.accessType) {
@@ -112,7 +109,6 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         }
         operationGraph.add(set_op);
         tpg.setupOperationTDFD(set_op, request);
-        return set_op;
     }
 
     protected void checkTransactionAbort(BFSOperation operation) {

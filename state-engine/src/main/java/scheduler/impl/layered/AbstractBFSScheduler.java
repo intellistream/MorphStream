@@ -1,18 +1,9 @@
 package scheduler.impl.layered;
 
-import org.jetbrains.annotations.Nullable;
-import profiler.MeasureTools;
-import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContext;
-import scheduler.context.LayeredTPGContext;
-import scheduler.struct.AbstractOperation;
-import scheduler.struct.OperationChain;
-import scheduler.struct.bfs.BFSOperation;
-import scheduler.struct.bfs.BFSOperationChain;
+import scheduler.struct.layered.bfs.BFSOperation;
+import scheduler.struct.layered.bfs.BFSOperationChain;
 import utils.SOURCE_CONTROL;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:

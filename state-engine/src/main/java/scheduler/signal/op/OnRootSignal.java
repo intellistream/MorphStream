@@ -1,6 +1,6 @@
 package scheduler.signal.op;
 
-import scheduler.struct.bfs.BFSOperation;
+import scheduler.struct.layered.bfs.BFSOperation;
 
 public class OnRootSignal extends OperationSignal {
     public OnRootSignal(BFSOperation targetOperation) {

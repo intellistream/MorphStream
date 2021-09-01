@@ -1,7 +1,7 @@
 package scheduler.context;
 
-import scheduler.struct.bfs.BFSOperation;
-import scheduler.struct.bfs.BFSOperationChain;
+import scheduler.struct.layered.bfs.BFSOperation;
+import scheduler.struct.layered.bfs.BFSOperationChain;
 
 public class BFSLayeredTPGContext extends LayeredTPGContext<BFSOperation, BFSOperationChain> {
 

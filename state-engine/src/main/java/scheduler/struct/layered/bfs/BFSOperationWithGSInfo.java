@@ -1,4 +1,4 @@
-package scheduler.struct.bfs;
+package scheduler.struct.layered.bfs;
 
 import content.common.CommonMetaTypes;
 import scheduler.context.SchedulerContext;

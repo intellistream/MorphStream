@@ -1,7 +1,7 @@
 package scheduler.context;
 
-import scheduler.struct.dfs.DFSOperation;
-import scheduler.struct.dfs.DFSOperationChain;
+import scheduler.struct.layered.dfs.DFSOperation;
+import scheduler.struct.layered.dfs.DFSOperationChain;
 
 public class DFSLayeredTPGContext extends LayeredTPGContext<DFSOperation, DFSOperationChain> {
 

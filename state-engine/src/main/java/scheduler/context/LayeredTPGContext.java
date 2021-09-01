@@ -1,14 +1,14 @@
 package scheduler.context;
 
 import scheduler.struct.AbstractOperation;
-import scheduler.struct.OperationChain;
+import scheduler.struct.layered.LayeredOperationChain;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 
-public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
+public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends LayeredOperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
 
     public HashMap<Integer, ArrayList<SchedulingUnit>> allocatedLayeredOCBucket;// <LevelID, ArrayDeque<OperationChain>
     public int currentLevel;
@@ -58,9 +58,10 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
      */
     public void buildBucketPerThread(Collection<SchedulingUnit> ocs) {
         int localMaxDLevel = 0;
+        int dependencyLevel;
         for (SchedulingUnit oc : ocs) {
             oc.updateDependencyLevel();
-            int dependencyLevel = oc.getDependencyLevel();
+            dependencyLevel = oc.getDependencyLevel();
             if (localMaxDLevel < dependencyLevel)
                 localMaxDLevel = dependencyLevel;
             if (!allocatedLayeredOCBucket.containsKey(dependencyLevel))

@@ -103,15 +103,23 @@ public class SLInitializer extends TableInitilizer {
         String subFolder = null;
         try {
             digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes;
+            if (dataConfig instanceof LayeredOCDataGeneratorConfig) {
+                bytes = digest.digest(String.format("%d_%d_%d_%d",
+                            dataConfig.getTotalThreads(),
+                            dataConfig.getTuplesPerBatch(),
+                            dataConfig.getTotalBatches(),
+                            ((LayeredOCDataGeneratorConfig) dataConfig).getNumberOfDLevels())
+                        .getBytes(StandardCharsets.UTF_8));
+            } else {
+                bytes = digest.digest(String.format("%d_%d_%d",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTuplesPerBatch(),
+                                dataConfig.getTotalBatches())
+                        .getBytes(StandardCharsets.UTF_8));
+            }
             subFolder = OsUtils.osWrapperPostFix(
-                    DatatypeConverter.printHexBinary(
-                            digest.digest(
-                                    String.format("%d_%d_%d",
-                                                    dataConfig.getTotalThreads(),
-                                                    dataConfig.getTuplesPerBatch(),
-                                                    dataConfig.getTotalBatches()
-                                            )
-                                            .getBytes(StandardCharsets.UTF_8))));
+                    DatatypeConverter.printHexBinary(bytes));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -136,9 +144,11 @@ public class SLInitializer extends TableInitilizer {
         } else {
             right_bound = (thread_id + 1) * partition_interval;
         }
+        int pid;
+        String _key;
         for (int key = left_bound; key < right_bound; key++) {
-            int pid = get_pid(partition_interval, key);
-            String _key = String.valueOf(key);
+            pid = get_pid(partition_interval, key);
+            _key = String.valueOf(key);
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }
@@ -168,9 +178,11 @@ public class SLInitializer extends TableInitilizer {
         } else {
             right_bound = (thread_id + 1) * partition_interval;
         }
+        int pid;
+        String _key;
         for (int key = left_bound; key < right_bound; key++) {
-            int pid = get_pid(partition_interval, key);
-            String _key = String.valueOf(key);
+            pid = get_pid(partition_interval, key);
+            _key = String.valueOf(key);
             insertAccountRecord(_key, startingBalance, pid, spinlock);
             insertAssetRecord(_key, startingBalance, pid, spinlock);
         }

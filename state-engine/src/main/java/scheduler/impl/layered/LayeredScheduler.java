@@ -4,13 +4,13 @@ import profiler.MeasureTools;
 import scheduler.context.LayeredTPGContext;
 import scheduler.impl.Scheduler;
 import scheduler.struct.AbstractOperation;
-import scheduler.struct.OperationChain;
+import scheduler.struct.layered.LayeredOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 
-public abstract class LayeredScheduler<Context extends LayeredTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>>
+public abstract class LayeredScheduler<Context extends LayeredTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends LayeredOperationChain<ExecutionUnit>>
         extends Scheduler<Context, ExecutionUnit, SchedulingUnit> {
 
     public LayeredScheduler(int totalThreads, int NUM_ITEMS) {

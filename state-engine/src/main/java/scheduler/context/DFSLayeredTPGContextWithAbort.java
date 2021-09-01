@@ -1,6 +1,6 @@
 package scheduler.context;
 
-import scheduler.struct.dfs.DFSOperationChain;
+import scheduler.struct.layered.dfs.DFSOperationChain;
 
 public class DFSLayeredTPGContextWithAbort extends DFSLayeredTPGContext {
 

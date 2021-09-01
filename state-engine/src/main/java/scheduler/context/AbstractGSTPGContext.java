@@ -1,11 +1,8 @@
 package scheduler.context;
 
-import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.statemanager.OperationChainStateListener;
-import scheduler.statemanager.OperationStateListener;
-import scheduler.statemanager.PartitionStateManager;
-import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.AbstractGSOperationChain;
+import scheduler.struct.gs.GSOperation;
 
 import java.util.ArrayDeque;
 

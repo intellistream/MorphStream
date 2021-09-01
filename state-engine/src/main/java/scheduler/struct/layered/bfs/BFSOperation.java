@@ -1,20 +1,13 @@
-package scheduler.struct.bfs;
+package scheduler.struct.layered.bfs;
 
 import content.common.CommonMetaTypes;
-import scheduler.context.AbstractGSTPGContext;
 import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
-import scheduler.struct.MetaTypes;
-import scheduler.struct.gs.GSOperation;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
-
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * contains the place-holder to fill, as well as timestamp (counter).

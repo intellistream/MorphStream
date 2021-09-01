@@ -1,17 +1,11 @@
 package scheduler.impl.nonlayered;
 
-import org.jetbrains.annotations.NotNull;
 import profiler.MeasureTools;
-import scheduler.Request;
 import scheduler.context.AbstractGSTPGContext;
 import scheduler.impl.Scheduler;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import scheduler.struct.gs.GSOperation;
-import scheduler.struct.gs.GSOperationChain;
 import transaction.impl.ordered.MyList;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends GSOperation, SchedulingUnit extends AbstractGSOperationChain<ExecutionUnit>>
         extends Scheduler<Context, ExecutionUnit, SchedulingUnit> {
