@@ -41,9 +41,9 @@ public class OBInitializer extends TableInitilizer {
     protected int[] triple_decision = new int[]{0, 0, 0, 0, 0, 0, 1, 2};//6:1:1 buy, alert, topping_handle.
     private int i = 0;
 
-    public OBInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
-        super(db, scale_factor, theta, tthread, config);
-        configure_store(scale_factor, theta, tthread, NUM_ITEMS);
+    public OBInitializer(Database db, double theta, int tthread, Configuration config) {
+        super(db, theta, tthread, config);
+        configure_store(theta, tthread, NUM_ITEMS);
     }
 
     @Override

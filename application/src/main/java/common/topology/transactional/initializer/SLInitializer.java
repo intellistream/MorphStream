@@ -50,11 +50,11 @@ public class SLInitializer extends TableInitilizer {
     private DataGenerator dataGenerator;
     private DataGeneratorConfig dataConfig;
 
-    public SLInitializer(Database db, String dataRootPath, int numberOfStates, double scale_factor, double theta, int tthread, Configuration config) {
-        super(db, scale_factor, theta, tthread, config);
+    public SLInitializer(Database db, String dataRootPath, int numberOfStates, double theta, int tthread, Configuration config) {
+        super(db, theta, tthread, config);
         this.numberOfStates = numberOfStates;
         this.dataRootPath = dataRootPath;
-        configure_store(scale_factor, theta, tthread, this.numberOfStates);
+        configure_store(theta, tthread, this.numberOfStates);
         totalRecords = config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches");
         idsGenType = config.getString("idGenType");
         this.partitionOffset = this.numberOfStates / tthread;

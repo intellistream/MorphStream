@@ -18,7 +18,7 @@
  */
 package common.datatype.toll;
 
-import common.bolts.lr.model.TollEntry;
+import common.bolts.model.TollEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

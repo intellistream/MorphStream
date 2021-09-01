@@ -43,11 +43,10 @@ public class TollProcessing extends TransactionTopology {
     //TODO: Clean this method..
     @Override
     public TableInitilizer initializeDB(SpinLock[] spinlock_) {
-        double scale_factor = config.getDouble("scale_factor", 1);
         double theta = config.getDouble("theta", 1);
         int tthread = config.getInt("tthread");
         setPartition_interval((int) (Math.ceil(NUM_SEGMENTS / (double) tthread)), tthread);
-        TableInitilizer ini = new TPInitializer(db, scale_factor, theta, tthread, config);
+        TableInitilizer ini = new TPInitializer(db, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)

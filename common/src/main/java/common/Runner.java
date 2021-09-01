@@ -32,8 +32,6 @@ public abstract class Runner implements IRunner {
     //        public int NUM_ITEMS = 100;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
-    @Parameter(names = {"--scale_factor"}, description = "scale_factor")
-    public double scale_factor = 1; //<=1
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
     public double ratio_of_read = 0.0; //<=1
     @Parameter(names = {"--ratio_of_multi_partition"}, description = "ratio_of_multi_partition")
@@ -59,7 +57,7 @@ public abstract class Runner implements IRunner {
      * TStream Specific Parameters.
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public double checkpoint_interval = 5;// default checkpoint interval.
+    public int checkpoint_interval = 100;// default checkpoint interval per thread.
 
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 2;// default total execution threads
@@ -161,7 +159,6 @@ public abstract class Runner implements IRunner {
         config.put("CCOption", CCOption);
         config.put("linked", linked);
         config.put("shared", shared);
-        config.put("scale_factor", scale_factor);
         config.put("ratio_of_read", ratio_of_read);
         config.put("theta", theta);
 

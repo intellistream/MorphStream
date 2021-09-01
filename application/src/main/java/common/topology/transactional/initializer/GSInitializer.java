@@ -41,8 +41,8 @@ public class GSInitializer extends TableInitilizer {
     protected transient boolean[] read_decision;
     int i = 0;
 
-    public GSInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
-        super(db, scale_factor, theta, tthread, config);
+    public GSInitializer(Database db, double theta, int tthread, Configuration config) {
+        super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(NUM_ITEMS / (double) tthread);//NUM_ITEMS / tthread;
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         if (ratio_of_read == 0) {
@@ -60,7 +60,7 @@ public class GSInitializer extends TableInitilizer {
         }
         if (enable_log)
             LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
-        configure_store(scale_factor, theta, tthread, NUM_ITEMS);
+        configure_store(theta, tthread, NUM_ITEMS);
     }
 
     /**

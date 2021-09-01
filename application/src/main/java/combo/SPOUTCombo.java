@@ -133,17 +133,10 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         totalEventsPerBatch = config.getInt("totalEventsPerBatch");
         numberOfBatches = config.getInt("numberOfBatches");
 
-        checkpoint_interval_sec = config.getDouble("checkpoint");
+        checkpoint_interval = config.getInt("checkpoint");
         target_Hz = (int) config.getDouble("targetHz", 10000000);
-        double scale_factor = config.getDouble("scale_factor", 1);
         double theta = config.getDouble("theta", 0);
         p_generator = new FastZipfGenerator(NUM_ITEMS, theta, 0);
-
-        batch_number_per_wm = totalEventsPerBatch / tthread;//10K, 1K, 100.
-
-        if (batch_number_per_wm * tthread < totalEventsPerBatch) // assuming combo_bid_size == 1 always
-            if (thread_Id < (totalEventsPerBatch - batch_number_per_wm * tthread))
-                batch_number_per_wm++;
 
         num_events_per_thread = batch_number_per_wm * numberOfBatches;
 

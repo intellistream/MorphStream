@@ -23,7 +23,7 @@ import static transaction.State.shared_store;
 public abstract class TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(TableInitilizer.class);
     public final Database db;
-    public final double scale_factor;
+
     public final double theta;
     public final int tthread;
     public final Configuration config;
@@ -40,9 +40,8 @@ public abstract class TableInitilizer {
     public transient int[] dual_decision = new int[]{0, 0, 0, 0, 1, 1, 1, 1};//1:1 deposite and transfer;
     private int i = 0;
 
-    public TableInitilizer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
+    public TableInitilizer(Database db, double theta, int tthread, Configuration config) {
         this.db = db;
-        this.scale_factor = scale_factor;
         this.theta = theta;
         this.tthread = tthread;
         this.config = config;

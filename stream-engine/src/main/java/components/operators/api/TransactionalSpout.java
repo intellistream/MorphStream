@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
-import java.util.ArrayList;
 
 import static common.CONTROL.enable_log;
 import static profiler.Metrics.NUM_ACCESSES;
@@ -16,7 +15,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public transient FastZipfGenerator p_generator;
     public long epoch_size = 0;
     public double target_Hz;
-    public double checkpoint_interval_sec;
+    public double checkpoint_interval;
     public volatile int control = 0;//control how many elements in each epoch.
     public int _combo_bid_size = 1;
     public int counter = 0;
@@ -24,7 +23,6 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public int taskId;
     public int ccOption;
     public long bid = 0;//local bid.
-    public volatile boolean earilier_check = true;
     public int empty = 0;//execute without emit.
     public int batch_number_per_wm;
 
@@ -48,7 +46,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
      */
     @Override
     public boolean checkpoint(int counter) {
-        return (counter % batch_number_per_wm == 0);
+        return (counter % checkpoint_interval == 0);
     }
 
     @Override
@@ -58,12 +56,8 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
         if (enable_log) LOG.trace("task_size: " + epoch_size * NUM_ACCESSES);
         long elapsed_time = System.nanoTime() - boardcast_time;//the time elapsed for the system to handle the previous epoch.
         double actual_system_throughput = epoch_size * 1E9 / elapsed_time;//events/ s
-//        if (epoch_size != 0)
-//            if (enable_log) LOG.info("finished measurement (k events/s):" + actual_system_throughput / 1E3);
-//        if (enable_admission_control) {
-//            target_Hz = actual_system_throughput * checkpoint_interval_sec;//target Hz.
-//            control = 0;
-//        }
+        if (epoch_size != 0)
+            if (enable_log) LOG.info("finished measurement (k events/s):" + actual_system_throughput / 1E3);
     }
 
     @Override

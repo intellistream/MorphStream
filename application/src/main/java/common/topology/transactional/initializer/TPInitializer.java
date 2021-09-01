@@ -27,8 +27,8 @@ import static utils.PartitionHelper.getPartition_interval;
 public class TPInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(TPInitializer.class);
 
-    public TPInitializer(Database db, double scale_factor, double theta, int tthread, Configuration config) {
-        super(db, scale_factor, theta, tthread, config);
+    public TPInitializer(Database db, double theta, int tthread, Configuration config) {
+        super(db, theta, tthread, config);
     }
 
     @Override

@@ -18,7 +18,7 @@
  */
 package common.datatype.toll;
 
-import common.bolts.lr.model.TollEntry;
+import common.bolts.model.TollEntry;
 
 /**
  * An interface for the storage of toll data (encapsulated in {@link TollEntry}) for historical queries. Allows to Store
