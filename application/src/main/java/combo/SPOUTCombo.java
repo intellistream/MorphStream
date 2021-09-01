@@ -93,13 +93,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 counter++;
 
                 if (ccOption == CCOption_TStream) {// This is only required by T-Stream.
-                    if (!CONTROL.enable_app_combo) {
-                        forward_checkpoint(this.taskId, bid, null);// this is no longer in use as we always assume combo.
-                    } else {
-                        if (checkpoint(counter)) {
-                            marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration));
-                            bolt.execute(marker);
-                        }
+                    if (checkpoint(counter)) {
+                        marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration));
+                        bolt.execute(marker);
                     }
                 }
 

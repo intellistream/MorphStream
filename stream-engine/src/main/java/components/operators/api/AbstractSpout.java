@@ -27,7 +27,7 @@ public abstract class AbstractSpout extends Operator {
     protected int cnt;
 
     protected AbstractSpout(Logger log) {
-        super(log, true, -1, 1);
+        super(log, 1);
     }
 
     protected String getConfigKey(String template) {
@@ -35,20 +35,6 @@ public abstract class AbstractSpout extends Operator {
     }
 
     public abstract void nextTuple() throws InterruptedException;
-
-    public void nextTuple_nonblocking() throws InterruptedException {
-        nextTuple();
-    }
-
-    private void construction(Scanner scanner, StringStatesWrapper wrapper) {
-        String splitregex = ",";
-        String[] words = scanner.nextLine().split(splitregex);
-        StringBuilder sb = new StringBuilder();
-        for (String word : words) {
-            sb.append(word).append(wrapper.getTuple_states()).append(splitregex);
-        }
-        array.add(sb.toString());
-    }
 
     private void splitRead(String fileName) throws FileNotFoundException {
         int numSpout = this.getContext().getComponent(taskId).getNumTasks();
@@ -134,17 +120,15 @@ public abstract class AbstractSpout extends Operator {
         }
         String sink_path = config.getString("metrics.output") + OsUtils.OS_wrapper("sink_threadId.txt");
         try {
-            fw = new FileWriter(new File(sink_path));
+            fw = new FileWriter(sink_path);
             writer = new BufferedWriter(fw);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
         try {
-            //String s_pid = String.valueOf(print_pid);
             writer.write(String.valueOf(pid));
             writer.flush();
-            //writer.clean();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

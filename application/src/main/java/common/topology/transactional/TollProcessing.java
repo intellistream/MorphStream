@@ -1,6 +1,5 @@
 package common.topology.transactional;
 
-import common.bolts.lr.DispatcherBolt;
 import common.bolts.transactional.tp.*;
 import common.collections.Configuration;
 import common.constants.LinearRoadConstants;
@@ -66,9 +65,6 @@ public class TollProcessing extends TransactionTopology {
             if (enable_app_combo) {
                 //spout only.
             } else {
-                builder.setBolt(LRTopologyControl.DISPATCHER,
-                        new DispatcherBolt(), 1,
-                        new ShuffleGrouping(LRTopologyControl.SPOUT));
                 switch (config.getInt("CCOption", 0)) {
                     case CCOption_LOCK: {//no-order
                         builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_nocc(0)//not available

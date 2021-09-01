@@ -87,15 +87,6 @@ public class MemFileSpout extends AbstractSpout {
         }
     }
 
-    @Override
-    public void nextTuple_nonblocking() throws InterruptedException {
-        collector.emit_nowait(array.get(counter));
-        counter++;
-        if (counter == array.size()) {
-            counter = 0;
-        }
-    }
-
     public void display() {
         if (enable_log) LOG.info("timestamp_counter:" + counter);
     }

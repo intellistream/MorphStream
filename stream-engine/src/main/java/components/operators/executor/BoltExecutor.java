@@ -11,7 +11,6 @@ import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import faulttolerance.Writer;
-import lock.Clock;
 
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
@@ -79,10 +78,6 @@ public abstract class BoltExecutor implements IExecutor {
 
     public int getStage() {
         return op.getFid();
-    }
-
-    public void setclock(Clock clock) {
-        this.op.clock = clock;
     }
 
     public double getEmpty() {

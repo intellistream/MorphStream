@@ -13,11 +13,11 @@ abstract class w_applyBolt extends BaseOperator {
     private static final long serialVersionUID = 742012390912849219L;
 
     public w_applyBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity, boolean byP, double event_frequency, double w) {
-        super(log, input_selectivity, output_selectivity, byP, event_frequency, w);
+        super(log, input_selectivity, output_selectivity, w);
     }
 
     public w_applyBolt(Logger log, Map<String, Double> output_selectivity, boolean byP, double event_frequency, double w) {
-        super(log, null, output_selectivity, byP, event_frequency, w);
+        super(log, null, output_selectivity, w);
     }
 
     public String output_type() {
