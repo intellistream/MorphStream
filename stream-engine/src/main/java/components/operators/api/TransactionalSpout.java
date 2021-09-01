@@ -15,7 +15,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public transient FastZipfGenerator p_generator;
     public long epoch_size = 0;
     public double target_Hz;
-    public double checkpoint_interval;
+    public int checkpoint_interval;
     public volatile int control = 0;//control how many elements in each epoch.
     public int _combo_bid_size = 1;
     public int counter = 0;
@@ -24,7 +24,6 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public int ccOption;
     public long bid = 0;//local bid.
     public int empty = 0;//execute without emit.
-    public int batch_number_per_wm;
 
     protected TransactionalSpout(Logger log, int fid) {
         super(log);

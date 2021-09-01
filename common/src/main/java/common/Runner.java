@@ -29,7 +29,6 @@ public abstract class Runner implements IRunner {
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 5_000_000;//
-    //        public int NUM_ITEMS = 100;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -58,13 +57,24 @@ public abstract class Runner implements IRunner {
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 100;// default checkpoint interval per thread.
-
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 2;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_TStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
+    @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
+    public String scheduler = "BFS";
+    //    public String scheduler = "BFSA";
+//    public String scheduler = "DFS";
+//    public String scheduler = "DFSA";
+//    public String scheduler = "GS";
+//    public String scheduler = "GSA";
+    @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
+    public String fanoutDist = "uniform";
+    @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
+    public String idGenType = "uniform";
+
     /**
      * Benchmarking Specific Parameters.
      */
@@ -89,26 +99,12 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
 //    public String generator = "TPGGenerator";
     public String generator = "OCGenerator";
-    @Parameter(names = {"--totalEventsPerBatch"}, description = "Total number of events per batch.")
-//    public int totalEventsPerBatch = 100000;
-    public int totalEventsPerBatch = 1000;
-    @Parameter(names = {"--numberOfBatches"}, description = "Total number of batches.")
-    public int numberOfBatches = 10;
+    @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
+    public int totalEvents = 10000;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 8;
     @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
     public Integer iterationNumber = 0;
-    @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BFS";
-    //    public String scheduler = "BFSA";
-//    public String scheduler = "DFS";
-//    public String scheduler = "DFSA";
-//    public String scheduler = "GS";
-//    public String scheduler = "GSA";
-    @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
-    public String fanoutDist = "uniform";
-    @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
-    public String idGenType = "uniform";
 
     /**
      * Functional Parameters.
@@ -136,8 +132,7 @@ public abstract class Runner implements IRunner {
         config.put("ratio_of_multi_partition", ratio_of_multi_partition);
         config.put("number_partitions", number_partitions);
         config.put("machine", machine);
-        config.put("totalEventsPerBatch", totalEventsPerBatch);
-        config.put("numberOfBatches", numberOfBatches);
+        config.put("totalEvents", totalEvents);
         config.put("rootFilePath", rootPath);
         config.put("scheduler", scheduler);
         config.put("generator", generator);

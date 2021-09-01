@@ -123,7 +123,7 @@ public class TPCombo extends SPOUTCombo {
             for (int j = 0; j < taskId; j++) {
                 sc.nextLine();
             }
-            while (sc.hasNextLine() && bid < config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches")) {
+            while (sc.hasNextLine() && bid < config.getInt("totalEvents") ) {
                 String record = sc.nextLine();
                 Object event = create_new_event(record, bid);
                 if (event == null) {
@@ -193,6 +193,6 @@ public class TPCombo extends SPOUTCombo {
         }
         String file = System.getProperty("user.home").concat("/data/app/").concat(path);
         loadEvent(file, config, context, collector);
-        sink.batch_number_per_wm = batch_number_per_wm;
+        sink.checkpoint_interval = checkpoint_interval;
     }
 }

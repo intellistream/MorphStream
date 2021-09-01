@@ -45,29 +45,14 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public int tthread;
     public SINKCombo sink = new SINKCombo();
     protected int totalEventsPerBatch = 0;
-    protected int numberOfBatches = 0;
     protected TransactionalBolt bolt;//compose the bolt here.
     int start_measure;
-
-//    event = new TransactionEvent(
-//                    0, //bid
-//                            0, //pid
-//                            "[0]", //bid_array
-//                            1,//num_of_partition
-//                            "0",//getSourceAccountId
-//                            "0",//getSourceBookEntryId
-//                            "1",//getTargetAccountId
-//                            "1",//getTargetBookEntryId
-//                            2,  //getAccountTransfer
-//                            2  //getBookEntryTransfer
-//    );
 
     public SPOUTCombo(Logger log, int i) {
         super(log, i);
         LOG = log;
         this.scalable = false;
         state = new ValueState();
-
     }
 
     public abstract void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) throws FileNotFoundException;
@@ -129,20 +114,21 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         ccOption = config.getInt("CCOption", 0);
         bid = 0;
         counter = 0;
-        tthread = config.getInt("tthread");
-        totalEventsPerBatch = config.getInt("totalEventsPerBatch");
-        numberOfBatches = config.getInt("numberOfBatches");
+
 
         checkpoint_interval = config.getInt("checkpoint");
         target_Hz = (int) config.getDouble("targetHz", 10000000);
         double theta = config.getDouble("theta", 0);
         p_generator = new FastZipfGenerator(NUM_ITEMS, theta, 0);
 
-        num_events_per_thread = batch_number_per_wm * numberOfBatches;
+        totalEventsPerBatch = config.getInt("totalEvents");
+        tthread = config.getInt("tthread");
 
-        if (enable_log) LOG.info("total events per batch... " + totalEventsPerBatch);
-        if (enable_log) LOG.info("events per thread... " + num_events_per_thread);
-        if (enable_log) LOG.info("batch_number_per_wm (watermark events length)= " + batch_number_per_wm);
+        num_events_per_thread = totalEventsPerBatch / tthread;
+
+        if (enable_log) LOG.info("total events... " + totalEventsPerBatch);
+        if (enable_log) LOG.info("total events per thread = " + num_events_per_thread);
+        if (enable_log) LOG.info("checkpoint_interval = " + checkpoint_interval);
 
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.

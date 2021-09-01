@@ -280,7 +280,7 @@ public class OBInitializer extends TableInitilizer {
         RecordSchema s = Goods();
         db.createTable(s, "goods");
         try {
-            prepare_input_events(config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
+            prepare_input_events(config.getInt("totalEvents"));
         } catch (IOException e) {
             e.printStackTrace();
         }

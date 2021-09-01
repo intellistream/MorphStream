@@ -15,7 +15,7 @@ public class stable_sink_helper_verbose extends helper {
     long starting = System.nanoTime();
 
     public stable_sink_helper_verbose(Logger LOG, int runtimeInSEC, String metric_path, int thisTaskId) {
-        super(runtimeInSEC, 0, 0, metric_path, thisTaskId, false);
+        super(runtimeInSEC, 0, 0, metric_path, thisTaskId);
         sink_pid();
     }
 

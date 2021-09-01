@@ -3,8 +3,7 @@ package benchmark.datagenerator;
 import common.collections.Configuration;
 
 public abstract class DataGeneratorConfig {
-    private Integer tuplesPerBatch;
-    private Integer totalBatches;
+    private Integer totalEvents;
     private Integer totalThreads;
     private String scheduler;
     private String rootPath;
@@ -13,8 +12,7 @@ public abstract class DataGeneratorConfig {
     private Boolean shufflingActive;
 
     public void initialize(Configuration config) {
-        this.setTuplesPerBatch(config.getInt("totalEventsPerBatch"));
-        this.setTotalBatches(config.getInt("numberOfBatches"));
+        this.setTotalEvents(config.getInt("totalEvents"));
         this.setTotalThreads(config.getInt("tthread"));
         this.setScheduler(config.getString("scheduler"));
         this.setRootPath(config.getString("rootFilePath"));
@@ -23,21 +21,14 @@ public abstract class DataGeneratorConfig {
         this.setShufflingActive(false);
     }
 
-    public Integer getTuplesPerBatch() {
-        return tuplesPerBatch;
+    public Integer getTotalEvents() {
+        return totalEvents;
     }
 
-    public void setTuplesPerBatch(Integer tuplesPerBatch) {
-        this.tuplesPerBatch = tuplesPerBatch;
+    public void setTotalEvents(Integer totalEvents) {
+        this.totalEvents = totalEvents;
     }
 
-    public Integer getTotalBatches() {
-        return totalBatches;
-    }
-
-    public void setTotalBatches(Integer totalBatches) {
-        this.totalBatches = totalBatches;
-    }
 
     public Integer getTotalThreads() {
         return totalThreads;

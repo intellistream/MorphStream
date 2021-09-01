@@ -92,12 +92,11 @@ public class LayeredOCDataGenerator extends DataGenerator {
     @Override
     public void dumpGeneratedDataToFile() {
         File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
-                + String.format("_%d_%d_%d.txt", dataConfig.getTuplesPerBatch(), dataConfig.getTotalBatches(), dataConfig.getNumberOfDLevels()));
+                + String.format("_%d_%d.txt", dataConfig.getTotalEvents(), dataConfig.getNumberOfDLevels()));
         try {
             versionFile.createNewFile();
             FileWriter fileWriter = new FileWriter(versionFile);
-            fileWriter.write(String.format("Tuples per batch      : %d\n", dataConfig.getTuplesPerBatch()));
-            fileWriter.write(String.format("Total batches         : %d\n", dataConfig.getTotalBatches()));
+            fileWriter.write(String.format("Tuples per batch      : %d\n", dataConfig.getTotalEvents()));
             fileWriter.write(String.format("Dependency depth      : %d\n", dataConfig.getNumberOfDLevels()));
             fileWriter.write(String.format("%s\n", Arrays.toString(ocLevelsDistribution)));
             fileWriter.close();

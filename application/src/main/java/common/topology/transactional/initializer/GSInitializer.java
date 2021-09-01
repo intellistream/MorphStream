@@ -146,7 +146,7 @@ public class GSInitializer extends TableInitilizer {
 //        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
 //        String event_path = Event_Path
 //                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-//                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"))
+//                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEvents") * )
 //                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
 //                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
 //                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
@@ -169,7 +169,7 @@ public class GSInitializer extends TableInitilizer {
         double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
         String event_path = Event_Path
                 + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"))
+                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEvents"))
                 + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
                 + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
                 + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
@@ -254,7 +254,7 @@ public class GSInitializer extends TableInitilizer {
         RecordSchema s = MicroTableSchema();
         db.createTable(s, "MicroTable");
         try {
-            prepare_input_events(config.getInt("totalEventsPerBatch") * config.getInt("numberOfBatches"));
+            prepare_input_events(config.getInt("totalEvents"));
         } catch (IOException e) {
             e.printStackTrace();
         }

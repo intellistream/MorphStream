@@ -38,7 +38,7 @@ public class spoutThread extends executorThread {
                        HashMap<Integer, executorThread> threadMap) {
         super(e, conf, context, cpu, node, latch, threadMap);
         this.sp = (BasicSpoutBatchExecutor) e.op;
-        this.collector = new OutputCollector(e, context, conf.getInt("totalEventsPerBatch") * conf.getInt("numberOfBatches"));
+        this.collector = new OutputCollector(e, context, conf.getInt("totalEvents"));
         batch = conf.getInt("batch", 100);
         sp.setExecutionNode(e);
         switch (conf.getInt("CCOption", 0)) {

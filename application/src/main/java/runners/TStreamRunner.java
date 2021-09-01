@@ -155,11 +155,10 @@ public class TStreamRunner extends Runner {
                         + OsUtils.osWrapperPostFix("stats")
                         + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
-                        + OsUtils.osWrapperPostFix("total_batches = %d")
-                        + OsUtils.osWrapperPostFix("dependency_level = %d")
-                        + OsUtils.osWrapperPostFix("events_per_batch = %d");
+                        + OsUtils.osWrapperPostFix("numberOfDLevels = %d")
+                        + OsUtils.osWrapperPostFix("totalEvents = %d");
 
-                String statsFolderPath = String.format(statsFolderPattern, scheduler, tthread, numberOfBatches, numberOfDLevels, totalEventsPerBatch);
+                String statsFolderPath = String.format(statsFolderPattern, scheduler, tthread, numberOfDLevels, totalEvents);
                 File file = new File(statsFolderPath);
                 if (enable_log) log.info("Dumping stats to...");
                 if (enable_log) log.info(String.valueOf(file.getAbsoluteFile()));
