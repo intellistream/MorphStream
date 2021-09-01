@@ -27,10 +27,12 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     }
 
     @Override
-    protected void reset() {
+    public void reset() {
+        super.reset();
+        allocatedLayeredOCBucket.clear();
         currentLevel = 0;
-        totalOsToSchedule = 0;
-        scheduledOPs = 0;
+        currentLevelIndex=0;
+        maxLevel=0;
     }
 
     @Override

@@ -8,7 +8,6 @@ import db.Database;
 import execution.runtime.boltThread;
 import execution.runtime.executorThread;
 import execution.runtime.spoutThread;
-import faulttolerance.Writer;
 import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,15 +49,6 @@ public class ExecutionManager {
     public void distributeTasks(Configuration conf,
                                 CountDownLatch latch, Database db) throws UnhandledCaseException {
         g.build_inputScheduler();
-        if (conf.getBoolean("enable_fault_tolerance", false)) {
-            Writer writer = null;
-            for (ExecutionNode e : g.getExecutionNodeArrayList()) {
-                if (e.isFirst_executor()) {
-                    writer = new Writer(e.operator, e.operator.getNumTasks());
-                }
-                e.configureWriter(writer);
-            }
-        }
         //TODO: support multi-stages later.
         if (enable_shared_state) {
             HashMap<Integer, List<Integer>> stage_map = new HashMap<>();//Stages --> Executors.

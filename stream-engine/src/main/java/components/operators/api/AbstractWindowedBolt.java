@@ -1,7 +1,6 @@
 package components.operators.api;
 
 import components.windowing.TupleWindow;
-import execution.runtime.tuple.impl.Marker;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -19,7 +18,4 @@ public abstract class AbstractWindowedBolt extends Operator {
 
     public abstract void execute(TupleWindow in);
 
-    @Override
-    public void callback(int callee, Marker marker) {
-    }
 }

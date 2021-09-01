@@ -13,7 +13,7 @@ public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, Sc
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
-    public AbstractGSTPGContext(int thisThreadId, int totalThreads) {
+    public AbstractGSTPGContext(int thisThreadId) {
         super(thisThreadId);
         IsolatedOC = new ArrayDeque<>();
         OCwithChildren = new ArrayDeque<>();
@@ -21,9 +21,9 @@ public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, Sc
     }
 
     @Override
-    protected void reset() {
-        IsolatedOC = new ArrayDeque<>();
-        OCwithChildren = new ArrayDeque<>();
+    public void reset() {
+        IsolatedOC.clear();
+        OCwithChildren.clear();
         totalOsToSchedule = 0;
         scheduledOPs = 0;
     }

@@ -59,7 +59,7 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
             PROCESS(context, mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
-        RESET();//
+        RESET(context);//
         MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 
@@ -200,8 +200,9 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
     }
 
     @Override
-    public void RESET() {
+    public void RESET(Context context) {
         SOURCE_CONTROL.getInstance().oneThreadCompleted();
+        context.reset();
     }
 
     @Override

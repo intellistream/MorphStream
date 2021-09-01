@@ -6,8 +6,6 @@ import components.operators.executor.IExecutor;
 import components.operators.executor.SpoutExecutor;
 import controller.input.InputStreamController;
 import controller.output.OutputController;
-import execution.runtime.tuple.impl.Marker;
-import faulttolerance.Writer;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -265,14 +263,6 @@ public class ExecutionNode implements Serializable {
 
     public void display() {
         op.display();
-    }
-
-    public void configureWriter(Writer writer) {
-        op.configureWriter(writer);
-    }
-
-    public void clean_state(Marker marker) {
-        op.clean_state(marker);
     }
 
 }

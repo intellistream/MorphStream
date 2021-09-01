@@ -4,8 +4,6 @@ import components.context.TopologyContext;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
-import execution.runtime.tuple.impl.Marker;
-import faulttolerance.Writer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import topology.TopologyBuilder;
@@ -52,24 +50,8 @@ public class VirtualExecutor implements IExecutor {
     }
 
     @Override
-    public void configureWriter(Writer writer) {
-    }
-
-    @Override
-    public void clean_state(Marker marker) {
-    }
-
-    @Override
     public int getStage() {
         return -1;
-    }
-
-    @Override
-    public void cleanup() {
-    }
-
-    @Override
-    public void callback(int callee, Marker marker) {
     }
 
     @Override

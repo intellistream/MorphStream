@@ -13,7 +13,6 @@ import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import profiler.MeasureTools;
 import utils.SOURCE_CONTROL;
@@ -35,7 +34,6 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public int the_end;
     public int global_cnt;
     public int num_events_per_thread;
-    public int test_num_events_per_thread;
     public long[] mybids;
     public Object[] myevents;
     public int counter;
@@ -52,7 +50,6 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         super(log, i);
         LOG = log;
         this.scalable = false;
-        state = new ValueState();
     }
 
     public abstract void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) throws FileNotFoundException;
@@ -130,15 +127,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         if (enable_log) LOG.info("total events per thread = " + num_events_per_thread);
         if (enable_log) LOG.info("checkpoint_interval = " + checkpoint_interval);
 
-        if (config.getInt("CCOption", 0) == CCOption_SStore) {
-            test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
-            start_measure = 0;
-        } else {
-            test_num_events_per_thread = num_events_per_thread;//otherwise deadlock.. TODO: fix it later.
-            start_measure = CONTROL.MeasureStart;
-        }
+        start_measure = CONTROL.MeasureStart;
 
-        mybids = new long[num_events_per_thread];//5000 batches.
+        mybids = new long[num_events_per_thread];
         myevents = new Object[num_events_per_thread];
         the_end = num_events_per_thread;
 

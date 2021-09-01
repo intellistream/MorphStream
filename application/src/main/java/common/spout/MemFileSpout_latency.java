@@ -89,13 +89,6 @@ public class MemFileSpout_latency extends AbstractSpout {
         msgID_counter = msgID_start;
     }
 
-    /**
-     * relax_reset source messages.
-     */
-    @Override
-    public void cleanup() {
-    }
-
     private void read(String prefix, int i, String postfix) throws FileNotFoundException {
         Scanner scanner = new Scanner(new File((prefix + i) + "." + postfix), "UTF-8");
         build(scanner);

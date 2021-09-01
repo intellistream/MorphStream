@@ -13,7 +13,7 @@ public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithA
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
     public GSTPGContextWithAbort(int thisThreadId, int totalThreads) {
-        super(thisThreadId, totalThreads);
+        super(thisThreadId);
         partitionStateManager = new PartitionStateManagerWithAbort();
     }
 

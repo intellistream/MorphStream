@@ -5,7 +5,6 @@ import components.operators.api.AbstractBolt;
 import db.DatabaseException;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 
 import java.util.Map;
@@ -22,15 +21,6 @@ public class BasicBoltBatchExecutor extends BoltExecutor {
 
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         super.prepare(stormConf, context, collector);
-    }
-
-    @Override
-    public void cleanup() {
-        _op.cleanup();
-    }
-
-    public void callback(int callee, Marker marker) {
-        _op.callback(callee, marker);
     }
 
     public void execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {

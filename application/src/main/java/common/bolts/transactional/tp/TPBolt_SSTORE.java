@@ -6,7 +6,6 @@ import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.context.TxnContext;
@@ -26,12 +25,12 @@ public class TPBolt_SSTORE extends TPBolt_LA {
 
     public TPBolt_SSTORE(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public TPBolt_SSTORE(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {

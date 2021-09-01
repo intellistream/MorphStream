@@ -55,8 +55,6 @@ public abstract class Runner implements IRunner {
     /**
      * TStream Specific Parameters.
      */
-    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 100;// default checkpoint interval per thread.
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 2;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
@@ -83,7 +81,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--measure"}, description = "enable measurement")
     public boolean enable_measurement = false;
     @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("tstreamplus") + OsUtils.OS_wrapper("data");
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("TStream") + OsUtils.OS_wrapper("data");
     @Parameter(names = {"-mp"}, description = "Metric path", required = false)
     public String metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
     @Parameter(names = {"--machine"}, description = "which machine to use? 0 (default): a simple one-socket machine with four cores. Add your machine specification accordingly and select them by change this specification")
@@ -96,21 +94,16 @@ public abstract class Runner implements IRunner {
     /**
      * generator parameters
      */
+    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
+    public int checkpoint_interval = 10_000;//
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
 //    public String generator = "TPGGenerator";
     public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 10000;
+    public int totalEvents = 100_000;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 8;
-    @Parameter(names = {"--iterationNumber"}, description = "Number of dependency levels.")
-    public Integer iterationNumber = 0;
 
-    /**
-     * Functional Parameters.
-     */
-    @Parameter(names = {"--fault_tolerance"}, description = "Enable or disable fault tolerance, it is disabled by default.")
-    boolean enable_fault_tolerance = false;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -126,7 +119,6 @@ public abstract class Runner implements IRunner {
     }
 
     public void initializeCfg(HashMap<String, Object> config) {
-        config.put("enable_fault_tolerance", enable_fault_tolerance);
         config.put("queue_size", queue_size);
         config.put("common", application);
         config.put("ratio_of_multi_partition", ratio_of_multi_partition);

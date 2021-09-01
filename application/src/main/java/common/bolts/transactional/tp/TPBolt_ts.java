@@ -6,9 +6,7 @@ import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.context.TxnContext;
@@ -21,7 +19,6 @@ import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_app_combo;
 import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static profiler.MeasureTools.*;
 
@@ -35,12 +32,12 @@ public class TPBolt_ts extends TPBolt {
 
     public TPBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public TPBolt_ts(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
@@ -93,11 +90,6 @@ public class TPBolt_ts extends TPBolt {
             transactionManager.start_evaluate(thread_Id, this.fid, readSize);//start lazy evaluation in transaction manager.
             REQUEST_REQUEST_CORE();
             REQUEST_POST();
-            if (!enable_app_combo) {
-                final Marker marker = in.getMarker();
-                this.collector.ack(in, marker);//tell spout it has finished transaction processing.
-            } else {
-            }
             END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize);
             LREvents.clear();//clear stored events.
         } else {

@@ -1,4 +1,4 @@
-package faulttolerance;
+package common.util;
 
 import net.jpountz.lz4.LZ4BlockOutputStream;
 

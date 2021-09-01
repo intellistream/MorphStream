@@ -9,7 +9,6 @@ import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Tuple;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -37,12 +36,12 @@ public class SLBolt_ts extends SLBolt {
 
     public SLBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public SLBolt_ts(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     @Override

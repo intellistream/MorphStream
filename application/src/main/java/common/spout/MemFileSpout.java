@@ -46,13 +46,6 @@ public class MemFileSpout extends AbstractSpout {
         load_input();
     }
 
-    /**
-     * relax_reset source messages.
-     */
-    @Override
-    public void cleanup() {
-    }
-
     private void spout_pid() {
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         String jvmName = runtimeBean.getName();

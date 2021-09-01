@@ -8,18 +8,13 @@ import controller.output.OutputController;
 import execution.ExecutionNode;
 import execution.runtime.collector.impl.Meta;
 import execution.runtime.collector.impl.MetaGroup;
-import execution.runtime.tuple.JumboTuple;
-import execution.runtime.tuple.impl.Marker;
-import execution.runtime.tuple.impl.Tuple;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
-import java.util.Set;
 
-import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
 
 /**
@@ -260,14 +255,6 @@ public class OutputCollector<T> {
         sc.emitOnStream_nowait(meta, streamId, data);
     }
 
-    private void emit_nowait(String streamId, char[] key, long value) {
-        if (executor.isLeafNode()) {
-            return;
-        }
-        assert key != null && sc != null;
-        sc.emitOnStream_nowait(meta, streamId, key, value);
-    }
-
     public void emit(String streamId, char[] key, long value) throws InterruptedException {
         if (executor.isLeafNode()) {
             return;
@@ -284,14 +271,6 @@ public class OutputCollector<T> {
         sc.emitOnStream(meta, streamId, key, value, bid, timestamp);
     }
 
-    private void emit_nowait(String streamId, char[] str) throws InterruptedException {
-        if (executor.isLeafNode()) {
-            return;
-        }
-        assert str != null && sc != null;
-        sc.emitOnStream_nowait(meta, streamId, str);
-    }
-
     /**
      * @param values
      */
@@ -303,155 +282,8 @@ public class OutputCollector<T> {
         emit(DEFAULT_STREAM_ID, key, value);
     }
 
-    public Marker emit_single(String streamId, long bid, Object... data) throws InterruptedException {
-        assert data != null && sc != null;
-        sc.force_emitOnStream(meta, streamId, bid, data);
-        return null;//marker
-    }
-
-    public Marker emit_single(String streamId, long[] bid, long msg_id, Object data) throws InterruptedException {
-        assert data != null && sc != null;
-        sc.force_emitOnStream(meta, streamId, bid, msg_id, data);
-        return null;//marker
-    }
-
-    public Marker emit_single(String streamId, long[] bid, int p_id, int number_partitions, Object data, long emit_timestamp) throws InterruptedException {
-        assert data != null && sc != null;
-        sc.force_emitOnStream(meta, streamId, bid, -1, data, p_id, number_partitions, emit_timestamp);//flag, pid, nump, emit-time.
-        return null;//marker
-    }
-
-    public Marker emit_single(String streamId, long[] bid, int p_id, int number_partitions, Object data, long msg_id, long emit_timestamp) throws InterruptedException {
-        assert data != null && sc != null;
-        sc.force_emitOnStream(meta, streamId, bid, msg_id, data, p_id, number_partitions, emit_timestamp);//flag, pid, nump, emit-time.
-        return null;//marker
-    }
-
-    public Marker emit_single(long bid, char[] value) throws InterruptedException {
-        return emit_single(DEFAULT_STREAM_ID, bid, value);
-    }
-
-    public Marker emit_single(long bid, char[] value, long emit_time) throws InterruptedException {
-        return emit_single(DEFAULT_STREAM_ID, bid, emit_time, value);
-    }
-
-    public Marker emit_single(long bid, Set<Integer> keys) throws InterruptedException {
-        return emit_single(DEFAULT_STREAM_ID, bid, keys);
-    }
-
-    public Marker emit_single(long[] bid, long msg_id, Set<Integer> keys) throws InterruptedException {
-        return emit_single(DEFAULT_STREAM_ID, bid, msg_id, keys);
-    }
-
-    public Marker emit_single(long bid) throws InterruptedException {
-        return emit_single(DEFAULT_STREAM_ID, bid, true);
-    }
-
-    public Marker emit_single(long bid, long emit_time) throws InterruptedException {
-        return emit_single(DEFAULT_STREAM_ID, bid, emit_time);
-    }
-
-    public Marker emit_single(long bid, int[] signal) throws InterruptedException {
-        return emit_single(DEFAULT_STREAM_ID, bid, signal);
-    }
-
-    public Marker emit_single(long[] bid, int p_id, int number_partitions, boolean read_write, long msg_id, long emit_timestamp) throws InterruptedException {
-        return emit_single(DEFAULT_STREAM_ID, bid, p_id, number_partitions, read_write, msg_id, emit_timestamp);
-    }
-
-    public Marker emit_single(String streamId, long bid) throws InterruptedException {
-        assert sc != null;
-        sc.force_emitOnStream(meta, streamId, bid, bid);
-        return null;//marker
-    }
-
-    public void broadcast_marker(long bid, Marker marker) throws InterruptedException {
-        if (executor.isLeafNode()) {
-            return;
-        }
-        sc.marker_boardcast(meta, bid, marker);
-    }
-
-    public void broadcast_marker(String streamId, long bid, Marker marker) throws InterruptedException {
-        if (executor.isLeafNode()) {
-            return;
-        }
-        sc.marker_boardcast(meta, streamId, bid, marker);
-    }
-
-    /**
-     * Only ``sink" operator shall call this function!
-     *
-     * @param input
-     * @param marker
-     */
-    public void ack(JumboTuple input, Marker marker) {
-        assert this.executor.isLeafNode();
-//		final int executorID = executor.getExecutorID();
-//		//if (enable_log) LOG.DEBUG(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " from " + input.getSourceTask());
-//		final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
-//		src.op.callback(executorID, marker);
-        //non-blocking ack.
-        Runnable r = () -> {
-            final int executorID = executor.getExecutorID();
-//			//LOG.DEBUG(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " from " + input.getSourceTask());
-            final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
-            src.op.callback(executorID, marker);
-        };
-        new Thread(r).start();
-    }
-
-    /**
-     * @param input
-     * @param marker
-     */
-    public void ack(Tuple input, Marker marker) {
-        final int executorID = executor.getExecutorID();
-        if (enable_log)
-            if (enable_log)
-                LOG.info(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " to " + input.getSourceComponent());
-        final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
-        if (input.getBID() != totalEvents)
-            src.op.callback(executorID, marker);
-        //non-blocking ack.
-//		Runnable r = () -> {
-//			final int executorID = executor.getExecutorID();
-//			//LOG.DEBUG(executor.getOP_full() + " is giving acknowledgement for marker:" + marker.msgId + " from " + input.getSourceTask());
-//			final ExecutionNode src = input.getContext().getExecutor(input.getSourceTask());
-//			src.op.callback(executorID, marker);
-//		};
-//
-//		new Thread(r).start();
-    }
-
-    public void broadcast_ack(Marker marker) {
-        final int executorID = this.executor.getExecutorID();
-        for (TopologyComponent op : executor.getParents_keySet()) {
-            for (ExecutionNode src : op.getExecutorList()) {
-                src.op.callback(executorID, marker);
-            }
-        }
-    }
-
-    //	public void try_fill_gap(String streamId) {
-//		sc.try_fill_gap(streamId);
-//	}
-//	public void try_fill_gap() {
-//		try_fill_gap(DEFAULT_STREAM_ID);
-//	}
     public long getBID(String streamId) {
         return sc.getBID(streamId);
     }
 
-    public void create_marker_boardcast(long boardcast_time, long bid, int myiteration) throws InterruptedException {
-        sc.create_marker_boardcast(meta, boardcast_time, bid, myiteration);
-    }
-
-    public void create_marker_boardcast(long boardcast_time, String streamId, long bid, int myiteration) throws InterruptedException {
-        sc.create_marker_boardcast(meta, boardcast_time, streamId, bid, myiteration);
-    }
-
-    public void create_marker_single(long boardcast_time, String streamId, long bid, int myiteration) {
-        sc.create_marker_single(meta, boardcast_time, streamId, bid, myiteration);
-    }
 }

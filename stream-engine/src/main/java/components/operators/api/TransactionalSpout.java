@@ -1,19 +1,14 @@
 package components.operators.api;
 
 import common.tools.FastZipfGenerator;
-import execution.runtime.tuple.impl.Marker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 
-import static common.CONTROL.enable_log;
-import static profiler.Metrics.NUM_ACCESSES;
-
 public abstract class TransactionalSpout extends AbstractSpout implements Checkpointable {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalSpout.class);
     public transient FastZipfGenerator p_generator;
-    public long epoch_size = 0;
     public double target_Hz;
     public int checkpoint_interval;
     public volatile int control = 0;//control how many elements in each epoch.
@@ -48,18 +43,4 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
         return (counter % checkpoint_interval == 0);
     }
 
-    @Override
-    public void ack_checkpoint(Marker marker) {
-        //Do something to clear past state. (optional)
-        success = true;//I can emit next marker.
-        if (enable_log) LOG.trace("task_size: " + epoch_size * NUM_ACCESSES);
-        long elapsed_time = System.nanoTime() - boardcast_time;//the time elapsed for the system to handle the previous epoch.
-        double actual_system_throughput = epoch_size * 1E9 / elapsed_time;//events/ s
-        if (epoch_size != 0)
-            if (enable_log) LOG.info("finished measurement (k events/s):" + actual_system_throughput / 1E3);
-    }
-
-    @Override
-    public void cleanup() {
-    }
 }

@@ -3,7 +3,6 @@ package components.operators.api;
 import components.operators.base.MapBolt;
 import db.DatabaseException;
 import execution.ExecutionGraph;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,11 +111,6 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
         MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
         POST_PROCESS(_bid, timestamp, 1);//otherwise deadlock.
         MeasureTools.END_TOTAL_TIME_MEASURE(thread_Id);//otherwise deadlock.
-    }
-
-    @Override
-    public void ack_checkpoint(Marker marker) {
-        this.collector.broadcast_ack(marker);//bolt needs to broadcast_ack
     }
 
     @Override

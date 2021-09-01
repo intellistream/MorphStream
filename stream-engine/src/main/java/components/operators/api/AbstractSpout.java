@@ -2,8 +2,6 @@ package components.operators.api;
 
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
-import common.helper.wrapper.StringStatesWrapper;
-import execution.runtime.tuple.impl.Marker;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -139,13 +137,4 @@ public abstract class AbstractSpout extends Operator {
         if (enable_log) LOG.info("spout prepare takes (ms):" + (end - start) / 1E6);
     }
 
-    /**
-     * When all my consumers callback_bolt, I can  delete source message.
-     *
-     * @param callee
-     * @param marker
-     */
-    public void callback(int callee, Marker marker) {
-        state.callback_spout(callee, marker, executor);
-    }
 }

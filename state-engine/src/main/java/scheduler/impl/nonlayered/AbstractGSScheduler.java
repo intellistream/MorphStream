@@ -39,7 +39,7 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
     }
 
     @Override
-    public void RESET() {
+    public void RESET(Context context) {
 //        Controller.exec.shutdownNow();
     }
 

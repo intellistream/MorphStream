@@ -5,7 +5,6 @@ import common.param.mb.MicroEvent;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.impl.TxnManagerLock;
@@ -22,7 +21,6 @@ public class GSBolt_Locks extends GSBolt {
 
     public GSBolt_Locks(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
     }
 
     protected void write_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {

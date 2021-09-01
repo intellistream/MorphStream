@@ -2,15 +2,12 @@ package components.operators.executor;
 
 import common.collections.Configuration;
 import components.context.TopologyContext;
-import components.operators.api.Checkpointable;
 import components.operators.api.Operator;
 import db.DatabaseException;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import faulttolerance.Writer;
 
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
@@ -63,17 +60,6 @@ public abstract class BoltExecutor implements IExecutor {
 
     public void setExecutionNode(ExecutionNode e) {
         op.setExecutionNode(e);
-    }
-
-    public void configureWriter(Writer writer) {
-        if (op.state != null) {
-            op.state.writer = writer;
-        }
-    }
-
-    @Override
-    public void clean_state(Marker marker) {
-        ((Checkpointable) op).ack_checkpoint(marker);
     }
 
     public int getStage() {

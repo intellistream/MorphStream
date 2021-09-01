@@ -3,7 +3,6 @@ package components.operators.api;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.OutputFieldsDeclarer;
 
 import java.io.Serializable;
@@ -30,7 +29,4 @@ public interface IOperator extends Serializable {
      */
     void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph);
 
-    void cleanup();
-
-    void callback(int callee, Marker marker);
 }

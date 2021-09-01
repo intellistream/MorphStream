@@ -9,9 +9,7 @@ import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.context.TxnContext;
@@ -24,7 +22,8 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_profile;
 import static common.constants.OnlineBidingSystemConstants.Constant.NUM_ACCESSES_PER_BUY;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
@@ -39,12 +38,12 @@ public class OBBolt_ts extends OBBolt {
 
     public OBBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public OBBolt_ts(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     @Override
@@ -108,14 +107,10 @@ public class OBBolt_ts extends OBBolt {
             BUYING_REQUEST_CORE();
             END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, write_useful_time, alertEvents + toppingEvents);//overhead_total compute time.
 
-//            BEGIN_POST_TIME_MEASURE(thread_Id);
+            BEGIN_POST_TIME_MEASURE(thread_Id);
             BUYING_REQUEST_POST();
-//            END_POST_TIME_MEASURE_ACC(thread_Id);
-            if (!enable_app_combo) {
-                final Marker marker = in.getMarker();
-                this.collector.ack(in, marker);//tell spout it has finished transaction processing.
-            } else {
-            }
+            END_POST_TIME_MEASURE_ACC(thread_Id);
+
             //post_process for events left-over.
             END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize + alertEvents + toppingEvents);
             buyingEvents.clear();//all tuples in the EventsHolder are finished.

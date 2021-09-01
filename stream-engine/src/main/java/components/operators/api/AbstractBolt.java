@@ -2,7 +2,6 @@ package components.operators.api;
 
 import db.DatabaseException;
 import execution.runtime.tuple.JumboTuple;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 
@@ -32,20 +31,5 @@ public abstract class AbstractBolt extends Operator {
         for (int i = 0; i < bound; i++) {
             execute(new Tuple(in.getBID(), in.getSourceTask(), in.getContext(), in.msg[i]));
         }
-    }
-
-    @Override
-    public void cleanup() {
-        state = null;
-    }
-
-    /**
-     * When all my consumers callback_bolt, I force synchronize
-     *
-     * @param callee
-     * @param marker
-     */
-    public void callback(int callee, Marker marker) {
-        state.callback_bolt(callee, marker, executor);
     }
 }

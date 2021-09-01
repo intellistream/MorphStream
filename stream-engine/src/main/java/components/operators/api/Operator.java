@@ -10,7 +10,6 @@ import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Fields;
 import execution.runtime.tuple.impl.OutputFieldsDeclarer;
-import faulttolerance.State;
 import lock.OrderLock;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -22,7 +21,8 @@ import transaction.context.TxnContext;
 import java.util.HashMap;
 import java.util.Map;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static common.constants.BaseConstants.BaseField.TEXT;
 
@@ -43,7 +43,6 @@ public abstract class Operator implements IOperator {
     public double read_selectivity;//the ratio of actual reading..
     public boolean scalable = true;
     public TopologyContext context;
-    public State state = null;
     public transient Database db;//this is only used if the bolt is transactional bolt. DB is shared by all operators.
     //    public transient TxnContext txn_context;
     public transient TxnContext[] txn_context = new TxnContext[combo_bid_size];
@@ -226,17 +225,6 @@ public abstract class Operator implements IOperator {
             LogManager.getLogger(LOG.getName()).setLevel(Level.DEBUG);
         } else {
             LogManager.getLogger(LOG.getName()).setLevel(Level.INFO);
-        }
-        if (this instanceof Checkpointable) {
-            if (state == null) {
-                if (enable_log) LOG.info("The operator" + executor.getOP() + " is declared as checkpointable " +
-                        "but no state is initialized");
-            } else {
-                if (!enable_app_combo) {
-                    state.source_state_ini(executor);
-                    state.dst_state_init(executor);
-                }
-            }
         }
         db = getContext().getDb();
         initialize(thread_Id, thisTaskId, graph);

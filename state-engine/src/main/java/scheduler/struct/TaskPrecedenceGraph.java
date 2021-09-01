@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 
+import static common.CONTROL.enable_log;
 import static scheduler.impl.Scheduler.getTaskId;
 
 /**
@@ -95,7 +96,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
                 context.totalOsToSchedule += oc.getOperations().size();
             }
             ((LayeredTPGContext) context).buildBucketPerThread(ocs);
-            System.out.println(((LayeredTPGContext) context).maxLevel);
+            if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : ocs) {
                 context.totalOsToSchedule += oc.getOperations().size();

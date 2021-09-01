@@ -4,7 +4,6 @@ import combo.SINKCombo;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
-import faulttolerance.impl.ValueState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.impl.ordered.TxnManagerLWM;
@@ -20,12 +19,12 @@ public class TPBolt_lwm extends TPBolt_LA {
 
     public TPBolt_lwm(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-        state = new ValueState();
+
     }
 
     public TPBolt_lwm(int fid) {
         super(LOG, fid, null);
-        state = new ValueState();
+
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {

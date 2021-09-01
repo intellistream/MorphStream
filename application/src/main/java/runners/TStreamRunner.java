@@ -61,123 +61,6 @@ public class TStreamRunner extends Runner {
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP
     }
-
-    public static void main(String[] args) {
-        if (enable_log) log.info("Program Starts..");
-        TStreamRunner runner = new TStreamRunner();
-        JCommander cmd = new JCommander(runner);
-        try {
-            cmd.parse(args);
-        } catch (ParameterException ex) {
-            if (enable_log) log.error("Argument error: " + ex.getMessage());
-            cmd.usage();
-        }
-        try {
-            runner.run();
-        } catch (InterruptedException ex) {
-            if (enable_log) log.error("Error in running topology locally", ex);
-        }
-    }
-
-    private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
-        TopologySubmitter submitter = new TopologySubmitter();
-        try {
-            final_topology = submitter.submitTopology(topology, conf);
-        } catch (UnhandledCaseException e) {
-            e.printStackTrace();
-        }
-        executorThread sinkThread = submitter.getOM().getEM().getSinkThread();
-        long start = System.currentTimeMillis();
-        sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
-        long time_elapsed = (long) ((System.currentTimeMillis() - start) / 1E3 / 60);//in mins
-        if (time_elapsed > 20) {
-            if (enable_log) log.info("Program error, exist...");
-            System.exit(-1);
-        }
-
-        submitter.getOM().join();
-        submitter.getOM().getEM().exist();
-        if (sinkThread.running) {
-            if (enable_log) log.info("The application fails to stop normally, exist...");
-            return -1;
-        } else {
-            if (enable_app_combo) {
-                return SINK_CONTROL.getInstance().throughput;
-            } else {
-                TopologyComponent sink = submitter.getOM().g.getSink().operator;
-                double sum = 0;
-                int cnt = 0;
-                for (ExecutionNode e : sink.getExecutorList()) {
-                    double results = e.op.getResults();
-                    if (results != 0) {
-                        sum += results;
-                    } else {
-                        sum += sum / cnt;
-                    }
-                    cnt++;
-                }
-                return sum;
-            }
-        }
-    }
-
-    public void run() throws InterruptedException {
-        MeasureTools.Initialize();
-        LoadConfiguration();
-
-        // Get the descriptor for the given application
-        AppDriver.AppDescriptor app = driver.getApp(application);
-        if (app == null) {
-            throw new RuntimeException("The given application name " + application + " is invalid");
-        }
-        // In case topology names is given, create one
-        if (topologyName == null) {
-            topologyName = application;
-        }
-        // Get the topology
-        Topology topology = app.getTopology(topologyName, config);
-        topology.addMachine(platform);
-        // Run the topology
-        double rt = runTopologyLocally(topology, config);
-        if (enable_profile) {
-            if (rt != -1) {//returns normally.
-                if (enable_log) log.info("finished measurement (k events/s):\t" + rt);
-            }
-            if (enable_shared_state) {
-                SpinLock[] spinlock = final_topology.spinlock;
-                for (SpinLock lock : spinlock) {
-                    if (lock != null)
-                        if (enable_log) log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
-                }
-
-                // decide the output path of metrics.
-                String statsFolderPattern = OsUtils.osWrapperPostFix(rootPath)
-                        + OsUtils.osWrapperPostFix("stats")
-                        + OsUtils.osWrapperPostFix("%s")
-                        + OsUtils.osWrapperPostFix("threads = %d")
-                        + OsUtils.osWrapperPostFix("numberOfDLevels = %d")
-                        + OsUtils.osWrapperPostFix("totalEvents = %d");
-
-                String statsFolderPath = String.format(statsFolderPattern, scheduler, tthread, numberOfDLevels, totalEvents);
-                File file = new File(statsFolderPath);
-                if (enable_log) log.info("Dumping stats to...");
-                if (enable_log) log.info(String.valueOf(file.getAbsoluteFile()));
-                file.mkdirs();
-
-                if (file.exists())
-                    file.delete();
-                try {
-                    file.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread, rt);
-            }
-        }//end of profile.
-    }
-
-    // Loads the configuration file set by the user or the default
-    // configuration
     // Prepared default configuration
     private void LoadConfiguration() {
         if (configStr == null) {
@@ -259,5 +142,118 @@ public class TStreamRunner extends Runner {
         } else {
             config.putAll(Configuration.fromStr(configStr));
         }
+    }
+    public static void main(String[] args) {
+        if (enable_log) log.info("Program Starts..");
+        TStreamRunner runner = new TStreamRunner();
+        JCommander cmd = new JCommander(runner);
+        try {
+            cmd.parse(args);
+        } catch (ParameterException ex) {
+            if (enable_log) log.error("Argument error: " + ex.getMessage());
+            cmd.usage();
+        }
+        try {
+            runner.run();
+        } catch (InterruptedException ex) {
+            if (enable_log) log.error("Error in running topology locally", ex);
+        }
+    }
+
+    private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
+        TopologySubmitter submitter = new TopologySubmitter();
+        try {
+            final_topology = submitter.submitTopology(topology, conf);
+        } catch (UnhandledCaseException e) {
+            e.printStackTrace();
+        }
+        executorThread sinkThread = submitter.getOM().getEM().getSinkThread();
+        long start = System.currentTimeMillis();
+        sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
+        long time_elapsed = (long) ((System.currentTimeMillis() - start) / 1E3 / 60);//in mins
+        if (time_elapsed > 20) {
+            if (enable_log) log.info("Program error, exist...");
+            System.exit(-1);
+        }
+
+        submitter.getOM().join();
+        submitter.getOM().getEM().exist();
+        if (sinkThread.running) {
+            if (enable_log) log.info("The application fails to stop normally, exist...");
+            return -1;
+        } else {
+            if (enable_app_combo) {
+                return SINK_CONTROL.getInstance().throughput;
+            } else {
+                TopologyComponent sink = submitter.getOM().g.getSink().operator;
+                double sum = 0;
+                int cnt = 0;
+                for (ExecutionNode e : sink.getExecutorList()) {
+                    double results = e.op.getResults();
+                    if (results != 0) {
+                        sum += results;
+                    } else {
+                        sum += sum / cnt;
+                    }
+                    cnt++;
+                }
+                return sum;
+            }
+        }
+    }
+
+    public void run() throws InterruptedException {
+        MeasureTools.Initialize();
+        LoadConfiguration();
+
+        // Get the descriptor for the given application
+        AppDriver.AppDescriptor app = driver.getApp(application);
+        if (app == null) {
+            throw new RuntimeException("The given application name " + application + " is invalid");
+        }
+        // In case topology names is given, create one
+        if (topologyName == null) {
+            topologyName = application;
+        }
+        // Get the topology
+        Topology topology = app.getTopology(topologyName, config);
+        topology.addMachine(platform);
+        // Run the topology
+        double rt = runTopologyLocally(topology, config);
+        if (enable_profile) {
+            if (rt != -1) {//returns normally.
+               log.info("finished measurement (k events/s):\t" + rt);
+            }
+            if (enable_shared_state) {
+                SpinLock[] spinlock = final_topology.spinlock;
+                for (SpinLock lock : spinlock) {
+                    if (lock != null)
+                      log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
+                }
+
+                // decide the output path of metrics.
+                String statsFolderPattern = OsUtils.osWrapperPostFix(rootPath)
+                        + OsUtils.osWrapperPostFix("stats")
+                        + OsUtils.osWrapperPostFix("%s")
+                        + OsUtils.osWrapperPostFix("threads = %d")
+                        + OsUtils.osWrapperPostFix("numberOfDLevels = %d")
+                        + OsUtils.osWrapperPostFix("totalEvents = %d");
+
+                String statsFolderPath = String.format(statsFolderPattern, scheduler, tthread, numberOfDLevels, totalEvents);
+                File file = new File(statsFolderPath);
+               log.info("Dumping stats to...");
+               log.info(String.valueOf(file.getAbsoluteFile()));
+                file.mkdirs();
+
+                if (file.exists())
+                    file.delete();
+                try {
+                    file.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread, rt);
+            }
+        }//end of profile.
     }
 }

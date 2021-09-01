@@ -11,7 +11,7 @@ public interface IScheduler<Context> {
 
     boolean FINISHED(Context threadId);
 
-    void RESET();
+    void RESET(Context context);
 
     boolean SubmitRequest(Context context, Request request);
 

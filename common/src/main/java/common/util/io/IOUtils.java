@@ -9,7 +9,7 @@ public class IOUtils {
         try {
             s = new Scanner(is).useDelimiter("\\A");
         } catch (Exception ex) {
-            System.out.println("FUCKING error!" + ex.getMessage());
+            System.out.println("Error!" + ex.getMessage());
         }
         return s.hasNext() ? s.next() : "";
     }

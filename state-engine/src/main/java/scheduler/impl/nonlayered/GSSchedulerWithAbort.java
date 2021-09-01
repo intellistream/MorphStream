@@ -44,7 +44,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     }
 
     @Override
-    public void RESET() {
+    public void RESET(GSTPGContextWithAbort context) {
 //        Controller.exec.shutdownNow();
     }
 
