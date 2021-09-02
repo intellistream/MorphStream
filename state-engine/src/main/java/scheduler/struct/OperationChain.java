@@ -15,18 +15,24 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     public final String tableName;
     public final String primaryKey;
     protected final MyList<ExecutionUnit> operations;
-    protected final AtomicInteger ocFdParentsCount;
-    // OperationChainKey -> OperationChain
-    public final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocFdParents;
+    protected final AtomicInteger ocParentsCount;
+    // OperationChain -> ChildOp that depend on the parent OC in cur OC
+    public final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocParents;
+    public final ConcurrentSkipListMap<ExecutionUnit, OperationChain<ExecutionUnit>> targetOpToOcParents;
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
     public boolean isExecuted = false;
+    protected TaskPrecedenceGraph tpg;
+    Set<ExecutionUnit> circularOps = new HashSet<>(2);
+    HashMap<ExecutionUnit, OperationChain<ExecutionUnit>> circularParents = new HashMap<>();
+
 
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
         this.operations = new MyList<>(tableName, primaryKey);
-        this.ocFdParentsCount = new AtomicInteger(0);
-        this.ocFdParents = new ConcurrentSkipListMap<>();
+        this.ocParentsCount = new AtomicInteger(0);
+        this.ocParents = new ConcurrentSkipListMap<>();
+        this.targetOpToOcParents = new ConcurrentSkipListMap<>();
     }
 
     public String getTableName() {
@@ -41,7 +47,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         potentialChldrenInfo.add(new PotentialChildrenInfo(potentialChildren, op));
     }
 
-    public void addFDParent(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC) {
+    public void addParent(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC) {
         Iterator<ExecutionUnit> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
         while (iterator.hasNext()) {
             ExecutionUnit parentOp = iterator.next();
@@ -53,10 +59,17 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
-        this.ocFdParents.putIfAbsent(parentOC, parentOp);
-        this.ocFdParentsCount.incrementAndGet();
-        if (parentOC.ocFdParents.containsKey(this)) {
-            throw new RuntimeException("cyclic in the tpg;");
+        this.ocParents.putIfAbsent(parentOC, parentOp);
+        this.targetOpToOcParents.putIfAbsent(targetOp, parentOC);
+        this.ocParentsCount.incrementAndGet();
+        if (parentOC.ocParents.containsKey(this)) {
+            ExecutionUnit circularSrcOp = parentOC.ocParents.get(this);
+            circularOps.add(circularSrcOp); // add the previous op in this oc that caused circular
+            circularOps.add(targetOp); // add current op in this oc that caused circular
+            circularParents.put(circularSrcOp, parentOC);
+            tpg.cirularOCs.add(this);
+
+//            throw new RuntimeException("cyclic in the tpg;");
         }
     }
 
@@ -65,7 +78,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 
         for (PotentialChildrenInfo pChildInfo : potentialChldrenInfo) {
             if (newOp.bid < pChildInfo.childOp.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
-                pChildInfo.potentialChildOC.addFDParent(pChildInfo.childOp, this);
+                pChildInfo.potentialChildOC.addParent(pChildInfo.childOp, this);
                 processed.add(pChildInfo);
             }
         }
@@ -104,12 +117,24 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
             return -1;
     }
 
-    public <T extends OperationChain> Collection<T> getFDParents() {
-        return (Collection<T>) ocFdParents.keySet();
+    public <T extends OperationChain> Collection<T> getParents() {
+        return (Collection<T>) ocParents.keySet();
     }
 
-    public boolean hasParents() {
-        return ocFdParentsCount.get() > 0;
+    public <ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> boolean hasParents() {
+        return ocParentsCount.get() > 0;
+    }
+
+    public void setupTPG(TaskPrecedenceGraph tpg) {
+        this.tpg = tpg;
+    }
+
+    public void clear() {
+        operations.clear();
+        ocParentsCount.set(0);
+        ocParents.clear();
+        targetOpToOcParents.clear();
+        potentialChldrenInfo.clear();
     }
 
     public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {

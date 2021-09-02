@@ -24,24 +24,26 @@ public class DFSOperationChain extends LayeredOperationChain<DFSOperation> {
 
     @Override
     protected void setupDependency(DFSOperation targetOp, OperationChain<DFSOperation> parentOC, DFSOperation parentOp) {
-        this.ocFdParents.putIfAbsent(parentOC, parentOp);
-        this.ocFdParentsCount.incrementAndGet();
+        super.setupDependency(targetOp, parentOC, parentOp);
         // add child for parent OC
         if (parentOC instanceof DFSOperationChain) {
             ((DFSOperationChain) parentOC).ocFdChildren.putIfAbsent(this, targetOp);
         } else {
             throw new UnsupportedOperationException("Wrong operation chain type: " + parentOC);
         }
-        if (parentOC.ocFdParents.containsKey(this)) {
-            throw new RuntimeException("cyclic in the tpg;");
-        }
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        ocFdChildren.clear();
     }
 
     public void updateDependency() {
-        ocFdParentsCount.decrementAndGet();
+        ocParentsCount.decrementAndGet();
     }
 
     public void rollbackDependency() {
-        ocFdParentsCount.incrementAndGet();
+        ocParentsCount.incrementAndGet();
     }
 }

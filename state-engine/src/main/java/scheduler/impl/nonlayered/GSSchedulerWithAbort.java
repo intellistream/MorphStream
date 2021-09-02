@@ -20,6 +20,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
     @Override
     public void INITIALIZE(GSTPGContextWithAbort context) {
+        tpg.circularResolve(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
     }
@@ -125,6 +126,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
         public void onOCFinalized(GSOperationChainWithAbort operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
+            operationChain.context.operaitonsLeft.removeAll(operationChain.getOperations());
         }
 
         public void onOCRollbacked(GSOperationChainWithAbort operationChain) {

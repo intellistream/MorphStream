@@ -19,8 +19,8 @@ public abstract class LayeredOperationChain<ExecutionUnit extends AbstractOperat
     }
 
     @Override
-    public Collection<LayeredOperationChain> getFDParents() {
-        return super.getFDParents();
+    public Collection<LayeredOperationChain> getParents() {
+        return super.getParents();
     }
 
     public synchronized boolean hasValidDependencyLevel() {
@@ -35,7 +35,7 @@ public abstract class LayeredOperationChain<ExecutionUnit extends AbstractOperat
         if (isDependencyLevelCalculated)
             return;
         dependencyLevel = 0;
-        for (LayeredOperationChain parent : getFDParents()) {
+        for (LayeredOperationChain parent : getParents()) {
             if (!parent.hasValidDependencyLevel()) {
                 parent.updateDependencyLevel();
             }

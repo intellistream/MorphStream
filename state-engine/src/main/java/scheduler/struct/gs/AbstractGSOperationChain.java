@@ -36,21 +36,24 @@ public abstract class AbstractGSOperationChain<ExecutionUnit extends GSOperation
 
     @Override
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
-        this.ocFdParents.putIfAbsent(parentOC, parentOp);
-        this.ocFdParentsCount.incrementAndGet();
+        super.setupDependency(targetOp, parentOC, parentOp);
         // add child for parent OC
         if (parentOC instanceof AbstractGSOperationChain) {
             ((AbstractGSOperationChain) parentOC).ocFdChildren.putIfAbsent(this, targetOp);
         } else {
             throw new UnsupportedOperationException("Wrong operation chain type: " + parentOC);
         }
-        if (parentOC.ocFdParents.containsKey(this)) {
-            throw new RuntimeException("cyclic in the tpg;");
-        }
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        ocFdChildren.clear();
+        context = null;
     }
 
     public void updateDependency() {
-        ocFdParentsCount.decrementAndGet();
+        ocParentsCount.decrementAndGet();
     }
 
     public boolean hasChildren() {
@@ -58,6 +61,6 @@ public abstract class AbstractGSOperationChain<ExecutionUnit extends GSOperation
     }
 
     public void rollbackDependency() {
-        ocFdParentsCount.incrementAndGet();
+        ocParentsCount.incrementAndGet();
     }
 }
