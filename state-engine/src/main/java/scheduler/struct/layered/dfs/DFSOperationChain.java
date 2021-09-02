@@ -32,6 +32,9 @@ public class DFSOperationChain extends LayeredOperationChain<DFSOperation> {
         } else {
             throw new UnsupportedOperationException("Wrong operation chain type: " + parentOC);
         }
+        if (parentOC.ocFdParents.containsKey(this)) {
+            throw new RuntimeException("cyclic in the tpg;");
+        }
     }
 
     public void updateDependency() {

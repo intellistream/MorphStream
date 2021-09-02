@@ -17,7 +17,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     protected final MyList<ExecutionUnit> operations;
     protected final AtomicInteger ocFdParentsCount;
     // OperationChainKey -> OperationChain
-    protected final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocFdParents;
+    public final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocFdParents;
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
     public boolean isExecuted = false;
 
