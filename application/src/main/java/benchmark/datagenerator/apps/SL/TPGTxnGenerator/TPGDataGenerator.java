@@ -61,7 +61,6 @@ public class TPGDataGenerator extends DataGenerator {
         Transaction_Length = 4;
         Ratio_of_Transaction_Aborts = 0;
 
-
         int nKeyState = dataConfig.getnKeyStates();
         events = new ArrayList<>(nTuples);
         // zipf state access generator
@@ -169,7 +168,7 @@ public class TPGDataGenerator extends DataGenerator {
         }
 
         File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
-                + String.format("_%d_%d.txt", dataConfig.getTotalEvents()));
+                + String.format("_%d.txt", dataConfig.getTotalEvents()));
         try {
             versionFile.createNewFile();
             FileWriter fileWriter = new FileWriter(versionFile);

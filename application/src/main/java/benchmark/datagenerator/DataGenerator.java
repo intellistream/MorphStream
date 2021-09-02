@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
  * Data generator for benchmarks, this class contains all common methods and attributes that can be used in each application
  */
 public abstract class DataGenerator {
-
     private static final Logger LOG = LoggerFactory.getLogger(DataGenerator.class);
     protected final int nTuples;
     protected DataGeneratorConfig dataConfig;

@@ -83,7 +83,8 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         // TD
         SchedulingUnit oc = addOperationToChain(operation);
         // FD
-        checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        if (request.condition_source != null)
+            checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
         return oc;
     }
 

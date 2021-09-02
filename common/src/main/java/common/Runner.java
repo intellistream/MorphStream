@@ -97,13 +97,9 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 50_000;//
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
-//    public String generator = "TPGGenerator";
-    public String generator = "OCGenerator";
+    public String generator = "TPGGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 100_000;
-    @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
-    public Integer numberOfDLevels = 8;
-
+    public int totalEvents = 50_000;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -130,7 +126,6 @@ public abstract class Runner implements IRunner {
         config.put("generator", generator);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
-        config.put("numberOfDLevels", numberOfDLevels);
 
         if (CCOption == 4)//S-Store enabled.
             config.put("partition", true);

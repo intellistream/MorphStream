@@ -17,7 +17,7 @@ import java.util.concurrent.BrokenBarrierException;
 import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_latency_measurement;
 
-public abstract class TransactionalBolt<T> extends MapBolt implements Checkpointable {
+public abstract class TransactionalBolt extends MapBolt implements Checkpointable {
     protected static final Logger LOG = LoggerFactory.getLogger(TransactionalBolt.class);
     private static final long serialVersionUID = -3899457584889441657L;
     public TxnManager transactionManager;

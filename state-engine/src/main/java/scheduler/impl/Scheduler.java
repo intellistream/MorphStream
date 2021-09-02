@@ -142,9 +142,6 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
         tempo_record = new SchemaRecord(values);//tempo record
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-        synchronized (operation.success) {
-            operation.success[0]++;
-        }
     }
 
     /**
@@ -158,22 +155,26 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
         if (operation.aborted) {
             return; // return if the operation is already aborted
         }
-
-        int success = operation.success[0];
+        int success;
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
+            success = operation.success[0];
             Transfer_Fun(operation, mark_ID, clean);
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
+            success = operation.success[0];
             Transfer_Fun(operation, mark_ID, clean);
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
         } else if (operation.accessType.equals(READ_WRITE)) {
             Depo_Fun(operation, mark_ID, clean);
         } else {
             throw new UnsupportedOperationException();
-        }
-        if (operation.success[0] == success) {
-            operation.isFailed = true;
         }
     }
 

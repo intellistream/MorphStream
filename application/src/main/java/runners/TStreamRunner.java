@@ -42,7 +42,6 @@ import static content.T_StreamContentImpl.T_STREAMCONTENT;
 import static content.common.ContentCommon.content_type;
 import static profiler.MeasureTools.METRICS_REPORT;
 
-
 public class TStreamRunner extends Runner {
     private static final Logger log = LoggerFactory.getLogger(TStreamRunner.class);
     private static Topology final_topology;
@@ -61,6 +60,7 @@ public class TStreamRunner extends Runner {
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP
     }
+
     // Prepared default configuration
     private void LoadConfiguration() {
         if (configStr == null) {
@@ -143,6 +143,7 @@ public class TStreamRunner extends Runner {
             config.putAll(Configuration.fromStr(configStr));
         }
     }
+
     public static void main(String[] args) {
         if (enable_log) log.info("Program Starts..");
         TStreamRunner runner = new TStreamRunner();
@@ -222,13 +223,13 @@ public class TStreamRunner extends Runner {
         double rt = runTopologyLocally(topology, config);
         if (enable_profile) {
             if (rt != -1) {//returns normally.
-               log.info("finished measurement (k events/s):\t" + rt);
+                log.info("finished measurement (k events/s):\t" + rt);
             }
             if (enable_shared_state) {
                 SpinLock[] spinlock = final_topology.spinlock;
                 for (SpinLock lock : spinlock) {
                     if (lock != null)
-                      log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
+                        log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
                 }
 
                 // decide the output path of metrics.
@@ -236,13 +237,12 @@ public class TStreamRunner extends Runner {
                         + OsUtils.osWrapperPostFix("stats")
                         + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
-                        + OsUtils.osWrapperPostFix("numberOfDLevels = %d")
                         + OsUtils.osWrapperPostFix("totalEvents = %d");
 
-                String statsFolderPath = String.format(statsFolderPattern, scheduler, tthread, numberOfDLevels, totalEvents);
+                String statsFolderPath = String.format(statsFolderPattern, scheduler, tthread, totalEvents);
                 File file = new File(statsFolderPath);
-               log.info("Dumping stats to...");
-               log.info(String.valueOf(file.getAbsoluteFile()));
+                log.info("Dumping stats to...");
+                log.info(String.valueOf(file.getAbsoluteFile()));
                 file.mkdirs();
 
                 if (file.exists())

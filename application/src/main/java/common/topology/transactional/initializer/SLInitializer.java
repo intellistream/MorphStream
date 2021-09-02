@@ -3,8 +3,6 @@ package common.topology.transactional.initializer;
 import benchmark.DataHolder;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGenerator;
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
 import common.collections.Configuration;
@@ -61,26 +59,13 @@ public class SLInitializer extends TableInitilizer {
 
         String generatorType = config.getString("generator");
         switch (generatorType) {
-            case "OCGenerator":
-                createLayeredOCGenerator(config);
-                break;
             case "TPGGenerator":
                 createTPGGenerator(config);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + generatorType);
         }
-
         dataConfig = dataGenerator.getDataConfig();
-    }
-
-    protected void createLayeredOCGenerator(Configuration config) {
-
-        LayeredOCDataGeneratorConfig dataConfig = new LayeredOCDataGeneratorConfig();
-        dataConfig.initialize(config);
-
-        configurePath(dataConfig);
-        dataGenerator = new LayeredOCDataGenerator(dataConfig);
     }
 
     protected void createTPGGenerator(Configuration config) {
@@ -104,18 +89,12 @@ public class SLInitializer extends TableInitilizer {
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
-            if (dataConfig instanceof LayeredOCDataGeneratorConfig) {
-                bytes = digest.digest(String.format("%d_%d_%d",
-                                dataConfig.getTotalThreads(),
-                                dataConfig.getTotalEvents(),
-                                ((LayeredOCDataGeneratorConfig) dataConfig).getNumberOfDLevels())
-                        .getBytes(StandardCharsets.UTF_8));
-            } else {
-                bytes = digest.digest(String.format("%d_%d",
-                                dataConfig.getTotalThreads(),
-                                dataConfig.getTotalEvents())
-                        .getBytes(StandardCharsets.UTF_8));
-            }
+
+            bytes = digest.digest(String.format("%d_%d",
+                            dataConfig.getTotalThreads(),
+                            dataConfig.getTotalEvents())
+                    .getBytes(StandardCharsets.UTF_8));
+
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(bytes));
         } catch (Exception e) {

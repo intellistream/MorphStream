@@ -2,7 +2,6 @@
 
 function ResetParameters() {
   NUM_ITEMS=5000000
-  numberOfDLevels=1024
   numberOfBatches=1
   events=983040
   fanoutDist="zipfcenter"
@@ -14,7 +13,6 @@ function ResetParameters() {
 function runTStream() {
   java -Xms60g -Xmx60g -jar -d64 application-0.0.2-jar-with-dependencies.jar \
     --NUM_ITEMS $NUM_ITEMS \
-    --numberOfDLevels $numberOfDLevels \
     --tthread $tthread \
     --totalEventsPerBatch $events \
     --numberOfBatches $numberOfBatches \
