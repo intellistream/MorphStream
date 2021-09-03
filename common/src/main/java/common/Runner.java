@@ -95,11 +95,11 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 50_000;//
+    public int checkpoint_interval = 1000;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 50_000;
+    public int totalEvents = 100_000;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -133,8 +133,12 @@ public abstract class Runner implements IRunner {
         else
             config.put("partition", enable_partition);
         config.put("measure", enable_measurement);
-        config.put("checkpoint", checkpoint_interval);
         config.put("tthread", tthread);
+
+        config.put("checkpoint", checkpoint_interval);
+
+        assert totalEvents / tthread == checkpoint_interval;
+
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);
         config.put("NUM_ACCESS", NUM_ACCESS);

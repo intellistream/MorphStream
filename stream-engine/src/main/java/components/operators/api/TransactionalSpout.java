@@ -42,5 +42,4 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public boolean checkpoint(int counter) {
         return (counter % checkpoint_interval == 0);
     }
-
 }

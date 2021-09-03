@@ -56,7 +56,7 @@ public class TPGDataGenerator extends DataGenerator {
         super(dataConfig);
 
         // TODO: temporarily hard coded, will update later
-        Ratio_Of_Deposit = 50;//0-100 (%)
+        Ratio_Of_Deposit = 25;//0-100 (%)
         State_Access_Skewness = 50;
         Transaction_Length = 4;
         Ratio_of_Transaction_Aborts = 0;
