@@ -93,7 +93,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         ocs.add(this);
         assert this.ocParents.containsKey(parentOC);
         assert parentOC.ocChildren.containsKey(this);
-//        assert this.ocParents.size() == this.ocParentsCount.get();
+        assert this.ocParents.size() == this.ocParentsCount.get();
     }
 
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {

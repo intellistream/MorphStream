@@ -127,8 +127,9 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
                         if (childOC.getOperations().size() == 0) {
                             continue;
                         }
-                        childOC.ocParents.remove(oc);
-                        childOC.ocParentsCount.decrementAndGet();
+                        if (childOC.ocParents.remove(oc) != null) {
+                            childOC.ocParentsCount.decrementAndGet();
+                        }
                         for (ExecutionUnit childOp : childOC.opToOcParents.keySet()) {
                             if (childOC.opToOcParents.get(childOp).contains(oc)) {
                                 childOC.opToOcParents.get(childOp).remove(oc); // remove and reset dependencies
