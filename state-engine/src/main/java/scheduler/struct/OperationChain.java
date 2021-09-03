@@ -1,10 +1,10 @@
 package scheduler.struct;
 
+import org.jboss.netty.util.internal.ConcurrentHashMap;
 import transaction.impl.ordered.MyList;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -17,13 +17,19 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     protected final MyList<ExecutionUnit> operations;
     protected final AtomicInteger ocParentsCount;
     // OperationChain -> ChildOp that depend on the parent OC in cur OC
-    public final ConcurrentSkipListMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocParents;
-    public final ConcurrentSkipListMap<ExecutionUnit, OperationChain<ExecutionUnit>> targetOpToOcParents;
+    public final ConcurrentHashMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocParents;
+    public final ConcurrentHashMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocChildren;
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
     public boolean isExecuted = false;
+
+
+    // Circular resolve required data structures
+    public final ConcurrentHashMap<ExecutionUnit,
+            ConcurrentLinkedQueue<OperationChain<ExecutionUnit>>> opToOcParents; // used for circular resolving
+    public final ConcurrentHashMap<ExecutionUnit,
+            ConcurrentLinkedQueue<OperationChain<ExecutionUnit>>> opToOcChildren; // used for circular resolving
     protected TaskPrecedenceGraph tpg;
     Set<ExecutionUnit> circularOps = new HashSet<>(2);
-    HashMap<ExecutionUnit, OperationChain<ExecutionUnit>> circularParents = new HashMap<>();
 
 
     public OperationChain(String tableName, String primaryKey) {
@@ -31,8 +37,10 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         this.primaryKey = primaryKey;
         this.operations = new MyList<>(tableName, primaryKey);
         this.ocParentsCount = new AtomicInteger(0);
-        this.ocParents = new ConcurrentSkipListMap<>();
-        this.targetOpToOcParents = new ConcurrentSkipListMap<>();
+        this.ocParents = new ConcurrentHashMap<>();
+        this.ocChildren = new ConcurrentHashMap<>();
+        this.opToOcParents = new ConcurrentHashMap<>();
+        this.opToOcChildren = new ConcurrentHashMap<>();
     }
 
     public String getTableName() {
@@ -58,18 +66,48 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         }
     }
 
+    public void addParents(ExecutionUnit targetOp, Queue<OperationChain<ExecutionUnit>> parentOCs, OperationChain<ExecutionUnit> oldOC) {
+        for (OperationChain<ExecutionUnit> parentOC : parentOCs) {
+            parentOC.ocChildren.remove(oldOC);
+            Iterator<ExecutionUnit> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
+            while (iterator.hasNext()) {
+                ExecutionUnit parentOp = iterator.next();
+                if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
+                    setupDependencyWithoutCheck(targetOp, parentOC, parentOp);
+                    break;
+                }
+            }
+        }
+    }
+
+    protected void setupDependencyWithoutCheck(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
+        this.ocParents.putIfAbsent(parentOC, parentOp);
+        ConcurrentLinkedQueue<OperationChain<ExecutionUnit>> ocs = this.opToOcParents.computeIfAbsent(targetOp, s -> new ConcurrentLinkedQueue<>());
+        ocs.add(parentOC);
+//        this.opToOcParents.putIfAbsent(targetOp, parentOC);
+        this.ocParentsCount.incrementAndGet();
+        // add child for parent OC
+        parentOC.ocChildren.putIfAbsent(this, targetOp);
+        ocs = parentOC.opToOcChildren.computeIfAbsent(parentOp, s -> new ConcurrentLinkedQueue<>());
+        ocs.add(this);
+    }
+
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
         this.ocParents.putIfAbsent(parentOC, parentOp);
-        this.targetOpToOcParents.putIfAbsent(targetOp, parentOC);
+        ConcurrentLinkedQueue<OperationChain<ExecutionUnit>> ocs = this.opToOcParents.computeIfAbsent(targetOp, s -> new ConcurrentLinkedQueue<>());
+        ocs.add(parentOC);
+//        this.opToOcParents.putIfAbsent(targetOp, parentOC);
         this.ocParentsCount.incrementAndGet();
+        // add child for parent OC
+        parentOC.ocChildren.putIfAbsent(this, targetOp);
+        ocs = parentOC.opToOcChildren.computeIfAbsent(parentOp, s -> new ConcurrentLinkedQueue<>());
+        ocs.add(this);
+//        parentOC.opToOcChildren.putIfAbsent(parentOp, this);
         if (parentOC.ocParents.containsKey(this)) {
-            ExecutionUnit circularSrcOp = parentOC.ocParents.get(this);
-            circularOps.add(circularSrcOp); // add the previous op in this oc that caused circular
+            ExecutionUnit circularOp = parentOC.ocParents.get(this);
+            circularOps.add(circularOp); // add the previous op in this oc that caused circular
             circularOps.add(targetOp); // add current op in this oc that caused circular
-            circularParents.put(circularSrcOp, parentOC);
             tpg.cirularOCs.add(this);
-
-//            throw new RuntimeException("cyclic in the tpg;");
         }
     }
 
@@ -121,6 +159,10 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         return (Collection<T>) ocParents.keySet();
     }
 
+    public <T extends OperationChain> Collection<T> getChildren() {
+        return (Collection<T>) ocChildren.keySet();
+    }
+
     public <ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> boolean hasParents() {
         return ocParentsCount.get() > 0;
     }
@@ -129,11 +171,15 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         this.tpg = tpg;
     }
 
+    /**
+     * clear all information in the oc if the OC is splitted due to the circular.
+     */
     public void clear() {
         operations.clear();
         ocParentsCount.set(0);
         ocParents.clear();
-        targetOpToOcParents.clear();
+        ocChildren.clear();
+        opToOcParents.clear();
         potentialChldrenInfo.clear();
     }
 

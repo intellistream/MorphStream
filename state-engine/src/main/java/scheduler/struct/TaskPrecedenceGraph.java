@@ -106,23 +106,32 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         SchedulingUnit prevOc;
         SchedulingUnit pOc;
         for (SchedulingUnit oc : cirularOCs) {
+            if (oc.primaryKey.split("\\|").length > 1) {
+                System.out.println("= =");
+            }
+            if (getTaskId(oc.primaryKey, delta) != context.thisThreadId) {
+                continue;
+            }
             // cut the circular ocs to multiple ocs
             int partitionId = 0;
             pOc = getNewOC(oc.tableName, oc.primaryKey, partitionId);
-            Collection<ExecutionUnit> srcOps = oc.targetOpToOcParents.keySet();
             for (ExecutionUnit op : oc.getOperations()) {
                 pOc.addOperation(op);
                 if (op instanceof GSOperationWithAbort) {
                     ((GSOperationWithAbort) op).setOC((GSOperationChainWithAbort) pOc);
                 }
-                if (srcOps.contains(op)) {
-                    pOc.addParent(op, oc.targetOpToOcParents.get(op));
+                if (oc.opToOcParents.containsKey(op)) {
+                    pOc.addParents(op, oc.opToOcParents.get(op), oc);
+                }
+                if (oc.opToOcChildren.containsKey(op)) {
+                    // update the parents set in children
+                     for (OperationChain<ExecutionUnit> childOC : oc.opToOcChildren.get(op)) {
+                        childOC.ocParents.remove(oc);
+                        childOC.ocParentsCount.decrementAndGet();
+                        childOC.ocParents.put(pOc, op);
+                    }
                 }
                 if (oc.circularOps.contains(op)) {
-                    if (oc.circularParents.containsKey(op)) { // if it is dst op, update parent oc dependencies
-                        oc.circularParents.get(op).ocParents.remove(oc);
-                        oc.circularParents.get(op).ocParents.put(pOc, op);
-                    }
                     partitionId++;
                     prevOc = pOc;
                     pOc = getNewOC(oc.tableName, oc.primaryKey, partitionId);
@@ -154,7 +163,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : ocs) {
                 context.totalOsToSchedule += oc.getOperations().size();
-                context.operaitonsLeft.addAll(oc.getOperations());
+//                context.operaitonsLeft.addAll(oc.getOperations());
                 if (((AbstractGSOperationChain) oc).context == null) {
                     if (enable_log) LOG.info("Circular OC that has been splitted: " + oc);
                     continue;

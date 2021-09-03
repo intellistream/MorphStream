@@ -11,32 +11,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * The operationchain only tries to maintain a data structure for the ease of temporal dependencies construction.
  */
 public class DFSOperationChain extends LayeredOperationChain<DFSOperation> {
-    private final ConcurrentSkipListMap<DFSOperationChain, DFSOperation> ocFdChildren;
 
     public DFSOperationChain(String tableName, String primaryKey) {
         super(tableName, primaryKey);
-        this.ocFdChildren = new ConcurrentSkipListMap<>();
-    }
-
-    public Collection<DFSOperationChain> getFDChildren() {
-        return ocFdChildren.keySet();
     }
 
     @Override
-    protected void setupDependency(DFSOperation targetOp, OperationChain<DFSOperation> parentOC, DFSOperation parentOp) {
-        super.setupDependency(targetOp, parentOC, parentOp);
-        // add child for parent OC
-        if (parentOC instanceof DFSOperationChain) {
-            ((DFSOperationChain) parentOC).ocFdChildren.putIfAbsent(this, targetOp);
-        } else {
-            throw new UnsupportedOperationException("Wrong operation chain type: " + parentOC);
-        }
-    }
-
-    @Override
-    public void clear() {
-        super.clear();
-        ocFdChildren.clear();
+    public Collection<DFSOperationChain> getChildren() {
+        return super.getChildren();
     }
 
     public void updateDependency() {

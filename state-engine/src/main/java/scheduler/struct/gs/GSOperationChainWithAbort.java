@@ -27,8 +27,8 @@ public class GSOperationChainWithAbort extends AbstractGSOperationChain<GSOperat
     }
 
     @Override
-    public Collection<GSOperationChainWithAbort> getFDChildren() {
-        return super.getFDChildren();
+    public Collection<GSOperationChainWithAbort> getChildren() {
+        return super.getChildren();
     }
 
     public void addDescendant(GSOperationWithAbort header, GSOperationWithAbort descendant) {

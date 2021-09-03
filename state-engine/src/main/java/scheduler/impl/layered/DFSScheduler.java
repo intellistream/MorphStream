@@ -52,7 +52,7 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
     protected void NOTIFY(DFSOperationChain operationChain, DFSLayeredTPGContext context) {
 //        context.partitionStateManager.onOcExecuted(operationChain);
         operationChain.isExecuted = true; // set operation chain to be executed, which is used for further rollback
-        Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
+        Collection<DFSOperationChain> ocs = operationChain.getChildren();
         for (DFSOperationChain childOC : ocs) {
             childOC.updateDependency();
         }

@@ -90,7 +90,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
     protected void NOTIFY(DFSOperationChain operationChain, DFSLayeredTPGContextWithAbort context) {
 //        context.partitionStateManager.onOcExecuted(operationChain);
         operationChain.isExecuted = true; // set operation chain to be executed, which is used for further rollback
-        Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
+        Collection<DFSOperationChain> ocs = operationChain.getChildren();
         for (DFSOperationChain childOC : ocs) {
             childOC.updateDependency();
         }
@@ -213,7 +213,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
                 ops += operationChain.getOperations().size();
                 if (operationChain.isExecuted) { // rollback children counter if the parent has been rollback
                     operationChain.isExecuted = false;
-                    Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
+                    Collection<DFSOperationChain> ocs = operationChain.getChildren();
                     for (DFSOperationChain childOC : ocs) {
                         childOC.rollbackDependency();
                     }

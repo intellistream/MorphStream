@@ -83,7 +83,7 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
     private void ocExecutedTransition(GSOperationChainWithAbort operationChain) {
         if (!operationChain.needAbortHandling) {
             operationChain.isExecuted = true;
-            for (GSOperationChainWithAbort child : operationChain.getFDChildren()) {
+            for (GSOperationChainWithAbort child : operationChain.getChildren()) {
                 ((GSTPGContextWithAbort) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
             }
             executableTaskListener.onOCFinalized(operationChain);
@@ -139,7 +139,7 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
 
     private void notifyChildrenRollbackAndRedo(GSOperationChainWithAbort operationChain) {
         // notify children to rollback and redo
-        for (GSOperationChainWithAbort child : operationChain.getFDChildren()) {
+        for (GSOperationChainWithAbort child : operationChain.getChildren()) {
             ((GSTPGContextWithAbort) child.context).partitionStateManager.onOcRollbackAndRedo(child);
         }
     }

@@ -33,8 +33,8 @@ public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, Sc
 
     @Override
     public boolean finished() {
-//        return scheduledOPs == totalOsToSchedule;
-        return operaitonsLeft.isEmpty();
+        return scheduledOPs == totalOsToSchedule;
+//        return operaitonsLeft.isEmpty();
     }
 
     public OperationChainStateListener getListener() {

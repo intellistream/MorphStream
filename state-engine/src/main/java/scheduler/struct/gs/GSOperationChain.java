@@ -12,7 +12,7 @@ public class GSOperationChain extends AbstractGSOperationChain<GSOperation> {
     }
 
     @Override
-    public Collection<GSOperationChain> getFDChildren() {
-        return super.getFDChildren();
+    public Collection<GSOperationChain> getChildren() {
+        return super.getChildren();
     }
 }

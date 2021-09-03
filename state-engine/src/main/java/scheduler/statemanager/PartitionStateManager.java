@@ -68,7 +68,7 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
 
     private void ocExecutedTransition(GSOperationChain operationChain) {
         operationChain.isExecuted = true;
-        for (GSOperationChain child : operationChain.getFDChildren()) {
+        for (GSOperationChain child : operationChain.getChildren()) {
             ((GSTPGContext) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
         }
         executableTaskListener.onOCFinalized(operationChain);
