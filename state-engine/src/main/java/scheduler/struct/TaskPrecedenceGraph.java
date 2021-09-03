@@ -42,7 +42,6 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
     private final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
-    public ConcurrentLinkedDeque<SchedulingUnit> cirularOCs;
     CyclicBarrier barrier;
 
     public void reset() {
@@ -50,7 +49,6 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         operationChains = new ConcurrentHashMap<>();
         operationChains.put("accounts", new TableOCs<>(totalThreads));
         operationChains.put("bookEntries", new TableOCs<>(totalThreads));
-        cirularOCs.clear();
     }
 
     /**
@@ -66,7 +64,6 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         operationChains.put("accounts", new TableOCs<>(totalThreads));
         operationChains.put("bookEntries", new TableOCs<>(totalThreads));
         threadToContextMap = new HashMap<>();
-        cirularOCs = new ConcurrentLinkedDeque<>();
     }
 
     public TableOCs<SchedulingUnit> getTableOCs(String table_name) {
@@ -92,6 +89,10 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         return oc;
     }
 
+    public void addCircularOC(SchedulingUnit oc) {
+        threadToContextMap.get(getTaskId(oc.primaryKey, delta)).cirularOCs.add(oc);
+    }
+
     /**
      * for a circular: OC1 (op1 op2), OC2 (op3 op4)
      * OC1 (op1) -> OC2 (op3), OC2 (op4) -> OC1 (op2)
@@ -105,12 +106,9 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         SchedulingUnit prevOc;
         SchedulingUnit pOc;
-        for (SchedulingUnit oc : cirularOCs) {
-            if (oc.primaryKey.split("\\|").length > 1) {
-                System.out.println("= =");
-            }
+        for (SchedulingUnit oc : context.cirularOCs) {
             if (getTaskId(oc.primaryKey, delta) != context.thisThreadId) {
-                continue;
+                throw new RuntimeException("unexpected circular to resolve");
             }
             // cut the circular ocs to multiple ocs
             int partitionId = 0;
@@ -126,9 +124,19 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
                 if (oc.opToOcChildren.containsKey(op)) {
                     // update the parents set in children
                      for (OperationChain<ExecutionUnit> childOC : oc.opToOcChildren.get(op)) {
+                        if (childOC.getOperations().size() == 0) {
+                            continue;
+                        }
                         childOC.ocParents.remove(oc);
                         childOC.ocParentsCount.decrementAndGet();
-                        childOC.ocParents.put(pOc, op);
+                        for (ExecutionUnit childOp : childOC.opToOcParents.keySet()) {
+                            if (childOC.opToOcParents.get(childOp).contains(oc)) {
+                                childOC.opToOcParents.get(childOp).remove(oc); // remove and reset dependencies
+                                childOC.setupDependencyWithoutCheck(childOp, pOc, op);
+                            }
+                        }
+//                        assert childOC.ocParents.containsKey(pOc);
+//                        assert pOc.ocChildren.containsKey(childOC);
                     }
                 }
                 if (oc.circularOps.contains(op)) {
@@ -163,7 +171,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : ocs) {
                 context.totalOsToSchedule += oc.getOperations().size();
-//                context.operaitonsLeft.addAll(oc.getOperations());
+                context.operaitonsLeft.addAll(oc.getOperations());
                 if (((AbstractGSOperationChain) oc).context == null) {
                     if (enable_log) LOG.info("Circular OC that has been splitted: " + oc);
                     continue;

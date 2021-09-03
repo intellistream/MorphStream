@@ -81,33 +81,29 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
     protected void setupDependencyWithoutCheck(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
-        this.ocParents.putIfAbsent(parentOC, parentOp);
+        assert parentOC.getOperations().size() > 0;
+        if (this.ocParents.putIfAbsent(parentOC, parentOp) == null) {
+            this.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
+        }
         ConcurrentLinkedQueue<OperationChain<ExecutionUnit>> ocs = this.opToOcParents.computeIfAbsent(targetOp, s -> new ConcurrentLinkedQueue<>());
         ocs.add(parentOC);
-//        this.opToOcParents.putIfAbsent(targetOp, parentOC);
-        this.ocParentsCount.incrementAndGet();
         // add child for parent OC
         parentOC.ocChildren.putIfAbsent(this, targetOp);
         ocs = parentOC.opToOcChildren.computeIfAbsent(parentOp, s -> new ConcurrentLinkedQueue<>());
         ocs.add(this);
+        assert this.ocParents.containsKey(parentOC);
+        assert parentOC.ocChildren.containsKey(this);
+//        assert this.ocParents.size() == this.ocParentsCount.get();
     }
 
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
-        this.ocParents.putIfAbsent(parentOC, parentOp);
-        ConcurrentLinkedQueue<OperationChain<ExecutionUnit>> ocs = this.opToOcParents.computeIfAbsent(targetOp, s -> new ConcurrentLinkedQueue<>());
-        ocs.add(parentOC);
-//        this.opToOcParents.putIfAbsent(targetOp, parentOC);
-        this.ocParentsCount.incrementAndGet();
-        // add child for parent OC
-        parentOC.ocChildren.putIfAbsent(this, targetOp);
-        ocs = parentOC.opToOcChildren.computeIfAbsent(parentOp, s -> new ConcurrentLinkedQueue<>());
-        ocs.add(this);
+        setupDependencyWithoutCheck(targetOp, parentOC, parentOp);
 //        parentOC.opToOcChildren.putIfAbsent(parentOp, this);
         if (parentOC.ocParents.containsKey(this)) {
             ExecutionUnit circularOp = parentOC.ocParents.get(this);
             circularOps.add(circularOp); // add the previous op in this oc that caused circular
             circularOps.add(targetOp); // add current op in this oc that caused circular
-            tpg.cirularOCs.add(this);
+            tpg.addCircularOC(this);
         }
     }
 
@@ -179,8 +175,9 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         ocParentsCount.set(0);
         ocParents.clear();
         ocChildren.clear();
-        opToOcParents.clear();
         potentialChldrenInfo.clear();
+        opToOcParents.clear();
+        opToOcChildren.clear();
     }
 
     public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {

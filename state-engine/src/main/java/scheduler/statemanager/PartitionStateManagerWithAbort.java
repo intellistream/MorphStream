@@ -84,6 +84,9 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         if (!operationChain.needAbortHandling) {
             operationChain.isExecuted = true;
             for (GSOperationChainWithAbort child : operationChain.getChildren()) {
+                if (child.context == null) {
+                    continue;
+                }
                 ((GSTPGContextWithAbort) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
             }
             executableTaskListener.onOCFinalized(operationChain);

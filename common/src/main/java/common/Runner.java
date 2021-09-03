@@ -95,11 +95,11 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 1000;//checkpoint per thread.
+    public int checkpoint_interval = 50000;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 100_000;
+    public int totalEvents = 50_000;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
