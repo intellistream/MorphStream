@@ -110,6 +110,7 @@ public abstract class Runner implements IRunner {
         Properties properties = new Properties();
         InputStream is = Runner.class.getResourceAsStream(filename);
         properties.load(is);
+        assert is != null;
         is.close();
         return properties;
     }

@@ -107,7 +107,6 @@ public class SLCombo extends SPOUTCombo {
             myevents[storageIndex++] = event;
             if (storageIndex == num_events_per_thread)
                 break;
-
             index += tthread * combo_bid_size;
         }
 
@@ -120,6 +119,7 @@ public class SLCombo extends SPOUTCombo {
                 break;
             index += tthread * combo_bid_size;
         }
+        assert (storageIndex == num_events_per_thread);
     }
 
     @Override

@@ -25,7 +25,7 @@ public abstract class DataGenerator {
     }
 
     public void generateStream() {
-        for (int tupleNumber = 0; tupleNumber < nTuples; tupleNumber++) {
+        for (int tupleNumber = 0; tupleNumber < nTuples + dataConfig.getTotalThreads(); tupleNumber++) {//add a padding to avoid non-integral-divided problem.
             generateTuple();
         }
     }
