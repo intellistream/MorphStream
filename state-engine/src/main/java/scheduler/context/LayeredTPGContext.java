@@ -36,7 +36,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     }
 
     @Override
-    public SchedulingUnit createTask(String tableName, String pKey) {
+    public SchedulingUnit createTask(String tableName, String pKey, long bid) {
         throw new UnsupportedOperationException("Unsupported.");
     }
 

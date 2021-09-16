@@ -18,8 +18,8 @@ public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithA
     }
 
     @Override
-    public GSOperationChainWithAbort createTask(String tableName, String pKey) {
-        GSOperationChainWithAbort oc = new GSOperationChainWithAbort(tableName, pKey);
+    public GSOperationChainWithAbort createTask(String tableName, String pKey, long bid) {
+        GSOperationChainWithAbort oc = new GSOperationChainWithAbort(tableName, pKey, bid);
         oc.setContext(this);
         return oc;
     }

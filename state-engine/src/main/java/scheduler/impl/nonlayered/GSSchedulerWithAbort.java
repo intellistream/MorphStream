@@ -20,7 +20,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
     @Override
     public void INITIALIZE(GSTPGContextWithAbort context) {
-        tpg.circularResolve(context);
+        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
     }
@@ -82,8 +82,10 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
             default:
                 throw new RuntimeException("Unexpected operation");
         }
+        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+//        tpg.addOperationToChain(set_op);
+        tpg.cacheToSortedOperations(set_op);
         operationGraph.add(set_op);
-        set_op.setOC(tpg.setupOperationTDFD(set_op, request));
         return set_op;
     }
 

@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class OperationChain<ExecutionUnit extends AbstractOperation> implements Comparable<OperationChain<ExecutionUnit>> {
     public final String tableName;
     public final String primaryKey;
+    public final long bid;
     protected final MyList<ExecutionUnit> operations;
     protected final AtomicInteger ocParentsCount;
     // OperationChain -> ChildOp that depend on the parent OC in cur OC
@@ -22,25 +23,18 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
     public boolean isExecuted = false;
 
-
-    // Circular resolve required data structures
-    public final ConcurrentHashMap<ExecutionUnit,
-            ConcurrentLinkedQueue<OperationChain<ExecutionUnit>>> opToOcParents; // used for circular resolving
-    public final ConcurrentHashMap<ExecutionUnit,
-            ConcurrentLinkedQueue<OperationChain<ExecutionUnit>>> opToOcChildren; // used for circular resolving
     protected TaskPrecedenceGraph tpg;
-    Set<ExecutionUnit> circularOps = new HashSet<>(2);
 
+    private HashSet<OperationChain<ExecutionUnit>> scanedOCs = new HashSet<>();
 
-    public OperationChain(String tableName, String primaryKey) {
+    public OperationChain(String tableName, String primaryKey, long bid) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
+        this.bid = bid;
         this.operations = new MyList<>(tableName, primaryKey);
         this.ocParentsCount = new AtomicInteger(0);
         this.ocParents = new ConcurrentHashMap<>();
         this.ocChildren = new ConcurrentHashMap<>();
-        this.opToOcParents = new ConcurrentHashMap<>();
-        this.opToOcChildren = new ConcurrentHashMap<>();
     }
 
     public String getTableName() {
@@ -66,45 +60,81 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         }
     }
 
-    public void addParents(ExecutionUnit targetOp, Queue<OperationChain<ExecutionUnit>> parentOCs, OperationChain<ExecutionUnit> oldOC) {
-        for (OperationChain<ExecutionUnit> parentOC : parentOCs) {
-            parentOC.ocChildren.remove(oldOC);
-            Iterator<ExecutionUnit> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
-            while (iterator.hasNext()) {
-                ExecutionUnit parentOp = iterator.next();
-                if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
-                    setupDependencyWithoutCheck(targetOp, parentOC, parentOp);
-                    break;
+    protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
+        boolean isCircular;
+        // loop to find the circular
+        if (this.tableName.equals("bookEntries") && this.primaryKey.equals("1") && this.bid == 0) {
+            System.out.println("= =");
+        }
+        isCircular = isCircular(parentOC);
+        if (isCircular) { // if circular detected, try to solve circular
+            // TODO: create a new OC and put all ops after circular OP to the new OC.
+            OperationChain<ExecutionUnit> newOC = tpg.getNewOC(targetOp.table_name, targetOp.d_record.record_.GetPrimaryKey(), targetOp.bid);
+            List<ExecutionUnit> opsToMigrate = new ArrayList<>();
+            for (ExecutionUnit op : operations) {
+                if (op.bid >= targetOp.bid) {
+                    opsToMigrate.add(op);
+                }
+            }
+            opsToMigrate.forEach(operations::remove);
+            for (ExecutionUnit op : opsToMigrate) {
+                newOC.addOperation(op);
+            }
+            newOC.potentialChldrenInfo.addAll(this.potentialChldrenInfo); // move the potentialChildrenInfo to future
+            newOC.setupDependency(targetOp, this, this.getOperations().last());
+            newOC.setupDependency(targetOp, parentOC, parentOp);
+        } else {
+            assert parentOC.getOperations().size() > 0;
+            if (this.ocParents.putIfAbsent(parentOC, parentOp) == null) {
+                this.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
+            }
+            // add child for parent OC
+            parentOC.ocChildren.putIfAbsent(this, targetOp);
+            assert this.ocParents.containsKey(parentOC);
+            assert parentOC.ocChildren.containsKey(this);
+            assert this.ocParents.size() == this.ocParentsCount.get();
+        }
+    }
+
+    public boolean isCircular(OperationChain<ExecutionUnit> parentOC) {
+        boolean isCircular;
+        if (parentOC.ocParents.containsKey(this)) {
+            isCircular = true;
+        } else {
+            scanedOCs.clear();
+            Collection<OperationChain<ExecutionUnit>> selectedOCs = parentOC.ocParents.keySet();
+            isCircular = scanParentOCs(selectedOCs);
+        }
+        return isCircular;
+    }
+
+    public boolean scanParentOCs(Collection<OperationChain<ExecutionUnit>> selectedOCs) {
+        for (OperationChain<ExecutionUnit> oc : selectedOCs) {
+            if (!oc.ocParents.isEmpty() && !scanedOCs.contains(oc)) {
+                scanedOCs.add(oc);
+                if (oc.ocParents.containsKey(this)) {
+                    return true;
+                }
+                if (scanParentOCs(oc.ocParents.keySet())) {
+                    return true;
                 }
             }
         }
+        return false;
     }
 
-    protected void setupDependencyWithoutCheck(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
-        assert parentOC.getOperations().size() > 0;
-        if (this.ocParents.putIfAbsent(parentOC, parentOp) == null) {
-            this.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
+    public boolean checkConnectivity(Collection<OperationChain<ExecutionUnit>> selectedOCs) {
+        if (selectedOCs.isEmpty()) {
+            return true;
         }
-        ConcurrentLinkedQueue<OperationChain<ExecutionUnit>> ocs = this.opToOcParents.computeIfAbsent(targetOp, s -> new ConcurrentLinkedQueue<>());
-        ocs.add(parentOC);
-        // add child for parent OC
-        parentOC.ocChildren.putIfAbsent(this, targetOp);
-        ocs = parentOC.opToOcChildren.computeIfAbsent(parentOp, s -> new ConcurrentLinkedQueue<>());
-        ocs.add(this);
-        assert this.ocParents.containsKey(parentOC);
-        assert parentOC.ocChildren.containsKey(this);
-        assert this.ocParents.size() == this.ocParentsCount.get();
-    }
-
-    protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
-        setupDependencyWithoutCheck(targetOp, parentOC, parentOp);
-//        parentOC.opToOcChildren.putIfAbsent(parentOp, this);
-        if (parentOC.ocParents.containsKey(this)) {
-            ExecutionUnit circularOp = parentOC.ocParents.get(this);
-            circularOps.add(circularOp); // add the previous op in this oc that caused circular
-            circularOps.add(targetOp); // add current op in this oc that caused circular
-            tpg.addCircularOC(this);
+        for (OperationChain<ExecutionUnit> oc : selectedOCs) {
+            if (oc.ocParents.isEmpty()) {
+                return true;
+            } else {
+                return checkConnectivity(oc.ocParents.keySet());
+            }
         }
+        return false;
     }
 
     public void checkPotentialFDChildrenOnNewArrival(ExecutionUnit newOp) {
@@ -126,7 +156,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 
     @Override
     public String toString() {
-        return "{" + tableName + " " + primaryKey + "}";//": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
+        return "{" + tableName + " " + primaryKey + " " + bid + "}";//": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
     }
 
     @Override
@@ -140,7 +170,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableName, primaryKey);
+        return Objects.hash(tableName, primaryKey, bid);
     }
 
     @Override
@@ -165,19 +195,6 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 
     public void setupTPG(TaskPrecedenceGraph tpg) {
         this.tpg = tpg;
-    }
-
-    /**
-     * clear all information in the oc if the OC is splitted due to the circular.
-     */
-    public void clear() {
-        operations.clear();
-        ocParentsCount.set(0);
-        ocParents.clear();
-        ocChildren.clear();
-        potentialChldrenInfo.clear();
-        opToOcParents.clear();
-        opToOcChildren.clear();
     }
 
     public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {

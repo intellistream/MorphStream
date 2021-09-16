@@ -24,8 +24,8 @@ public class GSTPGContext
     }
 
     @Override
-    public GSOperationChain createTask(String tableName, String pKey) {
-        GSOperationChain oc = new GSOperationChain(tableName, pKey);
+    public GSOperationChain createTask(String tableName, String pKey, long bid) {
+        GSOperationChain oc = new GSOperationChain(tableName, pKey, bid);
         oc.setContext(this);
         return oc;
     }

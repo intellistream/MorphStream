@@ -14,7 +14,7 @@ import transaction.function.Function;
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
  */
-public class DFSOperation extends AbstractOperation implements Comparable<DFSOperation> {
+public class DFSOperation extends AbstractOperation {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
 
     // operation id under a transaction.
@@ -68,33 +68,7 @@ public class DFSOperation extends AbstractOperation implements Comparable<DFSOpe
 
     /****************************End*************************************/
 
-
-    /**
-     * TODO: make it better.
-     * It has an assumption that no duplicate keys for the same BID. --> This helps a lot!
-     *
-     * @param operation
-     * @return
-     */
-    @Override
-    public int compareTo(DFSOperation operation) {
-        if (this.bid == (operation.bid)) {
-            if (this.d_record.getID() - operation.d_record.getID() == 0) {
-                return this.getTxn_op_id() - operation.getTxn_op_id();
-            }
-            return this.d_record.getID() - operation.d_record.getID();
-        } else
-            return Long.compare(this.bid, operation.bid);
-    }
-
-    @Override
-    public String toString() {
-        return bid + "|" + txn_op_id;
-    }
-
     public int getTxn_op_id() {
         return txn_op_id;
     }
-
-
 }

@@ -8,7 +8,7 @@ import scheduler.struct.layered.LayeredOperationChain;
  */
 public class BFSOperationChain extends LayeredOperationChain<BFSOperation> {
 
-    public BFSOperationChain(String tableName, String primaryKey) {
-        super(tableName, primaryKey);
+    public BFSOperationChain(String tableName, String primaryKey, long bid) {
+        super(tableName, primaryKey, bid);
     }
 }

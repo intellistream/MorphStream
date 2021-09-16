@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
  */
-public class BFSOperationWithGSInfo extends AbstractOperation implements Comparable<BFSOperationWithGSInfo> {
+public class BFSOperationWithGSInfo extends AbstractOperation {
 
     public final SchedulerContext context;
 
@@ -73,20 +73,5 @@ public class BFSOperationWithGSInfo extends AbstractOperation implements Compara
 //        ld_descendant_operations = new ConcurrentLinkedQueue<>();
         // temporal dependencies
         AtomicReference<MetaTypes.OperationStateType> operationState = new AtomicReference<>(MetaTypes.OperationStateType.BLOCKED);
-    }
-
-    /**
-     * TODO: make it better.
-     * It has an assumption that no duplicate keys for the same BID. --> This helps a lot!
-     *
-     * @param operation
-     * @return
-     */
-    @Override
-    public int compareTo(BFSOperationWithGSInfo operation) {
-        if (this.bid == (operation.bid)) {
-            return this.d_record.getID() - operation.d_record.getID();
-        } else
-            return Long.compare(this.bid, operation.bid);
     }
 }

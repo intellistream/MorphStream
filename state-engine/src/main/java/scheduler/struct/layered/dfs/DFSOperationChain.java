@@ -12,8 +12,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class DFSOperationChain extends LayeredOperationChain<DFSOperation> {
 
-    public DFSOperationChain(String tableName, String primaryKey) {
-        super(tableName, primaryKey);
+    public DFSOperationChain(String tableName, String primaryKey, long bid) {
+        super(tableName, primaryKey, bid);
     }
 
     @Override

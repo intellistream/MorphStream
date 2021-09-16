@@ -10,25 +10,14 @@ import scheduler.struct.OperationChain;
 public abstract class AbstractGSOperationChain<ExecutionUnit extends GSOperation> extends OperationChain<ExecutionUnit> {
     public AbstractGSTPGContext context = null;
 
-    public AbstractGSOperationChain(String tableName, String primaryKey) {
-        super(tableName, primaryKey);
+    public AbstractGSOperationChain(String tableName, String primaryKey, long bid) {
+        super(tableName, primaryKey, bid);
     }
-
-    public void addOperation(ExecutionUnit op) {
-        operations.add(op);
-    }
-
 
     public void setContext(AbstractGSTPGContext context) {
         if (this.context == null) {
             this.context = context;
         }
-    }
-
-    @Override
-    public void clear() {
-        super.clear();
-        context = null;
     }
 
     public void updateDependency() {

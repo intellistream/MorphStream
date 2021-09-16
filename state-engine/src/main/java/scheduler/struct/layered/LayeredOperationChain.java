@@ -14,8 +14,8 @@ public abstract class LayeredOperationChain<ExecutionUnit extends AbstractOperat
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
 
-    public LayeredOperationChain(String tableName, String primaryKey) {
-        super(tableName, primaryKey);
+    public LayeredOperationChain(String tableName, String primaryKey, long bid) {
+        super(tableName, primaryKey, bid);
     }
 
     @Override

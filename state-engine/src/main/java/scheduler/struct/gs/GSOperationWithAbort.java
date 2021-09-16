@@ -83,7 +83,7 @@ public class GSOperationWithAbort extends GSOperation {
     }
 
     public void addDescendant(GSOperationWithAbort descendant) {
-        oc.addDescendant(this, descendant);
+//        oc.addDescendant(this, descendant);
     }
 
     public GSOperationWithAbort getHeader() {

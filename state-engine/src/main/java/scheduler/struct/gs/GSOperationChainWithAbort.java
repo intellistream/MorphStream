@@ -17,13 +17,14 @@ public class GSOperationChainWithAbort extends AbstractGSOperationChain<GSOperat
     public Queue<GSOperationWithAbort> failedOperations = new ArrayDeque<>();
 
 
-    public GSOperationChainWithAbort(String tableName, String primaryKey) {
-        super(tableName, primaryKey);
+    public GSOperationChainWithAbort(String tableName, String primaryKey, long bid) {
+        super(tableName, primaryKey, bid);
         this.headerLdDescendants = new ConcurrentSkipListMap<>();
     }
 
     public void addOperation(GSOperationWithAbort op) {
         operations.add(op);
+        op.setOC(this); // set OC for op to enable txn abort.
     }
 
     @Override

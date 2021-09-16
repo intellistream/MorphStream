@@ -74,6 +74,7 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
 
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
+        // TODO: read values and check its timestamp, if the timestamp is not correct, busy wait until the targeting timestamp is received.
         if (preValues == null) {
             if (enable_log)
                 log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
