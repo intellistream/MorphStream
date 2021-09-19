@@ -51,10 +51,11 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
-            execute(context, next, mark_ID);
-            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-            NOTIFY(next, context);
-            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+            if (execute(context, next, mark_ID)) { // only when executed, the notification will start.
+                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+                NOTIFY(next, context);
+                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+            }
         }
      }
 
@@ -65,18 +66,19 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
 
     /**
      * Used by GSScheduler.
-     *
-     * @param context
+     *  @param context
      * @param operationChain
      * @param mark_ID
+     * @return
      */
-    public void execute(Context context, SchedulingUnit operationChain, long mark_ID) {
+    public boolean execute(Context context, SchedulingUnit operationChain, long mark_ID) {
         MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
         for (ExecutionUnit operation : operation_chain_list) {
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
+        return true;
     }
 
     /**
@@ -88,7 +90,10 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
     protected SchedulingUnit next(Context context) {
         SchedulingUnit operationChain = context.OCwithChildren.pollLast();
         if (operationChain == null) {
-            return context.IsolatedOC.pollLast();
+            operationChain = context.IsolatedOC.pollLast();
+            if (operationChain == null) {
+                operationChain = context.busyWaitQueue.poll();
+            }
         }
         return operationChain;
     }

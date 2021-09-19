@@ -1,7 +1,6 @@
 package scheduler.impl;
 
 
-import content.T_StreamContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -18,7 +17,6 @@ import transaction.function.INC;
 import utils.SOURCE_CONTROL;
 
 import java.util.List;
-import java.util.Map;
 
 import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.*;
@@ -72,33 +70,46 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
      */
     protected void Transfer_Fun(ExecutionUnit operation, long previous_mark_ID, boolean clean) {
 
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
-        SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
-        // TODO: read values and check its timestamp, if the timestamp is not correct, busy wait until the targeting timestamp is received.
-        if (preValues == null) {
-            if (enable_log)
-                log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
-            if (enable_log)
-                log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
-            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
-                if (enable_log)
-                    log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
-            }
-            if (enable_log)
-                log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
-        }
-        if (preValues1 == null) {
-            if (enable_log)
-                log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
-            if (enable_log)
-                log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
-            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
-                if (enable_log)
-                    log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
-            }
-            if (enable_log)
-                log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
-        }
+        SchemaRecord preValues = operation.fdParentOps[0] == null ?
+                operation.condition_records[0].content_.readPreValues(operation.bid) :
+                operation.condition_records[0].content_.readPreValues(operation.bid, operation.fdParentOps[0].bid);
+//        while (preValues == null) { // busy wait
+//            preValues = operation.fdParentOps[0] == null ?
+//                    operation.condition_records[0].content_.readPreValues(operation.bid) :
+//                    operation.condition_records[0].content_.readPreValues(operation.bid, operation.fdParentOps[0].bid);
+//        }
+        SchemaRecord preValues1 = operation.fdParentOps[1] == null ?
+                operation.condition_records[1].content_.readPreValues(operation.bid) :
+                operation.condition_records[1].content_.readPreValues(operation.bid, operation.fdParentOps[1].bid);
+//        while (preValues1 == null) { // busy wait
+//            preValues1 = operation.fdParentOps[1] == null ?
+//                    operation.condition_records[1].content_.readPreValues(operation.bid) :
+//                    operation.condition_records[1].content_.readPreValues(operation.bid, operation.fdParentOps[1].bid);
+//        }
+//        if (preValues == null) {
+//            if (enable_log)
+//                log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
+//            if (enable_log)
+//                log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
+//            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
+//                if (enable_log)
+//                    log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+//            }
+//            if (enable_log)
+//                log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
+//        }
+//        if (preValues1 == null) {
+//            if (enable_log)
+//                log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
+//            if (enable_log)
+//                log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
+//            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
+//                if (enable_log)
+//                    log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+//            }
+//            if (enable_log)
+//                log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
+//        }
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
         final long sourceAssetValue = preValues1.getValues().get(1).getLong();
 
@@ -165,15 +176,20 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
             }
             if (operation.success[0] == success) {
                 operation.isFailed = true;
+            } else {
+                operation.isExecuted = true;
             }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
             success = operation.success[0];
             Transfer_Fun(operation, mark_ID, clean);
             if (operation.success[0] == success) {
                 operation.isFailed = true;
+            } else {
+                operation.isExecuted = true;
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
             Depo_Fun(operation, mark_ID, clean);
+            operation.isExecuted = true;
         } else {
             throw new UnsupportedOperationException();
         }

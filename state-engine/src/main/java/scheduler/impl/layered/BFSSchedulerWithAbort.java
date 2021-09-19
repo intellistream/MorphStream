@@ -106,7 +106,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
                 break;
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op, request);
+        tpg.setupOperationTDFD(set_op);
     }
 
     protected void checkTransactionAbort(BFSOperation operation) {

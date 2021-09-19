@@ -54,8 +54,9 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         ocSignalQueue.add(new OnRollbackAndRedoSignal<>(operationChain));
     }
 
-    public void handleStateTransitions() {
+    public boolean handleStateTransitions() {
         OperationChainSignal<GSOperationWithAbort, GSOperationChainWithAbort> ocSignal = ocSignalQueue.poll();
+        boolean existsStateTransitions = ocSignal != null;
         while (ocSignal != null) {
             GSOperationChainWithAbort operationChain = ocSignal.getTargetOperationChain();
             if (ocSignal instanceof OnRootSignal) {
@@ -73,6 +74,7 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
             }
             ocSignal = ocSignalQueue.poll();
         }
+        return existsStateTransitions;
     }
 
     private void ocRootStartTransition(GSOperationChainWithAbort operationChain) {

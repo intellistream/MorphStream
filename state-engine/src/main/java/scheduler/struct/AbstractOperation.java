@@ -9,6 +9,7 @@ import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -35,8 +36,12 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
     public String[] condition_source = null;
     public Condition condition;
     public int[] success;
+    public boolean isExecuted = false; // whether the operation is failed, this is used to detect transaction abort
     public boolean isFailed = false; // whether the operation is failed, this is used to detect transaction abort
     public boolean aborted = false; // whether the operation is aborted, this is used to mark the operation as aborted to avoid re-execute
+
+    public volatile AbstractOperation[] fdParentOps; // parent ops that accessing conditioned records and has smaller
+    public HashMap<TableRecord, Integer> condition_source_to_index;
 
     public AbstractOperation(Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
                              TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid) {
@@ -51,6 +56,13 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
         this.s_record = s_record;
         this.d_record = d_record;
         this.bid = bid;
+        if (condition_records != null) {
+            this.fdParentOps = new AbstractOperation[condition_records.length];
+            this.condition_source_to_index = new HashMap<>(condition_records.length);
+            for (int i = 0; i < condition_records.length; i++) {
+                condition_source_to_index.put(condition_records[i], i);
+            }
+        }
     }
 
     @Override
@@ -82,5 +94,14 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
     public void setConditionSources(String[] condition_sourceTable, String[] condition_source) {
         this.condition_sourceTable = condition_sourceTable;
         this.condition_source = condition_source;
+    }
+
+
+    public void addFDParent(TableRecord pKey, AbstractOperation parent) {
+        if (!condition_source_to_index.containsKey(pKey)) {
+            System.out.println("= =");
+        }
+        assert condition_source_to_index.containsKey(pKey);
+        fdParentOps[condition_source_to_index.get(pKey)] = parent;
     }
 }

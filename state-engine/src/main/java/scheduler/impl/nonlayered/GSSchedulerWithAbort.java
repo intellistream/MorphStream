@@ -8,6 +8,7 @@ import scheduler.struct.gs.GSOperationWithAbort;
 import transaction.impl.ordered.MyList;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAbort, GSOperationWithAbort, GSOperationChainWithAbort> {
@@ -36,7 +37,27 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
      */
     @Override
     public void EXPLORE(GSTPGContextWithAbort context) {
-        context.partitionStateManager.handleStateTransitions();
+        boolean existsStateTransition = context.partitionStateManager.handleStateTransitions();
+        if (!existsStateTransition) { // circular exists in the constrcuted TPG
+            Collection<GSTPGContextWithAbort> contexts = tpg.getContexts();
+            if (isBlocked(contexts)) {
+                GSOperationChainWithAbort oc = tpg.forceExecuteBlockedOC(context);
+                if (oc != null) {
+                    executableTaskListener.onOCExecutable(oc);
+                }
+            }
+        }
+    }
+
+    private boolean isBlocked(Collection<GSTPGContextWithAbort> contexts) {
+        boolean isBlocked = true;
+        for (GSTPGContextWithAbort context : contexts) {
+            if (!context.IsolatedOC.isEmpty() || !context.OCwithChildren.isEmpty() || !context.partitionStateManager.ocSignalQueue.isEmpty()) {
+                isBlocked = false;
+                break;
+            }
+        }
+        return isBlocked;
     }
 
     @Override
@@ -96,19 +117,37 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
     /**
      * Used by GSScheduler.
-     *
-     * @param context
+     *  @param context
      * @param operationChain
      * @param mark_ID
+     * @return
      */
-    public void execute(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
+    public boolean execute(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
         MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
         for (GSOperationWithAbort operation : operation_chain_list) {
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+            if (operation.fdParentOps != null) {
+                if (operation.fdParentOps[0] != null) {
+                    if (!operation.fdParentOps[0].isExecuted) {
+                        // blocked and busy wait
+                        context.busyWaitQueue.add(operationChain);
+                        return false; // did not completed
+                    }
+                }
+                if (operation.fdParentOps[1] != null) {
+                    if (!operation.fdParentOps[1].isExecuted) {
+                        context.busyWaitQueue.add(operationChain);
+                        return false; // did not completed
+                    }
+                }
+            }
+            if (operation.isExecuted) continue;
+
             execute(operation, mark_ID, false);
             checkTransactionAbort(operation, operationChain);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
+        return true;
     }
 
     protected void checkTransactionAbort(GSOperationWithAbort operation, GSOperationChainWithAbort operationChain) {

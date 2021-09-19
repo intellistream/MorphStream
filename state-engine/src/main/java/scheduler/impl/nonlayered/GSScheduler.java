@@ -3,6 +3,7 @@ package scheduler.impl.nonlayered;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContext;
+import scheduler.struct.OperationChain;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
 
@@ -35,7 +36,13 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
      */
     @Override
     public void EXPLORE(GSTPGContext context) {
-        context.partitionStateManager.handleStateTransitions();
+        boolean existsStateTransition = context.partitionStateManager.handleStateTransitions();
+        if (!existsStateTransition && !context.finished()
+                && context.IsolatedOC.isEmpty() && context.OCwithChildren.isEmpty()) { // circular exists in the constrcuted TPG
+            GSOperationChain oc = tpg.forceExecuteBlockedOC(context);
+            assert oc != null;
+            executableTaskListener.onOCExecutable(oc);
+        }
     }
 
     @Override

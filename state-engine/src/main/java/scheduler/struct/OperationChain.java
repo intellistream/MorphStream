@@ -54,6 +54,8 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         while (iterator.hasNext()) {
             ExecutionUnit parentOp = iterator.next();
             if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
+                // setup dependencies on op level first.
+                targetOp.addFDParent(parentOp.d_record, parentOp);
                 setupDependency(targetOp, parentOC, parentOp);
                 break;
             }
@@ -63,9 +65,6 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
         boolean isCircular;
         // loop to find the circular
-        if (this.tableName.equals("bookEntries") && this.primaryKey.equals("1") && this.bid == 0) {
-            System.out.println("= =");
-        }
         isCircular = isCircular(parentOC);
         if (isCircular) { // if circular detected, try to solve circular
             // TODO: create a new OC and put all ops after circular OP to the new OC.

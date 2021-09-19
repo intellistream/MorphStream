@@ -7,6 +7,7 @@ import java.util.*;
 
 
 public abstract class SchedulerContext<SchedulingUnit> {
+    public final ArrayDeque<SchedulingUnit> busyWaitQueue;
     public int thisThreadId;
     public ArrayDeque<Request> requests;
     public int scheduledOPs;//current number of operations processed per thread.
@@ -17,6 +18,7 @@ public abstract class SchedulerContext<SchedulingUnit> {
     protected SchedulerContext(int thisThreadId) {
         this.thisThreadId = thisThreadId;
         requests = new ArrayDeque<>();
+        busyWaitQueue = new ArrayDeque<>(); // this is used to store those ocs that does not finished
     }
 
     public abstract boolean finished();

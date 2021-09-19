@@ -71,6 +71,6 @@ public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
                 break;
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op, request);
+        tpg.setupOperationTDFD(set_op);
     }
 }

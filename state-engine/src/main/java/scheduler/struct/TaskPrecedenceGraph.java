@@ -3,7 +3,6 @@ package scheduler.struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import scheduler.Request;
 import scheduler.context.AbstractGSTPGContext;
 import scheduler.context.LayeredTPGContext;
 import scheduler.context.SchedulerContext;
@@ -39,7 +38,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
     public final Map<Integer, Context> threadToContextMap;
     private final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
-    private ConcurrentHashMap<Integer, ConcurrentSkipListSet<ExecutionUnit>> sortedOperations;//shared data structure.
+    private final ConcurrentHashMap<Integer, ConcurrentSkipListSet<ExecutionUnit>> sortedOperations;//shared data structure.
     private ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
     CyclicBarrier barrier;
 
@@ -79,12 +78,11 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
      * set up functional dependencies among operations
      *
      * @param operation
-     * @param request
      */
-    public SchedulingUnit setupOperationTDFD(ExecutionUnit operation, Request request) {
+    public SchedulingUnit setupOperationTDFD(ExecutionUnit operation) {
         // TD
         SchedulingUnit oc = addOperationToChain(operation);
-        // FD
+        // FD TODO: update for other algorithms
 //        if (request.condition_source != null)
 //            checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
         return oc;
@@ -112,14 +110,6 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
             List<SchedulingUnit> ocs = new ArrayList<>();
             for (Deque<SchedulingUnit> ocsPerKey : tableOCs.threadOCsMap.get(threadId).holder_v1.values()) {
-//                for (SchedulingUnit oc : ocs) {
-//                    if (oc.scanParentOCs(oc.ocParents.keySet())) {
-//                        System.out.println("= =");
-//                    }
-//                    if (!oc.checkConnectivity(oc.ocParents.keySet())) {
-//                        System.out.println("0 0");
-//                    }
-//                }
                 ocs.addAll(ocsPerKey);
             }
             submit(context, ocs);
@@ -225,7 +215,7 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
 //            if (!OCFromConditionSource.getOperations().isEmpty() && conditionedOps.first().bid < op.bid) {
 //                // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
 //                LOG.info("adding dependency: " + curOC + " : " + OCFromConditionSource);
-//                curOC.addParent(op, OCFromConditionSource); // record dependency
+//                curOC.addFDParent(op, OCFromConditionSource); // record dependency
 //            }
 //        }
 //    }
@@ -248,5 +238,24 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         }
         SchedulingUnit ocToCheckPotential = getOC(table_name, key); // the oc can be either the splitted oc or the original oc to check potentialFD
         ocToCheckPotential.checkPotentialFDChildrenOnNewArrival(op);
+    }
+
+    public SchedulingUnit forceExecuteBlockedOC(Context context) {
+        int threadId = context.thisThreadId;
+        Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
+        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
+            for (Deque<SchedulingUnit> ocsPerKey : tableOCs.threadOCsMap.get(threadId).holder_v1.values()) {
+                for (SchedulingUnit oc : ocsPerKey) {
+                    if (!oc.isExecuted && !context.busyWaitQueue.contains(oc)) {
+                        return oc;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public Collection<Context> getContexts() {
+        return threadToContextMap.values();
     }
 }

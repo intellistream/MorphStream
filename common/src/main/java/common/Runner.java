@@ -29,7 +29,7 @@ public abstract class Runner implements IRunner {
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
 //    public int NUM_ITEMS = 5_000_000;//
-    public int NUM_ITEMS = 500;//
+    public int NUM_ITEMS = 300;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -96,11 +96,11 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 200;//checkpoint per thread.
+    public int checkpoint_interval = 100;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 1000;
+    public int totalEvents = 500;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";

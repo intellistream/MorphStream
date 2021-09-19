@@ -29,19 +29,6 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
         context.currentLevelIndex = 0;
     }
 
-    @Override
-    public void EXPLORE(DFSLayeredTPGContext context) {
-        DFSOperationChain oc = Next(context);
-        while (oc == null) {
-            if (context.finished())
-                break;
-            ProcessedToNextLevel(context);
-            oc = Next(context);
-        }
-        while (oc != null && oc.hasParents()) ;
-        DISTRIBUTE(oc, context);
-    }
-
     /**
      * notify is handled by state manager of each thread
      *
@@ -84,6 +71,6 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
                 break;
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op, request);
+        tpg.setupOperationTDFD(set_op);
     }
 }
