@@ -46,7 +46,11 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
 //        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+        System.out.println(threadId + " first explore tpg");
+
         INITIALIZE(context);
+        System.out.println(threadId + " first explore tpg complete, start to process");
+
 //        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 
         do {
@@ -70,22 +74,18 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
      */
     protected void Transfer_Fun(ExecutionUnit operation, long previous_mark_ID, boolean clean) {
 
-        SchemaRecord preValues = operation.fdParentOps[0] == null ?
-                operation.condition_records[0].content_.readPreValues(operation.bid) :
-                operation.condition_records[0].content_.readPreValues(operation.bid, operation.fdParentOps[0].bid);
-//        while (preValues == null) { // busy wait
-//            preValues = operation.fdParentOps[0] == null ?
-//                    operation.condition_records[0].content_.readPreValues(operation.bid) :
-//                    operation.condition_records[0].content_.readPreValues(operation.bid, operation.fdParentOps[0].bid);
-//        }
-        SchemaRecord preValues1 = operation.fdParentOps[1] == null ?
-                operation.condition_records[1].content_.readPreValues(operation.bid) :
-                operation.condition_records[1].content_.readPreValues(operation.bid, operation.fdParentOps[1].bid);
-//        while (preValues1 == null) { // busy wait
-//            preValues1 = operation.fdParentOps[1] == null ?
-//                    operation.condition_records[1].content_.readPreValues(operation.bid) :
-//                    operation.condition_records[1].content_.readPreValues(operation.bid, operation.fdParentOps[1].bid);
-//        }
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+        SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
+
+//        SchemaRecord preValues = operation.fdParentOps[0] == null ?
+//                operation.condition_records[0].content_.readPreValues(operation.bid) :
+//                operation.condition_records[0].content_.readPreValues(operation.bid, operation.fdParentOps[0].bid);
+//        assert preValues != null;
+//        SchemaRecord preValues1 = operation.fdParentOps[1] == null ?
+//                operation.condition_records[1].content_.readPreValues(operation.bid) :
+//                operation.condition_records[1].content_.readPreValues(operation.bid, operation.fdParentOps[1].bid);
+//        assert preValues1 != null;
+
 //        if (preValues == null) {
 //            if (enable_log)
 //                log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
@@ -221,7 +221,7 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
     public void RESET(Context context) {
         SOURCE_CONTROL.getInstance().oneThreadCompleted();
         context.reset();
-        tpg.reset();
+        tpg.reset(context);
     }
 
     @Override

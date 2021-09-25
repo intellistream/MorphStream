@@ -1,9 +1,12 @@
 package scheduler.context;
 
+import com.sun.xml.internal.ws.policy.EffectiveAlternativeSelector;
 import scheduler.Request;
+import scheduler.impl.Scheduler;
 import scheduler.struct.AbstractOperation;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 public abstract class SchedulerContext<SchedulingUnit> {
@@ -12,7 +15,8 @@ public abstract class SchedulerContext<SchedulingUnit> {
     public ArrayDeque<Request> requests;
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.
-    public Set<AbstractOperation> operaitonsLeft = new HashSet<>();//total number of operations to process per thread.
+//    public Set<AbstractOperation> operaitonsLeft = new HashSet<>();//total number of operations to process per thread.
+    public ConcurrentLinkedQueue<SchedulingUnit> operationChainsLeft = new ConcurrentLinkedQueue<>(); // total number of operationchains in the thread.
 
 
     protected SchedulerContext(int thisThreadId) {

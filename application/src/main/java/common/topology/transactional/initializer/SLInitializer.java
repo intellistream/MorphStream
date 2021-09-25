@@ -3,6 +3,8 @@ package common.topology.transactional.initializer;
 import benchmark.DataHolder;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGenerator;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
 import common.collections.Configuration;
@@ -59,6 +61,9 @@ public class SLInitializer extends TableInitilizer {
 
         String generatorType = config.getString("generator");
         switch (generatorType) {
+            case "OCGenerator":
+                createLayeredOCGenerator(config);
+                break;
             case "TPGGenerator":
                 createTPGGenerator(config);
                 break;
@@ -75,6 +80,15 @@ public class SLInitializer extends TableInitilizer {
 
         configurePath(dataConfig);
         dataGenerator = new TPGDataGenerator(dataConfig);
+    }
+
+    protected void createLayeredOCGenerator(Configuration config) {
+
+        LayeredOCDataGeneratorConfig dataConfig = new LayeredOCDataGeneratorConfig();
+        dataConfig.initialize(config);
+
+        configurePath(dataConfig);
+        dataGenerator = new LayeredOCDataGenerator(dataConfig);
     }
 
     /**

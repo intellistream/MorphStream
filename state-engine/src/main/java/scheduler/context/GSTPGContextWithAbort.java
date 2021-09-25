@@ -24,6 +24,8 @@ public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithA
     public GSOperationChainWithAbort createTask(String tableName, String pKey, long bid) {
         GSOperationChainWithAbort oc = new GSOperationChainWithAbort(tableName, pKey, bid);
         oc.setContext(this);
+//        if (!operationChainsLeft.contains(oc))
+//            operationChainsLeft.add(oc);
         return oc;
     }
 

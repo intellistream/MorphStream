@@ -29,16 +29,19 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
 
     @Override
     public void onOcRootStart(GSOperationChainWithAbort operationChain) {
+        System.out.println("enqueue root");
         ocSignalQueue.add(new OnRootSignal<>(operationChain));
     }
 
     @Override
     public void onOcExecuted(GSOperationChainWithAbort operationChain) {
+        System.out.println("enqueue executed");
         ocSignalQueue.add(new OnExecutedSignal<>(operationChain));
     }
 
     @Override
     public void onOcParentExecuted(GSOperationChainWithAbort operationChain, DependencyType dependencyType) {
+        System.out.println("enqueue parent executed");
         ocSignalQueue.add(new OnParentExecutedSignal<>(operationChain, dependencyType));
     }
 
@@ -58,6 +61,7 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         OperationChainSignal<GSOperationWithAbort, GSOperationChainWithAbort> ocSignal = ocSignalQueue.poll();
         boolean existsStateTransitions = ocSignal != null;
         while (ocSignal != null) {
+            System.out.println(ocSignal);
             GSOperationChainWithAbort operationChain = ocSignal.getTargetOperationChain();
             if (ocSignal instanceof OnRootSignal) {
                 ocRootStartTransition(operationChain);
@@ -86,9 +90,6 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         if (!operationChain.needAbortHandling) {
             operationChain.isExecuted = true;
             for (GSOperationChainWithAbort child : operationChain.getChildren()) {
-                if (child.context == null) {
-                    continue;
-                }
                 ((GSTPGContextWithAbort) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
             }
             executableTaskListener.onOCFinalized(operationChain);
@@ -128,7 +129,7 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
 
     private void ocParentExecutedTransition(GSOperationChainWithAbort operationChain) {
         operationChain.updateDependency();
-        if (!operationChain.hasParents()) {
+        if (!operationChain.hasParents() && !operationChain.isExecuted) {
             executableTaskListener.onOCExecutable(operationChain);
         }
     }

@@ -39,6 +39,7 @@ public class TPGDataGenerator extends DataGenerator {
     private final int State_Access_Skewness; // ratio of state access, following zipf distribution
     private final int Transaction_Length; // transaction length, 4 or 8 or longer
     private final int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
+    private final int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
     // control the number of txns overlap with each other.
     private final ArrayList<Integer> generatedAcc = new ArrayList<>();
     private final ArrayList<Integer> generatedAst = new ArrayList<>();
@@ -46,7 +47,7 @@ public class TPGDataGenerator extends DataGenerator {
     private final boolean isUnique = false;
     private final FastZipfGenerator accountZipf;
     private final FastZipfGenerator assetZipf;
-    private final Random transactionTypeDecider = new Random(0); // the transaction type decider
+    private final Random random = new Random(0); // the transaction type decider
     HashMap<Long, Integer> nGeneratedAccountIds = new HashMap<>();
     HashMap<Long, Integer> nGeneratedAssetIds = new HashMap<>();
     private ArrayList<SLEvent> events;
@@ -57,15 +58,16 @@ public class TPGDataGenerator extends DataGenerator {
 
         // TODO: temporarily hard coded, will update later
         Ratio_Of_Deposit = 25;//0-100 (%)
-        State_Access_Skewness = 50;
+        State_Access_Skewness = 0;
         Transaction_Length = 4;
         Ratio_of_Transaction_Aborts = 0;
+        Ratio_of_Overlapped_Keys = 30;
 
         int nKeyState = dataConfig.getnKeyStates();
         events = new ArrayList<>(nTuples);
         // zipf state access generator
-        accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
-        assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+        accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
+        assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
     }
 
     public static void main(String[] args) {
@@ -75,8 +77,8 @@ public class TPGDataGenerator extends DataGenerator {
 
     protected void generateTuple() {
         SLEvent event;
-        int next = transactionTypeDecider.nextInt(100);
-        if (next < Ratio_Of_Deposit) {
+        int next = random.nextInt(100);
+        if (next < Ratio_of_Overlapped_Keys) {
             event = randomDepositEvent();
         } else {
             event = randomTransferEvent();
@@ -89,44 +91,21 @@ public class TPGDataGenerator extends DataGenerator {
         int srcAcc, dstAcc, srcAst, dstAst;
 
         if (!isUnique) {
-            srcAcc = accountZipf.next();
-            dstAcc = accountZipf.next();
-            while (srcAcc == dstAcc) {
-                srcAcc = accountZipf.next();
-                dstAcc = accountZipf.next();
-            }
-
-            srcAst = assetZipf.next();
-            dstAst = assetZipf.next();
-            while (srcAst == dstAst) {
-                srcAst = assetZipf.next();
-                dstAst = assetZipf.next();
-            }
-        } else {
-            srcAcc = accountZipf.next();
-            while (generatedAcc.contains(srcAcc)) {
-                srcAcc = accountZipf.next();
-            }
-            generatedAcc.add(srcAcc);
-
-            dstAcc = accountZipf.next();
-            while (generatedAcc.contains(dstAcc)) {
-                dstAcc = accountZipf.next();
-            }
-            generatedAcc.add(dstAcc);
-
-            srcAst = assetZipf.next();
-            while (generatedAst.contains(srcAst)) {
-                srcAst = assetZipf.next();
-            }
-            generatedAst.add(srcAst);
-
-            dstAst = assetZipf.next();
-            while (generatedAst.contains(dstAst)) {
-                dstAst = assetZipf.next();
-            }
-            generatedAst.add(dstAst);
+            int[] accKeys = getKeys(accountZipf, generatedAcc);
+            srcAcc = accKeys[0];
+            dstAcc = accKeys[1];
+            int[] astKeys = getKeys(assetZipf, generatedAst);
+            srcAst = astKeys[0];
+            dstAst = astKeys[1];
+        } else { // generate unique keys for unique txn processing
+            srcAcc = getUniqueKey(accountZipf, generatedAcc);
+            dstAcc = getUniqueKey(accountZipf, generatedAcc);
+            srcAst = getUniqueKey(assetZipf, generatedAst);
+            dstAst = getUniqueKey(assetZipf, generatedAst);
         }
+
+        assert srcAcc != dstAcc;
+        assert srcAst != dstAst;
 
         // just for stats record
         nGeneratedAccountIds.put((long) srcAcc, nGeneratedAccountIds.getOrDefault((long) srcAcc, 0) + 1);
@@ -141,9 +120,59 @@ public class TPGDataGenerator extends DataGenerator {
         return t;
     }
 
+    private int[] getKeys(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+        int[] keys = new int[2];
+        keys[0] = getKey(zipfGenerator, generatedKeys);
+        keys[1] = getKey(zipfGenerator, generatedKeys);
+
+        while (keys[0] == keys[1]) {
+            keys[0] = getKey(zipfGenerator, generatedKeys);
+            keys[1] = getKey(zipfGenerator, generatedKeys);
+        }
+
+        generatedKeys.add(keys[0]);
+        generatedKeys.add(keys[1]);
+        return keys;
+    }
+
+    private int getKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+        int srcKey;
+        srcKey = zipfGenerator.next();
+        int next = random.nextInt(100);
+        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
+            if (generatedKeys.isEmpty()) {
+                srcKey = zipfGenerator.next();
+            } else {
+                srcKey = generatedKeys.get(zipfGenerator.next() % generatedKeys.size());
+            }
+        } else {
+            while (generatedKeys.contains(srcKey)) {
+                srcKey = zipfGenerator.next();
+            }
+        }
+        return srcKey;
+    }
+
+    private int getUniqueKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+        int key;
+        key = zipfGenerator.next();
+        while (generatedKeys.contains(key)) {
+            key = zipfGenerator.next();
+        }
+        generatedKeys.add(key);
+        return key;
+    }
+
     private SLEvent randomDepositEvent() {
-        int acc = accountZipf.next();
-        int ast = assetZipf.next();
+        int acc;
+        int ast;
+        if(!isUnique) {
+            acc = getKey(accountZipf, generatedAcc);
+            ast = getKey(assetZipf, generatedAst);
+        } else {
+            acc = getUniqueKey(accountZipf, generatedAcc);
+            ast = getUniqueKey(assetZipf, generatedAst);
+        }
 
         // just for stats record
         nGeneratedAccountIds.put((long) acc, nGeneratedAccountIds.getOrDefault((long) acc, 0) + 1);

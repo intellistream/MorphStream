@@ -20,7 +20,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
     @Override
     public void INITIALIZE(GSTPGContext context) {
-        tpg.constructTPG(context);
+//        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
     }
@@ -37,12 +37,12 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
     @Override
     public void EXPLORE(GSTPGContext context) {
         boolean existsStateTransition = context.partitionStateManager.handleStateTransitions();
-        if (!existsStateTransition && !context.finished()
-                && context.IsolatedOC.isEmpty() && context.OCwithChildren.isEmpty()) { // circular exists in the constrcuted TPG
-            GSOperationChain oc = tpg.forceExecuteBlockedOC(context);
-            assert oc != null;
-            executableTaskListener.onOCExecutable(oc);
-        }
+//        if (!existsStateTransition && !context.finished()
+//                && context.IsolatedOC.isEmpty() && context.OCwithChildren.isEmpty()) { // circular exists in the constrcuted TPG
+//            GSOperationChain oc = tpg.forceExecuteBlockedOC(context);
+//            assert oc != null;
+//            executableTaskListener.onOCExecutable(oc);
+//        }
     }
 
     @Override
@@ -83,7 +83,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
             default:
                 throw new RuntimeException("Unexpected operation");
         }
-        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+//        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
         operationGraph.add(set_op);
         tpg.addOperationToChain(set_op);
     }

@@ -6,6 +6,7 @@ import scheduler.context.GSTPGContextWithAbort;
 import scheduler.struct.gs.GSOperationChainWithAbort;
 import scheduler.struct.gs.GSOperationWithAbort;
 import transaction.impl.ordered.MyList;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,7 +14,7 @@ import java.util.List;
 
 public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAbort, GSOperationWithAbort, GSOperationChainWithAbort> {
 
-    public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
+    public final ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
     public GSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -21,9 +22,10 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
     @Override
     public void INITIALIZE(GSTPGContextWithAbort context) {
-        tpg.constructTPG(context);
+//        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 
     /**
@@ -39,22 +41,39 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     public void EXPLORE(GSTPGContextWithAbort context) {
         boolean existsStateTransition = context.partitionStateManager.handleStateTransitions();
         if (!existsStateTransition) { // circular exists in the constrcuted TPG
+            if (!context.IsolatedOC.isEmpty() || !context.OCwithChildren.isEmpty()) {
+                return;
+            }
             Collection<GSTPGContextWithAbort> contexts = tpg.getContexts();
-            if (isBlocked(contexts)) {
-                GSOperationChainWithAbort oc = tpg.forceExecuteBlockedOC(context);
-                if (oc != null) {
-                    executableTaskListener.onOCExecutable(oc);
+            if (isBlocked(contexts) && context.busyWaitQueue.isEmpty()) {
+                System.out.println("blocked and schedule all oc by busy wait");
+//                GSOperationChainWithAbort oc = tpg.forceExecuteBlockedOC(context);
+//                GSOperationChainWithAbort oc = forceExecuteBlockedOC(context);
+//                if (oc != null) {
+//                    executableTaskListener.onOCExecutable(oc);
+//                }
+                for (GSOperationChainWithAbort oc : context.operationChainsLeft) {
+                    if (!oc.isExecuted) {
+//                        executableTaskListener.onOCExecutable(oc);
+                        context.busyWaitQueue.add(oc);
+                    }
                 }
             }
         }
     }
 
+//    public GSOperationChainWithAbort forceExecuteBlockedOC(GSTPGContextWithAbort context) {
+//        return context.operationChainsLeft.poll();
+//    }
+
     private boolean isBlocked(Collection<GSTPGContextWithAbort> contexts) {
         boolean isBlocked = true;
         for (GSTPGContextWithAbort context : contexts) {
-            if (!context.IsolatedOC.isEmpty() || !context.OCwithChildren.isEmpty() || !context.partitionStateManager.ocSignalQueue.isEmpty()) {
-                isBlocked = false;
-                break;
+            if (!context.finished()) {
+                if (!context.IsolatedOC.isEmpty() || !context.OCwithChildren.isEmpty() || !context.partitionStateManager.ocSignalQueue.isEmpty()) {
+                    isBlocked = false;
+                    break;
+                }
             }
         }
         return isBlocked;
@@ -103,10 +122,10 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
             default:
                 throw new RuntimeException("Unexpected operation");
         }
-        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
-//        tpg.addOperationToChain(set_op);
-        tpg.cacheToSortedOperations(set_op);
         operationGraph.add(set_op);
+//        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+//        tpg.cacheToSortedOperations(set_op);
+        set_op.setOC(tpg.setupOperationTDFD(set_op, request));
         return set_op;
     }
 
@@ -122,32 +141,58 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
      * @param mark_ID
      * @return
      */
+    @Override
     public boolean execute(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
         MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
         for (GSOperationWithAbort operation : operation_chain_list) {
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-            if (operation.fdParentOps != null) {
-                if (operation.fdParentOps[0] != null) {
-                    if (!operation.fdParentOps[0].isExecuted) {
-                        // blocked and busy wait
-                        context.busyWaitQueue.add(operationChain);
-                        return false; // did not completed
-                    }
-                }
-                if (operation.fdParentOps[1] != null) {
-                    if (!operation.fdParentOps[1].isExecuted) {
-                        context.busyWaitQueue.add(operationChain);
-                        return false; // did not completed
-                    }
-                }
-            }
-            if (operation.isExecuted) continue;
-
             execute(operation, mark_ID, false);
             checkTransactionAbort(operation, operationChain);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
         return true;
+    }
+
+    /**
+     * Used by GSScheduler.
+     *  @param context
+     * @param operationChain
+     * @param mark_ID
+     * @return
+     */
+    @Override
+    public boolean executeWithBusyWait(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
+        MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
+        for (GSOperationWithAbort operation : operation_chain_list) {
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+            if (operation.isExecuted) continue;
+            execute(operation, mark_ID, false);
+            checkTransactionAbort(operation, operationChain);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+        }
+        return true;
+    }
+
+    private boolean isConflicted(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, GSOperationWithAbort operation) {
+        if (operation.fdParentOps != null) {
+            if (operation.fdParentOps[0] != null) {
+                if (!operation.fdParentOps[0].isExecuted) {
+                    // blocked and busy wait
+                    assert !context.busyWaitQueue.contains(operationChain);
+                    context.busyWaitQueue.add(operationChain);
+                    return true;
+                }
+            }
+            if (operation.fdParentOps[1] != null) {
+                if (!operation.fdParentOps[1].isExecuted) {
+                    assert !context.busyWaitQueue.contains(operationChain);
+                    context.busyWaitQueue.add(operationChain);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     protected void checkTransactionAbort(GSOperationWithAbort operation, GSOperationChainWithAbort operationChain) {
@@ -167,7 +212,9 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
         public void onOCFinalized(GSOperationChainWithAbort operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
-            operationChain.context.operaitonsLeft.removeAll(operationChain.getOperations());
+//            System.out.println(operationChain.context + " - " + operationChain.context.scheduledOPs);
+//            operationChain.context.operaitonsLeft.removeAll(operationChain.getOperations());
+//            operationChain.context.operationChainsLeft.remove(operationChain);
         }
 
         public void onOCRollbacked(GSOperationChainWithAbort operationChain) {

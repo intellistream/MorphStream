@@ -28,8 +28,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-//    public int NUM_ITEMS = 5_000_000;//
-    public int NUM_ITEMS = 300;//
+    public int NUM_ITEMS = 5_000_000;//
+//    public int NUM_ITEMS = 500;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -96,11 +96,14 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 100;//checkpoint per thread.
+    public int checkpoint_interval = 20000;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
+//    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 500;
+    public int totalEvents = 100000;
+    @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
+    public Integer numberOfDLevels = 8;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -128,6 +131,8 @@ public abstract class Runner implements IRunner {
         config.put("generator", generator);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
+
+        config.put("numberOfDLevels", numberOfDLevels);
 
         if (CCOption == 4)//S-Store enabled.
             config.put("partition", true);

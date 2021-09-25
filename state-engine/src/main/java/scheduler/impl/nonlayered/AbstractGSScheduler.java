@@ -2,9 +2,11 @@ package scheduler.impl.nonlayered;
 
 import profiler.MeasureTools;
 import scheduler.context.AbstractGSTPGContext;
+import scheduler.context.GSTPGContextWithAbort;
 import scheduler.impl.Scheduler;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import scheduler.struct.gs.GSOperation;
+import scheduler.struct.gs.GSOperationChainWithAbort;
 import transaction.impl.ordered.MyList;
 
 public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends GSOperation, SchedulingUnit extends AbstractGSOperationChain<ExecutionUnit>>
@@ -51,10 +53,25 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
-            if (execute(context, next, mark_ID)) { // only when executed, the notification will start.
-                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+            if (next.getOperations().isEmpty()) {
+                System.out.println(" = =");
+            }
+            assert !next.getOperations().isEmpty();
+            execute(context, next, mark_ID); // only when executed, the notification will start.
+            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+            if (next.hasChildren()) {
                 NOTIFY(next, context);
-                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+            } else {
+                next.context.scheduledOPs += next.getOperations().size();
+            }
+            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+        } else {
+            next = nextFromBusyWaitQueue(context);
+            if (next != null) {
+                assert !next.getOperations().isEmpty();
+                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+                    next.context.scheduledOPs += next.getOperations().size();
+                }
             }
         }
      }
@@ -81,6 +98,10 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
         return true;
     }
 
+    public boolean executeWithBusyWait(Context context, SchedulingUnit operationChain, long mark_ID) {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Try to get task from local queue.
      *
@@ -91,11 +112,12 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
         SchedulingUnit operationChain = context.OCwithChildren.pollLast();
         if (operationChain == null) {
             operationChain = context.IsolatedOC.pollLast();
-            if (operationChain == null) {
-                operationChain = context.busyWaitQueue.poll();
-            }
         }
         return operationChain;
+    }
+
+    protected SchedulingUnit nextFromBusyWaitQueue(Context context) {
+        return context.busyWaitQueue.poll();
     }
 
     /**

@@ -98,9 +98,6 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
 
 
     public void addFDParent(TableRecord pKey, AbstractOperation parent) {
-        if (!condition_source_to_index.containsKey(pKey)) {
-            System.out.println("= =");
-        }
         assert condition_source_to_index.containsKey(pKey);
         fdParentOps[condition_source_to_index.get(pKey)] = parent;
     }

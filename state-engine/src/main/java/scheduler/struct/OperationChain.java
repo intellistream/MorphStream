@@ -25,7 +25,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 
     protected TaskPrecedenceGraph tpg;
 
-    private HashSet<OperationChain<ExecutionUnit>> scanedOCs = new HashSet<>();
+    private final HashSet<OperationChain<ExecutionUnit>> scanedOCs = new HashSet<>();
 
     public OperationChain(String tableName, String primaryKey, long bid) {
         this.tableName = tableName;
@@ -63,6 +63,19 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
+        if (circularDetection(targetOp, parentOC, parentOp)) return;
+        assert parentOC.getOperations().size() > 0;
+        if (this.ocParents.putIfAbsent(parentOC, parentOp) == null) {
+            this.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
+        }
+        // add child for parent OC
+        parentOC.ocChildren.putIfAbsent(this, targetOp);
+        assert this.ocParents.containsKey(parentOC);
+        assert parentOC.ocChildren.containsKey(this);
+        assert this.ocParents.size() == this.ocParentsCount.get();
+    }
+
+    private boolean circularDetection(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
         boolean isCircular;
         // loop to find the circular
         isCircular = isCircular(parentOC);
@@ -82,17 +95,9 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
             newOC.potentialChldrenInfo.addAll(this.potentialChldrenInfo); // move the potentialChildrenInfo to future
             newOC.setupDependency(targetOp, this, this.getOperations().last());
             newOC.setupDependency(targetOp, parentOC, parentOp);
-        } else {
-            assert parentOC.getOperations().size() > 0;
-            if (this.ocParents.putIfAbsent(parentOC, parentOp) == null) {
-                this.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
-            }
-            // add child for parent OC
-            parentOC.ocChildren.putIfAbsent(this, targetOp);
-            assert this.ocParents.containsKey(parentOC);
-            assert parentOC.ocChildren.containsKey(this);
-            assert this.ocParents.size() == this.ocParentsCount.get();
+            return true;
         }
+        return false;
     }
 
     public boolean isCircular(OperationChain<ExecutionUnit> parentOC) {
@@ -164,7 +169,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         if (o == null || getClass() != o.getClass()) return false;
         OperationChain<ExecutionUnit> that = (OperationChain<ExecutionUnit>) o;
         return tableName.equals(that.tableName) &&
-                primaryKey.equals(that.primaryKey);
+                primaryKey.equals(that.primaryKey) && bid == that.bid;
     }
 
     @Override
