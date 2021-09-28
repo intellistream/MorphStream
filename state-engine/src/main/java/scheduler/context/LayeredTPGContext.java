@@ -1,12 +1,10 @@
 package scheduler.context;
 
 import scheduler.struct.AbstractOperation;
+import scheduler.struct.OperationChain;
 import scheduler.struct.layered.LayeredOperationChain;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
 
 public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends LayeredOperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
 
@@ -47,7 +45,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     @Override
     public boolean finished() {
 //        return scheduledOPs == totalOsToSchedule && !needAbortHandling; // not sure whether we need to check this condition.
-        return scheduledOPs == totalOsToSchedule;
+        return scheduledOPs == totalOsToSchedule && busyWaitQueue.isEmpty();
     }
 
 
@@ -61,6 +59,24 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     public void buildBucketPerThread(Collection<SchedulingUnit> ocs) {
         int localMaxDLevel = 0;
         int dependencyLevel;
+        Set<OperationChain<ExecutionUnit>> scannedOC = new HashSet<>();
+        // detect circular and actively resolve it.
+        for (SchedulingUnit oc : ocs) {
+            if (oc.ocChildren.isEmpty()) {
+                scannedOC.clear();
+                // scan from leaves and check whether circular are detected.
+                oc.scanParentsForRelaxing(scannedOC);
+            }
+//            if (oc.scanParentOCs(oc.ocParents.keySet())) {
+//                // remove all parents, update children set of its parents
+//                for (OperationChain<ExecutionUnit> ocToUpdate : oc.ocParents.keySet()) {
+//                    ocToUpdate.ocChildren.remove(oc);
+//                }
+//                oc.ocParentsCount.set(0);
+//                oc.ocParents.clear();
+//            }
+        }
+
         for (SchedulingUnit oc : ocs) {
             oc.updateDependencyLevel();
             dependencyLevel = oc.getDependencyLevel();

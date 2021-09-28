@@ -5,6 +5,10 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContextWithAbort;
+import scheduler.context.GSTPGContextWithAbort;
+import scheduler.context.SchedulerContext;
+import scheduler.struct.gs.GSOperationChainWithAbort;
+import scheduler.struct.gs.GSOperationWithAbort;
 import scheduler.struct.layered.bfs.BFSOperation;
 import scheduler.struct.layered.bfs.BFSOperationChain;
 import transaction.impl.ordered.MyList;
@@ -76,6 +80,27 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         }
     }
 
+    /**
+     * Used by GSScheduler.
+     *  @param context
+     * @param operationChain
+     * @param mark_ID
+     * @return
+     */
+    @Override
+    public boolean executeWithBusyWait(BFSLayeredTPGContextWithAbort context, BFSOperationChain operationChain, long mark_ID) {
+        MyList<BFSOperation> operation_chain_list = operationChain.getOperations();
+        for (BFSOperation operation : operation_chain_list) {
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+            if (operation.isExecuted) continue;
+            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+            execute(operation, mark_ID, false);
+            checkTransactionAbort(operation);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+        }
+        return true;
+    }
+
     @Override
     protected void NOTIFY(BFSOperationChain operationChain, BFSLayeredTPGContextWithAbort context) {
     }
@@ -93,7 +118,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
 
     private void constructOp(List<BFSOperation> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
-        BFSOperation set_op = null;
+        BFSOperation set_op;
         switch (request.accessType) {
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
@@ -104,9 +129,13 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
                 set_op = new BFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
+            default:
+                throw new UnsupportedOperationException();
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op);
+//        tpg.setupOperationTDFD(set_op);
+        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+        tpg.cacheToSortedOperations(set_op);
     }
 
     protected void checkTransactionAbort(BFSOperation operation) {

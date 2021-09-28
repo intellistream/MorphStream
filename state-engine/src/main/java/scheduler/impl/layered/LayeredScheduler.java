@@ -20,6 +20,7 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
     @Override
     public void INITIALIZE(Context context) {
         int threadId = context.thisThreadId;
+        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
@@ -35,6 +36,11 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
             MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
             NOTIFY(next, context);
             MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+        } else {
+            next = nextFromBusyWaitQueue(context);
+            if (next != null) {
+                executeWithBusyWait(context, next, mark_ID);
+            }
         }
     }
 

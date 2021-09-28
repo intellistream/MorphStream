@@ -61,7 +61,7 @@ public class TPGDataGenerator extends DataGenerator {
         State_Access_Skewness = 0;
         Transaction_Length = 4;
         Ratio_of_Transaction_Aborts = 0;
-        Ratio_of_Overlapped_Keys = 30;
+        Ratio_of_Overlapped_Keys = 10;
 
         int nKeyState = dataConfig.getnKeyStates();
         events = new ArrayList<>(nTuples);

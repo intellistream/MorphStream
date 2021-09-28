@@ -5,10 +5,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
+import scheduler.context.GSTPGContextWithAbort;
 import scheduler.context.SchedulerContext;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.OperationChain;
 import scheduler.struct.TaskPrecedenceGraph;
+import scheduler.struct.gs.GSOperationChainWithAbort;
+import scheduler.struct.gs.GSOperationWithAbort;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -195,6 +198,14 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
         }
     }
 
+    public boolean executeWithBusyWait(Context context, SchedulingUnit operationChain, long mark_ID) {
+        throw new UnsupportedOperationException();
+    }
+
+    protected SchedulingUnit nextFromBusyWaitQueue(Context context) {
+        return context.busyWaitQueue.poll();
+    }
+
     protected abstract void DISTRIBUTE(SchedulingUnit task, Context context);
 
     protected abstract void NOTIFY(SchedulingUnit task, Context context);
@@ -242,5 +253,26 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
         // we need to find the target context this thread is mapped to.
         int threadId = getTaskId(d_record.record_.GetPrimaryKey(), delta);
         return tpg.threadToContextMap.get(threadId);
+    }
+
+    protected boolean isConflicted(Context context, SchedulingUnit operationChain, ExecutionUnit operation) {
+        if (operation.fdParentOps != null) {
+            if (operation.fdParentOps[0] != null) {
+                if (!operation.fdParentOps[0].isExecuted) {
+                    // blocked and busy wait
+                    assert !context.busyWaitQueue.contains(operationChain);
+                    context.busyWaitQueue.add(operationChain);
+                    return true;
+                }
+            }
+            if (operation.fdParentOps[1] != null) {
+                if (!operation.fdParentOps[1].isExecuted) {
+                    assert !context.busyWaitQueue.contains(operationChain);
+                    context.busyWaitQueue.add(operationChain);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

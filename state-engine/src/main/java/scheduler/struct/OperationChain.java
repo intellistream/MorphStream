@@ -1,11 +1,14 @@
 package scheduler.struct;
 
+import org.apache.hadoop.mapred.Operation;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 import transaction.impl.ordered.MyList;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static scheduler.impl.Scheduler.getTaskId;
 
 /**
  * We still call it OperationChain in TPG but with different representation
@@ -16,7 +19,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     public final String primaryKey;
     public final long bid;
     protected final MyList<ExecutionUnit> operations;
-    protected final AtomicInteger ocParentsCount;
+    public final AtomicInteger ocParentsCount;
     // OperationChain -> ChildOp that depend on the parent OC in cur OC
     public final ConcurrentHashMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocParents;
     public final ConcurrentHashMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocChildren;
@@ -63,7 +66,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
     protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
-        if (circularDetection(targetOp, parentOC, parentOp)) return;
+//        if (circularDetection(targetOp, parentOC, parentOp)) return;
         assert parentOC.getOperations().size() > 0;
         if (this.ocParents.putIfAbsent(parentOC, parentOp) == null) {
             this.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
@@ -101,15 +104,32 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
     public boolean isCircular(OperationChain<ExecutionUnit> parentOC) {
-        boolean isCircular;
+        boolean isCircular = false;
         if (parentOC.ocParents.containsKey(this)) {
             isCircular = true;
-        } else {
-            scanedOCs.clear();
-            Collection<OperationChain<ExecutionUnit>> selectedOCs = parentOC.ocParents.keySet();
-            isCircular = scanParentOCs(selectedOCs);
         }
+//        else {
+//            scanedOCs.clear();
+//            Collection<OperationChain<ExecutionUnit>> selectedOCs = parentOC.ocParents.keySet();
+//            isCircular = scanParentOCs(selectedOCs);
+//        }
         return isCircular;
+    }
+
+    public void scanParentsForRelaxing(Set<OperationChain<ExecutionUnit>> scannedOCs) {
+        for (OperationChain<ExecutionUnit> oc : ocParents.keySet()) {
+            if (!scannedOCs.contains(oc)) { // if the oc is not traversed before, no circular.
+                scannedOCs.add(oc);
+                oc.scanParentsForRelaxing(scannedOCs);
+            } else {
+                // remove all parents, update children set of its parents
+                for (OperationChain<ExecutionUnit> ocToUpdate : oc.ocParents.keySet()) {
+                    ocToUpdate.ocChildren.remove(oc);
+                }
+                oc.ocParentsCount.set(0);
+                oc.ocParents.clear();
+            }
+        }
     }
 
     public boolean scanParentOCs(Collection<OperationChain<ExecutionUnit>> selectedOCs) {

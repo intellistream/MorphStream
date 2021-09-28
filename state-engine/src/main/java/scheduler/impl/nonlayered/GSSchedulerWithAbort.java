@@ -22,7 +22,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
     @Override
     public void INITIALIZE(GSTPGContextWithAbort context) {
-//        tpg.constructTPG(context);
+        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
@@ -80,11 +80,6 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     }
 
     @Override
-    public boolean FINISHED(GSTPGContextWithAbort context) {
-        return context.finished();
-    }
-
-    @Override
     public void TxnSubmitFinished(GSTPGContextWithAbort context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
@@ -123,9 +118,9 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
                 throw new RuntimeException("Unexpected operation");
         }
         operationGraph.add(set_op);
-//        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
-//        tpg.cacheToSortedOperations(set_op);
-        set_op.setOC(tpg.setupOperationTDFD(set_op, request));
+        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+        tpg.cacheToSortedOperations(set_op);
+//        set_op.setOC(tpg.setupOperationTDFD(set_op, request));
         return set_op;
     }
 
@@ -165,34 +160,13 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
         for (GSOperationWithAbort operation : operation_chain_list) {
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-            if (isConflicted(context, operationChain, operation)) return false; // did not completed
             if (operation.isExecuted) continue;
+            if (isConflicted(context, operationChain, operation)) return false; // did not completed
             execute(operation, mark_ID, false);
             checkTransactionAbort(operation, operationChain);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
         return true;
-    }
-
-    private boolean isConflicted(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, GSOperationWithAbort operation) {
-        if (operation.fdParentOps != null) {
-            if (operation.fdParentOps[0] != null) {
-                if (!operation.fdParentOps[0].isExecuted) {
-                    // blocked and busy wait
-                    assert !context.busyWaitQueue.contains(operationChain);
-                    context.busyWaitQueue.add(operationChain);
-                    return true;
-                }
-            }
-            if (operation.fdParentOps[1] != null) {
-                if (!operation.fdParentOps[1].isExecuted) {
-                    assert !context.busyWaitQueue.contains(operationChain);
-                    context.busyWaitQueue.add(operationChain);
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     protected void checkTransactionAbort(GSOperationWithAbort operation, GSOperationChainWithAbort operationChain) {
