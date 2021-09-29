@@ -260,14 +260,12 @@ public abstract class Scheduler<Context extends SchedulerContext<SchedulingUnit>
             if (operation.fdParentOps[0] != null) {
                 if (!operation.fdParentOps[0].isExecuted) {
                     // blocked and busy wait
-                    assert !context.busyWaitQueue.contains(operationChain);
                     context.busyWaitQueue.add(operationChain);
                     return true;
                 }
             }
             if (operation.fdParentOps[1] != null) {
                 if (!operation.fdParentOps[1].isExecuted) {
-                    assert !context.busyWaitQueue.contains(operationChain);
                     context.busyWaitQueue.add(operationChain);
                     return true;
                 }

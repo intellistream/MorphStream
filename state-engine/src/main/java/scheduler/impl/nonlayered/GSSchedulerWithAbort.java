@@ -40,26 +40,26 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     @Override
     public void EXPLORE(GSTPGContextWithAbort context) {
         boolean existsStateTransition = context.partitionStateManager.handleStateTransitions();
-        if (!existsStateTransition) { // circular exists in the constrcuted TPG
-            if (!context.IsolatedOC.isEmpty() || !context.OCwithChildren.isEmpty()) {
-                return;
-            }
-            Collection<GSTPGContextWithAbort> contexts = tpg.getContexts();
-            if (isBlocked(contexts) && context.busyWaitQueue.isEmpty()) {
-                System.out.println("blocked and schedule all oc by busy wait");
-//                GSOperationChainWithAbort oc = tpg.forceExecuteBlockedOC(context);
-//                GSOperationChainWithAbort oc = forceExecuteBlockedOC(context);
-//                if (oc != null) {
-//                    executableTaskListener.onOCExecutable(oc);
+//        if (!existsStateTransition) { // circular exists in the constrcuted TPG
+//            if (!context.IsolatedOC.isEmpty() || !context.OCwithChildren.isEmpty()) {
+//                return;
+//            }
+//            Collection<GSTPGContextWithAbort> contexts = tpg.getContexts();
+//            if (isBlocked(contexts) && context.busyWaitQueue.isEmpty()) {
+//                System.out.println("blocked and schedule all oc by busy wait");
+////                GSOperationChainWithAbort oc = tpg.forceExecuteBlockedOC(context);
+////                GSOperationChainWithAbort oc = forceExecuteBlockedOC(context);
+////                if (oc != null) {
+////                    executableTaskListener.onOCExecutable(oc);
+////                }
+//                for (GSOperationChainWithAbort oc : context.operationChainsLeft) {
+//                    if (!oc.isExecuted) {
+////                        executableTaskListener.onOCExecutable(oc);
+//                        context.busyWaitQueue.add(oc);
+//                    }
 //                }
-                for (GSOperationChainWithAbort oc : context.operationChainsLeft) {
-                    if (!oc.isExecuted) {
-//                        executableTaskListener.onOCExecutable(oc);
-                        context.busyWaitQueue.add(oc);
-                    }
-                }
-            }
-        }
+//            }
+//        }
     }
 
 //    public GSOperationChainWithAbort forceExecuteBlockedOC(GSTPGContextWithAbort context) {
@@ -159,12 +159,11 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     public boolean executeWithBusyWait(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
         MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
         for (GSOperationWithAbort operation : operation_chain_list) {
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             if (operation.isExecuted) continue;
             if (isConflicted(context, operationChain, operation)) return false; // did not completed
+            System.out.println("executing: " + operation);
             execute(operation, mark_ID, false);
             checkTransactionAbort(operation, operationChain);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
         return true;
     }

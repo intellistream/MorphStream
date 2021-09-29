@@ -1,14 +1,11 @@
 package scheduler.struct;
 
-import org.apache.hadoop.mapred.Operation;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 import transaction.impl.ordered.MyList;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static scheduler.impl.Scheduler.getTaskId;
 
 /**
  * We still call it OperationChain in TPG but with different representation
@@ -116,12 +113,13 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         return isCircular;
     }
 
-    public void scanParentsForRelaxing(Set<OperationChain<ExecutionUnit>> scannedOCs) {
+    public void checkToRelaxDependencies(ArrayDeque<OperationChain<ExecutionUnit>> scannedOCs) {
         for (OperationChain<ExecutionUnit> oc : ocParents.keySet()) {
             if (!scannedOCs.contains(oc)) { // if the oc is not traversed before, no circular.
                 scannedOCs.add(oc);
-                oc.scanParentsForRelaxing(scannedOCs);
+                oc.checkToRelaxDependencies(scannedOCs);
             } else {
+                System.out.println("relaxing: " + this);
                 // remove all parents, update children set of its parents
                 for (OperationChain<ExecutionUnit> ocToUpdate : oc.ocParents.keySet()) {
                     ocToUpdate.ocChildren.remove(oc);

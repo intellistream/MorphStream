@@ -32,10 +32,12 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         SchedulingUnit next = next(context);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
         if (next != null) {
-            execute(context, next.getOperations(), mark_ID);
-            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-            NOTIFY(next, context);
-            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+//            execute(context, next.getOperations(), mark_ID);
+            if (executeWithBusyWait(context, next, mark_ID)) {
+                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+                NOTIFY(next, context);
+                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+            }
         } else {
             next = nextFromBusyWaitQueue(context);
             if (next != null) {

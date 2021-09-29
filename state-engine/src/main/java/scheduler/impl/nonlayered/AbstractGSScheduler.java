@@ -55,15 +55,16 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
 
         if (next != null) {
 //            assert !next.getOperations().isEmpty();
-            execute(context, next, mark_ID); // only when executed, the notification will start.
-            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-            if (next.hasChildren()) {
-                NOTIFY(next, context);
-            } else {
-                next.isExecuted = true;
-                next.context.scheduledOPs += next.getOperations().size();
+            if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+                if (next.hasChildren()) {
+                    NOTIFY(next, context);
+                } else {
+                    next.isExecuted = true;
+                    next.context.scheduledOPs += next.getOperations().size();
+                }
+                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
             }
-            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         } else {
             next = nextFromBusyWaitQueue(context);
             if (next != null) {

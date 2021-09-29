@@ -13,7 +13,6 @@ import utils.SOURCE_CONTROL;
 import utils.lib.ConcurrentHashMap;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CyclicBarrier;
 
@@ -145,14 +144,17 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
     }
 
     private void submit(Context context, Collection<SchedulingUnit> ocs) {
+        ArrayDeque<OperationChain<ExecutionUnit>> scannedOC = new ArrayDeque<>();
         if (context instanceof LayeredTPGContext) {
             for (SchedulingUnit oc : ocs) {
+                resolveCircular(scannedOC, oc);
                 context.totalOsToSchedule += oc.getOperations().size();
             }
             ((LayeredTPGContext) context).buildBucketPerThread(ocs);
             if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : ocs) {
+                resolveCircular(scannedOC, oc);
                 context.totalOsToSchedule += oc.getOperations().size();
 //                context.operaitonsLeft.addAll(oc.getOperations());
                 if (!((AbstractGSOperationChain) oc).context.equals(context)) {
@@ -164,6 +166,14 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
             }
         } else {
             throw new UnsupportedOperationException("Unsupported.");
+        }
+    }
+
+    private void resolveCircular(ArrayDeque<OperationChain<ExecutionUnit>> scannedOC, SchedulingUnit oc) {
+        if (oc.ocChildren.isEmpty()) {
+            scannedOC.clear();
+            // scan from leaves and check whether circular are detected.
+            oc.checkToRelaxDependencies(scannedOC);
         }
     }
 
