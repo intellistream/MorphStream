@@ -1,18 +1,21 @@
 package transaction;
 
-import scheduler.impl.Scheduler;
+import scheduler.impl.IScheduler;
+import scheduler.impl.OCScheduler;
 import scheduler.impl.layered.BFSScheduler;
 import scheduler.impl.layered.BFSSchedulerWithAbort;
 import scheduler.impl.layered.DFSScheduler;
 import scheduler.impl.layered.DFSSchedulerWithAbort;
 import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
+import scheduler.oplevel.context.OPGSTPGContext;
+import scheduler.oplevel.impl.tpg.OPGSScheduler;
 
 /**
  * Every thread has its own TxnManager.
  */
 public abstract class TxnManager implements ITxnManager {
-    protected static Scheduler scheduler;
+    protected static IScheduler scheduler;
 
     public static void CreateScheduler(String schedulerType, int threadCount, int numberOfStates) {
 
@@ -34,6 +37,9 @@ public abstract class TxnManager implements ITxnManager {
                 break;
             case "GSA":
                 scheduler = new GSSchedulerWithAbort(threadCount, numberOfStates);
+                break;
+            case "OPGS":
+                scheduler = new OPGSScheduler<>(threadCount, numberOfStates);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);

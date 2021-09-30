@@ -3,7 +3,7 @@ package scheduler.struct.layered.dfs;
 import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scheduler.context.SchedulerContext;
+import scheduler.context.OCSchedulerContext;
 import scheduler.struct.AbstractOperation;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
@@ -41,23 +41,23 @@ public class DFSOperation extends AbstractOperation {
     }
 
 
-    public <Context extends SchedulerContext> DFSOperation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                           CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
+    public <Context extends OCSchedulerContext> DFSOperation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                             CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
     }
 
-    public <Context extends SchedulerContext> DFSOperation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                           CommonMetaTypes.AccessType accessType, TableRecord d_record) {
+    public <Context extends OCSchedulerContext> DFSOperation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                             CommonMetaTypes.AccessType accessType, TableRecord d_record) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
     }
 
-    public <Context extends SchedulerContext> DFSOperation(Context context, String table_name, TxnContext txn_context, long bid,
-                                                           CommonMetaTypes.AccessType accessType, TableRecord d_record,
-                                                           SchemaRecordRef record_ref) {
+    public <Context extends OCSchedulerContext> DFSOperation(Context context, String table_name, TxnContext txn_context, long bid,
+                                                             CommonMetaTypes.AccessType accessType, TableRecord d_record,
+                                                             SchemaRecordRef record_ref) {
         this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
 
-    public <Context extends SchedulerContext> DFSOperation(
+    public <Context extends OCSchedulerContext> DFSOperation(
             Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,

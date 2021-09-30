@@ -6,7 +6,7 @@ import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.AbstractGSTPGContext;
 import scheduler.context.LayeredTPGContext;
-import scheduler.context.SchedulerContext;
+import scheduler.context.OCSchedulerContext;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
-import static scheduler.impl.Scheduler.getTaskId;
+import static scheduler.impl.OCScheduler.getTaskId;
 
 /**
  * TPG  -> Partition -> Key:OperationChain -> Operation-Operation-Operation...
@@ -34,7 +34,7 @@ import static scheduler.impl.Scheduler.getTaskId;
  * |
  * -> Key: OperationChain [ Operation... ]
  */
-public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit>, SchedulingUnit extends OperationChain<ExecutionUnit>, ExecutionUnit extends AbstractOperation> {
+public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUnit>, SchedulingUnit extends OperationChain<ExecutionUnit>, ExecutionUnit extends AbstractOperation> {
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
     public final Map<Integer, Context> threadToContextMap;

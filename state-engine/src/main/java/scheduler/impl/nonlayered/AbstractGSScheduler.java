@@ -2,13 +2,13 @@ package scheduler.impl.nonlayered;
 
 import profiler.MeasureTools;
 import scheduler.context.AbstractGSTPGContext;
-import scheduler.impl.Scheduler;
+import scheduler.impl.OCScheduler;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import scheduler.struct.gs.GSOperation;
 import transaction.impl.ordered.MyList;
 
 public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends GSOperation, SchedulingUnit extends AbstractGSOperationChain<ExecutionUnit>>
-        extends Scheduler<Context, ExecutionUnit, SchedulingUnit> {
+        extends OCScheduler<Context, ExecutionUnit, SchedulingUnit> {
 
     public AbstractGSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);

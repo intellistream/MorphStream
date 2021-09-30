@@ -7,7 +7,7 @@ import lock.PartitionedOrderLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import scheduler.context.SchedulerContext;
+import scheduler.context.OCSchedulerContext;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
@@ -243,7 +243,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     @Override
-    public SchedulerContext getSchedulerContext() {
+    public OCSchedulerContext getSchedulerContext() {
         throw new UnsupportedOperationException();
     }
 }

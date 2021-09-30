@@ -6,7 +6,7 @@ import scheduler.struct.layered.LayeredOperationChain;
 
 import java.util.*;
 
-public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends LayeredOperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
+public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends LayeredOperationChain<ExecutionUnit>> extends OCSchedulerContext<SchedulingUnit> {
 
     public HashMap<Integer, ArrayList<SchedulingUnit>> allocatedLayeredOCBucket;// <LevelID, ArrayDeque<OperationChain>
     public int currentLevel;

@@ -49,7 +49,7 @@ public class SLBolt_ts extends SLBolt {
         super.initialize(thread_Id, thisTaskId, graph);
         int numberOfStates = config.getInt("NUM_ITEMS");
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
-                numberOfStates, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
+                numberOfStates, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BFS"));
         transactionEvents = new ArrayDeque<>();
         depositEvents = new ArrayDeque<>();
     }

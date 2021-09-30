@@ -3,12 +3,10 @@ package scheduler.context;
 import scheduler.statemanager.OperationChainStateListener;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import scheduler.struct.gs.GSOperation;
-import scheduler.struct.gs.GSOperationChainWithAbort;
 
 import java.util.ArrayDeque;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
-public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, SchedulingUnit extends AbstractGSOperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
+public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, SchedulingUnit extends AbstractGSOperationChain<ExecutionUnit>> extends OCSchedulerContext<SchedulingUnit> {
 
     public ArrayDeque<SchedulingUnit> IsolatedOC;
     public ArrayDeque<SchedulingUnit> OCwithChildren;

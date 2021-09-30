@@ -1,7 +1,7 @@
 package scheduler.struct.layered.bfs;
 
 import content.common.CommonMetaTypes;
-import scheduler.context.SchedulerContext;
+import scheduler.context.OCSchedulerContext;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.MetaTypes;
 import scheduler.struct.gs.GSOperation;
@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class BFSOperationWithGSInfo extends AbstractOperation {
 
-    public final SchedulerContext context;
+    public final OCSchedulerContext context;
 
     private final Queue<GSOperation> fd_children; // the functional dependencies ops to be executed after this op.
     private final Queue<GSOperation> fd_parents; // the functional dependencies ops to be executed in advance
@@ -42,23 +42,23 @@ public class BFSOperationWithGSInfo extends AbstractOperation {
     }
 
 
-    public <Context extends SchedulerContext> BFSOperationWithGSInfo(Context context, String table_name, TxnContext txn_context, long bid,
-                                                                     CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
+    public <Context extends OCSchedulerContext> BFSOperationWithGSInfo(Context context, String table_name, TxnContext txn_context, long bid,
+                                                                       CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
     }
 
-    public <Context extends SchedulerContext> BFSOperationWithGSInfo(Context context, String table_name, TxnContext txn_context, long bid,
-                                                                     CommonMetaTypes.AccessType accessType, TableRecord d_record) {
+    public <Context extends OCSchedulerContext> BFSOperationWithGSInfo(Context context, String table_name, TxnContext txn_context, long bid,
+                                                                       CommonMetaTypes.AccessType accessType, TableRecord d_record) {
         this(context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
     }
 
-    public <Context extends SchedulerContext> BFSOperationWithGSInfo(Context context, String table_name, TxnContext txn_context, long bid,
-                                                                     CommonMetaTypes.AccessType accessType, TableRecord d_record,
-                                                                     SchemaRecordRef record_ref) {
+    public <Context extends OCSchedulerContext> BFSOperationWithGSInfo(Context context, String table_name, TxnContext txn_context, long bid,
+                                                                       CommonMetaTypes.AccessType accessType, TableRecord d_record,
+                                                                       SchemaRecordRef record_ref) {
         this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
 
-    public <Context extends SchedulerContext> BFSOperationWithGSInfo(
+    public <Context extends OCSchedulerContext> BFSOperationWithGSInfo(
             Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,

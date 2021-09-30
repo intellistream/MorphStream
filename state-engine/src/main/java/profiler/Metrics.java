@@ -151,7 +151,7 @@ public class Metrics {
         Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id] / (double) Runtime.Txn[thread_id]);
     }
 
-    // Scheduler
+    // OCScheduler
     public static void COMPUTE_SCHEDULE_NEXT_START(int thread_id) {
         Scheduler.NextStart[thread_id] = System.nanoTime();
     }
