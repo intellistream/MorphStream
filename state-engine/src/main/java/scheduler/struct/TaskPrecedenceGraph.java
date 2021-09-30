@@ -126,35 +126,43 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
 
     public void firstTimeExploreTPG(Context context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-//        int threadId = context.thisThreadId;
-//        Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
-//        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
-//            Collection<Deque<SchedulingUnit>> ocsPerKeyCollection = tableOCs.threadOCsMap.get(threadId).holder_v1.values();
-//            for (Deque<SchedulingUnit> ocsPerKey : ocsPerKeyCollection) {
-//                assert ocsPerKey.size() == 1;
-//                context.operationChainsLeft.addAll(ocsPerKey);
-//            }
-//        }
-//        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
-////            submit(context, tableOCs.threadOCsMap.get(threadId).holder_v1.values());
-//            context.operationChainsLeft.addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
-//        }
-        submit(context, context.operationChainsLeft);
+        submit(context, context.operationChains);
+        assert context.totalOsToSchedule == sortedOperations.get(context.thisThreadId).size();
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
     private void submit(Context context, Collection<SchedulingUnit> ocs) {
         ArrayDeque<OperationChain<ExecutionUnit>> scannedOC = new ArrayDeque<>();
+        ArrayDeque<OperationChain<ExecutionUnit>> resolvedOC = new ArrayDeque<>();
+        for (SchedulingUnit oc : ocs) {
+            resolveCircular(scannedOC, resolvedOC, oc);
+        }
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
+        int counter = 0;
+        for (OperationChain<ExecutionUnit> oc : resolvedOC) {
+            assert  getTaskId(oc.primaryKey, delta) == context.thisThreadId;
+            oc.ocParentsCount.set(0);
+            oc.ocParents.clear();
+            oc.ocChildren.clear();
+            counter++;
+        }
+        System.out.println(context.thisThreadId + " : " + counter);
         if (context instanceof LayeredTPGContext) {
             for (SchedulingUnit oc : ocs) {
-                resolveCircular(scannedOC, oc);
                 context.totalOsToSchedule += oc.getOperations().size();
             }
-            ((LayeredTPGContext) context).buildBucketPerThread(ocs);
+            ((LayeredTPGContext) context).buildBucketPerThread(ocs, resolvedOC);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            int maxLevel = 0;
+            for (Context curContext : threadToContextMap.values()) {
+                if (((LayeredTPGContext) curContext).maxLevel > maxLevel) {
+                    maxLevel = ((LayeredTPGContext) curContext).maxLevel;
+                }
+            }
+            ((LayeredTPGContext) context).putBusyWaitOCs(resolvedOC, maxLevel+1);
             if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : ocs) {
-                resolveCircular(scannedOC, oc);
                 context.totalOsToSchedule += oc.getOperations().size();
 //                context.operaitonsLeft.addAll(oc.getOperations());
                 if (!((AbstractGSOperationChain) oc).context.equals(context)) {
@@ -169,11 +177,14 @@ public class TaskPrecedenceGraph<Context extends SchedulerContext<SchedulingUnit
         }
     }
 
-    private void resolveCircular(ArrayDeque<OperationChain<ExecutionUnit>> scannedOC, SchedulingUnit oc) {
-        if (oc.ocChildren.isEmpty()) {
-            scannedOC.clear();
-            // scan from leaves and check whether circular are detected.
-            oc.checkToRelaxDependencies(scannedOC);
+    private void resolveCircular(ArrayDeque<OperationChain<ExecutionUnit>> scannedOC,
+                                 ArrayDeque<OperationChain<ExecutionUnit>> resolvedOC,
+                                 SchedulingUnit oc) {
+        scannedOC.clear();
+        scannedOC.add(oc);
+        // scan from leaves and check whether circular are detected.
+        if (oc.isCircularAffected(scannedOC)) {
+            resolvedOC.add(oc);
         }
     }
 

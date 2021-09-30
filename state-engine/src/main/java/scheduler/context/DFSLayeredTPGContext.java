@@ -13,6 +13,8 @@ public class DFSLayeredTPGContext extends LayeredTPGContext<DFSOperation, DFSOpe
 
     @Override
     public DFSOperationChain createTask(String tableName, String pKey, long bid) {
-        return new DFSOperationChain(tableName, pKey, bid);
+        DFSOperationChain oc = new DFSOperationChain(tableName, pKey, bid);
+        operationChains.add(oc);
+        return oc;
     }
 }

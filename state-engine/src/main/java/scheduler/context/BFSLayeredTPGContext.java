@@ -13,6 +13,8 @@ public class BFSLayeredTPGContext extends LayeredTPGContext<BFSOperation, BFSOpe
 
     @Override
     public BFSOperationChain createTask(String tableName, String pKey, long bid) {
-        return new BFSOperationChain(tableName, pKey, bid);
+        BFSOperationChain oc = new BFSOperationChain(tableName, pKey, bid);
+        operationChains.add(oc);
+        return oc;
     }
-};
+}

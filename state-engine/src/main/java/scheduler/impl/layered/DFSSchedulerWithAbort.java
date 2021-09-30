@@ -4,7 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
+import scheduler.context.BFSLayeredTPGContextWithAbort;
 import scheduler.context.DFSLayeredTPGContextWithAbort;
+import scheduler.struct.layered.bfs.BFSOperation;
+import scheduler.struct.layered.bfs.BFSOperationChain;
 import scheduler.struct.layered.dfs.DFSOperation;
 import scheduler.struct.layered.dfs.DFSOperationChain;
 import transaction.impl.ordered.MyList;
@@ -49,7 +52,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
             if (needAbortHandling.get()) {
                 abortHandling(context);
             }
-            if (context.finished())
+            if (context.exploreFinished())
                 break;
             ProcessedToNextLevel(context);
             oc = Next(context);
@@ -78,6 +81,27 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
             checkTransactionAbort(operation);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
+    }
+
+    /**
+     * Used by GSScheduler.
+     *  @param context
+     * @param operationChain
+     * @param mark_ID
+     * @return
+     */
+    @Override
+    public boolean executeWithBusyWait(DFSLayeredTPGContextWithAbort context, DFSOperationChain operationChain, long mark_ID) {
+        MyList<DFSOperation> operation_chain_list = operationChain.getOperations();
+        for (DFSOperation operation : operation_chain_list) {
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+            if (operation.isExecuted) continue;
+            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+            execute(operation, mark_ID, false);
+            checkTransactionAbort(operation);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+        }
+        return true;
     }
 
     /**
@@ -120,9 +144,13 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
                 set_op = new DFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
+            default:
+                throw new UnsupportedOperationException();
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op);
+//        tpg.setupOperationTDFD(set_op);
+        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+        tpg.cacheToSortedOperations(set_op);
     }
 
     protected void checkTransactionAbort(DFSOperation operation) {

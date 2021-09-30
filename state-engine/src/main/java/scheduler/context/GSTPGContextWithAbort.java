@@ -6,8 +6,6 @@ import scheduler.statemanager.PartitionStateManagerWithAbort;
 import scheduler.struct.gs.GSOperationChainWithAbort;
 import scheduler.struct.gs.GSOperationWithAbort;
 
-import java.util.concurrent.ConcurrentLinkedDeque;
-
 public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithAbort, GSOperationChainWithAbort> {
 
     public final PartitionStateManagerWithAbort partitionStateManager;
@@ -25,7 +23,7 @@ public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithA
         GSOperationChainWithAbort oc = new GSOperationChainWithAbort(tableName, pKey, bid);
         oc.setContext(this);
 //        if (!operationChainsLeft.contains(oc))
-        operationChainsLeft.add(oc);
+        operationChains.add(oc);
         return oc;
     }
 

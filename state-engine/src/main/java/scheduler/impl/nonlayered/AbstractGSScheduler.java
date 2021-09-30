@@ -2,12 +2,9 @@ package scheduler.impl.nonlayered;
 
 import profiler.MeasureTools;
 import scheduler.context.AbstractGSTPGContext;
-import scheduler.context.GSTPGContextWithAbort;
 import scheduler.impl.Scheduler;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import scheduler.struct.gs.GSOperation;
-import scheduler.struct.gs.GSOperationChainWithAbort;
-import scheduler.struct.gs.GSOperationWithAbort;
 import transaction.impl.ordered.MyList;
 
 public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends GSOperation, SchedulingUnit extends AbstractGSOperationChain<ExecutionUnit>>
@@ -54,6 +51,7 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
+            System.out.println(context.thisThreadId + " execute normal: " + next);
 //            assert !next.getOperations().isEmpty();
             if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
                 MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
@@ -61,17 +59,20 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
                     NOTIFY(next, context);
                 } else {
                     next.isExecuted = true;
-                    next.context.scheduledOPs += next.getOperations().size();
+                    assert next.context.equals(context);
+                    context.scheduledOPs += next.getOperations().size();
                 }
                 MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
             }
         } else {
             next = nextFromBusyWaitQueue(context);
             if (next != null) {
+                System.out.println(context.thisThreadId + "execute busy wait: " + next);
 //                assert !next.getOperations().isEmpty();
                 if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
                     next.isExecuted = true;
-                    next.context.scheduledOPs += next.getOperations().size();
+                    assert next.context.equals(context);
+                    context.scheduledOPs += next.getOperations().size();
                 }
             }
         }

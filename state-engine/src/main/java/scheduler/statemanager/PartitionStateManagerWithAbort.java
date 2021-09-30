@@ -29,19 +29,16 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
 
     @Override
     public void onOcRootStart(GSOperationChainWithAbort operationChain) {
-        System.out.println("enqueue root");
         ocSignalQueue.add(new OnRootSignal<>(operationChain));
     }
 
     @Override
     public void onOcExecuted(GSOperationChainWithAbort operationChain) {
-        System.out.println("enqueue executed");
         ocSignalQueue.add(new OnExecutedSignal<>(operationChain));
     }
 
     @Override
     public void onOcParentExecuted(GSOperationChainWithAbort operationChain, DependencyType dependencyType) {
-        System.out.println("enqueue parent executed");
         ocSignalQueue.add(new OnParentExecutedSignal<>(operationChain, dependencyType));
     }
 
@@ -90,7 +87,9 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         if (!operationChain.needAbortHandling) {
             operationChain.isExecuted = true;
             for (GSOperationChainWithAbort child : operationChain.getChildren()) {
-                ((GSTPGContextWithAbort) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
+                if (child.ocParentsCount.get() > 0) {
+                    ((GSTPGContextWithAbort) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
+                }
             }
             executableTaskListener.onOCFinalized(operationChain);
         } else {

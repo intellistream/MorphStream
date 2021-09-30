@@ -48,6 +48,10 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
         return scheduledOPs == totalOsToSchedule && busyWaitQueue.isEmpty();
     }
 
+    public boolean exploreFinished() {
+//        return scheduledOPs == totalOsToSchedule && !needAbortHandling; // not sure whether we need to check this condition.
+        return scheduledOPs == totalOsToSchedule;
+    }
 
     /**
      * Build buckets with submitted ocs.
@@ -56,11 +60,14 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
      * @param ocs
      * @return
      */
-    public void buildBucketPerThread(Collection<SchedulingUnit> ocs) {
+    public int buildBucketPerThread(Collection<SchedulingUnit> ocs, ArrayDeque<OperationChain<ExecutionUnit>> resolvedOC) {
         int localMaxDLevel = 0;
         int dependencyLevel;
         for (SchedulingUnit oc : ocs) {
             oc.updateDependencyLevel();
+            if (resolvedOC.contains(oc)) {
+                continue;
+            }
             dependencyLevel = oc.getDependencyLevel();
             if (localMaxDLevel < dependencyLevel)
                 localMaxDLevel = dependencyLevel;
@@ -70,6 +77,14 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
         }
 //        if (enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
         this.maxLevel = localMaxDLevel;
-//        return localMaxDLevel;
+        return localMaxDLevel;
+    }
+
+    public void putBusyWaitOCs(ArrayDeque<SchedulingUnit> resolvedOC, int maxLevel) {
+        for (SchedulingUnit oc : resolvedOC) {
+            if (!allocatedLayeredOCBucket.containsKey(maxLevel))
+                allocatedLayeredOCBucket.put(maxLevel, new ArrayList<>());
+            allocatedLayeredOCBucket.get(maxLevel).add(oc);
+        }
     }
 };

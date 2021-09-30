@@ -113,22 +113,37 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         return isCircular;
     }
 
-    public void checkToRelaxDependencies(ArrayDeque<OperationChain<ExecutionUnit>> scannedOCs) {
-        for (OperationChain<ExecutionUnit> oc : ocParents.keySet()) {
-            if (!scannedOCs.contains(oc)) { // if the oc is not traversed before, no circular.
-                scannedOCs.add(oc);
-                oc.checkToRelaxDependencies(scannedOCs);
-            } else {
-                System.out.println("relaxing: " + this);
-                // remove all parents, update children set of its parents
-                for (OperationChain<ExecutionUnit> ocToUpdate : oc.ocParents.keySet()) {
-                    ocToUpdate.ocChildren.remove(oc);
+    public boolean isCircularAffected(ArrayDeque<OperationChain<ExecutionUnit>> scannedOCs) {
+        for (OperationChain<ExecutionUnit> parent : ocParents.keySet()) {
+            if (!scannedOCs.contains(parent)) { // if the oc is not traversed before, no circular.
+                scannedOCs.add(parent);
+                if (parent.isCircularAffected(scannedOCs)) {
+                    return true;
                 }
-                oc.ocParentsCount.set(0);
-                oc.ocParents.clear();
+            } else {
+                return true;
+//                relaxDependencies(oc, resolvedOC);
+                // make all children operations execution in busy wait
             }
         }
+        return false;
     }
+
+//    private void relaxDependencies(OperationChain<ExecutionUnit> oc, ArrayDeque<OperationChain<ExecutionUnit>> resolvedOC) {
+//        // remove all parents, update children set of its parents
+////        for (OperationChain<ExecutionUnit> parent : oc.ocParents.keySet()) {
+////            parent.ocChildren.remove(oc);
+////        }
+////        oc.ocParentsCount.set(0);
+////        oc.ocParents.clear();
+//        for (OperationChain<ExecutionUnit> child : oc.ocChildren.keySet()) {
+//            if (!resolvedOC.contains(child)) {
+//                resolvedOC.add(child);
+//                relaxDependencies(child, resolvedOC);
+//            }
+//        }
+//    }
+
 
     public boolean scanParentOCs(Collection<OperationChain<ExecutionUnit>> selectedOCs) {
         for (OperationChain<ExecutionUnit> oc : selectedOCs) {

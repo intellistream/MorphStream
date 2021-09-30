@@ -48,7 +48,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
     @Override
     public void EXPLORE(BFSLayeredTPGContextWithAbort context) {
         BFSOperationChain next = Next(context);
-        if (next == null && !context.finished()) { //current level is all processed at the current thread.
+        if (next == null && !context.exploreFinished()) { //current level is all processed at the current thread.
             while (next == null) {
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 //all threads come to the current level.

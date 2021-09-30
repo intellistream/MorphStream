@@ -11,11 +11,4 @@ public class BFSLayeredTPGContextWithAbort extends BFSLayeredTPGContext {
     public BFSLayeredTPGContextWithAbort(int thisThreadId, int totalThreads) {
         super(thisThreadId, totalThreads);
     }
-
-    @Override
-    public BFSOperationChain createTask(String tableName, String pKey, long bid) {
-        BFSOperationChain oc = new BFSOperationChain(tableName, pKey, bid);
-        operationChainsLeft.add(oc);
-        return oc;
-    }
 }

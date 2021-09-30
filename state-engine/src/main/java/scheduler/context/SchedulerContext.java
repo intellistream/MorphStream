@@ -16,7 +16,7 @@ public abstract class SchedulerContext<SchedulingUnit> {
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.
 //    public Set<AbstractOperation> operaitonsLeft = new HashSet<>();//total number of operations to process per thread.
-    public ConcurrentLinkedQueue<SchedulingUnit> operationChainsLeft = new ConcurrentLinkedQueue<>(); // total number of operationchains in the thread.
+    public ConcurrentLinkedQueue<SchedulingUnit> operationChains = new ConcurrentLinkedQueue<>(); // total number of operationchains in the thread.
 
 
     protected SchedulerContext(int thisThreadId) {
