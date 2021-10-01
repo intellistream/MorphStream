@@ -109,6 +109,8 @@ public interface ITxnManager {
         DFSA,
         GS,
         GSA,
-        OPGS
+        OPGS,
+        OPBFS,
+        OPDFS
     }
 }

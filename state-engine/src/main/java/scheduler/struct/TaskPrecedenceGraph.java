@@ -41,7 +41,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     private final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final ConcurrentHashMap<Integer, ConcurrentSkipListSet<ExecutionUnit>> sortedOperations;//shared data structure.
-    private ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
+    private final ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
     CyclicBarrier barrier;
 
     public void reset(Context context) {

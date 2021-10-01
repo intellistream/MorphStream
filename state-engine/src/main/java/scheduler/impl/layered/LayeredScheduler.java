@@ -55,9 +55,7 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
      */
     public void execute(Context context, MyList<ExecutionUnit> operation_chain, long mark_ID) {
         for (ExecutionUnit operation : operation_chain) {
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
     }
 

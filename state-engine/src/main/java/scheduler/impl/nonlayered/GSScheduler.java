@@ -96,7 +96,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         }
 
         public void onOCRollbacked(GSOperationChain operationChain) {
-            operationChain.context.scheduledOPs += operationChain.getOperations().size();
+            operationChain.context.scheduledOPs -= operationChain.getOperations().size();
         }
     }
 }

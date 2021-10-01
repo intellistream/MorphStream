@@ -28,6 +28,7 @@ public abstract class OCSchedulerContext<SchedulingUnit> implements SchedulerCon
         requests.clear();
         scheduledOPs = 0;
         totalOsToSchedule = 0;
+        busyWaitQueue.clear();
     }
 
     public void push(Request request) {

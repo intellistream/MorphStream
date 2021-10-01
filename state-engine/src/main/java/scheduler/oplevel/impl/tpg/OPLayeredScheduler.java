@@ -4,28 +4,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
-import scheduler.oplevel.context.OPGSTPGContext;
+import scheduler.oplevel.context.OPLayeredContext;
 import scheduler.oplevel.impl.OPScheduler;
 import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import scheduler.oplevel.struct.Operation;
 import utils.SOURCE_CONTROL;
 
+import java.util.ArrayList;
+
 import static content.common.CommonMetaTypes.AccessType.*;
 
-public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<Context, Operation> {
-    private static final Logger log = LoggerFactory.getLogger(OPGSScheduler.class);
+public class OPLayeredScheduler<Context extends OPLayeredContext> extends OPScheduler<Context, Operation> {
+    private static final Logger log = LoggerFactory.getLogger(OPLayeredScheduler.class);
 
-    public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
-
-    public OPGSScheduler(int totalThreads, int NUM_ITEMS) {
+    public OPLayeredScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
     }
 
     @Override
     public void INITIALIZE(Context context) {
         tpg.firstTimeExploreTPG(context);
-        context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
+    }
+
+    protected void ProcessedToNextLevel(Context context) {
+        context.currentLevel += 1;
+        context.currentLevelIndex = 0;
     }
 
     /**
@@ -39,11 +43,15 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
      */
     @Override
     public void EXPLORE(Context context) {
-        while (context.batchedOperations.size() != 0) {
-            Operation remove = context.batchedOperations.remove();
-            remove.context.getListener().onOpProcessed(remove);
+        Operation next = Next(context);
+        if (next == null && !context.finished()) { //current level is all processed at the current thread.
+            while (next == null) {
+                SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                ProcessedToNextLevel(context);
+                next = Next(context);
+            }
         }
-        context.partitionStateManager.handleStateTransitions();
+        DISTRIBUTE(next, context);
     }
 
     @Override
@@ -158,9 +166,16 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
         for (Operation operation : context.batchedOperations) {
             execute(operation, mark_ID, false);
         }
+
+        while (context.batchedOperations.size() != 0) {
+            Operation remove = context.batchedOperations.remove();
+            NOTIFY(remove, context);
+        }
         MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
     }
 
+    protected void NOTIFY(Operation task, Context context) {
+    }
 
     /**
      * Try to get task from local queue.
@@ -169,9 +184,10 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
      * @return
      */
     public Operation next(Context context) {
-        return context.taskQueues.pollLast();
+        Operation operation = context.ready_oc;
+        context.ready_oc = null;
+        return operation;
     }
-
 
     /**
      * Distribute the operations to different threads with different strategies
@@ -179,30 +195,27 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
      * 2. conserved: hash operations to threads based on the targeting key state
      * 3. shared: put all operations in a pool and
      *
-     * @param executableOperation
+     * @param task
      * @param context
      */
     @Override
-    protected void DISTRIBUTE(Operation executableOperation, Context context) {
-        if (executableOperation != null)
-            context.taskQueues.add(executableOperation);
+    protected void DISTRIBUTE(Operation task, Context context) {
+        context.ready_oc = task;
     }
 
     /**
-     * Register an operation to queue.
+     * Return the last operation chain of threadId at dLevel.
+     *
+     * @param context
+     * @return
      */
-    public class ExecutableTaskListener {
-        public void onExecutable(Operation operation) {
-            DISTRIBUTE(operation, (Context) operation.context);//TODO: make it clear..
+    protected Operation Next(Context context) {
+        ArrayList<Operation> ops = context.OPSCurrentLayer();
+        Operation op = null;
+        if (ops != null && context.currentLevelIndex < ops.size()) {
+            op = ops.get(context.currentLevelIndex++);
+            context.scheduledOPs++;
         }
-
-        public void onOPFinalized(Operation operation) {
-//            operation.context.operations.remove(operation);
-            operation.context.scheduledOPs++;
-        }
-
-        public void onOPRollbacked(Operation operation) {
-            operation.context.scheduledOPs--;
-        }
+        return op;
     }
 }

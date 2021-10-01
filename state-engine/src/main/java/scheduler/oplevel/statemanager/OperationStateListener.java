@@ -30,6 +30,8 @@ public interface OperationStateListener {
      */
     void onOpProcessed(Operation operation);
 
+    void onRootStart(Operation operation);
+
     /**
      * this method will only be used in header operation, others should not use it.
      *

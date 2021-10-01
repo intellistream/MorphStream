@@ -9,6 +9,7 @@ import scheduler.impl.layered.DFSSchedulerWithAbort;
 import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
 import scheduler.oplevel.context.OPGSTPGContext;
+import scheduler.oplevel.impl.tpg.OPBFSScheduler;
 import scheduler.oplevel.impl.tpg.OPGSScheduler;
 
 /**
@@ -40,6 +41,12 @@ public abstract class TxnManager implements ITxnManager {
                 break;
             case "OPGS":
                 scheduler = new OPGSScheduler<>(threadCount, numberOfStates);
+                break;
+            case "OPBFS":
+                scheduler = new OPBFSScheduler<>(threadCount, numberOfStates);
+                break;
+            case "OPDFS":
+                scheduler = new OPBFSScheduler<>(threadCount, numberOfStates);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);

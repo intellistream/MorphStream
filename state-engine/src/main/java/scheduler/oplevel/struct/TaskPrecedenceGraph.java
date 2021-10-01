@@ -4,16 +4,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
+import scheduler.context.LayeredTPGContext;
 import scheduler.oplevel.context.OPGSTPGContext;
-import scheduler.oplevel.impl.tpg.OPGSScheduler.ExecutableTaskListener;
+import scheduler.oplevel.context.OPLayeredContext;
+import scheduler.oplevel.context.OPSchedulerContext;
+import scheduler.oplevel.impl.tpg.OPBFSScheduler;
+import utils.lib.ConcurrentHashMap;
 
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import static common.CONTROL.enable_log;
+import static scheduler.oplevel.impl.OPScheduler.getTaskId;
 
 /**
  * TPG  -> Partition -> Key:OperationChain -> Operation-Operation-Operation...
@@ -30,29 +35,38 @@ import java.util.concurrent.atomic.AtomicInteger;
  * |
  * -> Key: OperationChain [ Operation... ]
  */
-public class TaskPrecedenceGraph {
-    private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
+public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
+    private static final Logger log = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
 
-    public final AtomicInteger nPendingOPs = new AtomicInteger(0);
-
-    public final static int Maximum_Speculation = 10;
-
-    // all parameters in this class should be thread safe.
-    private final ConcurrentHashMap<String, OperationChain> operationChains;// < state, OC>
-    private final ConcurrentLinkedQueue<List<Operation>> transactions;//
-    private final ShortCutListener shortCutListener;
-    private final AtomicInteger nExecutedOperation = new AtomicInteger(0);
+    protected final int delta;//range of each partition. depends on the number of op in the stage.
     CyclicBarrier barrier;
-    private ExecutableTaskListener executableTaskListener = null;
+    public final Map<Integer, Context> threadToContextMap;
+    private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
+
+    public void reset(Context context) {
+        operationChains.get("accounts").threadOCsMap.remove(context.thisThreadId);
+        operationChains.get("bookEntries").threadOCsMap.remove(context.thisThreadId);
+    }
 
     /**
      * @param totalThreads
      */
-    public TaskPrecedenceGraph(int totalThreads) {
+    public TaskPrecedenceGraph(int totalThreads, int delta) {
         barrier = new CyclicBarrier(totalThreads);
+        this.delta = delta;
+        // all parameters in this class should be thread safe.
         operationChains = new ConcurrentHashMap<>();
-        transactions = new ConcurrentLinkedQueue<>();
-        shortCutListener = new ShortCutListener();
+        operationChains.put("accounts", new TableOCs(totalThreads));
+        operationChains.put("bookEntries", new TableOCs(totalThreads));
+        threadToContextMap = new HashMap<>();
+    }
+
+    public TableOCs getTableOCs(String table_name) {
+        return operationChains.get(table_name);
+    }
+
+    public ConcurrentHashMap<String, TableOCs> getOperationChains() {
+        return operationChains;
     }
 
     /**
@@ -64,51 +78,10 @@ public class TaskPrecedenceGraph {
     public void setupOperationTDFD(Operation operation, Request request) {
         // TD
         OperationChain oc = addOperationToChain(operation);
-        // FD TODO: this is actually a cross state TD, FD is hidden in each composited operation i.e. write(A, read(B)).
-        checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        // FD
+        if (request.condition_source != null)
+            checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
     }
-
-    /**
-     * Add operations of transactions to TPG, which tries to find out the temporal dependencies
-     * Set up logical dependencies among operations
-     *
-     * @param operations
-     */
-    public void setupOperationLD(List<Operation> operations) {
-        // LD
-        // addOperation Logical dependnecies for those operations in the operation graph
-        // two operations can have both data dependency and logical dependency.
-        transactions.add(operations);
-        Operation headerOperation = operations.get(0);
-        headerOperation.setReadyCandidate();
-        for (int i = 0; i < operations.size(); i++) {
-            Operation curOperation = operations.get(i);
-            nPendingOPs.incrementAndGet();
-            if (i > 0)
-                curOperation.addParent(operations.get(i - 1), MetaTypes.DependencyType.LD);
-            if (i < operations.size() - 1)
-                curOperation.addChild(operations.get(i + 1), MetaTypes.DependencyType.LD);
-
-            // addOperation an operation id for the operation for the purpose of temporal dependency construction
-            curOperation.set_op_id(i);
-
-            // addOperation header for transaction commit and abort
-            curOperation.addHeader(headerOperation);
-            // addOperation all descendants to the descendant operation list
-            headerOperation.addDescendant(curOperation);
-
-            // addOperation speculative parents/children for speculative parallelization
-            // ld_spec_children/parents include the direct children/parents for convenience
-            for (int offset = 1; offset < Maximum_Speculation + 1; offset++) {
-                int reversedOffset = (Maximum_Speculation + 1 - offset);
-                if (i - reversedOffset >= 0)
-                    curOperation.addParent(operations.get(i - reversedOffset), MetaTypes.DependencyType.SP_LD);
-                if (i + offset < operations.size())
-                    curOperation.addChild(operations.get(i + offset), MetaTypes.DependencyType.SP_LD);
-            }
-        }
-    }
-
 
     /**
      * During the first explore, we will group operations that can be executed sequentially following Temporal dependencies
@@ -117,27 +90,42 @@ public class TaskPrecedenceGraph {
      * And then sorting operations in each partition to execute sequentially on each thread, such that they can be batched for execution.
      *
      * @param context
-     * @param <Context>
      */
-    public <Context extends OPGSTPGContext> void firstTimeExploreTPG(Context context) {
+    public void firstTimeExploreTPG(Context context) {
         MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
 
-        context.initialize(shortCutListener);
-        for (String key : context.partitionStateManager.partition) {
-            operationChains.computeIfPresent(key, (s, operationChain) -> {
-                operationChain.updateTDDependencies();
-                Operation head = operationChain.getOperations().first();
-                if (head.isRoot()) {
-                    head.context.partitionStateManager.onRootStart(head);
+        if (context instanceof OPLayeredContext) {
+            int threadId = context.thisThreadId;
+            Collection<TableOCs> tableOCsList = getOperationChains().values();
+            for (TableOCs tableOCs : tableOCsList) {//for each table.
+                for (OperationChain oc : tableOCs.threadOCsMap.get(threadId).holder_v1.values()) {
+                    oc.updateTDDependencies();
+                    context.operations.addAll(oc.getOperations());
+                    context.totalOsToSchedule += oc.getOperations().size();
                 }
-                return operationChain;
-            });
+            }
+            ((OPLayeredContext) context).buildBucketPerThread(context.operations);
+            if (enable_log) log.info("MaxLevel:" + (((OPLayeredContext) context).maxLevel));
+
+        } else if (context instanceof OPGSTPGContext) {
+            int threadId = context.thisThreadId;
+            Collection<TableOCs> tableOCsList = getOperationChains().values();
+            for (TableOCs tableOCs : tableOCsList) {//for each table.
+                for (OperationChain oc : tableOCs.threadOCsMap.get(threadId).holder_v1.values()) {
+                    oc.updateTDDependencies();
+//                context.operations.addAll(oc.getOperations());
+                    Operation head = oc.getOperations().first();
+                    context.totalOsToSchedule += oc.getOperations().size();
+                    if (head.isRoot()) {
+                        head.context.getListener().onRootStart(head);
+                    }
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException();
         }
-        LOG.trace("++++++ end explore");
 
         MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-
-        LOG.trace("++++++ end explore");
     }
 
     /**
@@ -147,16 +135,15 @@ public class TaskPrecedenceGraph {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         String table_name = operation.table_name;
         String primaryKey = operation.d_record.record_.GetPrimaryKey();
-        String operationChainKey = operation.getOperationChainKey();
-        OperationChain retOc = getOC(table_name, primaryKey, operationChainKey);
+        OperationChain retOc = getOC(table_name, primaryKey);
         retOc.addOperation(operation);
         return retOc;
     }
 
-    private OperationChain getOC(String table_name, String primaryKey, String operationChainKey) {
-        return operationChains.computeIfAbsent(operationChainKey, s -> {
-            return new OperationChain(table_name, primaryKey);
-        });
+    private OperationChain getOC(String tableName, String pKey) {
+        int threadId = getTaskId(pKey, delta);
+        ConcurrentHashMap<String, OperationChain> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
+        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
     }
 
     private void checkFD(OperationChain curOC, Operation op, String table_name,
@@ -165,9 +152,8 @@ public class TaskPrecedenceGraph {
             for (int index = 0; index < condition_source.length; index++) {
                 if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                     continue;// no need to check data dependency on a key itself.
-                String operationChainKey = condition_sourceTable[index] + "|" + condition_source[index];
                 OperationChain OCFromConditionSource = getOC(condition_sourceTable[index],
-                        condition_source[index], operationChainKey);
+                        condition_source[index]);
                 // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
                 if (OCFromConditionSource.getOperations().isEmpty() || OCFromConditionSource.getOperations().first().bid >= op.bid) {
                     OCFromConditionSource.addPotentialFDChildren(curOC, op);
@@ -177,143 +163,6 @@ public class TaskPrecedenceGraph {
                 }
             }
             curOC.checkPotentialFDChildrenOnNewArrival(op);
-        }
-    }
-
-    public void setExecutableListener(ExecutableTaskListener executableTaskListener) {
-        this.executableTaskListener = executableTaskListener;
-    }
-
-    /**
-     * expose an api to check whether all operations are in the final state i.e. aborted/committed
-     */
-    public boolean isFinished() {
-        LOG.trace("operations left to do:" + nPendingOPs.get());
-        return nPendingOPs.get() == 0;
-    }
-
-    /**
-     * @param threadId
-     */
-    public void dumpOCState(int threadId) {
-        if (threadId == 0) {
-            LOG.info("================Operation Chain=================");
-            for (OperationChain operationChain : operationChains.values()) {
-                StringBuilder output = new StringBuilder();
-                output.append(operationChain.getTableName()).append(operationChain.getPrimaryKey()).append("==");
-                for (Operation curOp : operationChain.getOperations()) {
-                    output.append(curOp).append(": ").append(curOp.getOperationState()).append(",");
-                }
-                LOG.info(String.valueOf(output));
-            }
-        }
-        try {
-            barrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * @param threadId
-     */
-    public void dumpTxnState(int threadId) {
-        if (threadId == 0) {
-            LOG.info("=================Transactions================");
-            for (List<Operation> operations : transactions) {
-                LOG.info(String.valueOf(operations));
-            }
-        }
-        try {
-            barrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * @param threadId
-     */
-    public void dumpStatusByDependency(int threadId) {
-        if (threadId == 0) {
-            LOG.info("=================Transactions================");
-            for (List<Operation> operations : transactions) {
-                for (Operation operation : operations) {
-                    StringBuilder output = new StringBuilder();
-                    output.append(dumpChildren(operation)).append(" => ");
-                    LOG.info(String.valueOf(output));
-                }
-            }
-        }
-        try {
-            barrier.await();
-        } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public StringBuilder dumpChildren(Operation operation) {
-        StringBuilder output = new StringBuilder();
-        output.append(operation).append(": ");
-        output.append("[");
-        Queue<Operation> td_children = operation.getChildren(MetaTypes.DependencyType.TD);
-        output.append("TD: ").append(td_children);
-        output.append(", ");
-
-        Queue<Operation> fd_children = operation.getChildren(MetaTypes.DependencyType.FD);
-        output.append("FD: ").append(fd_children);
-        output.append(", ");
-
-        Queue<Operation> ld_children = operation.getChildren(MetaTypes.DependencyType.LD);
-        output.append("LD: ").append(ld_children);
-        output.append("]");
-        return output;
-    }
-
-    /**
-     * @param threadId
-     * @return
-     */
-    public boolean isValid(int threadId) {
-        for (List<Operation> operations : transactions) {
-            if (operations.get(0).getOperationState().equals(MetaTypes.OperationStateType.COMMITTED)) {
-                // transactions operations are all committed
-                for (Operation operation : operations) {
-                    if (!(operation.getOperationState().equals(MetaTypes.OperationStateType.COMMITTED) || operation.getOperationState().equals(MetaTypes.OperationStateType.COMMITTABLE))) {
-                        LOG.info("++++++Wrong transaction committed state, not all operations are committed: " + operation + " : " + operations);
-                        return false;
-                    }
-                }
-            } else {
-                // transactions operations are in non-committed state
-                for (Operation operation : operations) {
-                    if (operation.getOperationState().equals(MetaTypes.OperationStateType.COMMITTED)) {
-                        LOG.info("++++++Wrong transaction non-committed state, exists operations committed: " + operations);
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Register an operation to queue.
-     */
-    public class ShortCutListener {
-
-        public void onExecutable(Operation operation, boolean isReady) {
-            executableTaskListener.onExecutable(operation);
-        }
-
-        public void onOperationFinalized(Operation operation, boolean isCommitted) {
-            LOG.debug("npending: " + nPendingOPs.get());
-            nPendingOPs.decrementAndGet();
-        }
-
-        public void onOperationExecuted() {
-            LOG.debug("nexecuted: " + nExecutedOperation.get());
-            nExecutedOperation.incrementAndGet();
         }
     }
 }

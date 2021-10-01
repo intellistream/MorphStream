@@ -58,7 +58,6 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         OperationChainSignal<GSOperationWithAbort, GSOperationChainWithAbort> ocSignal = ocSignalQueue.poll();
         boolean existsStateTransitions = ocSignal != null;
         while (ocSignal != null) {
-            System.out.println(ocSignal);
             GSOperationChainWithAbort operationChain = ocSignal.getTargetOperationChain();
             if (ocSignal instanceof OnRootSignal) {
                 ocRootStartTransition(operationChain);

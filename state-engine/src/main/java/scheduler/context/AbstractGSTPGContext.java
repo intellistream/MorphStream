@@ -24,7 +24,6 @@ public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, Sc
         super.reset();
         IsolatedOC.clear();
         OCwithChildren.clear();
-        busyWaitQueue.clear();
     }
 
     @Override
