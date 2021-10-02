@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import scheduler.Request;
 import scheduler.context.*;
 import scheduler.oplevel.context.OPGSTPGContext;
+import scheduler.oplevel.context.OPGSTPGContextWithAbort;
 import scheduler.oplevel.context.OPLayeredContext;
 import storage.*;
 import storage.datatype.DataBox;
@@ -75,6 +76,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 break;
             case OPGS:
                 context = new OPGSTPGContext(thisTaskId);
+                scheduler.AddContext(thisTaskId, context);
+                break;
+            case OPGSA:
+                context = new OPGSTPGContextWithAbort(thisTaskId);
                 scheduler.AddContext(thisTaskId, context);
                 break;
             case OPBFS:

@@ -213,28 +213,67 @@ public class Operation extends AbstractOperation implements Comparable<Operation
      */
     public void updateDependencies(DependencyType dependencyType, OperationStateType parentState) {
         // update countdown
-        assert parentState.equals(OperationStateType.EXECUTED);
-        if (dependencyType.equals(DependencyType.TD)) {
-            operationMetadata.td_countdown.decrementAndGet();
-            assert operationMetadata.td_countdown.get() >= 0;
-        } else if (dependencyType.equals(DependencyType.FD)) {
-            operationMetadata.fd_countdown.decrementAndGet();
-            assert operationMetadata.fd_countdown.get() >= 0;
-        } else if (dependencyType.equals(DependencyType.LD)) {
-            operationMetadata.ld_countdown.decrementAndGet();
-            assert operationMetadata.ld_countdown.get() >= 0;
+        if (parentState.equals(OperationStateType.EXECUTED)) {
+            if (dependencyType.equals(DependencyType.TD)) {
+                operationMetadata.td_countdown.decrementAndGet();
+                assert operationMetadata.td_countdown.get() >= 0;
+            } else if (dependencyType.equals(DependencyType.FD)) {
+                operationMetadata.fd_countdown.decrementAndGet();
+                assert operationMetadata.fd_countdown.get() >= 0;
+            } else if (dependencyType.equals(DependencyType.LD)) {
+                operationMetadata.ld_countdown.decrementAndGet();
+                assert operationMetadata.ld_countdown.get() >= 0;
+            }
+        } else if (parentState.equals(OperationStateType.READY) || parentState.equals(OperationStateType.BLOCKED)) { // rollback
+            if (dependencyType.equals(DependencyType.TD)) {
+                operationMetadata.td_countdown.incrementAndGet();
+                assert operationMetadata.td_countdown.get() >= 0;
+            } else if (dependencyType.equals(DependencyType.FD)) {
+                operationMetadata.fd_countdown.incrementAndGet();
+                assert operationMetadata.fd_countdown.get() >= 0;
+            } else if (dependencyType.equals(DependencyType.LD)) {
+                operationMetadata.ld_countdown.incrementAndGet();
+                assert operationMetadata.ld_countdown.get() >= 0;
+            }
+        } else if (parentState.equals(OperationStateType.ABORTED)) {
+            if (dependencyType.equals(DependencyType.TD)) {
+                operationMetadata.td_countdown.set(td_parents.size());
+                for (Operation operation : td_parents) {
+                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
+                        || operation.getOperationState().equals(OperationStateType.ABORTED)) {
+                        operationMetadata.td_countdown.decrementAndGet();
+                    }
+                }
+                assert operationMetadata.td_countdown.get() >= 0;
+            } else if (dependencyType.equals(DependencyType.FD)) {
+                operationMetadata.fd_countdown.set(fd_parents.size());
+                for (Operation operation : fd_parents) {
+                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
+                            || operation.getOperationState().equals(OperationStateType.ABORTED)) {
+                        operationMetadata.fd_countdown.decrementAndGet();
+                    }
+                }
+                assert operationMetadata.fd_countdown.get() >= 0;
+            } else if (dependencyType.equals(DependencyType.LD)) {
+                operationMetadata.ld_countdown.set(ld_parents.size());
+                for (Operation operation : ld_parents) {
+                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
+                            || operation.getOperationState().equals(OperationStateType.ABORTED)) {
+                        operationMetadata.ld_countdown.decrementAndGet();
+                    }
+                }
+                assert operationMetadata.ld_countdown.get() >= 0;
+            }
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 
 
-    public boolean tryReady(boolean isRollback) {
+    public boolean tryReady() {
         boolean isReady = operationMetadata.td_countdown.get() == 0
                 && operationMetadata.fd_countdown.get() == 0
                 && operationMetadata.ld_countdown.get() == 0;
-        if (isRollback)
-            assert this.getOperationState().equals(OperationStateType.EXECUTED);
-        else
-            assert this.getOperationState().equals(OperationStateType.BLOCKED);
         if (isReady) {
             stateTransition(OperationStateType.READY);
         }

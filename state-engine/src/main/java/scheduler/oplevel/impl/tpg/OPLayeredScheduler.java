@@ -174,6 +174,7 @@ public class OPLayeredScheduler<Context extends OPLayeredContext> extends OPSche
         MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
     }
 
+    @Override
     protected void NOTIFY(Operation task, Context context) {
     }
 

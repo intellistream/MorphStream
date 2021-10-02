@@ -10,6 +10,7 @@ import scheduler.Request;
 import scheduler.impl.IScheduler;
 import scheduler.oplevel.context.OPSchedulerContext;
 import scheduler.oplevel.struct.AbstractOperation;
+import scheduler.oplevel.struct.Operation;
 import scheduler.oplevel.struct.TaskPrecedenceGraph;
 import storage.SchemaRecord;
 import storage.TableRecord;
@@ -135,6 +136,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         context.reset();
         tpg.reset(context);
     }
+
+    protected abstract void NOTIFY(Operation operation, Context context);
 
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;

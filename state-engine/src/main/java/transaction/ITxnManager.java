@@ -110,6 +110,7 @@ public interface ITxnManager {
         GS,
         GSA,
         OPGS,
+        OPGSA,
         OPBFS,
         OPDFS
     }

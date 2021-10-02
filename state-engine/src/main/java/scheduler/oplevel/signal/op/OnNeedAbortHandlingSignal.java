@@ -3,10 +3,10 @@ package scheduler.oplevel.signal.op;
 import scheduler.oplevel.struct.MetaTypes;
 import scheduler.oplevel.struct.Operation;
 
-public class OnHeaderUpdatedSignal extends OperationSignal {
+public class OnNeedAbortHandlingSignal extends OperationSignal {
     private final MetaTypes.OperationStateType headerState;
 
-    public OnHeaderUpdatedSignal(Operation operation, MetaTypes.OperationStateType headerState) {
+    public OnNeedAbortHandlingSignal(Operation operation, MetaTypes.OperationStateType headerState) {
         super(operation);
         this.headerState = headerState;
     }

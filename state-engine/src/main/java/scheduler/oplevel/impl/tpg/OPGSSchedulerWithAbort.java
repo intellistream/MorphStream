@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.oplevel.context.OPGSTPGContext;
+import scheduler.oplevel.context.OPGSTPGContextWithAbort;
 import scheduler.oplevel.impl.OPScheduler;
 import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import scheduler.oplevel.struct.Operation;
@@ -12,12 +13,12 @@ import utils.SOURCE_CONTROL;
 
 import static content.common.CommonMetaTypes.AccessType.*;
 
-public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<Context, Operation> {
-    private static final Logger log = LoggerFactory.getLogger(OPGSScheduler.class);
+public class OPGSSchedulerWithAbort<Context extends OPGSTPGContextWithAbort> extends OPGSScheduler<Context> {
+    private static final Logger log = LoggerFactory.getLogger(OPGSSchedulerWithAbort.class);
 
     public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
-    public OPGSScheduler(int totalThreads, int NUM_ITEMS) {
+    public OPGSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
     }
 
@@ -95,9 +96,7 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
     public void execute(Operation operation, long mark_ID, boolean clean) {
         log.trace("++++++execute: " + operation);
         // if the operation is in state aborted or committable or committed, we can bypass the execution
-        if (operation.getOperationState().equals(OperationStateType.ABORTED)
-                || operation.getOperationState().equals(OperationStateType.COMMITTABLE)
-                || operation.getOperationState().equals(OperationStateType.COMMITTED)) {
+        if (operation.getOperationState().equals(OperationStateType.ABORTED)) {
             log.trace("++++++bypassed: " + operation);
             //otherwise, skip (those already been tagged as aborted).
             return;
@@ -158,7 +157,7 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
 
         while (context.batchedOperations.size() != 0) {
             Operation remove = context.batchedOperations.remove();
-            NOTIFY(remove, context);
+            NOTIFY(remove, context); // this also covers abort handling logic
         }
         MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
     }
