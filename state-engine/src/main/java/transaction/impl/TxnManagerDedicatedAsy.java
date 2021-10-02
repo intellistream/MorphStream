@@ -12,6 +12,7 @@ import scheduler.context.*;
 import scheduler.oplevel.context.OPGSTPGContext;
 import scheduler.oplevel.context.OPGSTPGContextWithAbort;
 import scheduler.oplevel.context.OPLayeredContext;
+import scheduler.oplevel.context.OPLayeredContextWithAbort;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
@@ -82,7 +83,11 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 context = new OPGSTPGContextWithAbort(thisTaskId);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case OPBFS:
+            case OPBFSA:
+                context = new OPLayeredContextWithAbort(thisTaskId);
+                scheduler.AddContext(thisTaskId, context);
+                break;
+                case OPBFS:
             case OPDFS:
                 context = new OPLayeredContext(thisTaskId);
                 scheduler.AddContext(thisTaskId, context);

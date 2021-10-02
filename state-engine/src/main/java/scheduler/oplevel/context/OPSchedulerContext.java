@@ -8,7 +8,7 @@ import scheduler.oplevel.struct.OperationChain;
 
 import java.util.ArrayDeque;
 
-public abstract class OPSchedulerContext  implements SchedulerContext {
+public abstract class OPSchedulerContext implements SchedulerContext {
     public final ArrayDeque<Operation> batchedOperations;
     public int thisThreadId;
     public ArrayDeque<Request> requests;

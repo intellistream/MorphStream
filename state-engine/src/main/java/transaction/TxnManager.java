@@ -10,6 +10,7 @@ import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
 import scheduler.oplevel.context.OPGSTPGContext;
 import scheduler.oplevel.impl.tpg.OPBFSScheduler;
+import scheduler.oplevel.impl.tpg.OPBFSSchedulerWithAbort;
 import scheduler.oplevel.impl.tpg.OPGSScheduler;
 import scheduler.oplevel.impl.tpg.OPGSSchedulerWithAbort;
 
@@ -44,10 +45,13 @@ public abstract class TxnManager implements ITxnManager {
                 scheduler = new OPGSScheduler<>(threadCount, numberOfStates);
                 break;
             case "OPGSA":
-                scheduler = new OPGSSchedulerWithAbort(threadCount, numberOfStates);
+                scheduler = new OPGSSchedulerWithAbort<>(threadCount, numberOfStates);
                 break;
             case "OPBFS":
                 scheduler = new OPBFSScheduler<>(threadCount, numberOfStates);
+                break;
+            case "OPBFSA":
+                scheduler = new OPBFSSchedulerWithAbort<>(threadCount, numberOfStates);
                 break;
             case "OPDFS":
                 scheduler = new OPBFSScheduler<>(threadCount, numberOfStates);
