@@ -113,6 +113,7 @@ public interface ITxnManager {
         OPGSA,
         OPBFS,
         OPBFSA,
-        OPDFS
+        OPDFS,
+        OPDFSA
     }
 }

@@ -3,7 +3,9 @@ package scheduler.oplevel.struct;
 import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scheduler.oplevel.context.OPLayeredContext;
 import scheduler.oplevel.context.OPSchedulerContext;
+import scheduler.oplevel.signal.op.OnParentUpdatedSignal;
 import scheduler.oplevel.struct.MetaTypes.DependencyType;
 import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
@@ -12,6 +14,7 @@ import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
 
+import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -216,6 +219,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         if (parentState.equals(OperationStateType.EXECUTED)) {
             if (dependencyType.equals(DependencyType.TD)) {
                 operationMetadata.td_countdown.decrementAndGet();
+                if (operationMetadata.td_countdown.get() < 0) {
+                    System.out.println("= =");
+                }
                 assert operationMetadata.td_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.FD)) {
                 operationMetadata.fd_countdown.decrementAndGet();
@@ -340,35 +346,76 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     /********************************* Layered operation related interfaces *********************************/
 
-    public synchronized void updateDependencyLevel() {
-        if (isDependencyLevelCalculated)
-            return;
+//    public synchronized void updateDependencyLevel() {
+//        if (isDependencyLevelCalculated)
+//            return;
+//        dependencyLevel = 0;
+//        for (Operation parent : getParents(DependencyType.TD)) {
+//            if (!parent.hasValidDependencyLevel()) {
+//                parent.updateDependencyLevel();
+//            }
+//            if (parent.getDependencyLevel() >= dependencyLevel) {
+//                dependencyLevel = parent.getDependencyLevel() + 1;
+//            }
+//        }
+//        for (Operation parent : getParents(DependencyType.FD)) {
+//            if (!parent.hasValidDependencyLevel()) {
+//                parent.updateDependencyLevel();
+//            }
+//            if (parent.getDependencyLevel() >= dependencyLevel) {
+//                dependencyLevel = parent.getDependencyLevel() + 1;
+//            }
+//        }
+//        for (Operation parent : getParents(DependencyType.LD)) {
+//            if (!parent.hasValidDependencyLevel()) {
+//                parent.updateDependencyLevel();
+//            }
+//            if (parent.getDependencyLevel() >= dependencyLevel) {
+//                dependencyLevel = parent.getDependencyLevel() + 1;
+//            }
+//        }
+//        isDependencyLevelCalculated = true;
+//    }
+
+    public void notifyChildren() {
+        for (Operation child : getChildren(DependencyType.TD)) {
+            ((OPLayeredContext) child.context).layerBuildHelperQueue
+                    .add(new OnParentUpdatedSignal(child, DependencyType.TD, OperationStateType.EXECUTED));
+        }
+        for (Operation child : getChildren(DependencyType.FD)) {
+            ((OPLayeredContext) child.context).layerBuildHelperQueue
+                    .add(new OnParentUpdatedSignal(child, DependencyType.FD, OperationStateType.EXECUTED));
+        }
+        for (Operation child : getChildren(DependencyType.LD)) {
+            ((OPLayeredContext) child.context).layerBuildHelperQueue
+                    .add(new OnParentUpdatedSignal(child, DependencyType.LD, OperationStateType.EXECUTED));
+        }
+    }
+
+    public void calculateDependencyLevelDuringExploration() {
         dependencyLevel = 0;
         for (Operation parent : getParents(DependencyType.TD)) {
-            if (!parent.hasValidDependencyLevel()) {
-                parent.updateDependencyLevel();
-            }
+            assert parent.hasValidDependencyLevel();
             if (parent.getDependencyLevel() >= dependencyLevel) {
                 dependencyLevel = parent.getDependencyLevel() + 1;
             }
         }
         for (Operation parent : getParents(DependencyType.FD)) {
-            if (!parent.hasValidDependencyLevel()) {
-                parent.updateDependencyLevel();
-            }
+            assert parent.hasValidDependencyLevel();
             if (parent.getDependencyLevel() >= dependencyLevel) {
                 dependencyLevel = parent.getDependencyLevel() + 1;
             }
         }
         for (Operation parent : getParents(DependencyType.LD)) {
-            if (!parent.hasValidDependencyLevel()) {
-                parent.updateDependencyLevel();
-            }
+            assert parent.hasValidDependencyLevel();
             if (parent.getDependencyLevel() >= dependencyLevel) {
                 dependencyLevel = parent.getDependencyLevel() + 1;
             }
         }
         isDependencyLevelCalculated = true;
+        operationMetadata.td_countdown.set(td_parents.size());
+        operationMetadata.fd_countdown.set(fd_parents.size());
+        operationMetadata.ld_countdown.set(ld_parents.size());
     }
 
     public int getDependencyLevel() {

@@ -61,6 +61,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
      * @return
      */
     public int buildBucketPerThread(Collection<SchedulingUnit> ocs, ArrayDeque<OperationChain<ExecutionUnit>> resolvedOC) {
+        // TODO: update this logic to the latest logic that we proposed in operation level
         int localMaxDLevel = 0;
         int dependencyLevel;
         for (SchedulingUnit oc : ocs) {

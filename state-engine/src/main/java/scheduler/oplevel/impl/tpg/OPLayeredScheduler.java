@@ -107,9 +107,7 @@ public class OPLayeredScheduler<Context extends OPLayeredContext> extends OPSche
     public void execute(Operation operation, long mark_ID, boolean clean) {
         log.trace("++++++execute: " + operation);
         // if the operation is in state aborted or committable or committed, we can bypass the execution
-        if (operation.getOperationState().equals(OperationStateType.ABORTED)
-                || operation.getOperationState().equals(OperationStateType.COMMITTABLE)
-                || operation.getOperationState().equals(OperationStateType.COMMITTED)) {
+        if (operation.getOperationState().equals(OperationStateType.ABORTED)) {
             log.trace("++++++bypassed: " + operation);
             //otherwise, skip (those already been tagged as aborted).
             return;

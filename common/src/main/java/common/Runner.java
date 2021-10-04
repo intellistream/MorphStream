@@ -57,7 +57,7 @@ public abstract class Runner implements IRunner {
      * TStream Specific Parameters.
      */
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 1;// default total execution threads
+    public int tthread = 5;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_TStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
@@ -70,9 +70,10 @@ public abstract class Runner implements IRunner {
 //    public String scheduler = "GS";
 //    public String scheduler = "GSA";
 //    public String scheduler = "OPGS";
-    public String scheduler = "OPGSA";
+//    public String scheduler = "OPGSA";
 //    public String scheduler = "OPBFS";
 //    public String scheduler = "OPDFS";
+    public String scheduler = "OPDFSA";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
@@ -100,12 +101,12 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 1000;//checkpoint per thread.
+    public int checkpoint_interval = 20000;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
 //    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 1000;
+    public int totalEvents = 100000;
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 8;
 

@@ -96,17 +96,21 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
 
         if (context instanceof OPLayeredContext) {
             int threadId = context.thisThreadId;
+            ArrayDeque<Operation> roots = new ArrayDeque<>();
             Collection<TableOCs> tableOCsList = getOperationChains().values();
             for (TableOCs tableOCs : tableOCsList) {//for each table.
                 for (OperationChain oc : tableOCs.threadOCsMap.get(threadId).holder_v1.values()) {
                     oc.updateTDDependencies();
+                    Operation head = oc.getOperations().first();
+                    if (head.isRoot()) {
+                        roots.add(head);
+                    }
                     context.operations.addAll(oc.getOperations());
                     context.totalOsToSchedule += oc.getOperations().size();
                 }
             }
-            ((OPLayeredContext) context).buildBucketPerThread(context.operations);
+            ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
             if (enable_log) log.info("MaxLevel:" + (((OPLayeredContext) context).maxLevel));
-
         } else if (context instanceof OPGSTPGContext) {
             int threadId = context.thisThreadId;
             Collection<TableOCs> tableOCsList = getOperationChains().values();

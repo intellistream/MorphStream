@@ -3,27 +3,29 @@ package scheduler.oplevel.impl.tpg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import scheduler.context.DFSLayeredTPGContextWithAbort;
 import scheduler.oplevel.context.OPLayeredContextWithAbort;
 import scheduler.oplevel.struct.MetaTypes;
 import scheduler.oplevel.struct.Operation;
+import scheduler.struct.layered.dfs.DFSOperation;
+import scheduler.struct.layered.dfs.DFSOperationChain;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static common.CONTROL.enable_log;
-import static java.lang.Integer.min;
 
-public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> extends OPBFSScheduler<Context> {
-    private static final Logger LOG = LoggerFactory.getLogger(OPBFSSchedulerWithAbort.class);
+public class OPDFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> extends OPDFSScheduler<Context> {
+    private static final Logger LOG = LoggerFactory.getLogger(OPDFSSchedulerWithAbort.class);
 
     public final ConcurrentLinkedDeque<Operation> failedOperations = new ConcurrentLinkedDeque<>();//aborted operations per thread.
     public final AtomicBoolean needAbortHandling = new AtomicBoolean(false);//if any operation is aborted during processing.
-    public int targetRollbackLevel = 0;//shared data structure.
 
-    public OPBFSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
+    public OPDFSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
     }
 
@@ -38,20 +40,24 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
      */
     @Override
     public void EXPLORE(Context context) {
-        Operation next = Next(context);
-        if (next == null && !context.finished()) { //current level is all processed at the current thread.
-            while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                //all threads come to the current level.
-                if (needAbortHandling.get()) {
-                    if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
-                    abortHandling(context);
-                }
-                ProcessedToNextLevel(context);
-                next = Next(context);
+        Operation op = Next(context);
+        while (op == null) {
+            // current thread finishes the current level
+            if (needAbortHandling.get()) {
+                abortHandling(context);
+            }
+            if (context.finished())
+                break;
+            ProcessedToNextLevel(context);
+            op = Next(context);
+        }
+        while (op != null && op.hasParents()) {
+            // Busy-Wait for dependency resolution
+            if (needAbortHandling.get()) {
+                return; // skip this busy wait when abort happens
             }
         }
-        DISTRIBUTE(next, context);
+        DISTRIBUTE(op, context);
     }
 
     @Override
@@ -81,7 +87,9 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
 
         while (context.batchedOperations.size() != 0) {
             Operation remove = context.batchedOperations.remove();
-            NOTIFY(remove, context);
+            if (!remove.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+                NOTIFY(remove, context); // only notify when the operation is executed
+            }
             checkTransactionAbort(remove);
         }
         MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
@@ -89,6 +97,11 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
 
     protected void checkTransactionAbort(Operation operation) {
         if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+            for (Operation failedOp : failedOperations) {
+                if (failedOp.bid == operation.bid) { // avoid duplicate abort notification
+                    return;
+                }
+            }
             needAbortHandling.compareAndSet(false, true);
             failedOperations.push(operation); // operation need to wait until the last abort has completed
         }
@@ -96,17 +109,10 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
 
     protected void abortHandling(Context context) {
         MarkOperationsToAbort(context);
-
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
-        IdentifyRollbackLevel(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
-        SetRollbackLevel(context);
-
         RollbackToCorrectLayerForRedo(context);
         ResumeExecution(context);
     }
 
-    //TODO: mark operations of aborted transaction to be aborted.
     protected void MarkOperationsToAbort(Context context) {
         boolean markAny = false;
         ArrayList<Operation> operations;
@@ -125,7 +131,7 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
             context.rollbackLevel = context.currentLevel;
         }
         context.isRollbacked = true;
-        if (enable_log) LOG.debug("++++++ rollback at level: " + context.thisThreadId + " | " + context.rollbackLevel);
+        if (enable_log) LOG.info("++++++ rollback at level: " + context.thisThreadId + " | " + context.rollbackLevel);
     }
 
     /**
@@ -142,34 +148,21 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
         for (Operation failedOp : failedOperations) {
             if (bid == failedOp.bid) {
                 operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
+                System.out.println(operation);
                 markAny = true;
             }
         }
         return markAny;
     }
 
-    protected void IdentifyRollbackLevel(Context context) {
-        if (context.thisThreadId == 0) {
-            targetRollbackLevel = Integer.MAX_VALUE;
-            for (int i = 0; i < context.totalThreads; i++) { // find the first level that contains aborted operations
-                targetRollbackLevel = min(targetRollbackLevel, tpg.threadToContextMap.get(i).rollbackLevel);
-            }
-        }
-    }
-
-    protected void SetRollbackLevel(Context context) {
-        if (enable_log) LOG.debug("++++++ rollback at: " + targetRollbackLevel);
-        context.rollbackLevel = targetRollbackLevel;
-    }
-
     protected void ResumeExecution(Context context) {
         context.rollbackLevel = -1;
         context.isRollbacked = false;
-//        if (context.thisThreadId == 0) { // TODO: what should we do to optimize this part?
-        if (needAbortHandling.compareAndSet(true, false)) {
-            failedOperations.clear();
-        }
-//        }
+
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        needAbortHandling.compareAndSet(true, false);
+        failedOperations.clear();
+        LOG.info("resume: " + context.thisThreadId);
     }
 
     protected void RollbackToCorrectLayerForRedo(Context context) {
@@ -185,8 +178,29 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
     protected int getNumOPsByLevel(Context context, int level) {
         int ops = 0;
         if (context.allocatedLayeredOCBucket.containsKey(level)) { // oc level may not be sequential
-            ops += context.allocatedLayeredOCBucket.get(level).size();
+            Collection<Operation> curLayer = context.allocatedLayeredOCBucket.get(level);
+            ops += curLayer.size();
+            for (Operation operation : curLayer) {
+                if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)) {
+                    operation.stateTransition(MetaTypes.OperationStateType.BLOCKED); // can be any state behind EXECUTED
+                    notifyChildren(operation, MetaTypes.OperationStateType.BLOCKED);
+                } else if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+                    notifyChildren(operation, MetaTypes.OperationStateType.ABORTED);
+                }
+            }
         }
         return ops;
+    }
+
+    private void notifyChildren(Operation operation, MetaTypes.OperationStateType operationStateType) {
+        for (Operation child : operation.getChildren(MetaTypes.DependencyType.TD)) {
+            child.updateDependencies(MetaTypes.DependencyType.TD, operationStateType);
+        }
+        for (Operation child : operation.getChildren(MetaTypes.DependencyType.FD)) {
+            child.updateDependencies(MetaTypes.DependencyType.FD, operationStateType);
+        }
+        for (Operation child : operation.getChildren(MetaTypes.DependencyType.LD)) {
+            child.updateDependencies(MetaTypes.DependencyType.LD, operationStateType);
+        }
     }
 }

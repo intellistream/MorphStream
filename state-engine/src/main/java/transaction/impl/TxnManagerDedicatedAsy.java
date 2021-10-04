@@ -83,13 +83,14 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 context = new OPGSTPGContextWithAbort(thisTaskId);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case OPBFSA:
-                context = new OPLayeredContextWithAbort(thisTaskId);
-                scheduler.AddContext(thisTaskId, context);
-                break;
-                case OPBFS:
+            case OPBFS:
             case OPDFS:
                 context = new OPLayeredContext(thisTaskId);
+                scheduler.AddContext(thisTaskId, context);
+                break;
+            case OPBFSA:
+            case OPDFSA:
+                context = new OPLayeredContextWithAbort(thisTaskId);
                 scheduler.AddContext(thisTaskId, context);
                 break;
             default:

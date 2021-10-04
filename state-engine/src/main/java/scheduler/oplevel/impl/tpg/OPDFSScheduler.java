@@ -49,16 +49,13 @@ public class OPDFSScheduler<Context extends OPLayeredContext> extends OPLayeredS
     @Override
     protected void NOTIFY(Operation operation, Context context) {
         operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
-        Collection<Operation> ops = operation.getChildren(MetaTypes.DependencyType.TD);
-        for (Operation childOP : ops) {
+        for (Operation childOP : operation.getChildren(MetaTypes.DependencyType.TD)) {
             childOP.updateDependencies(MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.EXECUTED);
         }
-        ops = operation.getChildren(MetaTypes.DependencyType.FD);
-        for (Operation childOP : ops) {
+        for (Operation childOP : operation.getChildren(MetaTypes.DependencyType.FD)) {
             childOP.updateDependencies(MetaTypes.DependencyType.FD, MetaTypes.OperationStateType.EXECUTED);
         }
-        ops = operation.getChildren(MetaTypes.DependencyType.LD);
-        for (Operation childOP : ops) {
+        for (Operation childOP : operation.getChildren(MetaTypes.DependencyType.LD)) {
             childOP.updateDependencies(MetaTypes.DependencyType.LD, MetaTypes.OperationStateType.EXECUTED);
         }
     }
