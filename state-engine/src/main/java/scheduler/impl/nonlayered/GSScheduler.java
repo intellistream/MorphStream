@@ -3,9 +3,14 @@ package scheduler.impl.nonlayered;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContext;
+import scheduler.context.GSTPGContextWithAbort;
 import scheduler.struct.OperationChain;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
+import scheduler.struct.gs.GSOperationChainWithAbort;
+import scheduler.struct.gs.GSOperationWithAbort;
+import transaction.impl.ordered.MyList;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +25,10 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
     @Override
     public void INITIALIZE(GSTPGContext context) {
-//        tpg.constructTPG(context);
+        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 
     /**
@@ -80,7 +86,28 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         }
 //        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
         operationGraph.add(set_op);
-        tpg.addOperationToChain(set_op);
+//        tpg.addOperationToChain(set_op);
+        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+        tpg.cacheToSortedOperations(set_op);
+    }
+
+    /**
+     * Used by GSScheduler.
+     *  @param context
+     * @param operationChain
+     * @param mark_ID
+     * @return
+     */
+    @Override
+    public boolean executeWithBusyWait(GSTPGContext context, GSOperationChain operationChain, long mark_ID) {
+        MyList<GSOperation> operation_chain_list = operationChain.getOperations();
+        assert !operationChain.isExecuted;
+        for (GSOperation operation : operation_chain_list) {
+            if (operation.isExecuted || operation.aborted) continue;
+            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+            execute(operation, mark_ID, false);
+        }
+        return true;
     }
 
     /**

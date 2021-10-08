@@ -5,6 +5,7 @@ import scheduler.statemanager.OperationChainStateListener;
 import scheduler.statemanager.PartitionStateManager;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
+import scheduler.struct.gs.GSOperationChainWithAbort;
 
 import java.util.ArrayDeque;
 
@@ -27,6 +28,7 @@ public class GSTPGContext
     public GSOperationChain createTask(String tableName, String pKey, long bid) {
         GSOperationChain oc = new GSOperationChain(tableName, pKey, bid);
         oc.setContext(this);
+        operationChains.add(oc);
         return oc;
     }
 

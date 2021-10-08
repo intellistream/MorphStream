@@ -67,8 +67,8 @@ public abstract class Runner implements IRunner {
 //        public String scheduler = "BFSA";
 //    public String scheduler = "DFS";
 //    public String scheduler = "DFSA";
-//    public String scheduler = "GS";
-    public String scheduler = "GSA";
+    public String scheduler = "GS";
+//    public String scheduler = "GSA";
 //    public String scheduler = "OPGS";
 //    public String scheduler = "OPGSA";
 //    public String scheduler = "OPBFS";

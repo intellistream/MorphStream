@@ -51,7 +51,6 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
-            System.out.println(context.thisThreadId + " execute normal: " + next);
 //            assert !next.getOperations().isEmpty();
             if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
                 MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
@@ -67,7 +66,6 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
         } else {
             next = nextFromBusyWaitQueue(context);
             if (next != null) {
-                System.out.println(context.thisThreadId + "execute busy wait: " + next);
 //                assert !next.getOperations().isEmpty();
                 if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
                     next.isExecuted = true;

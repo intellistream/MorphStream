@@ -3,8 +3,10 @@ package scheduler.impl.layered;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.DFSLayeredTPGContext;
+import scheduler.context.DFSLayeredTPGContextWithAbort;
 import scheduler.struct.layered.dfs.DFSOperation;
 import scheduler.struct.layered.dfs.DFSOperationChain;
+import transaction.impl.ordered.MyList;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,8 +71,31 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
                 set_op = new DFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
+            default:
+                throw new UnsupportedOperationException();
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op);
+//        tpg.setupOperationTDFD(set_op);
+        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+        tpg.cacheToSortedOperations(set_op);
+    }
+
+
+    /**
+     * Used by GSScheduler.
+     *  @param context
+     * @param operationChain
+     * @param mark_ID
+     * @return
+     */
+    @Override
+    public boolean executeWithBusyWait(DFSLayeredTPGContext context, DFSOperationChain operationChain, long mark_ID) {
+        MyList<DFSOperation> operation_chain_list = operationChain.getOperations();
+        for (DFSOperation operation : operation_chain_list) {
+            if (operation.isExecuted) continue;
+            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+            execute(operation, mark_ID, false);
+        }
+        return true;
     }
 }

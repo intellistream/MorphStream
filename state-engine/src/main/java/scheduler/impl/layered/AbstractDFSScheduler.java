@@ -29,7 +29,7 @@ public class AbstractDFSScheduler<Context extends DFSLayeredTPGContext> extends 
     public void EXPLORE(Context context) {
         DFSOperationChain oc = Next(context);
         while (oc == null) {
-            if (context.finished())
+            if (context.exploreFinished())
                 break;
             ProcessedToNextLevel(context);
             oc = Next(context);

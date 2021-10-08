@@ -3,8 +3,10 @@ package scheduler.impl.layered;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContext;
+import scheduler.context.BFSLayeredTPGContextWithAbort;
 import scheduler.struct.layered.bfs.BFSOperation;
 import scheduler.struct.layered.bfs.BFSOperationChain;
+import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
     @Override
     public void EXPLORE(BFSLayeredTPGContext context) {
         BFSOperationChain next = Next(context);
-        if (next == null && !context.finished()) { //current level is all processed at the current thread.
+        if (next == null && !context.exploreFinished()) { //current level is all processed at the current thread.
             while (next == null) {
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 ProcessedToNextLevel(context);
@@ -69,8 +71,30 @@ public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
                 set_op = new BFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
+            default:
+                throw new UnsupportedOperationException();
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op);
+//        tpg.setupOperationTDFD(set_op);
+        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+        tpg.cacheToSortedOperations(set_op);
+    }
+
+    /**
+     * Used by GSScheduler.
+     *  @param context
+     * @param operationChain
+     * @param mark_ID
+     * @return
+     */
+    @Override
+    public boolean executeWithBusyWait(BFSLayeredTPGContext context, BFSOperationChain operationChain, long mark_ID) {
+        MyList<BFSOperation> operation_chain_list = operationChain.getOperations();
+        for (BFSOperation operation : operation_chain_list) {
+            if (operation.isExecuted) continue;
+            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+            execute(operation, mark_ID, false);
+        }
+        return true;
     }
 }
