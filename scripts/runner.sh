@@ -2,23 +2,19 @@
 
 function ResetParameters() {
   NUM_ITEMS=5000000
-  numberOfBatches=1
-  events=983040
-  fanoutDist="zipfcenter"
-  idGenType="normal"
+  totalEvents=983040
   tthread=24
   scheduler="BFS"
 }
 
 function runTStream() {
+  checkpointInterval=`expr $totalEvents / $tthread`
   java -Xms60g -Xmx60g -jar -d64 application-0.0.2-jar-with-dependencies.jar \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
-    --totalEventsPerBatch $events \
-    --numberOfBatches $numberOfBatches \
-    --fanoutDist $fanoutDist  \
-    --idGenType $idGenType \
-    --scheduler $scheduler
+    --scheduler $scheduler \
+    --totalEvents $totalEvents \
+    --checkpoint_interval $checkpointInterval
 }
 
 # run basic experiment for different algorithms
@@ -26,7 +22,7 @@ function baselineEvaluation() {
   ResetParameters
   for scheduler in BFS DFS GS
   do
-      for events in 983040
+      for totalEvents in 983040
       do
           runTStream
       done
@@ -38,7 +34,7 @@ function withAbortEvaluation() {
   ResetParameters
   for scheduler in BFSA DFSA GSA
   do
-      for events in 983040
+      for totalEvents in 983040
       do
           runTStream
       done
