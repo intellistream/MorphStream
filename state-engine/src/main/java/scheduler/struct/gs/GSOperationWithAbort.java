@@ -2,11 +2,16 @@ package scheduler.struct.gs;
 
 import content.common.CommonMetaTypes;
 import scheduler.context.AbstractGSTPGContext;
+import scheduler.oplevel.struct.Operation;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
+
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Queue;
 
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
@@ -16,6 +21,7 @@ public class GSOperationWithAbort extends GSOperation {
     public int txnOpId = 0;
     // logical dependencies are to be stored for the purpose of abort handling
     private GSOperationWithAbort ld_head_operation = null; // the logical dependencies ops to be executed after this op.
+    private final Queue<GSOperationWithAbort> ld_descendant_operations;
     private GSOperationChainWithAbort oc; // used for dependency resolved notification under greedy smart
 
     public GSOperationWithAbort(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
@@ -58,6 +64,7 @@ public class GSOperationWithAbort extends GSOperation {
             TableRecord[] condition_records, int[] success) {
         super(context, table_name, txn_context, bid, accessType, record, record_ref, function, condition, condition_records, success);
         this.context = context;
+        ld_descendant_operations = new ArrayDeque<>();
     }
 
     public GSOperationChainWithAbort getOC() {
@@ -84,6 +91,11 @@ public class GSOperationWithAbort extends GSOperation {
 
     public void addDescendant(GSOperationWithAbort descendant) {
 //        oc.addDescendant(this, descendant);
+        ld_descendant_operations.add(descendant);
+    }
+
+    public Collection<GSOperationWithAbort> getDescendants() {
+        return ld_descendant_operations;
     }
 
     public GSOperationWithAbort getHeader() {

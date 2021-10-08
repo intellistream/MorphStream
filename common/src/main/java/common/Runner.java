@@ -68,12 +68,12 @@ public abstract class Runner implements IRunner {
 //    public String scheduler = "DFS";
 //    public String scheduler = "DFSA";
 //    public String scheduler = "GS";
-//    public String scheduler = "GSA";
+    public String scheduler = "GSA";
 //    public String scheduler = "OPGS";
 //    public String scheduler = "OPGSA";
 //    public String scheduler = "OPBFS";
 //    public String scheduler = "OPDFS";
-    public String scheduler = "OPDFSA";
+//    public String scheduler = "OPDFSA";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")

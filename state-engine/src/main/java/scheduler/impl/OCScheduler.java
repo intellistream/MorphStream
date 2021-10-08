@@ -223,14 +223,14 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     protected boolean isConflicted(Context context, SchedulingUnit operationChain, ExecutionUnit operation) {
         if (operation.fdParentOps != null) {
             if (operation.fdParentOps[0] != null) {
-                if (!operation.fdParentOps[0].isExecuted) {
+                if (!(operation.fdParentOps[0].isExecuted || operation.fdParentOps[0].aborted)) {
                     // blocked and busy wait
                     context.busyWaitQueue.add(operationChain);
                     return true;
                 }
             }
             if (operation.fdParentOps[1] != null) {
-                if (!operation.fdParentOps[1].isExecuted) {
+                if (!(operation.fdParentOps[1].isExecuted || operation.fdParentOps[1].aborted)) {
                     context.busyWaitQueue.add(operationChain);
                     return true;
                 }

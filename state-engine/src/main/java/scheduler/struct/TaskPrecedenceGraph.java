@@ -134,6 +134,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     private void submit(Context context, Collection<SchedulingUnit> ocs) {
         ArrayDeque<OperationChain<ExecutionUnit>> scannedOC = new ArrayDeque<>();
         ArrayDeque<OperationChain<ExecutionUnit>> resolvedOC = new ArrayDeque<>();
+        // TODO: simple dfs to solve circular, more efficient algorithm need to be involved. keywords: 如何找出有向图中的所有环路？
         for (SchedulingUnit oc : ocs) {
             resolveCircular(scannedOC, resolvedOC, oc);
         }
