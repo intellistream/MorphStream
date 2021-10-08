@@ -83,6 +83,7 @@ public class TPGDataGenerator extends DataGenerator {
         } else {
             event = randomTransferEvent();
         }
+        System.out.println(eventID);
         events.add(event);
     }
 
@@ -145,11 +146,12 @@ public class TPGDataGenerator extends DataGenerator {
             } else {
                 srcKey = generatedKeys.get(zipfGenerator.next() % generatedKeys.size());
             }
-        } else {
-            while (generatedKeys.contains(srcKey)) {
-                srcKey = zipfGenerator.next();
-            }
         }
+//        else {
+//            while (generatedKeys.contains(srcKey)) {
+//                srcKey = zipfGenerator.next();
+//            }
+//        }
         return srcKey;
     }
 
