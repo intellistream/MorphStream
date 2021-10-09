@@ -8,7 +8,6 @@ import java.io.BufferedWriter;
 
 public abstract class TransactionalSpout extends AbstractSpout implements Checkpointable {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalSpout.class);
-    public transient FastZipfGenerator p_generator;
     public double target_Hz;
     public int checkpoint_interval;
     public volatile int control = 0;//control how many elements in each epoch.

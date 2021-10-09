@@ -8,7 +8,7 @@
 /common/common.iml
 /state-engine/state-engine.iml
 /stream-engine/stream-engine.iml
-
+.idea/
 /metric_output/
 
 # builds

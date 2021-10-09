@@ -116,8 +116,6 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
         checkpoint_interval = config.getInt("checkpoint");
         target_Hz = (int) config.getDouble("targetHz", 10000000);
-        double theta = config.getDouble("theta", 0);
-        p_generator = new FastZipfGenerator(NUM_ITEMS, theta, 0);
 
         totalEventsPerBatch = config.getInt("totalEvents");
         tthread = config.getInt("tthread");
