@@ -107,8 +107,19 @@ public abstract class Runner implements IRunner {
 //    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
     public int totalEvents = 100000;
+
+    @Parameter(names = {"--deposit_ratio"}, description = "State access skewness.")
+    public Integer Ratio_Of_Deposit = 25;
+
+    @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
+    public Integer State_Access_Skewness = 0;
+
+    @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
+    public Integer Ratio_of_Overlapped_Keys = 10;
+
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 8;
+
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -136,6 +147,10 @@ public abstract class Runner implements IRunner {
         config.put("generator", generator);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
+
+        config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        config.put("State_Access_Skewness", State_Access_Skewness);
+        config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
 
         config.put("numberOfDLevels", numberOfDLevels);
 

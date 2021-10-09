@@ -57,11 +57,11 @@ public class TPGDataGenerator extends DataGenerator {
         super(dataConfig);
 
         // TODO: temporarily hard coded, will update later
-        Ratio_Of_Deposit = 25;//0-100 (%)
-        State_Access_Skewness = 0;
+        Ratio_Of_Deposit = dataConfig.Ratio_Of_Deposit;//0-100 (%)
+        State_Access_Skewness = dataConfig.State_Access_Skewness;
         Transaction_Length = 4;
         Ratio_of_Transaction_Aborts = 0;
-        Ratio_of_Overlapped_Keys = 10;
+        Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
 
         int nKeyState = dataConfig.getnKeyStates();
         events = new ArrayList<>(nTuples);
@@ -78,7 +78,7 @@ public class TPGDataGenerator extends DataGenerator {
     protected void generateTuple() {
         SLEvent event;
         int next = random.nextInt(100);
-        if (next < Ratio_of_Overlapped_Keys) {
+        if (next < Ratio_Of_Deposit) {
             event = randomDepositEvent();
         } else {
             event = randomTransferEvent();
