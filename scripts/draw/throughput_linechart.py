@@ -80,11 +80,10 @@ def DrawFigure(xvalues, yvalues, legend_labels, x_label, y_label, filename, allo
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
 
-def ReadFile(x_axis):
+def ReadFile(x_axis, batchInterval):
     w, h = 6, len(x_axis)
     y = [[] for _ in range(h)]
 
-    batchInterval = 10240
     for tthread in x_axis:
         events = tthread * batchInterval
         gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(tthread, events)
@@ -131,11 +130,10 @@ def ReadFile(x_axis):
 
     return y
 
-def ReadFileWithAbort(x_axis):
+def ReadFileWithAbort(x_axis, batchInterval):
     w, h = 6, len(x_axis)
     y = [[] for _ in range(h)]
 
-    batchInterval = 10240
     for tthread in x_axis:
         events = tthread * batchInterval
         gs_path = FILE_FOLER + '/GSA/threads = {}/totalEvents = {}'.format(tthread, events)
@@ -181,15 +179,15 @@ def ReadFileWithAbort(x_axis):
     return y
 
 if __name__ == '__main__':
+    batchInterval = 4096
     x_value = [1, 2, 4, 8, 16, 24]
     legend_labels = ["GS", "BFS", "DFS", "OPGS", "OPBFS", "OPDFS"]
     x_axis = [x_value] * len(legend_labels)
-    y_axis = ReadFile(x_value)
+    y_axis = ReadFile(x_value, batchInterval)
     legend = True
     DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)", "comparison", legend)
 
     legend_labels = ["GSA", "BFSA", "DFSA", "OPGSA", "OPBFSA", "OPDFSA"]
     x_axis = [x_value] * len(legend_labels)
-    y_axis = ReadFile(x_value)
-    y_axis = ReadFileWithAbort(x_value)
+    y_axis = ReadFileWithAbort(x_value, batchInterval)
     DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)", "comparison_with_abort", legend)

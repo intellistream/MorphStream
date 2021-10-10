@@ -170,6 +170,45 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         }
     }
 
+    @Override
+    public void PROCESS(Context context, long mark_ID) {
+        int threadId = context.thisThreadId;
+        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+        SchedulingUnit next = next(context);
+        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+
+        if (next != null) {
+//            assert !next.getOperations().isEmpty();
+            if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+                NOTIFY(next, context);
+                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+            }
+        } else {
+            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+            next = nextFromBusyWaitQueue(context);
+            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+            if (next != null) {
+//                assert !next.getOperations().isEmpty();
+                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+                    MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+                    NOTIFY(next, context);
+                    MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+                }
+            }
+        }
+    }
+
+    /**
+     * Try to get task from local queue.
+     *
+     * @param context
+     * @return
+     */
+    protected SchedulingUnit next(Context context) {
+        throw new UnsupportedOperationException();
+    }
+
     public boolean executeWithBusyWait(Context context, SchedulingUnit operationChain, long mark_ID) {
         MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
         for (ExecutionUnit operation : operation_chain_list) {

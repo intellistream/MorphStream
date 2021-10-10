@@ -92,40 +92,34 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         context.partitionStateManager.onOcExecuted(task);
     }
 
-    @Override
-    public void PROCESS(GSTPGContextWithAbort context, long mark_ID) {
-        int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-        GSOperationChainWithAbort next = next(context);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-
-        if (next != null) {
-//            assert !next.getOperations().isEmpty();
-            if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-//                if (next.hasChildren()) {
+//    @Override
+//    public void PROCESS(GSTPGContextWithAbort context, long mark_ID) {
+//        int threadId = context.thisThreadId;
+//        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+//        GSOperationChainWithAbort next = next(context);
+//        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+//
+//        if (next != null) {
+////            assert !next.getOperations().isEmpty();
+//            if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+//                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+//                NOTIFY(next, context);
+//                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+//            }
+//        } else {
+//            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+//            next = nextFromBusyWaitQueue(context);
+//            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+//            if (next != null) {
+////                assert !next.getOperations().isEmpty();
+//                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+//                    MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
 //                    NOTIFY(next, context);
-//                } else {
-//                    next.isExecuted = true;
-//                    assert next.context.equals(context);
-//                    executableTaskListener.onOCFinalized(next);
+//                    MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
 //                }
-                NOTIFY(next, context);
-                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
-            }
-        } else {
-            next = nextFromBusyWaitQueue(context);
-            if (next != null) {
-//                assert !next.getOperations().isEmpty();
-                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-//                    next.isExecuted = true;
-//                    assert next.context.equals(context);
-//                    executableTaskListener.onOCFinalized(next);
-                    NOTIFY(next, context);
-                }
-            }
-        }
-    }
+//            }
+//        }
+//    }
 
     /**
      * Used by GSScheduler.

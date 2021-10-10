@@ -80,7 +80,7 @@ public class OPDFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
         } while (true);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
-        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         for (Operation operation : context.batchedOperations) {
             execute(operation, mark_ID, false);
         }
@@ -88,11 +88,13 @@ public class OPDFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
         while (context.batchedOperations.size() != 0) {
             Operation remove = context.batchedOperations.remove();
             if (!remove.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
                 NOTIFY(remove, context); // only notify when the operation is executed
+                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
             }
             checkTransactionAbort(remove);
         }
-        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
     }
 
     protected void checkTransactionAbort(Operation operation) {

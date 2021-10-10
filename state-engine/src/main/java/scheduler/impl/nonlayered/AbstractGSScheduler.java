@@ -43,40 +43,34 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
         throw new UnsupportedOperationException("Unsupported.");
     }
 
-    @Override
-    public void PROCESS(Context context, long mark_ID) {
-        int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-        SchedulingUnit next = next(context);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-
-        if (next != null) {
-//            assert !next.getOperations().isEmpty();
-            if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-//                if (next.hasChildren()) {
-//                    NOTIFY(next, context);
-//                } else {
-//                    next.isExecuted = true;
-//                    assert next.context.equals(context);
-//                    context.scheduledOPs += next.getOperations().size();
-//                }
+//    @Override
+//    public void PROCESS(Context context, long mark_ID) {
+//        int threadId = context.thisThreadId;
+//        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+//        SchedulingUnit next = next(context);
+//        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+//
+//        if (next != null) {
+////            assert !next.getOperations().isEmpty();
+//            if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+//                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+//                NOTIFY(next, context);
 //                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
-                NOTIFY(next, context);
-            }
-        } else {
-            next = nextFromBusyWaitQueue(context);
-            if (next != null) {
-//                assert !next.getOperations().isEmpty();
-                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-//                    next.isExecuted = true;
-//                    assert next.context.equals(context);
-//                    context.scheduledOPs += next.getOperations().size();
-                    NOTIFY(next, context);
-                }
-            }
-        }
-     }
+//            }
+//        } else {
+//            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+//            next = nextFromBusyWaitQueue(context);
+//            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+//            if (next != null) {
+////                assert !next.getOperations().isEmpty();
+//                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+//                    MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+//                    NOTIFY(next, context);
+//                    MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+//                }
+//            }
+//        }
+//     }
 
     @Override
     protected void NOTIFY(SchedulingUnit task, Context context) {
@@ -106,6 +100,7 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
      * @param context
      * @return
      */
+    @Override
     protected SchedulingUnit next(Context context) {
         SchedulingUnit operationChain = context.OCwithChildren.pollLast();
         if (operationChain == null) {
