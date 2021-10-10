@@ -96,41 +96,41 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, al
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
 
-def ReadFile():
-    w, h = 12, 1
+def ReadFile(threads, events):
+    w, h = 6, 1
     y = [[] for _ in range(h)]
 
-    gs_path = FILE_FOLER + '/GS/threads = 5/totalEvents = 100000'
+    gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(gs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    bfs_path = FILE_FOLER + '/BFS/threads = 5/totalEvents = 100000'
+    bfs_path = FILE_FOLER + '/BFS/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(bfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    dfs_path = FILE_FOLER + '/DFS/threads = 5/totalEvents = 100000'
+    dfs_path = FILE_FOLER + '/DFS/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(dfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_gs_path = FILE_FOLER + '/OPGS/threads = 5/totalEvents = 100000'
+    op_gs_path = FILE_FOLER + '/OPGS/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(op_gs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_bfs_path = FILE_FOLER + '/OPBFS/threads = 5/totalEvents = 100000'
+    op_bfs_path = FILE_FOLER + '/OPBFS/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(op_bfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_dfs_path = FILE_FOLER + '/OPDFS/threads = 5/totalEvents = 100000'
+    op_dfs_path = FILE_FOLER + '/OPDFS/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(op_dfs_path).readlines()
     throughput = lines[0].split(": ")[1]
@@ -141,41 +141,41 @@ def ReadFile():
     return y
 
 
-def ReadFileWithAbort():
-    w, h = 12, 1
+def ReadFileWithAbort(threads, events):
+    w, h = 6, 1
     y = [[] for _ in range(h)]
 
-    gs_path = FILE_FOLER + '/GSA/threads = 5/totalEvents = 100000'
+    gs_path = FILE_FOLER + '/GSA/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(gs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    bfs_path = FILE_FOLER + '/BFSA/threads = 5/totalEvents = 100000'
+    bfs_path = FILE_FOLER + '/BFSA/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(bfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    dfs_path = FILE_FOLER + '/DFSA/threads = 5/totalEvents = 100000'
+    dfs_path = FILE_FOLER + '/DFSA/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(dfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_gs_path = FILE_FOLER + '/OPGSA/threads = 5/totalEvents = 100000'
+    op_gs_path = FILE_FOLER + '/OPGSA/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(op_gs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_bfs_path = FILE_FOLER + '/OPBFSA/threads = 5/totalEvents = 100000'
+    op_bfs_path = FILE_FOLER + '/OPBFSA/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(op_bfs_path).readlines()
     throughput = lines[0].split(": ")[1]
     y[0].append(float(throughput))
 
-    op_dfs_path = FILE_FOLER + '/OPDFSA/threads = 5/totalEvents = 100000'
+    op_dfs_path = FILE_FOLER + '/OPDFSA/threads = {}/totalEvents = {}'.format(threads, events)
 
     lines = open(op_dfs_path).readlines()
     throughput = lines[0].split(": ")[1]
@@ -187,15 +187,18 @@ def ReadFileWithAbort():
 
 
 if __name__ == '__main__':
-    y_values = ReadFile()
-    x_values = ["GS", "BFS", "DFS", "OPGS", "OPBFS", "OPDFS"]
-    legend_labels = ["throughput"]
-    legend = True
-    DrawFigure(x_values, y_values, legend_labels,
-               '', 'throughput', 'overview', True)
+    for tthread in [1, 2, 4, 8, 16, 24]:
+        for batchInterval in [10240]:
+            totalEvents = tthread * batchInterval
+            y_values = ReadFile(tthread, totalEvents)
+            x_values = ["GS", "BFS", "DFS", "OPGS", "OPBFS", "OPDFS"]
+            legend_labels = ["throughput"]
+            legend = True
+            DrawFigure(x_values, y_values, legend_labels,
+                       '', 'throughput', 'overview_t{}_b{}'.format(tthread, batchInterval), True)
 
-    y_values = ReadFile()
-    x_values = ["GSA", "BFSA", "DFSA", "OPGSA", "OPBFSA", "OPDFSA"]
-    legend_labels = ["throughput"]
-    DrawFigure(x_values, y_values, legend_labels,
-               '', 'throughput', 'overview_with_abort', True)
+            y_values = ReadFileWithAbort(tthread, totalEvents)
+            x_values = ["GSA", "BFSA", "DFSA", "OPGSA", "OPBFSA", "OPDFSA"]
+            legend_labels = ["throughput"]
+            DrawFigure(x_values, y_values, legend_labels,
+                       '', 'throughput', 'overview_with_abort_t{}_b{}'.format(tthread, batchInterval), True)

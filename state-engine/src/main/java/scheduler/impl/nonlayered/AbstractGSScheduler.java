@@ -54,23 +54,25 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
 //            assert !next.getOperations().isEmpty();
             if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
                 MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-                if (next.hasChildren()) {
-                    NOTIFY(next, context);
-                } else {
-                    next.isExecuted = true;
-                    assert next.context.equals(context);
-                    context.scheduledOPs += next.getOperations().size();
-                }
-                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+//                if (next.hasChildren()) {
+//                    NOTIFY(next, context);
+//                } else {
+//                    next.isExecuted = true;
+//                    assert next.context.equals(context);
+//                    context.scheduledOPs += next.getOperations().size();
+//                }
+//                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+                NOTIFY(next, context);
             }
         } else {
             next = nextFromBusyWaitQueue(context);
             if (next != null) {
 //                assert !next.getOperations().isEmpty();
                 if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-                    next.isExecuted = true;
-                    assert next.context.equals(context);
-                    context.scheduledOPs += next.getOperations().size();
+//                    next.isExecuted = true;
+//                    assert next.context.equals(context);
+//                    context.scheduledOPs += next.getOperations().size();
+                    NOTIFY(next, context);
                 }
             }
         }

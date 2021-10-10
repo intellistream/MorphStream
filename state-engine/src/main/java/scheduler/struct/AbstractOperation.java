@@ -1,6 +1,8 @@
 package scheduler.struct;
 
 import content.common.CommonMetaTypes;
+import scheduler.oplevel.struct.MetaTypes;
+import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import storage.TableRecordRef;
@@ -11,6 +13,7 @@ import transaction.function.Function;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * TODO: clean ``state" and ``reference".
@@ -24,7 +27,6 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
     public final CommonMetaTypes.AccessType accessType;
     public final TableRecord d_record;
     public final long bid;
-    public volatile TableRecordRef records_ref;//for cross-record dependency.
     public volatile SchemaRecordRef record_ref;//required by read-only: the placeholder of the reading d_record.
     public List<DataBox> value_list;//required by write-only: the value_list to be used to update the d_record.
     //only update corresponding column.
@@ -36,9 +38,8 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
     public String[] condition_source = null;
     public Condition condition;
     public int[] success;
-    public boolean isExecuted = false; // whether the operation is failed, this is used to detect transaction abort
+    private final AtomicReference<OperationStateType> operationState;
     public boolean isFailed = false; // whether the operation is failed, this is used to detect transaction abort
-    public boolean aborted = false; // whether the operation is aborted, this is used to mark the operation as aborted to avoid re-execute
 
     public volatile AbstractOperation[] fdParentOps; // parent ops that accessing conditioned records and has smaller
     public HashMap<TableRecord, Integer> condition_source_to_index;
@@ -63,6 +64,7 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
                 condition_source_to_index.put(condition_records[i], i);
             }
         }
+        operationState = new AtomicReference<>(OperationStateType.BLOCKED);
     }
 
     @Override
@@ -100,5 +102,13 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
     public void addFDParent(TableRecord pKey, AbstractOperation parent) {
         assert condition_source_to_index.containsKey(pKey);
         fdParentOps[condition_source_to_index.get(pKey)] = parent;
+    }
+
+    public void stateTransition(OperationStateType state) {
+        operationState.getAndSet(state);
+    }
+
+    public OperationStateType getOperationState() {
+        return operationState.get();
     }
 }

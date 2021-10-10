@@ -4,6 +4,7 @@ import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContext;
 import scheduler.context.BFSLayeredTPGContextWithAbort;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.layered.bfs.BFSOperation;
 import scheduler.struct.layered.bfs.BFSOperationChain;
 import transaction.impl.ordered.MyList;
@@ -80,21 +81,24 @@ public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
         tpg.cacheToSortedOperations(set_op);
     }
 
-    /**
-     * Used by GSScheduler.
-     *  @param context
-     * @param operationChain
-     * @param mark_ID
-     * @return
-     */
-    @Override
-    public boolean executeWithBusyWait(BFSLayeredTPGContext context, BFSOperationChain operationChain, long mark_ID) {
-        MyList<BFSOperation> operation_chain_list = operationChain.getOperations();
-        for (BFSOperation operation : operation_chain_list) {
-            if (operation.isExecuted) continue;
-            if (isConflicted(context, operationChain, operation)) return false; // did not completed
-            execute(operation, mark_ID, false);
-        }
-        return true;
-    }
+//    /**
+//     * Used by GSScheduler.
+//     *  @param context
+//     * @param operationChain
+//     * @param mark_ID
+//     * @return
+//     */
+//    @Override
+//    public boolean executeWithBusyWait(BFSLayeredTPGContext context, BFSOperationChain operationChain, long mark_ID) {
+//        MyList<BFSOperation> operation_chain_list = operationChain.getOperations();
+//        for (BFSOperation operation : operation_chain_list) {
+//            if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)) continue;
+//            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+//            execute(operation, mark_ID, false);
+//            if (!operation.isFailed) {
+//                operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
+//            }
+//        }
+//        return true;
+//    }
 }

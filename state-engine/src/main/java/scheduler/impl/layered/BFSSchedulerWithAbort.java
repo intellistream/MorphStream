@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContextWithAbort;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.layered.bfs.BFSOperation;
 import scheduler.struct.layered.bfs.BFSOperationChain;
 import transaction.impl.ordered.MyList;
@@ -59,43 +60,46 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         DISTRIBUTE(next, context);
     }
 
-    /**
-     * Used by BFSScheduler.
-     *
-     * @param context
-     * @param operation_chain
-     * @param mark_ID
-     */
-    @Override
-    public void execute(BFSLayeredTPGContextWithAbort context, MyList<BFSOperation> operation_chain, long mark_ID) {
-        for (BFSOperation operation : operation_chain) {
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-            execute(operation, mark_ID, false);
-            checkTransactionAbort(operation);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-        }
-    }
+//    /**
+//     * Used by BFSScheduler.
+//     *
+//     * @param context
+//     * @param operation_chain
+//     * @param mark_ID
+//     */
+//    @Override
+//    public void execute(BFSLayeredTPGContextWithAbort context, MyList<BFSOperation> operation_chain, long mark_ID) {
+//        for (BFSOperation operation : operation_chain) {
+////            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            execute(operation, mark_ID, false);
+//            checkTransactionAbort(operation, operation_chain);
+////            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//        }
+//    }
 
-    /**
-     * Used by GSScheduler.
-     *  @param context
-     * @param operationChain
-     * @param mark_ID
-     * @return
-     */
-    @Override
-    public boolean executeWithBusyWait(BFSLayeredTPGContextWithAbort context, BFSOperationChain operationChain, long mark_ID) {
-        MyList<BFSOperation> operation_chain_list = operationChain.getOperations();
-        for (BFSOperation operation : operation_chain_list) {
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-            if (operation.isExecuted) continue;
-            if (isConflicted(context, operationChain, operation)) return false; // did not completed
-            execute(operation, mark_ID, false);
-            checkTransactionAbort(operation);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-        }
-        return true;
-    }
+//    /**
+//     * Used by GSScheduler.
+//     *  @param context
+//     * @param operationChain
+//     * @param mark_ID
+//     * @return
+//     */
+//    @Override
+//    public boolean executeWithBusyWait(BFSLayeredTPGContextWithAbort context, BFSOperationChain operationChain, long mark_ID) {
+//        MyList<BFSOperation> operation_chain_list = operationChain.getOperations();
+//        for (BFSOperation operation : operation_chain_list) {
+////            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)) continue;
+//            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+//            execute(operation, mark_ID, false);
+//            if (!operation.isFailed) {
+//                operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
+//            }
+//            checkTransactionAbort(operation);
+////            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//        }
+//        return true;
+//    }
 
     @Override
     protected void NOTIFY(BFSOperationChain operationChain, BFSLayeredTPGContextWithAbort context) {
@@ -134,8 +138,9 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         tpg.cacheToSortedOperations(set_op);
     }
 
-    protected void checkTransactionAbort(BFSOperation operation) {
-        if (operation.isFailed && !operation.aborted) {
+    @Override
+    protected void checkTransactionAbort(BFSOperation operation, BFSOperationChain operationChain) {
+        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             needAbortHandling.compareAndSet(false, true);
             failedOperations.push(operation); // operation need to wait until the last abort has completed
         }
@@ -190,7 +195,8 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         //identify bids to be aborted.
         for (BFSOperation failedOp : failedOperations) {
             if (bid == failedOp.bid) {
-                operation.aborted = true;
+//                operation.aborted = true;
+                operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
                 markAny = true;
             }
         }

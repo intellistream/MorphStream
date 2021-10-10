@@ -91,24 +91,24 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         tpg.cacheToSortedOperations(set_op);
     }
 
-    /**
-     * Used by GSScheduler.
-     *  @param context
-     * @param operationChain
-     * @param mark_ID
-     * @return
-     */
-    @Override
-    public boolean executeWithBusyWait(GSTPGContext context, GSOperationChain operationChain, long mark_ID) {
-        MyList<GSOperation> operation_chain_list = operationChain.getOperations();
-        assert !operationChain.isExecuted;
-        for (GSOperation operation : operation_chain_list) {
-            if (operation.isExecuted || operation.aborted) continue;
-            if (isConflicted(context, operationChain, operation)) return false; // did not completed
-            execute(operation, mark_ID, false);
-        }
-        return true;
-    }
+//    /**
+//     * Used by GSScheduler.
+//     *  @param context
+//     * @param operationChain
+//     * @param mark_ID
+//     * @return
+//     */
+//    @Override
+//    public boolean executeWithBusyWait(GSTPGContext context, GSOperationChain operationChain, long mark_ID) {
+//        MyList<GSOperation> operation_chain_list = operationChain.getOperations();
+//        assert !operationChain.isExecuted;
+//        for (GSOperation operation : operation_chain_list) {
+//            if (operation.isExecuted || operation.aborted) continue;
+//            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+//            execute(operation, mark_ID, false);
+//        }
+//        return true;
+//    }
 
     /**
      * Register an operation to queue.

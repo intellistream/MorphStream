@@ -6,14 +6,19 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.OCSchedulerContext;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.OperationChain;
 import scheduler.struct.TaskPrecedenceGraph;
+import scheduler.struct.gs.GSOperationChainWithAbort;
+import scheduler.struct.gs.GSOperationWithAbort;
+import scheduler.struct.layered.bfs.BFSOperation;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
 import transaction.function.DEC;
 import transaction.function.INC;
+import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 
 import java.util.List;
@@ -139,7 +144,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
      * @param clean
      */
     public void execute(ExecutionUnit operation, long mark_ID, boolean clean) {
-        if (operation.aborted) {
+        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             return; // return if the operation is already aborted
         }
         int success;
@@ -151,27 +156,38 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             }
             if (operation.success[0] == success) {
                 operation.isFailed = true;
-            } else {
-                operation.isExecuted = true;
             }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
             success = operation.success[0];
             Transfer_Fun(operation, mark_ID, clean);
             if (operation.success[0] == success) {
                 operation.isFailed = true;
-            } else {
-                operation.isExecuted = true;
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
             Depo_Fun(operation, mark_ID, clean);
-            operation.isExecuted = true;
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
     public boolean executeWithBusyWait(Context context, SchedulingUnit operationChain, long mark_ID) {
-        throw new UnsupportedOperationException();
+        MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
+        for (ExecutionUnit operation : operation_chain_list) {
+            if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
+            || operation.isFailed) continue;
+            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+            execute(operation, mark_ID, false);
+            if (!operation.isFailed) {
+                operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
+            } else {
+                checkTransactionAbort(operation, operationChain);
+            }
+        }
+        return true;
+    }
+
+    protected void checkTransactionAbort(ExecutionUnit operation, SchedulingUnit operationChain) {
+
     }
 
     protected SchedulingUnit nextFromBusyWaitQueue(Context context) {
@@ -223,14 +239,16 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     protected boolean isConflicted(Context context, SchedulingUnit operationChain, ExecutionUnit operation) {
         if (operation.fdParentOps != null) {
             if (operation.fdParentOps[0] != null) {
-                if (!(operation.fdParentOps[0].isExecuted || operation.fdParentOps[0].aborted)) {
+                if (!(operation.fdParentOps[0].getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
+                        || operation.fdParentOps[0].getOperationState().equals(MetaTypes.OperationStateType.ABORTED))) {
                     // blocked and busy wait
                     context.busyWaitQueue.add(operationChain);
                     return true;
                 }
             }
             if (operation.fdParentOps[1] != null) {
-                if (!(operation.fdParentOps[1].isExecuted || operation.fdParentOps[1].aborted)) {
+                if (!(operation.fdParentOps[1].getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
+                        || operation.fdParentOps[1].getOperationState().equals(MetaTypes.OperationStateType.ABORTED))) {
                     context.busyWaitQueue.add(operationChain);
                     return true;
                 }

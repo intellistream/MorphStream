@@ -6,6 +6,7 @@ import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.BFSLayeredTPGContextWithAbort;
 import scheduler.context.DFSLayeredTPGContextWithAbort;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.layered.bfs.BFSOperation;
 import scheduler.struct.layered.bfs.BFSOperationChain;
 import scheduler.struct.layered.dfs.DFSOperation;
@@ -66,43 +67,43 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         DISTRIBUTE(oc, context);
     }
 
-    /**
-     * Used by BFSScheduler.
-     *
-     * @param context
-     * @param operation_chain
-     * @param mark_ID
-     */
-    @Override
-    public void execute(DFSLayeredTPGContextWithAbort context, MyList<DFSOperation> operation_chain, long mark_ID) {
-        for (DFSOperation operation : operation_chain) {
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-            execute(operation, mark_ID, false);
-            checkTransactionAbort(operation);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-        }
-    }
+//    /**
+//     * Used by BFSScheduler.
+//     *
+//     * @param context
+//     * @param operation_chain
+//     * @param mark_ID
+//     */
+//    @Override
+//    public void execute(DFSLayeredTPGContextWithAbort context, MyList<DFSOperation> operation_chain, long mark_ID) {
+//        for (DFSOperation operation : operation_chain) {
+////            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            execute(operation, mark_ID, false);
+//            checkTransactionAbort(operation);
+////            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//        }
+//    }
 
-    /**
-     * Used by GSScheduler.
-     *  @param context
-     * @param operationChain
-     * @param mark_ID
-     * @return
-     */
-    @Override
-    public boolean executeWithBusyWait(DFSLayeredTPGContextWithAbort context, DFSOperationChain operationChain, long mark_ID) {
-        MyList<DFSOperation> operation_chain_list = operationChain.getOperations();
-        for (DFSOperation operation : operation_chain_list) {
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-            if (operation.isExecuted) continue;
-            if (isConflicted(context, operationChain, operation)) return false; // did not completed
-            execute(operation, mark_ID, false);
-            checkTransactionAbort(operation);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-        }
-        return true;
-    }
+//    /**
+//     * Used by GSScheduler.
+//     *  @param context
+//     * @param operationChain
+//     * @param mark_ID
+//     * @return
+//     */
+//    @Override
+//    public boolean executeWithBusyWait(DFSLayeredTPGContextWithAbort context, DFSOperationChain operationChain, long mark_ID) {
+//        MyList<DFSOperation> operation_chain_list = operationChain.getOperations();
+//        for (DFSOperation operation : operation_chain_list) {
+////            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            if (operation.isExecuted) continue;
+//            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+//            execute(operation, mark_ID, false);
+//            checkTransactionAbort(operation);
+////            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//        }
+//        return true;
+//    }
 
     /**
      * notify is handled by state manager of each thread
@@ -153,8 +154,9 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         tpg.cacheToSortedOperations(set_op);
     }
 
-    protected void checkTransactionAbort(DFSOperation operation) {
-        if (operation.isFailed && !operation.aborted) {
+    @Override
+    protected void checkTransactionAbort(DFSOperation operation, DFSOperationChain dfsOperationChain) {
+        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             for (DFSOperation failedOp : failedOperations) {
                 if (failedOp.bid == operation.bid) {
                     return;
@@ -207,7 +209,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         //identify bids to be aborted.
         for (DFSOperation failedOp : failedOperations) {
             if (bid == failedOp.bid) {
-                operation.aborted = true;
+                operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
                 markAny = true;
             }
         }

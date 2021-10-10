@@ -44,7 +44,9 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         } else {
             next = nextFromBusyWaitQueue(context);
             if (next != null) {
-                executeWithBusyWait(context, next, mark_ID);
+                if(executeWithBusyWait(context, next, mark_ID)) {
+                    NOTIFY(next, context);
+                }
             }
         }
     }

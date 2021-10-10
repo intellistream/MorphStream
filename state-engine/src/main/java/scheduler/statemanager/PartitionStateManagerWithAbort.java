@@ -2,6 +2,7 @@ package scheduler.statemanager;
 
 import scheduler.context.GSTPGContextWithAbort;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.signal.oc.*;
 import scheduler.struct.MetaTypes.DependencyType;
 import scheduler.struct.gs.GSOperationChainWithAbort;
@@ -112,9 +113,10 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
 
 
     private void ocAbortHandlingTransition(GSOperationChainWithAbort operationChain, GSOperationWithAbort abortedOp) {
-        abortedOp.aborted = true;
+        abortedOp.stateTransition(MetaTypes.OperationStateType.ABORTED);
         for (GSOperationWithAbort operation : operationChain.getOperations()) {
-            operation.isExecuted = false;
+            if (!operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED))
+                operation.stateTransition(MetaTypes.OperationStateType.BLOCKED);
         }
         if (operationChain.isExecuted) {
             operationChain.isExecuted = false;
@@ -133,7 +135,7 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
 
     private void ocRollbackAndRedoTransition(GSOperationChainWithAbort operationChain) {
         for (GSOperationWithAbort operation : operationChain.getOperations()) {
-            operation.isExecuted = false;
+            operation.stateTransition(MetaTypes.OperationStateType.BLOCKED);
         }
         if (operationChain.isExecuted) {
             operationChain.isExecuted = false;

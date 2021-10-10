@@ -3,6 +3,7 @@ package scheduler.impl.nonlayered;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContextWithAbort;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.gs.GSOperationChainWithAbort;
 import scheduler.struct.gs.GSOperationWithAbort;
 import transaction.impl.ordered.MyList;
@@ -102,13 +103,14 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 //            assert !next.getOperations().isEmpty();
             if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
                 MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-                if (next.hasChildren()) {
-                    NOTIFY(next, context);
-                } else {
-                    next.isExecuted = true;
-                    assert next.context.equals(context);
-                    executableTaskListener.onOCFinalized(next);
-                }
+//                if (next.hasChildren()) {
+//                    NOTIFY(next, context);
+//                } else {
+//                    next.isExecuted = true;
+//                    assert next.context.equals(context);
+//                    executableTaskListener.onOCFinalized(next);
+//                }
+                NOTIFY(next, context);
                 MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
             }
         } else {
@@ -116,9 +118,10 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
             if (next != null) {
 //                assert !next.getOperations().isEmpty();
                 if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-                    next.isExecuted = true;
-                    assert next.context.equals(context);
-                    executableTaskListener.onOCFinalized(next);
+//                    next.isExecuted = true;
+//                    assert next.context.equals(context);
+//                    executableTaskListener.onOCFinalized(next);
+                    NOTIFY(next, context);
                 }
             }
         }
@@ -143,28 +146,29 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         return true;
     }
 
-    /**
-     * Used by GSScheduler.
-     *  @param context
-     * @param operationChain
-     * @param mark_ID
-     * @return
-     */
-    @Override
-    public boolean executeWithBusyWait(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
-        MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
-        assert !operationChain.isExecuted;
-        for (GSOperationWithAbort operation : operation_chain_list) {
-            if (operation.isExecuted || operation.aborted) continue;
-            if (isConflicted(context, operationChain, operation)) return false; // did not completed
-            execute(operation, mark_ID, false);
-            checkTransactionAbort(operation, operationChain);
-        }
-        return true;
-    }
+//    /**
+//     * Used by GSScheduler.
+//     *  @param context
+//     * @param operationChain
+//     * @param mark_ID
+//     * @return
+//     */
+//    @Override
+//    public boolean executeWithBusyWait(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
+//        MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
+//        assert !operationChain.isExecuted;
+//        for (GSOperationWithAbort operation : operation_chain_list) {
+//            if (operation.isExecuted || operation.aborted) continue;
+//            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+//            execute(operation, mark_ID, false);
+//            checkTransactionAbort(operation, operationChain);
+//        }
+//        return true;
+//    }
 
+    @Override
     protected void checkTransactionAbort(GSOperationWithAbort operation, GSOperationChainWithAbort operationChain) {
-        if (operation.isFailed && !operation.aborted) {
+        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             operationChain.needAbortHandling = true;
             operationChain.failedOperations.add(operation);
         }
