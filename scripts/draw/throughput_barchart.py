@@ -97,7 +97,7 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, al
 
 
 def ReadFile(threads, events):
-    w, h = 6, 1
+    w, h = 12, 1
     y = [[] for _ in range(h)]
 
     gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(threads, events)
@@ -142,7 +142,7 @@ def ReadFile(threads, events):
 
 
 def ReadFileWithAbort(threads, events):
-    w, h = 6, 1
+    w, h = 12, 1
     y = [[] for _ in range(h)]
 
     gs_path = FILE_FOLER + '/GSA/threads = {}/totalEvents = {}'.format(threads, events)
