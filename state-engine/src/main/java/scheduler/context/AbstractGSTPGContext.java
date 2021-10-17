@@ -34,7 +34,12 @@ public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, Sc
     @Override
     public boolean finished() {
         assert scheduledOPs <= totalOsToSchedule;
-        return scheduledOPs == totalOsToSchedule;
+        boolean rt;
+        rt = scheduledOPs == totalOsToSchedule;
+
+        if (rt)
+            assert operaitonsLeft.isEmpty();
+        return rt;
 //        return operaitonsLeft.isEmpty();
     }
 
