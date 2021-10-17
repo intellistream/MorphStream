@@ -76,9 +76,9 @@ public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
                 throw new UnsupportedOperationException();
         }
         operationGraph.add(set_op);
-//        tpg.setupOperationTDFD(set_op);
         set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
-        tpg.cacheToSortedOperations(set_op);
+//        tpg.cacheToSortedOperations(set_op);
+        tpg.setupOperationTDFD(set_op);
     }
 
 //    /**

@@ -54,7 +54,7 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
 
     @Override
     public void TxnSubmitFinished(Context context) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         int txnOpId = 0;
         Operation headerOperation = null;
@@ -82,7 +82,7 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
             set_op.addHeader(headerOperation);
             headerOperation.addDescendant(set_op);
         }
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
     /**

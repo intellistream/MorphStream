@@ -110,15 +110,15 @@ public class SLCombo extends SPOUTCombo {
             index += tthread * combo_bid_size;
         }
 
-        //Load Deposit Events.
-        for (int index = taskId; index < DataHolder.depositEvents.size(); ) {
-            TxnEvent event = DataHolder.depositEvents.get(index).cloneEvent();
-            mybids[storageIndex] = event.getBid();
-            myevents[storageIndex++] = event;
-            if (storageIndex == num_events_per_thread)
-                break;
-            index += tthread * combo_bid_size;
-        }
+//        //Load Deposit Events.
+//        for (int index = taskId; index < DataHolder.depositEvents.size(); ) {
+//            TxnEvent event = DataHolder.depositEvents.get(index).cloneEvent();
+//            mybids[storageIndex] = event.getBid();
+//            myevents[storageIndex++] = event;
+//            if (storageIndex == num_events_per_thread)
+//                break;
+//            index += tthread * combo_bid_size;
+//        }
         assert (storageIndex == num_events_per_thread);
     }
 

@@ -64,10 +64,11 @@ public class FileOutputHandler implements IOutputHandler {
         if (enable_log) log.info(String.format("depositEventFile path is %s", mRootPath + depositEventFileName));
         BufferedWriter depositEventBufferedWriter = CreateWriter(depositEventFileName);
         for (SLEvent event : events) {
-            if (event instanceof SLDepositEvent) {
-                depositEventBufferedWriter.write(event + "\n");
-            } else
-                transferEventBufferedWriter.write(event + "\n");
+//            if (event instanceof SLDepositEvent) {
+//                depositEventBufferedWriter.write(event + "\n");
+//            } else
+//                transferEventBufferedWriter.write(event + "\n");
+            transferEventBufferedWriter.write(event + "\n");
         }
         transferEventBufferedWriter.close();
         depositEventBufferedWriter.close();

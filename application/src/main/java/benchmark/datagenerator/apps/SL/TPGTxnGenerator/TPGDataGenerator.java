@@ -4,6 +4,7 @@ import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.apps.SL.Transaction.SLDepositEvent;
 import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
 import benchmark.datagenerator.apps.SL.Transaction.SLTransferEvent;
+import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.Random;
 
 import static common.CONTROL.enable_log;
+import static common.CONTROL.enable_states_partition;
 
 /**
  * \textbf{Workload Configurations.}
@@ -47,6 +49,12 @@ public class TPGDataGenerator extends DataGenerator {
     private final boolean isUnique = false;
     private final FastZipfGenerator accountZipf;
     private final FastZipfGenerator assetZipf;
+
+    private int floor_interval;
+    public FastZipfGenerator[] partitionedAccountZipf;
+    public FastZipfGenerator[] partitionedAssetZipf;
+
+
     private final Random random = new Random(0); // the transaction type decider
     HashMap<Long, Integer> nGeneratedAccountIds = new HashMap<>();
     HashMap<Long, Integer> nGeneratedAssetIds = new HashMap<>();
@@ -68,11 +76,22 @@ public class TPGDataGenerator extends DataGenerator {
         // zipf state access generator
         accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
         assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
+        configure_store(1, (double) State_Access_Skewness / 100, dataConfig.getTotalThreads(), nKeyState);
     }
 
     public static void main(String[] args) {
         FastZipfGenerator fastZipfGenerator = new FastZipfGenerator(10, 1, 0);
         fastZipfGenerator.show_sample();
+    }
+
+    public void configure_store(double scale_factor, double theta, int tthread, int numItems) {
+        floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / tthread;
+        partitionedAccountZipf = new FastZipfGenerator[tthread];//overhead_total number of working threads.
+        partitionedAssetZipf = new FastZipfGenerator[tthread];//overhead_total number of working threads.
+        for (int i = 0; i < tthread; i++) {
+            partitionedAccountZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), theta, i * floor_interval, 12345678);
+            partitionedAssetZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), theta, i * floor_interval, 123456789);
+        }
     }
 
     protected void generateTuple() {
@@ -92,12 +111,34 @@ public class TPGDataGenerator extends DataGenerator {
         int srcAcc, dstAcc, srcAst, dstAst;
 
         if (!isUnique) {
-            int[] accKeys = getKeys(accountZipf, generatedAcc);
-            srcAcc = accKeys[0];
-            dstAcc = accKeys[1];
-            int[] astKeys = getKeys(assetZipf, generatedAst);
-            srcAst = astKeys[0];
-            dstAst = astKeys[1];
+            if (enable_states_partition) {
+                int partitionId = random.nextInt(dataConfig.getTotalThreads());
+                int[] accKeys = getKeys(partitionedAccountZipf[partitionId],
+                        partitionedAccountZipf[(partitionId+2) % dataConfig.getTotalThreads()],
+                        partitionId,
+                        (partitionId+2) % dataConfig.getTotalThreads(),
+                        generatedAcc);
+                srcAcc = accKeys[0];
+                dstAcc = accKeys[1];
+                int[] astKeys = getKeys(partitionedAssetZipf[(partitionId+1) % dataConfig.getTotalThreads()],
+                        partitionedAssetZipf[(partitionId+3) % dataConfig.getTotalThreads()],
+                        (partitionId+1) % dataConfig.getTotalThreads(),
+                        (partitionId+3) % dataConfig.getTotalThreads(),
+                        generatedAst);
+                srcAst = astKeys[0];
+                dstAst = astKeys[1];
+                assert srcAcc / floor_interval == partitionId;
+                assert srcAst / floor_interval == (partitionId+1) % dataConfig.getTotalThreads();
+                assert dstAcc / floor_interval == (partitionId+2) % dataConfig.getTotalThreads();
+                assert dstAst / floor_interval == (partitionId+3) % dataConfig.getTotalThreads();
+            } else {
+                int[] accKeys = getKeys(accountZipf, generatedAcc);
+                srcAcc = accKeys[0];
+                dstAcc = accKeys[1];
+                int[] astKeys = getKeys(assetZipf, generatedAst);
+                srcAst = astKeys[0];
+                dstAst = astKeys[1];
+            }
         } else { // generate unique keys for unique txn processing
             srcAcc = getUniqueKey(accountZipf, generatedAcc);
             dstAcc = getUniqueKey(accountZipf, generatedAcc);
@@ -121,6 +162,70 @@ public class TPGDataGenerator extends DataGenerator {
         return t;
     }
 
+    private SLEvent randomDepositEvent() {
+        int acc;
+        int ast;
+        if(!isUnique) {
+            if (enable_states_partition) {
+                int partitionId = random.nextInt(dataConfig.getTotalThreads());
+                acc = getKey(partitionedAccountZipf[partitionId], partitionId, generatedAcc);
+                ast = getKey(partitionedAssetZipf[(partitionId+1) % dataConfig.getTotalThreads()], (partitionId+1) % dataConfig.getTotalThreads(), generatedAst);
+            } else {
+                acc = getKey(accountZipf, generatedAcc);
+                ast = getKey(assetZipf, generatedAst);
+            }
+        } else {
+            acc = getUniqueKey(accountZipf, generatedAcc);
+            ast = getUniqueKey(assetZipf, generatedAst);
+        }
+
+        // just for stats record
+        nGeneratedAccountIds.put((long) acc, nGeneratedAccountIds.getOrDefault((long) acc, 0) + 1);
+        nGeneratedAssetIds.put((long) ast, nGeneratedAccountIds.getOrDefault((long) ast, 0) + 1);
+
+        SLEvent t = new SLDepositEvent(eventID, acc, ast);
+
+        // increase the timestamp i.e. transaction id
+        eventID++;
+        return t;
+    }
+
+    private int[] getKeys(FastZipfGenerator zipfGeneratorSrc, FastZipfGenerator zipfGeneratorDst, int partitionSrc, int partitionDst, ArrayList<Integer> generatedKeys) {
+        int[] keys = new int[2];
+        keys[0] = getKey(zipfGeneratorSrc, partitionSrc, generatedKeys);
+        keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
+
+        while (keys[0] == keys[1]) {
+            keys[0] = getKey(zipfGeneratorSrc, partitionDst, generatedKeys);
+            keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
+        }
+
+        generatedKeys.add(keys[0]);
+        generatedKeys.add(keys[1]);
+        return keys;
+    }
+
+    private int getKey(FastZipfGenerator zipfGenerator, int partitionId, ArrayList<Integer> generatedKeys) {
+        int key;
+        key = zipfGenerator.next();
+        int next = random.nextInt(100);
+        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
+            if (!generatedKeys.isEmpty()) {
+                int counter = 0;
+                key = generatedKeys.get(random.nextInt(generatedKeys.size()));
+                while (key / floor_interval != partitionId) {
+                    key = generatedKeys.get(random.nextInt(generatedKeys.size()));
+                    counter++;
+                    if (counter >= partitionId) {
+                        key = zipfGenerator.next();
+                        break;
+                    }
+                }
+            }
+        }
+        return key;
+    }
+
     private int[] getKeys(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
         int[] keys = new int[2];
         keys[0] = getKey(zipfGenerator, generatedKeys);
@@ -141,17 +246,10 @@ public class TPGDataGenerator extends DataGenerator {
         srcKey = zipfGenerator.next();
         int next = random.nextInt(100);
         if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
-            if (generatedKeys.isEmpty()) {
-                srcKey = zipfGenerator.next();
-            } else {
+            if (!generatedKeys.isEmpty()) {
                 srcKey = generatedKeys.get(zipfGenerator.next() % generatedKeys.size());
             }
         }
-//        else {
-//            while (generatedKeys.contains(srcKey)) {
-//                srcKey = zipfGenerator.next();
-//            }
-//        }
         return srcKey;
     }
 
@@ -163,28 +261,6 @@ public class TPGDataGenerator extends DataGenerator {
         }
         generatedKeys.add(key);
         return key;
-    }
-
-    private SLEvent randomDepositEvent() {
-        int acc;
-        int ast;
-        if(!isUnique) {
-            acc = getKey(accountZipf, generatedAcc);
-            ast = getKey(assetZipf, generatedAst);
-        } else {
-            acc = getUniqueKey(accountZipf, generatedAcc);
-            ast = getUniqueKey(assetZipf, generatedAst);
-        }
-
-        // just for stats record
-        nGeneratedAccountIds.put((long) acc, nGeneratedAccountIds.getOrDefault((long) acc, 0) + 1);
-        nGeneratedAssetIds.put((long) ast, nGeneratedAccountIds.getOrDefault((long) ast, 0) + 1);
-
-        SLEvent t = new SLDepositEvent(eventID, acc, ast);
-
-        // increase the timestamp i.e. transaction id
-        eventID++;
-        return t;
     }
 
     public void dumpGeneratedDataToFile() {

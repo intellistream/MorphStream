@@ -19,8 +19,8 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "StreamLedger";
-    //    public String application = "GrepSum";
+//    public String application = "StreamLedger";
+        public String application = "GrepSum";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -28,7 +28,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 5_000_000;//
+    public int NUM_ITEMS = 100_000;//
 //    public int NUM_ITEMS = 500;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
@@ -57,9 +57,10 @@ public abstract class Runner implements IRunner {
      * TStream Specific Parameters.
      */
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 5;// default total execution threads
+    public int tthread = 1;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
-    public int CCOption = CCOption_TStream;
+//    public int CCOption = CCOption_TStream;
+    public int CCOption = CCOption_SStore;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
@@ -68,8 +69,8 @@ public abstract class Runner implements IRunner {
 //    public String scheduler = "DFS";
 //    public String scheduler = "DFSA";
 //    public String scheduler = "GS";
-    public String scheduler = "GSA";
-//    public String scheduler = "OPGS";
+//    public String scheduler = "GSA";
+    public String scheduler = "OPGS";
 //    public String scheduler = "OPGSA";
 //    public String scheduler = "OPBFS";
 //    public String scheduler = "OPDFS";
@@ -108,7 +109,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
     public int totalEvents = 100000;
 
-    @Parameter(names = {"--deposit_ratio"}, description = "State access skewness.")
+    @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
     public Integer Ratio_Of_Deposit = 25;
 
     @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
