@@ -49,6 +49,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     public static void LA_LOCK(int _pid, int num_P, TxnManager txnManager, long[] bid_array, long _bid, int tthread) {
         for (int k = 0; k < num_P; k++) {
             txnManager.getOrderLock(_pid).blocking_wait(bid_array[_pid], _bid);
+//            LOG.info(_pid + " : " + bid_array[_pid]);
             _pid++;
             if (_pid == tthread)
                 _pid = 0;

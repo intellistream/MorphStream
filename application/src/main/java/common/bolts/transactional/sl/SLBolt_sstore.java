@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerSStore;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import static profiler.MeasureTools.*;
@@ -53,6 +54,8 @@ public class SLBolt_sstore extends SLBolt_LA {
         int _pid = (event).getPid();
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         //ensures that locks are added in the input_event sequence order.
+//        LOG.info("+++++++thread_Id: " + thread_Id + " pid: " + _pid + " num partitions: " + event.num_p() +
+//                " bid array: " + Arrays.toString(event.getBid_array()) + " lock: " + transactionManager.getOrderLock(_pid).bid);
         LA_LOCK(_pid, event.num_p(), transactionManager, event.getBid_array(), _bid, tthread);
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
         if (event instanceof DepositEvent) {

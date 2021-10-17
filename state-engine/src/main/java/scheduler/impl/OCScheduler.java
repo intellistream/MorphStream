@@ -59,11 +59,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
 //        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-        System.out.println(threadId + " first explore tpg");
-
         INITIALIZE(context);
-        System.out.println(threadId + " first explore tpg complete, start to process");
-
 //        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 
         do {
@@ -212,8 +208,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     public boolean executeWithBusyWait(Context context, SchedulingUnit operationChain, long mark_ID) {
         MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
         for (ExecutionUnit operation : operation_chain_list) {
-            if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
-            || operation.isFailed) continue;
+            if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED) || operation.isFailed) continue;
             if (isConflicted(context, operationChain, operation)) return false; // did not completed
             execute(operation, mark_ID, false);
             if (!operation.isFailed) {

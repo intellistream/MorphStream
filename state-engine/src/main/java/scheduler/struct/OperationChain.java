@@ -72,7 +72,6 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         parentOC.ocChildren.putIfAbsent(this, targetOp);
         assert this.ocParents.containsKey(parentOC);
         assert parentOC.ocChildren.containsKey(this);
-        assert this.ocParents.size() == this.ocParentsCount.get();
     }
 
     private boolean circularDetection(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {

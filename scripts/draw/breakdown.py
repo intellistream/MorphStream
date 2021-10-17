@@ -36,9 +36,9 @@ matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 matplotlib.rcParams['pdf.fonttype'] = 42
 
-
-FIGURE_FOLDER = './results'
+FIGURE_FOLDER = './results/breakdown'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
+
 
 # there are some embedding problems if directly exporting the pdf figure using matplotlib.
 # so we generate the eps format first and convert it to pdf.
@@ -108,7 +108,6 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, al
     plt.xticks(index + 0.5 * width, x_values)
     plt.xticks(rotation=20)
 
-
     plt.grid(axis='y', color='gray')
     figure.yaxis.set_major_locator(LinearLocator(6))
 
@@ -167,8 +166,8 @@ def ReadFile(tthread, batchInterval):
         breakdown_value = line.split("\t")
         print(breakdown_value)
         for i in range(0, 5):
-            y[i][0] = float(breakdown_value[i+1])
-            y_sum[0] += float(breakdown_value[i+1])
+            y[i][0] += float(breakdown_value[i + 1])
+            y_sum[0] += float(breakdown_value[i + 1])
 
     bfs_path = FILE_FOLER + '/BFS/threads = {}/totalEvents = {}'.format(tthread, events)
     lines = open(bfs_path).readlines()
@@ -177,8 +176,8 @@ def ReadFile(tthread, batchInterval):
         breakdown_value = line.split("\t")
         print(breakdown_value)
         for i in range(0, 5):
-            y[i][1] = float(breakdown_value[i + 1])
-            y_sum[1] += float(breakdown_value[i+1])
+            y[i][1] += float(breakdown_value[i + 1])
+            y_sum[1] += float(breakdown_value[i + 1])
 
     dfs_path = FILE_FOLER + '/DFS/threads = {}/totalEvents = {}'.format(tthread, events)
     lines = open(dfs_path).readlines()
@@ -187,8 +186,8 @@ def ReadFile(tthread, batchInterval):
         breakdown_value = line.split("\t")
         print(breakdown_value)
         for i in range(0, 5):
-            y[i][2] = float(breakdown_value[i + 1])
-            y_sum[2] += float(breakdown_value[i+1])
+            y[i][2] += float(breakdown_value[i + 1])
+            y_sum[2] += float(breakdown_value[i + 1])
 
     op_gs_path = FILE_FOLER + '/OPGS/threads = {}/totalEvents = {}'.format(tthread, events)
     lines = open(op_gs_path).readlines()
@@ -197,8 +196,8 @@ def ReadFile(tthread, batchInterval):
         breakdown_value = line.split("\t")
         print(breakdown_value)
         for i in range(0, 5):
-            y[i][3] = float(breakdown_value[i + 1])
-            y_sum[3] += float(breakdown_value[i+1])
+            y[i][3] += float(breakdown_value[i + 1])
+            y_sum[3] += float(breakdown_value[i + 1])
 
     op_bfs_path = FILE_FOLER + '/OPBFS/threads = {}/totalEvents = {}'.format(tthread, events)
     lines = open(op_bfs_path).readlines()
@@ -207,8 +206,8 @@ def ReadFile(tthread, batchInterval):
         breakdown_value = line.split("\t")
         print(breakdown_value)
         for i in range(0, 5):
-            y[i][4] = float(breakdown_value[i + 1])
-            y_sum[4] += float(breakdown_value[i+1])
+            y[i][4] += float(breakdown_value[i + 1])
+            y_sum[4] += float(breakdown_value[i + 1])
 
     op_dfs_path = FILE_FOLER + '/OPDFS/threads = {}/totalEvents = {}'.format(tthread, events)
     lines = open(op_dfs_path).readlines()
@@ -217,8 +216,87 @@ def ReadFile(tthread, batchInterval):
         breakdown_value = line.split("\t")
         print(breakdown_value)
         for i in range(0, 5):
-            y[i][5] = float(breakdown_value[i + 1])
-            y_sum[5] += float(breakdown_value[i+1])
+            y[i][5] += float(breakdown_value[i + 1])
+            y_sum[5] += float(breakdown_value[i + 1])
+
+    for i in range(h):
+        for j in range(w):
+            if y_sum[j] != 0:
+                y[i][j] = (y[i][j] / y_sum[j]) * 100
+
+    print(y)
+
+    return y
+
+
+def ReadFileWithAbort(tthread, batchInterval):
+    # Creates a list containing w lists, each of h items, all set to 0
+    w, h = 6, 5
+    y = [[0 for x in range(w)] for y in range(h)]
+
+    y_sum = [0 for x in range(w)]
+
+    events = tthread * batchInterval
+
+    gs_path = FILE_FOLER + '/GSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    lines = open(gs_path).readlines()
+    idx = locateIdx(lines)
+    for line in lines[idx:]:
+        breakdown_value = line.split("\t")
+        print(breakdown_value)
+        for i in range(0, 5):
+            y[i][0] += float(breakdown_value[i + 1])
+            y_sum[0] += float(breakdown_value[i + 1])
+
+    bfs_path = FILE_FOLER + '/BFSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    lines = open(bfs_path).readlines()
+    idx = locateIdx(lines)
+    for line in lines[idx:]:
+        breakdown_value = line.split("\t")
+        print(breakdown_value)
+        for i in range(0, 5):
+            y[i][1] += float(breakdown_value[i + 1])
+            y_sum[1] += float(breakdown_value[i + 1])
+
+    dfs_path = FILE_FOLER + '/DFSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    lines = open(dfs_path).readlines()
+    idx = locateIdx(lines)
+    for line in lines[idx:]:
+        breakdown_value = line.split("\t")
+        print(breakdown_value)
+        for i in range(0, 5):
+            y[i][2] += float(breakdown_value[i + 1])
+            y_sum[2] += float(breakdown_value[i + 1])
+
+    op_gs_path = FILE_FOLER + '/OPGSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    lines = open(op_gs_path).readlines()
+    idx = locateIdx(lines)
+    for line in lines[idx:]:
+        breakdown_value = line.split("\t")
+        print(breakdown_value)
+        for i in range(0, 5):
+            y[i][3] += float(breakdown_value[i + 1])
+            y_sum[3] += float(breakdown_value[i + 1])
+
+    op_bfs_path = FILE_FOLER + '/OPBFSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    lines = open(op_bfs_path).readlines()
+    idx = locateIdx(lines)
+    for line in lines[idx:]:
+        breakdown_value = line.split("\t")
+        print(breakdown_value)
+        for i in range(0, 5):
+            y[i][4] += float(breakdown_value[i + 1])
+            y_sum[4] += float(breakdown_value[i + 1])
+
+    op_dfs_path = FILE_FOLER + '/OPDFSA/threads = {}/totalEvents = {}'.format(tthread, events)
+    lines = open(op_dfs_path).readlines()
+    idx = locateIdx(lines)
+    for line in lines[idx:]:
+        breakdown_value = line.split("\t")
+        print(breakdown_value)
+        for i in range(0, 5):
+            y[i][5] += float(breakdown_value[i + 1])
+            y_sum[5] += float(breakdown_value[i + 1])
 
     for i in range(h):
         for j in range(w):
@@ -241,13 +319,17 @@ def locateIdx(lines):
 
 
 if __name__ == "__main__":
-    x_values = ["GS", "BFS", "DFS", "OPGS", "OPBFS", "OPDFS"]
-
-    y_values = ReadFile(1, 2048)  # 55
     # break into 5 parts
-    legend_labels = ["Explore Time", "Next Time", "Useful Time", "Notify Time", "Construct Time"]  # , 'others'
-
-    DrawFigure(x_values, y_values, legend_labels,
-               '', 'percentage of time',
-               'breakdown', True)
-
+    legend_labels = ["Explore Time", "Next Time", "Useful Time", "Notify Time", "Construct Time"]
+    for tthread in [1, 2, 4, 8, 16, 24]:
+        for batchInterval in [2048]:
+            x_values = ["GS", "BFS", "DFS", "OPGS", "OPBFS", "OPDFS"]
+            y_values = ReadFile(tthread, batchInterval)
+            DrawFigure(x_values, y_values, legend_labels,
+                       '', 'percentage of time',
+                       'breakdown_t{}_b{}'.format(tthread, batchInterval), True)
+            x_values = ["GSA", "BFSA", "DFSA", "OPGSA", "OPBFSA", "OPDFSA"]
+            y_values = ReadFileWithAbort(tthread, batchInterval)
+            DrawFigure(x_values, y_values, legend_labels,
+                       '', 'percentage of time',
+                       'breakdown_with_abort_t{}_b{}'.format(tthread, batchInterval), True)

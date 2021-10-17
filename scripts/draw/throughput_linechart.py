@@ -84,12 +84,7 @@ def ReadFile(x_axis, batchInterval):
     w, h = 6, len(x_axis)
     y = [[] for _ in range(h)]
 
-    for tthread in x_axis:
-        events = tthread * batchInterval
-        gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(tthread, events)
-        lines = open(gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[0].append(float(throughput))
+    formRow(batchInterval, x_axis, y)
 
     for tthread in x_axis:
         events = tthread * batchInterval
@@ -129,6 +124,16 @@ def ReadFile(x_axis, batchInterval):
     print(y)
 
     return y
+
+
+def formRow(batchInterval, x_axis, y):
+    for tthread in x_axis:
+        events = tthread * batchInterval
+        gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(tthread, events)
+        lines = open(gs_path).readlines()
+        throughput = lines[0].split(": ")[1]
+        y[0].append(float(throughput))
+
 
 def ReadFileWithAbort(x_axis, batchInterval):
     w, h = 6, len(x_axis)

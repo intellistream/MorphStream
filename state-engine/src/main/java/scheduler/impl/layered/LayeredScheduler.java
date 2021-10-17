@@ -23,7 +23,7 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
     @Override
     public void INITIALIZE(Context context) {
         int threadId = context.thisThreadId;
-        tpg.constructTPG(context);
+//        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }

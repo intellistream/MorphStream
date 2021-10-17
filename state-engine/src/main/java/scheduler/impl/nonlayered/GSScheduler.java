@@ -25,7 +25,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
     @Override
     public void INITIALIZE(GSTPGContext context) {
-        tpg.constructTPG(context);
+//        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
@@ -42,13 +42,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
      */
     @Override
     public void EXPLORE(GSTPGContext context) {
-        boolean existsStateTransition = context.partitionStateManager.handleStateTransitions();
-//        if (!existsStateTransition && !context.finished()
-//                && context.IsolatedOC.isEmpty() && context.OCwithChildren.isEmpty()) { // circular exists in the constrcuted TPG
-//            GSOperationChain oc = tpg.forceExecuteBlockedOC(context);
-//            assert oc != null;
-//            executableTaskListener.onOCExecutable(oc);
-//        }
+         context.partitionStateManager.handleStateTransitions();
     }
 
     @Override
@@ -58,14 +52,14 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
     @Override
     public void TxnSubmitFinished(GSTPGContext context) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.BEGIN_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<GSOperation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
             constructOp(operationGraph, request);
         }
         // set logical dependencies among all operation in the same transaction
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.END_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
     }
 
     private void constructOp(List<GSOperation> operationGraph, Request request) {
@@ -86,9 +80,9 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         }
 //        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
         operationGraph.add(set_op);
-//        tpg.addOperationToChain(set_op);
         set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
-        tpg.cacheToSortedOperations(set_op);
+//        tpg.cacheToSortedOperations(set_op);
+        tpg.setupOperationTDFD(set_op);
     }
 
 //    /**

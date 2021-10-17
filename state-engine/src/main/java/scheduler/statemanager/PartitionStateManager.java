@@ -46,9 +46,8 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
     }
 
 
-    public boolean handleStateTransitions() {
+    public void handleStateTransitions() {
         OperationChainSignal<GSOperation, GSOperationChain> ocSignal = ocSignalQueue.poll();
-        boolean existsStateTransitions = ocSignal != null;
         while (ocSignal != null) {
             GSOperationChain operationChain = ocSignal.getTargetOperationChain();
             if (ocSignal instanceof OnRootSignal) {
@@ -60,7 +59,6 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
             }
             ocSignal = ocSignalQueue.poll();
         }
-        return existsStateTransitions;
     }
 
     private void ocRootStartTransition(GSOperationChain operationChain) {

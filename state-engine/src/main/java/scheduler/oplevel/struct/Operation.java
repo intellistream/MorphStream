@@ -219,9 +219,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         if (parentState.equals(OperationStateType.EXECUTED)) {
             if (dependencyType.equals(DependencyType.TD)) {
                 operationMetadata.td_countdown.decrementAndGet();
-                if (operationMetadata.td_countdown.get() < 0) {
-                    System.out.println("= =");
-                }
                 assert operationMetadata.td_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.FD)) {
                 operationMetadata.fd_countdown.decrementAndGet();
