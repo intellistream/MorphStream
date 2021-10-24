@@ -177,11 +177,13 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
         MeasureTools.END_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
         int counter = 0;
+        HashSet<OperationChain<ExecutionUnit>> resolvedOC = new HashSet<>();
         for (OperationChain<ExecutionUnit> oc : circularOCs) {
             if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
                 oc.ocParentsCount.set(0);
                 oc.ocParents.clear();
                 oc.ocChildren.clear();
+                resolvedOC.add(oc);
                 counter++;
             }
         }
@@ -190,7 +192,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             for (SchedulingUnit oc : ocs) {
                 context.totalOsToSchedule += oc.getOperations().size();
             }
-            ((LayeredTPGContext) context).buildBucketPerThread(ocs, circularOCs);
+            ((LayeredTPGContext) context).buildBucketPerThread(ocs, resolvedOC);
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
             int maxLevel = 0;
             for (Context curContext : threadToContextMap.values()) {
@@ -198,7 +200,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
                     maxLevel = ((LayeredTPGContext) curContext).maxLevel;
                 }
             }
-            ((LayeredTPGContext) context).putBusyWaitOCs(circularOCs, maxLevel+1);
+            ((LayeredTPGContext) context).putBusyWaitOCs(resolvedOC, maxLevel+1);
             if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : ocs) {
