@@ -132,7 +132,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
         //pre stream processing phase..
-        MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);
+        MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
         MeasureTools.END_PREPARE_TIME_MEASURE(thread_Id);
         PRE_TXN_PROCESS(_bid, timestamp);

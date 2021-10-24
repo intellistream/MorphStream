@@ -1,6 +1,7 @@
 package scheduler.context;
 
 import scheduler.Request;
+import scheduler.struct.AbstractOperation;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -12,8 +13,7 @@ public abstract class OCSchedulerContext<SchedulingUnit> implements SchedulerCon
     public ArrayDeque<Request> requests;
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.
-//    public Set<AbstractOperation> operaitonsLeft = new HashSet<>();//total number of operations to process per thread.
-    public ConcurrentLinkedQueue<SchedulingUnit> operationChains = new ConcurrentLinkedQueue<>(); // total number of operationchains in the thread.
+//    public Set<SchedulingUnit> operationChains = new HashSet<>();
 
 
     protected OCSchedulerContext(int thisThreadId) {

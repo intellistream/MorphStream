@@ -23,7 +23,7 @@ public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithA
         GSOperationChainWithAbort oc = new GSOperationChainWithAbort(tableName, pKey, bid);
         oc.setContext(this);
 //        if (!operationChainsLeft.contains(oc))
-        operationChains.add(oc);
+//        operationChains.add(oc);
         return oc;
     }
 

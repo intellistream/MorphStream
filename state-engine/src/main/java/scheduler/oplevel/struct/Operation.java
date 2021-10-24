@@ -3,6 +3,7 @@ package scheduler.oplevel.struct;
 import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import scheduler.oplevel.context.OPLayeredContext;
 import scheduler.oplevel.context.OPSchedulerContext;
 import scheduler.oplevel.signal.op.OnParentUpdatedSignal;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Operation extends AbstractOperation implements Comparable<Operation> {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
     public final OPSchedulerContext context;
+    public final String pKey;
 
     private final Queue<Operation> ld_descendant_operations;
     private final Queue<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
@@ -50,46 +52,47 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
 
-    public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
-        this(null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
+    public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
+        this(pKey, null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
     }
 
     /****************************Defined by MYC*************************************/
 
-    public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
+    public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
                      Function function, Condition condition, int[] success) {
-        this(null, table_name, txn_context, bid, accessType, record, null, function, condition, null, success);
+        this(pKey, null, table_name, txn_context, bid, accessType, record, null, function, condition, null, success);
     }
 
-    public Operation(String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
+    public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
                      SchemaRecordRef record_ref, Function function, Condition condition, int[] success) {
-        this(null, table_name, txn_context, bid, accessType, record, record_ref, function, condition, null, success);
+        this(pKey, null, table_name, txn_context, bid, accessType, record, record_ref, function, condition, null, success);
     }
 
 
-    public <Context extends OPSchedulerContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
-        this(context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
+        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
     }
 
-    public <Context extends OPSchedulerContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record) {
-        this(context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
+        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
     }
 
-    public <Context extends OPSchedulerContext> Operation(Context context, String table_name, TxnContext txn_context, long bid,
+    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record,
                                                   SchemaRecordRef record_ref) {
-        this(context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
+        this(pKey, context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
 
     public <Context extends OPSchedulerContext> Operation(
-            Context context, String table_name, TxnContext txn_context, long bid,
+            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success) {
         super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid);
         this.context = context;
+        this.pKey = pKey;
 
         ld_head_operation = null;
         ld_descendant_operations = new ArrayDeque<>();
@@ -105,7 +108,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         ld_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
         // finctional dependencies
         // speculative parents to wait, include the last ready op
-        Queue<Operation> ld_spec_parents = new ArrayDeque<>(); // speculative parents to wait, include the last ready op
+        // speculative parents to wait, include the last ready op
         ld_spec_children = new ArrayDeque<>(); // speculative children to notify.
 
         operationMetadata = new OperationMetadata();
@@ -190,7 +193,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
     public void stateTransition(OperationStateType state) {
-        LOG.debug(this + " : state transit " + operationState + " -> " + state);
+//        LOG.debug(this + " : state transit " + operationState + " -> " + state);
         operationState.getAndSet(state);
     }
 
@@ -277,6 +280,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         boolean isReady = operationMetadata.td_countdown.get() == 0
                 && operationMetadata.fd_countdown.get() == 0
                 && operationMetadata.ld_countdown.get() == 0;
+
         if (isReady) {
             stateTransition(OperationStateType.READY);
         }

@@ -54,7 +54,7 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
 
     @Override
     public void TxnSubmitFinished(Context context) {
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         int txnOpId = 0;
         Operation headerOperation = null;
@@ -64,11 +64,11 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
             switch (request.accessType) {
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
-                    set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, request.function, request.condition, request.condition_records, request.success);
                     break;
                 case READ_WRITE_COND_READ:
-                    set_op = new Operation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                     break;
                 default:
@@ -82,58 +82,13 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
             set_op.addHeader(headerOperation);
             headerOperation.addDescendant(set_op);
         }
-        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
-    }
-
-    /**
-     * Used by tpgScheduler.
-     *
-     * @param operation
-     * @param mark_ID
-     * @param clean
-     */
-    public void execute(Operation operation, long mark_ID, boolean clean) {
-        log.trace("++++++execute: " + operation);
-        // if the operation is in state aborted or committable or committed, we can bypass the execution
-        if (operation.getOperationState().equals(OperationStateType.ABORTED)
-                || operation.getOperationState().equals(OperationStateType.COMMITTABLE)
-                || operation.getOperationState().equals(OperationStateType.COMMITTED)) {
-            log.trace("++++++bypassed: " + operation);
-            //otherwise, skip (those already been tagged as aborted).
-            return;
-        }
-        int success;
-        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
-            success = operation.success[0];
-            CT_Transfer_Fun(operation, mark_ID, clean);
-            // check whether needs to return a read results of the operation
-            if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-            // operation success check, number of operation succeeded does not increase after execution
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
-        } else if (operation.accessType.equals(READ_WRITE_COND)) {
-            success = operation.success[0];
-            CT_Transfer_Fun(operation, mark_ID, clean);
-            // operation success check, number of operation succeeded does not increase after execution
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
-        } else if (operation.accessType.equals(READ_WRITE)) {
-            CT_Depo_Fun(operation, mark_ID, clean);
-        } else {
-            throw new UnsupportedOperationException();
-        }
-
-        assert operation.getOperationState() != OperationStateType.EXECUTED;
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
     @Override
     public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
-        int batch_size = 100;//TODO;
+        int batch_size = 10;//TODO;
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
 
@@ -151,7 +106,6 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
 
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
-//        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         for (Operation operation : context.batchedOperations) {
             execute(operation, mark_ID, false);
         }
@@ -162,7 +116,6 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
             NOTIFY(remove, context);
             MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }
-//        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
     }
 
     @Override

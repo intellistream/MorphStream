@@ -38,7 +38,9 @@ import static scheduler.oplevel.impl.OPScheduler.getTaskId;
 public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private static final Logger log = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
 
+    private final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
+    private final int NUM_ITEMS;
     CyclicBarrier barrier;
     public final Map<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
@@ -51,14 +53,39 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     /**
      * @param totalThreads
      */
-    public TaskPrecedenceGraph(int totalThreads, int delta) {
+    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS) {
         barrier = new CyclicBarrier(totalThreads);
+        this.totalThreads = totalThreads;
         this.delta = delta;
+        this.NUM_ITEMS = NUM_ITEMS;
         // all parameters in this class should be thread safe.
         operationChains = new ConcurrentHashMap<>();
         operationChains.put("accounts", new TableOCs(totalThreads));
         operationChains.put("bookEntries", new TableOCs(totalThreads));
         threadToContextMap = new HashMap<>();
+    }
+
+    /**
+     * Pre-create a bunch of OCs for each key in the table, which reduces the constant overhead during the runtime.
+     * @param context
+     */
+    // TODO: if running multiple batches, this will be a problem.
+    public void setOCs(Context context) {
+        int left_bound = context.thisThreadId * delta;
+        int right_bound;
+        if (context.thisThreadId == totalThreads - 1) {//last executor need to handle left-over
+            right_bound = NUM_ITEMS;
+        } else {
+            right_bound = (context.thisThreadId + 1) * delta;
+        }
+        String _key;
+        for (int key = left_bound; key < right_bound; key++) {
+            _key = String.valueOf(key);
+            OperationChain accOC = context.createTask("accounts", _key);
+            OperationChain beOC = context.createTask("bookEntries", _key);
+            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, accOC);
+            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
+        }
     }
 
     public TableOCs getTableOCs(String table_name) {
@@ -92,7 +119,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
      * @param context
      */
     public void firstTimeExploreTPG(Context context) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
 
         if (context instanceof OPLayeredContext) {
             int threadId = context.thisThreadId;
@@ -116,8 +143,9 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             Collection<TableOCs> tableOCsList = getOperationChains().values();
             for (TableOCs tableOCs : tableOCsList) {//for each table.
                 for (OperationChain oc : tableOCs.threadOCsMap.get(threadId).holder_v1.values()) {
+                    if (oc.getOperations().isEmpty())
+                        continue;
                     oc.updateTDDependencies();
-//                context.operations.addAll(oc.getOperations());
                     Operation head = oc.getOperations().first();
                     context.totalOsToSchedule += oc.getOperations().size();
                     if (head.isRoot()) {
@@ -129,7 +157,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             throw new UnsupportedOperationException();
         }
 
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
     /**
@@ -138,16 +166,24 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private OperationChain addOperationToChain(Operation operation) {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         String table_name = operation.table_name;
-        String primaryKey = operation.d_record.record_.GetPrimaryKey();
-        OperationChain retOc = getOC(table_name, primaryKey);
+        String primaryKey = operation.pKey;
+        OperationChain retOc = getOC(table_name, primaryKey, operation.context.thisThreadId);
         retOc.addOperation(operation);
         return retOc;
     }
 
     private OperationChain getOC(String tableName, String pKey) {
-        int threadId = getTaskId(pKey, delta);
+        int threadId = Integer.parseInt(pKey) / delta;
         ConcurrentHashMap<String, OperationChain> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
+//        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
+        return holder.get(pKey);
+    }
+
+    private OperationChain getOC(String tableName, String pKey, int threadId) {
+//        int threadId = Integer.parseInt(pKey) / delta;
+        ConcurrentHashMap<String, OperationChain> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
+//        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
+        return holder.get(pKey);
     }
 
     private void checkFD(OperationChain curOC, Operation op, String table_name,

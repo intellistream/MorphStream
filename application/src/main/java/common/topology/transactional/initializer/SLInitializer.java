@@ -17,7 +17,6 @@ import db.DatabaseException;
 import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scheduler.context.OCSchedulerContext;
 import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.TableRecord;
@@ -31,10 +30,7 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static common.CONTROL.enable_log;
 import static transaction.State.configure_store;
@@ -104,11 +100,21 @@ public class SLInitializer extends TableInitilizer {
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
-
-            bytes = digest.digest(String.format("%d_%d",
-                            dataConfig.getTotalThreads(),
-                            dataConfig.getTotalEvents())
-                    .getBytes(StandardCharsets.UTF_8));
+            if (dataConfig instanceof TPGDataGeneratorConfig)
+                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTotalEvents(),
+                                dataConfig.getnKeyStates(),
+                                ((TPGDataGeneratorConfig) dataConfig).Ratio_Of_Deposit,
+                                ((TPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
+                                ((TPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys)
+                        .getBytes(StandardCharsets.UTF_8));
+            else
+                bytes = digest.digest(String.format("%d_%d_%d",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTotalEvents(),
+                                dataConfig.getnKeyStates())
+                        .getBytes(StandardCharsets.UTF_8));
 
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(bytes));
@@ -289,12 +295,14 @@ public class SLInitializer extends TableInitilizer {
         int totalEvents = dataConfig.getTotalEvents();
         boolean shufflingActive = dataConfig.getShufflingActive();
         String folder = dataConfig.getRootPath();
-        File file = new File(folder + "transferEvents.txt");
+        File file = new File(folder + "events.txt");
         int[] p_bids = new int[tthread];
+        HashMap<String, List<Integer>> accKeys = new HashMap<>();
+        HashMap<String, List<Integer>> astKeys = new HashMap<>();
         if (file.exists()) {
             if (enable_log) LOG.info("Reading transfer events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-            loadTransferEvents(reader, totalEvents, shufflingActive, p_bids);
+            loadTransferDepositEvents(reader, totalEvents, shufflingActive, p_bids);
             reader.close();
         }
 
@@ -312,36 +320,36 @@ public class SLInitializer extends TableInitilizer {
 
     }
 
-    private void loadDepositEvents(BufferedReader reader, int tuplesPerBatch, boolean shufflingActive, int[] p_bids) throws IOException {
-        String txn = reader.readLine();
-        int count = 0;
-//        int p_bids[] = new int[tthread];
-        while (txn != null) {
-            String[] split = txn.split(",");
-            int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
-            DepositEvent event = new DepositEvent(
-                    Integer.parseInt(split[0]), //bid
-                    npid, //pid
-                    Arrays.toString(p_bids), //bid_array
-                    2,//num_of_partition
-                    split[1],//getSourceAccountId
-                    split[2],//getSourceBookEntryId
-                    100,  //getAccountDeposit
-                    100  //getBookEntryDeposit
-            );
-            for (int x = 0; x < 2; x++)
-                p_bids[(npid + x) % tthread]++;
-            DataHolder.depositEvents.add(event);
-            if (enable_log) LOG.debug(String.format("%d deposit read...", count));
-            txn = reader.readLine();
-        }
-        if (enable_log) LOG.info("Done reading transfer events...");
-        if (shufflingActive) {
-            shuffleEvents(DataHolder.depositEvents, tuplesPerBatch);
-        }
-    }
+//    private void loadDepositEvents(BufferedReader reader, int tuplesPerBatch, boolean shufflingActive, int[] p_bids) throws IOException {
+//        String txn = reader.readLine();
+//        int count = 0;
+////        int p_bids[] = new int[tthread];
+//        while (txn != null) {
+//            String[] split = txn.split(",");
+//            int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
+//            DepositEvent event = new DepositEvent(
+//                    Integer.parseInt(split[0]), //bid
+//                    npid, //pid
+//                    Arrays.toString(p_bids), //bid_array
+//                    2,//num_of_partition
+//                    split[1],//getSourceAccountId
+//                    split[2],//getSourceBookEntryId
+//                    100,  //getAccountDeposit
+//                    100  //getBookEntryDeposit
+//            );
+//            for (int x = 0; x < 2; x++)
+//                p_bids[(npid + x) % tthread]++;
+//            DataHolder.depositEvents.add(event);
+//            if (enable_log) LOG.debug(String.format("%d deposit read...", count));
+//            txn = reader.readLine();
+//        }
+//        if (enable_log) LOG.info("Done reading transfer events...");
+//        if (shufflingActive) {
+//            shuffleEvents(DataHolder.depositEvents, tuplesPerBatch);
+//        }
+//    }
 
-    private void loadTransferEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
+    private void loadTransferDepositEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
         String txn = reader.readLine();
         int count = 0;
 //        int[] p_bids = new int[tthread];
@@ -349,11 +357,11 @@ public class SLInitializer extends TableInitilizer {
             String[] split = txn.split(",");
             int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
             int accountTransfer = 100;
-            int accountEntryTransfer = 100;
+            int bookEntryTransfer = 100;
 //            if (count == 10) { // TODO: for the test purpose
 //            if (count == 25 || count == 50 || count == 75) {
 //                accountTransfer = 100000000;
-//                accountEntryTransfer = 100000000;
+//                bookEntryTransfer = 100000000;
 //            }
             count++;
             if (split.length == 5) {
@@ -367,13 +375,12 @@ public class SLInitializer extends TableInitilizer {
                         split[3],//getTargetAccountId
                         split[4],//getTargetBookEntryId
                         accountTransfer,  //getAccountTransfer
-                        accountEntryTransfer  //getBookEntryTransfer
+                        bookEntryTransfer  //getBookEntryTransfer
                 );
                 for (int x = 0; x < 4; x++)
                     p_bids[(npid + x) % tthread]++;
                 DataHolder.transferEvents.add(event);
             } else if (split.length == 3) {
-                int npid2 = (int) (Long.parseLong(split[2]) / partitionOffset);
                 DepositEvent event = new DepositEvent(
                         Integer.parseInt(split[0]), //bid
                         npid, //pid

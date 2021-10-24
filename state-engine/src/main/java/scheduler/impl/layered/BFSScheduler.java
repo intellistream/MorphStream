@@ -65,11 +65,11 @@ public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
         switch (request.accessType) {
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
-                set_op = new BFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                set_op = new BFSOperation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.function, request.condition, request.condition_records, request.success);
                 break;
             case READ_WRITE_COND_READ:
-                set_op = new BFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                set_op = new BFSOperation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
             default:

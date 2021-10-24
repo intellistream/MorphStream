@@ -8,6 +8,7 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import transaction.State;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -56,6 +57,7 @@ public class TPGDataGenerator extends DataGenerator {
 
 
     private final Random random = new Random(0); // the transaction type decider
+    public transient FastZipfGenerator p_generator; // partition generator
     HashMap<Long, Integer> nGeneratedAccountIds = new HashMap<>();
     HashMap<Long, Integer> nGeneratedAssetIds = new HashMap<>();
     private ArrayList<SLEvent> events;
@@ -77,6 +79,7 @@ public class TPGDataGenerator extends DataGenerator {
         accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
         assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
         configure_store(1, (double) State_Access_Skewness / 100, dataConfig.getTotalThreads(), nKeyState);
+        p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
     }
 
     public static void main(String[] args) {
@@ -112,7 +115,7 @@ public class TPGDataGenerator extends DataGenerator {
 
         if (!isUnique) {
             if (enable_states_partition) {
-                int partitionId = random.nextInt(dataConfig.getTotalThreads());
+                int partitionId = key_to_partition(p_generator.next());
                 int[] accKeys = getKeys(partitionedAccountZipf[partitionId],
                         partitionedAccountZipf[(partitionId+2) % dataConfig.getTotalThreads()],
                         partitionId,
@@ -167,7 +170,7 @@ public class TPGDataGenerator extends DataGenerator {
         int ast;
         if(!isUnique) {
             if (enable_states_partition) {
-                int partitionId = random.nextInt(dataConfig.getTotalThreads());
+                int partitionId = key_to_partition(p_generator.next());
                 acc = getKey(partitionedAccountZipf[partitionId], partitionId, generatedAcc);
                 ast = getKey(partitionedAssetZipf[(partitionId+1) % dataConfig.getTotalThreads()], (partitionId+1) % dataConfig.getTotalThreads(), generatedAst);
             } else {
@@ -188,6 +191,10 @@ public class TPGDataGenerator extends DataGenerator {
         // increase the timestamp i.e. transaction id
         eventID++;
         return t;
+    }
+
+    public int key_to_partition(int key) {
+        return (int) Math.floor((double) key / floor_interval);
     }
 
     private int[] getKeys(FastZipfGenerator zipfGeneratorSrc, FastZipfGenerator zipfGeneratorDst, int partitionSrc, int partitionDst, ArrayList<Integer> generatedKeys) {

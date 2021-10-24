@@ -36,7 +36,6 @@ public class MeasureTools {
 
     public static void BEGIN_TOTAL_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
-//            if (Metrics.Runtime.Start[thread_id] == 0)
             COMPUTE_START_TIME(thread_id);
             COMPUTE_PRE_EXE_START_TIME(thread_id);
         }
@@ -46,6 +45,14 @@ public class MeasureTools {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
             RECORD_TIME(thread_id);
             RESET_COUNTERS(thread_id);
+        }
+    }
+
+    public static void BEGIN_TOTAL_TIME_MEASURE_TS(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
+            if (Metrics.Runtime.Start[thread_id] == 0)
+                COMPUTE_START_TIME(thread_id);
+            COMPUTE_PRE_EXE_START_TIME(thread_id);
         }
     }
 

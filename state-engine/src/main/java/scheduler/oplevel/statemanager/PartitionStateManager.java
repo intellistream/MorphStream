@@ -1,5 +1,6 @@
 package scheduler.oplevel.statemanager;
 
+import profiler.MeasureTools;
 import scheduler.oplevel.impl.tpg.OPGSScheduler;
 import scheduler.oplevel.signal.op.*;
 import scheduler.oplevel.struct.MetaTypes;
@@ -90,20 +91,10 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
         // normal state transition during execution
         // **BLOCKED**
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.BLOCKED)) {
-            inBlockedState(operation, dependencyType, parentState);
-        } else if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)) {
-            inExecutedState(operation, dependencyType, parentState);
-        }
-    }
-
-    private void inExecutedState(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-        // TODO: abort handling
-    }
-
-    private void inBlockedState(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
-        if (parentState.equals(MetaTypes.OperationStateType.EXECUTED) && operation.tryReady()) {
-            // BLOCKED->READY
-            blockedToReadyAction(operation);
+            if (operation.tryReady()) {
+                // BLOCKED->READY
+                blockedToReadyAction(operation);
+            }
         }
     }
 
@@ -111,7 +102,6 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
         if (signal.isFailed()) {
             // transit to aborted
 //            operation.stateTransition(OperationStateType.ABORTED);
-            System.out.println("++++++There will never be aborted operation" + operation);
             throw new UnsupportedOperationException("There will never be aborted operation");
             // TODO: notify children.
         } else {

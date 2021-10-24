@@ -1,6 +1,7 @@
 package scheduler.struct;
 
 import org.jboss.netty.util.internal.ConcurrentHashMap;
+import profiler.MeasureTools;
 import transaction.impl.ordered.MyList;
 
 import java.util.*;
@@ -25,7 +26,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 
     protected TaskPrecedenceGraph tpg;
 
-    private final HashSet<OperationChain<ExecutionUnit>> scanedOCs = new HashSet<>();
+//    private final HashSet<OperationChain<ExecutionUnit>> scanedOCs = new HashSet<>();
 
     public OperationChain(String tableName, String primaryKey, long bid) {
         this.tableName = tableName;
@@ -55,7 +56,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
             ExecutionUnit parentOp = iterator.next();
             if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
                 // setup dependencies on op level first.
-                targetOp.addFDParent(parentOp.d_record, parentOp);
+                targetOp.addFDParent(parentOp);
                 setupDependency(targetOp, parentOC, parentOp);
                 break;
             }
@@ -69,35 +70,36 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
             this.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
         }
         // add child for parent OC
-        parentOC.ocChildren.putIfAbsent(this, targetOp);
+        parentOC.ocChildren.put(this, targetOp);
         assert this.ocParents.containsKey(parentOC);
         assert parentOC.ocChildren.containsKey(this);
+//        assert this.ocParents.size() == this.ocParentsCount.get();
     }
 
-    private boolean circularDetection(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
-        boolean isCircular;
-        // loop to find the circular
-        isCircular = isCircular(parentOC);
-        if (isCircular) { // if circular detected, try to solve circular
-            // TODO: create a new OC and put all ops after circular OP to the new OC.
-            OperationChain<ExecutionUnit> newOC = tpg.getNewOC(targetOp.table_name, targetOp.d_record.record_.GetPrimaryKey(), targetOp.bid);
-            List<ExecutionUnit> opsToMigrate = new ArrayList<>();
-            for (ExecutionUnit op : operations) {
-                if (op.bid >= targetOp.bid) {
-                    opsToMigrate.add(op);
-                }
-            }
-            opsToMigrate.forEach(operations::remove);
-            for (ExecutionUnit op : opsToMigrate) {
-                newOC.addOperation(op);
-            }
-            newOC.potentialChldrenInfo.addAll(this.potentialChldrenInfo); // move the potentialChildrenInfo to future
-            newOC.setupDependency(targetOp, this, this.getOperations().last());
-            newOC.setupDependency(targetOp, parentOC, parentOp);
-            return true;
-        }
-        return false;
-    }
+//    private boolean circularDetection(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
+//        boolean isCircular;
+//        // loop to find the circular
+//        isCircular = isCircular(parentOC);
+//        if (isCircular) { // if circular detected, try to solve circular
+//            // TODO: create a new OC and put all ops after circular OP to the new OC.
+//            OperationChain<ExecutionUnit> newOC = tpg.getNewOC(targetOp.table_name, targetOp.d_record.record_.GetPrimaryKey(), targetOp.bid);
+//            List<ExecutionUnit> opsToMigrate = new ArrayList<>();
+//            for (ExecutionUnit op : operations) {
+//                if (op.bid >= targetOp.bid) {
+//                    opsToMigrate.add(op);
+//                }
+//            }
+//            opsToMigrate.forEach(operations::remove);
+//            for (ExecutionUnit op : opsToMigrate) {
+//                newOC.addOperation(op);
+//            }
+//            newOC.potentialChldrenInfo.addAll(this.potentialChldrenInfo); // move the potentialChildrenInfo to future
+//            newOC.setupDependency(targetOp, this, this.getOperations().last());
+//            newOC.setupDependency(targetOp, parentOC, parentOp);
+//            return true;
+//        }
+//        return false;
+//    }
 
     public boolean isCircular(OperationChain<ExecutionUnit> parentOC) {
         boolean isCircular = false;
@@ -112,17 +114,15 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         return isCircular;
     }
 
-    public boolean isCircularAffected(ArrayDeque<OperationChain<ExecutionUnit>> scannedOCs) {
+    public boolean isCircularAffected(HashSet<OperationChain<ExecutionUnit>> scannedOCs, HashSet<OperationChain<ExecutionUnit>> circularOCs) {
         for (OperationChain<ExecutionUnit> parent : ocParents.keySet()) {
             if (!scannedOCs.contains(parent)) { // if the oc is not traversed before, no circular.
                 scannedOCs.add(parent);
-                if (parent.isCircularAffected(scannedOCs)) {
+                if (parent.isCircularAffected(scannedOCs, circularOCs)) {
                     return true;
                 }
             } else {
                 return true;
-//                relaxDependencies(oc, resolvedOC);
-                // make all children operations execution in busy wait
             }
         }
         return false;
@@ -144,34 +144,34 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 //    }
 
 
-    public boolean scanParentOCs(Collection<OperationChain<ExecutionUnit>> selectedOCs) {
-        for (OperationChain<ExecutionUnit> oc : selectedOCs) {
-            if (!oc.ocParents.isEmpty() && !scanedOCs.contains(oc)) {
-                scanedOCs.add(oc);
-                if (oc.ocParents.containsKey(this)) {
-                    return true;
-                }
-                if (scanParentOCs(oc.ocParents.keySet())) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+//    public boolean scanParentOCs(Collection<OperationChain<ExecutionUnit>> selectedOCs) {
+//        for (OperationChain<ExecutionUnit> oc : selectedOCs) {
+//            if (!oc.ocParents.isEmpty() && !scanedOCs.contains(oc)) {
+//                scanedOCs.add(oc);
+//                if (oc.ocParents.containsKey(this)) {
+//                    return true;
+//                }
+//                if (scanParentOCs(oc.ocParents.keySet())) {
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//    }
 
-    public boolean checkConnectivity(Collection<OperationChain<ExecutionUnit>> selectedOCs) {
-        if (selectedOCs.isEmpty()) {
-            return true;
-        }
-        for (OperationChain<ExecutionUnit> oc : selectedOCs) {
-            if (oc.ocParents.isEmpty()) {
-                return true;
-            } else {
-                return checkConnectivity(oc.ocParents.keySet());
-            }
-        }
-        return false;
-    }
+//    public boolean checkConnectivity(Collection<OperationChain<ExecutionUnit>> selectedOCs) {
+//        if (selectedOCs.isEmpty()) {
+//            return true;
+//        }
+//        for (OperationChain<ExecutionUnit> oc : selectedOCs) {
+//            if (oc.ocParents.isEmpty()) {
+//                return true;
+//            } else {
+//                return checkConnectivity(oc.ocParents.keySet());
+//            }
+//        }
+//        return false;
+//    }
 
     public void checkPotentialFDChildrenOnNewArrival(ExecutionUnit newOp) {
         List<PotentialChildrenInfo> processed = new ArrayList<>();

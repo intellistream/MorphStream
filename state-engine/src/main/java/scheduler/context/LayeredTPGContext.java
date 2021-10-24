@@ -1,5 +1,6 @@
 package scheduler.context;
 
+import org.apache.hadoop.util.hash.Hash;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.OperationChain;
 import scheduler.struct.layered.LayeredOperationChain;
@@ -60,7 +61,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
      * @param ocs
      * @return
      */
-    public int buildBucketPerThread(Collection<SchedulingUnit> ocs, ArrayDeque<OperationChain<ExecutionUnit>> resolvedOC) {
+    public int buildBucketPerThread(Collection<SchedulingUnit> ocs, HashSet<OperationChain<ExecutionUnit>> resolvedOC) {
         // TODO: update this logic to the latest logic that we proposed in operation level
         int localMaxDLevel = 0;
         int dependencyLevel;
@@ -81,7 +82,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
         return localMaxDLevel;
     }
 
-    public void putBusyWaitOCs(ArrayDeque<SchedulingUnit> resolvedOC, int maxLevel) {
+    public void putBusyWaitOCs(HashSet<SchedulingUnit> resolvedOC, int maxLevel) {
         for (SchedulingUnit oc : resolvedOC) {
             if (!allocatedLayeredOCBucket.containsKey(maxLevel))
                 allocatedLayeredOCBucket.put(maxLevel, new ArrayList<>());

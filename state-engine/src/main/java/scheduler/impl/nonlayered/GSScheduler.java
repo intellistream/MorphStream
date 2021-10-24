@@ -3,14 +3,8 @@ package scheduler.impl.nonlayered;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContext;
-import scheduler.context.GSTPGContextWithAbort;
-import scheduler.struct.OperationChain;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
-import scheduler.struct.gs.GSOperationChainWithAbort;
-import scheduler.struct.gs.GSOperationWithAbort;
-import transaction.impl.ordered.MyList;
-import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +22,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 //        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+//        SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 
     /**
@@ -52,27 +46,28 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
     @Override
     public void TxnSubmitFinished(GSTPGContext context) {
-        MeasureTools.BEGIN_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
         List<GSOperation> operationGraph = new ArrayList<>();
         for (Request request : context.requests) {
-            constructOp(operationGraph, request);
+            constructOp(operationGraph, request, context);
         }
         // set logical dependencies among all operation in the same transaction
-        MeasureTools.END_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
-    private void constructOp(List<GSOperation> operationGraph, Request request) {
+    private void constructOp(List<GSOperation> operationGraph, Request request, GSTPGContext context) {
         long bid = request.txn_context.getBID();
         GSOperation set_op;
+        GSTPGContext targetContext = getTargetContext(request.src_key);
         switch (request.accessType) {
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
-                set_op = new GSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                set_op = new GSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.function, request.condition, request.condition_records, request.success);
                 break;
             case READ_WRITE_COND_READ:
-                set_op = new GSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                set_op = new GSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
             default:
@@ -82,27 +77,8 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         operationGraph.add(set_op);
         set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
 //        tpg.cacheToSortedOperations(set_op);
-        tpg.setupOperationTDFD(set_op);
+        tpg.setupOperationTDFD(set_op, targetContext);
     }
-
-//    /**
-//     * Used by GSScheduler.
-//     *  @param context
-//     * @param operationChain
-//     * @param mark_ID
-//     * @return
-//     */
-//    @Override
-//    public boolean executeWithBusyWait(GSTPGContext context, GSOperationChain operationChain, long mark_ID) {
-//        MyList<GSOperation> operation_chain_list = operationChain.getOperations();
-//        assert !operationChain.isExecuted;
-//        for (GSOperation operation : operation_chain_list) {
-//            if (operation.isExecuted || operation.aborted) continue;
-//            if (isConflicted(context, operationChain, operation)) return false; // did not completed
-//            execute(operation, mark_ID, false);
-//        }
-//        return true;
-//    }
 
     /**
      * Register an operation to queue.
@@ -114,6 +90,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
         public void onOCFinalized(GSOperationChain operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
+//            operationChain.context.operationChains.remove(operationChain);
         }
 
         public void onOCRollbacked(GSOperationChain operationChain) {

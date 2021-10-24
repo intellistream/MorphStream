@@ -19,8 +19,8 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-//    public String application = "StreamLedger";
-        public String application = "GrepSum";
+    public String application = "StreamLedger";
+    //    public String application = "GrepSum";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -59,8 +59,9 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 1;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
-//    public int CCOption = CCOption_TStream;
-    public int CCOption = CCOption_SStore;
+    public int CCOption = CCOption_TStream;
+//    public int CCOption = CCOption_SStore;
+//    public int CCOption = CCOption_LOCK;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")

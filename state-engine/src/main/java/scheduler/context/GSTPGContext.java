@@ -1,5 +1,6 @@
 package scheduler.context;
 
+import profiler.MeasureTools;
 import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.statemanager.OperationChainStateListener;
 import scheduler.statemanager.PartitionStateManager;
@@ -28,7 +29,7 @@ public class GSTPGContext
     public GSOperationChain createTask(String tableName, String pKey, long bid) {
         GSOperationChain oc = new GSOperationChain(tableName, pKey, bid);
         oc.setContext(this);
-        operationChains.add(oc);
+//        operationChains.add(oc);
         return oc;
     }
 

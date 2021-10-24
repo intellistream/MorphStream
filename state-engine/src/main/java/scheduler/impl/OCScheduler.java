@@ -10,9 +10,6 @@ import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.OperationChain;
 import scheduler.struct.TaskPrecedenceGraph;
-import scheduler.struct.gs.GSOperationChainWithAbort;
-import scheduler.struct.gs.GSOperationWithAbort;
-import scheduler.struct.layered.bfs.BFSOperation;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -34,7 +31,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
 
     protected OCScheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
-        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta);
+        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS);
     }
 
     /**
@@ -55,6 +52,14 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         int threadId = getTaskId(d_record.record_.GetPrimaryKey(), delta);
         return tpg.threadToContextMap.get(threadId);
     }
+
+    public Context getTargetContext(String key) {
+        // the thread to submit the operation may not be the thread to execute it.
+        // we need to find the target context this thread is mapped to.
+        int threadId =  Integer.parseInt(key) / delta;
+        return tpg.threadToContextMap.get(threadId);
+    }
+
 
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
@@ -84,14 +89,11 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     protected void Transfer_Fun(ExecutionUnit operation, long previous_mark_ID, boolean clean) {
 
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
-        SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
 
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
-        final long sourceAssetValue = preValues1.getValues().get(1).getLong();
 
         if (sourceAccountBalance > operation.condition.arg1
-                && sourceAccountBalance > operation.condition.arg2
-                && sourceAssetValue > operation.condition.arg3) {
+                && sourceAccountBalance > operation.condition.arg2) {
             // read
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
@@ -110,7 +112,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             if (enable_log) log.info("++++++ operation failed: "
                     + sourceAccountBalance + "-" + operation.condition.arg1
                     + " : " + sourceAccountBalance + "-" + operation.condition.arg2
-                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
+//                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
                     + " condition: " + operation.condition);
         }
     }
@@ -140,6 +142,40 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
      * @param clean
      */
     public void execute(ExecutionUnit operation, long mark_ID, boolean clean) {
+        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+            return; // return if the operation is already aborted
+        }
+        int success;
+        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
+            success = operation.success[0];
+            Transfer_Fun(operation, mark_ID, clean);
+            if (operation.record_ref != null) {
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            }
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
+        } else if (operation.accessType.equals(READ_WRITE_COND)) {
+            success = operation.success[0];
+            Transfer_Fun(operation, mark_ID, clean);
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
+        } else if (operation.accessType.equals(READ_WRITE)) {
+            Depo_Fun(operation, mark_ID, clean);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * general operation execution entry method for all schedulers.
+     *
+     * @param operation
+     * @param mark_ID
+     * @param clean
+     */
+    public void execute(ExecutionUnit operation, long mark_ID, boolean clean, Context context) {
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             return; // return if the operation is already aborted
         }
@@ -209,7 +245,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
         for (ExecutionUnit operation : operation_chain_list) {
             if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED) || operation.isFailed) continue;
-            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+            if (isConflicted(context, operationChain, operation)) return false;
             execute(operation, mark_ID, false);
             if (!operation.isFailed) {
                 operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
@@ -268,23 +304,19 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     @Override
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);
+        tpg.setOCs(context);
     }
 
     protected boolean isConflicted(Context context, SchedulingUnit operationChain, ExecutionUnit operation) {
-        if (operation.fdParentOps != null) {
-            if (operation.fdParentOps[0] != null) {
-                if (!(operation.fdParentOps[0].getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
-                        || operation.fdParentOps[0].getOperationState().equals(MetaTypes.OperationStateType.ABORTED))) {
-                    // blocked and busy wait
-                    context.busyWaitQueue.add(operationChain);
-                    return true;
-                }
-            }
-            if (operation.fdParentOps[1] != null) {
-                if (!(operation.fdParentOps[1].getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
-                        || operation.fdParentOps[1].getOperationState().equals(MetaTypes.OperationStateType.ABORTED))) {
-                    context.busyWaitQueue.add(operationChain);
-                    return true;
+        if (operation.fd_parents != null) {
+            for (AbstractOperation conditioned_operation : operation.fd_parents) {
+                if (conditioned_operation != null) {
+                    if (!(conditioned_operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
+                            || conditioned_operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED))) {
+                        // blocked and busy wait
+                        context.busyWaitQueue.add(operationChain);
+                        return true;
+                    }
                 }
             }
         }

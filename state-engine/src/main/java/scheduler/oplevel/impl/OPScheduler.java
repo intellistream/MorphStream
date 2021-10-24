@@ -10,6 +10,7 @@ import scheduler.Request;
 import scheduler.impl.IScheduler;
 import scheduler.oplevel.context.OPSchedulerContext;
 import scheduler.oplevel.struct.AbstractOperation;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.oplevel.struct.Operation;
 import scheduler.oplevel.struct.TaskPrecedenceGraph;
 import storage.SchemaRecord;
@@ -22,6 +23,8 @@ import utils.SOURCE_CONTROL;
 import java.util.List;
 import java.util.Map;
 
+import static content.common.CommonMetaTypes.AccessType.*;
+
 public abstract class OPScheduler<Context extends OPSchedulerContext, Task> implements IScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OPScheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
@@ -29,7 +32,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     public OPScheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
-        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta);
+        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS);
     }
 
     /**
@@ -44,6 +47,13 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         return _key / delta;
     }
 
+    public Context getTargetContext(String key) {
+        // the thread to submit the operation may not be the thread to execute it.
+        // we need to find the target context this thread is mapped to.
+        int threadId =  Integer.parseInt(key) / delta;
+        return tpg.threadToContextMap.get(threadId);
+    }
+
     public Context getTargetContext(TableRecord d_record) {
         // the thread to submit the operation may not be the thread to execute it.
         // we need to find the target context this thread is mapped to.
@@ -51,10 +61,52 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         return tpg.threadToContextMap.get(threadId);
     }
 
+    /**
+     * Used by tpgScheduler.
+     *
+     * @param operation
+     * @param mark_ID
+     * @param clean
+     */
+    public void execute(Operation operation, long mark_ID, boolean clean) {
+//        log.trace("++++++execute: " + operation);
+        // if the operation is in state aborted or committable or committed, we can bypass the execution
+        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+//            log.trace("++++++bypassed: " + operation);
+            //otherwise, skip (those +already been tagged as aborted).
+            return;
+        }
+        int success;
+        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
+            success = operation.success[0];
+            CT_Transfer_Fun(operation, mark_ID, clean);
+            // check whether needs to return a read results of the operation
+            if (operation.record_ref != null) {
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            }
+            // operation success check, number of operation succeeded does not increase after execution
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
+        } else if (operation.accessType.equals(READ_WRITE_COND)) {
+            success = operation.success[0];
+            CT_Transfer_Fun(operation, mark_ID, clean);
+            // operation success check, number of operation succeeded does not increase after execution
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
+        } else if (operation.accessType.equals(READ_WRITE)) {
+            CT_Depo_Fun(operation, mark_ID, clean);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+
+        assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
+    }
+
     // DD: Transfer event processing
     protected void CT_Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
-        SchemaRecord preValues1 = operation.condition_records[1].content_.readPreValues(operation.bid);
         if (preValues == null) {
             log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
             log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
@@ -63,20 +115,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
             log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
         }
-        if (preValues1 == null) {
-            log.info("Failed to read condition records[1]" + operation.condition_records[1].record_.GetPrimaryKey());
-            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[1].content_).versions.size());
-            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[1].content_).versions.entrySet()) {
-                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
-            }
-            log.info("TRY reading:" + ((T_StreamContent) operation.condition_records[1].content_).versions.get(operation.bid));//not modified in last round);
-        }
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
-        final long sourceAssetValue = preValues1.getValues().get(1).getLong();
 
         if (sourceAccountBalance > operation.condition.arg1
-                && sourceAccountBalance > operation.condition.arg2
-                && sourceAssetValue > operation.condition.arg3) {
+                && sourceAccountBalance > operation.condition.arg2) {
             // read
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
@@ -95,7 +137,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             log.info("++++++ operation failed: "
                     + sourceAccountBalance + "-" + operation.condition.arg1
                     + " : " + sourceAccountBalance + "-" + operation.condition.arg2
-                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
+//                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
                     + " condition: " + operation.condition);
         }
     }
@@ -113,6 +155,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     @Override
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);
+        tpg.setOCs(context);
     }
 
     /**

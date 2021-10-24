@@ -115,31 +115,33 @@ public class SLBolt_ts extends SLBolt {
 
     protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
 
-        String[] srcTable = new String[]{"accounts", "bookEntries"};
-        String[] srcID = new String[]{event.getSourceAccountId(), event.getSourceBookEntryId()};
+        String[] accTable = new String[]{"accounts"};
+        String[] astTable = new String[]{"bookEntries"};
+        String[] accID = new String[]{event.getSourceAccountId()};
+        String[] astID = new String[]{event.getSourceBookEntryId()};
 
         DEC decrement1 = new DEC(event.getAccountTransfer());
-        Condition condition1 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
+        Condition condition1 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer());
         DEC decrement2 = new DEC(event.getBookEntryTransfer());
-        Condition condition2 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
+        Condition condition2 = new Condition(event.getMinAccountBalance(), event.getBookEntryTransfer());
         INC increment1 = new INC(event.getAccountTransfer());
-        Condition condition3 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
+        Condition condition3 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer());
         INC increment2 = new INC(event.getBookEntryTransfer());
-        Condition condition4 = new Condition(event.getMinAccountBalance(), event.getAccountTransfer(), event.getBookEntryTransfer());
+        Condition condition4 = new Condition(event.getMinAccountBalance(), event.getBookEntryTransfer());
 
         transactionManager.BeginTransaction(txnContext);
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "accounts",
                 event.getSourceAccountId(), event.src_account_value,//to be fill up.
                 decrement1,
-                srcTable, srcID,//condition source, condition id.
+                accTable, accID,//condition source, condition id.
                 condition1,
                 event.success);          //asynchronously return.
 
         transactionManager.Asy_ModifyRecord(txnContext,
                 "bookEntries", event.getSourceBookEntryId()
                 , decrement2,
-                srcTable, srcID,
+                astTable, astID,
                 condition2,
                 event.success);   //asynchronously return.
 
@@ -147,7 +149,7 @@ public class SLBolt_ts extends SLBolt {
                 "accounts",
                 event.getTargetAccountId(), event.dst_account_value,//to be fill up.
                 increment1,
-                srcTable, srcID//condition source, condition id.
+                accTable, accID//condition source, condition id.
                 , condition3,
                 event.success);          //asynchronously return.
 
@@ -155,7 +157,7 @@ public class SLBolt_ts extends SLBolt {
                 "bookEntries",
                 event.getTargetBookEntryId(),
                 increment2,
-                srcTable, srcID,
+                astTable, astID,
                 condition4,
                 event.success);   //asynchronously return.
 
