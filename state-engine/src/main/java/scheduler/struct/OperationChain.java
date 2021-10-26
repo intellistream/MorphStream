@@ -122,7 +122,6 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
                     return true;
                 }
             } else {
-                dfs(this, circularOCs);
                 return true;
             }
         }

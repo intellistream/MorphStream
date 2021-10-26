@@ -312,12 +312,11 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             scannedOCs.clear();
             scannedOCs.add(oc);
             // scan from leaves and check whether circular are detected.
-            oc.isCircularAffected(scannedOCs, circularOCs);
-//            if (oc.isCircularAffected(scannedOCs, circularOCs)) {
-//                circularOCs.add(oc);
-////                circularOCs.addAll(scannedOCs);
-//                dfs(oc, circularOCs);
-//            }
+//            oc.isCircularAffected(scannedOCs, circularOCs);
+            if (oc.isCircularAffected(scannedOCs, circularOCs)) {
+                circularOCs.add(oc);
+                dfs(oc, circularOCs);
+            }
         }
     }
 
