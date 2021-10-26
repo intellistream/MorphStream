@@ -122,11 +122,22 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
                     return true;
                 }
             } else {
+                dfs(this, circularOCs);
                 return true;
             }
         }
         return false;
     }
+
+    public void dfs(OperationChain<ExecutionUnit> oc, HashSet<OperationChain<ExecutionUnit>> affectedOCs) {
+        affectedOCs.add(oc);
+        for (OperationChain<ExecutionUnit> childOC : oc.ocChildren.keySet()) {
+            if (!affectedOCs.contains(childOC)) {
+                dfs(childOC, affectedOCs);
+            }
+        }
+    }
+
 
 //    private void relaxDependencies(OperationChain<ExecutionUnit> oc, ArrayDeque<OperationChain<ExecutionUnit>> resolvedOC) {
 //        // remove all parents, update children set of its parents

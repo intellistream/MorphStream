@@ -307,12 +307,11 @@ public class MeasureTools {
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("SchedulerTimeBreakdownReport\n");
             if (enable_log) log.info("===OCScheduler Time Breakdown Report===");
-            fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t construct_time\t first_explore_time\t caching\n");
+            fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t construct_time\t first_explore_time\n");
             if (enable_log)
-                log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time\t caching");
+                log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
-                                "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t" +
@@ -326,7 +325,6 @@ public class MeasureTools {
                         , Scheduler_Record.Noitfy[threadId].getMean()
                         , Scheduler_Record.Construct[threadId].getMean()
                         , Scheduler_Record.FirstExplore[threadId].getMean()
-                        , Scheduler_Record.Caching[threadId].getMean()
                 );
                 fileWriter.write(output + "\n");
                 if (enable_log) log.info(output);

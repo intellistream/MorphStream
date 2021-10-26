@@ -20,11 +20,6 @@ public class AbstractDFSScheduler<Context extends DFSLayeredTPGContext> extends 
         super(totalThreads, NUM_ITEMS);
     }
 
-    private void ProcessedToNextLevel(DFSLayeredTPGContext context) {
-        context.currentLevel += 1;
-        context.currentLevelIndex = 0;
-    }
-
     @Override
     public void EXPLORE(Context context) {
         DFSOperationChain oc = Next(context);

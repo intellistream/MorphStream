@@ -1,5 +1,8 @@
 package scheduler.oplevel.statemanager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scheduler.impl.layered.DFSSchedulerWithAbort;
 import scheduler.oplevel.impl.tpg.OPGSSchedulerWithAbort;
 import scheduler.oplevel.signal.op.*;
 import scheduler.oplevel.struct.MetaTypes.DependencyType;
@@ -9,10 +12,14 @@ import scheduler.oplevel.struct.Operation;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static common.CONTROL.enable_log;
+
 /**
  * Local to every TPGscheduler context.
  */
 public class PartitionStateManagerWithAbort implements OperationStateListener, Runnable {
+    private static final Logger LOG = LoggerFactory.getLogger(PartitionStateManagerWithAbort.class);
+
     public final Queue<OperationSignal> opSignalQueue;
     private OPGSSchedulerWithAbort.ExecutableTaskListener executableTaskListener;
 
@@ -126,7 +133,7 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
     }
 
     private void onAbortHandlingTransition(Operation descendant, OnNeedAbortHandlingSignal signal) {
-        System.out.println("failed operation: " + descendant);
+        if (enable_log) LOG.debug("failed operation: " + descendant);
         if (!descendant.getOperationState().equals(OperationStateType.EXECUTED)) {
             executableTaskListener.onOPFinalized(descendant);
         }

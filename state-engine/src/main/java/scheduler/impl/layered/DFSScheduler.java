@@ -26,11 +26,6 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
         super(totalThreads, NUM_ITEMS);
     }
 
-    private void ProcessedToNextLevel(DFSLayeredTPGContext context) {
-        context.currentLevel += 1;
-        context.currentLevelIndex = 0;
-    }
-
     /**
      * notify is handled by state manager of each thread
      *

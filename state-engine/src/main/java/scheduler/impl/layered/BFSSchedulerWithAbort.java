@@ -37,11 +37,6 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
         super(totalThreads, NUM_ITEMS);
     }
 
-    private void ProcessedToNextLevel(BFSLayeredTPGContextWithAbort context) {
-        context.currentLevel += 1;
-        context.currentLevelIndex = 0;
-    }
-
     @Override
     public void EXPLORE(BFSLayeredTPGContextWithAbort context) {
         BFSOperationChain next = Next(context);
@@ -53,6 +48,15 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
                     if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
                     abortHandling(context);
                 }
+                ProcessedToNextLevel(context);
+                next = Next(context);
+            }
+        }
+        if (context.exploreFinished()) {
+            if (needAbortHandling.get()) {
+                context.busyWaitQueue.clear();
+                if (enable_log) LOG.debug("aborted after all ocs explored: " + context.thisThreadId + " | " + needAbortHandling.get());
+                abortHandling(context);
                 ProcessedToNextLevel(context);
                 next = Next(context);
             }
@@ -140,7 +144,8 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
 
     @Override
     protected void checkTransactionAbort(BFSOperation operation, BFSOperationChain operationChain) {
-        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+        if (operation.isFailed
+                && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             needAbortHandling.compareAndSet(false, true);
             failedOperations.push(operation); // operation need to wait until the last abort has completed
         }
@@ -206,7 +211,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
     protected void IdentifyRollbackLevel(BFSLayeredTPGContextWithAbort context) {
         if (context.thisThreadId == 0) {
             targetRollbackLevel = Integer.MAX_VALUE;
-            for (int i = 0; i < context.totalThreads; i++) { // find the first level that contains aborted operations
+            for (int i = 0; i < tpg.totalThreads; i++) { // find the first level that contains aborted operations
                 targetRollbackLevel = min(targetRollbackLevel, tpg.threadToContextMap.get(i).rollbackLevel);
             }
         }
@@ -225,6 +230,7 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
             failedOperations.clear();
         }
 //        }
+        if (enable_log) LOG.debug("+++++++ rollback completed...");
     }
 
     protected void RollbackToCorrectLayerForRedo(BFSLayeredTPGContextWithAbort context) {

@@ -1,6 +1,5 @@
 package scheduler.context;
 
-import org.apache.hadoop.util.hash.Hash;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.OperationChain;
 import scheduler.struct.layered.LayeredOperationChain;
@@ -51,6 +50,7 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
 
     public boolean exploreFinished() {
 //        return scheduledOPs == totalOsToSchedule && !needAbortHandling; // not sure whether we need to check this condition.
+        assert scheduledOPs <= totalOsToSchedule;
         return scheduledOPs == totalOsToSchedule;
     }
 
@@ -59,13 +59,13 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
      * Return the local maximal dependency level.
      *
      * @param ocs
-     * @return
      */
-    public int buildBucketPerThread(Collection<SchedulingUnit> ocs, HashSet<OperationChain<ExecutionUnit>> resolvedOC) {
+    public void buildBucketPerThread(Collection<SchedulingUnit> ocs, HashSet<OperationChain<ExecutionUnit>> resolvedOC) {
         // TODO: update this logic to the latest logic that we proposed in operation level
         int localMaxDLevel = 0;
         int dependencyLevel;
         for (SchedulingUnit oc : ocs) {
+            this.totalOsToSchedule += oc.getOperations().size();
             oc.updateDependencyLevel();
             if (resolvedOC.contains(oc)) {
                 continue;
@@ -79,7 +79,6 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
         }
 //        if (enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
         this.maxLevel = localMaxDLevel;
-        return localMaxDLevel;
     }
 
     public void putBusyWaitOCs(HashSet<SchedulingUnit> resolvedOC, int maxLevel) {
@@ -88,5 +87,6 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
                 allocatedLayeredOCBucket.put(maxLevel, new ArrayList<>());
             allocatedLayeredOCBucket.get(maxLevel).add(oc);
         }
+        this.maxLevel = maxLevel;
     }
 };

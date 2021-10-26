@@ -18,10 +18,7 @@ public class AbstractBFSScheduler<Context extends BFSLayeredTPGContext> extends 
         super(totalThreads, NUM_ITEMS);
     }
 
-    private void ProcessedToNextLevel(Context context) {
-        context.currentLevel += 1;
-        context.currentLevelIndex = 0;
-    }
+
 
     @Override
     public void EXPLORE(Context context) {

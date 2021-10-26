@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.context.AbstractGSTPGContext;
+import scheduler.context.GSTPGContext;
 import scheduler.context.LayeredTPGContext;
 import scheduler.context.OCSchedulerContext;
 import scheduler.struct.gs.AbstractGSOperationChain;
@@ -37,7 +38,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
     public final Map<Integer, Context> threadToContextMap;
-    private final int totalThreads;
+    public final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private int NUM_ITEMS;
     private final ConcurrentHashMap<Integer, ConcurrentSkipListSet<ExecutionUnit>> sortedOperations;//shared data structure.
@@ -129,8 +130,10 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         // TD
         SchedulingUnit oc = addOperationToChain(operation, targetContext.thisThreadId);
         // FD
+//        MeasureTools.BEGIN_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
         if (operation.condition_source != null)
             checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), operation.condition_sourceTable, operation.condition_source);
+//        MeasureTools.END_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
         return oc;
     }
 
@@ -158,7 +161,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     }
 
     private void submit(Context context, Collection<SchedulingUnit> ocs) {
-        MeasureTools.BEGIN_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
+        ArrayDeque<SchedulingUnit> nonNullOCs = new ArrayDeque<>();
         HashSet<OperationChain<ExecutionUnit>> scannedOCs = new HashSet<>();
         HashSet<OperationChain<ExecutionUnit>> circularOCs = new HashSet<>();
         // TODO: simple dfs to solve circular, more efficient algorithm need to be involved. keywords: 如何找出有向图中的所有环路？
@@ -172,10 +175,12 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 //        }
 //        detectAffectedOCs(scannedOCs, circularOCs);
         for (SchedulingUnit oc : ocs) {
-            detectAffectedOCs(scannedOCs, circularOCs, oc);
+            if (!oc.getOperations().isEmpty()) {
+                nonNullOCs.add(oc);
+                detectAffectedOCs(scannedOCs, circularOCs, oc);
+            }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
-        MeasureTools.END_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
         int counter = 0;
         HashSet<OperationChain<ExecutionUnit>> resolvedOC = new HashSet<>();
         for (OperationChain<ExecutionUnit> oc : circularOCs) {
@@ -189,22 +194,22 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         }
         if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
         if (context instanceof LayeredTPGContext) {
-            for (SchedulingUnit oc : ocs) {
-                context.totalOsToSchedule += oc.getOperations().size();
-            }
-            ((LayeredTPGContext) context).buildBucketPerThread(ocs, resolvedOC);
+            ((LayeredTPGContext) context).buildBucketPerThread(nonNullOCs, resolvedOC);
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            int maxLevel = 0;
-            for (Context curContext : threadToContextMap.values()) {
-                if (((LayeredTPGContext) curContext).maxLevel > maxLevel) {
-                    maxLevel = ((LayeredTPGContext) curContext).maxLevel;
+            if (context.thisThreadId == 0) {
+                int maxLevel = 0;
+                for (Context curContext : threadToContextMap.values()) {
+                    if (((LayeredTPGContext) curContext).maxLevel > maxLevel) {
+                        maxLevel = ((LayeredTPGContext) curContext).maxLevel;
+                    }
                 }
+                ((LayeredTPGContext) context).maxLevel = maxLevel;
             }
-            ((LayeredTPGContext) context).putBusyWaitOCs(resolvedOC, maxLevel+1);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            ((LayeredTPGContext) context).putBusyWaitOCs(resolvedOC, ((LayeredTPGContext) threadToContextMap.get(0)).maxLevel+1);
             if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
         } else if (context instanceof AbstractGSTPGContext) {
-            for (SchedulingUnit oc : ocs) {
-                if (oc.getOperations().isEmpty()) continue;
+            for (SchedulingUnit oc : nonNullOCs) {
                 context.totalOsToSchedule += oc.getOperations().size();
 //                context.operationChains.add(oc);
                 if (!((AbstractGSOperationChain) oc).context.equals(context)) {
@@ -300,13 +305,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     private void detectAffectedOCs(HashSet<OperationChain<ExecutionUnit>> scannedOCs,
                                    HashSet<OperationChain<ExecutionUnit>> circularOCs,
                                    SchedulingUnit oc) {
-        if (!oc.getOperations().isEmpty() && oc.hasParents()) {
-//            for (OperationChain<ExecutionUnit> parent :oc.ocParents.keySet()) {
-//                if (circularOCs.contains(parent)) {
-//                    circularOCs.add(oc);
-//                    return;
-//                }
-//            }
+        if (oc.hasParents()) {
             if (circularOCs.contains(oc)) {
                 return;
             }
@@ -314,11 +313,11 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             scannedOCs.add(oc);
             // scan from leaves and check whether circular are detected.
             oc.isCircularAffected(scannedOCs, circularOCs);
-            if (oc.isCircularAffected(scannedOCs, circularOCs)) {
-                circularOCs.add(oc);
-//                circularOCs.addAll(scannedOCs);
-                dfs(oc, circularOCs);
-            }
+//            if (oc.isCircularAffected(scannedOCs, circularOCs)) {
+//                circularOCs.add(oc);
+////                circularOCs.addAll(scannedOCs);
+//                dfs(oc, circularOCs);
+//            }
         }
     }
 

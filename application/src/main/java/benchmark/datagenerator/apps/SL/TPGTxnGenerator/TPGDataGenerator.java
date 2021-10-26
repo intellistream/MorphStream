@@ -70,7 +70,7 @@ public class TPGDataGenerator extends DataGenerator {
         Ratio_Of_Deposit = dataConfig.Ratio_Of_Deposit;//0-100 (%)
         State_Access_Skewness = dataConfig.State_Access_Skewness;
         Transaction_Length = 4;
-        Ratio_of_Transaction_Aborts = 0;
+        Ratio_of_Transaction_Aborts = dataConfig.Ratio_of_Transaction_Aborts;
         Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
 
         int nKeyState = dataConfig.getnKeyStates();
@@ -157,8 +157,12 @@ public class TPGDataGenerator extends DataGenerator {
         nGeneratedAccountIds.put((long) dstAcc, nGeneratedAccountIds.getOrDefault((long) dstAcc, 0) + 1);
         nGeneratedAssetIds.put((long) srcAst, nGeneratedAccountIds.getOrDefault((long) srcAst, 0) + 1);
         nGeneratedAssetIds.put((long) dstAst, nGeneratedAccountIds.getOrDefault((long) dstAst, 0) + 1);
-
-        SLEvent t = new SLTransferEvent(eventID, srcAcc, srcAst, dstAcc, dstAst);
+        SLEvent t;
+        if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
+            t = new SLTransferEvent(eventID, srcAcc, srcAst, dstAcc, dstAst, 100000000, 100000000);
+        } else {
+            t = new SLTransferEvent(eventID, srcAcc, srcAst, dstAcc, dstAst);
+        }
 
         // increase the timestamp i.e. transaction id
         eventID++;

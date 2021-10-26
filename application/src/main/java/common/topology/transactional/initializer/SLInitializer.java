@@ -101,13 +101,14 @@ public class SLInitializer extends TableInitilizer {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
             if (dataConfig instanceof TPGDataGeneratorConfig)
-                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d",
+                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
                                 dataConfig.getnKeyStates(),
                                 ((TPGDataGeneratorConfig) dataConfig).Ratio_Of_Deposit,
                                 ((TPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
-                                ((TPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys)
+                                ((TPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
+                                ((TPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts)
                         .getBytes(StandardCharsets.UTF_8));
             else
                 bytes = digest.digest(String.format("%d_%d_%d",
@@ -364,7 +365,7 @@ public class SLInitializer extends TableInitilizer {
 //                bookEntryTransfer = 100000000;
 //            }
             count++;
-            if (split.length == 5) {
+            if (split.length == 7) {
                 TransactionEvent event = new TransactionEvent(
                         Integer.parseInt(split[0]), //bid
                         npid, //pid
@@ -374,8 +375,10 @@ public class SLInitializer extends TableInitilizer {
                         split[2],//getSourceBookEntryId
                         split[3],//getTargetAccountId
                         split[4],//getTargetBookEntryId
-                        accountTransfer,  //getAccountTransfer
-                        bookEntryTransfer  //getBookEntryTransfer
+                        Long.parseLong(split[5]), //getAccountTransfer
+                        Long.parseLong(split[6])  //getBookEntryTransfer
+//                        accountTransfer,
+//                        bookEntryTransfer
                 );
                 for (int x = 0; x < 4; x++)
                     p_bids[(npid + x) % tthread]++;

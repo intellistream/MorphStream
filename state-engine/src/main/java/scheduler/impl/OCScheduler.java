@@ -257,7 +257,8 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     }
 
     protected void checkTransactionAbort(ExecutionUnit operation, SchedulingUnit operationChain) {
-
+        // in coarse-grained algorithms, we will not handle transaction abort gracefully, just update the state of the operation
+        operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
     }
 
     protected SchedulingUnit nextFromBusyWaitQueue(Context context) {

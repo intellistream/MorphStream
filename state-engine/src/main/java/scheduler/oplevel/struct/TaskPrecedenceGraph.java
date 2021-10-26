@@ -11,10 +11,7 @@ import scheduler.oplevel.context.OPSchedulerContext;
 import scheduler.oplevel.impl.tpg.OPBFSScheduler;
 import utils.lib.ConcurrentHashMap;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
@@ -38,16 +35,18 @@ import static scheduler.oplevel.impl.OPScheduler.getTaskId;
 public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private static final Logger log = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
 
-    private final int totalThreads;
+    public final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final int NUM_ITEMS;
     CyclicBarrier barrier;
     public final Map<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
+    private final HashMap<Integer, Deque<OperationChain>> threadToOCs;
 
     public void reset(Context context) {
         operationChains.get("accounts").threadOCsMap.remove(context.thisThreadId);
         operationChains.get("bookEntries").threadOCsMap.remove(context.thisThreadId);
+        threadToOCs.remove(context.thisThreadId);
     }
 
     /**
@@ -63,6 +62,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         operationChains.put("accounts", new TableOCs(totalThreads));
         operationChains.put("bookEntries", new TableOCs(totalThreads));
         threadToContextMap = new HashMap<>();
+        threadToOCs = new HashMap<>();
     }
 
     /**
@@ -71,6 +71,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
      */
     // TODO: if running multiple batches, this will be a problem.
     public void setOCs(Context context) {
+        ArrayDeque<OperationChain> ocs = new ArrayDeque<>();
         int left_bound = context.thisThreadId * delta;
         int right_bound;
         if (context.thisThreadId == totalThreads - 1) {//last executor need to handle left-over
@@ -85,7 +86,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             OperationChain beOC = context.createTask("bookEntries", _key);
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, accOC);
             operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
+            ocs.add(accOC);
+            ocs.add(beOC);
         }
+        threadToOCs.put(context.thisThreadId, ocs);
     }
 
     public TableOCs getTableOCs(String table_name) {
@@ -122,11 +126,9 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
 
         if (context instanceof OPLayeredContext) {
-            int threadId = context.thisThreadId;
             ArrayDeque<Operation> roots = new ArrayDeque<>();
-            Collection<TableOCs> tableOCsList = getOperationChains().values();
-            for (TableOCs tableOCs : tableOCsList) {//for each table.
-                for (OperationChain oc : tableOCs.threadOCsMap.get(threadId).holder_v1.values()) {
+            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
                     oc.updateTDDependencies();
                     Operation head = oc.getOperations().first();
                     if (head.isRoot()) {
@@ -139,10 +141,8 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
             if (enable_log) log.info("MaxLevel:" + (((OPLayeredContext) context).maxLevel));
         } else if (context instanceof OPGSTPGContext) {
-            int threadId = context.thisThreadId;
-            Collection<TableOCs> tableOCsList = getOperationChains().values();
-            for (TableOCs tableOCs : tableOCsList) {//for each table.
-                for (OperationChain oc : tableOCs.threadOCsMap.get(threadId).holder_v1.values()) {
+            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
                     if (oc.getOperations().isEmpty())
                         continue;
                     oc.updateTDDependencies();

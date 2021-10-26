@@ -28,6 +28,12 @@ public abstract class LayeredScheduler<Context extends LayeredTPGContext<Executi
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
 
+    protected void ProcessedToNextLevel(Context context) {
+        context.currentLevel += 1;
+        assert context.currentLevel <= context.maxLevel;
+        context.currentLevelIndex = 0;
+    }
+
 //    @Override
 //    public void PROCESS(Context context, long mark_ID) {
 //        int threadId = context.thisThreadId;

@@ -40,11 +40,6 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         super(totalThreads, NUM_ITEMS);
     }
 
-    private void ProcessedToNextLevel(DFSLayeredTPGContextWithAbort context) {
-        context.currentLevel += 1;
-        context.currentLevelIndex = 0;
-    }
-
     @Override
     public void EXPLORE(DFSLayeredTPGContextWithAbort context) {
         DFSOperationChain oc = Next(context);

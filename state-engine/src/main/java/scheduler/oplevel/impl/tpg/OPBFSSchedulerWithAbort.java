@@ -153,7 +153,7 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
     protected void IdentifyRollbackLevel(Context context) {
         if (context.thisThreadId == 0) {
             targetRollbackLevel = Integer.MAX_VALUE;
-            for (int i = 0; i < context.totalThreads; i++) { // find the first level that contains aborted operations
+            for (int i = 0; i < tpg.totalThreads; i++) { // find the first level that contains aborted operations
                 targetRollbackLevel = min(targetRollbackLevel, tpg.threadToContextMap.get(i).rollbackLevel);
             }
         }

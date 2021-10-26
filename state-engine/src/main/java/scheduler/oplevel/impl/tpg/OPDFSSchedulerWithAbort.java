@@ -150,7 +150,7 @@ public class OPDFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
         for (Operation failedOp : failedOperations) {
             if (bid == failedOp.bid) {
                 operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
-                System.out.println(operation);
+                notifyChildren(operation, MetaTypes.OperationStateType.ABORTED);
                 markAny = true;
             }
         }
@@ -186,8 +186,6 @@ public class OPDFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
                 if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)) {
                     operation.stateTransition(MetaTypes.OperationStateType.BLOCKED); // can be any state behind EXECUTED
                     notifyChildren(operation, MetaTypes.OperationStateType.BLOCKED);
-                } else if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
-                    notifyChildren(operation, MetaTypes.OperationStateType.ABORTED);
                 }
             }
         }
