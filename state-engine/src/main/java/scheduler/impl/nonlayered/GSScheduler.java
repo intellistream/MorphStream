@@ -5,6 +5,7 @@ import scheduler.Request;
 import scheduler.context.GSTPGContext;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 //        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-//        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 
     /**
