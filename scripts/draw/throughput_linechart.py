@@ -84,7 +84,12 @@ def ReadFile(x_axis, batchInterval):
     w, h = 6, len(x_axis)
     y = [[] for _ in range(h)]
 
-    formRow(batchInterval, x_axis, y)
+    for tthread in x_axis:
+        events = tthread * batchInterval
+        gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(tthread, events)
+        lines = open(gs_path).readlines()
+        throughput = lines[0].split(": ")[1]
+        y[0].append(float(throughput))
 
     for tthread in x_axis:
         events = tthread * batchInterval
@@ -124,16 +129,6 @@ def ReadFile(x_axis, batchInterval):
     print(y)
 
     return y
-
-
-def formRow(batchInterval, x_axis, y):
-    for tthread in x_axis:
-        events = tthread * batchInterval
-        gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(tthread, events)
-        lines = open(gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[0].append(float(throughput))
-
 
 def ReadFileWithAbort(x_axis, batchInterval):
     w, h = 6, len(x_axis)
@@ -184,15 +179,16 @@ def ReadFileWithAbort(x_axis, batchInterval):
     return y
 
 if __name__ == '__main__':
-    batchInterval = 4096
-    x_value = [1, 2, 4, 8, 16, 24]
-    legend_labels = ["GS", "BFS", "DFS", "OPGS", "OPBFS", "OPDFS"]
-    x_axis = [x_value] * len(legend_labels)
-    y_axis = ReadFile(x_value, batchInterval)
-    legend = True
-    DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)", "comparison", legend)
+    batchInterval = 2048
+    for batchInterval in [1024, 2048, 4096, 8192, 10240]:
+        x_value = [1, 2, 4, 8, 16, 24]
+        legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$"]
+        x_axis = [x_value] * len(legend_labels)
+        y_axis = ReadFile(x_value, batchInterval)
+        legend = True
+        DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)", "comparison_b{}".format(batchInterval), legend)
 
-    legend_labels = ["GSA", "BFSA", "DFSA", "OPGSA", "OPBFSA", "OPDFSA"]
-    x_axis = [x_value] * len(legend_labels)
-    y_axis = ReadFileWithAbort(x_value, batchInterval)
-    DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)", "comparison_with_abort", legend)
+        legend_labels = ["$GSA_{OC}$", "$BFSA_{OC}$", "$DFSA_{OC}$", "$GSA_{OP}$", "$BFSA_{OP}$", "$DFSA_{OP}$"]
+        x_axis = [x_value] * len(legend_labels)
+        y_axis = ReadFileWithAbort(x_value, batchInterval)
+        DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)", "comparison_with_abort_b{}".format(batchInterval), legend)

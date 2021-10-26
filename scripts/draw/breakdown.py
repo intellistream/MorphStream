@@ -322,13 +322,14 @@ if __name__ == "__main__":
     # break into 5 parts
     legend_labels = ["Explore Time", "Next Time", "Useful Time", "Notify Time", "Construct Time"]
     for tthread in [1, 2, 4, 8, 16, 24]:
-        for batchInterval in [2048]:
-            x_values = ["GS", "BFS", "DFS", "OPGS", "OPBFS", "OPDFS"]
+        # for batchInterval in [1024, 2048, 4096, 8192, 10240]:
+        for batchInterval in [4096]:
+            x_values = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$"]
             y_values = ReadFile(tthread, batchInterval)
             DrawFigure(x_values, y_values, legend_labels,
                        '', 'percentage of time',
                        'breakdown_t{}_b{}'.format(tthread, batchInterval), True)
-            x_values = ["GSA", "BFSA", "DFSA", "OPGSA", "OPBFSA", "OPDFSA"]
+            x_values = ["$GSA_{OC}$", "$BFSA_{OC}$", "$DFSA_{OC}$", "$GSA_{OP}$", "$BFSA_{OP}$", "$DFSA_{OP}$"]
             y_values = ReadFileWithAbort(tthread, batchInterval)
             DrawFigure(x_values, y_values, legend_labels,
                        '', 'percentage of time',
