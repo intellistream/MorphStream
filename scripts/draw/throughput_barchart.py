@@ -188,17 +188,17 @@ def ReadFileWithAbort(threads, events):
 
 if __name__ == '__main__':
     for tthread in [1, 2, 4, 8, 16, 24]:
-        for batchInterval in [10240]:
+        for batchInterval in [1024, 2048, 4096, 8192, 10240]:
             totalEvents = tthread * batchInterval
             y_values = ReadFile(tthread, totalEvents)
-            x_values = ["GS", "BFS", "DFS", "OPGS", "OPBFS", "OPDFS"]
+            x_values = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$"]
             legend_labels = ["throughput"]
             legend = True
             DrawFigure(x_values, y_values, legend_labels,
                        '', 'throughput', 'overview_t{}_b{}'.format(tthread, batchInterval), True)
 
             y_values = ReadFileWithAbort(tthread, totalEvents)
-            x_values = ["GSA", "BFSA", "DFSA", "OPGSA", "OPBFSA", "OPDFSA"]
+            x_values = ["$GSA_{OC}$", "$BFSA_{OC}$", "$DFSA_{OC}$", "$GSA_{OP}$", "$BFSA_{OP}$", "$DFSA_{OP}$"]
             legend_labels = ["throughput"]
             DrawFigure(x_values, y_values, legend_labels,
                        '', 'throughput', 'overview_with_abort_t{}_b{}'.format(tthread, batchInterval), True)
