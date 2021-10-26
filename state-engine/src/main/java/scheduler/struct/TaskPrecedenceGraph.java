@@ -45,6 +45,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     private final ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
     private final HashMap<Integer, Deque<SchedulingUnit>> threadToOCs;
     CyclicBarrier barrier;
+    private int maxLevel = 0; // just for layered scheduling
 
     public void reset(Context context) {
         //reset holder.
@@ -197,16 +198,14 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             ((LayeredTPGContext) context).buildBucketPerThread(nonNullOCs, resolvedOC);
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
             if (context.thisThreadId == 0) {
-                int maxLevel = 0;
                 for (Context curContext : threadToContextMap.values()) {
                     if (((LayeredTPGContext) curContext).maxLevel > maxLevel) {
                         maxLevel = ((LayeredTPGContext) curContext).maxLevel;
                     }
                 }
-                ((LayeredTPGContext) context).maxLevel = maxLevel;
             }
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            ((LayeredTPGContext) context).putBusyWaitOCs(resolvedOC, ((LayeredTPGContext) threadToContextMap.get(0)).maxLevel+1);
+            ((LayeredTPGContext) context).putBusyWaitOCs(resolvedOC, maxLevel);
             if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : nonNullOCs) {
