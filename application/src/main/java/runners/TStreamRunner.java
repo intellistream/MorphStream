@@ -237,9 +237,15 @@ public class TStreamRunner extends Runner {
                         + OsUtils.osWrapperPostFix("stats")
                         + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
-                        + OsUtils.osWrapperPostFix("totalEvents = %d");
+                        + OsUtils.osWrapperPostFix("totalEvents = %d")
+                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d");
 
-                String statsFolderPath = String.format(statsFolderPattern, scheduler, tthread, totalEvents);
+                String statsFolderPath = String.format(statsFolderPattern,
+                        scheduler, tthread, totalEvents,
+                        config.getInt("Ratio_Of_Deposit"),
+                        config.getInt("State_Access_Skewness"),
+                        config.getInt("Ratio_of_Overlapped_Keys"),
+                        config.getInt("Ratio_of_Transaction_Aborts"));
                 File file = new File(statsFolderPath);
                 log.info("Dumping stats to...");
                 log.info(String.valueOf(file.getAbsoluteFile()));
