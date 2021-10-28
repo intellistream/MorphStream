@@ -240,6 +240,9 @@ public class TStreamRunner extends Runner {
                         + OsUtils.osWrapperPostFix("totalEvents = %d")
                         + OsUtils.osWrapperPostFix("%d_%d_%d_%d");
 
+                if (config.getInt("CCOption") == CCOption_SStore) {
+                    scheduler = "PAT";
+                }
                 String statsFolderPath = String.format(statsFolderPattern,
                         scheduler, tthread, totalEvents,
                         config.getInt("Ratio_Of_Deposit"),

@@ -44,9 +44,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private final HashMap<Integer, Deque<OperationChain>> threadToOCs;
 
     public void reset(Context context) {
-        operationChains.get("accounts").threadOCsMap.remove(context.thisThreadId);
-        operationChains.get("bookEntries").threadOCsMap.remove(context.thisThreadId);
+        operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         threadToOCs.remove(context.thisThreadId);
+        this.setOCs(context);
     }
 
     /**

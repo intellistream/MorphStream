@@ -336,14 +336,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public boolean isHeader() {
         return this.equals(ld_head_operation);
     }
-    /**
-     * check whether the operation has LD or FD
-     * @return
-     */
-    public boolean hasFDLDDependencies() {
-        return ld_parents.size() + fd_parents.size() >= 1;
-//        return operationMetadata.fd_countdown[0].get() + operationMetadata.td_countdown[0].get() > 1;
-    }
 
     /********************************* Layered operation related interfaces *********************************/
 

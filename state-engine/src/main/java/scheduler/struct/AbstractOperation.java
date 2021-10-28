@@ -31,8 +31,8 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
     //required by READ_WRITE.
     public volatile TableRecord s_record;//only if it is different from d_record.
     public volatile TableRecord[] condition_records;
-    public String[] condition_sourceTable = null;
-    public String[] condition_source = null;
+//    public String[] condition_sourceTable = null;
+//    public String[] condition_source = null;
     public Condition condition;
     public int[] success;
     private final AtomicReference<OperationStateType> operationState;
@@ -88,10 +88,10 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
             return Long.compare(this.bid, operation.bid);
     }
 
-    public void setConditionSources(String[] condition_sourceTable, String[] condition_source) {
-        this.condition_sourceTable = condition_sourceTable;
-        this.condition_source = condition_source;
-    }
+//    public void setConditionSources(String[] condition_sourceTable, String[] condition_source) {
+//        this.condition_sourceTable = condition_sourceTable;
+//        this.condition_source = condition_source;
+//    }
 
 
     public void addFDParent(AbstractOperation parent) {

@@ -130,23 +130,24 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
     private void constructOp(List<DFSOperation> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         DFSOperation set_op = null;
+        DFSLayeredTPGContextWithAbort targetContext = getTargetContext(request.src_key);
         switch (request.accessType) {
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
-                set_op = new DFSOperation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                set_op = new DFSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.function, request.condition, request.condition_records, request.success);
                 break;
             case READ_WRITE_COND_READ:
-                set_op = new DFSOperation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                set_op = new DFSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
             default:
                 throw new UnsupportedOperationException();
         }
         operationGraph.add(set_op);
-        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+//        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
 //        tpg.cacheToSortedOperations(set_op);
-        tpg.setupOperationTDFD(set_op);
+        tpg.setupOperationTDFD(set_op, request, targetContext);
     }
 
     @Override
