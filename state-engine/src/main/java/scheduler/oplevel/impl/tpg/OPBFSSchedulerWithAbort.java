@@ -106,6 +106,7 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
 
         RollbackToCorrectLayerForRedo(context);
         ResumeExecution(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 
     //TODO: mark operations of aborted transaction to be aborted.

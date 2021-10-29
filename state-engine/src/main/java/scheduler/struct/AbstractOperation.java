@@ -64,7 +64,7 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
 
     @Override
     public String toString() {
-        return table_name + " " + d_record.record_.GetPrimaryKey() + " " + bid;
+        return table_name + " " + d_record.record_.GetPrimaryKey() + " " + bid + " " + operationState.get();
     }
 
     /**

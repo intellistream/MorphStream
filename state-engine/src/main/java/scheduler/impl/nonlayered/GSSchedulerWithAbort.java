@@ -180,6 +180,9 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
         public void onOCFinalized(GSOperationChainWithAbort operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
+            if(!operationChain.context.operationChains.remove(operationChain)) {
+                System.out.println("= =");
+            }
         }
 
         public void onOCRollbacked(GSOperationChainWithAbort operationChain) {

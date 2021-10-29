@@ -3,6 +3,7 @@ package scheduler.impl.nonlayered;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContext;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
 import utils.SOURCE_CONTROL;
@@ -13,6 +14,8 @@ import java.util.List;
 public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, GSOperationChain> {
 
     public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
+
+    public boolean needAbortHandling = false;
 
     public GSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
@@ -44,6 +47,15 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
     protected void NOTIFY(GSOperationChain task, GSTPGContext context) {
         context.partitionStateManager.onOcExecuted(task);
     }
+
+    @Override
+    protected void checkTransactionAbort(GSOperation operation, GSOperationChain operationChain) {
+        // in coarse-grained algorithms, we will not handle transaction abort gracefully, just update the state of the operation
+        operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
+        // save the abort information and redo the batch.
+        needAbortHandling = true;
+    }
+
 
     @Override
     public void TxnSubmitFinished(GSTPGContext context) {

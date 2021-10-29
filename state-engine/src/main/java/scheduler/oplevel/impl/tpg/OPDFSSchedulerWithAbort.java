@@ -133,7 +133,7 @@ public class OPDFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
             context.rollbackLevel = context.currentLevel;
         }
         context.isRollbacked = true;
-        if (enable_log) LOG.info("++++++ rollback at level: " + context.thisThreadId + " | " + context.rollbackLevel);
+        if (enable_log) LOG.debug("++++++ rollback at level: " + context.thisThreadId + " | " + context.rollbackLevel);
     }
 
     /**
@@ -164,7 +164,8 @@ public class OPDFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
         needAbortHandling.compareAndSet(true, false);
         failedOperations.clear();
-        LOG.info("resume: " + context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        if (enable_log) LOG.debug("resume: " + context.thisThreadId);
     }
 
     protected void RollbackToCorrectLayerForRedo(Context context) {

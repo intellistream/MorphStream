@@ -244,10 +244,12 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     public boolean executeWithBusyWait(Context context, SchedulingUnit operationChain, long mark_ID) {
         MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
         for (ExecutionUnit operation : operation_chain_list) {
-            if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED) || operation.isFailed) continue;
+            if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
+                    || operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)
+                    || operation.isFailed) continue;
             if (isConflicted(context, operationChain, operation)) return false;
             execute(operation, mark_ID, false);
-            if (!operation.isFailed) {
+            if (!operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
                 operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
             } else {
                 checkTransactionAbort(operation, operationChain);
@@ -259,6 +261,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     protected void checkTransactionAbort(ExecutionUnit operation, SchedulingUnit operationChain) {
         // in coarse-grained algorithms, we will not handle transaction abort gracefully, just update the state of the operation
         operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
+        // save the abort information and redo the batch.
     }
 
     protected SchedulingUnit nextFromBusyWaitQueue(Context context) {
@@ -313,7 +316,8 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             for (AbstractOperation conditioned_operation : operation.fd_parents) {
                 if (conditioned_operation != null) {
                     if (!(conditioned_operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
-                            || conditioned_operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED))) {
+                            || conditioned_operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)
+                            || conditioned_operation.isFailed)) {
                         // blocked and busy wait
                         context.busyWaitQueue.add(operationChain);
                         return true;

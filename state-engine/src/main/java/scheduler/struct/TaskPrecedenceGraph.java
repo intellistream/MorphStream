@@ -223,7 +223,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : nonNullOCs) {
                 context.totalOsToSchedule += oc.getOperations().size();
-//                context.operationChains.add(oc);
+                context.operationChains.add(oc);
                 if (!((AbstractGSOperationChain) oc).context.equals(context)) {
                     throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
                 }
