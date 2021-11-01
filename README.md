@@ -5,10 +5,11 @@
 This project aims at building scalable transactional stream processing engine on modern hardware
 
 # Time Table
-1. Revert PAT's lock to ReentrantLock. 1/Nov/2021
-2. Add computation complexity to wrkload. 2/Nov/2021
-3. Algorithm evaluation under varying workloads. 5/Nov/2021
-4. First complete draft. 12/Nov/2021
-5. Ready for Volker's review. Improve code quality by addressing minor issues. 19/Nov/2021
-6. Make the submission. 1/Dec/2021
-
+1. Revert PAT's lock to ReentrantLock. 1/Nov/2021 (Not Valid Anymore)
+2. Revert PAT with sorting under TStream's two-phase execution framework. 3/Nov/2021
+3. Add Original Busy-wait TStream into our framework and call it TStream. Ours is TStream+. 4/Nov/2021
+4. Add computation complexity to wrkload. 5/Nov/2021
+5. Algorithm evaluation under varying workloads. 12/Nov/2021
+6. First complete draft. 19/Nov/2021
+7. Ready for Volker's review. Improve code quality by addressing minor issues. 22/Nov/2021
+8. Make the submission. 1/Dec/2021
