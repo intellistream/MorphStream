@@ -6,7 +6,6 @@ import transaction.context.TxnEvent;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class PartitionedOrderLock implements Serializable {

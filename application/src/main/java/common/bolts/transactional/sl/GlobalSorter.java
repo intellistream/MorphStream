@@ -1,7 +1,6 @@
 package common.bolts.transactional.sl;
 
-import lock.PartitionedOrderLock;
-import transaction.context.TxnEvent;
+import common.param.TxnEvent;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 

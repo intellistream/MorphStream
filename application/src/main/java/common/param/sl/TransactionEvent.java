@@ -1,7 +1,7 @@
 package common.param.sl;
 
 import common.bolts.transactional.sl.TransactionResult;
-import transaction.context.TxnEvent;
+import common.param.TxnEvent;
 import storage.SchemaRecordRef;
 import storage.TableRecordRef;
 import storage.datatype.DataBox;

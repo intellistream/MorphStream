@@ -9,7 +9,7 @@ import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import transaction.context.TxnEvent;
+import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import db.Database;

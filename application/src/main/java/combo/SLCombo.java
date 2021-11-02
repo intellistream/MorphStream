@@ -3,7 +3,7 @@ package combo;
 import benchmark.DataHolder;
 import common.bolts.transactional.sl.*;
 import common.collections.Configuration;
-import transaction.context.TxnEvent;
+import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import components.context.TopologyContext;

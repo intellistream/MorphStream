@@ -1,7 +1,7 @@
 package common.bolts.transactional.ob;
 
 import combo.SINKCombo;
-import transaction.context.TxnEvent;
+import common.param.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;

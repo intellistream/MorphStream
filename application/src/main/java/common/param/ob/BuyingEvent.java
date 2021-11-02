@@ -1,7 +1,7 @@
 package common.param.ob;
 
 import common.bolts.transactional.ob.BidingResult;
-import transaction.context.TxnEvent;
+import common.param.TxnEvent;
 import storage.SchemaRecordRef;
 
 import java.util.Arrays;

@@ -1,6 +1,6 @@
 package common.param.sl;
 
-import transaction.context.TxnEvent;
+import common.param.TxnEvent;
 import storage.SchemaRecordRef;
 import storage.TableRecordRef;
 import storage.datatype.DataBox;

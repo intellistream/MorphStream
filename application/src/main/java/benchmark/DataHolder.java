@@ -1,6 +1,6 @@
 package benchmark;
 
-import transaction.context.TxnEvent;
+import common.param.TxnEvent;
 
 import java.util.ArrayList;
 
