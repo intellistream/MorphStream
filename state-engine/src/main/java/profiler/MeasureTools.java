@@ -63,6 +63,7 @@ public class MeasureTools {
         }
     }
 
+
     public static void END_PREPARE_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
             COMPUTE_PRE_EXE_TIME(thread_id);
@@ -116,9 +117,19 @@ public class MeasureTools {
             COMPUTE_LOCK_TIME(thread_id);
     }
 
+    public static void END_LOCK_TIME_MEASURE_ACC(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_LOCK_TIME_ACC(thread_id);
+    }
+
     public static void END_WAIT_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_WAIT_TIME(thread_id);
+    }
+
+    public static void END_WAIT_TIME_MEASURE_ACC(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_WAIT_TIME_ACC(thread_id);
     }
 
     public static void BEGIN_ABORT_TIME_MEASURE(int thread_id) {

@@ -102,8 +102,17 @@ public class Metrics {
         TxnRuntime.Lock[thread_id] = System.nanoTime() - TxnRuntime.LockStart[thread_id];
     }
 
+    public static void COMPUTE_LOCK_TIME_ACC(int thread_id) {
+        TxnRuntime.Lock[thread_id] += System.nanoTime() - TxnRuntime.LockStart[thread_id];
+    }
+
     public static void COMPUTE_WAIT_TIME(int thread_id) {
         TxnRuntime.Wait[thread_id] = System.nanoTime() - TxnRuntime.WaitStart[thread_id] - TxnRuntime.Lock[thread_id];
+    }
+
+    public static void COMPUTE_WAIT_TIME_ACC(int thread_id) {
+//        TxnRuntime.Wait[thread_id] += System.nanoTime() - TxnRuntime.WaitStart[thread_id] - TxnRuntime.Lock[thread_id];
+        TxnRuntime.Wait[thread_id] += System.nanoTime() - TxnRuntime.WaitStart[thread_id];
     }
 
     public static void COMPUTE_ABORT_START_TIME(int thread_id) {
@@ -129,7 +138,7 @@ public class Metrics {
     }
 
     public static void COMPUTE_ACCESS_TIME_ACC(int thread_id) {
-        TxnRuntime.Access[thread_id] = System.nanoTime() - TxnRuntime.AccessStart[thread_id];
+        TxnRuntime.Access[thread_id] += System.nanoTime() - TxnRuntime.AccessStart[thread_id];
     }
 
     public static void COMPUTE_TXN_START_TIME(int thread_id) {
@@ -149,14 +158,14 @@ public class Metrics {
     }
 
     public static void RECORD_TXN_BREAKDOWN_RATIO(int thread_id) {
-        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id]);
-        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id]);
-        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id]);
-        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id]);
-//        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
-//        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
-//        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
-//        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id]);
+//        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id]);
+//        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id]);
+//        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id]);
+        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
+        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
+        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
+        Transaction_Record.sync_ratio[thread_id].addValue((TxnRuntime.Wait[thread_id]-TxnRuntime.Lock[thread_id]) / (double) Runtime.Txn[thread_id]);
     }
 
     // OCScheduler
@@ -230,6 +239,9 @@ public class Metrics {
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
+
+
+
                 IndexStart[i] = 0;
                 Index[i] = 0;
                 WaitStart[i] = 0;

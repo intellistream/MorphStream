@@ -237,6 +237,42 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
     }
 
+    private void tStreamSubmit(Context context, Collection<SchedulingUnit> ocs) {
+        ArrayDeque<SchedulingUnit> nonNullOCs = new ArrayDeque<>();
+        HashSet<OperationChain<ExecutionUnit>> circularOCs = new HashSet<>();
+        for (SchedulingUnit oc : ocs) {
+            if (!oc.getOperations().isEmpty()) {
+                nonNullOCs.add(oc);
+                circularOCs.add(oc);
+            }
+        }
+        int counter = 0;
+        for (OperationChain<ExecutionUnit> oc : circularOCs) {
+            if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
+                oc.ocParentsCount.set(0);
+                oc.ocParents.clear();
+                oc.ocChildren.clear();
+                counter++;
+            }
+        }
+        if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
+        if (context instanceof AbstractGSTPGContext) {
+            for (SchedulingUnit oc : nonNullOCs) {
+                context.totalOsToSchedule += oc.getOperations().size();
+                context.operationChains.add(oc);
+                if (!((AbstractGSOperationChain) oc).context.equals(context)) {
+                    throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
+                }
+                if (!oc.hasParents()) {
+                    ((AbstractGSTPGContext) context).getListener().onOcRootStart(oc);
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException("Unsupported.");
+        }
+        if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
+    }
+
     private void detectCircular(SchedulingUnit oc,
                                    HashMap<SchedulingUnit, Integer> dfn,
                                    HashMap<SchedulingUnit, Integer> low,

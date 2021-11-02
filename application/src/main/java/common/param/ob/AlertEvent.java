@@ -1,6 +1,6 @@
 package common.param.ob;
 
-import common.param.TxnEvent;
+import transaction.context.TxnEvent;
 import storage.SchemaRecordRef;
 
 import java.util.Arrays;

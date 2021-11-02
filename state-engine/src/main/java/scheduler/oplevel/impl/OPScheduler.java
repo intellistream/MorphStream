@@ -2,7 +2,6 @@ package scheduler.oplevel.impl;
 
 
 import content.T_StreamContent;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -19,6 +18,7 @@ import storage.datatype.DataBox;
 import transaction.function.DEC;
 import transaction.function.INC;
 import utils.SOURCE_CONTROL;
+import utils.UDF;
 
 import java.util.List;
 import java.util.Map;
@@ -123,6 +123,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
             // apply function
+            UDF.randomDelay();
             if (operation.function instanceof INC) {
                 tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
             } else if (operation.function instanceof DEC) {

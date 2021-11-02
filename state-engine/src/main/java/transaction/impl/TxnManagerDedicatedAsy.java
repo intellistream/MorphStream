@@ -18,6 +18,7 @@ import storage.datatype.DataBox;
 import transaction.TxnManager;
 import transaction.context.TxnAccess;
 import transaction.context.TxnContext;
+import transaction.context.TxnEvent;
 import transaction.function.Condition;
 import transaction.function.Function;
 
@@ -292,5 +293,4 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     public boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
-
 }

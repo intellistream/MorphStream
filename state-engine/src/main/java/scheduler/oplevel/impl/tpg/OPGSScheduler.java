@@ -8,6 +8,7 @@ import scheduler.oplevel.context.OPGSTPGContext;
 import scheduler.oplevel.impl.OPScheduler;
 import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import scheduler.oplevel.struct.Operation;
+import scheduler.oplevel.struct.OperationChain;
 import utils.SOURCE_CONTROL;
 
 import static content.common.CommonMetaTypes.AccessType.*;
@@ -17,14 +18,56 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
 
     public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
+    public boolean needAbortHandling = false;
+
     public OPGSScheduler(int totalThreads, int NUM_ITEMS) {
         super(totalThreads, NUM_ITEMS);
     }
 
     @Override
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
+        int threadId = context.thisThreadId;
+//        System.out.println(threadId + " first explore tpg");
+
+        INITIALIZE(context);
+//        System.out.println(threadId + " first explore tpg complete, start to process");
+
+        do {
+            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+            EXPLORE(context);
+            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            PROCESS(context, mark_ID);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+        } while (!FINISHED(context));
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        if (needAbortHandling) {
+            // identify all aborted operations and transit the state to aborted.
+            REINITIALIZE(context);
+            // rollback to the starting point and redo.
+            do {
+                MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+                EXPLORE(context);
+                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+                MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+                PROCESS(context, mark_ID);
+                MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            } while (!FINISHED(context));
+        }
+        RESET(context);//
+        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+    }
+
+
+    @Override
     public void INITIALIZE(Context context) {
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+    }
+
+    public void REINITIALIZE(Context context) {
+        tpg.secondTimeExploreTPG(context);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 
@@ -88,7 +131,7 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
     @Override
     public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
-        int batch_size = 10;//TODO;
+        int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
 
@@ -113,6 +156,9 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
         while (context.batchedOperations.size() != 0) {
             Operation remove = context.batchedOperations.remove();
             MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+            if (remove.isFailed && !remove.getOperationState().equals(OperationStateType.ABORTED)) {
+                needAbortHandling = true;
+            }
             NOTIFY(remove, context);
             MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }

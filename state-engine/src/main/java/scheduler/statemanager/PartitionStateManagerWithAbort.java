@@ -123,7 +123,7 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         abortedOp.stateTransition(OperationStateType.ABORTED);
         assert operationChain.getOperations().contains(abortedOp);
         if (!abortedOp.isFailed) {
-            System.out.println(abortedOp);
+//            System.out.println(abortedOp);
             for (GSOperationWithAbort operation : operationChain.getOperations()) {
                 if (!operation.getOperationState().equals(OperationStateType.ABORTED)) {
                     operation.stateTransition(OperationStateType.BLOCKED);

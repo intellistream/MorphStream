@@ -3,7 +3,6 @@ package scheduler.oplevel.struct;
 import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
 import scheduler.oplevel.context.OPLayeredContext;
 import scheduler.oplevel.context.OPSchedulerContext;
 import scheduler.oplevel.signal.op.OnParentUpdatedSignal;
@@ -15,7 +14,6 @@ import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
 
-import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -273,6 +271,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    public void resetDependencies() {
+        operationMetadata.td_countdown.set(td_parents.size());
+        operationMetadata.fd_countdown.set(fd_parents.size());
+        operationMetadata.ld_countdown.set(ld_parents.size());
     }
 
 

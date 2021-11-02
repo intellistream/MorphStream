@@ -1,6 +1,6 @@
 package common.param.sl;
 
-import common.param.TxnEvent;
+import transaction.context.TxnEvent;
 import storage.SchemaRecordRef;
 import storage.TableRecordRef;
 import storage.datatype.DataBox;
@@ -38,12 +38,12 @@ public class DepositEvent extends TxnEvent {
      * @param accountTransfer
      * @param bookEntryTransfer
      */
-    public DepositEvent(int bid, int pid, String bid_array, int num_of_partition,
+    public DepositEvent(int bid, int pid, String bid_array, String partition_index, int num_of_partition,
                         String accountId,
                         String bookEntryId,
                         long accountTransfer,
                         long bookEntryTransfer) {
-        super(bid, pid, bid_array, num_of_partition);
+        super(bid, pid, bid_array, partition_index, num_of_partition);
         this.accountId = accountId;
         this.bookEntryId = bookEntryId;
         this.accountTransfer = accountTransfer;
@@ -88,6 +88,6 @@ public class DepositEvent extends TxnEvent {
     }
 
     public DepositEvent cloneEvent() {
-        return new DepositEvent((int) bid, pid, Arrays.toString(bid_array), number_of_partitions, accountId, bookEntryId, accountTransfer, bookEntryTransfer);
+        return new DepositEvent((int) bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, accountId, bookEntryId, accountTransfer, bookEntryTransfer);
     }
 }

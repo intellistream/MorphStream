@@ -3,7 +3,7 @@ package combo;
 import common.bolts.transactional.ob.*;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.param.TxnEvent;
+import transaction.context.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;

@@ -2,9 +2,11 @@ package lock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import transaction.context.TxnEvent;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class PartitionedOrderLock implements Serializable {
@@ -62,6 +64,11 @@ public class PartitionedOrderLock implements Serializable {
 
         public void reset() {
             bid.set(0);
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(bid.get());
         }
     }
 }

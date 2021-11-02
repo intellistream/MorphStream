@@ -2,7 +2,6 @@ package scheduler.struct.gs;
 
 import content.common.CommonMetaTypes;
 import scheduler.context.AbstractGSTPGContext;
-import scheduler.oplevel.struct.Operation;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;

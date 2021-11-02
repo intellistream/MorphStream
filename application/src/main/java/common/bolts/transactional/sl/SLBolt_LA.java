@@ -21,14 +21,14 @@ public class SLBolt_LA extends SLBolt {
         for (long i = _bid; i < _bid + _combo_bid_size; i++) {
             if (input_event instanceof DepositEvent) {
                 DEPOSITE_REQUEST_NOLOCK((DepositEvent) input_event, txn_context[(int) (i - _bid)]);
-                BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+//                BEGIN_ACCESS_TIME_MEASURE(thread_Id);
                 DEPOSITE_REQUEST_CORE((DepositEvent) input_event);
-                END_ACCESS_TIME_MEASURE_ACC(thread_Id);
+//                END_ACCESS_TIME_MEASURE_ACC(thread_Id);
             } else {
                 TRANSFER_REQUEST_NOLOCK((TransactionEvent) input_event, txn_context[(int) (i - _bid)]);
-                BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+//                BEGIN_ACCESS_TIME_MEASURE(thread_Id);
                 TRANSFER_REQUEST_CORE((TransactionEvent) input_event);
-                END_ACCESS_TIME_MEASURE_ACC(thread_Id);
+//                END_ACCESS_TIME_MEASURE_ACC(thread_Id);
             }
             transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);
         }

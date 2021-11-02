@@ -9,7 +9,7 @@ import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.param.TxnEvent;
+import transaction.context.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import db.Database;
@@ -298,8 +298,6 @@ public class SLInitializer extends TableInitilizer {
         String folder = dataConfig.getRootPath();
         File file = new File(folder + "events.txt");
         int[] p_bids = new int[tthread];
-        HashMap<String, List<Integer>> accKeys = new HashMap<>();
-        HashMap<String, List<Integer>> astKeys = new HashMap<>();
         if (file.exists()) {
             if (enable_log) LOG.info("Reading transfer events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
@@ -357,8 +355,8 @@ public class SLInitializer extends TableInitilizer {
         while (txn != null) {
             String[] split = txn.split(",");
             int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
-            int accountTransfer = 100;
-            int bookEntryTransfer = 100;
+//            int accountTransfer = 100;
+//            int bookEntryTransfer = 100;
 //            if (count == 10) { // TODO: for the test purpose
 //            if (count == 25 || count == 50 || count == 75) {
 //                accountTransfer = 100000000;
@@ -366,10 +364,17 @@ public class SLInitializer extends TableInitilizer {
 //            }
             count++;
             if (split.length == 7) {
+                HashMap<Integer, Integer> pids = new HashMap<>();
+                for (int i = 1; i < 5; i++) {
+                    pids.put((int) (Long.parseLong(split[i]) / partitionOffset), 0);
+                }
+//                List<Integer> list = new ArrayList<>(pids.keySet());
+//                Collections.shuffle(list);
                 TransactionEvent event = new TransactionEvent(
                         Integer.parseInt(split[0]), //bid
                         npid, //pid
                         Arrays.toString(p_bids), //bid_arrary
+                        Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
                         4,//num_of_partition
                         split[1],//getSourceAccountId
                         split[2],//getSourceBookEntryId
@@ -380,30 +385,38 @@ public class SLInitializer extends TableInitilizer {
 //                        accountTransfer,
 //                        bookEntryTransfer
                 );
-                for (int x = 0; x < 4; x++)
-                    p_bids[(npid + x) % tthread]++;
-                DataHolder.transferEvents.add(event);
+//                for (int x = 0; x < 4; x++)
+//                    p_bids[(npid + x) % tthread]++;
+//                pids.replaceAll((k, v) -> p_bids[k]++);
+                DataHolder.events.add(event);
             } else if (split.length == 3) {
+                HashMap<Integer, Integer> pids = new HashMap<>();
+                for (int i = 1; i < 3; i++) {
+                    pids.put((int) (Long.parseLong(split[i]) / partitionOffset), 0);
+                }
                 DepositEvent event = new DepositEvent(
                         Integer.parseInt(split[0]), //bid
                         npid, //pid
                         Arrays.toString(p_bids), //bid_array
+                        Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
                         2,//num_of_partition
                         split[1],//getSourceAccountId
                         split[2],//getSourceBookEntryId
                         100,  //getAccountDeposit
                         100  //getBookEntryDeposit
                 );
-                for (int x = 0; x < 2; x++)
-                    p_bids[(npid + x) % tthread]++;
-                DataHolder.transferEvents.add(event);
+//                for (int x = 0; x < 2; x++)
+//                    p_bids[(npid + x) % tthread]++;
+//                pids.replaceAll((k, v) -> p_bids[k]++);
+
+                DataHolder.events.add(event);
             }
             if (enable_log) LOG.debug(String.format("%d transactions read...", count));
             txn = reader.readLine();
         }
         if (enable_log) LOG.info("Done reading transfer events...");
         if (shufflingActive) {
-            shuffleEvents(DataHolder.transferEvents, totalEvents);
+            shuffleEvents(DataHolder.events, totalEvents);
         }
     }
 

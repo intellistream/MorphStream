@@ -1,6 +1,6 @@
 package common.param.mb;
 
-import common.param.TxnEvent;
+import transaction.context.TxnEvent;
 import org.apache.commons.lang.StringUtils;
 import storage.SchemaRecordRef;
 import storage.datatype.DataBox;

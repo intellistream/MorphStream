@@ -56,6 +56,14 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         }
     }
 
+    public static void LA_LOCK_Reentrance(TxnManager txnManager, long[] bid_array, int[] partition_indexs, long _bid, int thread_Id) {
+        for (int _pid : partition_indexs) {
+//            LOG.info(thread_Id + " try lock: " + _pid);
+            txnManager.getOrderLock(_pid).blocking_wait(bid_array[_pid], _bid);
+//            LOG.info(thread_Id + " get lock: " + _pid);
+        }
+    }
+
     public static void LA_RESETALL(TxnManager txnManager, int tthread) {
         for (int k = 0; k < tthread; k++) {
             txnManager.getOrderLock(k).reset();
@@ -74,6 +82,14 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
             _pid++;
             if (_pid == tthread)
                 _pid = 0;
+        }
+    }
+
+    public static void LA_UNLOCK_Reentrance(TxnManager txnManager, int[] partition_indexs, int thread_Id) {
+        for (int _pid : partition_indexs) {
+            txnManager.getOrderLock(_pid).advance();
+//            LOG.info(thread_Id + " release lock: " + _pid);
+
         }
     }
 
@@ -101,7 +117,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
      */
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
-        MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);//start measure prepare and total.
+        MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);
         PRE_EXECUTE(in);
         MeasureTools.END_PREPARE_TIME_MEASURE(thread_Id);
         //begin transaction processing.
@@ -111,7 +127,6 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         //end transaction processing.
         MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
         POST_PROCESS(_bid, timestamp, 1);//otherwise deadlock.
-        MeasureTools.END_TOTAL_TIME_MEASURE(thread_Id);//otherwise deadlock.
     }
 
     @Override
@@ -134,7 +149,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         //pre stream processing phase..
         MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
-        MeasureTools.END_PREPARE_TIME_MEASURE(thread_Id);
+        MeasureTools.END_PREPARE_TIME_MEASURE_ACC(thread_Id);
         PRE_TXN_PROCESS(_bid, timestamp);
     }
 

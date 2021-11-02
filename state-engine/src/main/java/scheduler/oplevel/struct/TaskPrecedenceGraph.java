@@ -41,7 +41,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     CyclicBarrier barrier;
     public final Map<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
-    private final HashMap<Integer, Deque<OperationChain>> threadToOCs;
+    public final HashMap<Integer, Deque<OperationChain>> threadToOCs;
 
     public void reset(Context context) {
         operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
@@ -144,8 +144,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else if (context instanceof OPGSTPGContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
-                    if (oc.getOperations().isEmpty())
-                        continue;
                     oc.updateTDDependencies();
                     Operation head = oc.getOperations().first();
                     context.totalOsToSchedule += oc.getOperations().size();
@@ -159,6 +157,55 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         }
 
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+    }
+
+    public void secondTimeExploreTPG(Context context) {
+        context.reset();
+        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+        if (context instanceof OPLayeredContext) {
+            ArrayDeque<Operation> roots = new ArrayDeque<>();
+            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
+                    resetOp(oc);
+                    Operation head = oc.getOperations().first();
+                    if (head.isRoot()) {
+                        roots.add(head);
+                    }
+                    context.operations.addAll(oc.getOperations());
+                    context.totalOsToSchedule += oc.getOperations().size();
+                }
+            }
+            ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
+            if (enable_log) log.info("MaxLevel:" + (((OPLayeredContext) context).maxLevel));
+        } else if (context instanceof OPGSTPGContext) {
+            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
+                    resetOp(oc);
+                    Operation head = oc.getOperations().first();
+                    context.totalOsToSchedule += oc.getOperations().size();
+                    if (head.isRoot()) {
+                        head.context.getListener().onRootStart(head);
+                    }
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException();
+        }
+
+        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+    }
+
+    private void resetOp(OperationChain oc) {
+        for (Operation op : oc.getOperations()) {
+            op.resetDependencies();
+            op.stateTransition(MetaTypes.OperationStateType.BLOCKED);
+//            if (op.isFailed) { // transit state to aborted.
+//                op.stateTransition(MetaTypes.OperationStateType.ABORTED);
+//                for (Operation child : op.getHeader().getDescendants()) {
+//                    child.stateTransition(MetaTypes.OperationStateType.ABORTED);
+//                }
+//            }
+        }
     }
 
     /**

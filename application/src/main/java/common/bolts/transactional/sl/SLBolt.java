@@ -10,6 +10,7 @@ import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
+import utils.UDF;
 
 import java.util.List;
 
@@ -86,10 +87,16 @@ public abstract class SLBolt extends TransactionalBolt {
         if (sourceAccountBalance > event.getMinAccountBalance()
                 && sourceAccountBalance > event.getAccountTransfer()
                 && sourceAssetValue > event.getBookEntryTransfer()) {
+//            long start = System.nanoTime();
+//            while (System.nanoTime() - start < 40000) {}
             // compute the new balances
+            UDF.randomDelay();
             final long newSourceBalance = sourceAccountBalance - event.getAccountTransfer();
+            UDF.randomDelay();
             final long newTargetBalance = targetAccountBalance + event.getAccountTransfer();
+            UDF.randomDelay();
             final long newSourceAssets = sourceAssetValue - event.getBookEntryTransfer();
+            UDF.randomDelay();
             final long newTargetAssets = targetAssetValue + event.getBookEntryTransfer();
             // write back the updated values
             sourceAccountBalance_value.setLong(newSourceBalance);

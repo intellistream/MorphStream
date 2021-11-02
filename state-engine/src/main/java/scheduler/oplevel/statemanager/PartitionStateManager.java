@@ -4,6 +4,7 @@ import profiler.MeasureTools;
 import scheduler.oplevel.impl.tpg.OPGSScheduler;
 import scheduler.oplevel.signal.op.*;
 import scheduler.oplevel.struct.MetaTypes;
+import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import scheduler.oplevel.struct.Operation;
 
 import java.util.Queue;
@@ -22,17 +23,17 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     }
 
     @Override
-    public void onOpParentExecuted(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
+    public void onOpParentExecuted(Operation operation, MetaTypes.DependencyType dependencyType, OperationStateType parentState) {
         opSignalQueue.add(new OnParentUpdatedSignal(operation, dependencyType, parentState));//
     }
 
     @Override
-    public void onOpNeedAbortHandling(Operation operation, MetaTypes.OperationStateType headerState) {
+    public void onOpNeedAbortHandling(Operation operation, OperationStateType headerState) {
         opSignalQueue.add(new OnNeedAbortHandlingSignal(operation, headerState));//
     }
 
     @Override
-    public void onHeaderStartAbortHandling(Operation operation, MetaTypes.OperationStateType descendantState) {
+    public void onHeaderStartAbortHandling(Operation operation, OperationStateType descendantState) {
         opSignalQueue.add(new OnHeaderStartAbortHandlingSignal(operation, descendantState));//
     }
 
@@ -46,7 +47,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     }
 
     @Override
-    public void onOpRollbackAndRedo(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
+    public void onOpRollbackAndRedo(Operation operation, MetaTypes.DependencyType dependencyType, OperationStateType parentState) {
     }
 
     public void run() {
@@ -75,22 +76,22 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
 
 
     private void onRootTransition(Operation operation) {
-        operation.stateTransition(MetaTypes.OperationStateType.READY);
+        operation.stateTransition(OperationStateType.READY);
         blockedToReadyAction(operation);
     }
 
     private void onHeaderUpdatedTransition(Operation descendant, OnNeedAbortHandlingSignal signal) {
-        MetaTypes.OperationStateType headerState = signal.getState();
+        OperationStateType headerState = signal.getState();
         // TODO: abort handling
     }
 
     private void onParentStateUpdatedTransition(Operation operation, OnParentUpdatedSignal signal) {
         MetaTypes.DependencyType dependencyType = signal.getType();
-        MetaTypes.OperationStateType parentState = signal.getState();
+        OperationStateType parentState = signal.getState();
         operation.updateDependencies(dependencyType, parentState);
         // normal state transition during execution
         // **BLOCKED**
-        if (operation.getOperationState().equals(MetaTypes.OperationStateType.BLOCKED)) {
+        if (operation.getOperationState().equals(OperationStateType.BLOCKED)) {
             if (operation.tryReady()) {
                 // BLOCKED->READY
                 blockedToReadyAction(operation);
@@ -99,16 +100,14 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     }
 
     private void onProcessedTransition(Operation operation, OnProcessedSignal signal) {
-        if (signal.isFailed()) {
-            // transit to aborted
+//        if (signal.isFailed()) {
+//            // transit to aborted
 //            operation.stateTransition(OperationStateType.ABORTED);
-            throw new UnsupportedOperationException("There will never be aborted operation");
-            // TODO: notify children.
-        } else {
+//        } else {
             // transit to executed
-            operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
-            executedAction(operation);
-        }
+        operation.stateTransition(OperationStateType.EXECUTED);
+        executedAction(operation);
+//        }
     }
 
     private void blockedToReadyAction(Operation operation) {
@@ -121,15 +120,15 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
         Queue<Operation> children = operation.getChildren(MetaTypes.DependencyType.TD);
         for (Operation child : children) {
 //            getTargetStateManager(child).onParentStateUpdated(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.EXECUTED);
-            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.TD, MetaTypes.OperationStateType.EXECUTED);
+            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.TD, OperationStateType.EXECUTED);
         }
         children = operation.getChildren(MetaTypes.DependencyType.FD);
         for (Operation child : children) {
-            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.FD, MetaTypes.OperationStateType.EXECUTED);
+            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.FD, OperationStateType.EXECUTED);
         }
         children = operation.getChildren(MetaTypes.DependencyType.LD);
         for (Operation child : children) {
-            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.FD, MetaTypes.OperationStateType.EXECUTED);
+            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.FD, OperationStateType.EXECUTED);
         }
         executableTaskListener.onOPFinalized(operation);
     }

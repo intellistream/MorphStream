@@ -4,7 +4,6 @@ import content.common.CommonMetaTypes;
 import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
-import storage.datatype.DataBox;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;

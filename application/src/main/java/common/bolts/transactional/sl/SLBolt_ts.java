@@ -1,7 +1,7 @@
 package common.bolts.transactional.sl;
 
 import combo.SINKCombo;
-import common.param.TxnEvent;
+import transaction.context.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import components.context.TopologyContext;
