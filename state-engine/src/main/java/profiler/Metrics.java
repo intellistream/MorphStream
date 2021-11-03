@@ -73,7 +73,7 @@ public class Metrics {
     }
 
     public static void COMPUTE_INDEX_TIME_ACC(int thread_id) {
-        TxnRuntime.Index[thread_id] = System.nanoTime() - TxnRuntime.IndexStart[thread_id];
+        TxnRuntime.Index[thread_id] += System.nanoTime() - TxnRuntime.IndexStart[thread_id];
     }
 
     public static void COMPUTE_START_POST_EXE_TIME(int thread_id) {
@@ -89,7 +89,6 @@ public class Metrics {
     }
 
     public static void COMPUTE_START_WAIT_TIME(int thread_id) {
-
         TxnRuntime.WaitStart[thread_id] = System.nanoTime();
     }
 
@@ -158,14 +157,25 @@ public class Metrics {
     }
 
     public static void RECORD_TXN_BREAKDOWN_RATIO(int thread_id) {
-//        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id]);
-//        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id]);
-//        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id]);
-//        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id]);
-        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
-        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
-        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
-        Transaction_Record.sync_ratio[thread_id].addValue((TxnRuntime.Wait[thread_id]-TxnRuntime.Lock[thread_id]) / (double) Runtime.Txn[thread_id]);
+        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id]);
+        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id]);
+        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id]);
+        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id]);
+//        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.sync_ratio[thread_id].addValue((TxnRuntime.Wait[thread_id]-TxnRuntime.Lock[thread_id]) / (double) Runtime.Txn[thread_id]);
+    }
+
+    public static void RECORD_TXN_BREAKDOWN_RATIO(int thread_id, int number_events) {
+        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) number_events);
+        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) number_events);
+        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) number_events);
+        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id] / (double) number_events);
+//        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.sync_ratio[thread_id].addValue((TxnRuntime.Wait[thread_id]-TxnRuntime.Lock[thread_id]) / (double) Runtime.Txn[thread_id]);
     }
 
     // OCScheduler

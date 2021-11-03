@@ -152,7 +152,7 @@ def DrawLegend(legend_labels, filename):
 # example for reading csv file
 def ReadFile(tthread, batchInterval):
     # Creates a list containing w lists, each of h items, all set to 0
-    w, h = 6, 5
+    w, h = 6, 6
     y = [[0 for x in range(w)] for y in range(h)]
 
     y_sum = [0 for x in range(w)]
@@ -165,7 +165,7 @@ def ReadFile(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][0] += float(breakdown_value[i + 1])
             y_sum[0] += float(breakdown_value[i + 1])
 
@@ -175,7 +175,7 @@ def ReadFile(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][1] += float(breakdown_value[i + 1])
             y_sum[1] += float(breakdown_value[i + 1])
 
@@ -185,7 +185,7 @@ def ReadFile(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][2] += float(breakdown_value[i + 1])
             y_sum[2] += float(breakdown_value[i + 1])
 
@@ -195,7 +195,7 @@ def ReadFile(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][3] += float(breakdown_value[i + 1])
             y_sum[3] += float(breakdown_value[i + 1])
 
@@ -205,7 +205,7 @@ def ReadFile(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][4] += float(breakdown_value[i + 1])
             y_sum[4] += float(breakdown_value[i + 1])
 
@@ -215,7 +215,7 @@ def ReadFile(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][5] += float(breakdown_value[i + 1])
             y_sum[5] += float(breakdown_value[i + 1])
 
@@ -231,7 +231,7 @@ def ReadFile(tthread, batchInterval):
 
 def ReadFileWithAbort(tthread, batchInterval):
     # Creates a list containing w lists, each of h items, all set to 0
-    w, h = 6, 5
+    w, h = 6, 6
     y = [[0 for x in range(w)] for y in range(h)]
 
     y_sum = [0 for x in range(w)]
@@ -244,7 +244,7 @@ def ReadFileWithAbort(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][0] += float(breakdown_value[i + 1])
             y_sum[0] += float(breakdown_value[i + 1])
 
@@ -254,7 +254,7 @@ def ReadFileWithAbort(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][1] += float(breakdown_value[i + 1])
             y_sum[1] += float(breakdown_value[i + 1])
 
@@ -264,7 +264,7 @@ def ReadFileWithAbort(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][2] += float(breakdown_value[i + 1])
             y_sum[2] += float(breakdown_value[i + 1])
 
@@ -274,7 +274,7 @@ def ReadFileWithAbort(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][3] += float(breakdown_value[i + 1])
             y_sum[3] += float(breakdown_value[i + 1])
 
@@ -284,7 +284,7 @@ def ReadFileWithAbort(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][4] += float(breakdown_value[i + 1])
             y_sum[4] += float(breakdown_value[i + 1])
 
@@ -294,7 +294,7 @@ def ReadFileWithAbort(tthread, batchInterval):
     for line in lines[idx:]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 5):
+        for i in range(0, 6):
             y[i][5] += float(breakdown_value[i + 1])
             y_sum[5] += float(breakdown_value[i + 1])
 
@@ -320,10 +320,10 @@ def locateIdx(lines):
 
 if __name__ == "__main__":
     # break into 5 parts
-    legend_labels = ["Explore Time", "Next Time", "Useful Time", "Notify Time", "Construct Time"]
+    legend_labels = ["Explore Time", "Next Time", "Useful Time", "Notify Time", "Construct Time", "First Explore Time"]
     for tthread in [1, 2, 4, 8, 16, 24]:
-        # for batchInterval in [1024, 2048, 4096, 8192, 10240]:
-        for batchInterval in [4096]:
+        for batchInterval in [1024, 2048, 4096, 8192, 10240]:
+        # for batchInterval in [4096]:
             x_values = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$"]
             y_values = ReadFile(tthread, batchInterval)
             DrawFigure(x_values, y_values, legend_labels,

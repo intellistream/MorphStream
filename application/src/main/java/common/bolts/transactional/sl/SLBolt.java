@@ -113,9 +113,11 @@ public abstract class SLBolt extends TransactionalBolt {
     protected void DEPOSITE_REQUEST_CORE(DepositEvent event) {
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         List<DataBox> values = event.account_value.getRecord().getValues();
+        UDF.randomDelay();
         long newAccountValue = values.get(1).getLong() + event.getAccountTransfer();
         values.get(1).setLong(newAccountValue);
         List<DataBox> asset_values = event.asset_value.getRecord().getValues();
+        UDF.randomDelay();
         long newAssetValue = values.get(1).getLong() + event.getBookEntryTransfer();
         asset_values.get(1).setLong(newAssetValue);
 //        collector.force_emit(input_event.getBid(), null, input_event.getTimestamp());

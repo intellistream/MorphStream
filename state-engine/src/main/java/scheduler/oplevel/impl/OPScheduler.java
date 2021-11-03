@@ -149,6 +149,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         //apply function to modify..
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
+        UDF.randomDelay();
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }

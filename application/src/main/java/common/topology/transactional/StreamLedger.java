@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;
 import transaction.TableInitilizer;
+import utils.UDF;
 
 import java.util.Random;
 
@@ -52,6 +53,8 @@ public class StreamLedger extends TransactionTopology {
         setPartition_interval((int) (Math.ceil(numberOfStates / (double) tthread)), tthread);
         TableInitilizer ini = new SLInitializer(db, config.getString("rootFilePath"), numberOfStates, theta, tthread, config);
         ini.creates_Table(config);
+        // initialize UDF
+        UDF.complexity = config.getInt("complexity", 100000);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)
                 spinlock_[i] = new SpinLock();

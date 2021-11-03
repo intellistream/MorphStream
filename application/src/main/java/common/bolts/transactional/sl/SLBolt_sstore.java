@@ -40,7 +40,6 @@ public class SLBolt_sstore extends SLBolt_LA {
 
     public SLBolt_sstore(int fid) {
         super(LOG, fid, null);
-
     }
 
     @Override
@@ -70,7 +69,7 @@ public class SLBolt_sstore extends SLBolt_LA {
                 //end transaction processing.
                 POST_PROCESS(_bid, timestamp, 1);//otherwise deadlock.
             }
-            MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
+            MeasureTools.END_TXN_TIME_MEASURE(thread_Id, num_events);
             tuples.clear();
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);//otherwise deadlock.
         } else {

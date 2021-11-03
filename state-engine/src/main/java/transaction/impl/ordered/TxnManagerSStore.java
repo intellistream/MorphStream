@@ -12,7 +12,6 @@ import storage.SchemaRecordRef;
 import storage.StorageManager;
 import storage.TableRecord;
 import transaction.context.TxnContext;
-import transaction.context.TxnEvent;
 import transaction.impl.TxnManagerDedicatedLocked;
 
 import java.util.LinkedList;

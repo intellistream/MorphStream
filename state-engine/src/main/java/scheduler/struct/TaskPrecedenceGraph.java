@@ -41,7 +41,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     public final Map<Integer, Context> threadToContextMap;
     public final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
-    private int NUM_ITEMS;
+    private final int NUM_ITEMS;
     private final ConcurrentHashMap<Integer, ConcurrentSkipListSet<ExecutionUnit>> sortedOperations;//shared data structure.
     private final ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
     private final HashMap<Integer, Deque<SchedulingUnit>> threadToOCs;
@@ -237,6 +237,13 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
     }
 
+    public void tStreamExplore(Context context) {
+        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+//        assert context.totalOsToSchedule == ocs.size();
+        tStreamSubmit(context, threadToOCs.get(context.thisThreadId));
+        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+    }
+
     private void tStreamSubmit(Context context, Collection<SchedulingUnit> ocs) {
         ArrayDeque<SchedulingUnit> nonNullOCs = new ArrayDeque<>();
         HashSet<OperationChain<ExecutionUnit>> circularOCs = new HashSet<>();
@@ -256,19 +263,16 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             }
         }
         if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
-        if (context instanceof AbstractGSTPGContext) {
-            for (SchedulingUnit oc : nonNullOCs) {
-                context.totalOsToSchedule += oc.getOperations().size();
-                context.operationChains.add(oc);
-                if (!((AbstractGSOperationChain) oc).context.equals(context)) {
-                    throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
-                }
-                if (!oc.hasParents()) {
-                    ((AbstractGSTPGContext) context).getListener().onOcRootStart(oc);
-                }
+        assert context instanceof AbstractGSTPGContext;
+        for (SchedulingUnit oc : nonNullOCs) {
+            context.totalOsToSchedule += oc.getOperations().size();
+            context.operationChains.add(oc);
+            if (!((AbstractGSOperationChain) oc).context.equals(context)) {
+                throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
             }
-        } else {
-            throw new UnsupportedOperationException("Unsupported.");
+            if (!oc.hasParents()) {
+                ((AbstractGSTPGContext) context).getListener().onOcRootStart(oc);
+            }
         }
         if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
     }

@@ -13,7 +13,6 @@ import storage.datatype.DataBox;
 import transaction.TxnManager;
 import transaction.context.TxnAccess;
 import transaction.context.TxnContext;
-import transaction.context.TxnEvent;
 import transaction.function.Condition;
 import transaction.function.Function;
 

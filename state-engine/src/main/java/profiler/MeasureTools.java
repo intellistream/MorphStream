@@ -166,6 +166,13 @@ public class MeasureTools {
             COMPUTE_TXN_START_TIME(thread_id);
     }
 
+    public static void END_TXN_TIME_MEASURE(int thread_id, int number_events) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
+            COMPUTE_TXN_TIME(thread_id);
+            RECORD_TXN_BREAKDOWN_RATIO(thread_id, number_events);
+        }
+    }
+
     public static void END_TXN_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
             COMPUTE_TXN_TIME(thread_id);

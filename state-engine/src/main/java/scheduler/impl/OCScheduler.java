@@ -17,6 +17,7 @@ import transaction.function.DEC;
 import transaction.function.INC;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
+import utils.UDF;
 
 import java.util.List;
 
@@ -98,6 +99,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
             // apply function
+            UDF.randomDelay();
             if (operation.function instanceof INC) {
                 tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
             } else if (operation.function instanceof DEC) {
@@ -130,6 +132,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         //apply function to modify..
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
+        UDF.randomDelay();
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }

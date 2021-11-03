@@ -8,6 +8,7 @@ import scheduler.impl.layered.DFSScheduler;
 import scheduler.impl.layered.DFSSchedulerWithAbort;
 import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
+import scheduler.impl.nonlayered.TStreamScheduler;
 import scheduler.oplevel.context.OPGSTPGContext;
 import scheduler.oplevel.impl.tpg.*;
 
@@ -34,6 +35,9 @@ public abstract class TxnManager implements ITxnManager {
                 break;
             case "GS":
                 scheduler = new GSScheduler(threadCount, numberOfStates);
+                break;
+            case "TStream": // original tstream also uses gs scheduler
+                scheduler = new TStreamScheduler(threadCount, numberOfStates);
                 break;
             case "GSA":
                 scheduler = new GSSchedulerWithAbort(threadCount, numberOfStates);

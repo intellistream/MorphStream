@@ -65,17 +65,18 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-//    public String scheduler = "BFS";
+    public String scheduler = "BFS";
 //        public String scheduler = "BFSA";
 //    public String scheduler = "DFS";
 //    public String scheduler = "DFSA";
 //    public String scheduler = "GS";
 //    public String scheduler = "GSA";
-    public String scheduler = "OPGS";
+//    public String scheduler = "OPGS";
 //    public String scheduler = "OPGSA";
 //    public String scheduler = "OPBFS";
 //    public String scheduler = "OPDFS";
 //    public String scheduler = "OPDFSA";
+//    public String scheduler = "TStream";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
@@ -126,6 +127,9 @@ public abstract class Runner implements IRunner {
     public Integer numberOfDLevels = 1024;
 
 
+    @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
+    public Integer complexity = 100000;
+
     public Runner() {
         CFG_PATH = "/config/%s.properties";
         if (enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
@@ -159,6 +163,7 @@ public abstract class Runner implements IRunner {
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
 
         config.put("numberOfDLevels", numberOfDLevels);
+        config.put("complexity", complexity);
 
         if (CCOption == 4)//S-Store enabled.
             config.put("partition", true);

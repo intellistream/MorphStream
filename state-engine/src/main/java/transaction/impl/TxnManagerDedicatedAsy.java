@@ -18,7 +18,6 @@ import storage.datatype.DataBox;
 import transaction.TxnManager;
 import transaction.context.TxnAccess;
 import transaction.context.TxnContext;
-import transaction.context.TxnEvent;
 import transaction.function.Condition;
 import transaction.function.Function;
 
@@ -69,6 +68,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 scheduler.AddContext(thisTaskId, context);
                 break;
             case GS:
+            case TStream: // original tstream
                 context = new GSTPGContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
