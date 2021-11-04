@@ -24,7 +24,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
     public boolean isExecuted = false;
 
-    protected TaskPrecedenceGraph tpg;
+//    protected TaskPrecedenceGraph tpg;
 
 //    private final HashSet<OperationChain<ExecutionUnit>> scanedOCs = new HashSet<>();
 
@@ -240,7 +240,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
     public void setupTPG(TaskPrecedenceGraph tpg) {
-        this.tpg = tpg;
+//        this.tpg = tpg;
     }
 
     public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {

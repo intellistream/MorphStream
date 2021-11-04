@@ -72,7 +72,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        log.trace("++++++execute: " + operation);
         // if the operation is in state aborted or committable or committed, we can bypass the execution
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
-//            log.trace("++++++bypassed: " + operation);
             //otherwise, skip (those +already been tagged as aborted).
             return;
         }
@@ -107,14 +106,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     // DD: Transfer event processing
     protected void CT_Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
-        if (preValues == null) {
-            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
-            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
-            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
-                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
-            }
-            log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
-        }
+//        if (preValues == null) {
+//            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
+//            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
+//            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
+//                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
+//            }
+//            log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
+//        }
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
 
         if (sourceAccountBalance > operation.condition.arg1

@@ -37,7 +37,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private final Queue<Operation> td_parents; // the functional dependencies ops to be executed in advance
     private final Queue<Operation> ld_parents; // the functional dependencies ops to be executed in advance
     private final OperationMetadata operationMetadata;
-    private final AtomicReference<OperationStateType> operationState;
+    private OperationStateType operationState;
     // operation id under a transaction.
     // an operation id to indicate how many operations in front of this operation in the same transaction.
     public int txn_op_id = 0;
@@ -110,7 +110,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         ld_spec_children = new ArrayDeque<>(); // speculative children to notify.
 
         operationMetadata = new OperationMetadata();
-        operationState = new AtomicReference<>(OperationStateType.BLOCKED);
+//        operationState = new AtomicReference<>(OperationStateType.BLOCKED);
+        operationState = OperationStateType.BLOCKED;
     }
 
 
@@ -192,11 +193,13 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     public void stateTransition(OperationStateType state) {
 //        LOG.debug(this + " : state transit " + operationState + " -> " + state);
-        operationState.getAndSet(state);
+//        operationState.getAndSet(state);
+        operationState = state;
     }
 
     public OperationStateType getOperationState() {
-        return operationState.get();
+//        return operationState.get();
+        return operationState;
     }
 
 
@@ -421,6 +424,10 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     public synchronized boolean hasValidDependencyLevel() {
         return isDependencyLevelCalculated;
+    }
+
+    public boolean hasChildren() {
+        return !fd_children.isEmpty() || !td_children.isEmpty() || !ld_children.isEmpty();
     }
 
 

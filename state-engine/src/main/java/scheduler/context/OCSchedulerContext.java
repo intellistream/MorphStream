@@ -14,6 +14,8 @@ public abstract class OCSchedulerContext<SchedulingUnit> implements SchedulerCon
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.
     public Set<SchedulingUnit> operationChains = new HashSet<>();
+    public int fd = 0;
+
 
     protected OCSchedulerContext(int thisThreadId) {
         this.thisThreadId = thisThreadId;

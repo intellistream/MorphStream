@@ -42,7 +42,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     public final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final int NUM_ITEMS;
-    private final ConcurrentHashMap<Integer, ConcurrentSkipListSet<ExecutionUnit>> sortedOperations;//shared data structure.
     private final ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
     private final HashMap<Integer, Deque<SchedulingUnit>> threadToOCs;
     CyclicBarrier barrier;
@@ -50,10 +49,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 
     public void reset(Context context) {
         //reset holder.
-//        operationChains = new ConcurrentHashMap<>();
-//        operationChains.put("accounts", new TableOCs<>(totalThreads));
-//        operationChains.put("bookEntries", new TableOCs<>(totalThreads));
-//        sortedOperations.clear();
         operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         threadToOCs.remove(context.thisThreadId);
@@ -75,7 +70,8 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         operationChains.put("bookEntries", new TableOCs<>(totalThreads));
         threadToContextMap = new HashMap<>();
         threadToOCs = new HashMap<>();
-        sortedOperations = new ConcurrentHashMap<>();
+        //shared data structure.
+        ConcurrentHashMap<Integer, ConcurrentSkipListSet<ExecutionUnit>> sortedOperations = new ConcurrentHashMap<>();
     }
 
     /**
@@ -113,59 +109,16 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         return operationChains;
     }
 
-//    /**
-//     * set up functional dependencies among operations
-//     *
-//     * @param operation
-//     */
-//    public SchedulingUnit setupOperationTDFD(ExecutionUnit operation) {
-//        // TD
-//        SchedulingUnit oc = addOperationToChain(operation);
-//        // FD
-//        if (operation.condition_source != null)
-//            checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), operation.condition_sourceTable, operation.condition_source);
-//
-//        return oc;
-//    }
-
-//    public SchedulingUnit setupOperationTDFD(ExecutionUnit operation, Context targetContext) {
-//        // TD
-//        SchedulingUnit oc = addOperationToChain(operation, targetContext.thisThreadId);
-//        // FD
-////        MeasureTools.BEGIN_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
-//        if (operation.condition_source != null)
-//            checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), operation.condition_sourceTable, operation.condition_source);
-////        MeasureTools.END_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
-//        return oc;
-//    }
-
     public SchedulingUnit setupOperationTDFD(ExecutionUnit operation, Request request, Context targetContext) {
         // TD
         SchedulingUnit oc = addOperationToChain(operation, targetContext.thisThreadId);
         // FD
-//        MeasureTools.BEGIN_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
         if (request.condition_source != null)
             checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), request.condition_sourceTable, request.condition_source);
-//        MeasureTools.END_CACHE_OPERATION_TIME_MEASURE(context.thisThreadId);
         return oc;
     }
 
 
-//    /**
-//     * construct TPG from the arrived sorted operations, typically this step is to set dependencies and solve circular
-//     * @param context
-//     */
-//    public void constructTPG(Context context) {
-//        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-//        int threadId = context.thisThreadId;
-//        for (ExecutionUnit op : sortedOperations.get(threadId)) {
-//            SchedulingUnit oc = addOperationToChain(op);
-//            if (op.condition_source != null)
-//                checkFD(oc, op, op.table_name, op.d_record.record_.GetPrimaryKey(), op.condition_sourceTable, op.condition_source);
-//        }
-//        SOURCE_CONTROL.getInstance().waitForOtherThreads();
-//        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-//    }
 
     public void firstTimeExploreTPG(Context context) {
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
@@ -191,6 +144,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         for (SchedulingUnit oc : ocs) {
             if (!oc.getOperations().isEmpty()) {
                 nonNullOCs.add(oc);
+                context.fd += oc.ocParentsCount.get();
                 detectAffectedOCs(scannedOCs, circularOCs, oc);
             }
         }
@@ -207,6 +161,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             }
         }
         if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
+        LOG.info("fd number: " + context.fd);
         if (context instanceof LayeredTPGContext) {
             ((LayeredTPGContext) context).buildBucketPerThread(nonNullOCs, resolvedOC);
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
@@ -250,9 +205,11 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         for (SchedulingUnit oc : ocs) {
             if (!oc.getOperations().isEmpty()) {
                 nonNullOCs.add(oc);
+//                context.fd += oc.ocParentsCount.get();
                 circularOCs.add(oc);
             }
         }
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
         int counter = 0;
         for (OperationChain<ExecutionUnit> oc : circularOCs) {
             if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
@@ -263,6 +220,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             }
         }
         if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
+//        LOG.info("fd number: " + context.fd);
         assert context instanceof AbstractGSTPGContext;
         for (SchedulingUnit oc : nonNullOCs) {
             context.totalOsToSchedule += oc.getOperations().size();
@@ -372,40 +330,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         }
     }
 
-    /**
-     * @param operation
-     */
-    public void cacheToSortedOperations(ExecutionUnit operation) {
-        // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
-        String primaryKey = operation.d_record.record_.GetPrimaryKey();
-        int threadId = getTaskId(primaryKey, delta);
-        ConcurrentSkipListSet<ExecutionUnit> operations = sortedOperations.computeIfAbsent(threadId, s -> new ConcurrentSkipListSet<>());
-        operations.add(operation);
-        createQueueForState(operation.table_name, operation.d_record.record_.GetPrimaryKey());
-    }
-
-    private void createQueueForState(String tableName, String pKey) {
-        int threadId = getTaskId(pKey, delta);
-        ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-        holder.computeIfAbsent(pKey, s -> {
-            SchedulingUnit oc = threadToContextMap.get(threadId).createTask(tableName, pKey, 0);
-            oc.setupTPG(this);
-            return oc;
-        });
-    }
-
-    /**
-     * @param operation
-     */
-    public SchedulingUnit addOperationToChain(ExecutionUnit operation) {
-        // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
-        String table_name = operation.table_name;
-        String primaryKey = operation.d_record.record_.GetPrimaryKey();
-        SchedulingUnit retOc = getOC(table_name, primaryKey);
-        retOc.addOperation(operation);
-        return retOc;
-    }
-
     public SchedulingUnit addOperationToChain(ExecutionUnit operation, int targetThreadId) {
         // DD: Get the Holder for the table, then get a map for each thread, then get the list of operations
         String table_name = operation.table_name;
@@ -427,48 +351,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         return holder.get(pKey);
     }
 
-//    private SchedulingUnit getOC(String tableName, String pKey) {
-//        int threadId = Integer.parseInt(pKey) / delta;
-//        ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-//        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey, 0));
-//    }
-
-//    private SchedulingUnit getOC(String tableName, String pKey) {
-//        int threadId = getTaskId(pKey, delta);
-//        ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-//        return holder.get(pKey);
-//    }
-
-//    /**
-//     * create a new oc for a circular oc partition
-//     * @param tableName
-//     * @param pKey
-//     * @param bid
-//     * @return
-//     */
-//    public SchedulingUnit getNewOC(String tableName, String pKey, long bid) {
-//        if (enable_log) LOG.info("Circular OC that has been splitted: " + tableName + "|" + pKey + "|" + bid);
-//        int threadId = getTaskId(pKey, delta);
-//        ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-//        SchedulingUnit oc = threadToContextMap.get(threadId).createTask(tableName, pKey, bid);
-//        SchedulingUnit oldOC = holder.put(pKey, oc);
-//        assert oldOC == null || oldOC.bid <= oc.bid;
-//        oc.setupTPG(this);
-//        return oc;
-//    }
-
-    public SchedulingUnit getNewOC(String tableName, String pKey, long bid) {
-        if (enable_log) LOG.info("Circular OC that has been splitted: " + tableName + "|" + pKey + "|" + bid);
-        int threadId = getTaskId(pKey, delta);
-        ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-        SchedulingUnit newOC = threadToContextMap.get(threadId).createTask(tableName, pKey, bid);
-        SchedulingUnit curOC = holder.put(pKey, newOC);
-        assert curOC == null || curOC.bid <= newOC.bid;
-        newOC.setupTPG(this);
-        return newOC;
-    }
-
-
     private void checkFD(SchedulingUnit curOC, ExecutionUnit op, String table_name,
                          String key, String[] condition_sourceTable, String[] condition_source) {
         for (int index = 0; index < condition_source.length; index++) {
@@ -486,21 +368,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         }
         curOC.checkPotentialFDChildrenOnNewArrival(op);
     }
-
-//    public SchedulingUnit forceExecuteBlockedOC(Context context) {
-//        int threadId = context.thisThreadId;
-//        Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
-//        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
-//            for (Deque<SchedulingUnit> ocsPerKey : tableOCs.threadOCsMap.get(threadId).holder_v1.values()) {
-//                for (SchedulingUnit oc : ocsPerKey) { // TODO: this part can be buggy for correctness
-//                    if (!oc.isExecuted && !context.busyWaitQueue.contains(oc)) {
-//                        return oc;
-//                    }
-//                }
-//            }
-//        }
-//        return null;
-//    }
 
     public Collection<Context> getContexts() {
         return threadToContextMap.values();

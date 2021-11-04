@@ -10,18 +10,22 @@ import java.util.ArrayDeque;
 
 public class OPGSTPGContext extends OPSchedulerContext {
     public final PartitionStateManager partitionStateManager;
-    public final ArrayDeque<Operation> taskQueues; // task queues to store operations for each thread
+    public final ArrayDeque<Operation> IsolatedOC; // task queues to store operations for each thread
+    public final ArrayDeque<Operation> OCwithChildren; // task queues to store operations for each thread
+
 
     public OPGSTPGContext(int thisThreadId) {
         super(thisThreadId);
-        taskQueues = new ArrayDeque<>();
+        IsolatedOC = new ArrayDeque<>();
+        OCwithChildren = new ArrayDeque<>();
         partitionStateManager = new PartitionStateManager();
     }
 
     @Override
     public void reset() {
         super.reset();
-        taskQueues.clear();
+        IsolatedOC.clear();
+        OCwithChildren.clear();
     }
 
     @Override
