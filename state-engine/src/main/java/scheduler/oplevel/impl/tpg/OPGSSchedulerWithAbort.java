@@ -132,12 +132,8 @@ public class OPGSSchedulerWithAbort<Context extends OPGSTPGContextWithAbort> ext
      * @param context
      * @return
      */
-    protected Operation next(Context context) {
-        Operation operation = context.OCwithChildren.pollLast();
-        if (operation == null) {
-            operation = context.IsolatedOC.pollLast();
-        }
-        return operation;
+    public Operation next(Context context) {
+        return context.taskQueues.pollLast();
     }
 
 

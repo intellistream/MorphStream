@@ -134,6 +134,7 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
 
+        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
         do {
             Operation next = next(context);
             if (next == null) {
@@ -145,13 +146,10 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
                 break;
             }
         } while (true);
+        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
-        if (!context.batchedOperations.isEmpty()) {
-            for (Operation operation : context.batchedOperations) {
-                MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-                execute(operation, mark_ID, false);
-                MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-            }
+        for (Operation operation : context.batchedOperations) {
+            execute(operation, mark_ID, false);
         }
 
         while (!context.batchedOperations.isEmpty()) {
@@ -177,9 +175,9 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
 //     * @param context
 //     * @return
 //     */
-//    public Operation next(Context context) {
-//        return context.taskQueues.pollLast();
-//    }
+    public Operation next(Context context) {
+        return context.taskQueues.pollLast();
+    }
 
     /**
      * Try to get task from local queue.
@@ -187,13 +185,13 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
      * @param context
      * @return
      */
-    protected Operation next(Context context) {
-        Operation operation = context.OCwithChildren.pollLast();
-        if (operation == null) {
-            operation = context.IsolatedOC.pollLast();
-        }
-        return operation;
-    }
+//    protected Operation next(Context context) {
+//        Operation operation = context.OCwithChildren.pollLast();
+//        if (operation == null) {
+//            operation = context.IsolatedOC.pollLast();
+//        }
+//        return operation;
+//    }
 
 
     /**
@@ -202,19 +200,23 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
      * 2. conserved: hash operations to threads based on the targeting key state
      * 3. shared: put all operations in a pool and
      *
-     * @param task
+     * @param executableOperation
      * @param context
      */
-    @Override
-    public void DISTRIBUTE(Operation task, Context context) {
-        if (task != null) {
-            if (!task.hasChildren()) {
-                context.IsolatedOC.add(task);
-            } else {
-                context.OCwithChildren.add(task);
-            }
-        }
+    public void DISTRIBUTE(Operation executableOperation, Context context) {
+        if (executableOperation != null)
+            context.taskQueues.add(executableOperation);
     }
+//    @Override
+//    public void DISTRIBUTE(Operation executableOperation, Context context) {
+//        if (task != null) {
+//            if (!task.hasChildren()) {
+//                context.IsolatedOC.add(task);
+//            } else {
+//                context.OCwithChildren.add(task);
+//            }
+//        }
+//    }
 
     /**
      * Register an operation to queue.
