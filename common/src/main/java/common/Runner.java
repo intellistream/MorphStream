@@ -124,7 +124,7 @@ public abstract class Runner implements IRunner {
     public Integer Ratio_of_Transaction_Aborts = 0;
 
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
-    public Integer numberOfDLevels = 8;
+    public Integer numberOfDLevels = 1024;
 
 
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")

@@ -84,57 +84,86 @@ def DrawFigure(xvalues, yvalues, legend_labels, x_label, y_label, filename, allo
 
 
 def ReadFile(x_axis, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio):
-    w, h = 7, len(x_axis)
+    # w, h = 8, len(x_axis)
+    w, h = 3, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for tthread in x_axis:
-        events = tthread * batchInterval
-        gs_path = getPath("GS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
-        lines = open(gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[0].append(float(throughput))
+    # for tthread in x_axis:
+    #     events = tthread * batchInterval
+    #     gs_path = getPath("GS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+    #     lines = open(gs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[0].append(float(throughput))
 
-    for tthread in x_axis:
-        events = tthread * batchInterval
-        bfs_path = getPath("BFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
-        lines = open(bfs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[1].append(float(throughput))
+    # for tthread in x_axis:
+    #     events = tthread * batchInterval
+    #     bfs_path = getPath("BFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+    #     lines = open(bfs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[1].append(float(throughput))
 
-    for tthread in x_axis:
-        events = tthread * batchInterval
-        dfs_path = getPath("DFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
-        lines = open(dfs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[2].append(float(throughput))
+    # for tthread in x_axis:
+    #     events = tthread * batchInterval
+    #     dfs_path = getPath("DFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+    #     lines = open(dfs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[2].append(float(throughput))
+
+    # for tthread in x_axis:
+    #     events = tthread * batchInterval
+    #     op_gs_path = getPath("OPGS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+    #     lines = open(op_gs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[3].append(float(throughput))
+
+    # for tthread in x_axis:
+    #     events = tthread * batchInterval
+    #     op_bfs_path = getPath("OPBFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+    #     lines = open(op_bfs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[4].append(float(throughput))
+
+    # for tthread in x_axis:
+    #     events = tthread * batchInterval
+    #     op_dfs_path = getPath("OPDFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+    #     lines = open(op_dfs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[5].append(float(throughput))
+
+    # for tthread in x_axis:
+    #     events = tthread * batchInterval
+    #     op_dfs_path = getPath("TStream", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+    #     lines = open(op_dfs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[6].append(float(throughput))
+
+    # for tthread in x_axis:
+    #     events = tthread * batchInterval
+    #     op_dfs_path = getPath("PAT", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+    #     lines = open(op_dfs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[7].append(float(throughput))
 
     for tthread in x_axis:
         events = tthread * batchInterval
         op_gs_path = getPath("OPGS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
-        y[3].append(float(throughput))
+        y[0].append(float(throughput))
 
     for tthread in x_axis:
         events = tthread * batchInterval
-        op_bfs_path = getPath("OPBFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
-        lines = open(op_bfs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[4].append(float(throughput))
-
-    for tthread in x_axis:
-        events = tthread * batchInterval
-        op_dfs_path = getPath("OPDFS", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+        op_dfs_path = getPath("TStream", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
-        y[5].append(float(throughput))
+        y[1].append(float(throughput))
 
     for tthread in x_axis:
         events = tthread * batchInterval
         op_dfs_path = getPath("PAT", events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
-        y[6].append(float(throughput))
+        y[2].append(float(throughput))
 
     print(y)
 
@@ -191,32 +220,44 @@ def ReadFileWithAbort(x_axis, batchInterval, deposit_ratio, key_skewness, overla
 
 
 def getPath(algo, events, tthread, deposit_ratio, key_skewness, overlap_ratio, abort_ratio):
-    return FILE_FOLER + '/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}'\
+    return FILE_FOLER + '/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}' \
         .format(algo, tthread, events, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
 
 
 if __name__ == '__main__':
     deposit_ratio = 0
-    key_skewness = 0
-    overlap_ratio = 10
+    key_skewness = 60
+    overlap_ratio = 0
     abort_ratio = 0
     batchInterval = 10240
     # for deposit_ratio in [0, 25, 50, 75, 100]:
     # for key_skewness in [0, 25, 50]:
     # for overlap_ratio in [0, 25, 50]:
-    for batchInterval in [1024, 2048, 4096, 8192, 10240]:
-        x_value = [1, 2, 4, 8, 16, 24]
-        legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
-        x_axis = [x_value] * len(legend_labels)
-        y_axis = ReadFile(x_value, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
-        legend = True
-        DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)", "comparison_b{}_{}_{}_{}_{}"
-                    .format(batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio),
-                    legend)
+    # for batchInterval in [10240]:
 
-        legend_labels = ["$GSA_{OC}$", "$BFSA_{OC}$", "$DFSA_{OC}$", "$GSA_{OP}$", "$BFSA_{OP}$", "$DFSA_{OP}$"]
-        x_axis = [x_value] * len(legend_labels)
-        y_axis = ReadFileWithAbort(x_value, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
-        DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)",
-                    "comparison_with_abort_b{}_{}_{}_{}_{}"
-                    .format(batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio), legend)
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "d:k:o:a:b:")
+    except getopt.GetoptError:
+        print("Error")
+
+    for opt, arg in opts:
+        if opt in ['-d']:
+            deposit_ratio = int(arg)
+        elif opt in ['-k']:
+            key_skewness = int(arg)
+        elif opt in ['-o']:
+            overlap_ratio = int(arg)
+        elif opt in ['-a']:
+            abort_ratio = int(arg)
+        elif opt in ['-b']:
+            batchInterval = int(arg)
+
+    x_value = [1, 2, 4, 8, 16, 24, 48]
+    # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "TStream", "PAT"]
+    legend_labels = ["TStream+", "TStream", "PAT"]
+    x_axis = [x_value] * len(legend_labels)
+    y_axis = ReadFile(x_value, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio)
+    legend = True
+    DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)", "overview_b{}_{}_{}_{}_{}"
+               .format(batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio),
+               legend)

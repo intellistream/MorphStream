@@ -185,10 +185,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
-//        System.out.println(threadId + " first explore tpg");
 
         INITIALIZE(context);
-//        System.out.println(threadId + " first explore tpg complete, start to process");
 
         do {
             MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);

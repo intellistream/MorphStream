@@ -15,6 +15,8 @@ import transaction.function.Condition;
 import transaction.function.Function;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,14 +30,14 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public final OPSchedulerContext context;
     public final String pKey;
 
-    private final Queue<Operation> ld_descendant_operations;
-    private final Queue<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
-    private final Queue<Operation> td_children; // the functional dependencies ops to be executed after this op.
-    private final Queue<Operation> ld_children; // the functional dependencies ops to be executed after this op.
-    private final Queue<Operation> ld_spec_children; // speculative children to notify.
-    private final Queue<Operation> fd_parents; // the functional dependencies ops to be executed in advance
-    private final Queue<Operation> td_parents; // the functional dependencies ops to be executed in advance
-    private final Queue<Operation> ld_parents; // the functional dependencies ops to be executed in advance
+    private final Deque<Operation> ld_descendant_operations;
+    private final Deque<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
+    private final Deque<Operation> td_children; // the functional dependencies ops to be executed after this op.
+    private final Deque<Operation> ld_children; // the functional dependencies ops to be executed after this op.
+    private final Deque<Operation> ld_spec_children; // speculative children to notify.
+    private final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance
+    private final Deque<Operation> td_parents; // the functional dependencies ops to be executed in advance
+    private final Deque<Operation> ld_parents; // the functional dependencies ops to be executed in advance
     private final OperationMetadata operationMetadata;
     private OperationStateType operationState;
     // operation id under a transaction.
@@ -172,7 +174,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         if (type.equals(DependencyType.FD)) {
             this.fd_children.add(operation);
         } else if (type.equals(DependencyType.LD)) {
-            this.ld_children.clear();
             this.ld_children.add(operation);
         } else if (type.equals(DependencyType.SP_LD)) {
             this.ld_spec_children.add(operation);

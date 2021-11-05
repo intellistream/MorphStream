@@ -8,10 +8,7 @@ import scheduler.oplevel.context.OPGSTPGContext;
 import scheduler.oplevel.impl.OPScheduler;
 import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import scheduler.oplevel.struct.Operation;
-import scheduler.oplevel.struct.OperationChain;
 import utils.SOURCE_CONTROL;
-
-import static content.common.CommonMetaTypes.AccessType.*;
 
 public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<Context, Operation> {
     private static final Logger log = LoggerFactory.getLogger(OPGSScheduler.class);

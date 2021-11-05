@@ -17,8 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
+import static common.CONTROL.*;
 
 /**
  * \textbf{Workload Configurations.}
@@ -58,10 +57,11 @@ public class TPGDataGenerator extends DataGenerator {
 
     private final Random random = new Random(0); // the transaction type decider
     public transient FastZipfGenerator p_generator; // partition generator
-    HashMap<Long, Integer> nGeneratedAccountIds = new HashMap<>();
-    HashMap<Long, Integer> nGeneratedAssetIds = new HashMap<>();
+    private final HashMap<Integer, Integer> nGeneratedAccountIds = new HashMap<>();
+    private final HashMap<Integer, Integer> nGeneratedAssetIds = new HashMap<>();
     private ArrayList<SLEvent> events;
     private int eventID = 0;
+    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
     public TPGDataGenerator(TPGDataGeneratorConfig dataConfig) {
         super(dataConfig);
@@ -74,6 +74,12 @@ public class TPGDataGenerator extends DataGenerator {
         Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
 
         int nKeyState = dataConfig.getnKeyStates();
+
+        // allocate levels for each key, to prevent circular.
+        for (int i = 0; i < nKeyState; i++) {
+            idToLevel.put(i, random.nextInt(512));
+        }
+
         events = new ArrayList<>(nTuples);
         // zipf state access generator
         accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
@@ -153,10 +159,10 @@ public class TPGDataGenerator extends DataGenerator {
         assert srcAst != dstAst;
 
         // just for stats record
-        nGeneratedAccountIds.put((long) srcAcc, nGeneratedAccountIds.getOrDefault((long) srcAcc, 0) + 1);
-        nGeneratedAccountIds.put((long) dstAcc, nGeneratedAccountIds.getOrDefault((long) dstAcc, 0) + 1);
-        nGeneratedAssetIds.put((long) srcAst, nGeneratedAccountIds.getOrDefault((long) srcAst, 0) + 1);
-        nGeneratedAssetIds.put((long) dstAst, nGeneratedAccountIds.getOrDefault((long) dstAst, 0) + 1);
+        nGeneratedAccountIds.put(srcAcc, nGeneratedAccountIds.getOrDefault((long) srcAcc, 0) + 1);
+        nGeneratedAccountIds.put(dstAcc, nGeneratedAccountIds.getOrDefault((long) dstAcc, 0) + 1);
+        nGeneratedAssetIds.put(srcAst, nGeneratedAccountIds.getOrDefault((long) srcAst, 0) + 1);
+        nGeneratedAssetIds.put(dstAst, nGeneratedAccountIds.getOrDefault((long) dstAst, 0) + 1);
         SLEvent t;
         if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
             t = new SLTransferEvent(eventID, srcAcc, srcAst, dstAcc, dstAst, 100000000, 100000000);
@@ -187,8 +193,8 @@ public class TPGDataGenerator extends DataGenerator {
         }
 
         // just for stats record
-        nGeneratedAccountIds.put((long) acc, nGeneratedAccountIds.getOrDefault((long) acc, 0) + 1);
-        nGeneratedAssetIds.put((long) ast, nGeneratedAccountIds.getOrDefault((long) ast, 0) + 1);
+        nGeneratedAccountIds.put(acc, nGeneratedAccountIds.getOrDefault((long) acc, 0) + 1);
+        nGeneratedAssetIds.put(ast, nGeneratedAccountIds.getOrDefault((long) ast, 0) + 1);
 
         SLEvent t = new SLDepositEvent(eventID, acc, ast);
 
@@ -206,9 +212,16 @@ public class TPGDataGenerator extends DataGenerator {
         keys[0] = getKey(zipfGeneratorSrc, partitionSrc, generatedKeys);
         keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
 
-        while (keys[0] == keys[1]) {
-            keys[0] = getKey(zipfGeneratorSrc, partitionDst, generatedKeys);
-            keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
+        if (isCyclic) { // whether to generate acyclic input stream.
+            while (keys[0] == keys[1]) {
+                keys[0] = getKey(zipfGeneratorSrc, partitionDst, generatedKeys);
+                keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
+            }
+        } else {
+            while (keys[0] == keys[1] || idToLevel.get(keys[0]) >= idToLevel.get(keys[1])) {
+                keys[0] = getKey(zipfGeneratorSrc, partitionDst, generatedKeys);
+                keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
+            }
         }
 
         generatedKeys.add(keys[0]);
@@ -242,9 +255,16 @@ public class TPGDataGenerator extends DataGenerator {
         keys[0] = getKey(zipfGenerator, generatedKeys);
         keys[1] = getKey(zipfGenerator, generatedKeys);
 
-        while (keys[0] == keys[1]) {
-            keys[0] = getKey(zipfGenerator, generatedKeys);
-            keys[1] = getKey(zipfGenerator, generatedKeys);
+        if (isCyclic) {
+            while (keys[0] == keys[1]) {
+                keys[0] = getKey(zipfGenerator, generatedKeys);
+                keys[1] = getKey(zipfGenerator, generatedKeys);
+            }
+        } else {
+            while (keys[0] == keys[1] || idToLevel.get(keys[0]) >= idToLevel.get(keys[1])) {
+                keys[0] = getKey(zipfGenerator, generatedKeys);
+                keys[1] = getKey(zipfGenerator, generatedKeys);
+            }
         }
 
         generatedKeys.add(keys[0]);
