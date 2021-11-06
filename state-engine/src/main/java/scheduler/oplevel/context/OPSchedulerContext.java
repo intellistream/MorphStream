@@ -35,6 +35,13 @@ public abstract class OPSchedulerContext implements SchedulerContext {
         batchedOperations.clear();
     }
 
+    public void redo() {
+        requests.clear();
+        scheduledOPs = 0;
+        operations.clear();
+        batchedOperations.clear();
+    }
+
     public void push(Request request) {
         requests.push(request);
     }

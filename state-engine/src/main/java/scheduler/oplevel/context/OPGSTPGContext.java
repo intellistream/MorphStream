@@ -29,7 +29,14 @@ public class OPGSTPGContext extends OPSchedulerContext {
         taskQueues.clear();
         IsolatedOC.clear();
         OCwithChildren.clear();
+    }
 
+    @Override
+    public void redo() {
+        super.redo();
+        taskQueues.clear();
+        IsolatedOC.clear();
+        OCwithChildren.clear();
     }
 
     @Override

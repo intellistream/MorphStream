@@ -30,6 +30,16 @@ public class OPLayeredContext extends OPSchedulerContext {
     public void reset() {
         super.reset();
         this.allocatedLayeredOCBucket.clear();
+        currentLevel = 0;
+        currentLevelIndex = 0;
+        maxLevel = 0;
+        layerBuildHelperQueue.clear();
+    }
+
+    public void redo() {
+        super.redo();
+        currentLevel = 0;
+        currentLevelIndex = 0;
     }
 
     @Override

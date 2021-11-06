@@ -20,12 +20,6 @@ public class OPGSTPGContextWithAbort extends OPGSTPGContext {
     }
 
     @Override
-    public void reset() {
-        super.reset();
-        taskQueues.clear();
-    }
-
-    @Override
     public OperationChain createTask(String tableName, String pKey) {
         return new OperationChain(tableName, pKey);
     }
