@@ -244,6 +244,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
     public void reset() {
+        isExecuted = false;
         ocParentsCount.set(ocParents.size());
     }
 

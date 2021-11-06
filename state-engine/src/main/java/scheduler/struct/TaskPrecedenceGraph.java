@@ -53,7 +53,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         threadToOCs.remove(context.thisThreadId);
-        this.setOCs(context);
+//        this.setOCs(context);
     }
 
     /**
