@@ -28,4 +28,10 @@ public class TStreamScheduler extends GSScheduler {
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
+
+    @Override
+    public void REINITIALIZE(GSTPGContext context) {
+        tpg.tStreamReExplore(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+    }
 }

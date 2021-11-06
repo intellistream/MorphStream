@@ -34,6 +34,13 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     }
 
     @Override
+    public void redo() {
+        super.redo();
+        currentLevel = 0;
+        currentLevelIndex=0;
+    }
+
+    @Override
     public SchedulingUnit createTask(String tableName, String pKey, long bid) {
         throw new UnsupportedOperationException("Unsupported.");
     }

@@ -1,8 +1,11 @@
 package scheduler.impl.nonlayered;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContext;
+import scheduler.impl.OCScheduler;
 import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
@@ -11,7 +14,10 @@ import utils.SOURCE_CONTROL;
 import java.util.ArrayList;
 import java.util.List;
 
+import static common.CONTROL.enable_log;
+
 public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, GSOperationChain> {
+    private static final Logger log = LoggerFactory.getLogger(GSScheduler.class);
 
     public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
@@ -27,6 +33,48 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
+    }
+
+    public void REINITIALIZE(GSTPGContext context) {
+        tpg.secondTimeExploreTPG(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+    }
+
+    @Override
+    public void start_evaluation(GSTPGContext context, long mark_ID, int num_events) {
+        int threadId = context.thisThreadId;
+//        System.out.println(threadId + " first explore tpg");
+
+        INITIALIZE(context);
+//        System.out.println(threadId + " first explore tpg complete, start to process");
+
+        do {
+            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+            EXPLORE(context);
+            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            PROCESS(context, mark_ID);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+        } while (!FINISHED(context));
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        if (needAbortHandling) {
+            if (enable_log) {
+                log.info("need abort handling, rollback and redo");
+            }
+            // identify all aborted operations and transit the state to aborted.
+            REINITIALIZE(context);
+            // rollback to the starting point and redo.
+            do {
+                MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+                EXPLORE(context);
+                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+                MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+                PROCESS(context, mark_ID);
+                MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            } while (!FINISHED(context));
+        }
+        RESET(context);//
+        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 
     /**

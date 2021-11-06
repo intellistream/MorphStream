@@ -110,13 +110,14 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             synchronized (operation.success) {
                 operation.success[0]++;
             }
-        } else {
-            if (enable_log) log.info("++++++ operation failed: "
-                    + sourceAccountBalance + "-" + operation.condition.arg1
-                    + " : " + sourceAccountBalance + "-" + operation.condition.arg2
-//                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
-                    + " condition: " + operation.condition);
         }
+//        else {
+//            if (enable_log) log.debug("++++++ operation failed: "
+//                    + sourceAccountBalance + "-" + operation.condition.arg1
+//                    + " : " + sourceAccountBalance + "-" + operation.condition.arg2
+////                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
+//                    + " condition: " + operation.condition);
+//        }
     }
 
     /**

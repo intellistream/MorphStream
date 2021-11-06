@@ -1,7 +1,6 @@
 package scheduler.oplevel.impl;
 
 
-import content.T_StreamContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -21,7 +20,6 @@ import utils.SOURCE_CONTROL;
 import utils.UDF;
 
 import java.util.List;
-import java.util.Map;
 
 import static content.common.CommonMetaTypes.AccessType.*;
 
@@ -78,7 +76,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         int success;
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             success = operation.success[0];
-            CT_Transfer_Fun(operation, mark_ID, clean);
+            Transfer_Fun(operation, mark_ID, clean);
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
@@ -89,13 +87,13 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
             success = operation.success[0];
-            CT_Transfer_Fun(operation, mark_ID, clean);
+            Transfer_Fun(operation, mark_ID, clean);
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {
                 operation.isFailed = true;
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
-            CT_Depo_Fun(operation, mark_ID, clean);
+            Depo_Fun(operation, mark_ID, clean);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -104,7 +102,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     // DD: Transfer event processing
-    protected void CT_Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
 //        if (preValues == null) {
 //            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
@@ -133,16 +131,17 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             synchronized (operation.success) {
                 operation.success[0]++;
             }
-        } else {
-            log.info("++++++ operation failed: "
-                    + sourceAccountBalance + "-" + operation.condition.arg1
-                    + " : " + sourceAccountBalance + "-" + operation.condition.arg2
-//                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
-                    + " condition: " + operation.condition);
         }
+//        else {
+//            log.info("++++++ operation failed: "
+//                    + sourceAccountBalance + "-" + operation.condition.arg1
+//                    + " : " + sourceAccountBalance + "-" + operation.condition.arg2
+////                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
+//                    + " condition: " + operation.condition);
+//        }
     }
 
-    protected void CT_Depo_Fun(AbstractOperation operation, long mark_ID, boolean clean) {
+    protected void Depo_Fun(AbstractOperation operation, long mark_ID, boolean clean) {
         SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
         List<DataBox> values = srcRecord.getValues();
         //apply function to modify..

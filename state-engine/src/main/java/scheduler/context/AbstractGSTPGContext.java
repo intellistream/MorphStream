@@ -27,6 +27,13 @@ public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, Sc
     }
 
     @Override
+    public void redo() {
+        super.redo();
+        IsolatedOC.clear();
+        OCwithChildren.clear();
+    }
+
+    @Override
     public SchedulingUnit createTask(String tableName, String pKey, long bid) {
         throw new UnsupportedOperationException("Unsupported.");
     }

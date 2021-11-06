@@ -8,6 +8,8 @@ import scheduler.context.AbstractGSTPGContext;
 import scheduler.context.GSTPGContext;
 import scheduler.context.LayeredTPGContext;
 import scheduler.context.OCSchedulerContext;
+import scheduler.oplevel.struct.MetaTypes;
+import scheduler.oplevel.struct.Operation;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
@@ -18,7 +20,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
-import static scheduler.impl.OCScheduler.getTaskId;
 
 /**
  * TPG  -> Partition -> Key:OperationChain -> Operation-Operation-Operation...
@@ -192,6 +193,44 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
     }
 
+    public void secondTimeExploreTPG(Context context) {
+        context.redo();
+        for (SchedulingUnit oc : threadToOCs.get(context.thisThreadId)) {
+            if (!oc.getOperations().isEmpty()) {
+                resetOC(oc);
+            }
+        }
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+        if (context instanceof LayeredTPGContext) {
+            if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
+        } else if (context instanceof GSTPGContext) {
+            for (SchedulingUnit oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
+                    if (!((AbstractGSOperationChain) oc).context.equals(context)) {
+                        throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
+                    }
+                    if (!oc.hasParents()) {
+                        ((AbstractGSTPGContext) context).getListener().onOcRootStart(oc);
+                    }
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException();
+        }
+        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+    }
+
+    private void resetOC(SchedulingUnit oc) {
+        oc.reset();
+        for (ExecutionUnit op : oc.getOperations()) {
+            op.stateTransition(MetaTypes.OperationStateType.BLOCKED);
+            if (op.isFailed) { // transit state to aborted.
+                op.stateTransition(MetaTypes.OperationStateType.ABORTED);
+            }
+        }
+    }
+
     public void tStreamExplore(Context context) {
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
 //        assert context.totalOsToSchedule == ocs.size();
@@ -224,6 +263,39 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         assert context instanceof AbstractGSTPGContext;
         for (SchedulingUnit oc : nonNullOCs) {
             context.totalOsToSchedule += oc.getOperations().size();
+            context.operationChains.add(oc);
+            if (!((AbstractGSOperationChain) oc).context.equals(context)) {
+                throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
+            }
+            if (!oc.hasParents()) {
+                ((AbstractGSTPGContext) context).getListener().onOcRootStart(oc);
+            }
+        }
+        if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
+    }
+
+
+    public void tStreamReExplore(Context context) {
+        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+//        assert context.totalOsToSchedule == ocs.size();
+        tStreamReSubmit(context, threadToOCs.get(context.thisThreadId));
+        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+    }
+
+    private void tStreamReSubmit(Context context, Collection<SchedulingUnit> ocs) {
+        context.redo();
+        ArrayDeque<SchedulingUnit> nonNullOCs = new ArrayDeque<>();
+        HashSet<OperationChain<ExecutionUnit>> circularOCs = new HashSet<>();
+        for (SchedulingUnit oc : ocs) {
+            if (!oc.getOperations().isEmpty()) {
+                resetOC(oc);
+                nonNullOCs.add(oc);
+                circularOCs.add(oc);
+            }
+        }
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
+        assert context instanceof AbstractGSTPGContext;
+        for (SchedulingUnit oc : nonNullOCs) {
             context.operationChains.add(oc);
             if (!((AbstractGSOperationChain) oc).context.equals(context)) {
                 throw new RuntimeException("context of the OC should always be the same as those who submit the OC");

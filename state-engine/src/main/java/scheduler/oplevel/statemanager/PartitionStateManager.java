@@ -110,20 +110,20 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     private void executedAction(Operation operation) {
         // put child to the targeting state manager state transitiion queue.
         for (Operation child : operation.getChildren(MetaTypes.DependencyType.TD)) {
-//            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.TD, OperationStateType.EXECUTED);
-            this.opSignalQueue.addFirst(new OnParentUpdatedSignal(child, MetaTypes.DependencyType.TD, OperationStateType.EXECUTED));//
+            this.onOpParentExecuted(child, MetaTypes.DependencyType.TD, OperationStateType.EXECUTED);
+//            this.opSignalQueue.addFirst(new OnParentUpdatedSignal(child, MetaTypes.DependencyType.TD, OperationStateType.EXECUTED));//
         }
         for (Operation child : operation.getChildren(MetaTypes.DependencyType.LD)) {
-//            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.LD, OperationStateType.EXECUTED);
-            this.opSignalQueue.addFirst(new OnParentUpdatedSignal(child, MetaTypes.DependencyType.LD, OperationStateType.EXECUTED));//
+            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.LD, OperationStateType.EXECUTED);
+//            this.opSignalQueue.addFirst(new OnParentUpdatedSignal(child, MetaTypes.DependencyType.LD, OperationStateType.EXECUTED));//
         }
         for (Operation child : operation.getChildren(MetaTypes.DependencyType.FD)) {
-//            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.FD, OperationStateType.EXECUTED);
-            if (operation.context.thisThreadId != child.context.thisThreadId) {
-                child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.FD, OperationStateType.EXECUTED);
-            } else {
-                this.opSignalQueue.addFirst(new OnParentUpdatedSignal(child, MetaTypes.DependencyType.FD, OperationStateType.EXECUTED));//
-            }
+            child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.FD, OperationStateType.EXECUTED);
+//            if (operation.context.thisThreadId != child.context.thisThreadId) {
+//                child.context.getListener().onOpParentExecuted(child, MetaTypes.DependencyType.FD, OperationStateType.EXECUTED);
+//            } else {
+//                this.opSignalQueue.addFirst(new OnParentUpdatedSignal(child, MetaTypes.DependencyType.FD, OperationStateType.EXECUTED));//
+//            }
         }
         executableTaskListener.onOPFinalized(operation);
     }

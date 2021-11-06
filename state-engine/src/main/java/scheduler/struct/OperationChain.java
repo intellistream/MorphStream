@@ -243,6 +243,10 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 //        this.tpg = tpg;
     }
 
+    public void reset() {
+        ocParentsCount.set(ocParents.size());
+    }
+
     public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {
         public OperationChain<ExecutionUnit> potentialChildOC;
         public ExecutionUnit childOp;

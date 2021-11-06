@@ -32,6 +32,11 @@ public abstract class OCSchedulerContext<SchedulingUnit> implements SchedulerCon
         busyWaitQueue.clear();
     }
 
+    public void redo() {
+        scheduledOPs = 0;
+        busyWaitQueue.clear();
+    }
+
     public void push(Request request) {
         requests.push(request);
     }
