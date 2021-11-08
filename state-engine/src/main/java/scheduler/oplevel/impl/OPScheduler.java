@@ -16,6 +16,7 @@ import storage.TableRecord;
 import storage.datatype.DataBox;
 import transaction.function.DEC;
 import transaction.function.INC;
+import transaction.function.SUM;
 import utils.SOURCE_CONTROL;
 import utils.UDF;
 
@@ -28,9 +29,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
 
-    public OPScheduler(int totalThreads, int NUM_ITEMS) {
+    public OPScheduler(int totalThreads, int NUM_ITEMS, int app) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
-        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS);
+        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
     }
 
     /**
@@ -94,6 +95,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
             Depo_Fun(operation, mark_ID, clean);
+        } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
+            GrepSum_Fun(operation, mark_ID, clean);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -150,6 +153,30 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         UDF.randomDelay();
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+    }
+
+    protected void GrepSum_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        int keysLength = operation.condition_records.length;
+        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
+
+        long sum = 0;
+
+        for (int i = 0; i < keysLength; i++) {
+            preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
+            sum += preValues[i].getValues().get(1).getLong();
+        }
+
+        // read
+        SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+        // apply function
+        UDF.randomDelay();
+
+        if (operation.function instanceof SUM) {
+            tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
+        } else
+            throw new UnsupportedOperationException();
+        operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
     @Override

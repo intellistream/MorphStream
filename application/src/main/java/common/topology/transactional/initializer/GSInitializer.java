@@ -1,8 +1,13 @@
 package common.topology.transactional.initializer;
 
+import benchmark.DataHolder;
+import benchmark.datagenerator.DataGenerator;
+import benchmark.datagenerator.DataGeneratorConfig;
+import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGenerator;
+import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.param.MicroParam;
+import common.param.TxnEvent;
 import common.param.mb.MicroEvent;
 import db.Database;
 import db.DatabaseException;
@@ -14,120 +19,213 @@ import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
 import storage.datatype.IntDataBox;
+import storage.datatype.LongDataBox;
 import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.*;
 
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
 import static common.Constants.Event_Path;
-import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
-import static common.param.mb.MicroEvent.GenerateValue;
 import static profiler.Metrics.NUM_ACCESSES;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
-import static utils.PartitionHelper.getPartition_interval;
 
 public class GSInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(GSInitializer.class);
+    private final int numberOfStates;
+    private final int startingValue = 10000;
     //different R-W ratio.
     //just enable one of the decision array
     protected transient boolean[] read_decision;
     int i = 0;
+    private String dataRootPath;
+    private DataGenerator dataGenerator;
+    private final DataGeneratorConfig dataConfig;
+    private final int partitionOffset;
+    private final int NUM_ACCESS;
 
-    public GSInitializer(Database db, double theta, int tthread, Configuration config) {
+
+    public GSInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
-        floor_interval = (int) Math.floor(NUM_ITEMS / (double) tthread);//NUM_ITEMS / tthread;
-        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
-        if (ratio_of_read == 0) {
-            read_decision = new boolean[]{false, false, false, false, false, false, false, false};// all write.
-        } else if (ratio_of_read == 0.25) {
-            read_decision = new boolean[]{false, false, false, false, false, false, true, true};//75% W, 25% R.
-        } else if (ratio_of_read == 0.5) {
-            read_decision = new boolean[]{false, false, false, false, true, true, true, true};//equal r-w ratio.
-        } else if (ratio_of_read == 0.75) {
-            read_decision = new boolean[]{false, false, true, true, true, true, true, true};//25% W, 75% R.
-        } else if (ratio_of_read == 1) {
-            read_decision = new boolean[]{true, true, true, true, true, true, true, true};// all read.
-        } else {
-            System.exit(-1);
-        }
-        if (enable_log)
-            LOG.info("ratio_of_read: " + ratio_of_read + "\tREAD DECISIONS: " + Arrays.toString(read_decision));
-        configure_store(theta, tthread, NUM_ITEMS);
+        floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
+        this.dataRootPath = config.getString("rootFilePath");
+        this.partitionOffset = numberOfStates / tthread;
+        this.NUM_ACCESS = config.getInt("NUM_ACCESS");
+        this.numberOfStates = numberOfStates;
+        // set up generator
+        configure_store(theta, tthread, numberOfStates);
+        createTPGGenerator(config);
+        dataConfig = dataGenerator.getDataConfig();
+    }
+
+    protected void createTPGGenerator(Configuration config) {
+
+        GSTPGDataGeneratorConfig dataConfig = new GSTPGDataGeneratorConfig();
+        dataConfig.initialize(config);
+
+        configurePath(dataConfig);
+        dataGenerator = new GSTPGDataGenerator(dataConfig);
     }
 
     /**
-     * "INSERT INTO MicroTable (key, value_list) VALUES (?, ?);"
+     * Control the input file path.
+     * TODO: think carefully which configuration shall vary.
+     *
+     * @param config
      */
-    private void insertMicroRecord(int key, String value, int pid, SpinLock[] spinlock_) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new IntDataBox(key));
-        values.add(new StringDataBox(value, value.length()));
-        SchemaRecord schemaRecord = new SchemaRecord(values);
+    /**
+     * Control the input file path.
+     * TODO: think carefully which configuration shall vary.
+     *
+     * @param dataConfig
+     */
+    private void configurePath(GSTPGDataGeneratorConfig dataConfig) {
+        MessageDigest digest;
+        String subFolder = null;
         try {
-            db.InsertRecord("MicroTable", new TableRecord(schemaRecord, pid, spinlock_));
+            digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes;
+            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d",
+                            dataConfig.getTotalThreads(),
+                            dataConfig.getTotalEvents(),
+                            dataConfig.getnKeyStates(),
+                            dataConfig.NUM_ACCESS,
+                            dataConfig.State_Access_Skewness,
+                            dataConfig.Ratio_of_Overlapped_Keys,
+                            dataConfig.Ratio_of_Transaction_Aborts)
+                        .getBytes(StandardCharsets.UTF_8));
+
+            subFolder = OsUtils.osWrapperPostFix(
+                    DatatypeConverter.printHexBinary(bytes));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        dataConfig.setRootPath(dataConfig.getRootPath() + OsUtils.OS_wrapper(subFolder));
+        dataConfig.setIdsPath(dataConfig.getIdsPath() + OsUtils.OS_wrapper(subFolder));
+        this.dataRootPath += OsUtils.OS_wrapper(subFolder);
+    }
+
+    /**
+     * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
+     * initial account value_list is 0...?
+     */
+    private void insertMicroRecord(String key, long value, int pid, SpinLock[] spinlock_) {
+        try {
+            if (spinlock_ != null)
+                db.InsertRecord("MicroTable", new TableRecord(Record(key, value), pid, spinlock_));
+            else
+                db.InsertRecord("MicroTable", new TableRecord(Record(key, value)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
 
-    private void insertMicroRecord(int key, String value) {
+    private SchemaRecord Record(String key, long value) {
         List<DataBox> values = new ArrayList<>();
-        values.add(new IntDataBox(key));
-        values.add(new StringDataBox(value, value.length()));
-        SchemaRecord schemaRecord = new SchemaRecord(values);
-        try {
-            db.InsertRecord("MicroTable", new TableRecord(schemaRecord));
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
+        values.add(new StringDataBox(key, key.length()));
+        values.add(new LongDataBox(value));
+        return new SchemaRecord(values);
+    }
+
+//    /**
+//     * "INSERT INTO MicroTable (key, value_list) VALUES (?, ?);"
+//     */
+//    private void insertMicroRecord(int key, String value, int pid, SpinLock[] spinlock_) {
+//        List<DataBox> values = new ArrayList<>();
+//        values.add(new IntDataBox(key));
+//        values.add(new StringDataBox(value, value.length()));
+//        SchemaRecord schemaRecord = new SchemaRecord(values);
+//        try {
+//            db.InsertRecord("MicroTable", new TableRecord(schemaRecord, pid, spinlock_));
+//        } catch (DatabaseException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    private void insertMicroRecord(int key, String value) {
+//        List<DataBox> values = new ArrayList<>();
+//        values.add(new IntDataBox(key));
+//        values.add(new StringDataBox(value, value.length()));
+//        SchemaRecord schemaRecord = new SchemaRecord(values);
+//        try {
+//            db.InsertRecord("MicroTable", new TableRecord(schemaRecord));
+//        } catch (DatabaseException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    @Override
+    public void loadDB(int thread_id, int NUM_TASK) {
+        loadDB(thread_id, null, NUM_TASK);
     }
 
     @Override
-    public void loadDB(int thread_id, int NUMTasks) {
-        int partition_interval = getPartition_interval();
+    public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
+        int partition_interval = (int) Math.ceil(numberOfStates / (double) NUM_TASK);
         int left_bound = thread_id * partition_interval;
         int right_bound;
-        if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
-            right_bound = NUM_ITEMS;
+        if (thread_id == NUM_TASK - 1) {//last executor need to handle left-over
+            right_bound = config.getInt("NUM_ITEMS");
         } else {
             right_bound = (thread_id + 1) * partition_interval;
         }
+        int pid;
+        String _key;
         for (int key = left_bound; key < right_bound; key++) {
-            String value = GenerateValue(key);
-            assert value.length() == VALUE_LEN;
-            insertMicroRecord(key, value);
+            pid = get_pid(partition_interval, key);
+            _key = String.valueOf(key);
+//            assert value.length() == VALUE_LEN;
+            insertMicroRecord(_key, startingValue , pid, spinlock);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
-    @Override
-    public void loadDB(int thread_id, SpinLock[] spinlock_, int NUMTasks) {
-        int partition_interval = getPartition_interval();
-        int left_bound = thread_id * partition_interval;
-        int right_bound;
-        if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
-            right_bound = NUM_ITEMS;
-        } else {
-            right_bound = (thread_id + 1) * partition_interval;
-        }
-        for (int key = left_bound; key < right_bound; key++) {
-            int pid = get_pid(partition_interval, key);
-            String value = GenerateValue(key);
-            assert value.length() == VALUE_LEN;
-            insertMicroRecord(key, value, pid, spinlock_);
-        }
-        if (enable_log)
-            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
-    }
+//    @Override
+//    public void loadDB(int thread_id, int NUMTasks) {
+//        int partition_interval = getPartition_interval();
+//        int left_bound = thread_id * partition_interval;
+//        int right_bound;
+//        if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
+//            right_bound = NUM_ITEMS;
+//        } else {
+//            right_bound = (thread_id + 1) * partition_interval;
+//        }
+//        for (int key = left_bound; key < right_bound; key++) {
+//            String value = GenerateValue(key);
+//            assert value.length() == VALUE_LEN;
+//            insertMicroRecord(key, value);
+//        }
+//        if (enable_log)
+//            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+//    }
+//
+//    @Override
+//    public void loadDB(int thread_id, SpinLock[] spinlock_, int NUMTasks) {
+//        int partition_interval = getPartition_interval();
+//        int left_bound = thread_id * partition_interval;
+//        int right_bound;
+//        if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
+//            right_bound = NUM_ITEMS;
+//        } else {
+//            right_bound = (thread_id + 1) * partition_interval;
+//        }
+//        for (int key = left_bound; key < right_bound; key++) {
+//            int pid = get_pid(partition_interval, key);
+//            String value = GenerateValue(key);
+//            assert value.length() == VALUE_LEN;
+//            insertMicroRecord(key, value, pid, spinlock_);
+//        }
+//        if (enable_log)
+//            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
+//    }
 
     @Override
     public void loadDB(SchedulerContext context, int thread_id, int NUMTasks) {
@@ -140,26 +238,82 @@ public class GSInitializer extends TableInitilizer {
     }
 
     @Override
-    public boolean Generate() throws IOException {
-//        double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
-//        this.number_partitions = Math.min(tthread, config.getInt("number_partitions"));
-//        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
-//        String event_path = Event_Path
-//                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-//                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEvents") * )
-//                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
-//                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
-//                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
-//                + OsUtils.OS_wrapper("NUM_ACCESSES=" + NUM_ACCESSES)
-//                + OsUtils.OS_wrapper("theta=" + theta)
-//                + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
-//        return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
-        throw new UnsupportedOperationException();
+    public boolean Generate() {
+        String folder = dataRootPath;
+        File file = new File(folder);
+        if (file.exists()) {
+            if (enable_log) LOG.info("Data already exists.. skipping data generation...");
+            return false;
+        }
+        file.mkdirs();
+
+        dataGenerator.generateStream();//prepare input events.
+        if (enable_log) LOG.info(String.format("Data Generator will dump data at %s.", dataRootPath));
+        dataGenerator.dumpGeneratedDataToFile();
+        if (enable_log) LOG.info("Data Generation is done...");
+        dataGenerator.clearDataStructures();
+        return true;
     }
 
     @Override
     protected void Load() throws IOException {
-        throw new UnsupportedOperationException();
+        int totalEvents = dataConfig.getTotalEvents();
+        boolean shufflingActive = dataConfig.getShufflingActive();
+        String folder = dataConfig.getRootPath();
+        File file = new File(folder + "events.txt");
+        int[] p_bids = new int[tthread];
+        if (file.exists()) {
+            if (enable_log) LOG.info("Reading transfer events...");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            loadMicroEvents(reader, totalEvents, shufflingActive, p_bids);
+            reader.close();
+        }
+    }
+
+    private void loadMicroEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException  {
+        String txn = reader.readLine();
+        int count = 0;
+//        int p_bids[] = new int[tthread];
+        while (txn != null) {
+            String[] split = txn.split(",");
+            int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
+            // construct bid array
+            HashMap<Integer, Integer> pids = new HashMap<>();
+            long[] keys = new long[NUM_ACCESS];
+            for (int i = 1; i < NUM_ACCESS+1; i++) {
+                keys[i-1] = Long.parseLong(split[i]);
+                pids.put((int) (keys[i-1] / partitionOffset), 0);
+            }
+            // construct event
+            MicroEvent event = new MicroEvent(
+                    Integer.parseInt(split[0]), //bid,
+                    npid, //pid
+                    Arrays.toString(p_bids), //bid_array
+                    Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
+                    pids.size(), // num_of_partition
+                    Arrays.toString(keys), // key_array
+                    NUM_ACCESS,
+                    false);
+            DataHolder.events.add(event);
+            if (enable_log) LOG.debug(String.format("%d deposit read...", count));
+            txn = reader.readLine();
+        }
+        if (enable_log) LOG.info("Done reading transfer events...");
+        if (shufflingActive) {
+            shuffleEvents(DataHolder.events, totalEvents);
+        }
+    }
+
+    private void shuffleEvents(ArrayList<TxnEvent> txnEvents, int totalEvents) {
+        Random random = new Random();
+        int index;
+        TxnEvent temp;
+        for (int i = totalEvents - 1; i > 0; i--) {
+            index = random.nextInt(i + 1);
+            temp = txnEvents.get(index);
+            txnEvents.set(index, txnEvents.get(i));
+            txnEvents.set(i, temp);
+        }
     }
 
     @Override
@@ -201,43 +355,6 @@ public class GSInitializer extends TableInitilizer {
                     + "\n");
         }
         w.close();
-    }
-
-    protected boolean next_read_decision() {
-        boolean rt = read_decision[i];
-        i++;
-        if (i == 8)
-            i = 0;
-        return rt;
-    }
-
-    /**
-     * Generate events according to the given parition_id.
-     *
-     * @param partition_id
-     * @param bid_array
-     * @param bid
-     * @param flag
-     * @return
-     */
-    protected MicroEvent generateEvent(int partition_id,
-                                       long[] bid_array, int number_of_partitions, long bid, boolean flag) {
-        int pid = partition_id;
-        MicroParam param = new MicroParam(NUM_ACCESSES);
-        Set keys = new HashSet();
-        int access_per_partition = (int) Math.ceil(NUM_ACCESSES / (double) number_of_partitions);
-        int counter = 0;
-        randomkeys(pid, param, keys, access_per_partition, counter, NUM_ACCESSES);
-        assert !enable_states_partition || verify(keys, partition_id, number_of_partitions);
-        return new MicroEvent(
-                param.keys(),
-                flag,
-                NUM_ACCESSES,
-                bid,
-                partition_id,
-                bid_array,
-                number_of_partitions
-        );
     }
 
     private RecordSchema MicroTableSchema() {

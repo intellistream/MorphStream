@@ -36,8 +36,8 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
     public final ConcurrentLinkedDeque<DFSOperation> failedOperations = new ConcurrentLinkedDeque<>();//aborted operations per thread.
     public final AtomicBoolean needAbortHandling = new AtomicBoolean(false);//if any operation is aborted during processing.
 
-    public DFSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public DFSSchedulerWithAbort(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override

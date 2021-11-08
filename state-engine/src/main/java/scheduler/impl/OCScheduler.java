@@ -15,6 +15,7 @@ import storage.TableRecord;
 import storage.datatype.DataBox;
 import transaction.function.DEC;
 import transaction.function.INC;
+import transaction.function.SUM;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 import utils.UDF;
@@ -30,9 +31,9 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context, SchedulingUnit, ExecutionUnit> tpg; // TPG to be maintained in this global instance.
 
-    protected OCScheduler(int totalThreads, int NUM_ITEMS) {
+    protected OCScheduler(int totalThreads, int NUM_ITEMS, int app) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
-        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS);
+        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
     }
 
     /**
@@ -138,6 +139,30 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
+    protected void GrepSum_Fun(ExecutionUnit operation, long previous_mark_ID, boolean clean) {
+        int keysLength = operation.condition_records.length;
+        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
+
+        long sum = 0;
+
+        for (int i = 0; i < keysLength; i++) {
+            preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
+            sum += preValues[i].getValues().get(1).getLong();
+        }
+
+        // read
+        SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+        // apply function
+        UDF.randomDelay();
+
+        if (operation.function instanceof SUM) {
+            tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
+        } else
+            throw new UnsupportedOperationException();
+        operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+    }
+
     /**
      * general operation execution entry method for all schedulers.
      *
@@ -167,40 +192,8 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
             Depo_Fun(operation, mark_ID, clean);
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    /**
-     * general operation execution entry method for all schedulers.
-     *
-     * @param operation
-     * @param mark_ID
-     * @param clean
-     */
-    public void execute(ExecutionUnit operation, long mark_ID, boolean clean, Context context) {
-        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
-            return; // return if the operation is already aborted
-        }
-        int success;
-        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
-            success = operation.success[0];
-            Transfer_Fun(operation, mark_ID, clean);
-            if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
-        } else if (operation.accessType.equals(READ_WRITE_COND)) {
-            success = operation.success[0];
-            Transfer_Fun(operation, mark_ID, clean);
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
-        } else if (operation.accessType.equals(READ_WRITE)) {
-            Depo_Fun(operation, mark_ID, clean);
+        } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
+            GrepSum_Fun(operation, mark_ID, clean);
         } else {
             throw new UnsupportedOperationException();
         }

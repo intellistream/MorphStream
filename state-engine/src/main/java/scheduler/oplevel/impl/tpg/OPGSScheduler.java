@@ -17,8 +17,8 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
 
     public boolean needAbortHandling = false;
 
-    public OPGSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public OPGSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override
@@ -108,6 +108,7 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
                             request.d_record, request.function, request.condition, request.condition_records, request.success);
                     break;
                 case READ_WRITE_COND_READ:
+                case READ_WRITE_COND_READN:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                     break;

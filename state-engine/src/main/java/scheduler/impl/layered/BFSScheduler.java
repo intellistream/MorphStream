@@ -22,8 +22,8 @@ import java.util.List;
  */
 public class BFSScheduler extends AbstractBFSScheduler<BFSLayeredTPGContext> {
 
-    public BFSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public BFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override

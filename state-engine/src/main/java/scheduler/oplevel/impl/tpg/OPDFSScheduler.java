@@ -5,17 +5,13 @@ import org.slf4j.LoggerFactory;
 import scheduler.oplevel.context.OPLayeredContext;
 import scheduler.oplevel.struct.MetaTypes;
 import scheduler.oplevel.struct.Operation;
-import scheduler.struct.layered.dfs.DFSOperationChain;
-import utils.SOURCE_CONTROL;
-
-import java.util.Collection;
 
 public class OPDFSScheduler<Context extends OPLayeredContext> extends OPLayeredScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OPDFSScheduler.class);
 
 
-    public OPDFSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public OPDFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     /**

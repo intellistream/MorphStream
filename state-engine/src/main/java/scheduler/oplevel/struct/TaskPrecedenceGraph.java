@@ -39,14 +39,19 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     public final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final int NUM_ITEMS;
+    private final int app;
     CyclicBarrier barrier;
     public final Map<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
     public final HashMap<Integer, Deque<OperationChain>> threadToOCs;
 
     public void reset(Context context) {
-        operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        if (app == 0) {
+            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 1) {
+            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        }
         threadToOCs.remove(context.thisThreadId);
 //        this.setOCs(context); // TODO: the short cut should be reset, but will take some time.
     }
@@ -54,17 +59,23 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     /**
      * @param totalThreads
      */
-    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS) {
+    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS, int app) {
         barrier = new CyclicBarrier(totalThreads);
         this.totalThreads = totalThreads;
         this.delta = delta;
         this.NUM_ITEMS = NUM_ITEMS;
         // all parameters in this class should be thread safe.
-        operationChains = new ConcurrentHashMap<>();
-        operationChains.put("accounts", new TableOCs(totalThreads));
-        operationChains.put("bookEntries", new TableOCs(totalThreads));
         threadToContextMap = new HashMap<>();
         threadToOCs = new HashMap<>();
+        this.app = app;
+        //create holder.
+        operationChains = new ConcurrentHashMap<>();
+        if (app == 0) {
+            operationChains.put("MicroTable", new TableOCs(totalThreads));
+        } else if (app == 1) {
+            operationChains.put("accounts", new TableOCs(totalThreads));
+            operationChains.put("bookEntries", new TableOCs(totalThreads));
+        }
     }
 
     /**
@@ -84,12 +95,18 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         String _key;
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
-            OperationChain accOC = context.createTask("accounts", _key);
-            OperationChain beOC = context.createTask("bookEntries", _key);
-            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, accOC);
-            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
-            ocs.add(accOC);
-            ocs.add(beOC);
+            if (app == 0) {
+                OperationChain gsOC = context.createTask("MicroTable", _key);
+                operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
+                ocs.add(gsOC);
+            } else if (app == 1) {
+                OperationChain accOC = context.createTask("accounts", _key);
+                OperationChain beOC = context.createTask("bookEntries", _key);
+                operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, accOC);
+                operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
+                ocs.add(accOC);
+                ocs.add(beOC);
+            }
         }
         threadToOCs.put(context.thisThreadId, ocs);
     }

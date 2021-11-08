@@ -17,8 +17,8 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
     public final ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
-    public GSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public GSSchedulerWithAbort(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override

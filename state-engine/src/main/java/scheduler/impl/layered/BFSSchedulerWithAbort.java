@@ -33,8 +33,8 @@ public class BFSSchedulerWithAbort extends AbstractBFSScheduler<BFSLayeredTPGCon
     public final AtomicBoolean needAbortHandling = new AtomicBoolean(false);//if any operation is aborted during processing.
     public int targetRollbackLevel = 0;//shared data structure.
 
-    public BFSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public BFSSchedulerWithAbort(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override

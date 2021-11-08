@@ -22,8 +22,8 @@ import java.util.List;
 public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
 
 
-    public DFSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public DFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     /**

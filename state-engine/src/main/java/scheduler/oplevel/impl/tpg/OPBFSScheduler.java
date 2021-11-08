@@ -10,8 +10,8 @@ public class OPBFSScheduler<Context extends OPLayeredContext> extends OPLayeredS
     private static final Logger log = LoggerFactory.getLogger(OPBFSScheduler.class);
 
 
-    public OPBFSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public OPBFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     /**

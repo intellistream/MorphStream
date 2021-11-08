@@ -47,11 +47,16 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     private final HashMap<Integer, Deque<SchedulingUnit>> threadToOCs;
     CyclicBarrier barrier;
     private int maxLevel = 0; // just for layered scheduling
+    private final int app;
 
     public void reset(Context context) {
         //reset holder.
-        operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        if (app == 0) {
+            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 1) {
+            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        }
         threadToOCs.remove(context.thisThreadId);
 //        this.setOCs(context);
     }
@@ -59,20 +64,25 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     /**
      * @param totalThreads
      * @param delta
+     * @param app
      */
-    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS) {
+    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS, int app) {
         barrier = new CyclicBarrier(totalThreads);
         this.totalThreads = totalThreads;
         this.delta = delta;
         this.NUM_ITEMS = NUM_ITEMS;
-        //create holder.
-        operationChains = new ConcurrentHashMap<>();
-        operationChains.put("accounts", new TableOCs<>(totalThreads));
-        operationChains.put("bookEntries", new TableOCs<>(totalThreads));
         threadToContextMap = new HashMap<>();
         threadToOCs = new HashMap<>();
         //shared data structure.
-        ConcurrentHashMap<Integer, ConcurrentSkipListSet<ExecutionUnit>> sortedOperations = new ConcurrentHashMap<>();
+        this.app = app;
+        //create holder.
+        operationChains = new ConcurrentHashMap<>();
+        if (app == 0) {
+            operationChains.put("MicroTable", new TableOCs<>(totalThreads));
+        } else if (app == 1) {
+            operationChains.put("accounts", new TableOCs<>(totalThreads));
+            operationChains.put("bookEntries", new TableOCs<>(totalThreads));
+        }
     }
 
     /**
@@ -92,12 +102,20 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         String _key;
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
-            SchedulingUnit accOC = context.createTask("accounts", _key, 0);
-            SchedulingUnit beOC = context.createTask("bookEntries", _key, 0);
-            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, accOC);
-            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
-            ocs.add(accOC);
-            ocs.add(beOC);
+
+            if (app == 0) {
+                SchedulingUnit gsOC = context.createTask("MicroTable", _key, 0);
+                operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
+                ocs.add(gsOC);
+            } else if (app == 1) {
+                SchedulingUnit accOC = context.createTask("accounts", _key, 0);
+                SchedulingUnit beOC = context.createTask("bookEntries", _key, 0);
+                operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, accOC);
+                operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
+                ocs.add(accOC);
+                ocs.add(beOC);
+            }
+
         }
         threadToOCs.put(context.thisThreadId, ocs);
     }

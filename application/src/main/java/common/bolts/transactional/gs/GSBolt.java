@@ -12,6 +12,7 @@ import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
+import utils.UDF;
 
 import java.util.List;
 
@@ -37,7 +38,7 @@ public abstract class GSBolt extends TransactionalBolt {
     }
 
     protected boolean READ_CORE(MicroEvent event) {
-        for (int i = 0; i < NUM_ACCESSES; ++i) {
+        for (int i = 0; i < event.NUM_ACCESS; ++i) {
             SchemaRecordRef ref = event.getRecord_refs()[i];
             if (ref.isEmpty())
                 return false;//not yet processed.
@@ -52,7 +53,7 @@ public abstract class GSBolt extends TransactionalBolt {
     protected void READ_POST(MicroEvent event) throws InterruptedException {
         int sum = 0;
         if (POST_COMPUTE_COMPLEXITY != 0) {
-            for (int i = 0; i < NUM_ACCESSES; ++i) {
+            for (int i = 0; i < event.NUM_ACCESS; ++i) {
                 sum += event.result[i];
             }
             for (int j = 0; j < POST_COMPUTE_COMPLEXITY; ++j)
@@ -87,29 +88,36 @@ public abstract class GSBolt extends TransactionalBolt {
 
     protected void WRITE_CORE(MicroEvent event) {
 //        long start = System.nanoTime();
-        for (int i = 0; i < NUM_ACCESSES; ++i) {
+        long sum = 0;
+        DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
+        for (int i = 0; i < event.NUM_ACCESS; ++i) {
             List<DataBox> values = event.getValues()[i];
             SchemaRecordRef recordRef = event.getRecord_refs()[i];
+            UDF.randomDelay();
             SchemaRecord record = recordRef.getRecord();
-            List<DataBox> recordValues = record.getValues();
-            recordValues.get(1).setString(values.get(1).getString(), VALUE_LEN);
+//            List<DataBox> recordValues = record.getValues();
+//            recordValues.get(1).setString(values.get(1).getString(), VALUE_LEN);
+            DataBox Value_value = record.getValues().get(1);
+            final long Value = Value_value.getLong();
+            sum += Value;
         }
+        TargetValue_value.setLong(sum);
     }
 
-    protected void READ_LOCK_AHEAD(MicroEvent Event, TxnContext txnContext) throws DatabaseException {
-        for (int i = 0; i < NUM_ACCESSES; ++i)
+    protected void READ_LOCK_AHEAD(MicroEvent event, TxnContext txnContext) throws DatabaseException {
+        for (int i = 0; i < event.NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
-                    String.valueOf(Event.getKeys()[i]), Event.getRecord_refs()[i], READ_ONLY);
+                    String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_ONLY);
     }
 
-    protected void WRITE_LOCK_AHEAD(MicroEvent Event, TxnContext txnContext) throws DatabaseException {
-        for (int i = 0; i < NUM_ACCESSES; ++i)
+    protected void WRITE_LOCK_AHEAD(MicroEvent event, TxnContext txnContext) throws DatabaseException {
+        for (int i = 0; i < event.NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
-                    String.valueOf(Event.getKeys()[i]), Event.getRecord_refs()[i], READ_WRITE);
+                    String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_WRITE);
     }
 
     private boolean process_request_noLock(MicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
-        for (int i = 0; i < NUM_ACCESSES; ++i) {
+        for (int i = 0; i < event.NUM_ACCESS; ++i) {
             boolean rt = transactionManager.SelectKeyRecord_noLock(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
             if (rt) {
@@ -122,7 +130,7 @@ public abstract class GSBolt extends TransactionalBolt {
     }
 
     private boolean process_request(MicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
-        for (int i = 0; i < NUM_ACCESSES; ++i) {
+        for (int i = 0; i < event.NUM_ACCESS; ++i) {
             boolean rt = transactionManager.SelectKeyRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
             if (rt) {
                 assert event.getRecord_refs()[i].getRecord() != null;

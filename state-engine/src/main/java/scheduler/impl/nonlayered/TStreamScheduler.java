@@ -1,15 +1,7 @@
 package scheduler.impl.nonlayered;
 
-import profiler.MeasureTools;
-import scheduler.Request;
 import scheduler.context.GSTPGContext;
-import scheduler.oplevel.struct.MetaTypes;
-import scheduler.struct.gs.GSOperation;
-import scheduler.struct.gs.GSOperationChain;
 import utils.SOURCE_CONTROL;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class TStreamScheduler extends GSScheduler {
 
@@ -17,8 +9,8 @@ public class TStreamScheduler extends GSScheduler {
 
     public boolean needAbortHandling = false;
 
-    public TStreamScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public TStreamScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override

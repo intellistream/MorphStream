@@ -5,8 +5,8 @@ import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGenerator;
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
-import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGenerator;
-import benchmark.datagenerator.apps.SL.TPGTxnGenerator.TPGDataGeneratorConfig;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGenerator;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
@@ -38,8 +38,6 @@ import static transaction.State.configure_store;
 public class SLInitializer extends TableInitilizer {
 
     private static final Logger LOG = LoggerFactory.getLogger(SLInitializer.class);
-    private final int totalRecords;
-    private final String idsGenType;
     private final int numberOfStates;
     private final int startingBalance = 1000000;
     private final int partitionOffset;
@@ -47,15 +45,13 @@ public class SLInitializer extends TableInitilizer {
     private DataGenerator dataGenerator;
     private DataGeneratorConfig dataConfig;
 
-    public SLInitializer(Database db, String dataRootPath, int numberOfStates, double theta, int tthread, Configuration config) {
+    public SLInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
         this.numberOfStates = numberOfStates;
-        this.dataRootPath = dataRootPath;
         configure_store(theta, tthread, this.numberOfStates);
-        totalRecords = config.getInt("totalEvents");
-        idsGenType = config.getString("idGenType");
         this.partitionOffset = this.numberOfStates / tthread;
 
+        this.dataRootPath = config.getString("rootFilePath");
         String generatorType = config.getString("generator");
         switch (generatorType) {
             case "OCGenerator":
@@ -72,11 +68,11 @@ public class SLInitializer extends TableInitilizer {
 
     protected void createTPGGenerator(Configuration config) {
 
-        TPGDataGeneratorConfig dataConfig = new TPGDataGeneratorConfig();
+        SLTPGDataGeneratorConfig dataConfig = new SLTPGDataGeneratorConfig();
         dataConfig.initialize(config);
 
         configurePath(dataConfig);
-        dataGenerator = new TPGDataGenerator(dataConfig);
+        dataGenerator = new SLTPGDataGenerator(dataConfig);
     }
 
     protected void createLayeredOCGenerator(Configuration config) {
@@ -100,15 +96,15 @@ public class SLInitializer extends TableInitilizer {
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
-            if (dataConfig instanceof TPGDataGeneratorConfig)
+            if (dataConfig instanceof SLTPGDataGeneratorConfig)
                 bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
                                 dataConfig.getnKeyStates(),
-                                ((TPGDataGeneratorConfig) dataConfig).Ratio_Of_Deposit,
-                                ((TPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
-                                ((TPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
-                                ((TPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts)
+                                ((SLTPGDataGeneratorConfig) dataConfig).Ratio_Of_Deposit,
+                                ((SLTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
+                                ((SLTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
+                                ((SLTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts)
                         .getBytes(StandardCharsets.UTF_8));
             else
                 bytes = digest.digest(String.format("%d_%d_%d",

@@ -17,8 +17,8 @@ import static content.common.CommonMetaTypes.AccessType.*;
 public class OPLayeredScheduler<Context extends OPLayeredContext> extends OPScheduler<Context, Operation> {
     private static final Logger log = LoggerFactory.getLogger(OPLayeredScheduler.class);
 
-    public OPLayeredScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public OPLayeredScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override

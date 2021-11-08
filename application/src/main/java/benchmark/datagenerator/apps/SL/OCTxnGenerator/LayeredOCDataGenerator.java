@@ -1,7 +1,7 @@
 package benchmark.datagenerator.apps.SL.OCTxnGenerator;
 
 import benchmark.datagenerator.DataGenerator;
-import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
+import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.SL.Transaction.SLTransferEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -29,7 +28,7 @@ public class LayeredOCDataGenerator extends DataGenerator {
     SLDataOperationChain dstAstOC = null;
     private int totalAccountRecords = 0;
     private int totalAssetRecords = 0;
-    private ArrayList<SLEvent> dataTransactions;
+    private ArrayList<Event> dataTransactions;
     private HashMap<Integer, ArrayList<SLDataOperationChain>> accountOperationChainsByLevel;
     private HashMap<Integer, ArrayList<SLDataOperationChain>> assetsOperationChainsByLevel;
     private float[] accountLevelsDistribution;
@@ -72,7 +71,7 @@ public class LayeredOCDataGenerator extends DataGenerator {
         updateOCDependencies();
 
         // Step 3: create txn with the selected OCs, the specific operations are generated inside.
-        SLEvent t = new SLTransferEvent(transactionId, srcAccOC.getId(), srcAstOC.getId(), dstAccOC.getId(), dstAstOC.getId());
+        Event t = new SLTransferEvent(transactionId, srcAccOC.getId(), srcAstOC.getId(), dstAccOC.getId(), dstAstOC.getId());
         dataTransactions.add(t);
         transactionId++;
         System.out.println(transactionId);

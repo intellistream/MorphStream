@@ -2,13 +2,11 @@ package benchmark.datagenerator.apps.SL.TPGTxnGenerator;
 
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.apps.SL.Transaction.SLDepositEvent;
-import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
+import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.SL.Transaction.SLTransferEvent;
-import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.State;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -34,8 +32,8 @@ import static common.CONTROL.*;
  * Transaction will be aborted when balance will become negative. To systematically evaluate the effectiveness of \system in handling transaction aborts, we insert artificial abort in state transactions and vary its ratio in the workload.
  * \end{enumerate}
  */
-public class TPGDataGenerator extends DataGenerator {
-    private static final Logger LOG = LoggerFactory.getLogger(TPGDataGenerator.class);
+public class SLTPGDataGenerator extends DataGenerator {
+    private static final Logger LOG = LoggerFactory.getLogger(SLTPGDataGenerator.class);
 
     private final int Ratio_Of_Deposit;  // ratio of state access type i.e. deposit or transfer
     private final int State_Access_Skewness; // ratio of state access, following zipf distribution
@@ -59,11 +57,11 @@ public class TPGDataGenerator extends DataGenerator {
     public transient FastZipfGenerator p_generator; // partition generator
     private final HashMap<Integer, Integer> nGeneratedAccountIds = new HashMap<>();
     private final HashMap<Integer, Integer> nGeneratedAssetIds = new HashMap<>();
-    private ArrayList<SLEvent> events;
+    private ArrayList<Event> events;
     private int eventID = 0;
     private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
-    public TPGDataGenerator(TPGDataGeneratorConfig dataConfig) {
+    public SLTPGDataGenerator(SLTPGDataGeneratorConfig dataConfig) {
         super(dataConfig);
 
         // TODO: temporarily hard coded, will update later
@@ -104,7 +102,7 @@ public class TPGDataGenerator extends DataGenerator {
     }
 
     protected void generateTuple() {
-        SLEvent event;
+        Event event;
         int next = random.nextInt(100);
         if (next < Ratio_Of_Deposit) {
             event = randomDepositEvent();
@@ -115,7 +113,7 @@ public class TPGDataGenerator extends DataGenerator {
         events.add(event);
     }
 
-    private SLEvent randomTransferEvent() {
+    private Event randomTransferEvent() {
         // make sure source and destination are different
         int srcAcc, dstAcc, srcAst, dstAst;
 
@@ -163,7 +161,7 @@ public class TPGDataGenerator extends DataGenerator {
         nGeneratedAccountIds.put(dstAcc, nGeneratedAccountIds.getOrDefault((long) dstAcc, 0) + 1);
         nGeneratedAssetIds.put(srcAst, nGeneratedAccountIds.getOrDefault((long) srcAst, 0) + 1);
         nGeneratedAssetIds.put(dstAst, nGeneratedAccountIds.getOrDefault((long) dstAst, 0) + 1);
-        SLEvent t;
+        Event t;
         if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
             t = new SLTransferEvent(eventID, srcAcc, srcAst, dstAcc, dstAst, 100000000, 100000000);
         } else {
@@ -175,7 +173,7 @@ public class TPGDataGenerator extends DataGenerator {
         return t;
     }
 
-    private SLEvent randomDepositEvent() {
+    private Event randomDepositEvent() {
         int acc;
         int ast;
         if(!isUnique) {
@@ -196,7 +194,7 @@ public class TPGDataGenerator extends DataGenerator {
         nGeneratedAccountIds.put(acc, nGeneratedAccountIds.getOrDefault((long) acc, 0) + 1);
         nGeneratedAssetIds.put(ast, nGeneratedAccountIds.getOrDefault((long) ast, 0) + 1);
 
-        SLEvent t = new SLDepositEvent(eventID, acc, ast);
+        Event t = new SLDepositEvent(eventID, acc, ast);
 
         // increase the timestamp i.e. transaction id
         eventID++;
@@ -214,12 +212,12 @@ public class TPGDataGenerator extends DataGenerator {
 
         if (isCyclic) { // whether to generate acyclic input stream.
             while (keys[0] == keys[1]) {
-                keys[0] = getKey(zipfGeneratorSrc, partitionDst, generatedKeys);
+                keys[0] = getKey(zipfGeneratorSrc, partitionSrc, generatedKeys);
                 keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
             }
         } else {
             while (keys[0] == keys[1] || idToLevel.get(keys[0]) >= idToLevel.get(keys[1])) {
-                keys[0] = getKey(zipfGeneratorSrc, partitionDst, generatedKeys);
+                keys[0] = getKey(zipfGeneratorSrc, partitionSrc, generatedKeys);
                 keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
             }
         }

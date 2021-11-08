@@ -1,9 +1,11 @@
 package benchmark.datagenerator.apps.SL.Transaction;
 
+import benchmark.datagenerator.Event;
+
 /**
  * Streamledger related transaction data
  */
-public class SLTransferEvent extends SLEvent {
+public class SLTransferEvent extends Event {
     private int id;
     private int sourceAccountId;
     private int destinationAccountId;

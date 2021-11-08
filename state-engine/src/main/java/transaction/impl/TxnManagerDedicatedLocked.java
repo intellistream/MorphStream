@@ -243,6 +243,11 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     @Override
+    public boolean Asy_ModifyRecord_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public OCSchedulerContext getSchedulerContext() {
         throw new UnsupportedOperationException();
     }

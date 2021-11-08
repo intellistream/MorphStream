@@ -5,11 +5,8 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.oplevel.context.OPGSTPGContextWithAbort;
-import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import scheduler.oplevel.struct.Operation;
 import utils.SOURCE_CONTROL;
-
-import static content.common.CommonMetaTypes.AccessType.*;
 
 // TODO: code clean, a lot...
 public class OPGSSchedulerWithAbort<Context extends OPGSTPGContextWithAbort> extends OPGSScheduler<Context> {
@@ -17,8 +14,8 @@ public class OPGSSchedulerWithAbort<Context extends OPGSTPGContextWithAbort> ext
 
     public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
-    public OPGSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public OPGSSchedulerWithAbort(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override

@@ -1,6 +1,6 @@
-package benchmark.datagenerator.apps.SL.Transaction;
+package benchmark.datagenerator;
 
-public abstract class SLEvent {
+public abstract class Event {
     public String toString(int iterationNumber, int totalTransaction) {
         throw new UnsupportedOperationException("unsupported by abstract class");
     }

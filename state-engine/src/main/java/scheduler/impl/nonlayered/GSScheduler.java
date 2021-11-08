@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContext;
-import scheduler.impl.OCScheduler;
 import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
@@ -23,8 +22,8 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
     public boolean needAbortHandling = false;
 
-    public GSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public GSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override
@@ -128,6 +127,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
                         request.d_record, request.function, request.condition, request.condition_records, request.success);
                 break;
             case READ_WRITE_COND_READ:
+            case READ_WRITE_COND_READN:
                 set_op = new GSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;

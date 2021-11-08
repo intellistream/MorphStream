@@ -1,13 +1,9 @@
 package scheduler.impl.layered;
 
-import profiler.MeasureTools;
-import scheduler.context.BFSLayeredTPGContextWithAbort;
 import scheduler.context.LayeredTPGContext;
 import scheduler.impl.OCScheduler;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.layered.LayeredOperationChain;
-import scheduler.struct.layered.bfs.BFSOperation;
-import scheduler.struct.layered.bfs.BFSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 
@@ -16,8 +12,8 @@ import java.util.ArrayList;
 public abstract class LayeredScheduler<Context extends LayeredTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends LayeredOperationChain<ExecutionUnit>>
         extends OCScheduler<Context, ExecutionUnit, SchedulingUnit> {
 
-    public LayeredScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public LayeredScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override

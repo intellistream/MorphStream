@@ -263,6 +263,30 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
+    @Override // TRANSFER_ACT
+    public boolean Asy_ModifyRecord_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
+                                         Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
+
+        AccessType accessType = AccessType.READ_WRITE_COND_READN;
+        TableRecord[] condition_records = new TableRecord[condition_source.length];
+        for (int i = 0; i < condition_source.length; i++) {
+            condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
+            if (condition_records[i] == null) {
+                if (enable_log) log.info("No record is found for condition source:" + condition_source[i]);
+                return false;
+            }
+        }
+        TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
+        if (s_record != null) {
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                    key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+        } else {
+            // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
+            if (enable_log) log.info("No record is found:" + key);
+            return false;
+        }
+    }
+
     public void BeginTransaction(TxnContext txn_context) {
         scheduler.TxnSubmitBegin(context);
     }

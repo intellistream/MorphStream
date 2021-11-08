@@ -16,8 +16,8 @@ import java.util.Collection;
 public class AbstractDFSScheduler<Context extends DFSLayeredTPGContext> extends LayeredScheduler<Context, DFSOperation, DFSOperationChain> {
 
 
-    public AbstractDFSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public AbstractDFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override

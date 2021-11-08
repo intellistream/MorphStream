@@ -1,7 +1,7 @@
 package benchmark.datagenerator.apps.SL.output;
 
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
-import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
+import benchmark.datagenerator.Event;
 import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,10 +56,10 @@ public class FileOutputHandler implements IOutputHandler {
 
 
     @Override
-    public void sinkEvents(List<SLEvent> events) throws IOException {
+    public void sinkEvents(List<Event> events) throws IOException {
         if (enable_log) log.info(String.format("Event file path is %s", mRootPath + fileName));
         BufferedWriter transferEventBufferedWriter = CreateWriter(fileName);
-        for (SLEvent event : events) {
+        for (Event event : events) {
             transferEventBufferedWriter.write(event + "\n");
         }
         transferEventBufferedWriter.close();

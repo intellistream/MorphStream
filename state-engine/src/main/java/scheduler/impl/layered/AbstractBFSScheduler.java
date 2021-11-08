@@ -14,8 +14,8 @@ import utils.SOURCE_CONTROL;
  */
 public class AbstractBFSScheduler<Context extends BFSLayeredTPGContext> extends LayeredScheduler<Context, BFSOperation, BFSOperationChain> {
 
-    public AbstractBFSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public AbstractBFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
 
