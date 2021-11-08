@@ -16,4 +16,10 @@ public class Condition {
         this.arg2 = arg2;
         arg3 = -1;
     }
+
+    public Condition() {
+        arg1 = -1;
+        arg2 = -1;
+        arg3 = -1;
+    }
 }

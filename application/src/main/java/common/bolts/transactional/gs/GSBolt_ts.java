@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
+import transaction.function.Condition;
 import transaction.function.SUM;
 import transaction.impl.ordered.TxnManagerTStream;
 
@@ -68,7 +69,11 @@ public class GSBolt_ts extends GSBolt {
             condition_table[i] = "MicroTable";
         }
 
-        SUM sum = new SUM();
+        SUM sum;
+        if (event.READ_EVENT()) {
+            sum = new SUM(-1);
+        } else
+            sum = new SUM();
 
         transactionManager.BeginTransaction(txnContext);
         transactionManager.Asy_ModifyRecord_ReadN(
@@ -81,31 +86,6 @@ public class GSBolt_ts extends GSBolt {
                 event.success);          //asynchronously return.
         transactionManager.CommitTransaction(txnContext);
         microEvents.add(event);
-    }
-
-    void read_construct(MicroEvent event, TxnContext txnContext) throws DatabaseException {
-        for (int i = 0; i < NUM_ACCESSES; i++) {
-            //it simply constructs the operations and return.
-            transactionManager.Asy_ReadRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], event.enqueue_time);
-        }
-        if (enable_speculative) {//TODO: future work.
-            //earlier emit
-            //collector.emit(input_event.getBid(), 1, input_event.getTimestamp());//the tuple is finished.
-        } else {
-            microEvents.add(event);//mark the tuple as ``in-complete"
-        }
-    }
-
-    protected void write_construct(MicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
-        for (int i = 0; i < NUM_ACCESSES; ++i) {
-            //it simply construct the operations and return.
-            transactionManager.Asy_WriteRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getValues()[i], event.enqueue_time);//asynchronously return.
-        }
-        writeEvents++;
-        //post_process for write events immediately.
-        BEGIN_POST_TIME_MEASURE(thread_Id);
-        WRITE_POST(event);
-        END_POST_TIME_MEASURE_ACC(thread_Id);
     }
 
     @Override

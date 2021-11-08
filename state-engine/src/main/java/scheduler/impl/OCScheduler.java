@@ -146,21 +146,26 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         long sum = 0;
 
         for (int i = 0; i < keysLength; i++) {
+            UDF.randomDelay();
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
         }
 
-        // read
-        SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
-        SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-        // apply function
-        UDF.randomDelay();
+        if (operation.function.delta_long != -1) {
+            // read
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+            // apply function
 
-        if (operation.function instanceof SUM) {
-            tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
-        } else
-            throw new UnsupportedOperationException();
-        operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            if (operation.function instanceof SUM) {
+                tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
+            } else
+                throw new UnsupportedOperationException();
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+        }
     }
 
     /**
@@ -193,7 +198,14 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         } else if (operation.accessType.equals(READ_WRITE)) {
             Depo_Fun(operation, mark_ID, clean);
         } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
+            success = operation.success[0];
             GrepSum_Fun(operation, mark_ID, clean);
+            if (operation.record_ref != null) {
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            }
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
         } else {
             throw new UnsupportedOperationException();
         }

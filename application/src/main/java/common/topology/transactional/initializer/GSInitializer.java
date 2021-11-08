@@ -293,7 +293,7 @@ public class GSInitializer extends TableInitilizer {
                     pids.size(), // num_of_partition
                     Arrays.toString(keys), // key_array
                     NUM_ACCESS,
-                    false);
+                    Boolean.parseBoolean(split[NUM_ACCESS+1]));
             DataHolder.events.add(event);
             if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();

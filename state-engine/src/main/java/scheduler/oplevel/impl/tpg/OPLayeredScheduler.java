@@ -65,40 +65,6 @@ public class OPLayeredScheduler<Context extends OPLayeredContext> extends OPSche
     }
 
     @Override
-    public void TxnSubmitFinished(Context context) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-        // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
-        int txnOpId = 0;
-        Operation headerOperation = null;
-        for (Request request : context.requests) {
-            long bid = request.txn_context.getBID();
-            Operation set_op;
-            switch (request.accessType) {
-                case READ_WRITE: // they can use the same method for processing
-                case READ_WRITE_COND:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.function, request.condition, request.condition_records, request.success);
-                    break;
-                case READ_WRITE_COND_READ:
-                case READ_WRITE_COND_READN:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
-                    break;
-                default:
-                    throw new UnsupportedOperationException();
-            }
-            tpg.setupOperationTDFD(set_op, request);
-            if (txnOpId == 0)
-                headerOperation = set_op;
-            // addOperation an operation id for the operation for the purpose of temporal dependency construction
-            set_op.setTxnOpId(txnOpId++);
-            set_op.addHeader(headerOperation);
-            headerOperation.addDescendant(set_op);
-        }
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-    }
-
-    @Override
     public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;

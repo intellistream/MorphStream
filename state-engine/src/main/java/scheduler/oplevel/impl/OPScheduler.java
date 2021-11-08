@@ -167,15 +167,24 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             sum += preValues[i].getValues().get(1).getLong();
         }
 
-        // read
-        SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
-        SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-        // apply function
-        if (operation.function instanceof SUM) {
-            tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
-        } else
-            throw new UnsupportedOperationException();
-        operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+        if (operation.function.delta_long != -1) {
+            // read
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+            // apply function
+
+            if (operation.function instanceof SUM) {
+                tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
+            } else
+                throw new UnsupportedOperationException();
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+        }
+//        else {
+//            log.info("++++++ operation failed: " + operation);
+//        }
     }
 
     @Override
@@ -204,6 +213,40 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         SOURCE_CONTROL.getInstance().oneThreadCompleted();
         context.reset();
         tpg.reset(context);
+    }
+
+    @Override
+    public void TxnSubmitFinished(Context context) {
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+        // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
+        int txnOpId = 0;
+        Operation headerOperation = null;
+        for (Request request : context.requests) {
+            long bid = request.txn_context.getBID();
+            Operation set_op;
+            switch (request.accessType) {
+                case READ_WRITE: // they can use the same method for processing
+                case READ_WRITE_COND:
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, request.condition, request.condition_records, request.success);
+                    break;
+                case READ_WRITE_COND_READ:
+                case READ_WRITE_COND_READN:
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
+                    break;
+                default:
+                    throw new UnsupportedOperationException();
+            }
+            tpg.setupOperationTDFD(set_op, request);
+            if (txnOpId == 0)
+                headerOperation = set_op;
+            // addOperation an operation id for the operation for the purpose of temporal dependency construction
+            set_op.setTxnOpId(txnOpId++);
+            set_op.addHeader(headerOperation);
+            headerOperation.addDescendant(set_op);
+        }
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
     }
 
     protected abstract void NOTIFY(Operation operation, Context context);

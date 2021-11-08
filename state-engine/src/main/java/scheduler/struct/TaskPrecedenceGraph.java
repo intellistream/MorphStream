@@ -102,7 +102,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         String _key;
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
-
             if (app == 0) {
                 SchedulingUnit gsOC = context.createTask("MicroTable", _key, 0);
                 operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
@@ -115,7 +114,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
                 ocs.add(accOC);
                 ocs.add(beOC);
             }
-
         }
         threadToOCs.put(context.thisThreadId, ocs);
     }
