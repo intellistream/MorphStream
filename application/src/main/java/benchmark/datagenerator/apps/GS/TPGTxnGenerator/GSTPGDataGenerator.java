@@ -54,6 +54,7 @@ public class GSTPGDataGenerator extends DataGenerator {
     private ArrayList<Event> events;
     private int eventID = 0;
     private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
+    private final int[] invalid_keys;
 
     public GSTPGDataGenerator(GSTPGDataGeneratorConfig dataConfig) {
         super(dataConfig);
@@ -75,6 +76,8 @@ public class GSTPGDataGenerator extends DataGenerator {
         keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
         configure_store(1, (double) State_Access_Skewness / 100, dataConfig.getTotalThreads(), nKeyState);
         p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+
+        invalid_keys = new int[] {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
     }
 
     public static void main(String[] args) {
@@ -121,8 +124,12 @@ public class GSTPGDataGenerator extends DataGenerator {
             nGeneratedIds.put(key, nGeneratedIds.getOrDefault(key, 0) + 1);
         }
 
-        GSEvent t = new GSEvent(eventID, keys);
-
+        GSEvent t;
+        if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
+            t = new GSEvent(eventID, invalid_keys);
+        } else {
+            t = new GSEvent(eventID, keys);
+        }
         // increase the timestamp i.e. transaction id
         eventID++;
         return t;

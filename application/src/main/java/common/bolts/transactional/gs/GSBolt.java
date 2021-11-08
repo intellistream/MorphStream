@@ -91,12 +91,9 @@ public abstract class GSBolt extends TransactionalBolt {
         long sum = 0;
         DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
         for (int i = 0; i < event.NUM_ACCESS; ++i) {
-            List<DataBox> values = event.getValues()[i];
-            SchemaRecordRef recordRef = event.getRecord_refs()[i];
             UDF.randomDelay();
+            SchemaRecordRef recordRef = event.getRecord_refs()[i];
             SchemaRecord record = recordRef.getRecord();
-//            List<DataBox> recordValues = record.getValues();
-//            recordValues.get(1).setString(values.get(1).getString(), VALUE_LEN);
             DataBox Value_value = record.getValues().get(1);
             final long Value = Value_value.getLong();
             sum += Value;

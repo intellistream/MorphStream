@@ -162,6 +162,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         long sum = 0;
 
         for (int i = 0; i < keysLength; i++) {
+            UDF.randomDelay();
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
         }
@@ -170,8 +171,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
         SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
         // apply function
-        UDF.randomDelay();
-
         if (operation.function instanceof SUM) {
             tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
         } else
