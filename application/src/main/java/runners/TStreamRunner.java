@@ -236,6 +236,7 @@ public class TStreamRunner extends Runner {
                 String statsFolderPattern = OsUtils.osWrapperPostFix(rootPath)
                         + OsUtils.osWrapperPostFix("stats")
                         + OsUtils.osWrapperPostFix("%s")
+                        + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
                         + OsUtils.osWrapperPostFix("totalEvents = %d")
                         + OsUtils.osWrapperPostFix("%d_%d_%d_%d");
@@ -244,7 +245,7 @@ public class TStreamRunner extends Runner {
                     scheduler = "PAT";
                 }
                 String statsFolderPath = String.format(statsFolderPattern,
-                        scheduler, tthread, totalEvents,
+                        config.getString("common"),scheduler, tthread, totalEvents,
                         config.getInt("Ratio_Of_Deposit"),
                         config.getInt("State_Access_Skewness"),
                         config.getInt("Ratio_of_Overlapped_Keys"),
