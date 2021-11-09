@@ -160,7 +160,8 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             // apply function
 
             if (operation.function instanceof SUM) {
-                tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
+//                tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
+                tempo_record.getValues().get(1).setLong(sum);//compute.
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.

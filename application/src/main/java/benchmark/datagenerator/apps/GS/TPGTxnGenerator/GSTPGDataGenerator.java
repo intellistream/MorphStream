@@ -12,6 +12,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Random;
 
 import static common.CONTROL.*;
@@ -53,6 +54,8 @@ public class GSTPGDataGenerator extends DataGenerator {
     private final HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
+
+    private final int MAX_LEVEL = 128;
     private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
     public GSTPGDataGenerator(GSTPGDataGeneratorConfig dataConfig) {
@@ -67,7 +70,7 @@ public class GSTPGDataGenerator extends DataGenerator {
 
         // allocate levels for each key, to prevent circular.
         for (int i = 0; i < nKeyState; i++) {
-            idToLevel.put(i, random.nextInt(512));
+            idToLevel.put(i, random.nextInt(MAX_LEVEL));
         }
 
         events = new ArrayList<>(nTuples);
@@ -99,16 +102,44 @@ public class GSTPGDataGenerator extends DataGenerator {
 
     private GSEvent randomEvent() {
         int[] keys = new int[NUM_ACCESS];
+        int writeLevel = -1;
         if (!isUnique) {
             if (enable_states_partition) {
                 int partitionId = key_to_partition(p_generator.next());
                 for (int i = 0; i < NUM_ACCESS; i++) {
-                    keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                    if (isCyclic) {
+                        keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                    } else {
+                        keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                        if (i == 0) {
+                            while (idToLevel.get(keys[i]) == 0) {
+                                keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                            }
+                            writeLevel = idToLevel.get(keys[i]);
+                        } else {
+                            while (writeLevel <= idToLevel.get(keys[i])) {
+                                keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                            }
+                        }
+                    }
                     partitionId = (partitionId + 1) % dataConfig.getTotalThreads();
                 }
             } else {
-                for (int i = 0; i <NUM_ACCESS; i++) {
-                    keys[i] = getKey(keyZipf, generatedKeys);
+                for (int i = 0; i < NUM_ACCESS; i++) {
+                    if (isCyclic) {
+                        keys[i] = getKey(keyZipf, generatedKeys);
+                    } else {
+                        keys[i] = getKey(keyZipf, generatedKeys);
+                        if (i == 0) {
+                            while (idToLevel.get(keys[i]) == 0) {
+                                keys[i] = getKey(keyZipf, generatedKeys);
+                            }
+                            writeLevel = idToLevel.get(keys[i]);
+                        }
+                        while (writeLevel <= idToLevel.get(keys[i])) {
+                            keys[i] = getKey(keyZipf, generatedKeys);
+                        }
+                    }
                 }
             }
         } else {
