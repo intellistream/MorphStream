@@ -108,10 +108,6 @@ public class GSBolt_sstore extends GSBolt_LA {
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
 
-    private void parseDepositEvent(int partitionOffset, HashMap<Integer, Integer> pids, DepositEvent event) {
-        pids.put((int) (Long.parseLong(event.getAccountId()) / partitionOffset), 0);
-    }
-
     private void parseMicroEvent(int partitionOffset, MicroEvent event, HashMap<Integer, Integer> pids) {
         for (int key : event.getKeys()) {
             pids.put(key / partitionOffset, 0);
@@ -137,8 +133,8 @@ public class GSBolt_sstore extends GSBolt_LA {
         LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id);
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
         LAL(event, _bid, _bid);
-        END_LOCK_TIME_MEASURE(thread_Id);
+        END_LOCK_TIME_MEASURE_ACC(thread_Id);
         LA_UNLOCK_Reentrance(transactionManager, event.partition_indexs, thread_Id);
-        END_WAIT_TIME_MEASURE(thread_Id);
+        END_WAIT_TIME_MEASURE_ACC(thread_Id);
     }
 }
