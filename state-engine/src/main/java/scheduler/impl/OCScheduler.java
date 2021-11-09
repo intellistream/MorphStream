@@ -151,6 +151,8 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             sum += preValues[i].getValues().get(1).getLong();
         }
 
+        sum /= keysLength;
+
         if (operation.function.delta_long != -1) {
             // read
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);

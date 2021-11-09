@@ -98,6 +98,8 @@ public abstract class GSBolt extends TransactionalBolt {
             final long Value = Value_value.getLong();
             sum += Value;
         }
+
+        sum /= event.NUM_ACCESS;
         TargetValue_value.setLong(sum);
     }
 
