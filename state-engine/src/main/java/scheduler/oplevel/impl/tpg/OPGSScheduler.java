@@ -10,6 +10,8 @@ import scheduler.oplevel.struct.MetaTypes.OperationStateType;
 import scheduler.oplevel.struct.Operation;
 import utils.SOURCE_CONTROL;
 
+import static common.CONTROL.enable_log;
+
 public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<Context, Operation> {
     private static final Logger log = LoggerFactory.getLogger(OPGSScheduler.class);
 
@@ -39,6 +41,9 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
         } while (!FINISHED(context));
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
         if (needAbortHandling) {
+            if (enable_log) {
+                log.info("need abort handling, rollback and redo");
+            }
             // identify all aborted operations and transit the state to aborted.
             REINITIALIZE(context);
             // rollback to the starting point and redo.

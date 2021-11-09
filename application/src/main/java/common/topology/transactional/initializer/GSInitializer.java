@@ -283,6 +283,7 @@ public class GSInitializer extends TableInitilizer {
                 keys[i-1] = Long.parseLong(split[i]);
                 pids.put((int) (keys[i-1] / partitionOffset), 0);
             }
+
             // construct event
             MicroEvent event = new MicroEvent(
                     Integer.parseInt(split[0]), //bid,

@@ -148,6 +148,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         ArrayDeque<SchedulingUnit> nonNullOCs = new ArrayDeque<>();
         HashSet<OperationChain<ExecutionUnit>> scannedOCs = new HashSet<>();
         HashSet<OperationChain<ExecutionUnit>> circularOCs = new HashSet<>();
+        HashSet<OperationChain<ExecutionUnit>> resolvedOC = new HashSet<>();
         // TODO: simple dfs to solve circular, more efficient algorithm need to be involved. keywords: 如何找出有向图中的所有环路？
 //        HashMap<SchedulingUnit, Integer> dfn = new HashMap<>();
 //        HashMap<SchedulingUnit, Integer> low = new HashMap<>();
@@ -167,7 +168,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
         int counter = 0;
-        HashSet<OperationChain<ExecutionUnit>> resolvedOC = new HashSet<>();
         for (OperationChain<ExecutionUnit> oc : circularOCs) {
             if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
                 oc.ocParentsCount.set(0);

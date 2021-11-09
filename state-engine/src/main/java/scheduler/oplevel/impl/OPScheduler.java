@@ -96,7 +96,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         } else if (operation.accessType.equals(READ_WRITE)) {
             Depo_Fun(operation, mark_ID, clean);
         } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
+            success = operation.success[0];
             GrepSum_Fun(operation, mark_ID, clean);
+            // check whether needs to return a read results of the operation
+            if (operation.record_ref != null) {
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            }
+            // operation success check, number of operation succeeded does not increase after execution
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
         } else {
             throw new UnsupportedOperationException();
         }
