@@ -33,7 +33,6 @@ import java.util.*;
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
 import static common.Constants.Event_Path;
-import static profiler.Metrics.NUM_ACCESSES;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
 
@@ -327,7 +326,7 @@ public class GSInitializer extends TableInitilizer {
                 + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
                 + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
                 + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
-                + OsUtils.OS_wrapper("NUM_ACCESSES=" + NUM_ACCESSES)
+                + OsUtils.OS_wrapper("NUM_ACCESS=" + NUM_ACCESS)
                 + OsUtils.OS_wrapper("theta=" + theta)
                 + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
         File file = new File(event_path);
