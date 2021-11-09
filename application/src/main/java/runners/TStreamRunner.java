@@ -244,12 +244,25 @@ public class TStreamRunner extends Runner {
                 if (config.getInt("CCOption") == CCOption_SStore) {
                     scheduler = "PAT";
                 }
-                String statsFolderPath = String.format(statsFolderPattern,
-                        config.getString("common"),scheduler, tthread, totalEvents,
-                        config.getInt("Ratio_Of_Deposit"),
-                        config.getInt("State_Access_Skewness"),
-                        config.getInt("Ratio_of_Overlapped_Keys"),
-                        config.getInt("Ratio_of_Transaction_Aborts"));
+
+                String statsFolderPath;
+                if (config.getString("common").equals("StreamLedger")) {
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("Ratio_Of_Deposit"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"));
+                } else if (config.getString("common").equals("GrepSum")) {
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ACCESS"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"));
+                } else {
+                    throw new UnsupportedOperationException();
+                }
                 File file = new File(statsFolderPath);
                 log.info("Dumping stats to...");
                 log.info(String.valueOf(file.getAbsoluteFile()));
