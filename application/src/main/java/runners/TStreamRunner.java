@@ -239,7 +239,7 @@ public class TStreamRunner extends Runner {
                         + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
                         + OsUtils.osWrapperPostFix("totalEvents = %d")
-                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d");
+                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d");
 
                 if (config.getInt("CCOption") == CCOption_SStore) {
                     scheduler = "PAT";
@@ -249,6 +249,7 @@ public class TStreamRunner extends Runner {
                 if (config.getString("common").equals("StreamLedger")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
                             config.getInt("Ratio_Of_Deposit"),
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
@@ -256,6 +257,7 @@ public class TStreamRunner extends Runner {
                 } else if (config.getString("common").equals("GrepSum")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
                             config.getInt("NUM_ACCESS"),
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
