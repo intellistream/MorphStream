@@ -8,7 +8,7 @@ public interface CONTROL {
     int MeasureBound = 1_000;
 
     // data generator related
-    boolean isCyclic = true;
+    boolean isCyclic = false;
 
     //common.combo optimization
     boolean enable_app_combo = true;//compose all operators into one.

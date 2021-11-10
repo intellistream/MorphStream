@@ -159,25 +159,25 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 //            detectCircular(oc, dfn, low, inStack, stack, ts, circularOCs);
 //        }
 //        detectAffectedOCs(scannedOCs, circularOCs);
-        for (SchedulingUnit oc : ocs) {
-            if (!oc.getOperations().isEmpty()) {
-                nonNullOCs.add(oc);
-                context.fd += oc.ocParentsCount.get();
-                detectAffectedOCs(scannedOCs, circularOCs, oc);
-            }
-        }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
-        int counter = 0;
-        for (OperationChain<ExecutionUnit> oc : circularOCs) {
-            if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
-                oc.ocParentsCount.set(0);
-                oc.ocParents.clear();
-                oc.ocChildren.clear();
-                resolvedOC.add(oc);
-                counter++;
-            }
-        }
-        if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
+//        for (SchedulingUnit oc : ocs) {
+//            if (!oc.getOperations().isEmpty()) {
+//                nonNullOCs.add(oc);
+//                context.fd += oc.ocParentsCount.get();
+//                detectAffectedOCs(scannedOCs, circularOCs, oc);
+//            }
+//        }
+//        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
+//        int counter = 0;
+//        for (OperationChain<ExecutionUnit> oc : circularOCs) {
+//            if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
+//                oc.ocParentsCount.set(0);
+//                oc.ocParents.clear();
+//                oc.ocChildren.clear();
+//                resolvedOC.add(oc);
+//                counter++;
+//            }
+//        }
+//        if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
         LOG.info("fd number: " + context.fd);
         if (context instanceof LayeredTPGContext) {
             ((LayeredTPGContext) context).buildBucketPerThread(nonNullOCs, resolvedOC);
