@@ -48,7 +48,7 @@ public class PartitionStateManager implements OperationStateListener, Runnable {
     }
 
     @Override
-    public void onOpRollbackAndRedo(Operation operation, MetaTypes.DependencyType dependencyType, OperationStateType parentState) {
+    public void onOpRollbackAndRedo(Operation operation, MetaTypes.DependencyType dependencyType, OperationStateType parentState, OperationStateType prevParentState) {
     }
 
     public void run() {

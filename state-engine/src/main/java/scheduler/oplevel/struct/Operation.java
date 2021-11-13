@@ -245,31 +245,34 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             }
         } else if (parentState.equals(OperationStateType.ABORTED)) {
             if (dependencyType.equals(DependencyType.TD)) {
-                operationMetadata.td_countdown.set(td_parents.size());
-                for (Operation operation : td_parents) {
-                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
-                        || operation.getOperationState().equals(OperationStateType.ABORTED)) {
-                        operationMetadata.td_countdown.decrementAndGet();
-                    }
-                }
+//                operationMetadata.td_countdown.set(td_parents.size());
+//                for (Operation operation : td_parents) {
+//                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
+//                        || operation.getOperationState().equals(OperationStateType.ABORTED)) {
+//                        operationMetadata.td_countdown.decrementAndGet();
+//                    }
+//                }
+                operationMetadata.td_countdown.decrementAndGet();
                 assert operationMetadata.td_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.FD)) {
-                operationMetadata.fd_countdown.set(fd_parents.size());
-                for (Operation operation : fd_parents) {
-                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
-                            || operation.getOperationState().equals(OperationStateType.ABORTED)) {
-                        operationMetadata.fd_countdown.decrementAndGet();
-                    }
-                }
+//                operationMetadata.fd_countdown.set(fd_parents.size());
+//                for (Operation operation : fd_parents) {
+//                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
+//                            || operation.getOperationState().equals(OperationStateType.ABORTED)) {
+//                        operationMetadata.fd_countdown.decrementAndGet();
+//                    }
+//                }
+                operationMetadata.fd_countdown.decrementAndGet();
                 assert operationMetadata.fd_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.LD)) {
-                operationMetadata.ld_countdown.set(ld_parents.size());
-                for (Operation operation : ld_parents) {
-                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
-                            || operation.getOperationState().equals(OperationStateType.ABORTED)) {
-                        operationMetadata.ld_countdown.decrementAndGet();
-                    }
-                }
+//                operationMetadata.ld_countdown.set(ld_parents.size());
+//                for (Operation operation : ld_parents) {
+//                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
+//                            || operation.getOperationState().equals(OperationStateType.ABORTED)) {
+//                        operationMetadata.ld_countdown.decrementAndGet();
+//                    }
+//                }
+                operationMetadata.ld_countdown.decrementAndGet();
                 assert operationMetadata.ld_countdown.get() >= 0;
             }
         } else {

@@ -2,7 +2,6 @@ package scheduler.oplevel.statemanager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scheduler.impl.layered.DFSSchedulerWithAbort;
 import scheduler.oplevel.impl.tpg.OPGSSchedulerWithAbort;
 import scheduler.oplevel.signal.op.*;
 import scheduler.oplevel.struct.MetaTypes.DependencyType;
@@ -53,8 +52,8 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
     }
 
     @Override
-    public void onOpRollbackAndRedo(Operation operation, DependencyType dependencyType, OperationStateType parentState) {
-        opSignalQueue.add(new OnRollbackAndRedoSignal(operation, dependencyType, parentState));
+    public void onOpRollbackAndRedo(Operation operation, DependencyType dependencyType, OperationStateType parentState, OperationStateType prevParentState) {
+        opSignalQueue.add(new OnRollbackAndRedoSignal(operation, dependencyType, parentState, prevParentState));
     }
 
     public void run() {
@@ -134,11 +133,13 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
 
     private void onAbortHandlingTransition(Operation descendant, OnNeedAbortHandlingSignal signal) {
         if (enable_log) LOG.debug("failed operation: " + descendant);
+        OperationStateType prevOperationState;
         if (!descendant.getOperationState().equals(OperationStateType.EXECUTED)) {
             executableTaskListener.onOPFinalized(descendant);
         }
+        prevOperationState = descendant.getOperationState();
         descendant.stateTransition(OperationStateType.ABORTED);
-        notifyChildrenRollbackAndRedo(descendant, OperationStateType.ABORTED);
+        notifyChildrenRollbackAndRedo(descendant, OperationStateType.ABORTED, prevOperationState);
     }
 
     private void onRollbackAndRedoTransition(Operation operation, OnRollbackAndRedoSignal signal) {
@@ -154,9 +155,11 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
                 operation.stateTransition(OperationStateType.READY);
                 readyAction(operation);
                 executableTaskListener.onOPRollbacked(operation);
-                notifyChildrenRollbackAndRedo(operation, OperationStateType.READY);
+                notifyChildrenRollbackAndRedo(operation, OperationStateType.READY, OperationStateType.EXECUTED);
             } else if (operation.getOperationState().equals(OperationStateType.BLOCKED)) {
-                operation.updateDependencies(dependencyType, parentState);
+                if (!signal.getPrevParentState().equals(OperationStateType.EXECUTED)) {
+                    operation.updateDependencies(dependencyType, parentState);
+                }
                  if(operation.tryReady()) {
                      readyAction(operation);
                  }
@@ -174,7 +177,7 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
             if (operation.getOperationState().equals(OperationStateType.EXECUTED)) {
                 executableTaskListener.onOPRollbacked(operation);
                 // notify its children to rollback, otherwise just rollback its own state
-                notifyChildrenRollbackAndRedo(operation, OperationStateType.BLOCKED);
+                notifyChildrenRollbackAndRedo(operation, OperationStateType.BLOCKED, OperationStateType.EXECUTED);
             }
         } else {
             throw new UnsupportedOperationException();
@@ -210,15 +213,15 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
         }
     }
 
-    private void notifyChildrenRollbackAndRedo(Operation operation, OperationStateType operationStateType) {
+    private void notifyChildrenRollbackAndRedo(Operation operation, OperationStateType operationStateType, OperationStateType prevOperationState) {
         for (Operation child : operation.getChildren(DependencyType.TD)) {
-            child.context.getListener().onOpRollbackAndRedo(child, DependencyType.TD, operationStateType);
+            child.context.getListener().onOpRollbackAndRedo(child, DependencyType.TD, operationStateType, prevOperationState);
         }
         for (Operation child : operation.getChildren(DependencyType.FD)) {
-            child.context.getListener().onOpRollbackAndRedo(child, DependencyType.FD, operationStateType);
+            child.context.getListener().onOpRollbackAndRedo(child, DependencyType.FD, operationStateType, prevOperationState);
         }
         for (Operation child : operation.getChildren(DependencyType.LD)) {
-            child.context.getListener().onOpRollbackAndRedo(child, DependencyType.LD, operationStateType);
+            child.context.getListener().onOpRollbackAndRedo(child, DependencyType.LD, operationStateType, prevOperationState);
         }
     }
 

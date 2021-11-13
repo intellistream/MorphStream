@@ -9,17 +9,16 @@ import scheduler.context.GSTPGContext;
 import scheduler.context.LayeredTPGContext;
 import scheduler.context.OCSchedulerContext;
 import scheduler.oplevel.struct.MetaTypes;
-import scheduler.oplevel.struct.Operation;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 import utils.lib.ConcurrentHashMap;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
+import static common.CONTROL.isCyclic;
 
 /**
  * TPG  -> Partition -> Key:OperationChain -> Operation-Operation-Operation...
@@ -44,7 +43,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final int NUM_ITEMS;
     private final ConcurrentHashMap<String, TableOCs<SchedulingUnit>> operationChains;//shared data structure.
-    private final HashMap<Integer, Deque<SchedulingUnit>> threadToOCs;
+    private final ConcurrentHashMap<Integer, Deque<SchedulingUnit>> threadToOCs;
     CyclicBarrier barrier;
     private int maxLevel = 0; // just for layered scheduling
     private final int app;
@@ -57,7 +56,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
-        threadToOCs.remove(context.thisThreadId);
+        threadToOCs.get(context.thisThreadId).clear();
 //        this.setOCs(context);
     }
 
@@ -72,7 +71,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         this.delta = delta;
         this.NUM_ITEMS = NUM_ITEMS;
         threadToContextMap = new HashMap<>();
-        threadToOCs = new HashMap<>();
+        threadToOCs = new ConcurrentHashMap<>();
         //shared data structure.
         this.app = app;
         //create holder.
@@ -126,22 +125,27 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         return operationChains;
     }
 
-    public SchedulingUnit setupOperationTDFD(ExecutionUnit operation, Request request, Context targetContext) {
+    public void setupOperationTDFD(ExecutionUnit operation, Request request, Context targetContext) {
         // TD
         SchedulingUnit oc = addOperationToChain(operation, targetContext.thisThreadId);
         // FD
         if (request.condition_source != null)
             checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), request.condition_sourceTable, request.condition_source);
-        return oc;
     }
 
 
 
     public void firstTimeExploreTPG(Context context) {
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+        int threadId = context.thisThreadId;
+        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 //        assert context.totalOsToSchedule == ocs.size();
-        submit(context, threadToOCs.get(context.thisThreadId));
-        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+        Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
+        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
+            threadToOCs.computeIfAbsent(threadId, s -> new ArrayDeque<>()).addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
+
+        }
+        submit(context, threadToOCs.get(threadId));
+        MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(threadId);
     }
 
     private void submit(Context context, Collection<SchedulingUnit> ocs) {
@@ -159,25 +163,9 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 //            detectCircular(oc, dfn, low, inStack, stack, ts, circularOCs);
 //        }
 //        detectAffectedOCs(scannedOCs, circularOCs);
-        for (SchedulingUnit oc : ocs) {
-            if (!oc.getOperations().isEmpty()) {
-                nonNullOCs.add(oc);
-                context.fd += oc.ocParentsCount.get();
-                detectAffectedOCs(scannedOCs, circularOCs, oc);
-            }
+        if (isCyclic) { // if the constructed OCs are not cyclic, skip this.
+            circularDetect(context, ocs, nonNullOCs, scannedOCs, circularOCs, resolvedOC);
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
-        int counter = 0;
-        for (OperationChain<ExecutionUnit> oc : circularOCs) {
-            if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
-                oc.ocParentsCount.set(0);
-                oc.ocParents.clear();
-                oc.ocChildren.clear();
-                resolvedOC.add(oc);
-                counter++;
-            }
-        }
-        if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
         LOG.info("fd number: " + context.fd);
         if (context instanceof LayeredTPGContext) {
             ((LayeredTPGContext) context).buildBucketPerThread(nonNullOCs, resolvedOC);
@@ -207,6 +195,28 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             throw new UnsupportedOperationException("Unsupported.");
         }
         if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
+    }
+
+    private void circularDetect(Context context, Collection<SchedulingUnit> ocs, ArrayDeque<SchedulingUnit> nonNullOCs, HashSet<OperationChain<ExecutionUnit>> scannedOCs, HashSet<OperationChain<ExecutionUnit>> circularOCs, HashSet<OperationChain<ExecutionUnit>> resolvedOC) {
+        for (SchedulingUnit oc : ocs) {
+            if (!oc.getOperations().isEmpty()) {
+                nonNullOCs.add(oc);
+                context.fd += oc.ocParentsCount.get();
+                detectAffectedOCs(scannedOCs, circularOCs, oc);
+            }
+        }
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
+        int counter = 0;
+        for (OperationChain<ExecutionUnit> oc : circularOCs) {
+            if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
+                oc.ocParentsCount.set(0);
+                oc.ocParents.clear();
+                oc.ocChildren.clear();
+                resolvedOC.add(oc);
+                counter++;
+            }
+        }
+        if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
     }
 
     public void secondTimeExploreTPG(Context context) {
@@ -248,9 +258,15 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     }
 
     public void tStreamExplore(Context context) {
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+        int threadId = context.thisThreadId;
+        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 //        assert context.totalOsToSchedule == ocs.size();
-        tStreamSubmit(context, threadToOCs.get(context.thisThreadId));
+        Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
+        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
+            threadToOCs.computeIfAbsent(threadId, s -> new ArrayDeque<>()).addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
+
+        }
+        tStreamSubmit(context, threadToOCs.get(threadId));
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
@@ -429,14 +445,15 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 
     private SchedulingUnit getOC(String tableName, String pKey, int threadId) {
         ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-//        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey, 0));
-        return holder.get(pKey);
+        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey, 0));
+//        return holder.get(pKey);
     }
 
     private SchedulingUnit getOC(String tableName, String pKey) {
         int threadId = Integer.parseInt(pKey) / delta;
         ConcurrentHashMap<String, SchedulingUnit> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-        return holder.get(pKey);
+        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey, 0));
+//        return holder.get(pKey);
     }
 
     private void checkFD(SchedulingUnit curOC, ExecutionUnit op, String table_name,

@@ -202,7 +202,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     @Override
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);
-        tpg.setOCs(context);
+//        tpg.setOCs(context);
     }
 
     /**

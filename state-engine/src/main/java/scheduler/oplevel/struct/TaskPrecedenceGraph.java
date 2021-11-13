@@ -43,7 +43,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     CyclicBarrier barrier;
     public final Map<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
-    public final HashMap<Integer, Deque<OperationChain>> threadToOCs;
+    public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
 
     public void reset(Context context) {
         if (app == 0) {
@@ -52,7 +52,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
-        threadToOCs.remove(context.thisThreadId);
+        threadToOCs.get(context.thisThreadId).clear();
 //        this.setOCs(context); // TODO: the short cut should be reset, but will take some time.
     }
 
@@ -66,7 +66,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         this.NUM_ITEMS = NUM_ITEMS;
         // all parameters in this class should be thread safe.
         threadToContextMap = new HashMap<>();
-        threadToOCs = new HashMap<>();
+        threadToOCs = new ConcurrentHashMap<>();
         this.app = app;
         //create holder.
         operationChains = new ConcurrentHashMap<>();
@@ -142,7 +142,13 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
      * @param context
      */
     public void firstTimeExploreTPG(Context context) {
-        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
+        int threadId = context.thisThreadId;
+        MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
+
+        Collection<TableOCs> tableOCsList = getOperationChains().values();
+        for (TableOCs tableOCs : tableOCsList) {//for each table.
+            threadToOCs.computeIfAbsent(threadId, s -> new ArrayDeque<>()).addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
+        }
 
         if (context instanceof OPLayeredContext) {
             ArrayDeque<Operation> roots = new ArrayDeque<>();
@@ -160,6 +166,9 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
             if (enable_log) log.info("MaxLevel:" + (((OPLayeredContext) context).maxLevel));
         } else if (context instanceof OPGSTPGContext) {
+            if (!threadToOCs.containsKey(context.thisThreadId)) {
+                System.out.println("= =");
+            }
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
                     oc.updateTDDependencies();
@@ -232,15 +241,15 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private OperationChain getOC(String tableName, String pKey) {
         int threadId = Integer.parseInt(pKey) / delta;
         ConcurrentHashMap<String, OperationChain> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-//        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
-        return holder.get(pKey);
+        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
+//        return holder.get(pKey);
     }
 
     private OperationChain getOC(String tableName, String pKey, int threadId) {
 //        int threadId = Integer.parseInt(pKey) / delta;
         ConcurrentHashMap<String, OperationChain> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
-//        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
-        return holder.get(pKey);
+        return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
+//        return holder.get(pKey);
     }
 
     private void checkFD(OperationChain curOC, Operation op, String table_name,

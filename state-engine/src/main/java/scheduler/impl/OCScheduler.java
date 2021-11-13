@@ -320,7 +320,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     @Override
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);
-        tpg.setOCs(context);
+//        tpg.setOCs(context);
     }
 
     protected boolean isConflicted(Context context, SchedulingUnit operationChain, ExecutionUnit operation) {
