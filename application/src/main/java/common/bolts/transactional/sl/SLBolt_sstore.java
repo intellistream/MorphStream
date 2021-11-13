@@ -92,7 +92,7 @@ public class SLBolt_sstore extends SLBolt_LA {
                     event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
                     pids.replaceAll((k, v) -> p_bids[k]++);
                 } else if (event instanceof DepositEvent) {
-                    parseDepositEvent(partitionOffset, pids, (DepositEvent) event);
+                    parseDepositEvent(partitionOffset, (DepositEvent) event, pids);
                     event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
                     pids.replaceAll((k, v) -> p_bids[k]++);
                 } else {
@@ -105,8 +105,9 @@ public class SLBolt_sstore extends SLBolt_LA {
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
 
-    private void parseDepositEvent(int partitionOffset, HashMap<Integer, Integer> pids, DepositEvent event) {
+    private void parseDepositEvent(int partitionOffset, DepositEvent event, HashMap<Integer, Integer> pids) {
         pids.put((int) (Long.parseLong(event.getAccountId()) / partitionOffset), 0);
+        pids.put((int) (Long.parseLong(event.getBookEntryId()) / partitionOffset), 0);
     }
 
     private void parseTransactionEvent(int partitionOffset, TransactionEvent event, HashMap<Integer, Integer> pids) {
