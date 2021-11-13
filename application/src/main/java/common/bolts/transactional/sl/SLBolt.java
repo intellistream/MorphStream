@@ -10,7 +10,7 @@ import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
-import utils.UDF;
+import utils.AppConfig;
 
 import java.util.List;
 
@@ -90,13 +90,13 @@ public abstract class SLBolt extends TransactionalBolt {
 //            long start = System.nanoTime();
 //            while (System.nanoTime() - start < 40000) {}
             // compute the new balances
-            UDF.randomDelay();
+            AppConfig.randomDelay();
             final long newSourceBalance = sourceAccountBalance - event.getAccountTransfer();
-            UDF.randomDelay();
+            AppConfig.randomDelay();
             final long newTargetBalance = targetAccountBalance + event.getAccountTransfer();
-            UDF.randomDelay();
+            AppConfig.randomDelay();
             final long newSourceAssets = sourceAssetValue - event.getBookEntryTransfer();
-            UDF.randomDelay();
+            AppConfig.randomDelay();
             final long newTargetAssets = targetAssetValue + event.getBookEntryTransfer();
             // write back the updated values
             sourceAccountBalance_value.setLong(newSourceBalance);
@@ -113,11 +113,11 @@ public abstract class SLBolt extends TransactionalBolt {
     protected void DEPOSITE_REQUEST_CORE(DepositEvent event) {
 //        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         List<DataBox> values = event.account_value.getRecord().getValues();
-        UDF.randomDelay();
+        AppConfig.randomDelay();
         long newAccountValue = values.get(1).getLong() + event.getAccountTransfer();
         values.get(1).setLong(newAccountValue);
         List<DataBox> asset_values = event.asset_value.getRecord().getValues();
-        UDF.randomDelay();
+        AppConfig.randomDelay();
         long newAssetValue = values.get(1).getLong() + event.getBookEntryTransfer();
         asset_values.get(1).setLong(newAssetValue);
 //        collector.force_emit(input_event.getBid(), null, input_event.getTimestamp());

@@ -6,13 +6,13 @@ import benchmark.datagenerator.apps.GS.TPGTxnGenerator.Transaction.GSEvent;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.AppConfig;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Random;
 
 import static common.CONTROL.*;
@@ -107,7 +107,7 @@ public class GSTPGDataGenerator extends DataGenerator {
             if (enable_states_partition) {
                 int partitionId = key_to_partition(p_generator.next());
                 for (int i = 0; i < NUM_ACCESS; i++) {
-                    if (isCyclic) {
+                    if (AppConfig.isCyclic) {
                         keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
                     } else {
                         keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
@@ -126,7 +126,7 @@ public class GSTPGDataGenerator extends DataGenerator {
                 }
             } else {
                 for (int i = 0; i < NUM_ACCESS; i++) {
-                    if (isCyclic) {
+                    if (AppConfig.isCyclic) {
                         keys[i] = getKey(keyZipf, generatedKeys);
                     } else {
                         keys[i] = getKey(keyZipf, generatedKeys);

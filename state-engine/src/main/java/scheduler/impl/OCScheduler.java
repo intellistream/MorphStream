@@ -17,12 +17,11 @@ import transaction.function.DEC;
 import transaction.function.INC;
 import transaction.function.SUM;
 import transaction.impl.ordered.MyList;
+import utils.AppConfig;
 import utils.SOURCE_CONTROL;
-import utils.UDF;
 
 import java.util.List;
 
-import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.*;
 
 public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>>
@@ -100,7 +99,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
             // apply function
-            UDF.randomDelay();
+            AppConfig.randomDelay();
             if (operation.function instanceof INC) {
                 tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
             } else if (operation.function instanceof DEC) {
@@ -134,7 +133,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         //apply function to modify..
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
-        UDF.randomDelay();
+        AppConfig.randomDelay();
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
@@ -146,7 +145,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         long sum = 0;
 
         for (int i = 0; i < keysLength; i++) {
-            UDF.randomDelay();
+            AppConfig.randomDelay();
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
         }

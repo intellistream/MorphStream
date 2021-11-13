@@ -11,6 +11,7 @@ import scheduler.context.OCSchedulerContext;
 import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import transaction.impl.ordered.MyList;
+import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 import utils.lib.ConcurrentHashMap;
 
@@ -18,7 +19,6 @@ import java.util.*;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
-import static common.CONTROL.isCyclic;
 
 /**
  * TPG  -> Partition -> Key:OperationChain -> Operation-Operation-Operation...
@@ -163,7 +163,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 //            detectCircular(oc, dfn, low, inStack, stack, ts, circularOCs);
 //        }
 //        detectAffectedOCs(scannedOCs, circularOCs);
-        if (isCyclic) { // if the constructed OCs are not cyclic, skip this.
+        if (AppConfig.isCyclic) { // if the constructed OCs are not cyclic, skip this.
             circularDetect(context, ocs, nonNullOCs, scannedOCs, circularOCs, resolvedOC);
         }
         LOG.info("fd number: " + context.fd);
@@ -218,6 +218,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         }
         if (enable_log) LOG.info(context.thisThreadId + " : " + counter);
     }
+
 
     public void secondTimeExploreTPG(Context context) {
         context.redo();

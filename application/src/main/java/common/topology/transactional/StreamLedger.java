@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;
 import transaction.TableInitilizer;
-import utils.UDF;
 
 import java.util.Random;
 

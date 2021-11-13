@@ -2,9 +2,13 @@ package utils;
 
 import java.util.Random;
 
-public class UDF {
+/**
+ * store the static config for the app
+ */
+public class AppConfig {
     static Random random = new Random();
     public static int complexity;
+    public static boolean isCyclic = true;
 
     public static long randomDelay() {
         int delay = random.nextInt(complexity);

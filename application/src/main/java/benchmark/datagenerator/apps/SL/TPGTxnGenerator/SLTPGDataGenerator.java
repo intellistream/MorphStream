@@ -7,6 +7,7 @@ import benchmark.datagenerator.apps.SL.Transaction.SLTransferEvent;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.AppConfig;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -210,7 +211,7 @@ public class SLTPGDataGenerator extends DataGenerator {
         keys[0] = getKey(zipfGeneratorSrc, partitionSrc, generatedKeys);
         keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
 
-        if (isCyclic) { // whether to generate acyclic input stream.
+        if (AppConfig.isCyclic) { // whether to generate acyclic input stream.
             while (keys[0] == keys[1]) {
                 keys[0] = getKey(zipfGeneratorSrc, partitionSrc, generatedKeys);
                 keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
@@ -253,7 +254,7 @@ public class SLTPGDataGenerator extends DataGenerator {
         keys[0] = getKey(zipfGenerator, generatedKeys);
         keys[1] = getKey(zipfGenerator, generatedKeys);
 
-        if (isCyclic) {
+        if (AppConfig.isCyclic) {
             while (keys[0] == keys[1]) {
                 keys[0] = getKey(zipfGenerator, generatedKeys);
                 keys[1] = getKey(zipfGenerator, generatedKeys);

@@ -118,6 +118,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
 
         checkpoint_interval = config.getInt("checkpoint");
+        // setup the checkpoint interval for measurement
+        sink.checkpoint_interval = checkpoint_interval;
+
         target_Hz = (int) config.getDouble("targetHz", 10000000);
 
         totalEventsPerBatch = config.getInt("totalEvents");

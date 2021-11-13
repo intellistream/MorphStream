@@ -8,6 +8,7 @@ import common.sink.helper.stable_sink_helper;
 import components.operators.api.BaseSink;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
+import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,18 +79,20 @@ public class MeasureSink extends BaseSink {
     }
 
     protected void latency_measure(Tuple input) {
+        cnt++;
         if (enable_latency_measurement) {
-            if (cnt == 0) {
-                start = System.nanoTime();
-            } else {
-                if (cnt % checkpoint_interval == 0) {
-                    final long end = System.nanoTime();
-                    final long process_latency = end - start;//ns
-                    latency_map.add(process_latency / checkpoint_interval);
-                    start = end;
-                }
-            }
-            cnt++;
+//            if (cnt == 1) {
+//                start = System.nanoTime();
+//            } else {
+//                if (cnt % checkpoint_interval == 0) {
+//                    final long end = System.nanoTime();
+//                    final long process_latency = end - start;//ns
+//                    latency_map.add(process_latency / checkpoint_interval);
+//                    start = end;
+//                }
+//            }
+            latency_map.add(System.nanoTime() - input.getLong(1));
+
         }
     }
 

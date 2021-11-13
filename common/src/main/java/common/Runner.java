@@ -126,6 +126,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 1024;
 
+    @Parameter(names = {"--isCyclic"}, description = "isCyclic of generated OC.")
+    public int isCyclic = 1;
 
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
     public Integer complexity = 100000;
@@ -163,6 +165,11 @@ public abstract class Runner implements IRunner {
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
 
         config.put("numberOfDLevels", numberOfDLevels);
+        if (isCyclic == 1) {
+            config.put("isCyclic", true);
+        } else {
+            config.put("isCyclic", false);
+        }
         config.put("complexity", complexity);
 
         if (CCOption == 4)//S-Store enabled.

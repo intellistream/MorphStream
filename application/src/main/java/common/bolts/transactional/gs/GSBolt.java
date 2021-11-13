@@ -12,13 +12,10 @@ import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
-import utils.UDF;
-
-import java.util.List;
+import utils.AppConfig;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
 import static content.common.CommonMetaTypes.AccessType.READ_ONLY;
 import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
@@ -91,7 +88,7 @@ public abstract class GSBolt extends TransactionalBolt {
         long sum = 0;
         DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
         for (int i = 0; i < event.NUM_ACCESS; ++i) {
-            UDF.randomDelay();
+            AppConfig.randomDelay();
             SchemaRecordRef recordRef = event.getRecord_refs()[i];
             SchemaRecord record = recordRef.getRecord();
             DataBox Value_value = record.getValues().get(1);

@@ -1,7 +1,6 @@
 package transaction;
 
 import scheduler.impl.IScheduler;
-import scheduler.impl.OCScheduler;
 import scheduler.impl.layered.BFSScheduler;
 import scheduler.impl.layered.BFSSchedulerWithAbort;
 import scheduler.impl.layered.DFSScheduler;
@@ -9,9 +8,7 @@ import scheduler.impl.layered.DFSSchedulerWithAbort;
 import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
 import scheduler.impl.nonlayered.TStreamScheduler;
-import scheduler.oplevel.context.OPGSTPGContext;
 import scheduler.oplevel.impl.tpg.*;
-import utils.UDF;
 
 /**
  * Every thread has its own TxnManager.
