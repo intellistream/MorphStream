@@ -20,6 +20,7 @@ import java.util.HashMap;
 
 import static common.CONTROL.*;
 import static common.Constants.STAT_Path;
+import static common.IRunner.CCOption_SStore;
 
 public class MeasureSink extends BaseSink {
     private static final Logger LOG = LoggerFactory.getLogger(MeasureSink.class);
@@ -30,10 +31,10 @@ public class MeasureSink extends BaseSink {
     public int checkpoint_interval;
     protected stable_sink_helper helper;
     protected int ccOption;
-    protected int tthread;
+    public int tthread;
     int cnt = 0;
     long start;
-    private int totalEvents;
+    public int totalEvents;
 
     public MeasureSink() {
         super(new HashMap<>());
@@ -60,12 +61,59 @@ public class MeasureSink extends BaseSink {
                 , thisTaskId
                 , config.getBoolean("measure", false));
 
-        directory = STAT_Path
-                + OsUtils.OS_wrapper(configPrefix)
-                + OsUtils.OS_wrapper(String.valueOf(config.getInt("checkpoint")));
-        File file = new File(directory);
-        if (!file.mkdirs()) {
+//        directory = STAT_Path
+//                + OsUtils.OS_wrapper(configPrefix)
+//                + OsUtils.OS_wrapper(String.valueOf(config.getInt("checkpoint")));
+
+//        File file = new File(directory);
+//        if (!file.mkdirs()) {
+//        }
+        totalEvents = config.getInt("totalEvents");
+        tthread = config.getInt("tthread");
+
+        String statsFolderPattern = OsUtils.osWrapperPostFix(config.getString("rootFilePath"))
+                + OsUtils.osWrapperPostFix("stats")
+                + OsUtils.osWrapperPostFix("%s")
+                + OsUtils.osWrapperPostFix("%s")
+                + OsUtils.osWrapperPostFix("threads = %d")
+                + OsUtils.osWrapperPostFix("totalEvents = %d")
+                + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d.latency");
+
+        String scheduler = config.getString("scheduler");
+        if (config.getInt("CCOption") == CCOption_SStore) {
+            scheduler = "PAT";
         }
+
+        if (config.getString("common").equals("StreamLedger")) {
+            directory = String.format(statsFolderPattern,
+                    config.getString("common"), scheduler, tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("Ratio_Of_Deposit"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Overlapped_Keys"),
+                    config.getInt("Ratio_of_Transaction_Aborts"));
+        } else if (config.getString("common").equals("GrepSum")) {
+            directory = String.format(statsFolderPattern,
+                    config.getString("common"), scheduler, tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("NUM_ACCESS"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Overlapped_Keys"),
+                    config.getInt("Ratio_of_Transaction_Aborts"));
+        } else {
+            throw new UnsupportedOperationException();
+        }
+        File file = new File(directory);
+        file.mkdirs();
+
+        if (file.exists())
+            file.delete();
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         SINK_CONTROL.getInstance().config();
         tthread = this.config.getInt("tthread");
         totalEvents = config.getInt("totalEvents");
@@ -124,8 +172,7 @@ public class MeasureSink extends BaseSink {
             }
             try {
                 FileWriter f = null;
-                f = new FileWriter(new File(directory
-                        + OsUtils.OS_wrapper(ccOption + ".latency")));
+                f = new FileWriter(new File(directory));
                 Writer w = new BufferedWriter(f);
                 for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
                     w.write(latency.getPercentile(percentile) + "\n");

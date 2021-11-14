@@ -132,7 +132,7 @@ public class GSCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_SStore: {//SStore
-                bolt = new GSBolt_sstore(0);
+                bolt = new GSBolt_sstore(0, sink);
                 break;
             }
 
