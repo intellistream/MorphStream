@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import topology.TopologySubmitter;
+import utils.AppConfig;
 import utils.SINK_CONTROL;
 
 import java.io.File;
@@ -239,7 +240,7 @@ public class TStreamRunner extends Runner {
                         + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
                         + OsUtils.osWrapperPostFix("totalEvents = %d")
-                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d");
+                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%s");
 
                 if (config.getInt("CCOption") == CCOption_SStore) {
                     scheduler = "PAT";
@@ -253,7 +254,8 @@ public class TStreamRunner extends Runner {
                             config.getInt("Ratio_Of_Deposit"),
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
-                            config.getInt("Ratio_of_Transaction_Aborts"));
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            AppConfig.isCyclic);
                 } else if (config.getString("common").equals("GrepSum")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
@@ -261,7 +263,8 @@ public class TStreamRunner extends Runner {
                             config.getInt("NUM_ACCESS"),
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
-                            config.getInt("Ratio_of_Transaction_Aborts"));
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            AppConfig.isCyclic);
                 } else {
                     throw new UnsupportedOperationException();
                 }

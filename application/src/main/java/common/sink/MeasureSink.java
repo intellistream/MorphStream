@@ -12,6 +12,7 @@ import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.AppConfig;
 import utils.SINK_CONTROL;
 
 import java.io.*;
@@ -77,7 +78,7 @@ public class MeasureSink extends BaseSink {
                 + OsUtils.osWrapperPostFix("%s")
                 + OsUtils.osWrapperPostFix("threads = %d")
                 + OsUtils.osWrapperPostFix("totalEvents = %d")
-                + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d.latency");
+                + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%s.latency");
 
         String scheduler = config.getString("scheduler");
         if (config.getInt("CCOption") == CCOption_SStore) {
@@ -91,7 +92,8 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Ratio_Of_Deposit"),
                     config.getInt("State_Access_Skewness"),
                     config.getInt("Ratio_of_Overlapped_Keys"),
-                    config.getInt("Ratio_of_Transaction_Aborts"));
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    AppConfig.isCyclic);
         } else if (config.getString("common").equals("GrepSum")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -99,7 +101,8 @@ public class MeasureSink extends BaseSink {
                     config.getInt("NUM_ACCESS"),
                     config.getInt("State_Access_Skewness"),
                     config.getInt("Ratio_of_Overlapped_Keys"),
-                    config.getInt("Ratio_of_Transaction_Aborts"));
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    AppConfig.isCyclic);
         } else {
             throw new UnsupportedOperationException();
         }
