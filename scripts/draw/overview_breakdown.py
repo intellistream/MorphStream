@@ -358,7 +358,7 @@ if __name__ == "__main__":
                 isCyclic = "true"
             else:
                 isCyclic = "false"
-                
+
     # break into 5 parts
     legend_labels = ["Explore Time", "Next Time", "Useful Time", "Notify Time", "Construct Time", "First Explore Time"]
     for tthread in [1, 2, 4, 8, 16, 24]:
