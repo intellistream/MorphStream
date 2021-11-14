@@ -55,7 +55,6 @@ public class GSTPGDataGenerator extends DataGenerator {
     private ArrayList<Event> events;
     private int eventID = 0;
 
-    private final int MAX_LEVEL = 512;
     private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
     public GSTPGDataGenerator(GSTPGDataGeneratorConfig dataConfig) {
@@ -69,8 +68,9 @@ public class GSTPGDataGenerator extends DataGenerator {
         int nKeyState = dataConfig.getnKeyStates();
 
         // allocate levels for each key, to prevent circular.
+        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
         for (int i = 0; i < nKeyState; i++) {
-            idToLevel.put(i, i%MAX_LEVEL);
+            idToLevel.put(i, i% MAX_LEVEL);
         }
 
         events = new ArrayList<>(nTuples);

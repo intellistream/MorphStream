@@ -149,7 +149,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     }
 
     private void submit(Context context, Collection<SchedulingUnit> ocs) {
-        ArrayDeque<SchedulingUnit> nonNullOCs = new ArrayDeque<>();
         HashSet<OperationChain<ExecutionUnit>> scannedOCs = new HashSet<>();
         HashSet<OperationChain<ExecutionUnit>> circularOCs = new HashSet<>();
         HashSet<OperationChain<ExecutionUnit>> resolvedOC = new HashSet<>();
@@ -164,11 +163,11 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 //        }
 //        detectAffectedOCs(scannedOCs, circularOCs);
         if (AppConfig.isCyclic) { // if the constructed OCs are not cyclic, skip this.
-            circularDetect(context, ocs, nonNullOCs, scannedOCs, circularOCs, resolvedOC);
+            circularDetect(context, ocs, scannedOCs, circularOCs, resolvedOC);
         }
         LOG.info("fd number: " + context.fd);
         if (context instanceof LayeredTPGContext) {
-            ((LayeredTPGContext) context).buildBucketPerThread(nonNullOCs, resolvedOC);
+            ((LayeredTPGContext) context).buildBucketPerThread(ocs, resolvedOC);
             SOURCE_CONTROL.getInstance().waitForOtherThreads();
             if (context.thisThreadId == 0) {
                 for (Context curContext : threadToContextMap.values()) {
@@ -181,7 +180,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             ((LayeredTPGContext) context).putBusyWaitOCs(resolvedOC, maxLevel);
             if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
         } else if (context instanceof AbstractGSTPGContext) {
-            for (SchedulingUnit oc : nonNullOCs) {
+            for (SchedulingUnit oc : ocs) {
                 context.totalOsToSchedule += oc.getOperations().size();
                 context.operationChains.add(oc);
                 if (!((AbstractGSOperationChain) oc).context.equals(context)) {
@@ -197,10 +196,9 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
     }
 
-    private void circularDetect(Context context, Collection<SchedulingUnit> ocs, ArrayDeque<SchedulingUnit> nonNullOCs, HashSet<OperationChain<ExecutionUnit>> scannedOCs, HashSet<OperationChain<ExecutionUnit>> circularOCs, HashSet<OperationChain<ExecutionUnit>> resolvedOC) {
+    private void circularDetect(Context context, Collection<SchedulingUnit> ocs, HashSet<OperationChain<ExecutionUnit>> scannedOCs, HashSet<OperationChain<ExecutionUnit>> circularOCs, HashSet<OperationChain<ExecutionUnit>> resolvedOC) {
         for (SchedulingUnit oc : ocs) {
             if (!oc.getOperations().isEmpty()) {
-                nonNullOCs.add(oc);
                 context.fd += oc.ocParentsCount.get();
                 detectAffectedOCs(scannedOCs, circularOCs, oc);
             }

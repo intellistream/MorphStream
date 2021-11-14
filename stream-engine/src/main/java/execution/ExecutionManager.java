@@ -62,9 +62,6 @@ public class ExecutionManager {
 //            TxnProcessingEngine tp_engine = new TxnProcessingEngine(stage);
 //            tp_engine = TxnProcessingEngine.getInstance();
             if (integers != null) {
-                // initialize AppConfig
-                AppConfig.complexity = conf.getInt("complexity", 100000);
-                AppConfig.isCyclic = conf.getBoolean("isCyclic", true);
                 int totalThread = conf.getInt("tthread");
                 int numberOfStates = conf.getInt("NUM_ITEMS");
                 String schedulerType = conf.getString("scheduler");
