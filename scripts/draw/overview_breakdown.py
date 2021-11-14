@@ -67,6 +67,7 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, al
     bottom_base = np.zeros(len(y_values[0]))
     bars = [None] * (len(FIGURE_LABEL))
     for i in range(len(y_values)):
+        print(y_values[i])
         bars[i] = plt.bar(index + width / 2, y_values[i], width, hatch=PATTERNS[i], color=LINE_COLORS[i],
                           label=FIGURE_LABEL[i], bottom=bottom_base, edgecolor='black', linewidth=3)
         bottom_base = np.array(y_values[i]) + bottom_base
@@ -150,74 +151,82 @@ def DrawLegend(legend_labels, filename):
 
 
 # example for reading csv file
-def ReadFile(tthread, batchInterval):
+def ReadFileSL(tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic):
     # Creates a list containing w lists, each of h items, all set to 0
-    w, h = 6, 6
+    w, h = 4, 5
     y = [[0 for x in range(w)] for y in range(h)]
 
     y_sum = [0 for x in range(w)]
 
     events = tthread * batchInterval
 
-    gs_path = FILE_FOLER + '/GS/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(gs_path).readlines()
+    f = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio,
+                  isCyclic)
+    lines = open(f).readlines()
     idx = locateIdx(lines)
-    for line in lines[idx:]:
+    for line in lines[idx:idx+tthread]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 6):
-            y[i][0] += float(breakdown_value[i + 1])
-            y_sum[0] += float(breakdown_value[i + 1])
+        # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
+        y[0][0] = 0
+        y[1][0] = 0
+        y[2][0] = float(breakdown_value[1]) + float(breakdown_value[6])
+        y_sum[0] += float(breakdown_value[1]) + float(breakdown_value[6])
+        y[3][0] = float(breakdown_value[5])
+        y_sum[0] += float(breakdown_value[5])
+        y[4][0] = float(breakdown_value[3])
+        y_sum[0] += float(breakdown_value[3])
 
-    bfs_path = FILE_FOLER + '/BFS/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(bfs_path).readlines()
+    f = getPathSL("GSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio,
+                  isCyclic)
+    lines = open(f).readlines()
     idx = locateIdx(lines)
-    for line in lines[idx:]:
+    for line in lines[idx:idx+tthread]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 6):
-            y[i][1] += float(breakdown_value[i + 1])
-            y_sum[1] += float(breakdown_value[i + 1])
+        # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
+        y[0][1] = 0
+        y[1][1] = 0
+        y[2][1] = float(breakdown_value[1]) + float(breakdown_value[6])
+        y_sum[1] += float(breakdown_value[1]) + float(breakdown_value[6])
+        y[3][1] = float(breakdown_value[5])
+        y_sum[1] += float(breakdown_value[5])
+        y[4][1] = float(breakdown_value[3])
+        y_sum[1] += float(breakdown_value[3])
 
-    dfs_path = FILE_FOLER + '/DFS/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(dfs_path).readlines()
+    f = getPathSL("TStream", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio,
+                  isCyclic)
+    lines = open(f).readlines()
     idx = locateIdx(lines)
-    for line in lines[idx:]:
+    for line in lines[idx:idx + tthread]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 6):
-            y[i][2] += float(breakdown_value[i + 1])
-            y_sum[2] += float(breakdown_value[i + 1])
+        # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
+        y[0][2] = 0
+        y[1][2] = 0
+        y[2][2] = float(breakdown_value[1]) + float(breakdown_value[6])
+        y_sum[2] += float(breakdown_value[1]) + float(breakdown_value[6])
+        y[3][2] = float(breakdown_value[5])
+        y_sum[2] += float(breakdown_value[5])
+        y[4][2] = float(breakdown_value[3])
+        y_sum[2] += float(breakdown_value[3])
 
-    op_gs_path = FILE_FOLER + '/OPGS/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(op_gs_path).readlines()
-    idx = locateIdx(lines)
-    for line in lines[idx:]:
+    f = getPathSL("PAT", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio,
+                  isCyclic)
+    lines = open(f).readlines()
+    idx = locateIdxPAT(lines)
+    for line in lines[idx:idx + tthread]:
         breakdown_value = line.split("\t")
         print(breakdown_value)
-        for i in range(0, 6):
-            y[i][3] += float(breakdown_value[i + 1])
-            y_sum[3] += float(breakdown_value[i + 1])
-
-    op_bfs_path = FILE_FOLER + '/OPBFS/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(op_bfs_path).readlines()
-    idx = locateIdx(lines)
-    for line in lines[idx:]:
-        breakdown_value = line.split("\t")
-        print(breakdown_value)
-        for i in range(0, 6):
-            y[i][4] += float(breakdown_value[i + 1])
-            y_sum[4] += float(breakdown_value[i + 1])
-
-    op_dfs_path = FILE_FOLER + '/OPDFS/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(op_dfs_path).readlines()
-    idx = locateIdx(lines)
-    for line in lines[idx:]:
-        breakdown_value = line.split("\t")
-        print(breakdown_value)
-        for i in range(0, 6):
-            y[i][5] += float(breakdown_value[i + 1])
-            y_sum[5] += float(breakdown_value[i + 1])
+        # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
+        y[0][3] = float(breakdown_value[3])
+        y_sum[3] += float(breakdown_value[3])
+        y[1][3] = float(breakdown_value[4])
+        y_sum[3] += float(breakdown_value[4])
+        y[2][3] = 0
+        y[3][3] = 0
+        y[4][3] = float(breakdown_value[2])
+        y_sum[3] += float(breakdown_value[2])
 
     for i in range(h):
         for j in range(w):
@@ -228,85 +237,14 @@ def ReadFile(tthread, batchInterval):
 
     return y
 
+def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic):
+    return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}'\
+        .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
 
-def ReadFileWithAbort(tthread, batchInterval):
-    # Creates a list containing w lists, each of h items, all set to 0
-    w, h = 6, 6
-    y = [[0 for x in range(w)] for y in range(h)]
 
-    y_sum = [0 for x in range(w)]
-
-    events = tthread * batchInterval
-
-    gs_path = FILE_FOLER + '/GSA/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(gs_path).readlines()
-    idx = locateIdx(lines)
-    for line in lines[idx:]:
-        breakdown_value = line.split("\t")
-        print(breakdown_value)
-        for i in range(0, 6):
-            y[i][0] += float(breakdown_value[i + 1])
-            y_sum[0] += float(breakdown_value[i + 1])
-
-    bfs_path = FILE_FOLER + '/BFSA/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(bfs_path).readlines()
-    idx = locateIdx(lines)
-    for line in lines[idx:]:
-        breakdown_value = line.split("\t")
-        print(breakdown_value)
-        for i in range(0, 6):
-            y[i][1] += float(breakdown_value[i + 1])
-            y_sum[1] += float(breakdown_value[i + 1])
-
-    dfs_path = FILE_FOLER + '/DFSA/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(dfs_path).readlines()
-    idx = locateIdx(lines)
-    for line in lines[idx:]:
-        breakdown_value = line.split("\t")
-        print(breakdown_value)
-        for i in range(0, 6):
-            y[i][2] += float(breakdown_value[i + 1])
-            y_sum[2] += float(breakdown_value[i + 1])
-
-    op_gs_path = FILE_FOLER + '/OPGSA/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(op_gs_path).readlines()
-    idx = locateIdx(lines)
-    for line in lines[idx:]:
-        breakdown_value = line.split("\t")
-        print(breakdown_value)
-        for i in range(0, 6):
-            y[i][3] += float(breakdown_value[i + 1])
-            y_sum[3] += float(breakdown_value[i + 1])
-
-    op_bfs_path = FILE_FOLER + '/OPBFSA/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(op_bfs_path).readlines()
-    idx = locateIdx(lines)
-    for line in lines[idx:]:
-        breakdown_value = line.split("\t")
-        print(breakdown_value)
-        for i in range(0, 6):
-            y[i][4] += float(breakdown_value[i + 1])
-            y_sum[4] += float(breakdown_value[i + 1])
-
-    op_dfs_path = FILE_FOLER + '/OPDFSA/threads = {}/totalEvents = {}'.format(tthread, events)
-    lines = open(op_dfs_path).readlines()
-    idx = locateIdx(lines)
-    for line in lines[idx:]:
-        breakdown_value = line.split("\t")
-        print(breakdown_value)
-        for i in range(0, 6):
-            y[i][5] += float(breakdown_value[i + 1])
-            y_sum[5] += float(breakdown_value[i + 1])
-
-    for i in range(h):
-        for j in range(w):
-            if y_sum[j] != 0:
-                y[i][j] = (y[i][j] / y_sum[j]) * 100
-
-    print(y)
-
-    return y
-
+def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic):
+    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}'\
+        .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
 
 def locateIdx(lines):
     idx = 0
@@ -317,6 +255,14 @@ def locateIdx(lines):
             break
     return idx
 
+def locateIdxPAT(lines):
+    idx = 0
+    for line in lines:
+        idx += 1
+        if line.startswith("TransactionBreakdownRatioReport"):
+            idx += 1
+            break
+    return idx
 
 if __name__ == "__main__":
     tthread = 24
@@ -360,17 +306,10 @@ if __name__ == "__main__":
                 isCyclic = "false"
 
     # break into 5 parts
-    legend_labels = ["Explore Time", "Next Time", "Useful Time", "Notify Time", "Construct Time", "First Explore Time"]
-    for tthread in [1, 2, 4, 8, 16, 24]:
-        for batchInterval in [1024, 2048, 4096, 8192, 10240]:
+    legend_labels = ["Sync Time", "Lock Time", "Explore Time", "Construct Time",  "Useful Time"]
         # for batchInterval in [4096]:
-            x_values = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$"]
-            y_values = ReadFile(tthread, batchInterval)
-            DrawFigure(x_values, y_values, legend_labels,
-                       '', 'percentage of time',
-                       'breakdown_t{}_b{}'.format(tthread, batchInterval), True)
-            x_values = ["$GSA_{OC}$", "$BFSA_{OC}$", "$DFSA_{OC}$", "$GSA_{OP}$", "$BFSA_{OP}$", "$DFSA_{OP}$"]
-            y_values = ReadFileWithAbort(tthread, batchInterval)
-            DrawFigure(x_values, y_values, legend_labels,
-                       '', 'percentage of time',
-                       'breakdown_with_abort_t{}_b{}'.format(tthread, batchInterval), True)
+    x_values = ["$MorphStream$", "$GSA$", "$TStream$", "$PAT$"]
+    y_values = ReadFileSL(tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+    DrawFigure(x_values, y_values, legend_labels,
+               '', 'percentage of time', "gs_overview_throughput_b{}_{}_{}_{}_{}_{}_{}"
+               .format(NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic), True)

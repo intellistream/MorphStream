@@ -75,7 +75,8 @@ public class SLTPGDataGenerator extends DataGenerator {
         int nKeyState = dataConfig.getnKeyStates();
 
         // allocate levels for each key, to prevent circular.
-        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
+//        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
+        int MAX_LEVEL = 256;
         for (int i = 0; i < nKeyState; i++) {
             idToLevel.put(i, random.nextInt(MAX_LEVEL));
         }
