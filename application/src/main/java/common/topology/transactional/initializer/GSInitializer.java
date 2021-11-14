@@ -23,6 +23,7 @@ import storage.datatype.LongDataBox;
 import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
+import utils.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -91,14 +92,15 @@ public class GSInitializer extends TableInitilizer {
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
-            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d",
+            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%s",
                             dataConfig.getTotalThreads(),
                             dataConfig.getTotalEvents(),
                             dataConfig.getnKeyStates(),
                             dataConfig.NUM_ACCESS,
                             dataConfig.State_Access_Skewness,
                             dataConfig.Ratio_of_Overlapped_Keys,
-                            dataConfig.Ratio_of_Transaction_Aborts)
+                            dataConfig.Ratio_of_Transaction_Aborts,
+                            AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
 
             subFolder = OsUtils.osWrapperPostFix(
