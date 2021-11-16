@@ -44,3 +44,7 @@ _install/
 /.github/
 
 *.iml
+
+logs
+scripts/draw/results*
+scripts/*.jar

@@ -204,7 +204,7 @@ if __name__ == '__main__':
     # for deposit_ratio in [0, 25, 50, 75, 100]:
     # for key_skewness in [0, 25, 50]:
     # for overlap_ratio in [0, 25, 50]:
-    for batchInterval in [1024, 2048, 4096, 8192, 10240]:
+    for tthread in [24, 48]:
         x_value = [1, 2, 4, 8, 16, 24]
         legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
         x_axis = [x_value] * len(legend_labels)

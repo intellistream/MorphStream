@@ -83,68 +83,114 @@ def DrawFigure(xvalues, yvalues, legend_labels, x_label, y_label, filename, allo
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
 
-def ReadFile(x_axis, tthread, batchInterval, NUM_ACCESS, NUM_ITEMS, key_skewness, overlap_ratio, abort_ratio):
-    w, h = 4, len(x_axis)
+def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic):
+    w, h = 3, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for key_skewness in x_axis:
+    for NUM_ACCESS in x_axis:
         events = tthread * batchInterval
-        op_gs_path = getPath("OPGS", events, tthread, NUM_ACCESS, NUM_ITEMS, key_skewness, overlap_ratio, abort_ratio)
+        op_gs_path = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
-    for key_skewness in x_axis:
+    # for NUM_ACCESS in x_axis:
+    #     events = tthread * batchInterval
+    #     op_gs_path = getPathGS("GSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+    #     lines = open(op_gs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[1].append(float(throughput))
+
+
+    for NUM_ACCESS in x_axis:
         events = tthread * batchInterval
-        op_gs_path = getPath("OPGSA", events, tthread, NUM_ACCESS, NUM_ITEMS, key_skewness, overlap_ratio, abort_ratio)
-        lines = open(op_gs_path).readlines()
+        op_dfs_path = getPathGS("TStream", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+        lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[1].append(float(throughput))
 
-
-    for key_skewness in x_axis:
+    for NUM_ACCESS in x_axis:
         events = tthread * batchInterval
-        op_dfs_path = getPath("TStream", events, tthread, NUM_ACCESS, NUM_ITEMS, key_skewness, overlap_ratio, abort_ratio)
+        op_dfs_path = getPathGS("PAT", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[2].append(float(throughput))
-
-    for key_skewness in x_axis:
-        events = tthread * batchInterval
-        op_dfs_path = getPath("PAT", events, tthread, NUM_ACCESS, NUM_ITEMS, key_skewness, overlap_ratio, abort_ratio)
-        lines = open(op_dfs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[3].append(float(throughput))
 
     print(y)
 
     return y
 
 
+def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic):
+    w, h = 3, len(x_axis)
+    y = [[] for _ in range(w)]
 
-def getPath(algo, events, tthread, NUM_ACCESS, NUM_ITEMS, key_skewness, overlap_ratio, abort_ratio):
-    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}'\
-        .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio)
+    for abort_ratio in x_axis:
+        events = tthread * batchInterval
+        op_gs_path = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+        lines = open(op_gs_path).readlines()
+        throughput = lines[0].split(": ")[1]
+        y[0].append(float(throughput))
+
+    # for abort_ratio in x_axis:
+    #     events = tthread * batchInterval
+    #     op_gs_path = getPathSL("GSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+    #     lines = open(op_gs_path).readlines()
+    #     throughput = lines[0].split(": ")[1]
+    #     y[1].append(float(throughput))
+
+
+    for abort_ratio in x_axis:
+        events = tthread * batchInterval
+        op_dfs_path = getPathSL("TStream", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+        lines = open(op_dfs_path).readlines()
+        throughput = lines[0].split(": ")[1]
+        y[1].append(float(throughput))
+
+    for abort_ratio in x_axis:
+        events = tthread * batchInterval
+        op_dfs_path = getPathSL("PAT", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+        lines = open(op_dfs_path).readlines()
+        throughput = lines[0].split(": ")[1]
+        y[2].append(float(throughput))
+
+    print(y)
+
+    return y
+
+
+def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic):
+    return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}'\
+        .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+
+
+def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic):
+    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}'\
+        .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
 
 
 if __name__ == '__main__':
     tthread = 24
     NUM_ITEMS = 115200
-    NUM_ACCESS = 0
+    NUM_ACCESS = 10
+    deposit_ratio = 25
     key_skewness = 0
-    overlap_ratio = 10
+    overlap_ratio = 0
     abort_ratio = 0
     batchInterval = 10240
+    isCyclic = "false"
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:n:k:o:a:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:")
     except getopt.GetoptError:
         print("Error")
 
     for opt, arg in opts:
         if opt in ['-i']:
             NUM_ITEMS = int(arg)
-        if opt in ['-n']:
+        elif opt in ['-d']:
+            deposit_ratio = int(arg)
+        elif opt in ['-n']:
             NUM_ACCESS = int(arg)
         elif opt in ['-k']:
             key_skewness = int(arg)
@@ -154,21 +200,17 @@ if __name__ == '__main__':
             abort_ratio = int(arg)
         elif opt in ['-b']:
             batchInterval = int(arg)
+        elif opt in ['-c']:
+            if int(arg) == 1:
+                isCyclic = "true"
+            else:
+                isCyclic = "false"
 
-
-    for tthread in [24, 48]:
-        x_value = [2, 4, 6, 8, 10]
-        legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$"]
-        x_axis = [x_value] * len(legend_labels)
-        y_axis = ReadFile(x_value, tthread, batchInterval, NUM_ACCESS, NUM_ITEMS, key_skewness, overlap_ratio, abort_ratio)
-        legend = True
-        DrawFigure(x_axis, y_axis, legend_labels, "skewness", "throughput(e/s)", "batch_t{}_b{}_{}_{}_{}_{}_{}"
-                    .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio),
-                    legend)
-
-        # legend_labels = ["$GSA_{OC}$", "$BFSA_{OC}$", "$DFSA_{OC}$", "$GSA_{OP}$", "$BFSA_{OP}$", "$DFSA_{OP}$"]
-        # x_axis = [x_value] * len(legend_labels)
-        # y_axis = ReadFileWithAbort(x_value, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio)
-        # DrawFigure(x_axis, y_axis, legend_labels, "tthreads", "throughput(e/s)",
-        #             "comparison_with_abort_b{}_{}_{}_{}_{}"
-        #             .format(batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio), legend)
+    x_value = [1, 2, 4, 6, 8, 10]
+    legend_labels = ["$MorphStream$", "$TStream$", "$S-Store$"]
+    x_axis = [x_value] * len(legend_labels)
+    legend = True
+    y_axis = ReadFileGS(x_value, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+    DrawFigure(x_axis, y_axis, legend_labels, "num_state_access", "throughput(e/s)", "gs_access_throughput_t{}_b{}_{}_{}_{}_{}_{}_{}"
+                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic),
+                legend)

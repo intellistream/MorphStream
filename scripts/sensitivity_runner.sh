@@ -1,22 +1,28 @@
 #!/bin/bash
 
 function ResetParameters() {
+  app="GrepSum"
   NUM_ITEMS=115200
+  NUM_ACCESS=10
   checkpointInterval=10240
   tthread=24
   scheduler="BFS"
-  deposit_ratio=0
-  key_skewness=0
-  overlap_ratio=10
-  abort_ratio=0
+  deposit_ratio=25
+  key_skewness=25
+  overlap_ratio=0
+  abort_ratio=100
   CCOption=3 #TSTREAM
+  complexity=1000000
+  isCyclic=1
 }
 
 function runTStream() {
   totalEvents=`expr $checkpointInterval \* $tthread`
   # NUM_ITEMS=`expr $totalEvents`
   echo "java -Xms100g -Xmx100g -jar -d64 application-0.0.2-jar-with-dependencies.jar \
+          --app $app \
           --NUM_ITEMS $NUM_ITEMS \
+          --NUM_ACCESS $NUM_ACCESS \
           --tthread $tthread \
           --scheduler $scheduler \
           --totalEvents $totalEvents \
@@ -24,10 +30,14 @@ function runTStream() {
           --deposit_ratio $deposit_ratio \
           --key_skewness $key_skewness \
           --overlap_ratio $overlap_ratio \
-          --abort_ratio $abort_ratio
-          --CCOption $CCOption"
-  java -Xms100g -Xmx100g -Xss10M -jar -d64 application-0.0.2-jar-with-dependencies.jar \
+          --abort_ratio $abort_ratio \
+          --CCOption $CCOption \
+          --complexity $complexity \
+           --isCyclic $isCyclic"
+  java -Xms100g -Xmx100g -Xss100M -jar -d64 application-0.0.2-jar-with-dependencies.jar \
+    --app $app \
     --NUM_ITEMS $NUM_ITEMS \
+    --NUM_ACCESS $NUM_ACCESS \
     --tthread $tthread \
     --scheduler $scheduler \
     --totalEvents $totalEvents \
@@ -36,91 +46,320 @@ function runTStream() {
     --key_skewness $key_skewness \
     --overlap_ratio $overlap_ratio \
     --abort_ratio $abort_ratio \
-    --CCOption $CCOption
+    --CCOption $CCOption \
+    --complexity $complexity \
+    --isCyclic $isCyclic
 }
-
 # run basic experiment for different algorithms
 function baselineEvaluation() {
-  # for tthread in 1 2 4 8 16 24
-  # for tthread in 16
-  # for deposit_ratio in 0 25 50 75 100
-  # for key_skewness in 0 25 50 #0 25 50
-  for overlap_ratio in 0 #0 25 50
-  do
-    for scheduler in BFS DFS GS OPBFS OPDFS OPGS
-    # for scheduler in GS
-    do
-        for checkpointInterval in 1024 2048 4096 8192 10240
-        do
-            runTStream
-        done
-    done
-  done
-}
-
-# run basic experiment for different algorithms
-function withAbortEvaluation() {
-  # for tthread in 1 2 4 8 16 24
-  # for tthread in 1
-  # for deposit_ratio in 0 25 50 75 100
-  # for key_skewness in 0 25 50 #0 25 50
-  for overlap_ratio in 0 #0 25 50
-  do
-    # for scheduler in BFSA DFSA GSA OPBFSA OPDFSA OPGSA
-    for scheduler in BFSA
-    do
-        # for checkpointInterval in 1024 2048 4096 8192 10240
-        for checkpointInterval in 10240
-        do
-            runTStream
-        done
-    done
-  done
-}
-
-function patEvluation() {
-  CCOption=4 #SSTORE
-  for checkpointInterval in 1024 2048 4096 8192 10240
+  # for scheduler in BFS DFS GS OPBFS OPDFS OPGS TStream
+  for scheduler in OPGS TStream
+  # for scheduler in GS
   do
     runTStream
   done
 }
 
-
-function sensitivity() {
-  # TODO: more data generator properties are to be exposed
-  ResetParameters
-  for tthread in 1 2 4 8 16 24
+# run basic experiment for different algorithms
+function withAbortEvaluation() {
+  # for scheduler in BFSA DFSA GSA OPBFSA OPDFSA OPGSA
+  for scheduler in GSA OPGSA
   do
-    baselineEvaluation
-  done
-
-  ResetParameters
-  for tthread in 1 2 4 8 16 24
-  do
-    withAbortEvaluation
-  done
-
-
-  ResetParameters
-  for tthread in 1 2 4 8 16 24
-  do
-    patEvluation
+    runTStream
   done
 }
 
+function patEvluation() {
+  CCOption=4 #SSTORE
+  runTStream
+}
 
-function abortHandling() {
+
+# checkpointInterval
+function sensitivity_study_batch() {
   ResetParameters
-  # for abort_ratio in 1 10 100
-  for abort_ratio in 100
+  # for tthread in 1 2 4 8 16 24 48
+  for app in StreamLedger GrepSum
   do
-    # for tthread in 1 2 4 8 16 24
-    for tthread in 24
+    for isCyclic in 0 1
     do
-      withAbortEvaluation
+      for checkpointInterval in 5120 10240 20480 40960
+      do
+        baselineEvaluation
+      done
+    done
+  done
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for checkpointInterval in 5120 10240 20480 40960
+      do
+        withAbortEvaluation
+      done
+    done
+  done
+
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for checkpointInterval in 5120 10240 20480 40960
+      do
+        patEvluation
+      done
     done
   done
 }
 
-abortHandling
+# key_skewness
+function sensitivity_study_skewness() {
+  # for tthread in 1 2 4 8 16 24 48
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for key_skewness in 0 25 50 75 100
+      do
+        baselineEvaluation
+      done
+    done
+  done
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for key_skewness in 0 25 50 75 100
+      do
+        withAbortEvaluation
+      done
+    done
+  done
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for key_skewness in 0 25 50 75 100
+      do
+        patEvluation
+      done
+    done
+  done
+}
+
+# abort_ratio
+function sensitivity_study_abort() {
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for abort_ratio in 0 1 10 100 1000
+      do
+        baselineEvaluation
+      done
+    done
+  done
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for abort_ratio in 0 1 10 100 1000
+      do
+        withAbortEvaluation
+      done
+    done
+  done
+
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for abort_ratio in 0 1 10 100 1000
+      do
+        patEvluation
+      done
+    done
+  done
+}
+
+# NUM_ACCESS
+function sensitivity_study_access() {
+  ResetParameters
+  for app in GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for NUM_ACCESS in 1 2 4 6 8 10
+      do
+        baselineEvaluation
+      done
+    done
+  done
+
+  ResetParameters
+  for app in GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for NUM_ACCESS in 1 2 4 6 8 10
+      do
+        withAbortEvaluation
+      done
+    done
+  done
+
+
+  ResetParameters
+  for app in GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for NUM_ACCESS in 1 2 4 6 8 10
+      do
+        patEvluation
+      done
+    done
+  done
+}
+
+# writeonly
+function sensitivity_study_writeonly() {
+  # for tthread in 1 2 4 8 16 24 48
+  ResetParameters
+  for app in StreamLedger
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for deposit_ratio in 0 25 50 75 100
+      do
+        baselineEvaluation
+      done
+    done
+  done
+
+  ResetParameters
+  for app in StreamLedger 
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for deposit_ratio in 0 25 50 75 100
+      do
+        withAbortEvaluation
+      done
+    done
+  done
+
+  ResetParameters
+  for app in StreamLedger 
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for deposit_ratio in 0 25 50 75 100
+      do
+        patEvluation
+      done
+    done
+  done
+}
+
+# NUM_ACCESS
+function sensitivity_study_keys() {
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for NUM_ITEMS in 11520 115200 1152000
+      do
+        baselineEvaluation
+      done
+    done
+  done
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for NUM_ITEMS in 11520 115200 1152000
+      do
+        withAbortEvaluation
+      done
+    done
+  done
+
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for NUM_ITEMS in 11520 115200 1152000
+      do
+        patEvluation
+      done
+    done
+  done
+}
+
+# sensitivity_study_batch
+# sensitivity_study_skewness
+# sensitivity_study_abort
+# sensitivity_study_keys
+# sensitivity_study_access
+# sensitivity_study_writeonly
+
+# draw
+ResetParameters
+cd draw || exit
+for isCyclic in 0 1
+do
+  echo "python sensitivity_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
+  python sensitivity_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+
+  echo "python sensitivity_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
+  python sensitivity_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+
+  echo "python sensitivity_abort.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
+  python sensitivity_abort.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+
+  echo "python sensitivity_access.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
+  python sensitivity_access.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+
+  echo "python sensitivity_key.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
+  python sensitivity_key.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+
+  echo "python sensitivity_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
+  python sensitivity_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+done

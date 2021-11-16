@@ -159,7 +159,7 @@ def ReadFileSL(batchInterval, tthread, NUM_ITEMS, deposit_ratio, key_skewness, o
         x_axis.append(col)
         y_axis.append(coly)
     else:
-        print ("error")
+        print("error")
 
     col = []
     f = getPathSL("TStream", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
@@ -233,7 +233,7 @@ def ReadFileGS(batchInterval, tthread, NUM_ITEMS, NUM_ACCESS,  key_skewness, ove
         x_axis.append(col)
         y_axis.append(coly)
     else:
-        print ("error")
+        print("error")
 
     col = []
     f = getPathGS("TStream", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
@@ -307,7 +307,7 @@ if __name__ == '__main__':
     # for batchInterval in [10240]:
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:d:k:o:a:b:c:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:")
     except getopt.GetoptError:
         print("Error")
 
@@ -316,6 +316,8 @@ if __name__ == '__main__':
             NUM_ITEMS = int(arg)
         elif opt in ['-d']:
             deposit_ratio = int(arg)
+        elif opt in ['-n']:
+            NUM_ACCESS = int(arg)
         elif opt in ['-k']:
             key_skewness = int(arg)
         elif opt in ['-o']:
