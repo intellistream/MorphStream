@@ -133,6 +133,7 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
 
     private void onAbortHandlingTransition(Operation descendant, OnNeedAbortHandlingSignal signal) {
         if (enable_log) LOG.debug("failed operation: " + descendant);
+
         OperationStateType prevOperationState;
         if (!descendant.getOperationState().equals(OperationStateType.EXECUTED)) {
             executableTaskListener.onOPFinalized(descendant);
@@ -160,7 +161,7 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
                 if (!signal.getPrevParentState().equals(OperationStateType.EXECUTED)) {
                     operation.updateDependencies(dependencyType, parentState);
                 }
-                 if(operation.tryReady()) {
+                 if (operation.tryReady()) {
                      readyAction(operation);
                  }
             }

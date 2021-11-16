@@ -1,5 +1,6 @@
 package scheduler.statemanager;
 
+import profiler.MeasureTools;
 import scheduler.context.GSTPGContextWithAbort;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
 import scheduler.oplevel.struct.MetaTypes;
@@ -154,10 +155,6 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
     private void ocParentExecutedTransition(GSOperationChainWithAbort operationChain) {
         operationChain.updateDependency();
         if (!operationChain.hasParents() && !operationChain.isExecuted) {
-            assert (!operationChain.hasParents()
-                    && !operationChain.context.busyWaitQueue.contains(operationChain)
-                    && !operationChain.context.IsolatedOC.contains(operationChain)
-                    && !operationChain.context.OCwithChildren.contains(operationChain));
             executableTaskListener.onOCExecutable(operationChain);
         }
     }

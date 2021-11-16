@@ -93,13 +93,14 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
 
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
 
+        // apply function
+        AppConfig.randomDelay();
+
         if (sourceAccountBalance > operation.condition.arg1
                 && sourceAccountBalance > operation.condition.arg2) {
             // read
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-            // apply function
-            AppConfig.randomDelay();
             if (operation.function instanceof INC) {
                 tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
             } else if (operation.function instanceof DEC) {

@@ -95,35 +95,6 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         context.partitionStateManager.onOcExecuted(task);
     }
 
-//    @Override
-//    public void PROCESS(GSTPGContextWithAbort context, long mark_ID) {
-//        int threadId = context.thisThreadId;
-//        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-//        GSOperationChainWithAbort next = next(context);
-//        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-//
-//        if (next != null) {
-////            assert !next.getOperations().isEmpty();
-//            if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-//                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-//                NOTIFY(next, context);
-//                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
-//            }
-//        } else {
-//            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-//            next = nextFromBusyWaitQueue(context);
-//            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-//            if (next != null) {
-////                assert !next.getOperations().isEmpty();
-//                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-//                    MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-//                    NOTIFY(next, context);
-//                    MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
-//                }
-//            }
-//        }
-//    }
-
     /**
      * Used by GSScheduler.
      *  @param context
@@ -142,26 +113,6 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         }
         return true;
     }
-
-//    /**
-//     * Used by GSScheduler.
-//     *  @param context
-//     * @param operationChain
-//     * @param mark_ID
-//     * @return
-//     */
-//    @Override
-//    public boolean executeWithBusyWait(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
-//        MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
-//        assert !operationChain.isExecuted;
-//        for (GSOperationWithAbort operation : operation_chain_list) {
-//            if (operation.isExecuted || operation.aborted) continue;
-//            if (isConflicted(context, operationChain, operation)) return false; // did not completed
-//            execute(operation, mark_ID, false);
-//            checkTransactionAbort(operation, operationChain);
-//        }
-//        return true;
-//    }
 
     @Override
     protected void checkTransactionAbort(GSOperationWithAbort operation, GSOperationChainWithAbort operationChain) {

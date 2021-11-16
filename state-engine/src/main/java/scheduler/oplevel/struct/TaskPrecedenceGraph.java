@@ -166,9 +166,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
             if (enable_log) log.info("MaxLevel:" + (((OPLayeredContext) context).maxLevel));
         } else if (context instanceof OPGSTPGContext) {
-            if (!threadToOCs.containsKey(context.thisThreadId)) {
-                System.out.println("= =");
-            }
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
                     oc.updateTDDependencies();

@@ -1,5 +1,8 @@
 package utils;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
 /**
@@ -10,12 +13,32 @@ public class AppConfig {
     public static int complexity;
     public static boolean isCyclic = true;
 
-    public static long randomDelay() {
-        int delay = random.nextInt(complexity);
-        long sum = 1L;
-        for (int i = 1; i < delay; i++) {
-            sum *= i;
-        }
-        return sum;
+//    public static long randomDelay() {
+////        int delay = random.nextInt(complexity);
+//        int delay = complexity;
+//        long sum = 1L;
+//        for (int i = 1; i < delay; i++) {
+//            sum *= i;
+//        }
+//        return sum;
+//    }
+
+//    public static byte[] randomDelay() {
+//        try {
+//            byte[] b = new byte[0];
+//            for (int i = 1; i < 5; i++) {
+//                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+//                b = digest.digest(("XXXXXXXXXXXXXXXXXXXX"+i).getBytes(StandardCharsets.UTF_8));
+//            }
+//            return b;
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        }
+//        return null;
+//    }
+
+    public static void randomDelay() {
+        long start = System.nanoTime();
+        while (System.nanoTime() - start < complexity) {}
     }
 }

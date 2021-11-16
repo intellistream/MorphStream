@@ -20,6 +20,9 @@ import transaction.function.SUM;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import static content.common.CommonMetaTypes.AccessType.*;
@@ -70,7 +73,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public void execute(Operation operation, long mark_ID, boolean clean) {
 //        log.trace("++++++execute: " + operation);
         // if the operation is in state aborted or committable or committed, we can bypass the execution
-        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED) || operation.isFailed) {
             //otherwise, skip (those +already been tagged as aborted).
             return;
         }
@@ -116,23 +119,17 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     // DD: Transfer event processing
     protected void Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
-//        if (preValues == null) {
-//            log.info("Failed to read condition records[0]" + operation.condition_records[0].record_.GetPrimaryKey());
-//            log.info("Its version size:" + ((T_StreamContent) operation.condition_records[0].content_).versions.size());
-//            for (Map.Entry<Long, SchemaRecord> schemaRecord : ((T_StreamContent) operation.condition_records[0].content_).versions.entrySet()) {
-//                log.info("Its contents:" + schemaRecord.getKey() + " value:" + schemaRecord.getValue() + " current bid:" + operation.bid);
-//            }
-//            log.info("TRY reading:" + operation.condition_records[0].content_.readPreValues(operation.bid));//not modified in last round);
-//        }
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
+
+        // apply function
+        AppConfig.randomDelay();
 
         if (sourceAccountBalance > operation.condition.arg1
                 && sourceAccountBalance > operation.condition.arg2) {
             // read
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-            // apply function
-            AppConfig.randomDelay();
+
             if (operation.function instanceof INC) {
                 tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
             } else if (operation.function instanceof DEC) {
@@ -157,9 +154,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
         List<DataBox> values = srcRecord.getValues();
         //apply function to modify..
+        AppConfig.randomDelay();
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
-        AppConfig.randomDelay();
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
@@ -171,7 +168,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         long sum = 0;
 
         for (int i = 0; i < keysLength; i++) {
+            // apply function
             AppConfig.randomDelay();
+//            long start = System.nanoTime();
+//            while (System.nanoTime() - start < 10000) {}
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
         }
@@ -182,10 +182,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             // read
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-            // apply function
-
             if (operation.function instanceof SUM) {
-//                tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
                 tempo_record.getValues().get(1).setLong(sum);//compute.
             } else
                 throw new UnsupportedOperationException();
