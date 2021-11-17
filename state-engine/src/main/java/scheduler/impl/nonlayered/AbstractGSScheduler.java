@@ -1,6 +1,5 @@
 package scheduler.impl.nonlayered;
 
-import profiler.MeasureTools;
 import scheduler.context.AbstractGSTPGContext;
 import scheduler.impl.OCScheduler;
 import scheduler.struct.gs.AbstractGSOperationChain;
@@ -42,35 +41,6 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
     public void TxnSubmitFinished(Context context) {
         throw new UnsupportedOperationException("Unsupported.");
     }
-
-//    @Override
-//    public void PROCESS(Context context, long mark_ID) {
-//        int threadId = context.thisThreadId;
-//        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-//        SchedulingUnit next = next(context);
-//        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-//
-//        if (next != null) {
-////            assert !next.getOperations().isEmpty();
-//            if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-//                MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-//                NOTIFY(next, context);
-//                MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
-//            }
-//        } else {
-//            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-//            next = nextFromBusyWaitQueue(context);
-//            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-//            if (next != null) {
-////                assert !next.getOperations().isEmpty();
-//                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-//                    MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-//                    NOTIFY(next, context);
-//                    MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
-//                }
-//            }
-//        }
-//     }
 
     @Override
     protected void NOTIFY(SchedulingUnit task, Context context) {

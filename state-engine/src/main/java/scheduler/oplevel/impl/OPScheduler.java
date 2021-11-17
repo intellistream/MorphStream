@@ -167,9 +167,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         long sum = 0;
 
+        // apply function
+        AppConfig.randomDelay();
+
         for (int i = 0; i < keysLength; i++) {
-            // apply function
-            AppConfig.randomDelay();
 //            long start = System.nanoTime();
 //            while (System.nanoTime() - start < 10000) {}
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);

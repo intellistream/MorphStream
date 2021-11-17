@@ -10,7 +10,6 @@ import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAbort, GSOperationWithAbort, GSOperationChainWithAbort> {

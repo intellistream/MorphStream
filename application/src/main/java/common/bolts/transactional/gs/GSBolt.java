@@ -86,9 +86,9 @@ public abstract class GSBolt extends TransactionalBolt {
     protected void WRITE_CORE(MicroEvent event) {
 //        long start = System.nanoTime();
         long sum = 0;
+        AppConfig.randomDelay();
         DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
         for (int i = 0; i < event.NUM_ACCESS; ++i) {
-            AppConfig.randomDelay();
             SchemaRecordRef recordRef = event.getRecord_refs()[i];
             SchemaRecord record = recordRef.getRecord();
             DataBox Value_value = record.getValues().get(1);

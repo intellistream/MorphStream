@@ -38,22 +38,14 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
 //    public String[] condition_source = null;
     public Condition condition;
     public int[] success;
-    private final AtomicReference<OperationStateType> operationState;
+    private OperationStateType operationState;
     public boolean isFailed = false; // whether the operation is failed, this is used to detect transaction abort
 
 //    public volatile AbstractOperation[] fdParentOps; // parent ops that accessing conditioned records and has smaller
 //    public volatile List<AbstractOperation> fd_parents; // parent ops that accessing conditioned records and has smaller
 //    public HashMap<TableRecord, Integer> condition_source_to_index;
 
-    private scheduler.oplevel.struct.AbstractOperation ld_head_operation;
-    private final Queue<AbstractOperation> ld_descendant_operations;
-    private final Queue<AbstractOperation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
-    private final Queue<AbstractOperation> td_children; // the functional dependencies ops to be executed after this op.
-    private final Queue<AbstractOperation> ld_children; // the functional dependencies ops to be executed after this op.
-    private final Queue<AbstractOperation> ld_spec_children; // speculative children to notify.
     public final Queue<AbstractOperation> fd_parents; // the functional dependencies ops to be executed in advance
-    private final Queue<AbstractOperation> td_parents; // the functional dependencies ops to be executed in advance
-    private final Queue<AbstractOperation> ld_parents; // the functional dependencies ops to be executed in advance
 
     public AbstractOperation(String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
                              TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid) {
@@ -70,29 +62,16 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
         this.d_record = d_record;
         this.bid = bid;
 
-        ld_head_operation = null;
-        ld_descendant_operations = new ArrayDeque<>();
 
         // finctional dependencies, this should be concurrent because cross thread access
         fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
-        fd_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
-        // temporal dependencies
-        td_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
-        td_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
-        // finctional dependencies
-        ld_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
-        ld_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
-        // finctional dependencies
-        // speculative parents to wait, include the last ready op
-        // speculative parents to wait, include the last ready op
-        ld_spec_children = new ArrayDeque<>(); // speculative children to notify.
 
-        operationState = new AtomicReference<>(OperationStateType.BLOCKED);
+        operationState = OperationStateType.BLOCKED;
     }
 
     @Override
     public String toString() {
-        return table_name + " " + d_record.record_.GetPrimaryKey() + " " + bid + " " + operationState.get();
+        return table_name + " " + d_record.record_.GetPrimaryKey() + " " + bid + " " + operationState;
     }
 
     /**
@@ -128,10 +107,10 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
     }
 
     public void stateTransition(OperationStateType state) {
-        operationState.getAndSet(state);
+        operationState = state;
     }
 
     public OperationStateType getOperationState() {
-        return operationState.get();
+        return operationState;
     }
 }

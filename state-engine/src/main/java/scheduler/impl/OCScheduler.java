@@ -64,9 +64,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
 
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
-//        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         INITIALIZE(context);
-//        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 
         do {
             MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
@@ -131,10 +129,10 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     protected void Depo_Fun(ExecutionUnit operation, long mark_ID, boolean clean) {
         SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
         List<DataBox> values = srcRecord.getValues();
+        AppConfig.randomDelay();
         //apply function to modify..
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
-        AppConfig.randomDelay();
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
@@ -145,8 +143,10 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
 
         long sum = 0;
 
+        // apply function
+        AppConfig.randomDelay();
+
         for (int i = 0; i < keysLength; i++) {
-            AppConfig.randomDelay();
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
         }
@@ -219,7 +219,6 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
         SchedulingUnit next = next(context);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
 //            assert !next.getOperations().isEmpty();
@@ -229,18 +228,21 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
                 MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
             }
         } else {
-            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-            next = nextFromBusyWaitQueue(context);
-            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-            if (next != null) {
+            if (AppConfig.isCyclic) {
+                MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+                next = nextFromBusyWaitQueue(context);
+                MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+                if (next != null) {
 //                assert !next.getOperations().isEmpty();
-                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-                    MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-                    NOTIFY(next, context);
-                    MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+                    if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+                        MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+                        NOTIFY(next, context);
+                        MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
+                    }
                 }
             }
         }
+        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
     }
 
     /**
@@ -256,10 +258,14 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     public boolean executeWithBusyWait(Context context, SchedulingUnit operationChain, long mark_ID) {
         MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
         for (ExecutionUnit operation : operation_chain_list) {
-            if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
-                    || operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)
-                    || operation.isFailed) continue;
-            if (isConflicted(context, operationChain, operation)) return false;
+            if (AppConfig.isCyclic) {
+                if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
+                        || operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)
+                        || operation.isFailed) continue;
+                if (isConflicted(context, operationChain, operation)) {
+                    return false;
+                }
+            }
             execute(operation, mark_ID, false);
             if (!operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
                 operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
