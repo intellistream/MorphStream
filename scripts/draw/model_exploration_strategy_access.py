@@ -101,26 +101,48 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
     w, h = 3, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for NUM_ACCESS in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
-        lines = open(op_gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[0].append(float(throughput))
+    if isCyclic == "true":
+        for NUM_ACCESS in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[0].append(float(throughput))
 
-    for NUM_ACCESS in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathGS("OPBFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
-        lines = open(op_gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[1].append(float(throughput))
+        for NUM_ACCESS in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathGS("OPBFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[1].append(float(throughput))
 
-    for NUM_ACCESS in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathGS("OPDFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
-        lines = open(op_gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[2].append(float(throughput))
+        for NUM_ACCESS in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathGS("OPDFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[2].append(float(throughput))
+    else:
+        for NUM_ACCESS in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathGS("GS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[0].append(float(throughput))
+
+        for NUM_ACCESS in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathGS("BFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[1].append(float(throughput))
+
+        for NUM_ACCESS in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathGS("DFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[2].append(float(throughput))
 
     print(y)
 

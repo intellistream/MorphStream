@@ -205,7 +205,7 @@ if __name__ == '__main__':
                           abort_ratio, isCyclic)
     DrawFigure(x_values, y_axis, legend_labels, "abort(n/10000)", "throughput(e/s)", 0 ,400,
                'gs_abort_mechanism_comparison_{}'.format(isCyclic), legend)
-    y_values = ReadFileSL(x_values, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio,
+    y_axis = ReadFileSL(x_values, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio,
                           abort_ratio, isCyclic)
     DrawFigure(x_values, y_axis, legend_labels, "abort(n/10000)", "throughput(e/s)", 0 ,400,
                'sl_abort_mechanism_comparison_{}'.format(isCyclic), legend)

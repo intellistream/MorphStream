@@ -235,6 +235,92 @@ def ReadFileSL(tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, o
 
     return y
 
+# example for reading csv file
+def ReadFileGS(tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic):
+    # Creates a list containing w lists, each of h items, all set to 0
+    w, h = 3, 5
+    y = [[0 for x in range(w)] for y in range(h)]
+
+    y_sum = [0 for x in range(w)]
+
+    events = tthread * batchInterval
+
+    if isCyclic == "true":
+        f = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
+                    isCyclic)
+        lines = open(f).readlines()
+        idx = locateIdx(lines)
+        for line in lines[idx:idx+tthread]:
+            breakdown_value = line.split("\t")
+            # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
+            y[0][0] = 0
+            y[1][0] = 0
+            y[2][0] += float(breakdown_value[1]) + float(breakdown_value[6])
+            y_sum[0] += float(breakdown_value[1]) + float(breakdown_value[6])
+            y[3][0] += float(breakdown_value[5])
+            y_sum[0] += float(breakdown_value[5])
+            y[4][0] += float(breakdown_value[3])
+            y_sum[0] += float(breakdown_value[3])
+    elif isCyclic == "false":
+        f = getPathGS("GSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
+                    isCyclic)
+        lines = open(f).readlines()
+        idx = locateIdx(lines)
+        for line in lines[idx:idx+tthread]:
+            breakdown_value = line.split("\t")
+            # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
+            y[0][0] = 0
+            y[1][0] = 0
+            y[2][0] += float(breakdown_value[1]) + float(breakdown_value[6])
+            y_sum[0] += float(breakdown_value[1]) + float(breakdown_value[6])
+            y[3][0] += float(breakdown_value[5])
+            y_sum[0] += float(breakdown_value[5])
+            y[4][0] += float(breakdown_value[3])
+            y_sum[0] += float(breakdown_value[3])
+    else:
+        print("error")
+
+    f = getPathGS("TStream", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
+                  isCyclic)
+    lines = open(f).readlines()
+    idx = locateIdx(lines)
+    for line in lines[idx:idx + tthread]:
+        breakdown_value = line.split("\t")
+        # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
+        y[0][1] = 0
+        y[1][1] = 0
+        y[2][1] += float(breakdown_value[1]) + float(breakdown_value[6])
+        y_sum[1] += float(breakdown_value[1]) + float(breakdown_value[6])
+        y[3][1] += float(breakdown_value[5])
+        y_sum[1] += float(breakdown_value[5])
+        y[4][1] += float(breakdown_value[3])
+        y_sum[1] += float(breakdown_value[3])
+
+    f = getPathGS("PAT", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
+                  isCyclic)
+    lines = open(f).readlines()
+    idx = locateIdxPAT(lines)
+    for line in lines[idx:idx + tthread]:
+        breakdown_value = line.split("\t")
+        # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
+        y[0][2] += float(breakdown_value[3])
+        y_sum[2] += float(breakdown_value[3])
+        y[1][2] += float(breakdown_value[4])
+        y_sum[2] += float(breakdown_value[4])
+        y[2][2] = 0
+        y[3][2] = 0
+        y[4][2] += float(breakdown_value[2])
+        y_sum[2] += float(breakdown_value[2])
+
+    for i in range(h):
+        for j in range(w):
+            if y_sum[j] != 0:
+                y[i][j] = (y[i][j] / y_sum[j]) * 100
+
+    print(y)
+
+    return y
+
 def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic):
     return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}'\
         .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
@@ -310,4 +396,8 @@ if __name__ == "__main__":
     y_values = ReadFileSL(tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
     DrawFigure(x_values, y_values, legend_labels,
                '', 'percentage of time', "sl_breakdown_throughput_b{}_{}_{}_{}_{}_{}_{}"
+               .format(NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic), True)
+    y_values = ReadFileGS(tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+    DrawFigure(x_values, y_values, legend_labels,
+               '', 'percentage of time', "gs_breakdown_throughput_b{}_{}_{}_{}_{}_{}_{}"
                .format(NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic), True)

@@ -12,7 +12,7 @@ function ResetParameters() {
   overlap_ratio=0
   abort_ratio=100
   CCOption=3 #TSTREAM
-  complexity=1000000
+  complexity=1000
   isCyclic=1
 }
 
@@ -54,7 +54,7 @@ function runTStream() {
 # run basic experiment for different algorithms
 function baselineEvaluation() {
   # for scheduler in BFS DFS GS OPBFS OPDFS OPGS TStream
-  for scheduler in GSA OPGS OPGSA TStream
+  for scheduler in GSA OPGSA TStream
   # for scheduler in OPGSA
   do
     runTStream
@@ -74,7 +74,7 @@ function overview() {
   do
     for isCyclic in 0 1
     do
-        for tthread in 1 2 4 8 16 24
+        for tthread in 1 4 8 12 16 20 24
         # for tthread in 24
         do
           baselineEvaluation
@@ -87,7 +87,7 @@ function overview() {
   do
     for isCyclic in 0 1
     do
-      for tthread in 1 2 4 8 16 24
+      for tthread in 1 4 8 12 16 20 24
       # for tthread in 24
       do
         patEvluation
@@ -96,7 +96,7 @@ function overview() {
   done
 }
 
-# overview
+overview
 ResetParameters
 cd draw || exit
 for isCyclic in 0 1

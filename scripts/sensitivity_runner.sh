@@ -12,7 +12,7 @@ function ResetParameters() {
   overlap_ratio=0
   abort_ratio=100
   CCOption=3 #TSTREAM
-  complexity=1000000
+  complexity=1000
   isCyclic=1
 }
 
@@ -33,7 +33,7 @@ function runTStream() {
           --abort_ratio $abort_ratio \
           --CCOption $CCOption \
           --complexity $complexity \
-           --isCyclic $isCyclic"
+          --isCyclic $isCyclic"
   java -Xms100g -Xmx100g -Xss100M -jar -d64 application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
@@ -333,12 +333,12 @@ function sensitivity_study_keys() {
   done
 }
 
-# sensitivity_study_batch
-# sensitivity_study_skewness
-# sensitivity_study_abort
-# sensitivity_study_keys
-# sensitivity_study_access
-# sensitivity_study_writeonly
+sensitivity_study_batch
+sensitivity_study_skewness
+sensitivity_study_abort
+sensitivity_study_keys
+sensitivity_study_access
+sensitivity_study_writeonly
 
 # draw
 ResetParameters

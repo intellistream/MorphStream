@@ -102,26 +102,48 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
     w, h = 3, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for batchInterval in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
-        lines = open(op_gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[0].append(float(throughput))
+    if isCyclic == "true":
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[0].append(float(throughput))
 
-    for batchInterval in x_axis:
-        events = tthread * batchInterval
-        op_dfs_path = getPathGS("OPBFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
-        lines = open(op_dfs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[1].append(float(throughput))
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_dfs_path = getPathGS("OPBFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_dfs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[1].append(float(throughput))
 
-    for batchInterval in x_axis:
-        events = tthread * batchInterval
-        op_dfs_path = getPathGS("OPDFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
-        lines = open(op_dfs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[2].append(float(throughput))
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_dfs_path = getPathGS("OPDFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_dfs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[2].append(float(throughput))
+    else:
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathGS("GS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[0].append(float(throughput))
+
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_dfs_path = getPathGS("BFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_dfs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[1].append(float(throughput))
+
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_dfs_path = getPathGS("DFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_dfs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[2].append(float(throughput))
 
     print(y)
     return y
@@ -131,26 +153,48 @@ def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_ske
     w, h = 3, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for batchInterval in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathSL("OPGS", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
-        lines = open(op_gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[0].append(float(throughput))
+    if isCyclic == "true":
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathSL("OPGS", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[0].append(float(throughput))
 
-    for batchInterval in x_axis:
-        events = tthread * batchInterval
-        op_dfs_path = getPathSL("OPBFS", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
-        lines = open(op_dfs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[1].append(float(throughput))
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_dfs_path = getPathSL("OPBFS", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_dfs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[1].append(float(throughput))
 
-    for batchInterval in x_axis:
-        events = tthread * batchInterval
-        op_dfs_path = getPathSL("OPDFS", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
-        lines = open(op_dfs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[2].append(float(throughput))
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_dfs_path = getPathSL("OPDFS", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_dfs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[2].append(float(throughput))
+    else:
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_gs_path = getPathSL("GS", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_gs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[0].append(float(throughput))
+
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_dfs_path = getPathSL("BFS", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_dfs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[1].append(float(throughput))
+
+        for batchInterval in x_axis:
+            events = tthread * batchInterval
+            op_dfs_path = getPathSL("DFS", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            lines = open(op_dfs_path).readlines()
+            throughput = lines[0].split(": ")[1]
+            y[2].append(float(throughput))
 
     print(y)
     return y

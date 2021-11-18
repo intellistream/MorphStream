@@ -327,7 +327,8 @@ if __name__ == '__main__':
             else:
                 isCyclic = "false"
 
-    x_value = [1, 2, 4, 8, 16, 24]
+    # x_value = [1, 2, 4, 8, 16, 24]
+    x_value = [1, 4, 8, 12, 16, 20, 24]
     # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "TStream", "PAT"]
     legend_labels = ["$MorphStream$", "$TStream$", "$S-Store$"]
     x_axis = [x_value] * len(legend_labels)
