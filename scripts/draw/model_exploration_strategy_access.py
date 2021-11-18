@@ -97,49 +97,49 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
 
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
-def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic):
+def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     w, h = 3, len(x_axis)
     y = [[] for _ in range(w)]
 
     if isCyclic == "true":
         for NUM_ACCESS in x_axis:
             events = tthread * batchInterval
-            op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[0].append(float(throughput))
 
         for NUM_ACCESS in x_axis:
             events = tthread * batchInterval
-            op_gs_path = getPathGS("OPBFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            op_gs_path = getPathGS("OPBFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[1].append(float(throughput))
 
         for NUM_ACCESS in x_axis:
             events = tthread * batchInterval
-            op_gs_path = getPathGS("OPDFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            op_gs_path = getPathGS("OPDFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[2].append(float(throughput))
     else:
         for NUM_ACCESS in x_axis:
             events = tthread * batchInterval
-            op_gs_path = getPathGS("GS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            op_gs_path = getPathGS("GS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[0].append(float(throughput))
 
         for NUM_ACCESS in x_axis:
             events = tthread * batchInterval
-            op_gs_path = getPathGS("BFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            op_gs_path = getPathGS("BFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[1].append(float(throughput))
 
         for NUM_ACCESS in x_axis:
             events = tthread * batchInterval
-            op_gs_path = getPathGS("DFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+            op_gs_path = getPathGS("DFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
             lines = open(op_gs_path).readlines()
             throughput = lines[0].split(": ")[1]
             y[2].append(float(throughput))
@@ -149,14 +149,14 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
     return y
 
 
-def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic):
-    return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}'\
-        .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+    return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
+        .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic):
-    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}'\
-        .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic)
+def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
+        .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
 if __name__ == '__main__':
@@ -169,9 +169,10 @@ if __name__ == '__main__':
     abort_ratio = 0
     batchInterval = 10240
     isCyclic = "false"
+    complexity = 1000
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:m:")
     except getopt.GetoptError:
         print("Error")
 
@@ -195,13 +196,15 @@ if __name__ == '__main__':
                 isCyclic = "true"
             else:
                 isCyclic = "false"
+        elif opt in ['-m']:
+            complexity = int(arg)
 
     # NUM_ACCESS
     x_values = [1, 2, 4, 6, 8, 10]
     legend_labels = ["$Notification$", "$BFS$", "$DFS$"]
     legend = True
     y_values = ReadFileGS(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
-                          abort_ratio, isCyclic)
+                          abort_ratio, isCyclic, complexity)
     DrawFigure(x_values, y_values, legend_labels,
                'num_state_access', 'Tpt. (#inputs/ms)', 0,
-               400, 'exploration_strategy_comparison_access_{}'.format(isCyclic), legend)
+               400, 'exploration_strategy_comparison_access_{}_{}'.format(isCyclic, complexity), legend)
