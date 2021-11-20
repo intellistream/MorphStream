@@ -78,7 +78,7 @@ public class MeasureSink extends BaseSink {
                 + OsUtils.osWrapperPostFix("%s")
                 + OsUtils.osWrapperPostFix("threads = %d")
                 + OsUtils.osWrapperPostFix("totalEvents = %d")
-                + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%s.latency");
+                + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%s_%d.latency");
 
         String scheduler = config.getString("scheduler");
         if (config.getInt("CCOption") == CCOption_SStore) {
@@ -93,7 +93,8 @@ public class MeasureSink extends BaseSink {
                     config.getInt("State_Access_Skewness"),
                     config.getInt("Ratio_of_Overlapped_Keys"),
                     config.getInt("Ratio_of_Transaction_Aborts"),
-                    AppConfig.isCyclic);
+                    AppConfig.isCyclic,
+                    config.getInt("complexity"));
         } else if (config.getString("common").equals("GrepSum")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -102,7 +103,8 @@ public class MeasureSink extends BaseSink {
                     config.getInt("State_Access_Skewness"),
                     config.getInt("Ratio_of_Overlapped_Keys"),
                     config.getInt("Ratio_of_Transaction_Aborts"),
-                    AppConfig.isCyclic);
+                    AppConfig.isCyclic,
+                    config.getInt("complexity"));
         } else {
             throw new UnsupportedOperationException();
         }
