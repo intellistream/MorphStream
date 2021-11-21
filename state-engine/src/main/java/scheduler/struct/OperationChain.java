@@ -262,4 +262,11 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
             return Long.compare(this.childOp.bid, o.childOp.bid);
         }
     }
+
+    public void clear() {
+        potentialChldrenInfo.clear();
+        operations.clear();
+        ocParents.clear();
+        ocChildren.clear();
+    }
 }

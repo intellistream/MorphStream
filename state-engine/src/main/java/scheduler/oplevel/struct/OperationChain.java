@@ -144,4 +144,9 @@ public class OperationChain implements Comparable<OperationChain> {
             return Long.compare(this.op.bid, o.op.bid);
         }
     }
+
+    public void clear() {
+        potentialChldrenInfo.clear();
+        operations.clear();
+    }
 }

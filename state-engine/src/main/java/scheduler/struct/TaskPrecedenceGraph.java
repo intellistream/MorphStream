@@ -56,7 +56,10 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
-        threadToOCs.get(context.thisThreadId).clear();
+//        threadToOCs.get(context.thisThreadId).clear();
+        for (SchedulingUnit oc : threadToOCs.get(context.thisThreadId)) {
+            oc.clear();
+        }
 //        this.setOCs(context);
     }
 
@@ -139,11 +142,11 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 //        assert context.totalOsToSchedule == ocs.size();
-        Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
-        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
-            threadToOCs.computeIfAbsent(threadId, s -> new ArrayDeque<>()).addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
+//        Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
+//        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
+//            threadToOCs.computeIfAbsent(threadId, s -> new ArrayDeque<>()).addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
+//        }
 
-        }
         submit(context, threadToOCs.get(threadId));
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(threadId);
     }
@@ -457,20 +460,22 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 
     private void checkFD(SchedulingUnit curOC, ExecutionUnit op, String table_name,
                          String key, String[] condition_sourceTable, String[] condition_source) {
-        for (int index = 0; index < condition_source.length; index++) {
-            if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
-                continue;// no need to check data dependency on a key itself.
-            SchedulingUnit OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index]);
-            // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
-            MyList<ExecutionUnit> conditionedOps = OCFromConditionSource.getOperations();
-            if (OCFromConditionSource.getOperations().isEmpty() || conditionedOps.first().bid >= op.bid) {
-                OCFromConditionSource.addPotentialFDChildren(curOC, op);
-            } else {
-                // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
-                curOC.addParent(op, OCFromConditionSource); // record dependency
+        if (condition_source != null) {
+            for (int index = 0; index < condition_source.length; index++) {
+                if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
+                    continue;// no need to check data dependency on a key itself.
+                SchedulingUnit OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index]);
+                // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
+                MyList<ExecutionUnit> conditionedOps = OCFromConditionSource.getOperations();
+                if (OCFromConditionSource.getOperations().isEmpty() || conditionedOps.first().bid >= op.bid) {
+                    OCFromConditionSource.addPotentialFDChildren(curOC, op);
+                } else {
+                    // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
+                    curOC.addParent(op, OCFromConditionSource); // record dependency
+                }
             }
+            curOC.checkPotentialFDChildrenOnNewArrival(op);
         }
-        curOC.checkPotentialFDChildrenOnNewArrival(op);
     }
 
     public Collection<Context> getContexts() {

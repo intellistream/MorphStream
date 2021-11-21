@@ -52,7 +52,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
-        threadToOCs.get(context.thisThreadId).clear();
+//        threadToOCs.get(context.thisThreadId).clear();
+        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+            oc.clear();
+        }
 //        this.setOCs(context); // TODO: the short cut should be reset, but will take some time.
     }
 
@@ -145,11 +148,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 
-        Collection<TableOCs> tableOCsList = getOperationChains().values();
-        for (TableOCs tableOCs : tableOCsList) {//for each table.
-            threadToOCs.computeIfAbsent(threadId, s -> new ArrayDeque<>()).addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
-        }
-
         if (context instanceof OPLayeredContext) {
             ArrayDeque<Operation> roots = new ArrayDeque<>();
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
@@ -206,7 +204,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else {
             throw new UnsupportedOperationException();
         }
-
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
