@@ -46,4 +46,11 @@ public abstract class LayeredOperationChain<ExecutionUnit extends AbstractOperat
         }
         isDependencyLevelCalculated = true;
     }
+
+    @Override
+    public void clear() {
+        super.clear();
+        isDependencyLevelCalculated = false;
+        dependencyLevel = -1;
+    }
 }

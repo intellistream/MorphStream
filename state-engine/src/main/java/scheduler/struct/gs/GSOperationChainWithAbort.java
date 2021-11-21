@@ -12,14 +12,12 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class GSOperationChainWithAbort extends AbstractGSOperationChain<GSOperationWithAbort> {
     // maintains descendants of header operation in the oc. HeaderOperation -> Queue<Descendants>
-    private final ConcurrentSkipListMap<GSOperationWithAbort, Queue<GSOperationWithAbort>> headerLdDescendants;
     public boolean needAbortHandling = false; // The abort handling in GS should be residing in each operation chain
     public Queue<GSOperationWithAbort> failedOperations = new ArrayDeque<>();
 
 
     public GSOperationChainWithAbort(String tableName, String primaryKey, long bid) {
         super(tableName, primaryKey, bid);
-        this.headerLdDescendants = new ConcurrentSkipListMap<>();
     }
 
     public void addOperation(GSOperationWithAbort op) {
@@ -32,12 +30,10 @@ public class GSOperationChainWithAbort extends AbstractGSOperationChain<GSOperat
         return super.getChildren();
     }
 
-    public void addDescendant(GSOperationWithAbort header, GSOperationWithAbort descendant) {
-        Queue<GSOperationWithAbort> q = headerLdDescendants.computeIfAbsent(header, s -> new ConcurrentLinkedDeque<>());
-        q.add(descendant);
-    }
-
-    public Queue<GSOperationWithAbort> getDescendants(GSOperationWithAbort descendant) {
-        return headerLdDescendants.get(descendant);
+    @Override
+    public void clear() {
+        super.clear();
+        needAbortHandling = false;
+        failedOperations.clear();
     }
 }
