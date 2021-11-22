@@ -149,21 +149,21 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 
         if (context instanceof OPLayeredContext) {
-//            ArrayDeque<Operation> roots = new ArrayDeque<>();
-//            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
-//                if (!oc.getOperations().isEmpty()) {
-//                    oc.updateTDDependencies();
-////                    updateTDDependencies(oc);
-//                    Operation head = oc.getOperations().first();
-//                    if (head.isRoot()) {
-//                        roots.add(head);
-//                    }
-//                    context.operations.addAll(oc.getOperations());
-//                    context.totalOsToSchedule += oc.getOperations().size();
-//                }
-//            }
-//            ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
-            ((OPLayeredContext) context).buildBucketPerThread(threadToOCs.get(context.thisThreadId));
+            ArrayDeque<Operation> roots = new ArrayDeque<>();
+            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
+                    oc.updateTDDependencies();
+//                    updateTDDependencies(oc);
+                    Operation head = oc.getOperations().first();
+                    if (head.isRoot()) {
+                        roots.add(head);
+                    }
+                    context.operations.addAll(oc.getOperations());
+                    context.totalOsToSchedule += oc.getOperations().size();
+                }
+            }
+            ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
+//            ((OPLayeredContext) context).buildBucketPerThread(threadToOCs.get(context.thisThreadId));
             if (enable_log) log.info("MaxLevel:" + (((OPLayeredContext) context).maxLevel));
         } else if (context instanceof OPGSTPGContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
