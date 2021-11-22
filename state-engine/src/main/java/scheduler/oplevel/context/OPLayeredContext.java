@@ -5,10 +5,7 @@ import scheduler.oplevel.signal.op.OnParentUpdatedSignal;
 import scheduler.oplevel.struct.Operation;
 import scheduler.oplevel.struct.OperationChain;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class OPLayeredContext extends OPSchedulerContext {
@@ -49,6 +46,33 @@ public class OPLayeredContext extends OPSchedulerContext {
 
     public ArrayList<Operation> OPSCurrentLayer() {
         return allocatedLayeredOCBucket.get(currentLevel);
+    }
+
+    /**
+     * Build buckets with submitted ocs.
+     * Return the local maximal dependency level.
+     *
+     * @param ocs
+     */
+    public void buildBucketPerThread(Collection<OperationChain> ocs) {
+        // TODO: update this logic to the latest logic that we proposed in operation level
+        int localMaxDLevel = 0;
+        int dependencyLevel;
+        for (OperationChain oc : ocs) {
+            if (oc.getOperations().isEmpty()) {
+                continue;
+            }
+            this.totalOsToSchedule += oc.getOperations().size();
+            oc.updateDependencyLevel();
+            dependencyLevel = oc.getDependencyLevel();
+            if (localMaxDLevel < dependencyLevel)
+                localMaxDLevel = dependencyLevel;
+            if (!allocatedLayeredOCBucket.containsKey(dependencyLevel))
+                allocatedLayeredOCBucket.put(dependencyLevel, new ArrayList<>());
+            allocatedLayeredOCBucket.get(dependencyLevel).addAll(oc.getOperations());
+        }
+//        if (enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
+        this.maxLevel = localMaxDLevel;
     }
 
     /**

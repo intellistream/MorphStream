@@ -1,8 +1,9 @@
 package scheduler.oplevel.struct;
 
-import scheduler.oplevel.context.OPGSTPGContext;
 import scheduler.oplevel.struct.MetaTypes.DependencyType;
+import scheduler.struct.layered.LayeredOperationChain;
 import transaction.impl.ordered.MyList;
+import utils.lib.ConcurrentHashMap;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -20,10 +21,17 @@ public class OperationChain implements Comparable<OperationChain> {
     private final MyList<Operation> operations;
     public boolean isExecuted = false;
 
+    // layered OC related
+    public final ConcurrentHashMap<OperationChain, Operation> ocParents; // for layered TPG building
+    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
+    private int dependencyLevel = -1;
+
+
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
         this.operations = new MyList<>(tableName, primaryKey);
+        this.ocParents = new ConcurrentHashMap<>();
     }
 
     public String getTableName() {
@@ -80,6 +88,7 @@ public class OperationChain implements Comparable<OperationChain> {
             if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
                 targetOp.addParent(parentOp, DependencyType.FD);
                 parentOp.addChild(targetOp, DependencyType.FD);
+                ocParents.put(parentOC, parentOp);
                 break;
             }
         }
@@ -148,5 +157,34 @@ public class OperationChain implements Comparable<OperationChain> {
     public void clear() {
         potentialChldrenInfo.clear();
         operations.clear();
+    }
+
+
+    // for layered tpg building
+    public synchronized void updateDependencyLevel() {
+        if (isDependencyLevelCalculated)
+            return;
+        dependencyLevel = 0;
+        for (OperationChain parent : ocParents.keySet()) {
+            if (!parent.hasValidDependencyLevel()) {
+                parent.updateDependencyLevel();
+            }
+
+            if (parent.getDependencyLevel() >= dependencyLevel) {
+                dependencyLevel = parent.getDependencyLevel() + 1;
+                for (Operation op : operations) {
+                    op.updateDependencyLevel(dependencyLevel);
+                }
+            }
+        }
+        isDependencyLevelCalculated = true;
+    }
+
+    public synchronized boolean hasValidDependencyLevel() {
+        return isDependencyLevelCalculated;
+    }
+
+    public int getDependencyLevel() {
+        return dependencyLevel;
     }
 }

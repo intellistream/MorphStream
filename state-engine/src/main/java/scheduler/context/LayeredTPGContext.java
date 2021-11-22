@@ -72,6 +72,9 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
         int localMaxDLevel = 0;
         int dependencyLevel;
         for (SchedulingUnit oc : ocs) {
+            if (oc.getOperations().isEmpty()) {
+                continue;
+            }
             this.totalOsToSchedule += oc.getOperations().size();
             oc.updateDependencyLevel();
             if (resolvedOC.contains(oc)) {

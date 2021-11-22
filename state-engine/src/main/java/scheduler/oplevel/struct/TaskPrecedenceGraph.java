@@ -4,19 +4,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
-import scheduler.context.LayeredTPGContext;
 import scheduler.oplevel.context.OPGSTPGContext;
 import scheduler.oplevel.context.OPLayeredContext;
 import scheduler.oplevel.context.OPSchedulerContext;
-import scheduler.oplevel.impl.tpg.OPBFSScheduler;
 import utils.SOURCE_CONTROL;
 import utils.lib.ConcurrentHashMap;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
-import static scheduler.oplevel.impl.OPScheduler.getTaskId;
 
 /**
  * TPG  -> Partition -> Key:OperationChain -> Operation-Operation-Operation...
@@ -149,20 +149,21 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 
         if (context instanceof OPLayeredContext) {
-            ArrayDeque<Operation> roots = new ArrayDeque<>();
-            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
-                if (!oc.getOperations().isEmpty()) {
-                    oc.updateTDDependencies();
-//                    updateTDDependencies(oc);
-                    Operation head = oc.getOperations().first();
-                    if (head.isRoot()) {
-                        roots.add(head);
-                    }
-                    context.operations.addAll(oc.getOperations());
-                    context.totalOsToSchedule += oc.getOperations().size();
-                }
-            }
-            ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
+//            ArrayDeque<Operation> roots = new ArrayDeque<>();
+//            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+//                if (!oc.getOperations().isEmpty()) {
+//                    oc.updateTDDependencies();
+////                    updateTDDependencies(oc);
+//                    Operation head = oc.getOperations().first();
+//                    if (head.isRoot()) {
+//                        roots.add(head);
+//                    }
+//                    context.operations.addAll(oc.getOperations());
+//                    context.totalOsToSchedule += oc.getOperations().size();
+//                }
+//            }
+//            ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
+            ((OPLayeredContext) context).buildBucketPerThread(threadToOCs.get(context.thisThreadId));
             if (enable_log) log.info("MaxLevel:" + (((OPLayeredContext) context).maxLevel));
         } else if (context instanceof OPGSTPGContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {

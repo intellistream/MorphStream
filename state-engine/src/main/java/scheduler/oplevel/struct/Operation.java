@@ -432,6 +432,11 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         operationMetadata.ld_countdown.set(ld_parents.size());
     }
 
+    public void updateDependencyLevel(int dependencyLevel) {
+        this.dependencyLevel = dependencyLevel;
+        isDependencyLevelCalculated = true;
+    }
+
     public int getDependencyLevel() {
         return dependencyLevel;
     }

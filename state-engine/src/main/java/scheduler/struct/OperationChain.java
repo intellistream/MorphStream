@@ -1,8 +1,7 @@
 package scheduler.struct;
 
-import org.jboss.netty.util.internal.ConcurrentHashMap;
-import profiler.MeasureTools;
 import transaction.impl.ordered.MyList;
+import utils.lib.ConcurrentHashMap;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;

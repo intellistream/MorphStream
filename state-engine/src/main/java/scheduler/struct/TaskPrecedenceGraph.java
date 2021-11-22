@@ -174,19 +174,24 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 //        LOG.info("id: " + context.thisThreadId + " fd: " + context.fd);
         if (context instanceof LayeredTPGContext) {
             ((LayeredTPGContext) context).buildBucketPerThread(ocs, resolvedOC);
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            if (context.thisThreadId == 0) {
-                for (Context curContext : threadToContextMap.values()) {
-                    if (((LayeredTPGContext) curContext).maxLevel > maxLevel) {
-                        maxLevel = ((LayeredTPGContext) curContext).maxLevel;
+            if (AppConfig.isCyclic) { // if the constructed OCs are not cyclic, skip this.
+                SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                if (context.thisThreadId == 0) {
+                    for (Context curContext : threadToContextMap.values()) {
+                        if (((LayeredTPGContext) curContext).maxLevel > maxLevel) {
+                            maxLevel = ((LayeredTPGContext) curContext).maxLevel;
+                        }
                     }
                 }
+                SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                ((LayeredTPGContext) context).putBusyWaitOCs(resolvedOC, maxLevel);
             }
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
-            ((LayeredTPGContext) context).putBusyWaitOCs(resolvedOC, maxLevel);
             if (enable_log) LOG.info("MaxLevel:" + (((LayeredTPGContext) context).maxLevel));
         } else if (context instanceof AbstractGSTPGContext) {
             for (SchedulingUnit oc : ocs) {
+                if (oc.getOperations().isEmpty()) {
+                    continue;
+                }
                 context.totalOsToSchedule += oc.getOperations().size();
                 context.operationChains.add(oc);
                 if (!((AbstractGSOperationChain) oc).context.equals(context)) {
