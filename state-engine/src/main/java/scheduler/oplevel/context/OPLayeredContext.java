@@ -96,7 +96,7 @@ public class OPLayeredContext extends OPSchedulerContext {
 
     private void updateDependencyLevel(ArrayDeque<Operation> processedOps, Operation operation) {
         operation.calculateDependencyLevelDuringExploration();
-        operation.notifyChildren();
+        operation.layeredNotifyChildren();
         processedOps.add(operation);
     }
 }

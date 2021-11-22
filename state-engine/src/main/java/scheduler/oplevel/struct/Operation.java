@@ -391,7 +391,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //        isDependencyLevelCalculated = true;
 //    }
 
-    public void notifyChildren() {
+    public void layeredNotifyChildren() {
         for (Operation child : getChildren(DependencyType.TD)) {
             ((OPLayeredContext) child.context).layerBuildHelperQueue
                     .add(new OnParentUpdatedSignal(child, DependencyType.TD, OperationStateType.EXECUTED));
@@ -411,7 +411,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         for (Operation parent : getParents(DependencyType.TD)) {
             assert parent.hasValidDependencyLevel();
             if (parent.getDependencyLevel() >= dependencyLevel) {
-                dependencyLevel = parent.getDependencyLevel() + 1;
+                dependencyLevel = parent.getDependencyLevel();
             }
         }
         for (Operation parent : getParents(DependencyType.FD)) {
