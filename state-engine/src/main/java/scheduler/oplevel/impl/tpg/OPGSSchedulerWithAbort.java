@@ -67,7 +67,7 @@ public class OPGSSchedulerWithAbort<Context extends OPGSTPGContextWithAbort> ext
                 break;
             }
         } while (true);
-
+        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
 //        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         for (Operation operation : context.batchedOperations) {
@@ -81,7 +81,6 @@ public class OPGSSchedulerWithAbort<Context extends OPGSTPGContextWithAbort> ext
             MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }
 //        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
     }
 
     @Override

@@ -153,6 +153,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
                     oc.updateTDDependencies();
+//                    updateTDDependencies(oc);
                     Operation head = oc.getOperations().first();
                     if (head.isRoot()) {
                         roots.add(head);
@@ -164,9 +165,14 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             ((OPLayeredContext) context).buildBucketPerThread(context.operations, roots);
             if (enable_log) log.info("MaxLevel:" + (((OPLayeredContext) context).maxLevel));
         } else if (context instanceof OPGSTPGContext) {
+            System.out.println("start dependency construction");
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
                     oc.updateTDDependencies();
+//                    updateTDDependencies(oc);
+//                    for (Operation op : oc.getOperations()) {
+//                        context.fd += op.fd_parents.size();
+//                    }
                     Operation head = oc.getOperations().first();
                     context.totalOsToSchedule += oc.getOperations().size();
                     if (head.isRoot()) {
@@ -174,12 +180,49 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     }
                 }
             }
+//            log.info("id: " + context.thisThreadId + " fd: " + context.fd);
         } else {
             throw new UnsupportedOperationException();
         }
 
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
+
+//    /**
+//     * Update TD of each operation in the operation chain
+//     * <p>
+//     * OC: O1 <- O2 O3. O2
+//     */
+//    public void updateTDDependencies(OperationChain oc) {
+//        Operation prevOperation = null;
+//        List<Operation> parentOperations = new ArrayList<>();
+//        for (Operation curOperation : oc.getOperations()) {
+//            if (prevOperation != null) {
+//                parentOperations.add(prevOperation);
+//                // if operations are in the same transaction, i.e. have the same bid,
+//                // add the temporal dependency parent of the prevOperation i.e. all operations with the same bid have the same temporal dependent parent
+//                if (curOperation.bid != prevOperation.bid) {
+//                    for (Operation parentOperation : parentOperations) {
+//                        curOperation.addParent(parentOperation, MetaTypes.DependencyType.TD);
+//                        parentOperation.addChild(curOperation, MetaTypes.DependencyType.TD);
+//                    }
+//                    parentOperations.clear();
+//                } else {
+//                    Queue<Operation> prevParentOperations = prevOperation.getParents(MetaTypes.DependencyType.TD);
+//                    for (Operation prevParentOperation : prevParentOperations) {
+//                        curOperation.addParent(prevParentOperation, MetaTypes.DependencyType.TD);
+//                        prevParentOperation.addChild(curOperation, MetaTypes.DependencyType.TD);
+//                    }
+//                }
+//            }
+//            prevOperation = curOperation;
+//
+//            // check FD
+//            if (curOperation.condition_source != null)
+//                checkFD(oc, curOperation, curOperation.table_name, curOperation.d_record.record_.GetPrimaryKey(),
+//                        curOperation.condition_sourceTable, curOperation.condition_source);
+//        }
+//    }
 
     public void secondTimeExploreTPG(Context context) {
         context.redo();

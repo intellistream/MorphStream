@@ -248,6 +248,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 default:
                     throw new UnsupportedOperationException();
             }
+//            set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
             tpg.setupOperationTDFD(set_op, request);
             if (txnOpId == 0)
                 headerOperation = set_op;
@@ -269,10 +270,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         do {
             MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             EXPLORE(context);
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             PROCESS(context, mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
         RESET(context);//
         MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);

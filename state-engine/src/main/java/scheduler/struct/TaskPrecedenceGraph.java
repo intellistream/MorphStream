@@ -168,7 +168,10 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         if (AppConfig.isCyclic) { // if the constructed OCs are not cyclic, skip this.
             circularDetect(context, ocs, scannedOCs, circularOCs, resolvedOC);
         }
-        LOG.info("fd number: " + context.fd);
+//        for (SchedulingUnit oc : ocs) {
+//            context.fd += oc.ocParentsCount.get();
+//        }
+//        LOG.info("id: " + context.thisThreadId + " fd: " + context.fd);
         if (context instanceof LayeredTPGContext) {
             ((LayeredTPGContext) context).buildBucketPerThread(ocs, resolvedOC);
             SOURCE_CONTROL.getInstance().waitForOtherThreads();

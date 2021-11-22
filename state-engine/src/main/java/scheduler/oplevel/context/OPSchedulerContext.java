@@ -15,6 +15,7 @@ public abstract class OPSchedulerContext implements SchedulerContext {
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.
     public ArrayDeque<Operation> operations = new ArrayDeque<>();
+    public int fd = 0;
 
     protected OPSchedulerContext(int thisThreadId) {
         this.thisThreadId = thisThreadId;

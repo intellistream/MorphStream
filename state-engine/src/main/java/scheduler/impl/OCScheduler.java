@@ -69,10 +69,11 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         do {
             MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             EXPLORE(context);
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             PROCESS(context, mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
         RESET(context);//
         MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
@@ -86,9 +87,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
      * @param clean
      */
     protected void Transfer_Fun(ExecutionUnit operation, long previous_mark_ID, boolean clean) {
-
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
-
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
 
         // apply function
@@ -219,6 +218,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
         SchedulingUnit next = next(context);
+        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
 //            assert !next.getOperations().isEmpty();
@@ -242,7 +242,6 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
                 }
             }
         }
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
     }
 
     /**

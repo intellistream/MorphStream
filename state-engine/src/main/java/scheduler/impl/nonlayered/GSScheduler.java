@@ -50,10 +50,10 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
         do {
             MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             EXPLORE(context);
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             PROCESS(context, mark_ID);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
         if (needAbortHandling) {
@@ -66,10 +66,11 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
             do {
                 MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
                 EXPLORE(context);
-                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
                 MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
                 PROCESS(context, mark_ID);
                 MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             } while (!FINISHED(context));
         }
         RESET(context);//
