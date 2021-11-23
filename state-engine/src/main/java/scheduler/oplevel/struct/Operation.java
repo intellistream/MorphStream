@@ -411,7 +411,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         for (Operation parent : getParents(DependencyType.TD)) {
             assert parent.hasValidDependencyLevel();
             if (parent.getDependencyLevel() >= dependencyLevel) {
-                dependencyLevel = parent.getDependencyLevel();
+                dependencyLevel = parent.getDependencyLevel() + 1;
             }
         }
         for (Operation parent : getParents(DependencyType.FD)) {
