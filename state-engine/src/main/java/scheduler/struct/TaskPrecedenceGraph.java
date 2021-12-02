@@ -271,11 +271,11 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 //        assert context.totalOsToSchedule == ocs.size();
-        Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
-        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
-            threadToOCs.computeIfAbsent(threadId, s -> new ArrayDeque<>()).addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
+//        Collection<TableOCs<SchedulingUnit>> tableOCsList = getOperationChains().values();
+//        for (TableOCs<SchedulingUnit> tableOCs : tableOCsList) {//for each table.
+//            threadToOCs.computeIfAbsent(threadId, s -> new ArrayDeque<>()).addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
+//        }
 
-        }
         tStreamSubmit(context, threadToOCs.get(threadId));
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
@@ -313,7 +313,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
                 ((AbstractGSTPGContext) context).getListener().onOcRootStart(oc);
             }
         }
-        if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
+        if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / nonNullOCs.size());
     }
 
 
