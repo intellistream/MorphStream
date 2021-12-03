@@ -294,10 +294,10 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         int counter = 0;
         for (OperationChain<ExecutionUnit> oc : circularOCs) {
             if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
+                counter += oc.ocParentsCount.get();
                 oc.ocParentsCount.set(0);
                 oc.ocParents.clear();
                 oc.ocChildren.clear();
-                counter++;
             }
         }
         if (enable_log) LOG.info(context.thisThreadId + " : " + counter);

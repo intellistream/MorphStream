@@ -23,6 +23,7 @@ public class Metrics {
 
     public static void RECORD_SCHEDULE_TIME(int thread_id, int num_events) {
         double explore_time = (Scheduler.Explore[thread_id] - Scheduler.Useful[thread_id]) / (double) num_events;
+//        double explore_time = (Scheduler.Explore[thread_id]) / (double) num_events;
         double next_time = Scheduler.Next[thread_id] / (double) num_events;
         double useful_time = Scheduler.Useful[thread_id] / (double) num_events;
         double construct_time = Scheduler.Construct[thread_id] / (double) num_events;

@@ -228,7 +228,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
                 MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
             }
         } else {
-            if (AppConfig.isCyclic) {
+//            if (AppConfig.isCyclic) {
                 MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
                 next = nextFromBusyWaitQueue(context);
                 MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
@@ -240,7 +240,7 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
                         MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
                     }
                 }
-            }
+//            }
         }
     }
 
@@ -257,13 +257,11 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
     public boolean executeWithBusyWait(Context context, SchedulingUnit operationChain, long mark_ID) {
         MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
         for (ExecutionUnit operation : operation_chain_list) {
-            if (AppConfig.isCyclic) {
-                if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
-                        || operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)
-                        || operation.isFailed) continue;
-                if (isConflicted(context, operationChain, operation)) {
-                    return false;
-                }
+            if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
+                    || operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)
+                    || operation.isFailed) continue;
+            if (isConflicted(context, operationChain, operation)) {
+                return false;
             }
             execute(operation, mark_ID, false);
             if (!operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
