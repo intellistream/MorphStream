@@ -67,16 +67,16 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
         INITIALIZE(context);
 
         do {
-            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             EXPLORE(context);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             PROCESS(context, mark_ID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
         RESET(context);//
-        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+//        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 
     /**
@@ -263,7 +263,9 @@ public abstract class OCScheduler<Context extends OCSchedulerContext<SchedulingU
             if (isConflicted(context, operationChain, operation)) {
                 return false;
             }
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             if (!operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
                 operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
             } else {

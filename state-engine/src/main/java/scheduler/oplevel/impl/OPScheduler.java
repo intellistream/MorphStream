@@ -268,15 +268,15 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         INITIALIZE(context);
 
         do {
-            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             EXPLORE(context);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             PROCESS(context, mark_ID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
         RESET(context);//
-        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+//        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 }

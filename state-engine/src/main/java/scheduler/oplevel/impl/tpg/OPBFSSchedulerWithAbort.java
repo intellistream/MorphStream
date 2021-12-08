@@ -76,7 +76,9 @@ public class OPBFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
 
 //        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         for (Operation operation : context.batchedOperations) {
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(operation, mark_ID, false);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 
         while (context.batchedOperations.size() != 0) {

@@ -1,6 +1,7 @@
 package transaction.impl.ordered;
 
 import db.DatabaseException;
+import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.StorageManager;
 import storage.TableRecord;
@@ -52,8 +53,11 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
      */
     @Override
     public void start_evaluate(int thread_Id, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
+        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         scheduler.start_evaluation(context, mark_ID, num_events);
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
+        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
+        MeasureTools.SCHEDULE_TIME_RECORD(thread_Id, num_events);
     }
 }

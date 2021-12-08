@@ -41,20 +41,16 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
     @Override
     public void start_evaluation(GSTPGContext context, long mark_ID, int num_events) {
-        int threadId = context.thisThreadId;
-//        System.out.println(threadId + " first explore tpg");
-
         INITIALIZE(context);
-//        System.out.println(threadId + " first explore tpg complete, start to process");
 
+//        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         do {
-            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             EXPLORE(context);
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             PROCESS(context, mark_ID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
+//        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
         if (needAbortHandling) {
             if (enable_log) {
@@ -63,18 +59,18 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
             // identify all aborted operations and transit the state to aborted.
             REINITIALIZE(context);
             // rollback to the starting point and redo.
+//            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             do {
-                MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
                 EXPLORE(context);
 //                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-                MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//                MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
                 PROCESS(context, mark_ID);
-                MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//                MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             } while (!FINISHED(context));
+//            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         }
         RESET(context);//
-        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+//        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 
     /**

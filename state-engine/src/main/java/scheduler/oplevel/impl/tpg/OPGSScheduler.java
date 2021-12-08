@@ -32,13 +32,13 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
 //        System.out.println(threadId + " first explore tpg complete, start to process");
 
         do {
-            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             EXPLORE(context);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             PROCESS(context, mark_ID);
-            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
         if (needAbortHandling) {
@@ -49,17 +49,17 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
             REINITIALIZE(context);
             // rollback to the starting point and redo.
             do {
-                MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//                MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
                 EXPLORE(context);
 //                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
                 MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
                 PROCESS(context, mark_ID);
-                MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
+//                MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+//                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             } while (!FINISHED(context));
         }
         RESET(context);//
-        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+//        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 
 
@@ -120,7 +120,9 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         for (Operation operation : context.batchedOperations) {
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(operation, mark_ID, false);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 
         while (!context.batchedOperations.isEmpty()) {

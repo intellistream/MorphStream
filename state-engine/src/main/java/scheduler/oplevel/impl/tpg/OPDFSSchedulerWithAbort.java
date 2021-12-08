@@ -8,6 +8,7 @@ import scheduler.oplevel.struct.MetaTypes;
 import scheduler.oplevel.struct.Operation;
 import utils.SOURCE_CONTROL;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -79,7 +80,9 @@ public class OPDFSSchedulerWithAbort<Context extends OPLayeredContextWithAbort> 
 
 //        MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         for (Operation operation : context.batchedOperations) {
+            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             execute(operation, mark_ID, false);
+            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 
         while (context.batchedOperations.size() != 0) {
