@@ -43,14 +43,14 @@ import static content.T_StreamContentImpl.T_STREAMCONTENT;
 import static content.common.ContentCommon.content_type;
 import static profiler.MeasureTools.METRICS_REPORT;
 
-public class MorphStreamRunner extends Runner {
-    private static final Logger log = LoggerFactory.getLogger(MorphStreamRunner.class);
+public class TStreamRunner extends Runner {
+    private static final Logger log = LoggerFactory.getLogger(TStreamRunner.class);
     private static Topology final_topology;
     private final AppDriver driver;
     private final Configuration config = new Configuration();
     private Platform platform;
 
-    public MorphStreamRunner() {
+    public TStreamRunner() {
         driver = new AppDriver();
         //Ordinary Application
         driver.addApp("WordCount", WordCount.class);//WC
@@ -147,7 +147,7 @@ public class MorphStreamRunner extends Runner {
 
     public static void main(String[] args) {
         if (enable_log) log.info("Program Starts..");
-        MorphStreamRunner runner = new MorphStreamRunner();
+        TStreamRunner runner = new TStreamRunner();
         JCommander cmd = new JCommander(runner);
         try {
             cmd.parse(args);

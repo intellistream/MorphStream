@@ -200,7 +200,7 @@ public class OPGSScheduler<Context extends OPGSTPGContext> extends OPScheduler<C
         }
 
         public void onOPFinalized(Operation operation) {
-            operation.context.operations.remove(operation);
+//            operation.context.operations.remove(operation);
             operation.context.scheduledOPs++;
         }
 
