@@ -13,9 +13,9 @@ from numpy import double
 from numpy.ma import arange
 
 OPT_FONT_NAME = 'Helvetica'
-TICK_FONT_SIZE = 20
-LABEL_FONT_SIZE = 24
-LEGEND_FONT_SIZE = 26
+TICK_FONT_SIZE = 24
+LABEL_FONT_SIZE = 28
+LEGEND_FONT_SIZE = 30
 LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
@@ -37,7 +37,7 @@ matplotlib.rcParams['xtick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
-FIGURE_FOLDER = './results'
+FIGURE_FOLDER = './results/overview'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
 
 
@@ -196,7 +196,7 @@ def ReadFileSL(batchInterval, tthread, NUM_ITEMS, deposit_ratio, key_skewness, o
 
 
 
-def ReadFileGS(batchInterval, tthread, NUM_ITEMS, NUM_ACCESS,  key_skewness, overlap_ratio, abort_ratio, isCyclic):
+def ReadFileGS(batchInterval, tthread, NUM_ITEMS, NUM_ACCESS,  key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     x_axis = []
     y_axis = []
     events = tthread * batchInterval
@@ -332,7 +332,7 @@ if __name__ == '__main__':
             complexity = int(arg)
 
     # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "TStream", "PAT"]
-    legend_labels = ["$MorphStream$", "$TStream$", "$S-Store$"]
+    legend_labels = ["MorphStream", "TStream", "S-Store"]
     x_axis, y_axis = ReadFileSL(batchInterval, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     legend = True
     DrawFigure(x_axis, y_axis, legend_labels, "latency(ms)", "cumulative percent",

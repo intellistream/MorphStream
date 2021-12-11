@@ -11,9 +11,9 @@ from matplotlib.ticker import LinearLocator
 from numpy import double
 
 OPT_FONT_NAME = 'Helvetica'
-TICK_FONT_SIZE = 20
-LABEL_FONT_SIZE = 24
-LEGEND_FONT_SIZE = 20
+TICK_FONT_SIZE = 24
+LABEL_FONT_SIZE = 28
+LEGEND_FONT_SIZE = 30
 LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
@@ -36,7 +36,7 @@ matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 matplotlib.rcParams['pdf.fonttype'] = 42
 
-FIGURE_FOLDER = './results/breakdown'
+FIGURE_FOLDER = './results/overview/breakdown'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
 
 
@@ -92,7 +92,7 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, al
                              loc='center',
                              prop=LEGEND_FP,
                              ncol=3,
-                             bbox_to_anchor=(0.5, 1.3),
+                             bbox_to_anchor=(0.5, 1.2),
                              handletextpad=0.1,
                              borderaxespad=0.0,
                              handlelength=1.8,
@@ -201,10 +201,10 @@ def ReadFileSL(tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, o
     for line in lines[idx:idx + tthread]:
         breakdown_value = line.split("\t")
         # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
-        y[0][1] = 0
-        y[1][1] = 0
-        y[2][1] += float(breakdown_value[1]) + float(breakdown_value[6])
+        y[0][1] += float(breakdown_value[1]) + float(breakdown_value[6])
         y_sum[1] += float(breakdown_value[1]) + float(breakdown_value[6])
+        y[1][1] = 0
+        y[2][1] = 0
         y[3][1] += float(breakdown_value[5])
         y_sum[1] += float(breakdown_value[5])
         y[4][1] += float(breakdown_value[3])
@@ -287,10 +287,10 @@ def ReadFileGS(tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, over
     for line in lines[idx:idx + tthread]:
         breakdown_value = line.split("\t")
         # ["Sync Time", "Lock Time", "Explore Time", "Construct Time", "Useful Time"]
-        y[0][1] = 0
-        y[1][1] = 0
-        y[2][1] += float(breakdown_value[1]) + float(breakdown_value[6])
+        y[0][1] += float(breakdown_value[1]) + float(breakdown_value[6])
         y_sum[1] += float(breakdown_value[1]) + float(breakdown_value[6])
+        y[1][1] = 0
+        y[2][1] = 0
         y[3][1] += float(breakdown_value[5])
         y_sum[1] += float(breakdown_value[5])
         y[4][1] += float(breakdown_value[3])
@@ -391,7 +391,7 @@ if __name__ == "__main__":
     # break into 5 parts
     legend_labels = ["Sync Time", "Lock Time", "Explore Time", "Construct Time",  "Useful Time"]
         # for batchInterval in [4096]:
-    x_values = ["$MorphStream$", "$TStream$", "$S-Store$"]
+    x_values = ["MorphStream", "TStream", "S-Store"]
     y_values = ReadFileSL(tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     DrawFigure(x_values, y_values, legend_labels,
                '', 'percentage of time', "sl_breakdown_throughput_b{}_{}_{}_{}_{}_{}_{}_{}"
@@ -399,4 +399,4 @@ if __name__ == "__main__":
     y_values = ReadFileGS(tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     DrawFigure(x_values, y_values, legend_labels,
                '', 'percentage of time', "gs_breakdown_throughput_b{}_{}_{}_{}_{}_{}_{}_{}"
-               .format(NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity), True)
+               .format(NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity), True)

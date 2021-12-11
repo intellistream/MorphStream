@@ -11,9 +11,9 @@ from matplotlib.ticker import LinearLocator, LogLocator, MaxNLocator
 from numpy import double
 
 OPT_FONT_NAME = 'Helvetica'
-TICK_FONT_SIZE = 20
-LABEL_FONT_SIZE = 24
-LEGEND_FONT_SIZE = 26
+TICK_FONT_SIZE = 24
+LABEL_FONT_SIZE = 28
+LEGEND_FONT_SIZE = 30
 LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
@@ -35,7 +35,7 @@ matplotlib.rcParams['xtick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
-FIGURE_FOLDER = './results'
+FIGURE_FOLDER = './results/sensitivity'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
 
 
@@ -79,7 +79,7 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
                    loc='upper center',
                    # mode='expand',
                    shadow=False,
-                   bbox_to_anchor=(0.5, 1.2),
+                   bbox_to_anchor=(0.5, 1.25),
                    columnspacing=0.1,
                    handletextpad=0.2,
                    #                     bbox_transform=ax.transAxes,
@@ -88,7 +88,7 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
                    handlelength=2,
                    )
 
-    plt.xticks(index + 2 * width, x_values)
+    plt.xticks(index + 1.5 * width, x_values)
     # plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
     # plt.grid(axis='y', color='gray')
     # figure.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
@@ -113,21 +113,34 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
     y = [[] for _ in range(w)]
 
     for isCyclic in ["true", "false"]:
-        if isCyclic == "true":
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[0].append(float(throughput))
-        elif isCyclic == "false":
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("GSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[0].append(float(throughput))
-        else:
-            print("error")
+        # if isCyclic == "true":
+        #     events = tthread * batchInterval
+        #     op_gs_path = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        #     lines = open(op_gs_path).readlines()
+        #     throughput = lines[0].split(": ")[1]
+        #     y[0].append(float(throughput))
+        # elif isCyclic == "false":
+        #     events = tthread * batchInterval
+        #     op_gs_path = getPathGS("GSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        #     lines = open(op_gs_path).readlines()
+        #     throughput = lines[0].split(": ")[1]
+        #     y[0].append(float(throughput))
+        # else:
+        #     print("error")
+        events = tthread * batchInterval
+        op_gs_path = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        lines = open(op_gs_path).readlines()
+        throughput_true = float(lines[0].split(": ")[1])
 
+        op_gs_path = getPathGS("GSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        lines = open(op_gs_path).readlines()
+        throughput_false = float(lines[0].split(": ")[1])
+
+        print(throughput_true, throughput_false)
+        if throughput_true > throughput_false:
+            y[0].append(float(throughput_true))
+        else:
+            y[0].append(float(throughput_false))
 
     for isCyclic in ["true", "false"]:
         events = tthread * batchInterval
@@ -153,21 +166,33 @@ def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_ske
     y = [[] for _ in range(w)]
 
     for isCyclic in ["true", "false"]:
-        if isCyclic == "true":
-            events = tthread * batchInterval
-            op_gs_path = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[0].append(float(throughput))
-        elif isCyclic == "false":
-            events = tthread * batchInterval
-            op_gs_path = getPathSL("GSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[0].append(float(throughput))
-        else:
-            print("error")
+        # if isCyclic == "true":
+        #     events = tthread * batchInterval
+        #     op_gs_path = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        #     lines = open(op_gs_path).readlines()
+        #     throughput = lines[0].split(": ")[1]
+        #     y[0].append(float(throughput))
+        # elif isCyclic == "false":
+        #     events = tthread * batchInterval
+        #     op_gs_path = getPathSL("GSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        #     lines = open(op_gs_path).readlines()
+        #     throughput = lines[0].split(": ")[1]
+        #     y[0].append(float(throughput))
+        # else:
+        #     print("error")
+        events = tthread * batchInterval
+        op_gs_path = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        lines = open(op_gs_path).readlines()
+        throughput_true = float(lines[0].split(": ")[1])
+        op_gs_path = getPathSL("GSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        lines = open(op_gs_path).readlines()
+        throughput_false = float(lines[0].split(": ")[1])
 
+        print(throughput_true, throughput_false)
+        if throughput_true > throughput_false:
+            y[0].append(float(throughput_true))
+        else:
+            y[0].append(float(throughput_false))
 
     for isCyclic in ["true", "false"]:
         events = tthread * batchInterval
@@ -200,15 +225,15 @@ def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overla
 
 if __name__ == '__main__':
     tthread = 24
-    NUM_ITEMS = 115200
+    NUM_ITEMS = 122880
     NUM_ACCESS = 10
     deposit_ratio = 25
-    key_skewness = 0
+    key_skewness = 25
     overlap_ratio = 0
-    abort_ratio = 0
+    abort_ratio = 100
     batchInterval = 10240
-    isCyclic = "false"
-    complexity = 1000
+    isCyclic = "true"
+    complexity = 10000
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:m:")
@@ -239,7 +264,7 @@ if __name__ == '__main__':
             complexity = int(arg)
 
     x_values = ["Cyclic", "Acyclic"]
-    legend_labels = ["$MorphStream$", "$TStream$", "$S-Store$"]
+    legend_labels = ["MorphStream", "TStream", "S-Store"]
     legend = True
     y_values = ReadFileSL(x_values, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     DrawFigure(x_values, y_values, legend_labels,

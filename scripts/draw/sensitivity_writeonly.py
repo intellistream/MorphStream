@@ -11,9 +11,9 @@ from matplotlib.ticker import LinearLocator, LogLocator, MaxNLocator
 from numpy import double
 
 OPT_FONT_NAME = 'Helvetica'
-TICK_FONT_SIZE = 20
-LABEL_FONT_SIZE = 24
-LEGEND_FONT_SIZE = 26
+TICK_FONT_SIZE = 24
+LABEL_FONT_SIZE = 28
+LEGEND_FONT_SIZE = 30
 LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
@@ -35,7 +35,7 @@ matplotlib.rcParams['xtick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
-FIGURE_FOLDER = './results'
+FIGURE_FOLDER = './results/sensitivity'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
 
 
@@ -210,12 +210,12 @@ if __name__ == '__main__':
             complexity = int(arg)
 
     x_value = [0, 25, 50, 75, 100]
-    legend_labels = ["$MorphStream$", "$TStream$", "$S-Store$"]
+    legend_labels = ["MorphStream", "TStream", "S-Store"]
     # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
     x_axis = [x_value] * len(legend_labels)
     legend = True
     y_axis = ReadFileSL(x_value, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-    DrawFigure(x_axis, y_axis, legend_labels, "writeonly(%)", "throughput(e/s)", "sl_writeonly_throughput_t{}_b{}_{}_{}_{}_{}_{}_{}_{}"
+    DrawFigure(x_axis, y_axis, legend_labels, "writeonly_ratio(%)", "throughput(e/s)", "sl_writeonly_throughput_t{}_b{}_{}_{}_{}_{}_{}_{}_{}"
             .format(tthread, NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity),
             legend)
     # legend_labels = ["$GSA_{OC}$", "$BFSA_{OC}$", "$DFSA_{OC}$", "$GSA_{OP}$", "$BFSA_{OP}$", "$DFSA_{OP}$"]

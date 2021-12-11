@@ -87,29 +87,29 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
     w, h = 3, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for batchInterval in x_axis:
+
+    for complexity in x_axis:
         events = tthread * batchInterval
         op_gs_path = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
-    # for batchInterval in x_axis:
+    # for key_skewness in x_axis:
     #     events = tthread * batchInterval
     #     op_gs_path = getPathGS("GSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     #     lines = open(op_gs_path).readlines()
     #     throughput = lines[0].split(": ")[1]
     #     y[1].append(float(throughput))
 
-
-    for batchInterval in x_axis:
+    for complexity in x_axis:
         events = tthread * batchInterval
         op_dfs_path = getPathGS("TStream", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[1].append(float(throughput))
 
-    for batchInterval in x_axis:
+    for complexity in x_axis:
         events = tthread * batchInterval
         op_dfs_path = getPathGS("PAT", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_dfs_path).readlines()
@@ -125,14 +125,14 @@ def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_ske
     w, h = 3, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for batchInterval in x_axis:
+    for complexity in x_axis:
         events = tthread * batchInterval
         op_gs_path = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
-    # for batchInterval in x_axis:
+    # for deposit_ratio in x_axis:
     #     events = tthread * batchInterval
     #     op_gs_path = getPathSL("GSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     #     lines = open(op_gs_path).readlines()
@@ -140,14 +140,14 @@ def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_ske
     #     y[1].append(float(throughput))
 
 
-    for batchInterval in x_axis:
+    for complexity in x_axis:
         events = tthread * batchInterval
         op_dfs_path = getPathSL("TStream", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[1].append(float(throughput))
 
-    for batchInterval in x_axis:
+    for complexity in x_axis:
         events = tthread * batchInterval
         op_dfs_path = getPathSL("PAT", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_dfs_path).readlines()
@@ -209,15 +209,16 @@ if __name__ == '__main__':
         elif opt in ['-m']:
             complexity = int(arg)
 
-    x_value = [5120, 10240, 20480, 40960]
+    x_value = [10000, 20000, 40000, 60000, 80000, 100000]
     legend_labels = ["MorphStream", "TStream", "S-Store"]
+    # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
     x_axis = [x_value] * len(legend_labels)
     legend = True
     y_axis = ReadFileSL(x_value, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-    DrawFigure(x_axis, y_axis, legend_labels, "batch_size", "throughput(e/s)", "sl_batch_throughput_t{}_b{}_{}_{}_{}_{}_{}_{}_{}"
+    DrawFigure(x_axis, y_axis, legend_labels, "complexity(ns)", "throughput(e/s)", "sl_complexity_throughput_t{}_b{}_{}_{}_{}_{}_{}_{}_{}"
             .format(tthread, NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity),
             legend)
     y_axis = ReadFileGS(x_value, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-    DrawFigure(x_axis, y_axis, legend_labels, "batch_size", "throughput(e/s)", "gs_batch_throughput_t{}_b{}_{}_{}_{}_{}_{}_{}_{}"
+    DrawFigure(x_axis, y_axis, legend_labels, "complexity(ns)", "throughput(e/s)", "gs_complexity_throughput_t{}_b{}_{}_{}_{}_{}_{}_{}_{}"
                 .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity),
                 legend)

@@ -11,9 +11,9 @@ from matplotlib.ticker import LinearLocator, LogLocator, MaxNLocator
 from numpy import double
 
 OPT_FONT_NAME = 'Helvetica'
-TICK_FONT_SIZE = 20
-LABEL_FONT_SIZE = 24
-LEGEND_FONT_SIZE = 26
+TICK_FONT_SIZE = 24
+LABEL_FONT_SIZE = 28
+LEGEND_FONT_SIZE = 30
 LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
@@ -35,7 +35,7 @@ matplotlib.rcParams['xtick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
-FIGURE_FOLDER = './results'
+FIGURE_FOLDER = './results/model/granularity'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
 
 
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     complexity = 1000
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:cm:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:m:")
     except getopt.GetoptError:
         print("Error")
 
@@ -191,17 +191,20 @@ if __name__ == '__main__':
                 isCyclic = "true"
             else:
                 isCyclic = "false"
-        elif opt in ['-cm']:
+        elif opt in ['-m']:
             complexity = int(arg)
 
     x_value = [11520, 115200, 1152000]
-    legend_labels = ["$OP Level$", "$OC Level$"]
+    legend_labels = ["Fine-grained", "Coarse-grained"]
     # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
     x_axis = [x_value] * len(legend_labels)
     legend = True
-    y_axis = ReadFileSL(x_value, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-    DrawFigure(x_value, y_axis, legend_labels, "keys", "throughput(e/s)", 0, 400, 'sl_granularity_comparison_key_{}'.format(isCyclic),
-            legend)
+    
     y_axis = ReadFileGS(x_value, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-    DrawFigure(x_value, y_axis, legend_labels, "keys", "throughput(e/s)", 0, 400, 'gs_granularity_comparison_key_{}'.format(isCyclic),
+    DrawFigure(x_value, y_axis, legend_labels, "keys", "throughput(e/s)", 0, 400, 'gs_granularity_comparison_key_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
+                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity),
                 legend)
+    y_axis = ReadFileSL(x_value, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+    DrawFigure(x_value, y_axis, legend_labels, "keys", "throughput(e/s)", 0, 400, 'sl_granularity_comparison_key_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
+                .format(tthread, NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity),
+            legend)

@@ -11,9 +11,9 @@ from matplotlib.ticker import LinearLocator, LogLocator, MaxNLocator
 from numpy import double
 
 OPT_FONT_NAME = 'Helvetica'
-TICK_FONT_SIZE = 20
-LABEL_FONT_SIZE = 24
-LEGEND_FONT_SIZE = 26
+TICK_FONT_SIZE = 24
+LABEL_FONT_SIZE = 28
+LEGEND_FONT_SIZE = 30
 LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
@@ -35,7 +35,7 @@ matplotlib.rcParams['xtick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
-FIGURE_FOLDER = './results'
+FIGURE_FOLDER = './results/model/granularity'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
 
 
@@ -97,24 +97,20 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
 
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
-
-def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
-               isCyclic, complexity):
+def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     w, h = 2, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for abort_ratio in x_axis:
+    for deposit_ratio in x_axis:
         events = tthread * batchInterval
-        op_gs_path = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
-                               abort_ratio, isCyclic, complexity)
+        op_gs_path = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
-    for abort_ratio in x_axis:
+    for deposit_ratio in x_axis:
         events = tthread * batchInterval
-        op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
-                               isCyclic, complexity)
+        op_gs_path = getPathSL("GSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[1].append(float(throughput))
@@ -122,41 +118,14 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
     print(y)
 
     return y
-
-
-def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
-               isCyclic, complexity):
-    w, h = 2, len(x_axis)
-    y = [[] for _ in range(w)]
-
-    for abort_ratio in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathSL("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
-                               abort_ratio, isCyclic, complexity)
-        lines = open(op_gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[0].append(float(throughput))
-
-    for abort_ratio in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathSL("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
-                               isCyclic, complexity)
-        lines = open(op_gs_path).readlines()
-        throughput = lines[0].split(": ")[1]
-        y[1].append(float(throughput))
-
-    print(y)
-
-    return y
-
 
 def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
-    return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}' \
+    return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
         .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
 def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
-    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}' \
+    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
         .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
@@ -200,15 +169,13 @@ if __name__ == '__main__':
         elif opt in ['-m']:
             complexity = int(arg)
 
-    x_values = [0, 1, 10, 100, 1000, 2000, 5000]
-    legend_labels = ["$Fine-grained$", "$Coarse-grained$"]
-    x_axis = [x_values] * len(legend_labels)
+    # NUM_ACCESS
+    x_values = [0, 25, 50, 75, 100]
+    legend_labels = ["Fine-grained", "Coarse-grained"]
     legend = True
-    y_axis = ReadFileGS(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
+    y_values = ReadFileSL(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
                           abort_ratio, isCyclic, complexity)
-    DrawFigure(x_values, y_axis, legend_labels, "abort(n/10000)", "throughput(e/s)", 0 ,400,
-               'gs_abort_mechanism_comparison_{}_{}'.format(isCyclic, complexity), legend)
-    y_axis = ReadFileSL(x_values, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio,
-                          abort_ratio, isCyclic, complexity)
-    DrawFigure(x_values, y_axis, legend_labels, "abort(n/10000)", "throughput(e/s)", 0 ,400,
-               'sl_abort_mechanism_comparison_{}_{}'.format(isCyclic, complexity), legend)
+    DrawFigure(x_values, y_values, legend_labels,
+               'writeonly_ratio', 'Tpt. (#inputs/ms)', 0,
+               400, 'sl_granularity_comparison_writeonly_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
+                .format(tthread, NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity), legend)

@@ -11,9 +11,9 @@ from matplotlib.ticker import LinearLocator, LogLocator, MaxNLocator
 from numpy import double
 
 OPT_FONT_NAME = 'Helvetica'
-TICK_FONT_SIZE = 20
-LABEL_FONT_SIZE = 24
-LEGEND_FONT_SIZE = 26
+TICK_FONT_SIZE = 24
+LABEL_FONT_SIZE = 28
+LEGEND_FONT_SIZE = 30
 LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
@@ -35,7 +35,7 @@ matplotlib.rcParams['xtick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
-FIGURE_FOLDER = './results'
+FIGURE_FOLDER = './results/model/exploration'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
 
 
@@ -250,8 +250,8 @@ if __name__ == '__main__':
         elif opt in ['-m']:
             complexity = int(arg)
 
-    x_value = [11520, 115200, 1152000]
-    legend_labels = ["$Notification$", "$BFS$", "$DFS$"]
+    x_value = [12288, 122880, 1228800]
+    legend_labels = ["Noti.", "BFS", "DFS"]
     legend = True
     y_axis = ReadFileSL(x_value, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     DrawFigure(x_value, y_axis, legend_labels, "keys", "throughput(e/s)", 0, 400, "sl_exploration_strategy_key_t{}_b{}_{}_{}_{}_{}_{}_{}_{}"

@@ -11,9 +11,9 @@ from matplotlib.ticker import LinearLocator, LogLocator, MaxNLocator
 from numpy import double
 
 OPT_FONT_NAME = 'Helvetica'
-TICK_FONT_SIZE = 20
-LABEL_FONT_SIZE = 24
-LEGEND_FONT_SIZE = 26
+TICK_FONT_SIZE = 24
+LABEL_FONT_SIZE = 28
+LEGEND_FONT_SIZE = 30
 LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
@@ -35,7 +35,7 @@ matplotlib.rcParams['xtick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
-FIGURE_FOLDER = './results'
+FIGURE_FOLDER = './results/model/granularity'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
 
 
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     complexity = 1000
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:cm:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:m:")
     except getopt.GetoptError:
         print("Error")
 
@@ -167,15 +167,16 @@ if __name__ == '__main__':
                 isCyclic = "true"
             else:
                 isCyclic = "false"
-        elif opt in ['-cm']:
+        elif opt in ['-m']:
             complexity = int(arg)
 
     # NUM_ACCESS
     x_values = [1, 2, 4, 6, 8, 10]
-    legend_labels = ["$OP Level$", "$OC Level$"]
+    legend_labels = ["Fine-grained", "Coarse-grained"]
     legend = True
     y_values = ReadFileGS(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
                           abort_ratio, isCyclic, complexity)
     DrawFigure(x_values, y_values, legend_labels,
                'num_state_access', 'Tpt. (#inputs/ms)', 0,
-               400, 'granularity_comparison_access_{}'.format(isCyclic), legend)
+               400, 'granularity_comparison_access_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
+                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity), legend)

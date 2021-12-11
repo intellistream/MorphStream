@@ -35,7 +35,7 @@ matplotlib.rcParams['xtick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
-FIGURE_FOLDER = './results/model/exploration'
+FIGURE_FOLDER = './results/model/abort'
 FILE_FOLER = '/home/shuhao/TStream/data/stats'
 
 
@@ -97,65 +97,41 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
 
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
-def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
-    w, h = 3, len(x_axis)
+
+def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
+               isCyclic, complexity):
+    w, h = 2, len(x_axis)
     y = [[] for _ in range(w)]
 
-    if isCyclic == "true":
-        for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[0].append(float(throughput))
+    for NUM_ACCESS in x_axis:
+        events = tthread * batchInterval
+        op_gs_path = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
+                               abort_ratio, isCyclic, complexity)
+        lines = open(op_gs_path).readlines()
+        throughput = lines[0].split(": ")[1]
+        y[0].append(float(throughput))
 
-        for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("OPBFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[1].append(float(throughput))
-
-        for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("OPDFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[2].append(float(throughput))
-    else:
-        for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("GS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[0].append(float(throughput))
-
-        for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("BFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[1].append(float(throughput))
-
-        for NUM_ACCESS in x_axis:
-            events = tthread * batchInterval
-            op_gs_path = getPathGS("DFS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
-            lines = open(op_gs_path).readlines()
-            throughput = lines[0].split(": ")[1]
-            y[2].append(float(throughput))
+    for NUM_ACCESS in x_axis:
+        events = tthread * batchInterval
+        op_gs_path = getPathGS("OPGS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
+                               isCyclic, complexity)
+        lines = open(op_gs_path).readlines()
+        throughput = lines[0].split(": ")[1]
+        y[1].append(float(throughput))
 
     print(y)
 
     return y
 
 
+
 def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
-    return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
+    return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}' \
         .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
 def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
-    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
+    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}' \
         .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
@@ -199,13 +175,12 @@ if __name__ == '__main__':
         elif opt in ['-m']:
             complexity = int(arg)
 
-    # NUM_ACCESS
+    # x_values = [0, 100, 1000, 10000, 100000]
     x_values = [1, 2, 4, 6, 8, 10]
-    legend_labels = ["Noti.", "BFS", "DFS"]
+    legend_labels = ["w/ SM", "w/o SM"]
     legend = True
-    y_values = ReadFileGS(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
+    y_axis = ReadFileGS(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
                           abort_ratio, isCyclic, complexity)
-    DrawFigure(x_values, y_values, legend_labels,
-               'num_state_access', 'Tpt. (#inputs/ms)', 0,
-               400, 'exploration_strategy_comparison_access_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
-                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity), legend)
+    DrawFigure(x_values, y_axis, legend_labels, "num_state_access", "throughput(e/s)", 0 ,400,
+               'gs_abort_mechanism_comparison_access_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
+                .format(tthread, NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity), legend)

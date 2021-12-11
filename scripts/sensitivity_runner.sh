@@ -2,7 +2,7 @@
 
 function ResetParameters() {
   app="GrepSum"
-  NUM_ITEMS=115200
+  NUM_ITEMS=122880
   NUM_ACCESS=10
   checkpointInterval=10240
   tthread=24
@@ -12,7 +12,7 @@ function ResetParameters() {
   overlap_ratio=0
   abort_ratio=100
   CCOption=3 #TSTREAM
-  complexity=1000
+  complexity=10000
   isCyclic=1
 }
 
@@ -53,7 +53,7 @@ function runTStream() {
 # run basic experiment for different algorithms
 function baselineEvaluation() {
   # for scheduler in BFS DFS GS OPBFS OPDFS OPGS TStream
-  for scheduler in OPGS TStream
+  for scheduler in TStream
   # for scheduler in GS
   do
     runTStream
@@ -63,7 +63,7 @@ function baselineEvaluation() {
 # run basic experiment for different algorithms
 function withAbortEvaluation() {
   # for scheduler in BFSA DFSA GSA OPBFSA OPDFSA OPGSA
-  for scheduler in GSA OPGSA
+  for scheduler in OPGSA GSA
   do
     runTStream
   done
@@ -83,7 +83,7 @@ function sensitivity_study_batch() {
   do
     for isCyclic in 0 1
     do
-      for checkpointInterval in 5120 10240 20480 40960
+      for checkpointInterval in 5120 10240 20480 40960 81920
       do
         baselineEvaluation
       done
@@ -96,7 +96,7 @@ function sensitivity_study_batch() {
     # for tthread in 24
     for isCyclic in 0 1
     do
-      for checkpointInterval in 5120 10240 20480 40960
+      for checkpointInterval in 5120 10240 20480 40960 81920
       do
         withAbortEvaluation
       done
@@ -110,7 +110,7 @@ function sensitivity_study_batch() {
     # for tthread in 24
     for isCyclic in 0 1
     do
-      for checkpointInterval in 5120 10240 20480 40960
+      for checkpointInterval in 5120 10240 20480 40960 81920
       do
         patEvluation
       done
@@ -298,7 +298,7 @@ function sensitivity_study_keys() {
     # for tthread in 24
     for isCyclic in 0 1
     do
-      for NUM_ITEMS in 11520 115200 1152000
+      for NUM_ITEMS in 12288 122880 1228800
       do
         baselineEvaluation
       done
@@ -311,7 +311,7 @@ function sensitivity_study_keys() {
     # for tthread in 24
     for isCyclic in 0 1
     do
-      for NUM_ITEMS in 11520 115200 1152000
+      for NUM_ITEMS in 12288 122880 1228800
       do
         withAbortEvaluation
       done
@@ -325,7 +325,51 @@ function sensitivity_study_keys() {
     # for tthread in 24
     for isCyclic in 0 1
     do
-      for NUM_ITEMS in 11520 115200 1152000
+      for NUM_ITEMS in 12288 122880 1228800
+      do
+        patEvluation
+      done
+    done
+  done
+}
+
+
+# NUM_ACCESS
+function sensitivity_study_complexity() {
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for complexity in 0 10000 20000 40000 60000 80000 100000
+      do
+        baselineEvaluation
+      done
+    done
+  done
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for complexity in 0 10000 20000 40000 60000 80000 100000
+      do
+        withAbortEvaluation
+      done
+    done
+  done
+
+
+  ResetParameters
+  for app in StreamLedger GrepSum
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+      for complexity in 0 10000 20000 40000 60000 80000 100000
       do
         patEvluation
       done
@@ -339,27 +383,31 @@ sensitivity_study_abort
 sensitivity_study_keys
 sensitivity_study_access
 sensitivity_study_writeonly
+sensitivity_study_complexity
 
 # draw
 ResetParameters
 cd draw || exit
 for isCyclic in 0 1
 do
-  echo "python sensitivity_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python sensitivity_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+  echo "python sensitivity_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python sensitivity_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 
-  echo "python sensitivity_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python sensitivity_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+  echo "python sensitivity_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python sensitivity_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 
-  echo "python sensitivity_abort.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python sensitivity_abort.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+  echo "python sensitivity_abort.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python sensitivity_abort.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 
-  echo "python sensitivity_access.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python sensitivity_access.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+  echo "python sensitivity_access.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python sensitivity_access.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 
-  echo "python sensitivity_key.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python sensitivity_key.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+  echo "python sensitivity_key.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python sensitivity_key.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 
-  echo "python sensitivity_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python sensitivity_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+  echo "python sensitivity_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python sensitivity_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+
+  echo "python sensitivity_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python sensitivity_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 done

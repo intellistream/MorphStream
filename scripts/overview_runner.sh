@@ -2,7 +2,7 @@
 
 function ResetParameters() {
   app="StreamLedger"
-  NUM_ITEMS=115200
+  NUM_ITEMS=122880
   NUM_ACCESS=10
   checkpointInterval=10240
   tthread=24
@@ -12,7 +12,7 @@ function ResetParameters() {
   overlap_ratio=0
   abort_ratio=100
   CCOption=3 #TSTREAM
-  complexity=1000
+  complexity=10000
   isCyclic=1
 }
 
@@ -67,8 +67,8 @@ function patEvluation() {
   runTStream
 }
 
-# overview experiment
-function overview() {
+# overview experiment scalability exp
+function overview_scalability() {
   ResetParameters
   for app in StreamLedger GrepSum
   do
@@ -96,18 +96,70 @@ function overview() {
   done
 }
 
-overview
+
+function overview() { # multi-batch exp
+  ResetParameters
+  for isCyclic in 1
+  do
+    for NUM_ITEMS in 12288 122880 1228800
+    do
+      for abort_ratio in 0 10 100 1000 5000
+      do
+        for key_skewness in 0 25 50 75 100
+        do
+          app=StreamLedger
+          for deposit_ratio in 0 25 50 75 100
+          do
+            baselineEvaluation
+          done
+          app=GrepSum
+          for NUM_ACCESS in 0 2 4 6 8 10
+          do
+            baselineEvaluation
+          done
+        done
+      done
+    done
+  done
+
+  ResetParameters
+  for isCyclic in 1
+  do
+    for NUM_ITEMS in 12288 122880 1228800
+    do
+      for abort_ratio in 0 10 100 1000 5000
+      do
+        for key_skewness in 0 25 50 75 100
+        do
+          app=StreamLedger
+          for deposit_ratio in 0 25 50 75 100
+          do
+            patEvluation
+          done
+          app=GrepSum
+          for NUM_ACCESS in 0 2 4 6 8 10
+          do
+            patEvluation
+          done
+        done
+      done
+    done
+  done
+}
+
+
+overview_scalability
 ResetParameters
 cd draw || exit
 for isCyclic in 0 1
 do
   # python overview.py
-  echo "python overview_all.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python overview_all.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
-  echo "python overview_all_latency.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python overview_all_latency.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
-  echo "python sensitivity_cyclic.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python sensitivity_cyclic.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
-  echo "python overview_breakdown.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic"
-  python overview_breakdown.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic
+  echo "python overview_all.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python overview_all.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+  echo "python overview_all_latency.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python overview_all_latency.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+  echo "python sensitivity_cyclic.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python sensitivity_cyclic.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+  echo "python overview_breakdown.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python overview_breakdown.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 done
