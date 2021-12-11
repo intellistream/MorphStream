@@ -61,14 +61,6 @@ public class GSBolt_ts extends GSBolt {
     }
 
     private void RANGE_WRITE_CONSRUCT(MicroEvent event, TxnContext txnContext) throws DatabaseException {
-        int NUM_ACCESS = event.getKeys().length;
-        String[] condition_table = new String[NUM_ACCESS];
-        String[] condition_source = new String[NUM_ACCESS];
-        for (int i = 0; i < NUM_ACCESS; i++) {
-            condition_source[i] = String.valueOf(event.getKeys()[i]);
-            condition_table[i] = "MicroTable";
-        }
-
         SUM sum;
         if (event.READ_EVENT()) {
             sum = new SUM(-1);
@@ -76,14 +68,26 @@ public class GSBolt_ts extends GSBolt {
             sum = new SUM();
 
         transactionManager.BeginTransaction(txnContext);
-        transactionManager.Asy_ModifyRecord_ReadN(
-                txnContext,
-                "MicroTable",
-                String.valueOf(event.getKeys()[0]), // src key to write ahead
-                event.getRecord_refs()[0],//to be fill up.
-                sum,
-                condition_table, condition_source,//condition source, condition id.
-                event.success);          //asynchronously return.
+        // multiple operations will be decomposed
+        for (int i = 0; i < event.Txn_Length; i++) {
+            int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
+            String[] condition_table = new String[NUM_ACCESS];
+            String[] condition_source = new String[NUM_ACCESS];
+            for (int j = 0; j < NUM_ACCESS; j++) {
+                int offset = i * NUM_ACCESS + j;
+                condition_source[j] = String.valueOf(event.getKeys()[offset]);
+                condition_table[j] = "MicroTable";
+            }
+            int writeKeyIdx = i * NUM_ACCESS;
+            transactionManager.Asy_ModifyRecord_ReadN(
+                    txnContext,
+                    "MicroTable",
+                    String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
+                    event.getRecord_refs()[writeKeyIdx],//to be fill up.
+                    sum,
+                    condition_table, condition_source,//condition source, condition id.
+                    event.success);          //asynchronously return.
+        }
         transactionManager.CommitTransaction(txnContext);
         microEvents.add(event);
     }

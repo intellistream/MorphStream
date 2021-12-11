@@ -35,7 +35,7 @@ public abstract class GSBolt extends TransactionalBolt {
     }
 
     protected boolean READ_CORE(MicroEvent event) {
-        for (int i = 0; i < event.NUM_ACCESS; ++i) {
+        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             SchemaRecordRef ref = event.getRecord_refs()[i];
             if (ref.isEmpty())
                 return false;//not yet processed.
@@ -50,7 +50,7 @@ public abstract class GSBolt extends TransactionalBolt {
     protected void READ_POST(MicroEvent event) throws InterruptedException {
         int sum = 0;
         if (POST_COMPUTE_COMPLEXITY != 0) {
-            for (int i = 0; i < event.NUM_ACCESS; ++i) {
+            for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
                 sum += event.result[i];
             }
             for (int j = 0; j < POST_COMPUTE_COMPLEXITY; ++j)
@@ -88,7 +88,7 @@ public abstract class GSBolt extends TransactionalBolt {
         long sum = 0;
         AppConfig.randomDelay();
         DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
-        for (int i = 0; i < event.NUM_ACCESS; ++i) {
+        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             SchemaRecordRef recordRef = event.getRecord_refs()[i];
             SchemaRecord record = recordRef.getRecord();
             DataBox Value_value = record.getValues().get(1);
@@ -96,24 +96,24 @@ public abstract class GSBolt extends TransactionalBolt {
             sum += Value;
         }
 
-        sum /= event.NUM_ACCESS;
+        sum /= event.TOTAL_NUM_ACCESS;
         TargetValue_value.setLong(sum);
     }
 
     protected void READ_LOCK_AHEAD(MicroEvent event, TxnContext txnContext) throws DatabaseException {
-        for (int i = 0; i < event.NUM_ACCESS; ++i)
+        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_ONLY);
     }
 
     protected void WRITE_LOCK_AHEAD(MicroEvent event, TxnContext txnContext) throws DatabaseException {
-        for (int i = 0; i < event.NUM_ACCESS; ++i)
+        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_WRITE);
     }
 
     private boolean process_request_noLock(MicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
-        for (int i = 0; i < event.NUM_ACCESS; ++i) {
+        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             boolean rt = transactionManager.SelectKeyRecord_noLock(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
             if (rt) {
@@ -126,7 +126,7 @@ public abstract class GSBolt extends TransactionalBolt {
     }
 
     private boolean process_request(MicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
-        for (int i = 0; i < event.NUM_ACCESS; ++i) {
+        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             boolean rt = transactionManager.SelectKeyRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
             if (rt) {
                 assert event.getRecord_refs()[i].getRecord() != null;

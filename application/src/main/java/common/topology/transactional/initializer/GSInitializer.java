@@ -50,6 +50,7 @@ public class GSInitializer extends TableInitilizer {
     private final DataGeneratorConfig dataConfig;
     private final int partitionOffset;
     private final int NUM_ACCESS;
+    private final int Transaction_Length;
 
 
     public GSInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
@@ -58,6 +59,7 @@ public class GSInitializer extends TableInitilizer {
         this.dataRootPath = config.getString("rootFilePath");
         this.partitionOffset = numberOfStates / tthread;
         this.NUM_ACCESS = config.getInt("NUM_ACCESS");
+        this.Transaction_Length = config.getInt("Transaction_Length");
         this.numberOfStates = numberOfStates;
         // set up generator
         configure_store(theta, tthread, numberOfStates);
@@ -92,7 +94,7 @@ public class GSInitializer extends TableInitilizer {
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
-            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%s",
+            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%s",
                             dataConfig.getTotalThreads(),
                             dataConfig.getTotalEvents(),
                             dataConfig.getnKeyStates(),
@@ -100,6 +102,7 @@ public class GSInitializer extends TableInitilizer {
                             dataConfig.State_Access_Skewness,
                             dataConfig.Ratio_of_Overlapped_Keys,
                             dataConfig.Ratio_of_Transaction_Aborts,
+                            dataConfig.Transaction_Length,
                             AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
 
@@ -279,9 +282,10 @@ public class GSInitializer extends TableInitilizer {
             String[] split = txn.split(",");
             int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
             // construct bid array
+            int keyLength = NUM_ACCESS*Transaction_Length;
             HashMap<Integer, Integer> pids = new HashMap<>();
-            long[] keys = new long[NUM_ACCESS];
-            for (int i = 1; i < NUM_ACCESS+1; i++) {
+            long[] keys = new long[keyLength];
+            for (int i = 1; i < keyLength+1; i++) {
                 keys[i-1] = Long.parseLong(split[i]);
                 pids.put((int) (keys[i-1] / partitionOffset), 0);
             }
@@ -294,8 +298,9 @@ public class GSInitializer extends TableInitilizer {
                     Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
                     pids.size(), // num_of_partition
                     Arrays.toString(keys), // key_array
-                    NUM_ACCESS,
-                    Boolean.parseBoolean(split[NUM_ACCESS+1]));
+                    keyLength,
+                    Transaction_Length,
+                    Boolean.parseBoolean(split[keyLength+1]));
             DataHolder.events.add(event);
             if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();

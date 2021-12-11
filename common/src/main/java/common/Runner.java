@@ -123,6 +123,9 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
     public Integer Ratio_of_Transaction_Aborts = 0;
 
+    @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
+    public Integer Transaction_Length = 1;
+
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 1024;
 
@@ -163,6 +166,7 @@ public abstract class Runner implements IRunner {
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
+        config.put("Transaction_Length", Transaction_Length);
 
         config.put("numberOfDLevels", numberOfDLevels);
         if (isCyclic == 1) {

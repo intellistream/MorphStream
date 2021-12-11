@@ -39,6 +39,7 @@ public class GSTPGDataGenerator extends DataGenerator {
     private final int State_Access_Skewness; // ratio of state access, following zipf distribution
     private final int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
     private final int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
+    private final int Transaction_Length;
     // control the number of txns overlap with each other.
     private final ArrayList<Integer> generatedKeys = new ArrayList<>();
     // independent transactions.
@@ -64,6 +65,7 @@ public class GSTPGDataGenerator extends DataGenerator {
         NUM_ACCESS = dataConfig.NUM_ACCESS;
         Ratio_of_Transaction_Aborts = dataConfig.Ratio_of_Transaction_Aborts;
         Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
+        Transaction_Length = dataConfig.Transaction_Length;
 
         int nKeyState = dataConfig.getnKeyStates();
 
@@ -102,28 +104,41 @@ public class GSTPGDataGenerator extends DataGenerator {
     }
 
     private GSEvent randomEvent() {
-        int[] keys = new int[NUM_ACCESS];
+        int[] keys = new int[NUM_ACCESS*Transaction_Length];
         int writeLevel = -1;
         if (!isUnique) {
             if (enable_states_partition) {
-                int partitionId = key_to_partition(p_generator.next());
-                for (int i = 0; i < NUM_ACCESS; i++) {
-                    if (AppConfig.isCyclic) {
-                        keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
-                    } else {
-                        keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
-                        if (i == 0) {
-                            while (idToLevel.get(keys[i]) == 0) {
-                                keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                for (int j = 0; j < Transaction_Length; j++) {
+                    int partitionId = key_to_partition(p_generator.next());
+                    for (int i = 0; i < NUM_ACCESS; i++) {
+                        int offset = j * NUM_ACCESS + i;
+                        if (AppConfig.isCyclic) {
+                            int key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                            if (offset % NUM_ACCESS == 0) {
+                                // make sure this one is different with other write key
+                                for (int k = 0; k < j; k++) {
+                                    while (keys[k*NUM_ACCESS] == key) {
+                                        key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                                    }
+                                }
                             }
-                            writeLevel = idToLevel.get(keys[i]);
+                            keys[offset] = key;
                         } else {
-                            while (writeLevel <= idToLevel.get(keys[i])) {
-                                keys[i] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                            // TODO: correct it later
+                            keys[offset] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                            if (i == 0) {
+                                while (idToLevel.get(keys[offset]) == 0) {
+                                    keys[offset] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                                }
+                                writeLevel = idToLevel.get(keys[offset]);
+                            } else {
+                                while (writeLevel <= idToLevel.get(keys[offset])) {
+                                    keys[offset] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                                }
                             }
                         }
+                        partitionId = (partitionId + 1) % dataConfig.getTotalThreads();
                     }
-                    partitionId = (partitionId + 1) % dataConfig.getTotalThreads();
                 }
             } else {
                 for (int i = 0; i < NUM_ACCESS; i++) {
@@ -144,6 +159,7 @@ public class GSTPGDataGenerator extends DataGenerator {
                 }
             }
         } else {
+            // TODO: add transaction length logic
             for (int i = 0; i <NUM_ACCESS; i++) {
                 keys[i] = getUniqueKey(keyZipf, generatedKeys);
             }

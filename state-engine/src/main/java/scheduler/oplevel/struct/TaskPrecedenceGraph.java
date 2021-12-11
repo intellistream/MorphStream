@@ -174,6 +174,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
 //                        context.fd += op.fd_parents.size();
 //                    }
                     Operation head = oc.getOperations().first();
+                    context.operations.addAll(oc.getOperations());
                     context.totalOsToSchedule += oc.getOperations().size();
                     if (head.isRoot()) {
                         head.context.getListener().onRootStart(head);

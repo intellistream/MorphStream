@@ -15,6 +15,7 @@ public class GSTPGDataGeneratorConfig extends DataGeneratorConfig {
     public int NUM_ACCESS;
     public int Ratio_of_Overlapped_Keys;
     public int Ratio_of_Transaction_Aborts;
+    public int Transaction_Length;
 
     @Override
     public void initialize(Configuration config) {
@@ -23,5 +24,6 @@ public class GSTPGDataGeneratorConfig extends DataGeneratorConfig {
         State_Access_Skewness = config.getInt("State_Access_Skewness", 0);
         Ratio_of_Overlapped_Keys = config.getInt("Ratio_of_Overlapped_Keys", 0);
         Ratio_of_Transaction_Aborts = config.getInt("Ratio_of_Transaction_Aborts", 0);
+        Transaction_Length = config.getInt("Transaction_Length", 1);
     }
 }

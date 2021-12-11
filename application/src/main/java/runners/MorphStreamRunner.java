@@ -43,14 +43,14 @@ import static content.T_StreamContentImpl.T_STREAMCONTENT;
 import static content.common.ContentCommon.content_type;
 import static profiler.MeasureTools.METRICS_REPORT;
 
-public class TStreamRunner extends Runner {
-    private static final Logger log = LoggerFactory.getLogger(TStreamRunner.class);
+public class MorphStreamRunner extends Runner {
+    private static final Logger log = LoggerFactory.getLogger(MorphStreamRunner.class);
     private static Topology final_topology;
     private final AppDriver driver;
     private final Configuration config = new Configuration();
     private Platform platform;
 
-    public TStreamRunner() {
+    public MorphStreamRunner() {
         driver = new AppDriver();
         //Ordinary Application
         driver.addApp("WordCount", WordCount.class);//WC
@@ -147,7 +147,7 @@ public class TStreamRunner extends Runner {
 
     public static void main(String[] args) {
         if (enable_log) log.info("Program Starts..");
-        TStreamRunner runner = new TStreamRunner();
+        MorphStreamRunner runner = new MorphStreamRunner();
         JCommander cmd = new JCommander(runner);
         try {
             cmd.parse(args);
@@ -240,7 +240,7 @@ public class TStreamRunner extends Runner {
                         + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
                         + OsUtils.osWrapperPostFix("totalEvents = %d")
-                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%s_%d");
+                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d");
 
                 if (config.getInt("CCOption") == CCOption_SStore) {
                     scheduler = "PAT";
@@ -255,6 +255,7 @@ public class TStreamRunner extends Runner {
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
                             config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
                 } else if (config.getString("common").equals("GrepSum")) {
@@ -265,6 +266,7 @@ public class TStreamRunner extends Runner {
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
                             config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
                 } else {
