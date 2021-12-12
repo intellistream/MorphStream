@@ -5,6 +5,7 @@ import scheduler.struct.layered.LayeredOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.lib.ConcurrentHashMap;
 
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -70,6 +71,7 @@ public class OperationChain implements Comparable<OperationChain> {
                 }
             }
             prevOperation = curOperation;
+            curOperation.initialize();
         }
     }
 

@@ -30,6 +30,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public final OPSchedulerContext context;
     public final String pKey;
 
+    private final Deque<Operation> fd_concurrent_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
+    private final Deque<Operation> fd_concurrent_parents; // the functional dependencies ops to be executed after this op.
+
     private final Deque<Operation> ld_descendant_operations;
     private final Deque<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
     private final Deque<Operation> td_children; // the functional dependencies ops to be executed after this op.
@@ -52,8 +55,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
 
-//    public String[] condition_sourceTable = null;
-//    public String[] condition_source = null;
+    public String[] condition_sourceTable = null;
+    public String[] condition_source = null;
 
     public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
         this(pKey, null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
@@ -101,10 +104,10 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         ld_descendant_operations = new ArrayDeque<>();
 
         // finctional dependencies, this should be concurrent because cross thread access
-        fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
-        fd_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
-//        fd_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
-//        fd_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        fd_concurrent_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
+        fd_concurrent_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
+        fd_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
+        fd_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
         // temporal dependencies
         td_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
         td_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
@@ -123,7 +126,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
 
     /****************************End*************************************/
-
 
     /**
      * TODO: make it better.
@@ -157,24 +159,32 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
     public boolean isRoot() {
-        return operationMetadata.td_countdown.get() == 0 && operationMetadata.fd_countdown.get() == 0 && operationMetadata.ld_countdown.get() == 0;
+        return operationMetadata.td_countdown == 0 && operationMetadata.fd_countdown == 0 && operationMetadata.ld_countdown == 0;
     }
 
-//    public void setConditionSources(String[] condition_sourceTable, String[] condition_source) {
-//        this.condition_sourceTable = condition_sourceTable;
-//        this.condition_source = condition_source;
-//    }
+    public void setConditionSources(String[] condition_sourceTable, String[] condition_source) {
+        this.condition_sourceTable = condition_sourceTable;
+        this.condition_source = condition_source;
+    }
+
+    public void initialize() {
+        fd_parents.addAll(fd_concurrent_parents);
+        fd_children.addAll(fd_concurrent_children);
+        operationMetadata.fd_countdown = fd_parents.size();
+        operationMetadata.td_countdown = td_parents.size();
+        operationMetadata.ld_countdown = ld_parents.size();
+    }
 
     public void addParent(Operation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
-            this.fd_parents.add(operation);
-            this.operationMetadata.fd_countdown.incrementAndGet();
+            this.fd_concurrent_parents.add(operation);
+//            this.operationMetadata.fd_countdown++;
         } else if (type.equals(DependencyType.LD)) {
             this.ld_parents.add(operation);
-            this.operationMetadata.ld_countdown.incrementAndGet();
+//            this.operationMetadata.ld_countdown++;
         } else if (type.equals(DependencyType.TD)) {
             this.td_parents.add(operation);
-            this.operationMetadata.td_countdown.incrementAndGet();
+//            this.operationMetadata.td_countdown++;
         } else {
             throw new RuntimeException("unsupported dependency type parent");
         }
@@ -182,7 +192,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     public void addChild(Operation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
-            this.fd_children.add(operation);
+            this.fd_concurrent_children.add(operation);
         } else if (type.equals(DependencyType.LD)) {
             this.ld_children.add(operation);
         } else if (type.equals(DependencyType.SP_LD)) {
@@ -209,7 +219,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
     public OperationStateType getOperationState() {
-//        return operationState.get();
+//        return operationState;
         return operationState;
     }
 
@@ -233,25 +243,25 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         // update countdown
         if (parentState.equals(OperationStateType.EXECUTED)) {
             if (dependencyType.equals(DependencyType.TD)) {
-                operationMetadata.td_countdown.decrementAndGet();
-                assert operationMetadata.td_countdown.get() >= 0;
+                operationMetadata.td_countdown--;
+                assert operationMetadata.td_countdown >= 0;
             } else if (dependencyType.equals(DependencyType.FD)) {
-                operationMetadata.fd_countdown.decrementAndGet();
-                assert operationMetadata.fd_countdown.get() >= 0;
+                operationMetadata.fd_countdown--;
+                assert operationMetadata.fd_countdown >= 0;
             } else if (dependencyType.equals(DependencyType.LD)) {
-                operationMetadata.ld_countdown.decrementAndGet();
-                assert operationMetadata.ld_countdown.get() >= 0;
+                operationMetadata.ld_countdown--;
+                assert operationMetadata.ld_countdown >= 0;
             }
         } else if (parentState.equals(OperationStateType.READY) || parentState.equals(OperationStateType.BLOCKED)) { // rollback
             if (dependencyType.equals(DependencyType.TD)) {
-                operationMetadata.td_countdown.incrementAndGet();
-                assert operationMetadata.td_countdown.get() >= 0;
+                operationMetadata.td_countdown++;
+                assert operationMetadata.td_countdown >= 0;
             } else if (dependencyType.equals(DependencyType.FD)) {
-                operationMetadata.fd_countdown.incrementAndGet();
-                assert operationMetadata.fd_countdown.get() >= 0;
+                operationMetadata.fd_countdown++;
+                assert operationMetadata.fd_countdown >= 0;
             } else if (dependencyType.equals(DependencyType.LD)) {
-                operationMetadata.ld_countdown.incrementAndGet();
-                assert operationMetadata.ld_countdown.get() >= 0;
+                operationMetadata.ld_countdown++;
+                assert operationMetadata.ld_countdown >= 0;
             }
         } else if (parentState.equals(OperationStateType.ABORTED)) {
             if (dependencyType.equals(DependencyType.TD)) {
@@ -259,31 +269,31 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //                for (Operation operation : td_parents) {
 //                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
 //                        || operation.getOperationState().equals(OperationStateType.ABORTED)) {
-//                        operationMetadata.td_countdown.decrementAndGet();
+//                        operationMetadata.td_countdown--;
 //                    }
 //                }
-                operationMetadata.td_countdown.decrementAndGet();
-                assert operationMetadata.td_countdown.get() >= 0;
+                operationMetadata.td_countdown--;
+                assert operationMetadata.td_countdown >= 0;
             } else if (dependencyType.equals(DependencyType.FD)) {
 //                operationMetadata.fd_countdown.set(fd_parents.size());
 //                for (Operation operation : fd_parents) {
 //                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
 //                            || operation.getOperationState().equals(OperationStateType.ABORTED)) {
-//                        operationMetadata.fd_countdown.decrementAndGet();
+//                        operationMetadata.fd_countdown--;
 //                    }
 //                }
-                operationMetadata.fd_countdown.decrementAndGet();
-                assert operationMetadata.fd_countdown.get() >= 0;
+                operationMetadata.fd_countdown--;
+                assert operationMetadata.fd_countdown >= 0;
             } else if (dependencyType.equals(DependencyType.LD)) {
 //                operationMetadata.ld_countdown.set(ld_parents.size());
 //                for (Operation operation : ld_parents) {
 //                    if (operation.getOperationState().equals(OperationStateType.EXECUTED)
 //                            || operation.getOperationState().equals(OperationStateType.ABORTED)) {
-//                        operationMetadata.ld_countdown.decrementAndGet();
+//                        operationMetadata.ld_countdown--;
 //                    }
 //                }
-                operationMetadata.ld_countdown.decrementAndGet();
-                assert operationMetadata.ld_countdown.get() >= 0;
+                operationMetadata.ld_countdown--;
+                assert operationMetadata.ld_countdown >= 0;
             }
         } else {
             throw new UnsupportedOperationException();
@@ -291,16 +301,16 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
     public void resetDependencies() {
-        operationMetadata.td_countdown.set(td_parents.size());
-        operationMetadata.fd_countdown.set(fd_parents.size());
-        operationMetadata.ld_countdown.set(ld_parents.size());
+        operationMetadata.td_countdown = td_parents.size();
+        operationMetadata.fd_countdown = fd_parents.size();
+        operationMetadata.ld_countdown = ld_parents.size();
     }
 
 
     public boolean tryReady() {
-        boolean isReady = operationMetadata.td_countdown.get() == 0
-                && operationMetadata.fd_countdown.get() == 0
-                && operationMetadata.ld_countdown.get() == 0;
+        boolean isReady = operationMetadata.td_countdown == 0
+                && operationMetadata.fd_countdown == 0
+                && operationMetadata.ld_countdown == 0;
 
         if (isReady) {
             stateTransition(OperationStateType.READY);
@@ -311,7 +321,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     // **********************************Utilities**********************************
 
     public boolean hasParents() {
-        return !(operationMetadata.td_countdown.get() == 0 && operationMetadata.fd_countdown.get() == 0 && operationMetadata.ld_countdown.get() == 0);
+        return !(operationMetadata.td_countdown == 0 && operationMetadata.fd_countdown == 0 && operationMetadata.ld_countdown == 0);
     }
 
     /**
@@ -427,9 +437,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             }
         }
         isDependencyLevelCalculated = true;
-        operationMetadata.td_countdown.set(td_parents.size());
-        operationMetadata.fd_countdown.set(fd_parents.size());
-        operationMetadata.ld_countdown.set(ld_parents.size());
+        operationMetadata.td_countdown = td_parents.size();
+        operationMetadata.fd_countdown = fd_parents.size();
+        operationMetadata.ld_countdown = ld_parents.size();
     }
 
     public void updateDependencyLevel(int dependencyLevel) {
@@ -452,9 +462,13 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     private static class OperationMetadata {
         // countdown to be executed parents and committed parents for state transition
-        public final AtomicInteger fd_countdown;
-        public final AtomicInteger td_countdown;
-        public final AtomicInteger ld_countdown;
+//        public final AtomicInteger fd_countdown;
+//        public final AtomicInteger td_countdown;
+//        public final AtomicInteger ld_countdown;
+
+        public int fd_countdown;
+        public int td_countdown;
+        public int ld_countdown;
 
         /**
          * A flag to control the state transition from a BLOCKED operation
@@ -464,9 +478,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
          * 2 can promote to a ready
          */
         public OperationMetadata() {
-            td_countdown = new AtomicInteger(0); // countdown Idx0/1 when executed/committed
-            fd_countdown = new AtomicInteger(0); // countdown when executed
-            ld_countdown = new AtomicInteger(0); // countdown when executed
+//            td_countdown = new AtomicInteger(0); // countdown Idx0/1 when executed/committed
+//            fd_countdown = new AtomicInteger(0); // countdown when executed
+//            ld_countdown = new AtomicInteger(0); // countdown when executed
+            td_countdown = 0; // countdown Idx0/1 when executed/committed
+            fd_countdown = 0; // countdown when executed
+            ld_countdown = 0; // countdown when executed
         }
     }
 }

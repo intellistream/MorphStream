@@ -10,10 +10,7 @@ import scheduler.oplevel.context.OPSchedulerContext;
 import utils.SOURCE_CONTROL;
 import utils.lib.ConcurrentHashMap;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
@@ -188,11 +185,11 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
-//    /**
-//     * Update TD of each operation in the operation chain
-//     * <p>
-//     * OC: O1 <- O2 O3. O2
-//     */
+    /**
+     * Update TD of each operation in the operation chain
+     * <p>
+     * OC: O1 <- O2 O3. O2
+     */
 //    public void updateTDDependencies(OperationChain oc) {
 //        Operation prevOperation = null;
 //        List<Operation> parentOperations = new ArrayList<>();
@@ -218,9 +215,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
 //            prevOperation = curOperation;
 //
 //            // check FD
-//            if (curOperation.condition_source != null)
-//                checkFD(oc, curOperation, curOperation.table_name, curOperation.d_record.record_.GetPrimaryKey(),
-//                        curOperation.condition_sourceTable, curOperation.condition_source);
+////            if (curOperation.condition_source != null)
+////                checkFD(oc, curOperation, curOperation.table_name, curOperation.d_record.record_.GetPrimaryKey(),
+////                        curOperation.condition_sourceTable, curOperation.condition_source);
+//            curOperation.initialize();
 //        }
 //    }
 
@@ -295,8 +293,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             for (int index = 0; index < condition_source.length; index++) {
                 if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                     continue;// no need to check data dependency on a key itself.
-                OperationChain OCFromConditionSource = getOC(condition_sourceTable[index],
-                        condition_source[index]);
+                OperationChain OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index]);
                 // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
                 if (OCFromConditionSource.getOperations().isEmpty() || OCFromConditionSource.getOperations().first().bid >= op.bid) {
                     OCFromConditionSource.addPotentialFDChildren(curOC, op);
