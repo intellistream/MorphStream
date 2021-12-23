@@ -12,6 +12,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.Metrics;
+import utils.AppConfig;
 
 import java.util.Collection;
 
@@ -41,6 +42,9 @@ public class TopologySubmitter {
             Metrics.NUM_ITEMS = conf.getInt("NUM_ITEMS");
             Metrics.H2_SIZE = Metrics.NUM_ITEMS / conf.getInt("tthread");
         }
+        // initialize AppConfig
+        AppConfig.complexity = conf.getInt("complexity", 100000);
+        AppConfig.isCyclic = conf.getBoolean("isCyclic", true);
         //launch
         OM = new OptimizationManager(g, conf);//support different kinds of optimization module.
         if (enable_shared_state) {

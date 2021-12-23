@@ -41,7 +41,7 @@ public class PartitionedOrderLock implements Serializable {
     }
 
     public class LOCK {
-        volatile AtomicLong bid = new AtomicLong();
+        public volatile AtomicLong bid = new AtomicLong();
 
         public boolean blocking_wait(final long bid, long _bid) {
 //            if (!this.counter.compareAndSet(counter, counter))
@@ -62,6 +62,11 @@ public class PartitionedOrderLock implements Serializable {
 
         public void reset() {
             bid.set(0);
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(bid.get());
         }
     }
 }

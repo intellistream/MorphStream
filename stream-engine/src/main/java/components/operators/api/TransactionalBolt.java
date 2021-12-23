@@ -17,7 +17,7 @@ import java.util.concurrent.BrokenBarrierException;
 import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_latency_measurement;
 
-public abstract class TransactionalBolt<T> extends MapBolt implements Checkpointable {
+public abstract class TransactionalBolt extends MapBolt implements Checkpointable {
     protected static final Logger LOG = LoggerFactory.getLogger(TransactionalBolt.class);
     private static final long serialVersionUID = -3899457584889441657L;
     public TxnManager transactionManager;
@@ -49,9 +49,18 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
     public static void LA_LOCK(int _pid, int num_P, TxnManager txnManager, long[] bid_array, long _bid, int tthread) {
         for (int k = 0; k < num_P; k++) {
             txnManager.getOrderLock(_pid).blocking_wait(bid_array[_pid], _bid);
+//            LOG.info(_pid + " : " + bid_array[_pid]);
             _pid++;
             if (_pid == tthread)
                 _pid = 0;
+        }
+    }
+
+    public static void LA_LOCK_Reentrance(TxnManager txnManager, long[] bid_array, int[] partition_indexs, long _bid, int thread_Id) {
+        for (int _pid : partition_indexs) {
+//            LOG.info(thread_Id + " try lock: " + _pid);
+            txnManager.getOrderLock(_pid).blocking_wait(bid_array[_pid], _bid);
+//            LOG.info(thread_Id + " get lock: " + _pid);
         }
     }
 
@@ -73,6 +82,14 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
             _pid++;
             if (_pid == tthread)
                 _pid = 0;
+        }
+    }
+
+    public static void LA_UNLOCK_Reentrance(TxnManager txnManager, int[] partition_indexs, int thread_Id) {
+        for (int _pid : partition_indexs) {
+            txnManager.getOrderLock(_pid).advance();
+//            LOG.info(thread_Id + " release lock: " + _pid);
+
         }
     }
 
@@ -100,7 +117,7 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
      */
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
-        MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);//start measure prepare and total.
+        MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);
         PRE_EXECUTE(in);
         MeasureTools.END_PREPARE_TIME_MEASURE(thread_Id);
         //begin transaction processing.
@@ -110,7 +127,6 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
         //end transaction processing.
         MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
         POST_PROCESS(_bid, timestamp, 1);//otherwise deadlock.
-        MeasureTools.END_TOTAL_TIME_MEASURE(thread_Id);//otherwise deadlock.
     }
 
     @Override
@@ -131,9 +147,9 @@ public abstract class TransactionalBolt<T> extends MapBolt implements Checkpoint
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
         //pre stream processing phase..
-        MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);
+        MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
-        MeasureTools.END_PREPARE_TIME_MEASURE(thread_Id);
+        MeasureTools.END_PREPARE_TIME_MEASURE_ACC(thread_Id);
         PRE_TXN_PROCESS(_bid, timestamp);
     }
 

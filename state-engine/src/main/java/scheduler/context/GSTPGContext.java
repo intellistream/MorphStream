@@ -1,10 +1,12 @@
 package scheduler.context;
 
+import profiler.MeasureTools;
 import scheduler.impl.nonlayered.GSScheduler;
 import scheduler.statemanager.OperationChainStateListener;
 import scheduler.statemanager.PartitionStateManager;
 import scheduler.struct.gs.GSOperation;
 import scheduler.struct.gs.GSOperationChain;
+import scheduler.struct.gs.GSOperationChainWithAbort;
 
 import java.util.ArrayDeque;
 
@@ -24,9 +26,10 @@ public class GSTPGContext
     }
 
     @Override
-    public GSOperationChain createTask(String tableName, String pKey) {
-        GSOperationChain oc = new GSOperationChain(tableName, pKey);
+    public GSOperationChain createTask(String tableName, String pKey, long bid) {
+        GSOperationChain oc = new GSOperationChain(tableName, pKey, bid);
         oc.setContext(this);
+//        operationChains.add(oc);
         return oc;
     }
 

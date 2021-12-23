@@ -11,9 +11,4 @@ public class DFSLayeredTPGContextWithAbort extends DFSLayeredTPGContext {
     public DFSLayeredTPGContextWithAbort(int thisThreadId, int totalThreads) {
         super(thisThreadId, totalThreads);
     }
-
-    @Override
-    public DFSOperationChain createTask(String tableName, String pKey) {
-        return new DFSOperationChain(tableName, pKey);
-    }
 }

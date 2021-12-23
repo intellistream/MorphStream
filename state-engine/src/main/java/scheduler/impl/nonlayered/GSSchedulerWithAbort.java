@@ -3,25 +3,29 @@ package scheduler.impl.nonlayered;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.GSTPGContextWithAbort;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.struct.gs.GSOperationChainWithAbort;
 import scheduler.struct.gs.GSOperationWithAbort;
 import transaction.impl.ordered.MyList;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAbort, GSOperationWithAbort, GSOperationChainWithAbort> {
 
-    public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
+    public final ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
-    public GSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public GSSchedulerWithAbort(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override
     public void INITIALIZE(GSTPGContextWithAbort context) {
+//        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 
     /**
@@ -36,11 +40,6 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     @Override
     public void EXPLORE(GSTPGContextWithAbort context) {
         context.partitionStateManager.handleStateTransitions();
-    }
-
-    @Override
-    public boolean FINISHED(GSTPGContextWithAbort context) {
-        return context.finished();
     }
 
     @Override
@@ -68,21 +67,25 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
     private GSOperationWithAbort constructOp(List<GSOperationWithAbort> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         GSOperationWithAbort set_op;
+        GSTPGContextWithAbort targetContext = getTargetContext(request.src_key);
         switch (request.accessType) {
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
-                set_op = new GSOperationWithAbort(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                set_op = new GSOperationWithAbort(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.function, request.condition, request.condition_records, request.success);
                 break;
             case READ_WRITE_COND_READ:
-                set_op = new GSOperationWithAbort(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+            case READ_WRITE_COND_READN:
+                set_op = new GSOperationWithAbort(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
             default:
                 throw new RuntimeException("Unexpected operation");
         }
         operationGraph.add(set_op);
-        set_op.setOC(tpg.setupOperationTDFD(set_op, request));
+//        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+//        tpg.cacheToSortedOperations(set_op);
+        tpg.setupOperationTDFD(set_op, request, targetContext);
         return set_op;
     }
 
@@ -93,12 +96,13 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
 
     /**
      * Used by GSScheduler.
-     *
-     * @param context
+     *  @param context
      * @param operationChain
      * @param mark_ID
+     * @return
      */
-    public void execute(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
+    @Override
+    public boolean execute(GSTPGContextWithAbort context, GSOperationChainWithAbort operationChain, long mark_ID) {
         MyList<GSOperationWithAbort> operation_chain_list = operationChain.getOperations();
         for (GSOperationWithAbort operation : operation_chain_list) {
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
@@ -106,10 +110,12 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
             checkTransactionAbort(operation, operationChain);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
+        return true;
     }
 
+    @Override
     protected void checkTransactionAbort(GSOperationWithAbort operation, GSOperationChainWithAbort operationChain) {
-        if (operation.isFailed && !operation.aborted) {
+        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             operationChain.needAbortHandling = true;
             operationChain.failedOperations.add(operation);
         }
@@ -128,7 +134,7 @@ public class GSSchedulerWithAbort extends AbstractGSScheduler<GSTPGContextWithAb
         }
 
         public void onOCRollbacked(GSOperationChainWithAbort operationChain) {
-            operationChain.context.scheduledOPs += operationChain.getOperations().size();
+            operationChain.context.scheduledOPs -= operationChain.getOperations().size();
         }
     }
 }

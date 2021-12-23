@@ -1,8 +1,7 @@
 package benchmark.datagenerator.apps.SL.output;
 
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
-import benchmark.datagenerator.apps.SL.Transaction.SLDepositEvent;
-import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
+import benchmark.datagenerator.Event;
 import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,27 +21,26 @@ import static common.CONTROL.enable_log;
 public class FileOutputHandler implements IOutputHandler {
     protected static final Logger log = LoggerFactory.getLogger(FileOutputHandler.class);
     protected String mRootPath;
-    protected String transferEventFileName;
-    protected String depositEventFileName;
+    protected String fileName;
     protected String mDependencyEdgesFileName;
     protected String mDependencyVerticesFileName;
 
     public FileOutputHandler(String rootPath) {
-        this(rootPath, null, null, null, null);
+        this(rootPath, null, null, null);
     }
 
-    public FileOutputHandler(String rootPath, String transferEventFileName, String depositEventFileName, String dependencyFileName, String dependencyVerticesFileName) {
+    public FileOutputHandler(String rootPath, String fileName, String dependencyFileName, String dependencyVerticesFileName) {
         mRootPath = rootPath;
 
-        if (transferEventFileName == null) {
-            this.transferEventFileName = "transferEvents.txt";
+        if (fileName == null) {
+            this.fileName = "events.txt";
         } else
-            this.transferEventFileName = transferEventFileName;
+            this.fileName = fileName;
 
-        this.depositEventFileName = depositEventFileName;
-        if (depositEventFileName == null) {
-            this.depositEventFileName = "depositEvents.txt";
-        }
+//        this.depositEventFileName = depositEventFileName;
+//        if (depositEventFileName == null) {
+//            this.depositEventFileName = "depositEvents.txt";
+//        }
 
         mDependencyEdgesFileName = dependencyFileName;
         if (mDependencyEdgesFileName == null) {
@@ -58,19 +56,13 @@ public class FileOutputHandler implements IOutputHandler {
 
 
     @Override
-    public void sinkEvents(List<SLEvent> events) throws IOException {
-        if (enable_log) log.info(String.format("transferEventFile path is %s", mRootPath + transferEventFileName));
-        BufferedWriter transferEventBufferedWriter = CreateWriter(transferEventFileName);
-        if (enable_log) log.info(String.format("depositEventFile path is %s", mRootPath + depositEventFileName));
-        BufferedWriter depositEventBufferedWriter = CreateWriter(depositEventFileName);
-        for (SLEvent event : events) {
-            if (event instanceof SLDepositEvent) {
-                depositEventBufferedWriter.write(event + "\n");
-            } else
-                transferEventBufferedWriter.write(event + "\n");
+    public void sinkEvents(List<Event> events) throws IOException {
+        if (enable_log) log.info(String.format("Event file path is %s", mRootPath + fileName));
+        BufferedWriter transferEventBufferedWriter = CreateWriter(fileName);
+        for (Event event : events) {
+            transferEventBufferedWriter.write(event + "\n");
         }
         transferEventBufferedWriter.close();
-        depositEventBufferedWriter.close();
     }
 
     private BufferedWriter CreateWriter(String FileName) throws IOException {

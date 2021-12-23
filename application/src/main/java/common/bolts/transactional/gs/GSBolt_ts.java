@@ -7,7 +7,10 @@ import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import transaction.context.TxnContext;
+import transaction.function.Condition;
+import transaction.function.SUM;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
@@ -22,7 +25,7 @@ public class GSBolt_ts extends GSBolt {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     private final double write_useful_time = 556;//write-compute time pre-measured.
-    Collection<MicroEvent> EventsHolder;
+    Collection<MicroEvent> microEvents;
     private int writeEvents;
 
     public GSBolt_ts(int fid, SINKCombo sink) {
@@ -47,45 +50,53 @@ public class GSBolt_ts extends GSBolt {
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             boolean flag = event.READ_EVENT();
-            if (flag) {//read
-                read_construct(event, txnContext);
-            } else {
-                write_construct(event, txnContext);
+//            if (flag) {//read
+//                read_construct(event, txnContext);
+//            } else {
+//                write_construct(event, txnContext);
+//            }
+            RANGE_WRITE_CONSRUCT((MicroEvent) event, txnContext);
+        }
+
+    }
+
+    private void RANGE_WRITE_CONSRUCT(MicroEvent event, TxnContext txnContext) throws DatabaseException {
+        SUM sum;
+        if (event.READ_EVENT()) {
+            sum = new SUM(-1);
+        } else
+            sum = new SUM();
+
+        transactionManager.BeginTransaction(txnContext);
+        // multiple operations will be decomposed
+        for (int i = 0; i < event.Txn_Length; i++) {
+            int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
+            String[] condition_table = new String[NUM_ACCESS];
+            String[] condition_source = new String[NUM_ACCESS];
+            for (int j = 0; j < NUM_ACCESS; j++) {
+                int offset = i * NUM_ACCESS + j;
+                condition_source[j] = String.valueOf(event.getKeys()[offset]);
+                condition_table[j] = "MicroTable";
             }
+            int writeKeyIdx = i * NUM_ACCESS;
+            transactionManager.Asy_ModifyRecord_ReadN(
+                    txnContext,
+                    "MicroTable",
+                    String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
+                    event.getRecord_refs()[writeKeyIdx],//to be fill up.
+                    sum,
+                    condition_table, condition_source,//condition source, condition id.
+                    event.success);          //asynchronously return.
         }
-
-    }
-
-    void read_construct(MicroEvent event, TxnContext txnContext) throws DatabaseException {
-        for (int i = 0; i < NUM_ACCESSES; i++) {
-            //it simply constructs the operations and return.
-            transactionManager.Asy_ReadRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], event.enqueue_time);
-        }
-        if (enable_speculative) {//TODO: future work.
-            //earlier emit
-            //collector.emit(input_event.getBid(), 1, input_event.getTimestamp());//the tuple is finished.
-        } else {
-            EventsHolder.add(event);//mark the tuple as ``in-complete"
-        }
-    }
-
-    protected void write_construct(MicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
-        for (int i = 0; i < NUM_ACCESSES; ++i) {
-            //it simply construct the operations and return.
-            transactionManager.Asy_WriteRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getValues()[i], event.enqueue_time);//asynchronously return.
-        }
-        writeEvents++;
-        //post_process for write events immediately.
-        BEGIN_POST_TIME_MEASURE(thread_Id);
-        WRITE_POST(event);
-        END_POST_TIME_MEASURE_ACC(thread_Id);
+        transactionManager.CommitTransaction(txnContext);
+        microEvents.add(event);
     }
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
-        EventsHolder = new ArrayDeque<>();
+        microEvents = new ArrayDeque<>();
     }
 
     void READ_REQUEST_CORE() throws InterruptedException {
@@ -99,34 +110,42 @@ public class GSBolt_ts extends GSBolt {
 //                END_POST_TIME_MEASURE_ACC(thread_Id);
 //            }
 //        }
-        for (MicroEvent event : EventsHolder) {
+        for (MicroEvent event : microEvents) {
             READ_CORE(event);
         }
     }
 
     void READ_POST() throws InterruptedException {
-        for (MicroEvent event : EventsHolder) {
+        for (MicroEvent event : microEvents) {
             READ_POST(event);
         }
     }
 
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+
         if (in.isMarker()) {
-            int readSize = EventsHolder.size();
-            BEGIN_TXN_TIME_MEASURE(thread_Id);
+            int num_events = microEvents.size();
+            /**
+             *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
+             */
+            {
+                MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
+                {
+                    transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
+                    READ_REQUEST_CORE();
+                }
+                MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
+                BEGIN_POST_TIME_MEASURE(thread_Id);
+                {
+                    READ_POST();
+                }
+                END_POST_TIME_MEASURE_ACC(thread_Id);
 
-            transactionManager.start_evaluate(thread_Id, in.getBID(), readSize);//start lazy evaluation in transaction manager.
-
-            BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-            READ_REQUEST_CORE();
-            END_ACCESS_TIME_MEASURE_TS(thread_Id, readSize, write_useful_time, writeEvents);//overhead_total compute time.
-            READ_POST();
-            //post_process for events left-over.
-            END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize + writeEvents);
-            EventsHolder.clear();//all tuples in the EventsHolder are finished.
-            if (enable_profile)
-                writeEvents = 0;//all tuples in the holder are finished.
+                //all tuples in the holder is finished.
+                microEvents.clear();
+            }
+            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
         } else {
             execute_ts_normal(in);
         }

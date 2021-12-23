@@ -18,10 +18,12 @@ import profiler.MeasureTools;
 import utils.SOURCE_CONTROL;
 
 import java.io.FileNotFoundException;
+import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
+import static common.Constants.sinkType;
 import static content.Content.CCOption_SStore;
 import static content.Content.CCOption_TStream;
 import static profiler.Metrics.NUM_ITEMS;
@@ -45,6 +47,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     protected int totalEventsPerBatch = 0;
     protected TransactionalBolt bolt;//compose the bolt here.
     int start_measure;
+    Random random = new Random();
 
     public SPOUTCombo(Logger log, int i) {
         super(log, i);
@@ -63,6 +66,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
             }
             if (counter < num_events_per_thread) {
                 Object event = myevents[counter];
+
                 long bid = mybids[counter];
                 if (CONTROL.enable_latency_measurement)
                     generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
@@ -74,7 +78,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
                 counter++;
 
-                if (ccOption == CCOption_TStream) {// This is only required by T-Stream.
+                if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                     if (checkpoint(counter)) {
                         marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration));
                         bolt.execute(marker);
@@ -82,8 +86,8 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 }
 
                 if (counter == the_end) {
-                    if (ccOption == CCOption_SStore)
-                        MeasureTools.END_TOTAL_TIME_MEASURE(taskId);//otherwise deadlock.
+//                    if (ccOption == CCOption_SStore)
+//                        MeasureTools.END_TOTAL_TIME_MEASURE(taskId);//otherwise deadlock.
                     SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                     if (taskId == 0)
                         sink.end(global_cnt);
@@ -114,9 +118,10 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
 
         checkpoint_interval = config.getInt("checkpoint");
+        // setup the checkpoint interval for measurement
+        sink.checkpoint_interval = checkpoint_interval;
+
         target_Hz = (int) config.getDouble("targetHz", 10000000);
-        double theta = config.getDouble("theta", 0);
-        p_generator = new FastZipfGenerator(NUM_ITEMS, theta, 0);
 
         totalEventsPerBatch = config.getInt("totalEvents");
         tthread = config.getInt("tthread");

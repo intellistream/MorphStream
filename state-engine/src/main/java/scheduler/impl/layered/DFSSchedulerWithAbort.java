@@ -4,7 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
+import scheduler.context.BFSLayeredTPGContextWithAbort;
 import scheduler.context.DFSLayeredTPGContextWithAbort;
+import scheduler.oplevel.struct.MetaTypes;
+import scheduler.struct.layered.bfs.BFSOperation;
+import scheduler.struct.layered.bfs.BFSOperationChain;
 import scheduler.struct.layered.dfs.DFSOperation;
 import scheduler.struct.layered.dfs.DFSOperationChain;
 import transaction.impl.ordered.MyList;
@@ -32,13 +36,8 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
     public final ConcurrentLinkedDeque<DFSOperation> failedOperations = new ConcurrentLinkedDeque<>();//aborted operations per thread.
     public final AtomicBoolean needAbortHandling = new AtomicBoolean(false);//if any operation is aborted during processing.
 
-    public DFSSchedulerWithAbort(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
-    }
-
-    private void ProcessedToNextLevel(DFSLayeredTPGContextWithAbort context) {
-        context.currentLevel += 1;
-        context.currentLevelIndex = 0;
+    public DFSSchedulerWithAbort(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override
@@ -49,7 +48,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
             if (needAbortHandling.get()) {
                 abortHandling(context);
             }
-            if (context.finished())
+            if (context.exploreFinished())
                 break;
             ProcessedToNextLevel(context);
             oc = Next(context);
@@ -63,22 +62,43 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         DISTRIBUTE(oc, context);
     }
 
-    /**
-     * Used by BFSScheduler.
-     *
-     * @param context
-     * @param operation_chain
-     * @param mark_ID
-     */
-    @Override
-    public void execute(DFSLayeredTPGContextWithAbort context, MyList<DFSOperation> operation_chain, long mark_ID) {
-        for (DFSOperation operation : operation_chain) {
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-            execute(operation, mark_ID, false);
-            checkTransactionAbort(operation);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-        }
-    }
+//    /**
+//     * Used by BFSScheduler.
+//     *
+//     * @param context
+//     * @param operation_chain
+//     * @param mark_ID
+//     */
+//    @Override
+//    public void execute(DFSLayeredTPGContextWithAbort context, MyList<DFSOperation> operation_chain, long mark_ID) {
+//        for (DFSOperation operation : operation_chain) {
+////            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            execute(operation, mark_ID, false);
+//            checkTransactionAbort(operation);
+////            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//        }
+//    }
+
+//    /**
+//     * Used by GSScheduler.
+//     *  @param context
+//     * @param operationChain
+//     * @param mark_ID
+//     * @return
+//     */
+//    @Override
+//    public boolean executeWithBusyWait(DFSLayeredTPGContextWithAbort context, DFSOperationChain operationChain, long mark_ID) {
+//        MyList<DFSOperation> operation_chain_list = operationChain.getOperations();
+//        for (DFSOperation operation : operation_chain_list) {
+////            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//            if (operation.isExecuted) continue;
+//            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+//            execute(operation, mark_ID, false);
+//            checkTransactionAbort(operation);
+////            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
+//        }
+//        return true;
+//    }
 
     /**
      * notify is handled by state manager of each thread
@@ -90,7 +110,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
     protected void NOTIFY(DFSOperationChain operationChain, DFSLayeredTPGContextWithAbort context) {
 //        context.partitionStateManager.onOcExecuted(operationChain);
         operationChain.isExecuted = true; // set operation chain to be executed, which is used for further rollback
-        Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
+        Collection<DFSOperationChain> ocs = operationChain.getChildren();
         for (DFSOperationChain childOC : ocs) {
             childOC.updateDependency();
         }
@@ -110,23 +130,30 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
     private void constructOp(List<DFSOperation> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         DFSOperation set_op = null;
+        DFSLayeredTPGContextWithAbort targetContext = getTargetContext(request.src_key);
         switch (request.accessType) {
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
-                set_op = new DFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                set_op = new DFSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.function, request.condition, request.condition_records, request.success);
                 break;
             case READ_WRITE_COND_READ:
-                set_op = new DFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+            case READ_WRITE_COND_READN:
+                set_op = new DFSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
+            default:
+                throw new UnsupportedOperationException();
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op, request);
+//        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+//        tpg.cacheToSortedOperations(set_op);
+        tpg.setupOperationTDFD(set_op, request, targetContext);
     }
 
-    protected void checkTransactionAbort(DFSOperation operation) {
-        if (operation.isFailed && !operation.aborted) {
+    @Override
+    protected void checkTransactionAbort(DFSOperation operation, DFSOperationChain dfsOperationChain) {
+        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             for (DFSOperation failedOp : failedOperations) {
                 if (failedOp.bid == operation.bid) {
                     return;
@@ -179,7 +206,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
         //identify bids to be aborted.
         for (DFSOperation failedOp : failedOperations) {
             if (bid == failedOp.bid) {
-                operation.aborted = true;
+                operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
                 markAny = true;
             }
         }
@@ -213,7 +240,7 @@ public class DFSSchedulerWithAbort extends AbstractDFSScheduler<DFSLayeredTPGCon
                 ops += operationChain.getOperations().size();
                 if (operationChain.isExecuted) { // rollback children counter if the parent has been rollback
                     operationChain.isExecuted = false;
-                    Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
+                    Collection<DFSOperationChain> ocs = operationChain.getChildren();
                     for (DFSOperationChain childOC : ocs) {
                         childOC.rollbackDependency();
                     }

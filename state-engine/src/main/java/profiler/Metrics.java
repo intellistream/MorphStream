@@ -9,7 +9,7 @@ public class Metrics {
     public static int POST_COMPUTE_COMPLEXITY = 1;
     //change to 3 for S_STORE testing.
     public static int NUM_ACCESSES = 3;//10 as default setting. 2 for short transaction, 10 for long transaction.? --> this is the setting used in YingJun's work. 16 is the default value_list used in 1000core machine.
-    public static int NUM_ITEMS = 1_000_000;//1. 1_000_000; 2. ? ; 3. 1_000  //1_000_000 YCSB has 16 million records, Ledger use 200 million records.
+    public static int NUM_ITEMS = 500_000;//1. 1_000_000; 2. ? ; 3. 1_000  //1_000_000 YCSB has 16 million records, Ledger use 200 million records.
     public static int H2_SIZE;
 
     public static void RESET_COUNTERS(int thread_id) {
@@ -22,16 +22,21 @@ public class Metrics {
     }
 
     public static void RECORD_SCHEDULE_TIME(int thread_id, int num_events) {
-        double explore_time = Scheduler.Explore[thread_id] / (double) num_events;
+        double explore_time = (Scheduler.Explore[thread_id] - Scheduler.Useful[thread_id]) / (double) num_events;
+//        double explore_time = (Scheduler.Explore[thread_id]) / (double) num_events;
         double next_time = Scheduler.Next[thread_id] / (double) num_events;
         double useful_time = Scheduler.Useful[thread_id] / (double) num_events;
         double construct_time = Scheduler.Construct[thread_id] / (double) num_events;
         double notify_time = Scheduler.Notify[thread_id] / (double) num_events;
+        double first_explore_time = Scheduler.FirstExplore[thread_id] / (double) num_events;
+        double caching_time = Scheduler.Caching[thread_id] / (double) num_events;
         Scheduler_Record.Explore[thread_id].addValue(explore_time);
         Scheduler_Record.Next[thread_id].addValue(next_time);
         Scheduler_Record.Useful[thread_id].addValue(useful_time);
         Scheduler_Record.Construct[thread_id].addValue(construct_time);
         Scheduler_Record.Noitfy[thread_id].addValue(notify_time);
+        Scheduler_Record.FirstExplore[thread_id].addValue(first_explore_time);
+        Scheduler_Record.Caching[thread_id].addValue(caching_time);
     }
 
     public static void RECORD_TIME(int thread_id) {
@@ -85,7 +90,6 @@ public class Metrics {
     }
 
     public static void COMPUTE_START_WAIT_TIME(int thread_id) {
-
         TxnRuntime.WaitStart[thread_id] = System.nanoTime();
     }
 
@@ -98,8 +102,17 @@ public class Metrics {
         TxnRuntime.Lock[thread_id] = System.nanoTime() - TxnRuntime.LockStart[thread_id];
     }
 
+    public static void COMPUTE_LOCK_TIME_ACC(int thread_id) {
+        TxnRuntime.Lock[thread_id] += System.nanoTime() - TxnRuntime.LockStart[thread_id];
+    }
+
     public static void COMPUTE_WAIT_TIME(int thread_id) {
         TxnRuntime.Wait[thread_id] = System.nanoTime() - TxnRuntime.WaitStart[thread_id] - TxnRuntime.Lock[thread_id];
+    }
+
+    public static void COMPUTE_WAIT_TIME_ACC(int thread_id) {
+//        TxnRuntime.Wait[thread_id] += System.nanoTime() - TxnRuntime.WaitStart[thread_id] - TxnRuntime.Lock[thread_id];
+        TxnRuntime.Wait[thread_id] += System.nanoTime() - TxnRuntime.WaitStart[thread_id];
     }
 
     public static void COMPUTE_ABORT_START_TIME(int thread_id) {
@@ -145,13 +158,28 @@ public class Metrics {
     }
 
     public static void RECORD_TXN_BREAKDOWN_RATIO(int thread_id) {
-        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
-        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
-        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
-        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id] / (double) Runtime.Txn[thread_id]);
+        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id]);
+        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id]);
+        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id]);
+        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id]);
+//        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.sync_ratio[thread_id].addValue((TxnRuntime.Wait[thread_id]-TxnRuntime.Lock[thread_id]) / (double) Runtime.Txn[thread_id]);
     }
 
-    // Scheduler
+    public static void RECORD_TXN_BREAKDOWN_RATIO(int thread_id, int number_events) {
+        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) number_events);
+        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) number_events);
+        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) number_events);
+        Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id] / (double) number_events);
+//        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
+//        Transaction_Record.sync_ratio[thread_id].addValue((TxnRuntime.Wait[thread_id]-TxnRuntime.Lock[thread_id]) / (double) Runtime.Txn[thread_id]);
+    }
+
+    // OCScheduler
     public static void COMPUTE_SCHEDULE_NEXT_START(int thread_id) {
         Scheduler.NextStart[thread_id] = System.nanoTime();
     }
@@ -184,6 +212,22 @@ public class Metrics {
         Scheduler.Construct[thread_id] += System.nanoTime() - Scheduler.ConstructStart[thread_id];
     }
 
+    public static void COMPUTE_CACHE_OPERATION_START(int thread_id) {
+        Scheduler.CachingStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_CACHE_OPERATION(int thread_id) {
+        Scheduler.Caching[thread_id] += System.nanoTime() - Scheduler.CachingStart[thread_id];
+    }
+
+    public static void COMPUTE_FIRST_EXPLORE_START(int thread_id) {
+        Scheduler.FirstExploreStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_FIRST_EXPLORE(int thread_id) {
+        Scheduler.FirstExplore[thread_id] += System.nanoTime() - Scheduler.FirstExploreStart[thread_id];
+    }
+
     public static void COMPUTE_NOTIFY_START(int thread_id) {
         Scheduler.NotifyStart[thread_id] = System.nanoTime();
     }
@@ -206,6 +250,9 @@ public class Metrics {
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
+
+
+
                 IndexStart[i] = 0;
                 Index[i] = 0;
                 WaitStart[i] = 0;
@@ -290,6 +337,11 @@ public class Metrics {
         public static long[] Construct = new long[kMaxThreadNum];
         public static long[] NotifyStart = new long[kMaxThreadNum];
         public static long[] Notify = new long[kMaxThreadNum];
+        public static long[] FirstExploreStart = new long[kMaxThreadNum];
+        public static long[] FirstExplore = new long[kMaxThreadNum];
+        public static long[] CachingStart = new long[kMaxThreadNum];
+        public static long[] Caching = new long[kMaxThreadNum];
+
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
@@ -303,6 +355,10 @@ public class Metrics {
                 Construct[i] = 0;
                 NotifyStart[i] = 0;
                 Notify[i] = 0;
+                FirstExploreStart[i] = 0;
+                FirstExplore[i] = 0;
+                CachingStart[i] = 0;
+                Caching[i] = 0;
             }
         }
     }
@@ -313,6 +369,8 @@ public class Metrics {
         public static DescriptiveStatistics[] Useful = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
         public static DescriptiveStatistics[] Construct = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
         public static DescriptiveStatistics[] Noitfy = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
+        public static DescriptiveStatistics[] FirstExplore = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
+        public static DescriptiveStatistics[] Caching = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
@@ -321,6 +379,8 @@ public class Metrics {
                 Useful[i] = new DescriptiveStatistics();
                 Construct[i] = new DescriptiveStatistics();
                 Noitfy[i] = new DescriptiveStatistics();
+                FirstExplore[i] = new DescriptiveStatistics();
+                Caching[i] = new DescriptiveStatistics();
             }
         }
     }

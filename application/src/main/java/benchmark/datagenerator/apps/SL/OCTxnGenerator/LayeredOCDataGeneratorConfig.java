@@ -18,6 +18,8 @@ public class LayeredOCDataGeneratorConfig extends DataGeneratorConfig {
     private String idGenType;
     private float[] dependenciesDistributionForLevels;
 
+
+
     @Override
     public void initialize(Configuration config) {
         super.initialize(config);
@@ -57,7 +59,6 @@ public class LayeredOCDataGeneratorConfig extends DataGeneratorConfig {
             throw new UnsupportedOperationException("Invalid fanout scheme.");
         }
 
-        if (enable_log) LOG.info(String.format("totalEventsPerBatch: %d", getTotalEvents()));
         if (enable_log) LOG.info(String.format("numberOfDLevels: %d", getNumberOfDLevels()));
         if (enable_log) LOG.info(String.format("rootFilePath: %s", getRootPath()));
     }

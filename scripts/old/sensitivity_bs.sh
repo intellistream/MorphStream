@@ -4,7 +4,7 @@ do
     do
         for events in 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576
         do
-            java -Xms60g -Xmx60g -jar -d64 application-0.0.1-jar-with-dependencies.jar --numberOfDLevels 1024 -tt $tt --totalEventsPerBatch $events --numberOfBatches 1 --fanoutDist zipfcenter --idGenType hgaussian --scheduler $scheduler --rootFilePath ./data_$1/
+            java -Xms60g -Xmx60g -jar -d64 application-0.0.1-jar-with-dependencies.jar -tt $tt --totalEventsPerBatch $events --numberOfBatches 1 --fanoutDist zipfcenter --idGenType hgaussian --scheduler $scheduler --rootFilePath ./data_$1/
         done
     done
 done

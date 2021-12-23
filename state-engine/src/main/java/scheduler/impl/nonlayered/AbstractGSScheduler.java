@@ -1,17 +1,16 @@
 package scheduler.impl.nonlayered;
 
-import profiler.MeasureTools;
 import scheduler.context.AbstractGSTPGContext;
-import scheduler.impl.Scheduler;
+import scheduler.impl.OCScheduler;
 import scheduler.struct.gs.AbstractGSOperationChain;
 import scheduler.struct.gs.GSOperation;
 import transaction.impl.ordered.MyList;
 
 public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends GSOperation, SchedulingUnit extends AbstractGSOperationChain<ExecutionUnit>>
-        extends Scheduler<Context, ExecutionUnit, SchedulingUnit> {
+        extends OCScheduler<Context, ExecutionUnit, SchedulingUnit> {
 
-    public AbstractGSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
+    public AbstractGSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override
@@ -44,39 +43,25 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
-        int threadId = context.thisThreadId;
-        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-        SchedulingUnit next = next(context);
-        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-
-        if (next != null) {
-            execute(context, next, mark_ID);
-            MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-            NOTIFY(next, context);
-            MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
-        }
-     }
-
-    @Override
     protected void NOTIFY(SchedulingUnit task, Context context) {
         throw new UnsupportedOperationException("Unsupported.");
     }
 
     /**
      * Used by GSScheduler.
-     *
-     * @param context
+     *  @param context
      * @param operationChain
      * @param mark_ID
+     * @return
      */
-    public void execute(Context context, SchedulingUnit operationChain, long mark_ID) {
+    public boolean execute(Context context, SchedulingUnit operationChain, long mark_ID) {
         MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
         for (ExecutionUnit operation : operation_chain_list) {
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
         }
+        return true;
     }
 
     /**
@@ -85,10 +70,11 @@ public abstract class AbstractGSScheduler<Context extends AbstractGSTPGContext<E
      * @param context
      * @return
      */
+    @Override
     protected SchedulingUnit next(Context context) {
         SchedulingUnit operationChain = context.OCwithChildren.pollLast();
         if (operationChain == null) {
-            return context.IsolatedOC.pollLast();
+            operationChain = context.IsolatedOC.pollLast();
         }
         return operationChain;
     }

@@ -10,6 +10,7 @@ public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithA
 
     public final PartitionStateManagerWithAbort partitionStateManager;
 
+
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
     public GSTPGContextWithAbort(int thisThreadId, int totalThreads) {
@@ -18,9 +19,11 @@ public class GSTPGContextWithAbort extends AbstractGSTPGContext<GSOperationWithA
     }
 
     @Override
-    public GSOperationChainWithAbort createTask(String tableName, String pKey) {
-        GSOperationChainWithAbort oc = new GSOperationChainWithAbort(tableName, pKey);
+    public GSOperationChainWithAbort createTask(String tableName, String pKey, long bid) {
+        GSOperationChainWithAbort oc = new GSOperationChainWithAbort(tableName, pKey, bid);
         oc.setContext(this);
+//        if (!operationChainsLeft.contains(oc))
+//        operationChains.add(oc);
         return oc;
     }
 

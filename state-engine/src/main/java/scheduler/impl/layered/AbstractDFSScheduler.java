@@ -16,20 +16,15 @@ import java.util.Collection;
 public class AbstractDFSScheduler<Context extends DFSLayeredTPGContext> extends LayeredScheduler<Context, DFSOperation, DFSOperationChain> {
 
 
-    public AbstractDFSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
-    }
-
-    private void ProcessedToNextLevel(DFSLayeredTPGContext context) {
-        context.currentLevel += 1;
-        context.currentLevelIndex = 0;
+    public AbstractDFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     @Override
     public void EXPLORE(Context context) {
         DFSOperationChain oc = Next(context);
         while (oc == null) {
-            if (context.finished())
+            if (context.exploreFinished())
                 break;
             ProcessedToNextLevel(context);
             oc = Next(context);
@@ -48,7 +43,7 @@ public class AbstractDFSScheduler<Context extends DFSLayeredTPGContext> extends 
     protected void NOTIFY(DFSOperationChain operationChain, Context context) {
 //        context.partitionStateManager.onOcExecuted(operationChain);
         operationChain.isExecuted = true; // set operation chain to be executed, which is used for further rollback
-        Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
+        Collection<DFSOperationChain> ocs = operationChain.getChildren();
         for (DFSOperationChain childOC : ocs) {
             childOC.updateDependency();
         }

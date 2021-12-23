@@ -10,6 +10,7 @@ import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
+import utils.AppConfig;
 
 import java.util.List;
 
@@ -73,7 +74,7 @@ public abstract class SLBolt extends TransactionalBolt {
     }
 
     protected void TRANSFER_REQUEST_CORE(TransactionEvent event) throws InterruptedException {
-        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+//        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         // measure_end the preconditions
         DataBox sourceAccountBalance_value = event.src_account_value.getRecord().getValues().get(1);
         final long sourceAccountBalance = sourceAccountBalance_value.getLong();
@@ -86,10 +87,16 @@ public abstract class SLBolt extends TransactionalBolt {
         if (sourceAccountBalance > event.getMinAccountBalance()
                 && sourceAccountBalance > event.getAccountTransfer()
                 && sourceAssetValue > event.getBookEntryTransfer()) {
+//            long start = System.nanoTime();
+//            while (System.nanoTime() - start < 40000) {}
             // compute the new balances
+            AppConfig.randomDelay();
             final long newSourceBalance = sourceAccountBalance - event.getAccountTransfer();
+            AppConfig.randomDelay();
             final long newTargetBalance = targetAccountBalance + event.getAccountTransfer();
+            AppConfig.randomDelay();
             final long newSourceAssets = sourceAssetValue - event.getBookEntryTransfer();
+            AppConfig.randomDelay();
             final long newTargetAssets = targetAssetValue + event.getBookEntryTransfer();
             // write back the updated values
             sourceAccountBalance_value.setLong(newSourceBalance);
@@ -100,19 +107,21 @@ public abstract class SLBolt extends TransactionalBolt {
         } else {
             event.transaction_result = new TransactionResult(event, false, sourceAccountBalance, targetAccountBalance);
         }
-        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
+//        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
     protected void DEPOSITE_REQUEST_CORE(DepositEvent event) {
-        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+//        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         List<DataBox> values = event.account_value.getRecord().getValues();
+        AppConfig.randomDelay();
         long newAccountValue = values.get(1).getLong() + event.getAccountTransfer();
         values.get(1).setLong(newAccountValue);
         List<DataBox> asset_values = event.asset_value.getRecord().getValues();
+        AppConfig.randomDelay();
         long newAssetValue = values.get(1).getLong() + event.getBookEntryTransfer();
         asset_values.get(1).setLong(newAssetValue);
 //        collector.force_emit(input_event.getBid(), null, input_event.getTimestamp());
-        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
+//        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
     //post stream processing phase..

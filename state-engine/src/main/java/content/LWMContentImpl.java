@@ -121,6 +121,11 @@ public class LWMContentImpl extends LWMContent {
     }
 
     @Override
+    public SchemaRecord readPreValues(long ts, long min_ts) {
+        return null;
+    }
+
+    @Override
     public void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
     }
 

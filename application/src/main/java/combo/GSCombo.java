@@ -1,8 +1,10 @@
 package combo;
 
+import benchmark.DataHolder;
 import common.bolts.transactional.gs.*;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.param.TxnEvent;
 import common.param.mb.MicroEvent;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
@@ -37,56 +39,29 @@ public class GSCombo extends SPOUTCombo {
         super(LOG, 0);
     }
 
-    public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) throws FileNotFoundException {
-        double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
-        int number_partitions = Math.min(tthread, config.getInt("number_partitions"));
-        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
-        String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEvents"))
-                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
-                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
-                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
-                + OsUtils.OS_wrapper("NUM_ACCESSES=" + NUM_ACCESSES)
-                + OsUtils.OS_wrapper("theta=" + config.getDouble("theta", 1))
-                + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
-        if (Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file_name))))
-            throw new FileNotFoundException();
-        long start = System.nanoTime();
-        Scanner sc;
-        int i = 0;
-        try {
-            sc = new Scanner(new File(event_path + OsUtils.OS_wrapper(file_name)));
-            Object event = null;
-            for (int j = 0; j < taskId; j++) {
-                sc.nextLine();
-            }
-            while (sc.hasNextLine()) {
-                String read = sc.nextLine();
-                String[] split = read.split(split_exp);
-                event = new MicroEvent(
-                        Integer.parseInt(split[0]), //bid
-                        Integer.parseInt(split[1]), //pid
-                        split[2], //bid_array
-                        Integer.parseInt(split[3]),//num_of_partition
-                        split[5],//key_array
-                        Boolean.parseBoolean(split[6])//flag
-                );
-                myevents[i++] = event;
-                if (i == num_events_per_thread) break;
-                for (int j = 0; j < (tthread - 1) * combo_bid_size; j++) {
-                    if (sc.hasNextLine())
-                        sc.nextLine();//skip un-related.
-                }
-                //db.eventManager.put(input_event, Integer.parseInt(split[0]));
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+    @Override
+    public void loadEvent(String filePath, Configuration config, TopologyContext context, OutputCollector collector) {
+        int storageIndex = 0;
+        //Load Transfer Events.
+        for (int index = taskId; index < DataHolder.events.size(); ) {
+            TxnEvent event = DataHolder.events.get(index).cloneEvent();
+            mybids[storageIndex] = event.getBid();
+            myevents[storageIndex++] = event;
+            if (storageIndex == num_events_per_thread)
+                break;
+            index += tthread * combo_bid_size;
         }
-        if (enable_log)
-            LOG.info("Thread:" + taskId + " finished loading events (" + num_events_per_thread + ") in " + (System.nanoTime() - start) / 1E6 + " ms");
-        if (enable_log)
-            show_stats();
+
+//        //Load Deposit Events.
+//        for (int index = taskId; index < DataHolder.depositEvents.size(); ) {
+//            TxnEvent event = DataHolder.depositEvents.get(index).cloneEvent();
+//            mybids[storageIndex] = event.getBid();
+//            myevents[storageIndex++] = event;
+//            if (storageIndex == num_events_per_thread)
+//                break;
+//            index += tthread * combo_bid_size;
+//        }
+        assert (storageIndex == num_events_per_thread);
     }
 
     private boolean key_conflict(int pre_key, int key) {
@@ -157,7 +132,7 @@ public class GSCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_SStore: {//SStore
-                bolt = new GSBolt_sstore(0);
+                bolt = new GSBolt_sstore(0, sink);
                 break;
             }
 
@@ -167,11 +142,7 @@ public class GSCombo extends SPOUTCombo {
         //do preparation.
         bolt.prepare(config, context, collector);
         bolt.loadDB(config, context, collector);
-        try {
-            loadEvent("GS_Events" + tthread, config, context, collector);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        loadEvent(config.getString("rootFilePath"), config, context, collector);
 //        bolt.sink.batch_number_per_wm = batch_number_per_wm;
     }
 }

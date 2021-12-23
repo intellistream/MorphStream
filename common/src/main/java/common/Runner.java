@@ -19,8 +19,8 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "StreamLedger";
-    //    public String application = "GrepSum";
+//    public String application = "StreamLedger";
+        public String application = "GrepSum";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -28,7 +28,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 5_000_000;//
+    public int NUM_ITEMS = 100_000;//
+//    public int NUM_ITEMS = 500;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 10;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -56,18 +57,26 @@ public abstract class Runner implements IRunner {
      * TStream Specific Parameters.
      */
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 2;// default total execution threads
+    public int tthread = 1;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_TStream;
+//    public int CCOption = CCOption_SStore;
+//    public int CCOption = CCOption_LOCK;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-//    public String scheduler = "BFS";
+    public String scheduler = "BFS";
 //        public String scheduler = "BFSA";
 //    public String scheduler = "DFS";
 //    public String scheduler = "DFSA";
 //    public String scheduler = "GS";
-    public String scheduler = "GSA";
+//    public String scheduler = "GSA";
+//    public String scheduler = "OPGS";
+//    public String scheduler = "OPGSA";
+//    public String scheduler = "OPBFS";
+//    public String scheduler = "OPDFS";
+//    public String scheduler = "OPDFSA";
+//    public String scheduler = "TStream";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
@@ -95,15 +104,36 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 50_000;//
+    public int checkpoint_interval = 20000;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
-//    public String generator = "TPGGenerator";
-    public String generator = "OCGenerator";
+    public String generator = "TPGGenerator";
+//    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 100_000;
-    @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
-    public Integer numberOfDLevels = 8;
+    public int totalEvents = 100000;
 
+    @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
+    public Integer Ratio_Of_Deposit = 25;
+
+    @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
+    public Integer State_Access_Skewness = 0;
+
+    @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
+    public Integer Ratio_of_Overlapped_Keys = 10;
+
+    @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
+    public Integer Ratio_of_Transaction_Aborts = 0;
+
+    @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
+    public Integer Transaction_Length = 1;
+
+    @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
+    public Integer numberOfDLevels = 1024;
+
+    @Parameter(names = {"--isCyclic"}, description = "isCyclic of generated OC.")
+    public int isCyclic = 1;
+
+    @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
+    public Integer complexity = 100000;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -114,6 +144,7 @@ public abstract class Runner implements IRunner {
         Properties properties = new Properties();
         InputStream is = Runner.class.getResourceAsStream(filename);
         properties.load(is);
+        assert is != null;
         is.close();
         return properties;
     }
@@ -130,15 +161,32 @@ public abstract class Runner implements IRunner {
         config.put("generator", generator);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
+
+        config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        config.put("State_Access_Skewness", State_Access_Skewness);
+        config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
+        config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
+        config.put("Transaction_Length", Transaction_Length);
+
         config.put("numberOfDLevels", numberOfDLevels);
+        if (isCyclic == 1) {
+            config.put("isCyclic", true);
+        } else {
+            config.put("isCyclic", false);
+        }
+        config.put("complexity", complexity);
 
         if (CCOption == 4)//S-Store enabled.
             config.put("partition", true);
         else
             config.put("partition", enable_partition);
         config.put("measure", enable_measurement);
-        config.put("checkpoint", checkpoint_interval);
         config.put("tthread", tthread);
+
+        config.put("checkpoint", checkpoint_interval);
+
+        assert totalEvents / tthread == checkpoint_interval;
+
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);
         config.put("NUM_ACCESS", NUM_ACCESS);

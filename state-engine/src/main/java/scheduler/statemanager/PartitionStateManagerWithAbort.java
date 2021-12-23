@@ -1,7 +1,9 @@
 package scheduler.statemanager;
 
+import profiler.MeasureTools;
 import scheduler.context.GSTPGContextWithAbort;
 import scheduler.impl.nonlayered.GSSchedulerWithAbort;
+import scheduler.oplevel.struct.MetaTypes;
 import scheduler.signal.oc.*;
 import scheduler.struct.MetaTypes.DependencyType;
 import scheduler.struct.gs.GSOperationChainWithAbort;
@@ -9,6 +11,8 @@ import scheduler.struct.gs.GSOperationWithAbort;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static scheduler.oplevel.struct.MetaTypes.*;
 
 /**
  * Local to every TPGScheduler context.
@@ -83,10 +87,12 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
     private void ocExecutedTransition(GSOperationChainWithAbort operationChain) {
         if (!operationChain.needAbortHandling) {
             operationChain.isExecuted = true;
-            for (GSOperationChainWithAbort child : operationChain.getFDChildren()) {
-                ((GSTPGContextWithAbort) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
-            }
             executableTaskListener.onOCFinalized(operationChain);
+            for (GSOperationChainWithAbort child : operationChain.getChildren()) {
+                if (child.ocParentsCount.get() > 0) {
+                    ((GSTPGContextWithAbort) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
+                }
+            }
         } else {
             scheduleAbortHandling(operationChain);
         }
@@ -100,35 +106,64 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         }
         operationChain.needAbortHandling = false;
         operationChain.failedOperations.clear();
+        executableTaskListener.onOCExecutable(operationChain);
     }
 
     private void ocHeaderStartAbortHandlingTransition(GSOperationChainWithAbort operationChain, GSOperationWithAbort header) {
-        for (GSOperationWithAbort abortedOp : operationChain.getDescendants(header)) {
-            ((GSTPGContextWithAbort) abortedOp.context).partitionStateManager.onOcNeedAbortHandling(abortedOp.getOC(), abortedOp);
+        if (!header.getOperationState().equals(OperationStateType.ABORTED)) {
+            // header might receive multiple abort handling signal, but transaction abort should only happen once.
+            header.stateTransition(OperationStateType.ABORTED);
+            for (GSOperationWithAbort abortedOp : header.getDescendants()) {
+                ((GSTPGContextWithAbort) abortedOp.context).partitionStateManager.onOcNeedAbortHandling(abortedOp.getOC(), abortedOp);
+            }
         }
     }
 
 
     private void ocAbortHandlingTransition(GSOperationChainWithAbort operationChain, GSOperationWithAbort abortedOp) {
-        abortedOp.aborted = true;
-        if (operationChain.isExecuted) {
-            operationChain.isExecuted = false;
-            notifyChildrenRollbackAndRedo(operationChain);
-            executableTaskListener.onOCRollbacked(operationChain);
+        abortedOp.stateTransition(OperationStateType.ABORTED);
+        assert operationChain.getOperations().contains(abortedOp);
+        if (!abortedOp.isFailed) {
+//            System.out.println(abortedOp);
+            for (GSOperationWithAbort operation : operationChain.getOperations()) {
+                if (!operation.getOperationState().equals(OperationStateType.ABORTED)) {
+                    operation.stateTransition(OperationStateType.BLOCKED);
+                }
+            }
+            if (operationChain.isExecuted) {
+                operationChain.isExecuted = false;
+                notifyChildrenRollbackAndRedo(operationChain);
+                executableTaskListener.onOCRollbacked(operationChain);
+                executableTaskListener.onOCExecutable(operationChain);
+            }
         }
-        if (!operationChain.hasParents()) {
-            executableTaskListener.onOCExecutable(operationChain);
-        }
+
+//        if (!operationChain.hasParents()
+//                && !operationChain.context.busyWaitQueue.contains(operationChain)
+//                && !operationChain.context.IsolatedOC.contains(operationChain)
+//                && !operationChain.context.OCwithChildren.contains(operationChain)) {
+//            executableTaskListener.onOCExecutable(operationChain);
+//        }
+//        if (operationChain.needAbortHandling) {
+//            operationChain.failedOperations.remove(abortedOp);
+//            if (operationChain.failedOperations.isEmpty()) {
+//                operationChain.needAbortHandling = false;
+//            }
+//        }
     }
 
     private void ocParentExecutedTransition(GSOperationChainWithAbort operationChain) {
         operationChain.updateDependency();
-        if (!operationChain.hasParents()) {
+        if (!operationChain.hasParents() && !operationChain.isExecuted) {
             executableTaskListener.onOCExecutable(operationChain);
         }
     }
 
     private void ocRollbackAndRedoTransition(GSOperationChainWithAbort operationChain) {
+        for (GSOperationWithAbort operation : operationChain.getOperations()) {
+            if (!operation.getOperationState().equals(OperationStateType.ABORTED))
+                operation.stateTransition(OperationStateType.BLOCKED);
+        }
         if (operationChain.isExecuted) {
             operationChain.isExecuted = false;
             operationChain.rollbackDependency();
@@ -139,7 +174,7 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
 
     private void notifyChildrenRollbackAndRedo(GSOperationChainWithAbort operationChain) {
         // notify children to rollback and redo
-        for (GSOperationChainWithAbort child : operationChain.getFDChildren()) {
+        for (GSOperationChainWithAbort child : operationChain.getChildren()) {
             ((GSTPGContextWithAbort) child.context).partitionStateManager.onOcRollbackAndRedo(child);
         }
     }

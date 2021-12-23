@@ -18,7 +18,7 @@ public class Tuple {
     private final TopologyContext context;
     //	private boolean tickerMark = false;
     private final long bid;
-    private final Message message;
+    public final Message message;
     private long[] partition_bid;
 
     public Tuple(long bid, int sourceId, TopologyContext context, Message message) {

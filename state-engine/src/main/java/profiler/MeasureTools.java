@@ -36,8 +36,7 @@ public class MeasureTools {
 
     public static void BEGIN_TOTAL_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
-            if (Metrics.Runtime.Start[thread_id] == 0)
-                COMPUTE_START_TIME(thread_id);
+            COMPUTE_START_TIME(thread_id);
             COMPUTE_PRE_EXE_START_TIME(thread_id);
         }
     }
@@ -49,12 +48,21 @@ public class MeasureTools {
         }
     }
 
+    public static void BEGIN_TOTAL_TIME_MEASURE_TS(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
+            if (Metrics.Runtime.Start[thread_id] == 0)
+                COMPUTE_START_TIME(thread_id);
+            COMPUTE_PRE_EXE_START_TIME(thread_id);
+        }
+    }
+
     public static void END_TOTAL_TIME_MEASURE_TS(int thread_id, int number_events) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
             RECORD_TIME(thread_id, number_events);
             RESET_COUNTERS(thread_id);
         }
     }
+
 
     public static void END_PREPARE_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
@@ -109,9 +117,19 @@ public class MeasureTools {
             COMPUTE_LOCK_TIME(thread_id);
     }
 
+    public static void END_LOCK_TIME_MEASURE_ACC(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_LOCK_TIME_ACC(thread_id);
+    }
+
     public static void END_WAIT_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_WAIT_TIME(thread_id);
+    }
+
+    public static void END_WAIT_TIME_MEASURE_ACC(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_WAIT_TIME_ACC(thread_id);
     }
 
     public static void BEGIN_ABORT_TIME_MEASURE(int thread_id) {
@@ -148,6 +166,13 @@ public class MeasureTools {
             COMPUTE_TXN_START_TIME(thread_id);
     }
 
+    public static void END_TXN_TIME_MEASURE(int thread_id, int number_events) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
+            COMPUTE_TXN_TIME(thread_id);
+            RECORD_TXN_BREAKDOWN_RATIO(thread_id, number_events);
+        }
+    }
+
     public static void END_TXN_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
             COMPUTE_TXN_TIME(thread_id);
@@ -166,7 +191,7 @@ public class MeasureTools {
             COMPUTE_PRE_TXN_TIME_ACC(thread_id);
     }
 
-    // Scheduler Specific.
+    // OCScheduler Specific.
     public static void BEGIN_SCHEDULE_NEXT_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_SCHEDULE_NEXT_START(thread_id);
@@ -206,6 +231,26 @@ public class MeasureTools {
     public static void END_TPG_CONSTRUCTION_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_CONSTRUCT(thread_id);
+    }
+
+    public static void BEGIN_CACHE_OPERATION_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_CACHE_OPERATION_START(thread_id);
+    }
+
+    public static void END_CACHE_OPERATION_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_CACHE_OPERATION(thread_id);
+    }
+
+    public static void BEGIN_FIRST_EXPLORE_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_FIRST_EXPLORE_START(thread_id);
+    }
+
+    public static void END_FIRST_EXPLORE_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_FIRST_EXPLORE(thread_id);
     }
 
     public static void BEGIN_NOTIFY_TIME_MEASURE(int thread_id) {
@@ -279,12 +324,13 @@ public class MeasureTools {
             if (enable_debug) log.info("++++++ counter: " + counter);
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("SchedulerTimeBreakdownReport\n");
-            if (enable_log) log.info("===Scheduler Time Breakdown Report===");
-            fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t construct_time\n");
+            if (enable_log) log.info("===OCScheduler Time Breakdown Report===");
+            fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time\n");
             if (enable_log)
-                log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time");
+                log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
+                                "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t" +
@@ -296,6 +342,7 @@ public class MeasureTools {
                         , Scheduler_Record.Useful[threadId].getMean()
                         , Scheduler_Record.Noitfy[threadId].getMean()
                         , Scheduler_Record.Construct[threadId].getMean()
+                        , Scheduler_Record.FirstExplore[threadId].getMean()
                 );
                 fileWriter.write(output + "\n");
                 if (enable_log) log.info(output);

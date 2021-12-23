@@ -1,9 +1,11 @@
 package benchmark.datagenerator.apps.SL.Transaction;
 
+import benchmark.datagenerator.Event;
+
 /**
  * Streamledger deposit transaction, which write without dependency.
  */
-public class SLDepositEvent extends SLEvent {
+public class SLDepositEvent extends Event {
     private int id;
     private int accountId;
     private int assetId;

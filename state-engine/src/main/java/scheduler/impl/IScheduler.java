@@ -20,4 +20,7 @@ public interface IScheduler<Context> {
     void TxnSubmitFinished(Context context);
 
     void AddContext(int thisTaskId, Context context);
+
+    void start_evaluation(Context context, long mark_ID, int num_events);
+
 }

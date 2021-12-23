@@ -3,8 +3,10 @@ package scheduler.impl.layered;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.DFSLayeredTPGContext;
+import scheduler.context.DFSLayeredTPGContextWithAbort;
 import scheduler.struct.layered.dfs.DFSOperation;
 import scheduler.struct.layered.dfs.DFSOperationChain;
+import transaction.impl.ordered.MyList;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,26 +22,8 @@ import java.util.List;
 public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
 
 
-    public DFSScheduler(int totalThreads, int NUM_ITEMS) {
-        super(totalThreads, NUM_ITEMS);
-    }
-
-    private void ProcessedToNextLevel(DFSLayeredTPGContext context) {
-        context.currentLevel += 1;
-        context.currentLevelIndex = 0;
-    }
-
-    @Override
-    public void EXPLORE(DFSLayeredTPGContext context) {
-        DFSOperationChain oc = Next(context);
-        while (oc == null) {
-            if (context.finished())
-                break;
-            ProcessedToNextLevel(context);
-            oc = Next(context);
-        }
-        while (oc != null && oc.hasParents()) ;
-        DISTRIBUTE(oc, context);
+    public DFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
+        super(totalThreads, NUM_ITEMS, app);
     }
 
     /**
@@ -52,7 +36,7 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
     protected void NOTIFY(DFSOperationChain operationChain, DFSLayeredTPGContext context) {
 //        context.partitionStateManager.onOcExecuted(operationChain);
         operationChain.isExecuted = true; // set operation chain to be executed, which is used for further rollback
-        Collection<DFSOperationChain> ocs = operationChain.getFDChildren();
+        Collection<DFSOperationChain> ocs = operationChain.getChildren();
         for (DFSOperationChain childOC : ocs) {
             childOC.updateDependency();
         }
@@ -72,18 +56,43 @@ public class DFSScheduler extends AbstractDFSScheduler<DFSLayeredTPGContext> {
     private void constructOp(List<DFSOperation> operationGraph, Request request) {
         long bid = request.txn_context.getBID();
         DFSOperation set_op = null;
+        DFSLayeredTPGContext targetContext = getTargetContext(request.src_key);
         switch (request.accessType) {
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
-                set_op = new DFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+                set_op = new DFSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.function, request.condition, request.condition_records, request.success);
                 break;
             case READ_WRITE_COND_READ:
-                set_op = new DFSOperation(getTargetContext(request.d_record), request.table_name, request.txn_context, bid, request.accessType,
+            case READ_WRITE_COND_READN:
+                set_op = new DFSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
+            default:
+                throw new UnsupportedOperationException();
         }
         operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op, request);
+//        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
+//        tpg.cacheToSortedOperations(set_op);
+        tpg.setupOperationTDFD(set_op, request, targetContext);
     }
+
+
+//    /**
+//     * Used by GSScheduler.
+//     *  @param context
+//     * @param operationChain
+//     * @param mark_ID
+//     * @return
+//     */
+//    @Override
+//    public boolean executeWithBusyWait(DFSLayeredTPGContext context, DFSOperationChain operationChain, long mark_ID) {
+//        MyList<DFSOperation> operation_chain_list = operationChain.getOperations();
+//        for (DFSOperation operation : operation_chain_list) {
+//            if (operation.isExecuted) continue;
+//            if (isConflicted(context, operationChain, operation)) return false; // did not completed
+//            execute(operation, mark_ID, false);
+//        }
+//        return true;
+//    }
 }

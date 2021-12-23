@@ -101,25 +101,25 @@ public class SLCombo extends SPOUTCombo {
     public void loadEvent(String filePath, Configuration config, TopologyContext context, OutputCollector collector) {
         int storageIndex = 0;
         //Load Transfer Events.
-        for (int index = taskId; index < DataHolder.transferEvents.size(); ) {
-            TxnEvent event = DataHolder.transferEvents.get(index).cloneEvent();
-            mybids[storageIndex] = event.getBid();
-            myevents[storageIndex++] = event;
-            if (storageIndex == num_events_per_thread)
-                break;
-
-            index += tthread * combo_bid_size;
-        }
-
-        //Load Deposit Events.
-        for (int index = taskId; index < DataHolder.depositEvents.size(); ) {
-            TxnEvent event = DataHolder.depositEvents.get(index).cloneEvent();
+        for (int index = taskId; index < DataHolder.events.size(); ) {
+            TxnEvent event = DataHolder.events.get(index).cloneEvent();
             mybids[storageIndex] = event.getBid();
             myevents[storageIndex++] = event;
             if (storageIndex == num_events_per_thread)
                 break;
             index += tthread * combo_bid_size;
         }
+
+//        //Load Deposit Events.
+//        for (int index = taskId; index < DataHolder.depositEvents.size(); ) {
+//            TxnEvent event = DataHolder.depositEvents.get(index).cloneEvent();
+//            mybids[storageIndex] = event.getBid();
+//            myevents[storageIndex++] = event;
+//            if (storageIndex == num_events_per_thread)
+//                break;
+//            index += tthread * combo_bid_size;
+//        }
+        assert (storageIndex == num_events_per_thread);
     }
 
     @Override

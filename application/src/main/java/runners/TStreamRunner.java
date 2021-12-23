@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import topology.TopologySubmitter;
+import utils.AppConfig;
 import utils.SINK_CONTROL;
 
 import java.io.File;
@@ -41,7 +42,6 @@ import static content.SStoreContentImpl.SSTORE_CONTENT;
 import static content.T_StreamContentImpl.T_STREAMCONTENT;
 import static content.common.ContentCommon.content_type;
 import static profiler.MeasureTools.METRICS_REPORT;
-
 
 public class TStreamRunner extends Runner {
     private static final Logger log = LoggerFactory.getLogger(TStreamRunner.class);
@@ -61,6 +61,7 @@ public class TStreamRunner extends Runner {
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP
     }
+
     // Prepared default configuration
     private void LoadConfiguration() {
         if (configStr == null) {
@@ -143,6 +144,7 @@ public class TStreamRunner extends Runner {
             config.putAll(Configuration.fromStr(configStr));
         }
     }
+
     public static void main(String[] args) {
         if (enable_log) log.info("Program Starts..");
         TStreamRunner runner = new TStreamRunner();
@@ -222,27 +224,57 @@ public class TStreamRunner extends Runner {
         double rt = runTopologyLocally(topology, config);
         if (enable_profile) {
             if (rt != -1) {//returns normally.
-               log.info("finished measurement (k events/s):\t" + rt);
+                log.info("finished measurement (k events/s):\t" + rt);
             }
             if (enable_shared_state) {
                 SpinLock[] spinlock = final_topology.spinlock;
                 for (SpinLock lock : spinlock) {
                     if (lock != null)
-                      log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
+                        log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
                 }
 
                 // decide the output path of metrics.
                 String statsFolderPattern = OsUtils.osWrapperPostFix(rootPath)
                         + OsUtils.osWrapperPostFix("stats")
                         + OsUtils.osWrapperPostFix("%s")
+                        + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
-                        + OsUtils.osWrapperPostFix("numberOfDLevels = %d")
-                        + OsUtils.osWrapperPostFix("totalEvents = %d");
+                        + OsUtils.osWrapperPostFix("totalEvents = %d")
+                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d");
 
-                String statsFolderPath = String.format(statsFolderPattern, scheduler, tthread, numberOfDLevels, totalEvents);
+                if (config.getInt("CCOption") == CCOption_SStore) {
+                    scheduler = "PAT";
+                }
+
+                String statsFolderPath;
+                if (config.getString("common").equals("StreamLedger")) {
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("Ratio_Of_Deposit"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else if (config.getString("common").equals("GrepSum")) {
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("NUM_ACCESS"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else {
+                    throw new UnsupportedOperationException();
+                }
                 File file = new File(statsFolderPath);
-               log.info("Dumping stats to...");
-               log.info(String.valueOf(file.getAbsoluteFile()));
+                log.info("Dumping stats to...");
+                log.info(String.valueOf(file.getAbsoluteFile()));
                 file.mkdirs();
 
                 if (file.exists())

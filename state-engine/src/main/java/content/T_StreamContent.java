@@ -108,6 +108,27 @@ public abstract class T_StreamContent implements Content {
         return record_at_ts;
     }
 
+    /**
+     * @param ts
+     * @return null if the value does not reach the expected min_ts. otherwise, return the value.
+     */
+    @Override
+    public SchemaRecord readPreValues(long ts, long min_ts) {
+//            spinlock_.lock_ratio();
+        SchemaRecord record_at_ts;
+        Map.Entry<Long, SchemaRecord> entry = versions.lowerEntry(ts);//always get the original (previous) version.
+        //not modified in last round
+        record_at_ts = entry != null ? entry.getValue() : versions.get(ts);
+        if (record_at_ts == null || record_at_ts.getValues() == null)
+            System.out.println("Read a null value??");
+
+        assert entry != null;
+        if (entry.getKey() < min_ts) {
+            return null;
+        }
+        return record_at_ts;
+    }
+
     @Override
     public void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
         versions.put(ts, record);

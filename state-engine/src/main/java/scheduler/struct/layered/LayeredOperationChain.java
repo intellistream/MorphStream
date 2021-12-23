@@ -14,13 +14,13 @@ public abstract class LayeredOperationChain<ExecutionUnit extends AbstractOperat
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
 
-    public LayeredOperationChain(String tableName, String primaryKey) {
-        super(tableName, primaryKey);
+    public LayeredOperationChain(String tableName, String primaryKey, long bid) {
+        super(tableName, primaryKey, bid);
     }
 
     @Override
-    public Collection<LayeredOperationChain> getFDParents() {
-        return super.getFDParents();
+    public Collection<LayeredOperationChain> getParents() {
+        return super.getParents();
     }
 
     public synchronized boolean hasValidDependencyLevel() {
@@ -35,7 +35,7 @@ public abstract class LayeredOperationChain<ExecutionUnit extends AbstractOperat
         if (isDependencyLevelCalculated)
             return;
         dependencyLevel = 0;
-        for (LayeredOperationChain parent : getFDParents()) {
+        for (LayeredOperationChain parent : getParents()) {
             if (!parent.hasValidDependencyLevel()) {
                 parent.updateDependencyLevel();
             }
@@ -45,5 +45,12 @@ public abstract class LayeredOperationChain<ExecutionUnit extends AbstractOperat
             }
         }
         isDependencyLevelCalculated = true;
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        isDependencyLevelCalculated = false;
+        dependencyLevel = -1;
     }
 }

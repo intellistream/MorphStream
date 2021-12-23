@@ -2,7 +2,7 @@ package benchmark.datagenerator.apps.SL.output;
 
 
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
-import benchmark.datagenerator.apps.SL.Transaction.SLEvent;
+import benchmark.datagenerator.Event;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface IOutputHandler {
-    void sinkEvents(List<SLEvent> dataTransactions) throws IOException;
+    void sinkEvents(List<Event> dataTransactions) throws IOException;
 
     void sinkDependenciesEdges(HashMap<Integer, ArrayList<SLDataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<SLDataOperationChain>> allAssetsOperationChains);
 

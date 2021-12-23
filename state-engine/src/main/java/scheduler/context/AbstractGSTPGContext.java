@@ -6,7 +6,7 @@ import scheduler.struct.gs.GSOperation;
 
 import java.util.ArrayDeque;
 
-public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, SchedulingUnit extends AbstractGSOperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
+public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, SchedulingUnit extends AbstractGSOperationChain<ExecutionUnit>> extends OCSchedulerContext<SchedulingUnit> {
 
     public ArrayDeque<SchedulingUnit> IsolatedOC;
     public ArrayDeque<SchedulingUnit> OCwithChildren;
@@ -27,12 +27,20 @@ public abstract class AbstractGSTPGContext<ExecutionUnit extends GSOperation, Sc
     }
 
     @Override
-    public SchedulingUnit createTask(String tableName, String pKey) {
+    public void redo() {
+        super.redo();
+        IsolatedOC.clear();
+        OCwithChildren.clear();
+    }
+
+    @Override
+    public SchedulingUnit createTask(String tableName, String pKey, long bid) {
         throw new UnsupportedOperationException("Unsupported.");
     }
 
     @Override
     public boolean finished() {
+        assert scheduledOPs <= totalOsToSchedule;
         return scheduledOPs == totalOsToSchedule;
     }
 

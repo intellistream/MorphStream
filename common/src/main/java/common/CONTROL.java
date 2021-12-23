@@ -7,6 +7,9 @@ public interface CONTROL {
     int MeasureStart = 0;//10_000;//server needs at least 10,000 to compile, so skip them.
     int MeasureBound = 1_000;
 
+    // data generator related
+//    boolean isCyclic = true;
+
     //common.combo optimization
     boolean enable_app_combo = true;//compose all operators into one.
     int combo_bid_size = 1;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).

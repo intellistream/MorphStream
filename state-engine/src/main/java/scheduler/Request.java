@@ -77,6 +77,19 @@ public class Request {
         this(txn_context, accessType, table_name, src_key, s_record, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success, -1, null);
     }
 
+    //no column id and condition
+    public Request(TxnContext txn_context,
+                   CommonMetaTypes.AccessType accessType,
+                   String table_name,
+                   String src_key,
+                   TableRecord s_record,
+                   TableRecord d_record,
+                   Function function,
+                   SchemaRecordRef record_ref,
+                   String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, int[] success) {
+        this(txn_context, accessType, table_name, src_key, s_record, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, null, success, -1, null);
+    }
+
     //no condition, no ref.
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,

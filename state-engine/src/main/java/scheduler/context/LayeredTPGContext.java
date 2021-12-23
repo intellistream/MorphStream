@@ -1,14 +1,12 @@
 package scheduler.context;
 
 import scheduler.struct.AbstractOperation;
+import scheduler.struct.OperationChain;
 import scheduler.struct.layered.LayeredOperationChain;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
 
-public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends LayeredOperationChain<ExecutionUnit>> extends SchedulerContext<SchedulingUnit> {
+public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends LayeredOperationChain<ExecutionUnit>> extends OCSchedulerContext<SchedulingUnit> {
 
     public HashMap<Integer, ArrayList<SchedulingUnit>> allocatedLayeredOCBucket;// <LevelID, ArrayDeque<OperationChain>
     public int currentLevel;
@@ -36,7 +34,14 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     }
 
     @Override
-    public SchedulingUnit createTask(String tableName, String pKey) {
+    public void redo() {
+        super.redo();
+        currentLevel = 0;
+        currentLevelIndex=0;
+    }
+
+    @Override
+    public SchedulingUnit createTask(String tableName, String pKey, long bid) {
         throw new UnsupportedOperationException("Unsupported.");
     }
 
@@ -47,22 +52,34 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
     @Override
     public boolean finished() {
 //        return scheduledOPs == totalOsToSchedule && !needAbortHandling; // not sure whether we need to check this condition.
-        return scheduledOPs == totalOsToSchedule;
+        return scheduledOPs == totalOsToSchedule && busyWaitQueue.isEmpty();
     }
 
+    public boolean exploreFinished() {
+//        return scheduledOPs == totalOsToSchedule && !needAbortHandling; // not sure whether we need to check this condition.
+        assert scheduledOPs <= totalOsToSchedule;
+        return scheduledOPs == totalOsToSchedule;
+    }
 
     /**
      * Build buckets with submitted ocs.
      * Return the local maximal dependency level.
      *
      * @param ocs
-     * @return
      */
-    public void buildBucketPerThread(Collection<SchedulingUnit> ocs) {
+    public void buildBucketPerThread(Collection<SchedulingUnit> ocs, HashSet<OperationChain<ExecutionUnit>> resolvedOC) {
+        // TODO: update this logic to the latest logic that we proposed in operation level
         int localMaxDLevel = 0;
         int dependencyLevel;
         for (SchedulingUnit oc : ocs) {
+            if (oc.getOperations().isEmpty()) {
+                continue;
+            }
+            this.totalOsToSchedule += oc.getOperations().size();
             oc.updateDependencyLevel();
+            if (resolvedOC.contains(oc)) {
+                continue;
+            }
             dependencyLevel = oc.getDependencyLevel();
             if (localMaxDLevel < dependencyLevel)
                 localMaxDLevel = dependencyLevel;
@@ -72,6 +89,14 @@ public abstract class LayeredTPGContext<ExecutionUnit extends AbstractOperation,
         }
 //        if (enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
         this.maxLevel = localMaxDLevel;
-//        return localMaxDLevel;
+    }
+
+    public void putBusyWaitOCs(HashSet<SchedulingUnit> resolvedOC, int maxLevel) {
+        for (SchedulingUnit oc : resolvedOC) {
+            if (!allocatedLayeredOCBucket.containsKey(maxLevel))
+                allocatedLayeredOCBucket.put(maxLevel, new ArrayList<>());
+            allocatedLayeredOCBucket.get(maxLevel).add(oc);
+        }
+        this.maxLevel = maxLevel;
     }
 };
