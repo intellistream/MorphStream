@@ -44,4 +44,3 @@ bash sensitivity_study.sh
 ```shell
 bash model_study.sh
 ```
-
