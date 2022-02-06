@@ -4,6 +4,9 @@ import storage.EventManager;
 import storage.StorageManager;
 import storage.TableRecord;
 
+/**
+ * original designer for CavaliaDatabase: Yingjun Wu.
+ */
 public class CavaliaDatabase extends Database {
     public CavaliaDatabase(String path) {
         storageManager = new StorageManager();

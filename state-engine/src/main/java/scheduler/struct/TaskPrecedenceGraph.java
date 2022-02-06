@@ -267,7 +267,7 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         }
     }
 
-    public void tStreamExplore(Context context) {
+    public void Explore(Context context) {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(threadId);
 //        assert context.totalOsToSchedule == ocs.size();
@@ -276,11 +276,11 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
 //            threadToOCs.computeIfAbsent(threadId, s -> new ArrayDeque<>()).addAll(tableOCs.threadOCsMap.get(threadId).holder_v1.values());
 //        }
 
-        tStreamSubmit(context, threadToOCs.get(threadId));
+        Submit(context, threadToOCs.get(threadId));
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
-    private void tStreamSubmit(Context context, Collection<SchedulingUnit> ocs) {
+    private void Submit(Context context, Collection<SchedulingUnit> ocs) {
         ArrayDeque<SchedulingUnit> nonNullOCs = new ArrayDeque<>();
         HashSet<OperationChain<ExecutionUnit>> circularOCs = new HashSet<>();
         for (SchedulingUnit oc : ocs) {
@@ -317,14 +317,14 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
     }
 
 
-    public void tStreamReExplore(Context context) {
+    public void ReExplore(Context context) {
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
 //        assert context.totalOsToSchedule == ocs.size();
-        tStreamReSubmit(context, threadToOCs.get(context.thisThreadId));
+        ReSubmit(context, threadToOCs.get(context.thisThreadId));
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
 
-    private void tStreamReSubmit(Context context, Collection<SchedulingUnit> ocs) {
+    private void ReSubmit(Context context, Collection<SchedulingUnit> ocs) {
         context.redo();
         ArrayDeque<SchedulingUnit> nonNullOCs = new ArrayDeque<>();
         HashSet<OperationChain<ExecutionUnit>> circularOCs = new HashSet<>();
@@ -373,15 +373,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
         ts++;
         stack.push(oc);
         inStack.put(oc, true);
-
-//        for (OperationChain<ExecutionUnit> childOC : oc.ocChildren.keySet()) {
-//            if (!dfn.containsKey(childOC)) {
-//                tarjanDfs((SchedulingUnit) childOC, dfn, low, inStack, stack, ts, circularOCs);
-//                low.put(oc, Math.min(low.get(oc), low.get(childOC)));
-//            } else if (inStack.get(childOC)) {
-//                low.put(oc, Math.min(low.get(oc), dfn.get(childOC)));
-//            }
-//        }
 
         for (OperationChain<ExecutionUnit> parentOC : oc.ocParents.keySet()) {
             if (!dfn.containsKey(parentOC)) {
@@ -436,7 +427,6 @@ public class TaskPrecedenceGraph<Context extends OCSchedulerContext<SchedulingUn
             scannedOCs.clear();
             scannedOCs.add(oc);
             // scan from leaves and check whether circular are detected.
-//            oc.isCircularAffected(scannedOCs, circularOCs);
             if (oc.isCircularAffected(scannedOCs, circularOCs)) {
                 circularOCs.add(oc);
                 dfs(oc, circularOCs);

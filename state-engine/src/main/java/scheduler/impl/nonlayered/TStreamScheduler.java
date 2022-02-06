@@ -16,14 +16,14 @@ public class TStreamScheduler extends GSScheduler {
     @Override
     public void INITIALIZE(GSTPGContext context) {
 //        tpg.constructTPG(context);
-        tpg.tStreamExplore(context);
+        tpg.Explore(context);
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 
     @Override
     public void REINITIALIZE(GSTPGContext context) {
-        tpg.tStreamReExplore(context);
+        tpg.ReExplore(context);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 }

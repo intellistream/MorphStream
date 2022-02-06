@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-public abstract class T_StreamContent implements Content {
+public abstract class TStreamContent implements Content {
     public final static String T_STREAMCONTENT = "T_STREAMCONTENT";
     public ConcurrentSkipListMap<Long, SchemaRecord> versions = new ConcurrentSkipListMap<>();//TODO: In fact... there can be at most only one write to the d_record concurrently. It is safe to just use sorted hashmap.
     public SchemaRecord record;

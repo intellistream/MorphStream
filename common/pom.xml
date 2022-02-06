@@ -3,9 +3,9 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>TStream</artifactId>
-        <groupId>org.tony</groupId>
-        <version>0.0.2</version>
+        <artifactId>MorphStream</artifactId>
+        <groupId>intellistream</groupId>
+        <version>0.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -93,18 +93,17 @@
 
     </repositories>
 
-
     <dependencies>
         <dependency>
             <groupId>com.maxmind.geoip2</groupId>
             <artifactId>geoip2</artifactId>
             <version>2.1.0</version>
         </dependency>
-        <!--<dependency>-->
-        <!--<groupId>commons-lang</groupId>-->
-        <!--<artifactId>commons-lang</artifactId>-->
-        <!--<version>2.6</version>-->
-        <!--</dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.antlr</groupId>-->
+<!--            <artifactId>antlr4-master</artifactId>-->
+<!--            <version>4.9.3</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libthrift</artifactId>

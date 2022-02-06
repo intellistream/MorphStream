@@ -8,7 +8,7 @@ import storage.table.RowID;
 
 import static content.LWMContentImpl.LWM_CONTENT;
 import static content.LockContentImpl.LOCK_CONTENT;
-import static content.T_StreamContentImpl.T_STREAMCONTENT;
+import static content.TStreamContentImpl.T_STREAMCONTENT;
 import static content.ToContentImpl.TO_CONTENT;
 import static content.common.ContentCommon.content_type;
 
@@ -32,7 +32,7 @@ public class TableRecord implements Comparable<TableRecord> {
                 content_.updateMultiValues(0, 0, false, record);//mvcc, value_list @ts=0
                 break;
             case T_STREAMCONTENT:
-                content_ = new T_StreamContentImpl();
+                content_ = new TStreamContentImpl();
                 content_.updateValues(0, 0, false, record);//mvcc, value_list @ts=0
                 content_.updateMultiValues(0, 0, false, record);//mvcc, value_list @ts=0
                 break;

@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import transaction.context.TxnContext;
 
-public class T_StreamContentImpl extends T_StreamContent {
-    private static final Logger LOG = LoggerFactory.getLogger(T_StreamContentImpl.class);
+public class TStreamContentImpl extends TStreamContent {
+    private static final Logger LOG = LoggerFactory.getLogger(TStreamContentImpl.class);
     private final long pwid = Long.MAX_VALUE;//previous watermark id.
 
     @Override
@@ -23,25 +23,6 @@ public class T_StreamContentImpl extends T_StreamContent {
 
     @Override
     public void WriteAccess(long ts, long previous_mark_ID, boolean clean, SchemaRecord local_record_) {
-//        version.updateValues(local_record_.getValues());
-//        versions.put(ts, local_record_);
-//        CollectGarbage(wid);///BUGS.... Fix it.
         updateValues(ts, previous_mark_ID, clean, local_record_);//mvcc, value_list @ts=0
     }
-    /**
-     * Shall be called only when watermark is received.
-     *
-     * @param wid watermark id.
-     */
-//    private void CollectGarbage(long wid) {
-//        if (versions.size() > kRecycleLength) {
-//            ClearHistory();
-//        }
-//        pwid = wid;
-//    }
-//
-//    private void ClearHistory() {
-////        versions.clear();
-//        versions.headMap(pwid).clear();
-//    }
 }

@@ -3,9 +3,9 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>TStream</artifactId>
-        <groupId>org.tony</groupId>
-        <version>0.0.2</version>
+        <artifactId>MorphStream</artifactId>
+        <groupId>intellistream</groupId>
+        <version>0.1</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -25,7 +25,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>runners.TStreamRunner</mainClass>
+                            <mainClass>runners.MorphStreamRunner</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -86,14 +86,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.tony</groupId>
+            <groupId>intellistream</groupId>
             <artifactId>state-engine</artifactId>
-            <version>${tstream.version}</version>
+            <version>0.0.2</version>
             <!--<scope>compile</scope>-->
         </dependency>
 
         <dependency>
-            <groupId>org.tony</groupId>
+            <groupId>intellistream</groupId>
             <artifactId>affinity</artifactId>
             <version>3.21ea80-SNAPSHOT</version>
             <!--<scope>compile</scope>-->

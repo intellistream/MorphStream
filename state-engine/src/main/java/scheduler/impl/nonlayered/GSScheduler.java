@@ -28,7 +28,6 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
     @Override
     public void INITIALIZE(GSTPGContext context) {
-//        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
@@ -42,42 +41,25 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
     @Override
     public void start_evaluation(GSTPGContext context, long mark_ID, int num_events) {
         INITIALIZE(context);
-
-//        MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         do {
             EXPLORE(context);
-//            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             PROCESS(context, mark_ID);
-//            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
-//        MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");
             }
-            // identify all aborted operations and transit the state to aborted.
             REINITIALIZE(context);
-            // rollback to the starting point and redo.
-//            MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
             do {
                 EXPLORE(context);
-//                MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
-//                MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
                 PROCESS(context, mark_ID);
-//                MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
             } while (!FINISHED(context));
-//            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         }
-        RESET(context);//
-//        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+        RESET(context);
     }
 
     /**
-     * // O1 -> (logical)  O2
-     * // T1: pickup O1. Transition O1 (ready - > execute) || notify O2 (speculative -> ready).
-     * // T2: pickup O2 (speculative -> executed)
-     * // T3: pickup O2
      * fast explore dependencies in TPG and put ready/speculative operations into task queues.
      *
      * @param context
@@ -131,10 +113,7 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
             default:
                 throw new RuntimeException("Unexpected operation");
         }
-//        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
         operationGraph.add(set_op);
-//        set_op.setConditionSources(request.condition_sourceTable, request.condition_source);
-//        tpg.cacheToSortedOperations(set_op);
         tpg.setupOperationTDFD(set_op, request, targetContext);
     }
 
@@ -148,7 +127,6 @@ public class GSScheduler extends AbstractGSScheduler<GSTPGContext, GSOperation, 
 
         public void onOCFinalized(GSOperationChain operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
-//            operationChain.context.operationChains.remove(operationChain);
         }
 
         public void onOCRollbacked(GSOperationChain operationChain) {

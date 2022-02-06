@@ -68,7 +68,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 scheduler.AddContext(thisTaskId, context);
                 break;
             case GS:
-            case TStream: // original tstream
+            case TStream: // original tstream is the same as using GS scheduler..
                 context = new GSTPGContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;

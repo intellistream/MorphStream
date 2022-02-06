@@ -3,9 +3,9 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>TStream</artifactId>
-        <groupId>org.tony</groupId>
-        <version>0.0.2</version>
+        <artifactId>MorphStream</artifactId>
+        <groupId>intellistream</groupId>
+        <version>0.1</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -42,7 +42,7 @@
             <version>26.0-jre</version>
         </dependency>
         <dependency>
-            <groupId>org.tony</groupId>
+            <groupId>intellistream</groupId>
             <artifactId>common</artifactId>
             <version>${tstream.version}</version>
         </dependency>
