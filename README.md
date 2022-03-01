@@ -13,15 +13,7 @@ If you use MorphStream in your paper, please cite our work.
 * **[ICDE]** Shuhao Zhang, Yingjun Wu, Feng Zhang, Bingsheng He. Towards Concurrent Stateful Stream Processing on Multicore Processors, ICDE, 2020
 * **[xxx]** We have an anonymized submission under review. Stay tuned.
 ```
-@INPROCEEDINGS{9101749,  
- author={S. {Zhang} and Y. {Wu} and F. {Zhang} and B. {He}},  
- booktitle={2020 IEEE 36th International Conference on Data Engineering (ICDE)},   
- title={Towards Concurrent Stateful Stream Processing on Multicore Processors},   
- year={2020},  
- volume={},  
- number={}, 
- pages={1537-1548},
-}
+@INPROCEEDINGS{9101749,  author={Zhang, Shuhao and Wu, Yingjun and Zhang, Feng and He, Bingsheng},  booktitle={2020 IEEE 36th International Conference on Data Engineering (ICDE)},   title={Towards Concurrent Stateful Stream Processing on Multicore Processors},   year={2020},  volume={},  number={},  pages={1537-1548},  doi={10.1109/ICDE48307.2020.00136}}
 
 ```
 
