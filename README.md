@@ -2,8 +2,8 @@
 
 ![Java CI with Maven](https://github.com/ShuhaoZhangTony/TStream/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
 
-- This project aims at building scalable transactional stream processing engine on modern hardware. MorphStream is built based on our previous work of TStream but with significant changes: the codebase are exclusive. 
-
+- This project aims at building scalable transactional stream processing engine on modern hardware. 
+- MorphStream is built based on our previous work of TStream but with significant changes: the codebase are exclusive. 
 - Please checkout our ![wiki](https://github.com/intellistream/MorphStream/wiki) for more detailed desciptions.
 
 ## How to Cite MorphStream
