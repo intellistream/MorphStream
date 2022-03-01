@@ -2,45 +2,30 @@
 
 ![Java CI with Maven](https://github.com/ShuhaoZhangTony/TStream/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
 
-This project aims at building scalable transactional stream processing engine on modern hardware.
+This project aims at building scalable transactional stream processing engine on modern hardware. MorphStream is built based on our previous work of TStream but with significant changes: the codebase are exclusive.
 
-### Prerequisite
+## How to Cite MorphStream
 
-1. System Specification
+If you use MorphStream in your paper, please cite our work.
 
-   | Component          | Description                                                |
-   | ------------------ | ---------------------------------------------------------- |
-   | Processor (w/o HT) | Intel(R) Xeon(R) Gold 6248R CPU, 2 (socket) * 24 * 3.00GHz |
-   | L3 cache size      | 35.75MB                                                    |
-   | Memory             | 384GB                                                      |
-   | OS & Compiler      | Linux 4.15.0-118-generic                                   |
+* **[ICDE]** Shuhao Zhang, Yingjun Wu, Feng Zhang, Bingsheng He. Towards Concurrent Stateful Stream Processing on Multicore Processors, ICDE, 2020
+* **[xxx]** We have an anonymized submission under review. Stay tuned.
+```
+@INPROCEEDINGS{9101749,  
+ author={S. {Zhang} and Y. {Wu} and F. {Zhang} and B. {He}},  
+ booktitle={2020 IEEE 36th International Conference on Data Engineering (ICDE)},   
+ title={Towards Concurrent Stateful Stream Processing on Multicore Processors},   
+ year={2020},  
+ volume={},  
+ number={}, 
+ pages={1537-1548},
+}
 
-2. JDK version 1.11.0
-
-### Reproduce all the experiment results
-
-All of our experiments including rawdata and figures can be automatically reproduced by using the following scripts:
-
-```shell
-bash run_all.sh
 ```
 
-You can also run each of the following command to get the rawdata and figures for each individual experiments:
+### Other related publications
 
-1. Overall system sensitivity study
+* **[ICDE]** Shuhao Zhang, Bingsheng He, Daniel Dahlmeier, Amelie Chi Zhou, Thomas Heinze. Revisiting the design of data stream processing systems on multi-core processors, ICDE, 2017 (code: https://github.com/ShuhaoZhangTony/ProfilingStudy)
+* **[SIGMOD]** Shuhao Zhang, Jiong He, Chi Zhou (Amelie), Bingsheng He. BriskStream: Scaling Stream Processing on Multicore Architectures, SIGMOD, 2019
 
-```shell
-bash overview_all.sh
-```
-
-2. Workload sensitivity study
-
-```shell
-bash sensitivity_study.sh
-```
-
-3. Model decision study
-
-```shell
-bash model_study.sh
-```
+Please checkout our wiki for more detailed desciptions.
