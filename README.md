@@ -5,7 +5,7 @@
 - This project aims at building a scalable transactional stream processing engine on modern hardware. It allows ACID transactions to be run directly on streaming data. It shares similar project vision with Flink StreamingLedger from Data Artisans (https://www.ververica.com/hubfs/Ververica/Docs/%5B2018-08%5D-dA-Streaming-Ledger-whitepaper.pdf). 
 - MorphStream is built based on our previous work of TStream (ICDE'20) but with significant changes: the codebase are exclusive. 
 - The code is still under active development and more features will be introduced. We are also actively maintain the project [wiki](https://github.com/intellistream/MorphStream/wiki). Please checkout it for more detailed desciptions.
-- We welcome your contributions, if you are interested to contribute to the project, please write an email to me: shuhao_zhang AT sutd.edu.sg
+- We welcome your contributions, if you are interested to contribute to the project, please fork and submit a PR. If you have questions, feel free to log an issue or write an email to me: shuhao_zhang AT sutd.edu.sg
 
 ## How to Cite MorphStream
 
