@@ -2,7 +2,7 @@
 
 ![Java CI with Maven](https://github.com/ShuhaoZhangTony/TStream/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
 
-- This project aims at building scalable transactional stream processing engine on modern hardware. It allows ACID transactions to be run directly on streaming data. It shares some similar project vision with Flink StreamingLedger from Data Artisans (https://www.ververica.com/hubfs/Ververica/Docs/%5B2018-08%5D-dA-Streaming-Ledger-whitepaper.pdf). 
+- This project aims at building a scalable transactional stream processing engine on modern hardware. It allows ACID transactions to be run directly on streaming data. It shares similar project vision with Flink StreamingLedger from Data Artisans (https://www.ververica.com/hubfs/Ververica/Docs/%5B2018-08%5D-dA-Streaming-Ledger-whitepaper.pdf). 
 - MorphStream is built based on our previous work of TStream (ICDE'20) but with significant changes: the codebase are exclusive. 
 - Please checkout the project [wiki](https://github.com/intellistream/MorphStream/wiki) for more detailed desciptions.
 
