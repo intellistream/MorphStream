@@ -176,6 +176,6 @@ if __name__ == '__main__':
     y_values = ReadFileSL(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
                           abort_ratio, isCyclic, complexity)
     DrawFigure(x_values, y_values, legend_labels,
-               'Ratio of Writeonly Txns', 'Throughput (K/sec)', 0,
+               'writeonly_ratio', 'Tpt. (#inputs/ms)', 0,
                400, 'sl_granularity_comparison_writeonly_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
                 .format(tthread, NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity), legend)

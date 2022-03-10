@@ -97,20 +97,44 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
 
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
+
 def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     w, h = 2, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for NUM_ACCESS in x_axis:
+    for NUM_ITEMS in x_axis:
         events = tthread * batchInterval
         op_gs_path = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
-    for NUM_ACCESS in x_axis:
+    for NUM_ITEMS in x_axis:
         events = tthread * batchInterval
         op_gs_path = getPathGS("GSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        lines = open(op_gs_path).readlines()
+        throughput = lines[0].split(": ")[1]
+        y[1].append(float(throughput))
+
+    print(y)
+
+    return y
+
+
+def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+    w, h = 2, len(x_axis)
+    y = [[] for _ in range(w)]
+
+    for NUM_ITEMS in x_axis:
+        events = tthread * batchInterval
+        op_gs_path = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        lines = open(op_gs_path).readlines()
+        throughput = lines[0].split(": ")[1]
+        y[0].append(float(throughput))
+
+    for NUM_ITEMS in x_axis:
+        events = tthread * batchInterval
+        op_gs_path = getPathSL("GSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[1].append(float(throughput))
@@ -125,7 +149,7 @@ def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, ove
         .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio , complexity):
     return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
         .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
@@ -170,13 +194,17 @@ if __name__ == '__main__':
         elif opt in ['-m']:
             complexity = int(arg)
 
-    # NUM_ACCESS
-    x_values = [1, 2, 4, 6, 8, 10]
+    x_value = [11520, 115200, 1152000]
     legend_labels = ["Fine-grained", "Coarse-grained"]
+    # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
+    x_axis = [x_value] * len(legend_labels)
     legend = True
-    y_values = ReadFileGS(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
-                          abort_ratio, isCyclic, complexity)
-    DrawFigure(x_values, y_values, legend_labels,
-               'num_state_access', 'Tpt. (#inputs/ms)', 0,
-               400, 'granularity_comparison_access_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
-                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity), legend)
+    
+    y_axis = ReadFileGS(x_value, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+    DrawFigure(x_value, y_axis, legend_labels, "keys", "throughput(e/s)", 0, 400, 'gs_granularity_comparison_key_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
+                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity),
+                legend)
+    y_axis = ReadFileSL(x_value, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+    DrawFigure(x_value, y_axis, legend_labels, "keys", "throughput(e/s)", 0, 400, 'sl_granularity_comparison_key_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
+                .format(tthread, NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity),
+            legend)
