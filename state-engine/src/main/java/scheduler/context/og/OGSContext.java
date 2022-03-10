@@ -1,17 +1,19 @@
 package scheduler.context.og;
 
+import scheduler.struct.og.AbstractOperation;
 import scheduler.struct.og.OperationChain;
+import scheduler.struct.og.structured.SOperationChain;
 
 import java.util.*;
 
-public class OGSContext extends OGSchedulerContext {
+public abstract class OGSContext<ExecutionUnit extends AbstractOperation, SchedulingUnit extends SOperationChain<ExecutionUnit>> extends OGSchedulerContext<SchedulingUnit> {
 
-    public HashMap<Integer, ArrayList<OperationChain>> allocatedLayeredOCBucket;// <LevelID, ArrayDeque<OperationChain>
+    public HashMap<Integer, ArrayList<SchedulingUnit>> allocatedLayeredOCBucket;// <LevelID, ArrayDeque<OperationChain>
     public int currentLevel;
     public int currentLevelIndex;
     public int totalThreads;
     public int maxLevel;//total number of operations to process per thread.
-    public OperationChain ready_oc;//ready operation chain per thread.
+    public SchedulingUnit ready_oc;//ready operation chain per thread.
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
@@ -39,13 +41,11 @@ public class OGSContext extends OGSchedulerContext {
     }
 
     @Override
-    public OperationChain createTask(String tableName, String pKey, long bid) {
-        OperationChain oc = new OperationChain(tableName, pKey, bid);
-//        operationChains.add(oc);
-        return oc;
+    public SchedulingUnit createTask(String tableName, String pKey, long bid) {
+        throw new UnsupportedOperationException("Unsupported.");
     }
 
-    public ArrayList<OperationChain> OCSCurrentLayer() {
+    public ArrayList<SchedulingUnit> OCSCurrentLayer() {
         return allocatedLayeredOCBucket.get(currentLevel);
     }
 
@@ -67,11 +67,11 @@ public class OGSContext extends OGSchedulerContext {
      *
      * @param ocs
      */
-    public void buildBucketPerThread(Collection<OperationChain> ocs, HashSet<OperationChain> resolvedOC) {
+    public void buildBucketPerThread(Collection<SchedulingUnit> ocs, HashSet<OperationChain<ExecutionUnit>> resolvedOC) {
         // TODO: update this logic to the latest logic that we proposed in operation level
         int localMaxDLevel = 0;
         int dependencyLevel;
-        for (OperationChain oc : ocs) {
+        for (SchedulingUnit oc : ocs) {
             if (oc.getOperations().isEmpty()) {
                 continue;
             }
@@ -91,8 +91,8 @@ public class OGSContext extends OGSchedulerContext {
         this.maxLevel = localMaxDLevel;
     }
 
-    public void putBusyWaitOCs(HashSet<OperationChain> resolvedOC, int maxLevel) {
-        for (OperationChain oc : resolvedOC) {
+    public void putBusyWaitOCs(HashSet<SchedulingUnit> resolvedOC, int maxLevel) {
+        for (SchedulingUnit oc : resolvedOC) {
             if (!allocatedLayeredOCBucket.containsKey(maxLevel))
                 allocatedLayeredOCBucket.put(maxLevel, new ArrayList<>());
             allocatedLayeredOCBucket.get(maxLevel).add(oc);

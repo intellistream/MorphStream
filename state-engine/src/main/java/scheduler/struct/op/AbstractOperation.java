@@ -1,4 +1,4 @@
-package scheduler.struct;
+package scheduler.struct.op;
 
 import content.common.CommonMetaTypes;
 import storage.SchemaRecordRef;

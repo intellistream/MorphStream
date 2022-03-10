@@ -2,18 +2,17 @@ package scheduler.context.og;
 
 import scheduler.Request;
 import scheduler.context.SchedulerContext;
-import scheduler.struct.og.OperationChain;
 
 import java.util.*;
 
 
-public abstract class OGSchedulerContext implements SchedulerContext {
-    public final ArrayDeque<OperationChain> busyWaitQueue;
+public abstract class OGSchedulerContext<SchedulingUnit> implements SchedulerContext {
+    public final ArrayDeque<SchedulingUnit> busyWaitQueue;
     public int thisThreadId;
     public ArrayDeque<Request> requests;
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.
-    public Set<OperationChain> operationChains = new HashSet<>();
+    public Set<SchedulingUnit> operationChains = new HashSet<>();
     public int fd = 0;
 
 
@@ -41,5 +40,5 @@ public abstract class OGSchedulerContext implements SchedulerContext {
         requests.push(request);
     }
 
-    public abstract OperationChain createTask(String tableName, String pKey, long bid);
+    public abstract SchedulingUnit createTask(String tableName, String pKey, long bid);
 }

@@ -2,12 +2,12 @@ package scheduler.impl.og.nonstructured;
 
 import scheduler.context.og.AbstractOGNSContext;
 import scheduler.impl.og.OGScheduler;
-import scheduler.struct.og.Operation;
-import scheduler.struct.og.OperationChain;
+import scheduler.struct.og.nonstructured.AbstractNSOperationChain;
+import scheduler.struct.og.nonstructured.NSOperation;
 import transaction.impl.ordered.MyList;
 
-public abstract class AbstractOGNSScheduler<Context extends AbstractOGNSContext>
-        extends OGScheduler<Context> {
+public abstract class AbstractOGNSScheduler<Context extends AbstractOGNSContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends NSOperation, SchedulingUnit extends AbstractNSOperationChain<ExecutionUnit>>
+        extends OGScheduler<Context, ExecutionUnit, SchedulingUnit> {
 
     public AbstractOGNSScheduler(int totalThreads, int NUM_ITEMS, int app) {
         super(totalThreads, NUM_ITEMS, app);
@@ -38,7 +38,12 @@ public abstract class AbstractOGNSScheduler<Context extends AbstractOGNSContext>
     }
 
     @Override
-    protected void NOTIFY(OperationChain task, Context context) {
+    public void TxnSubmitFinished(Context context) {
+        throw new UnsupportedOperationException("Unsupported.");
+    }
+
+    @Override
+    protected void NOTIFY(SchedulingUnit task, Context context) {
         throw new UnsupportedOperationException("Unsupported.");
     }
 
@@ -49,9 +54,9 @@ public abstract class AbstractOGNSScheduler<Context extends AbstractOGNSContext>
      * @param mark_ID
      * @return
      */
-    public boolean execute(Context context, OperationChain operationChain, long mark_ID) {
-        MyList<Operation> operation_chain_list = operationChain.getOperations();
-        for (Operation operation : operation_chain_list) {
+    public boolean execute(Context context, SchedulingUnit operationChain, long mark_ID) {
+        MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
+        for (ExecutionUnit operation : operation_chain_list) {
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
@@ -66,8 +71,8 @@ public abstract class AbstractOGNSScheduler<Context extends AbstractOGNSContext>
      * @return
      */
     @Override
-    protected OperationChain next(Context context) {
-        OperationChain operationChain = context.OCwithChildren.pollLast();
+    protected SchedulingUnit next(Context context) {
+        SchedulingUnit operationChain = context.OCwithChildren.pollLast();
         if (operationChain == null) {
             operationChain = context.IsolatedOC.pollLast();
         }
@@ -81,7 +86,7 @@ public abstract class AbstractOGNSScheduler<Context extends AbstractOGNSContext>
      * 3. shared: put all operations in a pool and
      */
     @Override
-    public void DISTRIBUTE(OperationChain task, Context context) {
+    public void DISTRIBUTE(SchedulingUnit task, Context context) {
         if (task != null) {
             if (!task.hasChildren()) {
                 context.IsolatedOC.add(task);

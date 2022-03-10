@@ -4,8 +4,8 @@ import scheduler.context.og.OGNSAContext;
 import scheduler.impl.og.nonstructured.OGNSAScheduler;
 import scheduler.signal.oc.*;
 import scheduler.struct.og.MetaTypes.DependencyType;
-import scheduler.struct.og.Operation;
-import scheduler.struct.og.OperationChain;
+import scheduler.struct.og.nonstructured.NSAOperationChain;
+import scheduler.struct.og.nonstructured.NSAOperation;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -15,8 +15,8 @@ import static scheduler.struct.op.MetaTypes.*;
 /**
  * Local to every TPGScheduler context.
  */
-public class PartitionStateManagerWithAbort implements Runnable, OperationChainStateListener {
-    public final Queue<OperationChainSignal> ocSignalQueue;
+public class PartitionStateManagerWithAbort implements Runnable, OperationChainStateListener<NSAOperation, NSAOperationChain> {
+    public final Queue<OperationChainSignal<NSAOperation, NSAOperationChain>> ocSignalQueue;
     private OGNSAScheduler.ExecutableTaskListener executableTaskListener;
 
     public PartitionStateManagerWithAbort() {
@@ -30,36 +30,36 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
     }
 
     @Override
-    public void onOcRootStart(OperationChain operationChain) {
-        ocSignalQueue.add(new OnRootSignal(operationChain));
+    public void onOcRootStart(NSAOperationChain operationChain) {
+        ocSignalQueue.add(new OnRootSignal<>(operationChain));
     }
 
     @Override
-    public void onOcExecuted(OperationChain operationChain) {
-        ocSignalQueue.add(new OnExecutedSignal(operationChain));
+    public void onOcExecuted(NSAOperationChain operationChain) {
+        ocSignalQueue.add(new OnExecutedSignal<>(operationChain));
     }
 
     @Override
-    public void onOcParentExecuted(OperationChain operationChain, DependencyType dependencyType) {
-        ocSignalQueue.add(new OnParentExecutedSignal(operationChain, dependencyType));
+    public void onOcParentExecuted(NSAOperationChain operationChain, DependencyType dependencyType) {
+        ocSignalQueue.add(new OnParentExecutedSignal<>(operationChain, dependencyType));
     }
 
-    public void onHeaderStartAbortHandling(OperationChain operationChain, Operation abortedOp) {
-        ocSignalQueue.add(new OnHeaderStartAbortHandlingSignal(operationChain, abortedOp));
+    public void onHeaderStartAbortHandling(NSAOperationChain operationChain, NSAOperation abortedOp) {
+        ocSignalQueue.add(new OnHeaderStartAbortHandlingSignal<>(operationChain, abortedOp));
     }
 
-    public void onOcNeedAbortHandling(OperationChain operationChain, Operation abortedOp) {
-        ocSignalQueue.add(new OnNeedAbortHandlingSignal(operationChain, abortedOp));
+    public void onOcNeedAbortHandling(NSAOperationChain operationChain, NSAOperation abortedOp) {
+        ocSignalQueue.add(new OnNeedAbortHandlingSignal<>(operationChain, abortedOp));
     }
 
-    public void onOcRollbackAndRedo(OperationChain operationChain) {
-        ocSignalQueue.add(new OnRollbackAndRedoSignal(operationChain));
+    public void onOcRollbackAndRedo(NSAOperationChain operationChain) {
+        ocSignalQueue.add(new OnRollbackAndRedoSignal<>(operationChain));
     }
 
     public void handleStateTransitions() {
-        OperationChainSignal ocSignal = ocSignalQueue.poll();
+        OperationChainSignal<NSAOperation, NSAOperationChain> ocSignal = ocSignalQueue.poll();
         while (ocSignal != null) {
-            OperationChain operationChain = ocSignal.getTargetOperationChain();
+            NSAOperationChain operationChain = ocSignal.getTargetOperationChain();
             if (ocSignal instanceof OnRootSignal) {
                 ocRootStartTransition(operationChain);
             } else if (ocSignal instanceof OnExecutedSignal) {
@@ -67,26 +67,26 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
             } else if (ocSignal instanceof OnParentExecutedSignal) {
                 ocParentExecutedTransition(operationChain);
             } else if (ocSignal instanceof OnNeedAbortHandlingSignal) {
-                ocAbortHandlingTransition(operationChain, ((OnNeedAbortHandlingSignal) ocSignal).getOperation());
+                ocAbortHandlingTransition(operationChain, ((OnNeedAbortHandlingSignal<NSAOperation, NSAOperationChain>) ocSignal).getOperation());
             } else if (ocSignal instanceof OnRollbackAndRedoSignal) {
                 ocRollbackAndRedoTransition(operationChain);
             } else if (ocSignal instanceof OnHeaderStartAbortHandlingSignal) {
-                ocHeaderStartAbortHandlingTransition(operationChain, ((OnHeaderStartAbortHandlingSignal) ocSignal).getOperation());
+                ocHeaderStartAbortHandlingTransition(operationChain, ((OnHeaderStartAbortHandlingSignal<NSAOperation, NSAOperationChain>) ocSignal).getOperation());
             }
             ocSignal = ocSignalQueue.poll();
         }
     }
 
-    private void ocRootStartTransition(OperationChain operationChain) {
+    private void ocRootStartTransition(NSAOperationChain operationChain) {
         executableTaskListener.onOCExecutable(operationChain);
     }
 
 
-    private void ocExecutedTransition(OperationChain operationChain) {
+    private void ocExecutedTransition(NSAOperationChain operationChain) {
         if (!operationChain.needAbortHandling) {
             operationChain.isExecuted = true;
             executableTaskListener.onOCFinalized(operationChain);
-            for (OperationChain child : operationChain.getChildren()) {
+            for (NSAOperationChain child : operationChain.getChildren()) {
                 if (child.ocParentsCount.get() > 0) {
                     ((OGNSAContext) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
                 }
@@ -96,10 +96,10 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         }
     }
 
-    private void scheduleAbortHandling(OperationChain operationChain) {
+    private void scheduleAbortHandling(NSAOperationChain operationChain) {
         // mark aborted operations and notify OC contains header operation to abort
         // notify children to rollback and redo if it is executed
-        for (Operation failedOp : operationChain.failedOperations) {
+        for (NSAOperation failedOp : operationChain.failedOperations) {
             ((OGNSAContext) failedOp.getHeader().context).partitionStateManager.onHeaderStartAbortHandling(failedOp.getHeader().getOC(), failedOp.getHeader());
         }
         operationChain.needAbortHandling = false;
@@ -107,23 +107,23 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         executableTaskListener.onOCExecutable(operationChain);
     }
 
-    private void ocHeaderStartAbortHandlingTransition(OperationChain operationChain, Operation header) {
+    private void ocHeaderStartAbortHandlingTransition(NSAOperationChain operationChain, NSAOperation header) {
         if (!header.getOperationState().equals(OperationStateType.ABORTED)) {
             // header might receive multiple abort handling signal, but transaction abort should only happen once.
             header.stateTransition(OperationStateType.ABORTED);
-            for (Operation abortedOp : header.getDescendants()) {
+            for (NSAOperation abortedOp : header.getDescendants()) {
                 ((OGNSAContext) abortedOp.context).partitionStateManager.onOcNeedAbortHandling(abortedOp.getOC(), abortedOp);
             }
         }
     }
 
 
-    private void ocAbortHandlingTransition(OperationChain operationChain, Operation abortedOp) {
+    private void ocAbortHandlingTransition(NSAOperationChain operationChain, NSAOperation abortedOp) {
         abortedOp.stateTransition(OperationStateType.ABORTED);
         assert operationChain.getOperations().contains(abortedOp);
         if (!abortedOp.isFailed) {
 //            System.out.println(abortedOp);
-            for (Operation operation : operationChain.getOperations()) {
+            for (NSAOperation operation : operationChain.getOperations()) {
                 if (!operation.getOperationState().equals(OperationStateType.ABORTED)) {
                     operation.stateTransition(OperationStateType.BLOCKED);
                 }
@@ -150,15 +150,15 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
 //        }
     }
 
-    private void ocParentExecutedTransition(OperationChain operationChain) {
+    private void ocParentExecutedTransition(NSAOperationChain operationChain) {
         operationChain.updateDependency();
         if (!operationChain.hasParents() && !operationChain.isExecuted) {
             executableTaskListener.onOCExecutable(operationChain);
         }
     }
 
-    private void ocRollbackAndRedoTransition(OperationChain operationChain) {
-        for (Operation operation : operationChain.getOperations()) {
+    private void ocRollbackAndRedoTransition(NSAOperationChain operationChain) {
+        for (NSAOperation operation : operationChain.getOperations()) {
             if (!operation.getOperationState().equals(OperationStateType.ABORTED))
                 operation.stateTransition(OperationStateType.BLOCKED);
         }
@@ -170,9 +170,9 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
         }
     }
 
-    private void notifyChildrenRollbackAndRedo(OperationChain operationChain) {
+    private void notifyChildrenRollbackAndRedo(NSAOperationChain operationChain) {
         // notify children to rollback and redo
-        for (OperationChain child : operationChain.getChildren()) {
+        for (NSAOperationChain child : operationChain.getChildren()) {
             ((OGNSAContext) child.context).partitionStateManager.onOcRollbackAndRedo(child);
         }
     }

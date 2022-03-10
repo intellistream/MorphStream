@@ -7,7 +7,7 @@ import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.impl.IScheduler;
 import scheduler.context.op.OPSchedulerContext;
-import scheduler.struct.AbstractOperation;
+import scheduler.struct.op.AbstractOperation;
 import scheduler.struct.op.MetaTypes;
 import scheduler.struct.op.Operation;
 import scheduler.struct.op.TaskPrecedenceGraph;

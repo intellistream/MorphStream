@@ -2,14 +2,15 @@ package scheduler.impl.og.structured;
 
 import scheduler.context.og.OGSContext;
 import scheduler.impl.og.OGScheduler;
-import scheduler.struct.og.Operation;
-import scheduler.struct.og.OperationChain;
+import scheduler.struct.og.AbstractOperation;
+import scheduler.struct.og.structured.SOperationChain;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 
-public abstract class OGSScheduler<Context extends OGSContext> extends OGScheduler<Context> {
+public abstract class OGSScheduler<Context extends OGSContext<ExecutionUnit, SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends SOperationChain<ExecutionUnit>>
+        extends OGScheduler<Context, ExecutionUnit, SchedulingUnit> {
 
     public OGSScheduler(int totalThreads, int NUM_ITEMS, int app) {
         super(totalThreads, NUM_ITEMS, app);
@@ -33,7 +34,7 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
 //    public void PROCESS(Context context, long mark_ID) {
 //        int threadId = context.thisThreadId;
 //        MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-//        OperationChain next = next(context);
+//        SchedulingUnit next = next(context);
 //        MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 //        if (next != null) {
 ////            execute(context, next.getOperations(), mark_ID);
@@ -61,8 +62,8 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
      * @param operation_chain
      * @param mark_ID
      */
-    public void execute(Context context, MyList<Operation> operation_chain, long mark_ID) {
-        for (Operation operation : operation_chain) {
+    public void execute(Context context, MyList<ExecutionUnit> operation_chain, long mark_ID) {
+        for (ExecutionUnit operation : operation_chain) {
             execute(operation, mark_ID, false);
         }
     }
@@ -74,8 +75,8 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
      * @return
      */
     @Override
-    protected OperationChain next(Context context) {
-        OperationChain operationChain = context.ready_oc;
+    protected SchedulingUnit next(Context context) {
+        SchedulingUnit operationChain = context.ready_oc;
         context.ready_oc = null;
         return operationChain;// if a null is returned, it means, we are done with this level!
     }
@@ -87,7 +88,7 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
      * 3. shared: put all operations in a pool and
      */
     @Override
-    public void DISTRIBUTE(OperationChain task, Context context) {
+    public void DISTRIBUTE(SchedulingUnit task, Context context) {
         context.ready_oc = task;
     }
 
@@ -97,9 +98,9 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
      * @param context
      * @return
      */
-    protected OperationChain Next(Context context) {
-        ArrayList<OperationChain> ocs = context.OCSCurrentLayer(); //
-        OperationChain oc = null;
+    protected SchedulingUnit Next(Context context) {
+        ArrayList<SchedulingUnit> ocs = context.OCSCurrentLayer(); //
+        SchedulingUnit oc = null;
         if (ocs != null && context.currentLevelIndex < ocs.size()) {
             oc = ocs.get(context.currentLevelIndex++);
             context.scheduledOPs += oc.getOperations().size();

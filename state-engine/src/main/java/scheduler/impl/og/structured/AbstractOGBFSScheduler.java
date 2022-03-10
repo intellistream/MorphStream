@@ -1,7 +1,8 @@
 package scheduler.impl.og.structured;
 
-import scheduler.context.og.OGSContext;
-import scheduler.struct.og.OperationChain;
+import scheduler.context.og.OGBFSContext;
+import scheduler.struct.og.structured.bfs.BFSOperation;
+import scheduler.struct.og.structured.bfs.BFSOperationChain;
 import utils.SOURCE_CONTROL;
 
 /**
@@ -11,7 +12,7 @@ import utils.SOURCE_CONTROL;
  * 3. thread will find operations from its queue for execution.
  * It's a shared data structure!
  */
-public class AbstractOGBFSScheduler<Context extends OGSContext> extends OGSScheduler<Context> {
+public class AbstractOGBFSScheduler<Context extends OGBFSContext> extends OGSScheduler<Context, BFSOperation, BFSOperationChain> {
 
     public AbstractOGBFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
         super(totalThreads, NUM_ITEMS, app);
@@ -21,7 +22,7 @@ public class AbstractOGBFSScheduler<Context extends OGSContext> extends OGSSched
 
     @Override
     public void EXPLORE(Context context) {
-        OperationChain next = Next(context);
+        BFSOperationChain next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
             while (next == null) {
                 SOURCE_CONTROL.getInstance().waitForOtherThreads();
@@ -33,6 +34,10 @@ public class AbstractOGBFSScheduler<Context extends OGSContext> extends OGSSched
     }
 
     @Override
-    protected void NOTIFY(OperationChain operationChain, Context context) {
+    protected void NOTIFY(BFSOperationChain operationChain, Context context) {
+    }
+
+    @Override
+    public void TxnSubmitFinished(Context context) {
     }
 }

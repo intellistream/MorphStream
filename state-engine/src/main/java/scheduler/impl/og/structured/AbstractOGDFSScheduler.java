@@ -1,7 +1,8 @@
 package scheduler.impl.og.structured;
 
-import scheduler.context.og.OGSContext;
-import scheduler.struct.og.OperationChain;
+import scheduler.context.og.OGDFSContext;
+import scheduler.struct.og.structured.dfs.DFSOperation;
+import scheduler.struct.og.structured.dfs.DFSOperationChain;
 
 import java.util.Collection;
 
@@ -12,7 +13,7 @@ import java.util.Collection;
  * 3. thread will find operations from its queue for execution.
  * It's a shared data structure!
  */
-public class AbstractOGDFSScheduler<Context extends OGSContext> extends OGSScheduler<Context> {
+public class AbstractOGDFSScheduler<Context extends OGDFSContext> extends OGSScheduler<Context, DFSOperation, DFSOperationChain> {
 
 
     public AbstractOGDFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
@@ -21,7 +22,7 @@ public class AbstractOGDFSScheduler<Context extends OGSContext> extends OGSSched
 
     @Override
     public void EXPLORE(Context context) {
-        OperationChain oc = Next(context);
+        DFSOperationChain oc = Next(context);
         while (oc == null) {
             if (context.exploreFinished())
                 break;
@@ -39,12 +40,16 @@ public class AbstractOGDFSScheduler<Context extends OGSContext> extends OGSSched
      * @param context
      */
     @Override
-    protected void NOTIFY(OperationChain operationChain, Context context) {
+    protected void NOTIFY(DFSOperationChain operationChain, Context context) {
 //        context.partitionStateManager.onOcExecuted(operationChain);
         operationChain.isExecuted = true; // set operation chain to be executed, which is used for further rollback
-        Collection<OperationChain> ocs = operationChain.getChildren();
-        for (OperationChain childOC : ocs) {
+        Collection<DFSOperationChain> ocs = operationChain.getChildren();
+        for (DFSOperationChain childOC : ocs) {
             childOC.updateDependency();
         }
+    }
+
+    @Override
+    public void TxnSubmitFinished(Context context) {
     }
 }

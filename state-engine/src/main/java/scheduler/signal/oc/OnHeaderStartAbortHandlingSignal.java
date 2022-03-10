@@ -1,17 +1,18 @@
 package scheduler.signal.oc;
 
-import scheduler.struct.og.Operation;
+import scheduler.struct.og.AbstractOperation;
 import scheduler.struct.og.OperationChain;
 
-public class OnHeaderStartAbortHandlingSignal extends OperationChainSignal {
-    private final Operation abortedOp;
+public class OnHeaderStartAbortHandlingSignal<OP extends AbstractOperation, OC extends OperationChain<OP>>
+        extends OperationChainSignal<OP, OC> {
+    private final OP abortedOp;
 
-    public OnHeaderStartAbortHandlingSignal(OperationChain targetOperationChain, Operation abortedOp) {
+    public OnHeaderStartAbortHandlingSignal(OC targetOperationChain, OP abortedOp) {
         super(targetOperationChain);
         this.abortedOp = abortedOp;
     }
 
-    public Operation getOperation() {
+    public OP getOperation() {
         return abortedOp;
     }
 }

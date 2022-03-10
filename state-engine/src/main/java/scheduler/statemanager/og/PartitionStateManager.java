@@ -7,7 +7,8 @@ import scheduler.signal.oc.OnParentExecutedSignal;
 import scheduler.signal.oc.OnRootSignal;
 import scheduler.signal.oc.OperationChainSignal;
 import scheduler.struct.og.MetaTypes.DependencyType;
-import scheduler.struct.og.OperationChain;
+import scheduler.struct.og.nonstructured.NSOperation;
+import scheduler.struct.og.nonstructured.NSOperationChain;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -15,8 +16,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Local to every TPGScheduler context.
  */
-public class PartitionStateManager implements Runnable, OperationChainStateListener {
-    public final Queue<OperationChainSignal> ocSignalQueue;
+public class PartitionStateManager implements Runnable, OperationChainStateListener<NSOperation, NSOperationChain> {
+    public final Queue<OperationChainSignal<NSOperation, NSOperationChain>> ocSignalQueue;
     private OGNSScheduler.ExecutableTaskListener executableTaskListener;
 
     public PartitionStateManager() {
@@ -30,25 +31,25 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
     }
 
     @Override
-    public void onOcRootStart(OperationChain operationChain) {
-        ocSignalQueue.add(new OnRootSignal(operationChain));
+    public void onOcRootStart(NSOperationChain operationChain) {
+        ocSignalQueue.add(new OnRootSignal<>(operationChain));
     }
 
     @Override
-    public void onOcExecuted(OperationChain operationChain) {
-        ocSignalQueue.add(new OnExecutedSignal(operationChain));
+    public void onOcExecuted(NSOperationChain operationChain) {
+        ocSignalQueue.add(new OnExecutedSignal<>(operationChain));
     }
 
     @Override
-    public void onOcParentExecuted(OperationChain operationChain, DependencyType dependencyType) {
-        ocSignalQueue.add(new OnParentExecutedSignal(operationChain, dependencyType));
+    public void onOcParentExecuted(NSOperationChain operationChain, DependencyType dependencyType) {
+        ocSignalQueue.add(new OnParentExecutedSignal<>(operationChain, dependencyType));
     }
 
 
     public void handleStateTransitions() {
-        OperationChainSignal ocSignal = ocSignalQueue.poll();
+        OperationChainSignal<NSOperation, NSOperationChain> ocSignal = ocSignalQueue.poll();
         while (ocSignal != null) {
-            OperationChain operationChain = ocSignal.getTargetOperationChain();
+            NSOperationChain operationChain = ocSignal.getTargetOperationChain();
             if (ocSignal instanceof OnRootSignal) {
                 ocRootStartTransition(operationChain);
             } else if (ocSignal instanceof OnExecutedSignal) {
@@ -60,14 +61,14 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
         }
     }
 
-    private void ocRootStartTransition(OperationChain operationChain) {
+    private void ocRootStartTransition(NSOperationChain operationChain) {
         executableTaskListener.onOCExecutable(operationChain);
     }
 
 
-    private void ocExecutedTransition(OperationChain operationChain) {
+    private void ocExecutedTransition(NSOperationChain operationChain) {
         operationChain.isExecuted = true;
-        for (OperationChain child : operationChain.getChildren()) {
+        for (NSOperationChain child : operationChain.getChildren()) {
             if (child.ocParentsCount.get() > 0) {
                 ((OGNSContext) child.context).partitionStateManager.onOcParentExecuted(child, DependencyType.FD);
             }
@@ -76,7 +77,7 @@ public class PartitionStateManager implements Runnable, OperationChainStateListe
 
     }
 
-    private void ocParentExecutedTransition(OperationChain operationChain) {
+    private void ocParentExecutedTransition(NSOperationChain operationChain) {
         operationChain.updateDependency();
         if (!operationChain.hasParents() && !operationChain.isExecuted) {
             executableTaskListener.onOCExecutable(operationChain);
