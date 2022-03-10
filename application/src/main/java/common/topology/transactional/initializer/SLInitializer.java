@@ -302,49 +302,12 @@ public class SLInitializer extends TableInitilizer {
             loadTransferDepositEvents(reader, totalEvents, shufflingActive, p_bids);
             reader.close();
         }
-
-//        file = new File(folder + "depositEvents.txt");
-//        if (file.exists()) {
-//            if (enable_log) LOG.info("Reading deposit events...");
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-//            loadDepositEvents(reader, totalEvents, shufflingActive, p_bids);
-//            reader.close();
-//        }
     }
 
     @Override
     public void store(String file_name) throws IOException {
 
     }
-
-//    private void loadDepositEvents(BufferedReader reader, int tuplesPerBatch, boolean shufflingActive, int[] p_bids) throws IOException {
-//        String txn = reader.readLine();
-//        int count = 0;
-////        int p_bids[] = new int[tthread];
-//        while (txn != null) {
-//            String[] split = txn.split(",");
-//            int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
-//            DepositEvent event = new DepositEvent(
-//                    Integer.parseInt(split[0]), //bid
-//                    npid, //pid
-//                    Arrays.toString(p_bids), //bid_array
-//                    2,//num_of_partition
-//                    split[1],//getSourceAccountId
-//                    split[2],//getSourceBookEntryId
-//                    100,  //getAccountDeposit
-//                    100  //getBookEntryDeposit
-//            );
-//            for (int x = 0; x < 2; x++)
-//                p_bids[(npid + x) % tthread]++;
-//            DataHolder.depositEvents.add(event);
-//            if (enable_log) LOG.debug(String.format("%d deposit read...", count));
-//            txn = reader.readLine();
-//        }
-//        if (enable_log) LOG.info("Done reading transfer events...");
-//        if (shufflingActive) {
-//            shuffleEvents(DataHolder.depositEvents, tuplesPerBatch);
-//        }
-//    }
 
     private void loadTransferDepositEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
         String txn = reader.readLine();

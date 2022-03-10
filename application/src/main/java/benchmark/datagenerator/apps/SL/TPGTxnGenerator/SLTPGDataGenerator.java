@@ -112,7 +112,6 @@ public class SLTPGDataGenerator extends DataGenerator {
         } else {
             event = randomTransferEvent();
         }
-        System.out.println(eventID);
         events.add(event);
     }
 

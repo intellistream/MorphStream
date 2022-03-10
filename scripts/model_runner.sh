@@ -3,7 +3,7 @@
 function ResetParameters() {
   app="StreamLedger"
   NUM_ITEMS=12288
-  NUM_ACCESS=10
+  NUM_ACCESS=2
   checkpointInterval=10240
   tthread=24
   scheduler="BFS"
@@ -12,8 +12,8 @@ function ResetParameters() {
   overlap_ratio=0
   abort_ratio=0
   CCOption=3 #TSTREAM
-  complexity=10000
-  isCyclic=1
+  complexity=0
+  isCyclic=0
 }
 
 function runTStream() {
@@ -53,9 +53,7 @@ function runTStream() {
 
 # run basic experiment for different algorithms
 function baselineEvaluation() {
-  # for scheduler in BFS DFS GS OPBFS OPDFS OPGS TStream
-  for scheduler in GS OPGS
-  # for scheduler in GS
+  for scheduler in OG_NS OP_NS
   do
     runTStream
   done
@@ -63,21 +61,31 @@ function baselineEvaluation() {
 
 # run basic experiment for different algorithms
 function withAbortEvaluation() {
-  # for scheduler in BFSA DFSA GSA OPBFSA OPDFSA OPGSA
-  for scheduler in GSA OPGSA
+  for scheduler in OG_NS_A OP_NS_A
   do
     runTStream
   done
 }
 
 function granularity_study() {
+
+  # isCyclic
+  ResetParameters
+  for app in GrepSum StreamLedger
+  do
+    # for tthread in 24
+    for isCyclic in 0 1
+    do
+        withAbortEvaluation
+    done
+  done
   
-  # Num of FD
+  # Num of PD
   ResetParameters
   for app in GrepSum
   do
     # for tthread in 24
-    for isCyclic in 0 1
+    for isCyclic in 0
     do
       for NUM_ACCESS in 1 2 4 6 8 10
       do
@@ -86,31 +94,14 @@ function granularity_study() {
     done
   done
 
-  # # Average num of OP in OC
-  # ResetParameters
-  # NUM_ACCESS=1 # OC level and OP level has similar performance before
-  # for app in StreamLedger GrepSum
-  # do
-  #   # for tthread in 24
-  #   for isCyclic in 0 1
-  #   do
-  #     for NUM_ITEMS in 12288 122880 1228800
-  #     do
-  #       for checkpointInterval in 5120 10240 20480 40960 81920
-  #       do
-  #         withAbortEvaluation
-  #       done
-  #     done
-  #   done
-  # done
-
-  # Average num of OP in OC
+  # num of TD
   ResetParameters
   NUM_ACCESS=1 # OC level and OP level has similar performance before
+  deposit_ratio=90 # try to avoid the overhead of PD
   for app in StreamLedger GrepSum
   do
     # for tthread in 24
-    for isCyclic in 0 1
+    for isCyclic in 0
     do
       for checkpointInterval in 5120 10240 20480 40960 81920
       do
@@ -119,28 +110,12 @@ function granularity_study() {
     done
   done
 
-  # # Abort Ratio, rollback overhead.
-  # ResetParameters
-  # NUM_ACCESS=1 # OC level and OP level has similar performance before
-  # for app in StreamLedger GrepSum
-  # do
-  #   # for tthread in 24
-  #   for isCyclic in 0 1
-  #   do
-  #     for abort_ratio in 0 1 10 100 1000 2000 5000
-  #     do
-  #       withAbortEvaluation
-  #     done
-  #   done
-  # done
-
-  
   # Write Only Ratio
   ResetParameters
   for app in StreamLedger
   do
     # for tthread in 24
-    for isCyclic in 0 1
+    for isCyclic in 0
     do
       for deposit_ratio in 0 25 50 75 100
       do
@@ -167,21 +142,7 @@ function abort_mechanism_study() {
     done
   done
 
-  # ResetParameters
-  # for app in StreamLedger GrepSum
-  # do
-  #   # for tthread in 24
-  #   for isCyclic in 1
-  #   do
-  #     for abort_ratio in 0 1000 2000 5000 7000 9000
-  #     do
-  #       withAbortEvaluation
-  #     done
-  #   done
-  # done
-
-
-  # # Average num of OP in OC
+  # Average num of OP in OC
   ResetParameters
   abort_ratio=5000
   for app in StreamLedger GrepSum
@@ -198,19 +159,6 @@ function abort_mechanism_study() {
       done
     done
   done
-  # ResetParameters
-  # abort_ratio=5000
-  # for app in StreamLedger GrepSum
-  # do
-  #   # for tthread in 24
-  #   for isCyclic in 1
-  #   do
-  #     for checkpointInterval in 5120 10240 20480 40960
-  #     do
-  #       withAbortEvaluation
-  #     done
-  #   done
-  # done
 
   # Complexity of OP process
   ResetParameters
@@ -229,19 +177,6 @@ function abort_mechanism_study() {
       done
     done
   done
-  # ResetParameters
-  # abort_ratio=5000
-  # for app in StreamLedger GrepSum
-  # do
-  #   # for tthread in 24
-  #   for isCyclic in 0 1
-  #   do
-  #     for complexity in 10000 20000 40000 60000 80000 100000
-  #     do
-  #       withAbortEvaluation
-  #     done
-  #   done
-  # done
 
   # Write Only Ratio
   ResetParameters
@@ -260,20 +195,6 @@ function abort_mechanism_study() {
       done
     done
   done
-  # # Write Only Ratio
-  # ResetParameters
-  # abort_ratio=5000
-  # for app in StreamLedger
-  # do
-  #   # for tthread in 24
-  #   for isCyclic in 1
-  #   do
-  #     for deposit_ratio in 0 25 50 75 100
-  #     do
-  #       withAbortEvaluation
-  #     done
-  #   done
-  # done
 
   # Num of FD
   ResetParameters
@@ -292,19 +213,6 @@ function abort_mechanism_study() {
       done
     done
   done
-  # ResetParameters
-  # abort_ratio=5000
-  # for app in GrepSum
-  # do
-  #   # for tthread in 24
-  #   for isCyclic in 1
-  #   do
-  #     for NUM_ACCESS in 1 2 4 6 8 10
-  #     do
-  #       withAbortEvaluation
-  #     done
-  #   done
-  # done
 }
 
 function exploration_strategy_study() {
@@ -413,10 +321,10 @@ function exploration_strategy_study() {
 
 # Granularity selection
 granularity_study
-# Exploration Strategy
-exploration_strategy_study
-# Abort mechanism selection
-abort_mechanism_study
+## Exploration Strategy
+#exploration_strategy_study
+## Abort mechanism selection
+#abort_mechanism_study
 
 cd draw || exit
 
@@ -428,65 +336,59 @@ NUM_ACCESS=1 # where OP and OC has the similar performance under default setting
 # cd draw || exit
 for isCyclic in 0 1
 do
-  echo "python model_granularity_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  echo "python model/model_granularity_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
   python model_granularity_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 
-  echo "python model_granularity_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  echo "python model/model_granularity_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
   python model_granularity_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 
-  echo "python model_granularity_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  echo "python model/model_granularity_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
   python model_granularity_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  # echo "python model_granularity_key.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  # python model_granularity_key.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  # echo "python model_granularity_abort.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  # python model_granularity_abort.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 done
 
 
-ResetParameters
-abort_ratio=0
-# cd draw || exit
-for isCyclic in 1
-do
-  echo "python model_exploration_strategy_key.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_exploration_strategy_key.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  echo "python model_exploration_strategy_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_exploration_strategy_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  echo "python model_exploration_strategy_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_exploration_strategy_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  echo "python model_exploration_strategy_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_exploration_strategy_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  echo "python model_exploration_strategy_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_exploration_strategy_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  echo "python model_exploration_strategy_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_exploration_strategy_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-done
-
-
-ResetParameters
-abort_ratio=5000
-# cd draw || exit
-for isCyclic in 1
-do
-  echo "python model_abort_mechanism_abort.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_abort_mechanism_abort.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  echo "python model_abort_mechanism_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_abort_mechanism_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  echo "python model_abort_mechanism_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_abort_mechanism_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  echo "python model_abort_mechanism_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_abort_mechanism_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
-  echo "python model_abort_mechanism_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python model_abort_mechanism_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-done
+#ResetParameters
+#abort_ratio=0
+## cd draw || exit
+#for isCyclic in 1
+#do
+#  echo "python model_exploration_strategy_key.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_exploration_strategy_key.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#
+#  echo "python model_exploration_strategy_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_exploration_strategy_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#
+#  echo "python model_exploration_strategy_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_exploration_strategy_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#
+#  echo "python model_exploration_strategy_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_exploration_strategy_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#
+#  echo "python model_exploration_strategy_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_exploration_strategy_skewness.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#
+#  echo "python model_exploration_strategy_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_exploration_strategy_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#done
+#
+#
+#ResetParameters
+#abort_ratio=5000
+## cd draw || exit
+#for isCyclic in 1
+#do
+#  echo "python model_abort_mechanism_abort.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_abort_mechanism_abort.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#
+#  echo "python model_abort_mechanism_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_abort_mechanism_complexity.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#
+#  echo "python model_abort_mechanism_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_abort_mechanism_batch.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#
+#  echo "python model_abort_mechanism_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_abort_mechanism_access.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#
+#  echo "python model_abort_mechanism_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+#  python model_abort_mechanism_writeonly.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+#done
