@@ -103,14 +103,14 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
 
     for NUM_ACCESS in x_axis:
         events = tthread * batchInterval
-        op_gs_path = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        op_gs_path = getPathGS("OP_NS_A", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
     for NUM_ACCESS in x_axis:
         events = tthread * batchInterval
-        op_gs_path = getPathGS("GSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        op_gs_path = getPathGS("OG_NS_A", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[1].append(float(throughput))
@@ -177,6 +177,6 @@ if __name__ == '__main__':
     y_values = ReadFileGS(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
                           abort_ratio, isCyclic, complexity)
     DrawFigure(x_values, y_values, legend_labels,
-               'num_state_access', 'Tpt. (#inputs/ms)', 0,
+               'Num. of State Access Per Op.', 'Throughput (K/sec)', 0,
                400, 'granularity_comparison_access_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
                 .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity), legend)
