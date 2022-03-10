@@ -99,7 +99,7 @@ public class GSTPGDataGenerator extends DataGenerator {
     protected void generateTuple() {
         GSEvent event;
         event = randomEvent();
-        System.out.println(eventID);
+//        System.out.println(eventID);
         events.add(event);
     }
 

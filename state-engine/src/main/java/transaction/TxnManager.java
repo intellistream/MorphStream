@@ -1,14 +1,19 @@
 package transaction;
 
 import scheduler.impl.IScheduler;
-import scheduler.impl.layered.BFSScheduler;
-import scheduler.impl.layered.BFSSchedulerWithAbort;
-import scheduler.impl.layered.DFSScheduler;
-import scheduler.impl.layered.DFSSchedulerWithAbort;
-import scheduler.impl.nonlayered.GSScheduler;
-import scheduler.impl.nonlayered.GSSchedulerWithAbort;
-import scheduler.impl.nonlayered.TStreamScheduler;
-import scheduler.oplevel.impl.tpg.*;
+import scheduler.impl.og.structured.OGBFSScheduler;
+import scheduler.impl.og.structured.OGBFSAScheduler;
+import scheduler.impl.og.structured.OGDFSScheduler;
+import scheduler.impl.og.structured.OGDFSAScheduler;
+import scheduler.impl.og.nonstructured.OGNSScheduler;
+import scheduler.impl.og.nonstructured.OGNSAScheduler;
+import scheduler.impl.og.nonstructured.TStreamScheduler;
+import scheduler.impl.op.nonstructured.OPNSAScheduler;
+import scheduler.impl.op.nonstructured.OPNSScheduler;
+import scheduler.impl.op.structured.OPBFSAScheduler;
+import scheduler.impl.op.structured.OPBFSScheduler;
+import scheduler.impl.op.structured.OPDFSAScheduler;
+import scheduler.impl.op.structured.OPDFSScheduler;
 
 /**
  * Every thread has its own TxnManager.
@@ -18,44 +23,44 @@ public abstract class TxnManager implements ITxnManager {
 
     public static void CreateScheduler(String schedulerType, int threadCount, int numberOfStates, int app) {
         switch (schedulerType) {
-            case "BFS":
-                scheduler = new BFSScheduler(threadCount, numberOfStates, app);
+            case "OG_BFS": // Group of operation + Structured BFS exploration strategy + coarse-grained
+                scheduler = new OGBFSScheduler(threadCount, numberOfStates, app);
                 break;
-            case "BFSA":
-                scheduler = new BFSSchedulerWithAbort(threadCount, numberOfStates, app);
+            case "OG_BFS_A": // Group of operation + Structured BFS exploration strategy + fine-grained
+                scheduler = new OGBFSAScheduler(threadCount, numberOfStates, app);
                 break;
-            case "DFS": // TODO
-                scheduler = new DFSScheduler(threadCount, numberOfStates, app);
+            case "OG_DFS": // Group of operation + Structured DFS exploration strategy + coarse-grained
+                scheduler = new OGDFSScheduler(threadCount, numberOfStates, app);
                 break;
-            case "DFSA": // TODO
-                scheduler = new DFSSchedulerWithAbort(threadCount, numberOfStates, app);
+            case "OG_DFS_A": // Group of operation + Structured DFS exploration strategy + fine-grained
+                scheduler = new OGDFSAScheduler(threadCount, numberOfStates, app);
                 break;
-            case "GS":
-                scheduler = new GSScheduler(threadCount, numberOfStates, app);
+            case "OG_NS": // Group of operation + Non-structured exploration strategy + coarse-grained
+                scheduler = new OGNSScheduler(threadCount, numberOfStates, app);
                 break;
-            case "TStream": // original tstream also uses gs scheduler
-                scheduler = new TStreamScheduler(threadCount, numberOfStates, app);
+            case "OG_NS_A": // Group of operation + Non-structured exploration strategy + fine-grained
+                scheduler = new OGNSAScheduler(threadCount, numberOfStates, app);
                 break;
-            case "GSA":
-                scheduler = new GSSchedulerWithAbort(threadCount, numberOfStates, app);
+            case "OP_NS": // Single operation + Non-structured exploration strategy + coarse-grained
+                scheduler = new OPNSScheduler<>(threadCount, numberOfStates, app);
                 break;
-            case "OPGS":
-                scheduler = new OPGSScheduler<>(threadCount, numberOfStates, app);
+            case "OP_NS_A": // Single operation + Non-structured exploration strategy + fine-grained
+                scheduler = new OPNSAScheduler<>(threadCount, numberOfStates, app);
                 break;
-            case "OPGSA":
-                scheduler = new OPGSSchedulerWithAbort<>(threadCount, numberOfStates, app);
-                break;
-            case "OPBFS":
+            case "OP_BFS": // Single operation + Structured BFS exploration strategy + coarse-grained
                 scheduler = new OPBFSScheduler<>(threadCount, numberOfStates, app);
                 break;
-            case "OPBFSA":
-                scheduler = new OPBFSSchedulerWithAbort<>(threadCount, numberOfStates, app);
+            case "OP_BFS_A": // Single operation + Structured BFS exploration strategy + fine-grained
+                scheduler = new OPBFSAScheduler<>(threadCount, numberOfStates, app);
                 break;
-            case "OPDFS":
+            case "OP_DFS": // Single operation + Structured DFS exploration strategy + coarse-grained
                 scheduler = new OPDFSScheduler<>(threadCount, numberOfStates, app);
                 break;
-            case "OPDFSA":
-                scheduler = new OPDFSSchedulerWithAbort<>(threadCount, numberOfStates, app);
+            case "OP_DFS_A": // Single operation + Structured DFS exploration strategy + fine-grained
+                scheduler = new OPDFSAScheduler<>(threadCount, numberOfStates, app);
+                break;
+            case "TStream": // original TStream also uses Non-structured exploration strategy
+                scheduler = new TStreamScheduler(threadCount, numberOfStates, app);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);

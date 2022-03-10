@@ -59,23 +59,24 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 1;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
-    public int CCOption = CCOption_TStream;
+    public int CCOption = CCOption_MorphStream;
 //    public int CCOption = CCOption_SStore;
 //    public int CCOption = CCOption_LOCK;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "BFS";
-//        public String scheduler = "BFSA";
-//    public String scheduler = "DFS";
-//    public String scheduler = "DFSA";
-//    public String scheduler = "GS";
-//    public String scheduler = "GSA";
-//    public String scheduler = "OPGS";
-//    public String scheduler = "OPGSA";
-//    public String scheduler = "OPBFS";
-//    public String scheduler = "OPDFS";
-//    public String scheduler = "OPDFSA";
+    public String scheduler = "OG_BFS";
+    //        public String scheduler = "OG_BFS_A";
+//    public String scheduler = "OG_DFS";
+//    public String scheduler = "OG_DFS_A";
+//    public String scheduler = "OG_NS";
+//    public String scheduler = "OG_NS_A";
+//    public String scheduler = "OP_NS";
+//    public String scheduler = "OP_NS_A";
+//    public String scheduler = "OP_BFS";
+//    public String scheduler = "OP_BFS_A";
+//    public String scheduler = "OP_DFS";
+//    public String scheduler = "OP_DFS_A";
 //    public String scheduler = "TStream";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
