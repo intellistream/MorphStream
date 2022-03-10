@@ -97,7 +97,7 @@ public class MorphStreamRunner extends Runner {
                     case CCOption_LWM://LWM
                         content_type = LWM_CONTENT;
                         break;
-                    case CCOption_TStream:
+                    case CCOption_MorphStream:
                         content_type = T_STREAMCONTENT;//records the multi-version of table record.
                         break;
                     case CCOption_SStore://SStore

@@ -105,18 +105,18 @@ public interface ITxnManager {
     SchedulerContext getSchedulerContext();
 
     enum SCHEDULER_TYPE {
-        BFS,
-        BFSA,
-        DFS,
-        DFSA,
-        GS,
-        TStream, // original tstream
-        GSA,
-        OPGS,
-        OPGSA,
-        OPBFS,
-        OPBFSA,
-        OPDFS,
-        OPDFSA
-    }
+        OG_BFS,
+        OG_BFS_A,
+        OG_DFS,
+        OG_DFS_A,
+        OG_NS,
+        OG_NS_A,
+        OP_NS,
+        OP_NS_A,
+        OP_BFS,
+        OP_BFS_A,
+        OP_DFS,
+        OP_DFS_A,
+        TStream // original tstream
+        }
 }

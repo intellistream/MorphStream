@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.enable_debug;
 import static common.CONTROL.enable_log;
-import static common.IRunner.CCOption_TStream;
+import static common.IRunner.CCOption_MorphStream;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static profiler.Metrics.*;
 
@@ -191,7 +191,7 @@ public class MeasureTools {
             COMPUTE_PRE_TXN_TIME_ACC(thread_id);
     }
 
-    // OCScheduler Specific.
+    // OGScheduler Specific.
     public static void BEGIN_SCHEDULE_NEXT_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_SCHEDULE_NEXT_START(thread_id);
@@ -308,7 +308,7 @@ public class MeasureTools {
                         , Transaction_Record.index_ratio[threadId].getMean()
                         , Transaction_Record.useful_ratio[threadId].getMean()
                         , Transaction_Record.sync_ratio[threadId].getMean()
-                        , ccOption == CCOption_TStream ? 0 : Transaction_Record.lock_ratio[threadId].getMean()
+                        , ccOption == CCOption_MorphStream ? 0 : Transaction_Record.lock_ratio[threadId].getMean()
                 );
                 fileWriter.write(output + "\n");
                 if (enable_log) log.info(output);
@@ -324,7 +324,7 @@ public class MeasureTools {
             if (enable_debug) log.info("++++++ counter: " + counter);
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("SchedulerTimeBreakdownReport\n");
-            if (enable_log) log.info("===OCScheduler Time Breakdown Report===");
+            if (enable_log) log.info("===OGScheduler Time Breakdown Report===");
             fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time\n");
             if (enable_log)
                 log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time");
@@ -366,7 +366,7 @@ public class MeasureTools {
     public static void METRICS_REPORT(int ccOption, File file, int tthread, double throughput) {
         WriteThroughputReport(file, throughput);
         AverageTotalTimeBreakdownReport(file, tthread);
-        if (ccOption == CCOption_TStream) {//extra info
+        if (ccOption == CCOption_MorphStream) {//extra info
             SchedulerTimeBreakdownReport(file, tthread);
         } else {
             TransactionBreakdownRatioReport(ccOption, file, tthread);

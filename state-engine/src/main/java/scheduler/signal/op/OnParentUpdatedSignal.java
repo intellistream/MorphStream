@@ -1,13 +1,13 @@
 package scheduler.signal.op;
 
-import scheduler.struct.MetaTypes;
-import scheduler.struct.layered.bfs.BFSOperation;
+import scheduler.struct.op.MetaTypes;
+import scheduler.struct.op.Operation;
 
 public class OnParentUpdatedSignal extends OperationSignal {
     private final MetaTypes.DependencyType dependencyType;
     private final MetaTypes.OperationStateType parentState;
 
-    public OnParentUpdatedSignal(BFSOperation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
+    public OnParentUpdatedSignal(Operation operation, MetaTypes.DependencyType dependencyType, MetaTypes.OperationStateType parentState) {
         super(operation);
         this.dependencyType = dependencyType;
         this.parentState = parentState;
