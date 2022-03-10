@@ -1,8 +1,8 @@
 package scheduler.signal.oc;
 
 import scheduler.signal.NotificationSignal;
-import scheduler.struct.AbstractOperation;
-import scheduler.struct.OperationChain;
+import scheduler.struct.og.AbstractOperation;
+import scheduler.struct.og.OperationChain;
 
 public abstract class OperationChainSignal<OP extends AbstractOperation, OC extends OperationChain<OP>>
         implements NotificationSignal {

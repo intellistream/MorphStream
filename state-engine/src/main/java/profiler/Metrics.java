@@ -179,7 +179,7 @@ public class Metrics {
 //        Transaction_Record.sync_ratio[thread_id].addValue((TxnRuntime.Wait[thread_id]-TxnRuntime.Lock[thread_id]) / (double) Runtime.Txn[thread_id]);
     }
 
-    // OCScheduler
+    // OGScheduler
     public static void COMPUTE_SCHEDULE_NEXT_START(int thread_id) {
         Scheduler.NextStart[thread_id] = System.nanoTime();
     }
