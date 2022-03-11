@@ -141,7 +141,6 @@ public class GSBolt_ts extends GSBolt {
                     READ_POST();
                 }
                 END_POST_TIME_MEASURE_ACC(thread_Id);
-
                 //all tuples in the holder is finished.
                 microEvents.clear();
             }

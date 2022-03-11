@@ -61,4 +61,21 @@ public abstract class TxnManager implements ITxnManager {
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
         }
     }
+
+    /**
+     * Switch scheduler every punctuation
+     * When the workload changes and the scheduler is no longer applicable
+     * @return
+     */
+    public boolean SwitchScheduler(){
+        //TODO: implement the scheduler switching
+        return true;
+    }
+
+    /**
+     * Configure the bottom line for triggering scheduled switching in Collector
+     */
+    public static void setBottomLine(){
+
+    }
 }

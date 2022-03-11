@@ -67,6 +67,8 @@ public class ExecutionManager {
                 String schedulerType = conf.getString("scheduler");
                 int app = conf.getInt("app");
                 TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates, app);
+                //TODO: Configure the bottom line for triggering scheduler switching in Collector
+                TxnManager.setBottomLine();
             }
         }
         executorThread thread = null;
