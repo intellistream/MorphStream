@@ -9,10 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.Request;
 import scheduler.context.*;
-import scheduler.oplevel.context.OPGSTPGContext;
-import scheduler.oplevel.context.OPGSTPGContextWithAbort;
-import scheduler.oplevel.context.OPLayeredContext;
-import scheduler.oplevel.context.OPLayeredContextWithAbort;
+import scheduler.context.og.*;
+import scheduler.context.op.OPNSContext;
+import scheduler.context.op.OPNSAContext;
+import scheduler.context.op.OPSContext;
+import scheduler.context.op.OPSAContext;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
@@ -51,47 +52,47 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         SCHEDULER_TYPE scheduler_type = SCHEDULER_TYPE.valueOf(schedulerType);
         switch (scheduler_type) {
-            case BFS:
-                context = new BFSLayeredTPGContext(thisTaskId, thread_count);
+            case OG_BFS:
+                context = new OGBFSContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case BFSA:
-                context = new BFSLayeredTPGContextWithAbort(thisTaskId, thread_count);
+            case OG_BFS_A:
+                context = new OGBFSAContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case DFS:
-                context = new DFSLayeredTPGContext(thisTaskId, thread_count);
+            case OG_DFS:
+                context = new OGDFSContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case DFSA:
-                context = new DFSLayeredTPGContextWithAbort(thisTaskId, thread_count);
+            case OG_DFS_A:
+                context = new OGDFSAContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case GS:
+            case OG_NS:
             case TStream: // original tstream is the same as using GS scheduler..
-                context = new GSTPGContext(thisTaskId, thread_count);
+                context = new OGNSContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case GSA:
-                context = new GSTPGContextWithAbort(thisTaskId, thread_count);
+            case OG_NS_A:
+                context = new OGNSAContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case OPGS:
-                context = new OPGSTPGContext(thisTaskId);
+            case OP_NS:
+                context = new OPNSContext(thisTaskId);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case OPGSA:
-                context = new OPGSTPGContextWithAbort(thisTaskId);
+            case OP_NS_A:
+                context = new OPNSAContext(thisTaskId);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case OPBFS:
-            case OPDFS:
-                context = new OPLayeredContext(thisTaskId);
+            case OP_BFS:
+            case OP_DFS:
+                context = new OPSContext(thisTaskId);
                 scheduler.AddContext(thisTaskId, context);
                 break;
-            case OPBFSA:
-            case OPDFSA:
-                context = new OPLayeredContextWithAbort(thisTaskId);
+            case OP_BFS_A:
+            case OP_DFS_A:
+                context = new OPSAContext(thisTaskId);
                 scheduler.AddContext(thisTaskId, context);
                 break;
             default:

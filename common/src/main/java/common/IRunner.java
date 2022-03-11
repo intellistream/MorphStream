@@ -7,6 +7,6 @@ public interface IRunner {
     int CCOption_LOCK = 0;
     int CCOption_OrderLOCK = 1;
     int CCOption_LWM = 2;
-    int CCOption_TStream = 3;
+    int CCOption_MorphStream = 3;
     int CCOption_SStore = 4;
 }

@@ -342,7 +342,7 @@ public class ExecutionGraph extends RawExecutionGraph {
             //Each thread has its own Brisk.execution.runtime.tuple scheduler, which can be customize for each bolt.
             if (!executor.hasScheduler()) {
                 //use global scheduler instead.
-                // executor.setInputStreamController(new OCScheduler(global_tuple_scheduler));//every executor owns its own input scheduler.
+                // executor.setInputStreamController(new OGScheduler(global_tuple_scheduler));//every executor owns its own input scheduler.
                 if (global_tuple_scheduler instanceof SequentialScheduler) {
                     executor.setInputStreamController(new SequentialScheduler());
                 } else if (global_tuple_scheduler instanceof UniformedScheduler) {
