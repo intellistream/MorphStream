@@ -84,6 +84,16 @@ public abstract class Runner implements IRunner {
     public String idGenType = "uniform";
 
     /**
+     * Dynamic Scheduler
+     */
+    @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
+    public boolean isDynamic = false;
+    @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
+    public String schedulerPools = "OG_DFS,OP_DFS";
+    @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
+    public String defaultScheduler = "OG_DFS";
+
+    /**
      * Benchmarking Specific Parameters.
      */
     @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
@@ -205,6 +215,11 @@ public abstract class Runner implements IRunner {
         config.put("runtimeInSeconds", runtimeInSeconds);
         config.put("size_tuple", size_tuple);
         config.put("verbose", verbose);
+
+        /* Dynamic Workload Configuration*/
+        config.put("isDynamic",isDynamic);
+        config.put("schedulersPool",schedulerPools);
+        config.put("defaultScheduler",defaultScheduler);
         System.setProperty("my.log", metric_path);
     }
 }

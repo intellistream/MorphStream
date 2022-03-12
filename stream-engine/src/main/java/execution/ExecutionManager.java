@@ -9,6 +9,7 @@ import execution.runtime.boltThread;
 import execution.runtime.executorThread;
 import execution.runtime.spoutThread;
 import optimization.OptimizationManager;
+import org.apache.zookeeper.txn.Txn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.TxnManager;
@@ -66,9 +67,14 @@ public class ExecutionManager {
                 int numberOfStates = conf.getInt("NUM_ITEMS");
                 String schedulerType = conf.getString("scheduler");
                 int app = conf.getInt("app");
-                TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates, app);
-                //TODO: Configure the bottom line for triggering scheduler switching in Collector
-                TxnManager.setBottomLine();
+                String schedulers=conf.getString("schedulersPool");
+                if(conf.getBoolean("isDynamic")){
+                    //TODO: Configure the bottom line for triggering scheduler switching in Collector
+                    TxnManager.initSchedulerPool(conf.getString("defaultScheduler"),schedulers, totalThread,numberOfStates,app);
+                    TxnManager.setBottomLine();
+                }else{
+                    TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates, app);
+                }
             }
         }
         executorThread thread = null;

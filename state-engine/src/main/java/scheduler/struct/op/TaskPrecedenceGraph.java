@@ -70,11 +70,14 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         this.app = app;
         //create holder.
         operationChains = new ConcurrentHashMap<>();
-        if (app == 0) {
+        if (app == 0) {//GS
             operationChains.put("MicroTable", new TableOCs(totalThreads));
-        } else if (app == 1) {
+        } else if (app == 1) {//SL
             operationChains.put("accounts", new TableOCs(totalThreads));
             operationChains.put("bookEntries", new TableOCs(totalThreads));
+        } else if(app==2){//TP
+            operationChains.put("segment_speed",new TableOCs(totalThreads));
+            operationChains.put("segment_cnt",new TableOCs(totalThreads));
         }
     }
 
@@ -106,6 +109,13 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
                 ocs.add(accOC);
                 ocs.add(beOC);
+            } else if(app==2){
+                OperationChain speedOC=context.createTask("segment_speed",_key);
+                OperationChain cntOC=context.createTask("segment_cnt",_key);
+                operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, speedOC);
+                operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, cntOC);
+                ocs.add(speedOC);
+                ocs.add(cntOC);
             }
         }
         threadToOCs.put(context.thisThreadId, ocs);

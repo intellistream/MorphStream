@@ -15,11 +15,15 @@ import scheduler.impl.op.structured.OPBFSScheduler;
 import scheduler.impl.op.structured.OPDFSAScheduler;
 import scheduler.impl.op.structured.OPDFSScheduler;
 
+import java.util.HashMap;
+import java.util.List;
+
 /**
  * Every thread has its own TxnManager.
  */
 public abstract class TxnManager implements ITxnManager {
     protected static IScheduler scheduler;
+    protected static HashMap<String,IScheduler> schedulerPool;
 
     public static void CreateScheduler(String schedulerType, int threadCount, int numberOfStates, int app) {
         switch (schedulerType) {
@@ -78,9 +82,63 @@ public abstract class TxnManager implements ITxnManager {
     }
 
     /**
-     * Configure the bottom line for triggering scheduled switching in Collector
+     * Configure the bottom line for triggering scheduler switching in Collector
      */
     public static void setBottomLine(){
 
     }
+
+    /**
+     * Configure the scheduler pool
+     */
+    public static void initSchedulerPool(String defaultScheduler,String schedulerPool,int threadCount, int numberOfStates, int app){
+        TxnManager.schedulerPool=new HashMap<>();
+        String[] scheduler =schedulerPool.split(",");
+        for(int i=0;i<scheduler.length;i++ ){
+            TxnManager.schedulerPool.put(scheduler[i],CreateSchedulerByType(schedulerPool,threadCount,numberOfStates,app));
+        }
+        TxnManager.scheduler=TxnManager.schedulerPool.get(defaultScheduler);
+    }
+
+    /**
+     * create Scheduler by flag
+     * @param schedulerType
+     * @param threadCount
+     * @param numberOfStates
+     * @param app
+     * @return
+     */
+    public static IScheduler CreateSchedulerByType(String schedulerType, int threadCount, int numberOfStates, int app) {
+        switch (schedulerType) {
+            case "OG_BFS": // Group of operation + Structured BFS exploration strategy + coarse-grained
+                return new OGBFSScheduler(threadCount, numberOfStates, app);
+            case "OG_BFS_A": // Group of operation + Structured BFS exploration strategy + fine-grained
+                return new OGBFSAScheduler(threadCount, numberOfStates, app);
+            case "OG_DFS": // Group of operation + Structured DFS exploration strategy + coarse-grained
+                return new OGDFSScheduler(threadCount, numberOfStates, app);
+            case "OG_DFS_A": // Group of operation + Structured DFS exploration strategy + fine-grained
+                return new OGDFSAScheduler(threadCount, numberOfStates, app);
+            case "OG_NS": // Group of operation + Non-structured exploration strategy + coarse-grained
+                return new OGNSScheduler(threadCount, numberOfStates, app);
+            case "OG_NS_A": // Group of operation + Non-structured exploration strategy + fine-grained
+                return new OGNSAScheduler(threadCount, numberOfStates, app);
+            case "OP_NS": // Single operation + Non-structured exploration strategy + coarse-grained
+                return new OPNSScheduler<>(threadCount, numberOfStates, app);
+            case "OP_NS_A": // Single operation + Non-structured exploration strategy + fine-grained
+                return new OPNSAScheduler<>(threadCount, numberOfStates, app);
+            case "OP_BFS": // Single operation + Structured BFS exploration strategy + coarse-grained
+                return new OPBFSScheduler<>(threadCount, numberOfStates, app);
+            case "OP_BFS_A": // Single operation + Structured BFS exploration strategy + fine-grained
+                return new OPBFSAScheduler<>(threadCount, numberOfStates, app);
+            case "OP_DFS": // Single operation + Structured DFS exploration strategy + coarse-grained
+                return new OPDFSScheduler<>(threadCount, numberOfStates, app);
+            case "OP_DFS_A": // Single operation + Structured DFS exploration strategy + fine-grained
+                return new OPDFSAScheduler<>(threadCount, numberOfStates, app);
+            case "TStream": // original TStream also uses Non-structured exploration strategy
+                return new TStreamScheduler(threadCount, numberOfStates, app);
+            default:
+                throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
+        }
+    }
+
 }
