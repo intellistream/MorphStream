@@ -76,16 +76,16 @@ public class OGSContext extends OGSchedulerContext {
                 continue;
             }
             this.totalOsToSchedule += oc.getOperations().size();
-            oc.updateDependencyLevel();
+            ((OperationChain) oc).updateDependencyLevel();
             if (resolvedOC.contains(oc)) {
                 continue;
             }
-            dependencyLevel = oc.getDependencyLevel();
+            dependencyLevel = ((OperationChain) oc).getDependencyLevel();
             if (localMaxDLevel < dependencyLevel)
                 localMaxDLevel = dependencyLevel;
             if (!allocatedLayeredOCBucket.containsKey(dependencyLevel))
                 allocatedLayeredOCBucket.put(dependencyLevel, new ArrayList<>());
-            allocatedLayeredOCBucket.get(dependencyLevel).add(oc);
+            allocatedLayeredOCBucket.get(dependencyLevel).add((OperationChain) oc);
         }
 //        if (enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
         this.maxLevel = localMaxDLevel;
@@ -95,7 +95,7 @@ public class OGSContext extends OGSchedulerContext {
         for (OperationChain oc : resolvedOC) {
             if (!allocatedLayeredOCBucket.containsKey(maxLevel))
                 allocatedLayeredOCBucket.put(maxLevel, new ArrayList<>());
-            allocatedLayeredOCBucket.get(maxLevel).add(oc);
+            allocatedLayeredOCBucket.get(maxLevel).add((OperationChain) oc);
         }
         this.maxLevel = maxLevel;
     }
