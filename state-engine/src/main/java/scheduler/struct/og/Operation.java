@@ -1,6 +1,8 @@
 package scheduler.struct.og;
 
 import content.common.CommonMetaTypes;
+import scheduler.context.og.OGSchedulerContext;
+import scheduler.struct.AbstractOperation;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
@@ -8,65 +10,55 @@ import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
 
+import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * TODO: clean ``state" and ``reference".
  */
-public abstract class AbstractOperation implements Comparable<AbstractOperation>  {
+public class Operation extends AbstractOperation implements Comparable<Operation>  {
 
     //required by READ_WRITE_and Condition.
-    public final Function function;
-    public final String table_name;
     public final String pKey;
-    public final TxnContext txn_context;
-    public final CommonMetaTypes.AccessType accessType;
-    public final TableRecord d_record;
-    public final long bid;
-    public volatile SchemaRecordRef record_ref;//required by read-only: the placeholder of the reading d_record.
-    //only update corresponding column.
+    public final OGSchedulerContext context;
+    protected final Queue<Operation> ld_descendant_operations;
     //required by READ_WRITE.
-    public volatile TableRecord s_record;//only if it is different from d_record.
-    public volatile TableRecord[] condition_records;
 //    public String[] condition_sourceTable = null;
 //    public String[] condition_source = null;
-    public Condition condition;
-    public int[] success;
     private OperationStateType operationState;
     public boolean isFailed = false; // whether the operation is failed, this is used to detect transaction abort
 
-//    public volatile AbstractOperation[] fdParentOps; // parent ops that accessing conditioned records and has smaller
-//    public volatile List<AbstractOperation> fd_parents; // parent ops that accessing conditioned records and has smaller
+//    public volatile Operation[] fdParentOps; // parent ops that accessing conditioned records and has smaller
+//    public volatile List<Operation> fd_parents; // parent ops that accessing conditioned records and has smaller
 //    public HashMap<TableRecord, Integer> condition_source_to_index;
 
-    public final Queue<AbstractOperation> fd_parents; // the functional dependencies ops to be executed in advance
+    public final Queue<Operation> fd_parents; // the functional dependencies ops to be executed in advance
 
-    public AbstractOperation(String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
-                             TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid) {
+    private int txnOpId = 0;
+    // logical dependencies are to be stored for the purpose of abort handling
+    private Operation ld_head_operation = null; // the logical dependencies ops to be executed after this op.
+    private OperationChain oc; // used for dependency resolved notification under greedy smart
+
+
+    public <Context extends OGSchedulerContext> Operation(String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
+                     TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid, Context context) {
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, s_record, d_record, bid);
+
         this.pKey = pKey;
-        this.function = function;
-        this.table_name = table_name;
-        this.record_ref = record_ref;//this holds events' record_ref.
-        this.condition_records = condition_records;
-        this.condition = condition;
-        this.success = success;
-        this.txn_context = txn_context;
-        this.accessType = accessType;
-        this.s_record = s_record;
-        this.d_record = d_record;
-        this.bid = bid;
-
 
         // finctional dependencies, this should be concurrent because cross thread access
         fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
 
         operationState = OperationStateType.BLOCKED;
+        this.context = context;
+        ld_descendant_operations = new ArrayDeque<>();
     }
 
     @Override
     public String toString() {
-        return table_name + " " + d_record.record_.GetPrimaryKey() + " " + bid + " " + operationState;
+        return bid + "|" + txnOpId + "|" + String.format("%-15s", this.getOperationState());
     }
 
     /**
@@ -77,7 +69,7 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
      * @return
      */
     @Override
-    public int compareTo(AbstractOperation operation) {
+    public int compareTo(Operation operation) {
         if (this.bid == (operation.bid)) {
             if (!this.table_name.equals(operation.table_name)) {
                 if (this.table_name.equals("accounts"))
@@ -96,7 +88,7 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
 //    }
 
 
-    public void addFDParent(AbstractOperation parent) {
+    public void addFDParent(Operation parent) {
 //        assert condition_source_to_index.containsKey(pKey);
         fd_parents.add(parent);
     }
@@ -107,5 +99,40 @@ public abstract class AbstractOperation implements Comparable<AbstractOperation>
 
     public OperationStateType getOperationState() {
         return operationState;
+    }
+
+    public void setTxnOpId(int op_id) {
+        this.txnOpId = op_id;
+    }
+
+    public int getTxnOpId() {
+        return txnOpId;
+    }
+
+    public OperationChain getOC() {
+        return oc;
+    }
+
+    public void setOC(OperationChain operationChain) {
+        this.oc = operationChain;
+    }
+
+    /*********************************Dependencies setup****************************************/
+
+    public void addHeader(Operation header) {
+        ld_head_operation = header;
+    }
+
+    public void addDescendant(Operation descendant) {
+//        oc.addDescendant(this, descendant);
+        ld_descendant_operations.add(descendant);
+    }
+
+    public Collection<Operation> getDescendants() {
+        return ld_descendant_operations;
+    }
+
+    public Operation getHeader() {
+        return ld_head_operation;
     }
 }

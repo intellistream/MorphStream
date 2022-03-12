@@ -1,18 +1,17 @@
 package scheduler.signal.oc;
 
-import scheduler.struct.og.AbstractOperation;
+import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 
-public class OnNeedAbortHandlingSignal<OP extends AbstractOperation, OC extends OperationChain<OP>>
-        extends OperationChainSignal<OP, OC> {
-    private final OP abortedOp;
+public class OnNeedAbortHandlingSignal extends OperationChainSignal {
+    private final Operation abortedOp;
 
-    public OnNeedAbortHandlingSignal(OC targetOperationChain, OP abortedOp) {
+    public OnNeedAbortHandlingSignal(OperationChain targetOperationChain, Operation abortedOp) {
         super(targetOperationChain);
         this.abortedOp = abortedOp;
     }
 
-    public OP getOperation() {
+    public Operation getOperation() {
         return abortedOp;
     }
 }
