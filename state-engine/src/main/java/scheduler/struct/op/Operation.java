@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import scheduler.context.op.OPSContext;
 import scheduler.context.op.OPSchedulerContext;
 import scheduler.signal.op.OnParentUpdatedSignal;
+import scheduler.struct.AbstractOperation;
 import scheduler.struct.op.MetaTypes.DependencyType;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
@@ -43,7 +44,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private OperationStateType operationState;
     // operation id under a transaction.
     // an operation id to indicate how many operations in front of this operation in the same transaction.
-    public int txn_op_id = 0;
+    public int txnOpId = 0;
     public boolean isFailed;
     public String name;
 
@@ -56,37 +57,11 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public String[] condition_sourceTable = null;
     public String[] condition_source = null;
 
-    public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
-        this(pKey, null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
-    }
-
     /****************************Defined by MYC*************************************/
-
-    public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
-                     Function function, Condition condition, int[] success) {
-        this(pKey, null, table_name, txn_context, bid, accessType, record, null, function, condition, null, success);
-    }
-
-    public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
-                     SchemaRecordRef record_ref, Function function, Condition condition, int[] success) {
-        this(pKey, null, table_name, txn_context, bid, accessType, record, record_ref, function, condition, null, success);
-    }
-
 
     public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
         this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
-    }
-
-    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record) {
-        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
-    }
-
-    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record,
-                                                  SchemaRecordRef record_ref) {
-        this(pKey, context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
 
     public <Context extends OPSchedulerContext> Operation(
@@ -145,15 +120,15 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     @Override
     public String toString() {
-        return bid + "|" + txn_op_id + "|" + String.format("%-15s", this.getOperationState());
+        return bid + "|" + txnOpId + "|" + String.format("%-15s", this.getOperationState());
     }
 
     public void setTxnOpId(int op_id) {
-        this.txn_op_id = op_id;
+        this.txnOpId = op_id;
     }
 
     public int getTxnOpId() {
-        return txn_op_id;
+        return txnOpId;
     }
 
     public boolean isRoot() {
