@@ -2,20 +2,15 @@ package scheduler.impl.og.nonstructured;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
-import scheduler.Request;
 import scheduler.context.og.OGNSContext;
+import scheduler.struct.og.Operation;
+import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
-import scheduler.struct.og.nonstructured.NSOperation;
-import scheduler.struct.og.nonstructured.NSOperationChain;
 import utils.SOURCE_CONTROL;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static common.CONTROL.enable_log;
 
-public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext, NSOperation, NSOperationChain> {
+public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
     private static final Logger log = LoggerFactory.getLogger(OGNSScheduler.class);
 
     public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
@@ -70,12 +65,12 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext, NSOperatio
     }
 
     @Override
-    protected void NOTIFY(NSOperationChain task, OGNSContext context) {
+    protected void NOTIFY(OperationChain task, OGNSContext context) {
         context.partitionStateManager.onOcExecuted(task);
     }
 
     @Override
-    protected void checkTransactionAbort(NSOperation operation, NSOperationChain operationChain) {
+    protected void checkTransactionAbort(Operation operation, OperationChain operationChain) {
         // in coarse-grained algorithms, we will not handle transaction abort gracefully, just update the state of the operation
         operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
         // save the abort information and redo the batch.
@@ -83,53 +78,19 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext, NSOperatio
     }
 
 
-    @Override
-    public void TxnSubmitFinished(OGNSContext context) {
-        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-        // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
-        List<NSOperation> operationGraph = new ArrayList<>();
-        for (Request request : context.requests) {
-            constructOp(operationGraph, request, context);
-        }
-        // set logical dependencies among all operation in the same transaction
-        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
-    }
-
-    private void constructOp(List<NSOperation> operationGraph, Request request, OGNSContext context) {
-        long bid = request.txn_context.getBID();
-        NSOperation set_op;
-        OGNSContext targetContext = getTargetContext(request.src_key);
-        switch (request.accessType) {
-            case READ_WRITE_COND: // they can use the same method for processing
-            case READ_WRITE:
-                set_op = new NSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
-                        request.d_record, request.function, request.condition, request.condition_records, request.success);
-                break;
-            case READ_WRITE_COND_READ:
-            case READ_WRITE_COND_READN:
-                set_op = new NSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
-                        request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
-                break;
-            default:
-                throw new RuntimeException("Unexpected operation");
-        }
-        operationGraph.add(set_op);
-        tpg.setupOperationTDFD(set_op, request, targetContext);
-    }
-
     /**
      * Register an operation to queue.
      */
     public class ExecutableTaskListener {
-        public void onOCExecutable(NSOperationChain operationChain) {
+        public void onOCExecutable(OperationChain operationChain) {
             DISTRIBUTE(operationChain, (OGNSContext) operationChain.context);//TODO: make it clear..
         }
 
-        public void onOCFinalized(NSOperationChain operationChain) {
+        public void onOCFinalized(OperationChain operationChain) {
             operationChain.context.scheduledOPs += operationChain.getOperations().size();
         }
 
-        public void onOCRollbacked(NSOperationChain operationChain) {
+        public void onOCRollbacked(OperationChain operationChain) {
             operationChain.context.scheduledOPs -= operationChain.getOperations().size();
         }
     }
