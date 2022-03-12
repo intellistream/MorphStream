@@ -7,10 +7,10 @@ import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.og.OGSchedulerContext;
 import scheduler.impl.IScheduler;
-import scheduler.struct.op.MetaTypes;
-import scheduler.struct.og.AbstractOperation;
+import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.og.TaskPrecedenceGraph;
+import scheduler.struct.op.MetaTypes;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -21,15 +21,16 @@ import transaction.impl.ordered.MyList;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static content.common.CommonMetaTypes.AccessType.*;
 
-public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingUnit>, ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>>
+public abstract class OGScheduler<Context extends OGSchedulerContext>
         implements IScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OGScheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
-    public final TaskPrecedenceGraph<Context, SchedulingUnit, ExecutionUnit> tpg; // TPG to be maintained in this global instance.
+    public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
 
     protected OGScheduler(int totalThreads, int NUM_ITEMS, int app) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
@@ -87,7 +88,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
      * @param previous_mark_ID
      * @param clean
      */
-    protected void Transfer_Fun(ExecutionUnit operation, long previous_mark_ID, boolean clean) {
+    protected void Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
 
@@ -126,7 +127,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
      * @param mark_ID
      * @param clean
      */
-    protected void Depo_Fun(ExecutionUnit operation, long mark_ID, boolean clean) {
+    protected void Depo_Fun(Operation operation, long mark_ID, boolean clean) {
         SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
         List<DataBox> values = srcRecord.getValues();
         AppConfig.randomDelay();
@@ -137,7 +138,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
-    protected void GrepSum_Fun(ExecutionUnit operation, long previous_mark_ID, boolean clean) {
+    protected void GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         int keysLength = operation.condition_records.length;
         SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
 
@@ -178,7 +179,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
      * @param mark_ID
      * @param clean
      */
-    public void execute(ExecutionUnit operation, long mark_ID, boolean clean) {
+    public void execute(Operation operation, long mark_ID, boolean clean) {
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             return; // return if the operation is already aborted
         }
@@ -218,7 +219,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
     public void PROCESS(Context context, long mark_ID) {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-        SchedulingUnit next = next(context);
+        OperationChain next = next(context);
         MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
 
         if (next != null) {
@@ -251,13 +252,13 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
      * @param context
      * @return
      */
-    protected SchedulingUnit next(Context context) {
+    protected OperationChain next(Context context) {
         throw new UnsupportedOperationException();
     }
 
-    public boolean executeWithBusyWait(Context context, SchedulingUnit operationChain, long mark_ID) {
-        MyList<ExecutionUnit> operation_chain_list = operationChain.getOperations();
-        for (ExecutionUnit operation : operation_chain_list) {
+    public boolean executeWithBusyWait(Context context, OperationChain operationChain, long mark_ID) {
+        MyList<Operation> operation_chain_list = operationChain.getOperations();
+        for (Operation operation : operation_chain_list) {
             if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
                     || operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)
                     || operation.isFailed) continue;
@@ -276,19 +277,19 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
         return true;
     }
 
-    protected void checkTransactionAbort(ExecutionUnit operation, SchedulingUnit operationChain) {
+    protected void checkTransactionAbort(Operation operation, OperationChain operationChain) {
         // in coarse-grained algorithms, we will not handle transaction abort gracefully, just update the state of the operation
         operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
         // save the abort information and redo the batch.
     }
 
-    protected SchedulingUnit nextFromBusyWaitQueue(Context context) {
+    protected OperationChain nextFromBusyWaitQueue(Context context) {
         return context.busyWaitQueue.poll();
     }
 
-    protected abstract void DISTRIBUTE(SchedulingUnit task, Context context);
+    protected abstract void DISTRIBUTE(OperationChain task, Context context);
 
-    protected abstract void NOTIFY(SchedulingUnit task, Context context);
+    protected abstract void NOTIFY(OperationChain task, Context context);
 
     @Override
     public boolean FINISHED(Context context) {
@@ -321,7 +322,48 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
     }
 
     @Override
-    public abstract void TxnSubmitFinished(Context context);
+    public void TxnSubmitFinished(Context context) {
+        MeasureTools.BEGIN_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+        // the data structure to store all operations created from the txn, store them in order, which indicates the logical dependency
+        List<Operation> operationGraph = new ArrayList<>();
+        int txnOpId = 0;
+        Operation headerOperation = null;
+        Operation set_op;
+        for (Request request : context.requests) {
+            set_op = constructOp(operationGraph, request);
+            if (txnOpId == 0)
+                headerOperation = set_op;
+            // addOperation an operation id for the operation for the purpose of temporal dependency construction
+            set_op.setTxnOpId(txnOpId++);
+            set_op.addHeader(headerOperation);
+            headerOperation.addDescendant(set_op);
+        }
+        // set logical dependencies among all operation in the same transaction
+        MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
+    }
+
+    private Operation constructOp(List<Operation> operationGraph, Request request) {
+        long bid = request.txn_context.getBID();
+        Operation set_op;
+        Context targetContext = getTargetContext(request.src_key);
+        switch (request.accessType) {
+            case READ_WRITE_COND: // they can use the same method for processing
+            case READ_WRITE:
+                set_op = new Operation(request.src_key, request.function, request.table_name, null, request.condition_records, request.condition,
+                        request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
+                break;
+            case READ_WRITE_COND_READ:
+            case READ_WRITE_COND_READN:
+                set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, request.condition_records, request.condition,
+                        request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
+                break;
+            default:
+                throw new RuntimeException("Unexpected operation");
+        }
+        operationGraph.add(set_op);
+        tpg.setupOperationTDFD(set_op, request, targetContext);
+        return set_op;
+    }
 
     @Override
     public void AddContext(int threadId, Context context) {
@@ -329,9 +371,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
         tpg.setOCs(context);
     }
 
-    protected boolean isConflicted(Context context, SchedulingUnit operationChain, ExecutionUnit operation) {
+    protected boolean isConflicted(Context context, OperationChain operationChain, Operation operation) {
         if (operation.fd_parents != null) {
-            for (AbstractOperation conditioned_operation : operation.fd_parents) {
+            for (Operation conditioned_operation : operation.fd_parents) {
                 if (conditioned_operation != null) {
                     if (!(conditioned_operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
                             || conditioned_operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)

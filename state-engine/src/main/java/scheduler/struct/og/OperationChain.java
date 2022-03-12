@@ -1,5 +1,7 @@
 package scheduler.struct.og;
 
+import scheduler.context.og.AbstractOGNSContext;
+import scheduler.context.og.OGSchedulerContext;
 import transaction.impl.ordered.MyList;
 import utils.lib.ConcurrentHashMap;
 
@@ -11,21 +13,29 @@ import java.util.concurrent.atomic.AtomicInteger;
  * We still call it OperationChain in TPG but with different representation
  * The OperationChain only tries to maintain a data structure for the ease of temporal dependencies construction.
  */
-public class OperationChain<ExecutionUnit extends AbstractOperation> implements Comparable<OperationChain<ExecutionUnit>> {
+public class OperationChain implements Comparable<OperationChain> {
     public final String tableName;
     public final String primaryKey;
     public final long bid;
-    protected final MyList<ExecutionUnit> operations;
+    protected final MyList<Operation> operations;
     public final AtomicInteger ocParentsCount;
     // OperationChain -> ChildOp that depend on the parent OC in cur OC
-    public final ConcurrentHashMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocParents;
-    public final ConcurrentHashMap<OperationChain<ExecutionUnit>, ExecutionUnit> ocChildren;
+    public final ConcurrentHashMap<OperationChain, Operation> ocParents;
+    public final ConcurrentHashMap<OperationChain, Operation> ocChildren;
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
     public boolean isExecuted = false;
 
 //    protected TaskPrecedenceGraph tpg;
 
-//    private final HashSet<OperationChain<ExecutionUnit>> scanedOCs = new HashSet<>();
+    public OGSchedulerContext context = null;
+    public boolean needAbortHandling = false; // The abort handling in GS should be residing in each operation chain
+    public Queue<Operation> failedOperations = new ArrayDeque<>();
+
+    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
+    private int dependencyLevel = -1;
+
+
+//    private final HashSet<OperationChain> scanedOCs = new HashSet<>();
 
     public OperationChain(String tableName, String primaryKey, long bid) {
         this.tableName = tableName;
@@ -41,18 +51,19 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         return tableName;
     }
 
-    public void addOperation(ExecutionUnit op) {
+    public void addOperation(Operation op) {
         operations.add(op);
+        op.setOC(this); // set OC for op to enable txn abort.
     }
 
-    public void addPotentialFDChildren(OperationChain<ExecutionUnit> potentialChildren, ExecutionUnit op) {
+    public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
         potentialChldrenInfo.add(new PotentialChildrenInfo(potentialChildren, op));
     }
 
-    public void addParent(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC) {
-        Iterator<ExecutionUnit> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
+    public void addParent(Operation targetOp, OperationChain parentOC) {
+        Iterator<Operation> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
         while (iterator.hasNext()) {
-            ExecutionUnit parentOp = iterator.next();
+            Operation parentOp = iterator.next();
             if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
                 // setup dependencies on op level first.
                 targetOp.addFDParent(parentOp);
@@ -62,7 +73,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         }
     }
 
-    protected void setupDependency(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
+    protected void setupDependency(Operation targetOp, OperationChain parentOC, Operation parentOp) {
 //        if (circularDetection(targetOp, parentOC, parentOp)) return;
         assert parentOC.getOperations().size() > 0;
         if (this.ocParents.putIfAbsent(parentOC, parentOp) == null) {
@@ -75,21 +86,21 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 //        assert this.ocParents.size() == this.ocParentsCount.get();
     }
 
-//    private boolean circularDetection(ExecutionUnit targetOp, OperationChain<ExecutionUnit> parentOC, ExecutionUnit parentOp) {
+//    private boolean circularDetection(Operation targetOp, OperationChain parentOC, Operation parentOp) {
 //        boolean isCircular;
 //        // loop to find the circular
 //        isCircular = isCircular(parentOC);
 //        if (isCircular) { // if circular detected, try to solve circular
 //            // TODO: create a new OC and put all ops after circular OP to the new OC.
-//            OperationChain<ExecutionUnit> newOC = tpg.getNewOC(targetOp.table_name, targetOp.d_record.record_.GetPrimaryKey(), targetOp.bid);
-//            List<ExecutionUnit> opsToMigrate = new ArrayList<>();
-//            for (ExecutionUnit op : operations) {
+//            OperationChain newOC = tpg.getNewOC(targetOp.table_name, targetOp.d_record.record_.GetPrimaryKey(), targetOp.bid);
+//            List<Operation> opsToMigrate = new ArrayList<>();
+//            for (Operation op : operations) {
 //                if (op.bid >= targetOp.bid) {
 //                    opsToMigrate.add(op);
 //                }
 //            }
 //            opsToMigrate.forEach(operations::remove);
-//            for (ExecutionUnit op : opsToMigrate) {
+//            for (Operation op : opsToMigrate) {
 //                newOC.addOperation(op);
 //            }
 //            newOC.potentialChldrenInfo.addAll(this.potentialChldrenInfo); // move the potentialChildrenInfo to future
@@ -100,21 +111,21 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 //        return false;
 //    }
 
-    public boolean isCircular(OperationChain<ExecutionUnit> parentOC) {
+    public boolean isCircular(OperationChain parentOC) {
         boolean isCircular = false;
         if (parentOC.ocParents.containsKey(this)) {
             isCircular = true;
         }
 //        else {
 //            scanedOCs.clear();
-//            Collection<OperationChain<ExecutionUnit>> selectedOCs = parentOC.ocParents.keySet();
+//            Collection<OperationChain> selectedOCs = parentOC.ocParents.keySet();
 //            isCircular = scanParentOCs(selectedOCs);
 //        }
         return isCircular;
     }
 
-    public boolean isCircularAffected(HashSet<OperationChain<ExecutionUnit>> scannedOCs, HashSet<OperationChain<ExecutionUnit>> circularOCs) {
-        for (OperationChain<ExecutionUnit> parent : ocParents.keySet()) {
+    public boolean isCircularAffected(HashSet<OperationChain> scannedOCs, HashSet<OperationChain> circularOCs) {
+        for (OperationChain parent : ocParents.keySet()) {
             if (!scannedOCs.contains(parent)) { // if the oc is not traversed before, no circular.
                 scannedOCs.add(parent);
                 if (parent.isCircularAffected(scannedOCs, circularOCs)) {
@@ -127,9 +138,9 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         return false;
     }
 
-    public void dfs(OperationChain<ExecutionUnit> oc, HashSet<OperationChain<ExecutionUnit>> affectedOCs) {
+    public void dfs(OperationChain oc, HashSet<OperationChain> affectedOCs) {
         affectedOCs.add(oc);
-        for (OperationChain<ExecutionUnit> childOC : oc.ocChildren.keySet()) {
+        for (OperationChain childOC : oc.ocChildren.keySet()) {
             if (!affectedOCs.contains(childOC)) {
                 dfs(childOC, affectedOCs);
             }
@@ -137,14 +148,14 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
 
-//    private void relaxDependencies(OperationChain<ExecutionUnit> oc, ArrayDeque<OperationChain<ExecutionUnit>> resolvedOC) {
+//    private void relaxDependencies(OperationChain oc, ArrayDeque<OperationChain> resolvedOC) {
 //        // remove all parents, update children set of its parents
-////        for (OperationChain<ExecutionUnit> parent : oc.ocParents.keySet()) {
+////        for (OperationChain parent : oc.ocParents.keySet()) {
 ////            parent.ocChildren.remove(oc);
 ////        }
 ////        oc.ocParentsCount.set(0);
 ////        oc.ocParents.clear();
-//        for (OperationChain<ExecutionUnit> child : oc.ocChildren.keySet()) {
+//        for (OperationChain child : oc.ocChildren.keySet()) {
 //            if (!resolvedOC.contains(child)) {
 //                resolvedOC.add(child);
 //                relaxDependencies(child, resolvedOC);
@@ -153,8 +164,8 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 //    }
 
 
-//    public boolean scanParentOCs(Collection<OperationChain<ExecutionUnit>> selectedOCs) {
-//        for (OperationChain<ExecutionUnit> oc : selectedOCs) {
+//    public boolean scanParentOCs(Collection<OperationChain> selectedOCs) {
+//        for (OperationChain oc : selectedOCs) {
 //            if (!oc.ocParents.isEmpty() && !scanedOCs.contains(oc)) {
 //                scanedOCs.add(oc);
 //                if (oc.ocParents.containsKey(this)) {
@@ -168,11 +179,11 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 //        return false;
 //    }
 
-//    public boolean checkConnectivity(Collection<OperationChain<ExecutionUnit>> selectedOCs) {
+//    public boolean checkConnectivity(Collection<OperationChain> selectedOCs) {
 //        if (selectedOCs.isEmpty()) {
 //            return true;
 //        }
-//        for (OperationChain<ExecutionUnit> oc : selectedOCs) {
+//        for (OperationChain oc : selectedOCs) {
 //            if (oc.ocParents.isEmpty()) {
 //                return true;
 //            } else {
@@ -182,7 +193,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
 //        return false;
 //    }
 
-    public void checkPotentialFDChildrenOnNewArrival(ExecutionUnit newOp) {
+    public void checkPotentialFDChildrenOnNewArrival(Operation newOp) {
         List<PotentialChildrenInfo> processed = new ArrayList<>();
 
         for (PotentialChildrenInfo pChildInfo : potentialChldrenInfo) {
@@ -195,7 +206,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         processed.clear();
     }
 
-    public MyList<ExecutionUnit> getOperations() {
+    public MyList<Operation> getOperations() {
         return operations;
     }
 
@@ -208,7 +219,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        OperationChain<ExecutionUnit> that = (OperationChain<ExecutionUnit>) o;
+        OperationChain that = (OperationChain) o;
         return tableName.equals(that.tableName) &&
                 primaryKey.equals(that.primaryKey) && bid == that.bid;
     }
@@ -234,7 +245,7 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         return (Collection<T>) ocChildren.keySet();
     }
 
-    public <ExecutionUnit extends AbstractOperation, SchedulingUnit extends OperationChain<ExecutionUnit>> boolean hasParents() {
+    public boolean hasParents() {
         return ocParentsCount.get() > 0;
     }
 
@@ -248,10 +259,10 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
     }
 
     public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {
-        public OperationChain<ExecutionUnit> potentialChildOC;
-        public ExecutionUnit childOp;
+        public OperationChain potentialChildOC;
+        public Operation childOp;
 
-        public PotentialChildrenInfo(OperationChain<ExecutionUnit> oc, ExecutionUnit op) {
+        public PotentialChildrenInfo(OperationChain oc, Operation op) {
             this.potentialChildOC = oc;
             this.childOp = op;
         }
@@ -267,5 +278,55 @@ public class OperationChain<ExecutionUnit extends AbstractOperation> implements 
         operations.clear();
         ocParents.clear();
         ocChildren.clear();
+        // Non-structured data structure clearance
+        needAbortHandling = false;
+        failedOperations.clear();
+        // Structured data structure clearance
+        isDependencyLevelCalculated = false;
+        dependencyLevel = -1;
+    }
+
+    // ------------------ Non-Structured Methods ------------------------
+    public void setContext(AbstractOGNSContext context) {
+        if (this.context == null) {
+            this.context = context;
+        }
+    }
+
+    public void updateDependency() {
+        ocParentsCount.decrementAndGet();
+    }
+
+    public boolean hasChildren() {
+        return !ocChildren.isEmpty();
+    }
+
+    public void rollbackDependency() {
+        ocParentsCount.incrementAndGet();
+    }
+
+    // ------------------ Structured Methods ------------------------
+    public synchronized boolean hasValidDependencyLevel() {
+        return isDependencyLevelCalculated;
+    }
+
+    public int getDependencyLevel() {
+        return dependencyLevel;
+    }
+
+    public synchronized void updateDependencyLevel() {
+        if (isDependencyLevelCalculated)
+            return;
+        dependencyLevel = 0;
+        for (OperationChain parent : getParents()) {
+            if (!parent.hasValidDependencyLevel()) {
+                parent.updateDependencyLevel();
+            }
+
+            if (parent.getDependencyLevel() >= dependencyLevel) {
+                dependencyLevel = parent.getDependencyLevel() + 1;
+            }
+        }
+        isDependencyLevelCalculated = true;
     }
 }
