@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import scheduler.context.op.OPSContext;
 import scheduler.context.op.OPSchedulerContext;
 import scheduler.signal.op.OnParentUpdatedSignal;
+import scheduler.struct.AbstractOperation;
 import scheduler.struct.op.MetaTypes.DependencyType;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
@@ -18,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * contains the place-holder to fill, as well as timestamp (counter).
@@ -42,7 +44,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private OperationStateType operationState;
     // operation id under a transaction.
     // an operation id to indicate how many operations in front of this operation in the same transaction.
-    public int txn_op_id = 0;
+    public int txnOpId = 0;
     public boolean isFailed;
     public String name;
 
@@ -55,42 +57,11 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public String[] condition_sourceTable = null;
     public String[] condition_source = null;
 
-    public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record, SchemaRecordRef record_ref) {
-        this(pKey, null, table_name, txn_context, bid, accessType, record, record_ref, null, null, null, null);
-    }
-
     /****************************Defined by MYC*************************************/
-
-    public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
-                     Function function, Condition condition, int[] success) {
-        this(pKey, null, table_name, txn_context, bid, accessType, record, null, function, condition, null, success);
-    }
-
-    public Operation(String pKey, String table_name, TxnContext txn_context, long bid, CommonMetaTypes.AccessType accessType, TableRecord record,
-                     SchemaRecordRef record_ref, Function function, Condition condition, int[] success) {
-        this(pKey, null, table_name, txn_context, bid, accessType, record, record_ref, function, condition, null, success);
-    }
-
 
     public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
         this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
-    }
-
-    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record) {
-        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, null, null, null, null);
-    }
-
-    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record,
-                                                  SchemaRecordRef record_ref) {
-        this(pKey, context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
-    }
-    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-                                                          CommonMetaTypes.AccessType accessType, TableRecord d_record,
-                                                          SchemaRecordRef record_ref,Function function) {
-        this(pKey, context, table_name, txn_context, bid, accessType, d_record, record_ref, function, null, null, null);
     }
 
     public <Context extends OPSchedulerContext> Operation(
@@ -149,19 +120,19 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     @Override
     public String toString() {
-        return bid + "|" + txn_op_id + "|" + String.format("%-15s", this.getOperationState());
+        return bid + "|" + txnOpId + "|" + String.format("%-15s", this.getOperationState());
     }
 
     public void setTxnOpId(int op_id) {
-        this.txn_op_id = op_id;
+        this.txnOpId = op_id;
     }
 
     public int getTxnOpId() {
-        return txn_op_id;
+        return txnOpId;
     }
 
     public boolean isRoot() {
-        return operationMetadata.td_countdown == 0 && operationMetadata.fd_countdown == 0 && operationMetadata.ld_countdown == 0;
+        return operationMetadata.td_countdown.get() == 0 && operationMetadata.fd_countdown.get() == 0 && operationMetadata.ld_countdown.get() == 0;
     }
 
     public void setConditionSources(String[] condition_sourceTable, String[] condition_source) {
@@ -172,9 +143,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public void initialize() {
         fd_parents.addAll(fd_concurrent_parents);
         fd_children.addAll(fd_concurrent_children);
-        operationMetadata.fd_countdown = fd_parents.size();
-        operationMetadata.td_countdown = td_parents.size();
-        operationMetadata.ld_countdown = ld_parents.size();
+        operationMetadata.fd_countdown.set(fd_parents.size());
+        operationMetadata.td_countdown.set(td_parents.size());
+        operationMetadata.ld_countdown.set(ld_parents.size());
     }
 
     public void addParent(Operation operation, DependencyType type) {
@@ -245,25 +216,25 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         // update countdown
         if (parentState.equals(OperationStateType.EXECUTED)) {
             if (dependencyType.equals(DependencyType.TD)) {
-                operationMetadata.td_countdown--;
-                assert operationMetadata.td_countdown >= 0;
+                operationMetadata.td_countdown.decrementAndGet();
+                assert operationMetadata.td_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.FD)) {
-                operationMetadata.fd_countdown--;
-                assert operationMetadata.fd_countdown >= 0;
+                operationMetadata.fd_countdown.decrementAndGet();
+                assert operationMetadata.fd_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.LD)) {
-                operationMetadata.ld_countdown--;
-                assert operationMetadata.ld_countdown >= 0;
+                operationMetadata.ld_countdown.decrementAndGet();
+                assert operationMetadata.ld_countdown.get() >= 0;
             }
         } else if (parentState.equals(OperationStateType.READY) || parentState.equals(OperationStateType.BLOCKED)) { // rollback
             if (dependencyType.equals(DependencyType.TD)) {
-                operationMetadata.td_countdown++;
-                assert operationMetadata.td_countdown >= 0;
+                operationMetadata.td_countdown.incrementAndGet();
+                assert operationMetadata.td_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.FD)) {
-                operationMetadata.fd_countdown++;
-                assert operationMetadata.fd_countdown >= 0;
+                operationMetadata.fd_countdown.incrementAndGet();
+                assert operationMetadata.fd_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.LD)) {
-                operationMetadata.ld_countdown++;
-                assert operationMetadata.ld_countdown >= 0;
+                operationMetadata.ld_countdown.incrementAndGet();
+                assert operationMetadata.ld_countdown.get() >= 0;
             }
         } else if (parentState.equals(OperationStateType.ABORTED)) {
             if (dependencyType.equals(DependencyType.TD)) {
@@ -274,8 +245,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //                        operationMetadata.td_countdown--;
 //                    }
 //                }
-                operationMetadata.td_countdown--;
-                assert operationMetadata.td_countdown >= 0;
+                operationMetadata.td_countdown.decrementAndGet();
+                assert operationMetadata.td_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.FD)) {
 //                operationMetadata.fd_countdown.set(fd_parents.size());
 //                for (Operation operation : fd_parents) {
@@ -284,8 +255,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //                        operationMetadata.fd_countdown--;
 //                    }
 //                }
-                operationMetadata.fd_countdown--;
-                assert operationMetadata.fd_countdown >= 0;
+                operationMetadata.fd_countdown.decrementAndGet();
+                assert operationMetadata.fd_countdown.get() >= 0;
             } else if (dependencyType.equals(DependencyType.LD)) {
 //                operationMetadata.ld_countdown.set(ld_parents.size());
 //                for (Operation operation : ld_parents) {
@@ -294,8 +265,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //                        operationMetadata.ld_countdown--;
 //                    }
 //                }
-                operationMetadata.ld_countdown--;
-                assert operationMetadata.ld_countdown >= 0;
+                operationMetadata.ld_countdown.decrementAndGet();
+                assert operationMetadata.ld_countdown.get() >= 0;
             }
         } else {
             throw new UnsupportedOperationException();
@@ -303,16 +274,16 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
     public void resetDependencies() {
-        operationMetadata.td_countdown = td_parents.size();
-        operationMetadata.fd_countdown = fd_parents.size();
-        operationMetadata.ld_countdown = ld_parents.size();
+        operationMetadata.td_countdown.set(td_parents.size());
+        operationMetadata.fd_countdown.set(fd_parents.size());
+        operationMetadata.ld_countdown.set(ld_parents.size());
     }
 
 
     public boolean tryReady() {
-        boolean isReady = operationMetadata.td_countdown == 0
-                && operationMetadata.fd_countdown == 0
-                && operationMetadata.ld_countdown == 0;
+        boolean isReady = operationMetadata.td_countdown.get() == 0
+                && operationMetadata.fd_countdown.get() == 0
+                && operationMetadata.ld_countdown.get() == 0;
 
         if (isReady) {
             stateTransition(OperationStateType.READY);
@@ -323,7 +294,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     // **********************************Utilities**********************************
 
     public boolean hasParents() {
-        return !(operationMetadata.td_countdown == 0 && operationMetadata.fd_countdown == 0 && operationMetadata.ld_countdown == 0);
+        return !(operationMetadata.td_countdown.get() == 0 && operationMetadata.fd_countdown.get() == 0 && operationMetadata.ld_countdown.get() == 0);
     }
 
     /**
@@ -439,9 +410,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             }
         }
         isDependencyLevelCalculated = true;
-        operationMetadata.td_countdown = td_parents.size();
-        operationMetadata.fd_countdown = fd_parents.size();
-        operationMetadata.ld_countdown = ld_parents.size();
+        operationMetadata.td_countdown.set(td_parents.size());
+        operationMetadata.fd_countdown.set(fd_parents.size());
+        operationMetadata.ld_countdown.set(ld_parents.size());
     }
 
     public void updateDependencyLevel(int dependencyLevel) {
@@ -464,13 +435,14 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     private static class OperationMetadata {
         // countdown to be executed parents and committed parents for state transition
-//        public final AtomicInteger fd_countdown;
-//        public final AtomicInteger td_countdown;
-//        public final AtomicInteger ld_countdown;
+        // Has to use atomic for DFS, for notification from other threads, otherwise we may employ a state manager for DFS.
+        public final AtomicInteger fd_countdown;
+        public final AtomicInteger td_countdown;
+        public final AtomicInteger ld_countdown;
 
-        public int fd_countdown;
-        public int td_countdown;
-        public int ld_countdown;
+//        public int fd_countdown;
+//        public int td_countdown;
+//        public int ld_countdown;
 
         /**
          * A flag to control the state transition from a BLOCKED operation
@@ -480,12 +452,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
          * 2 can promote to a ready
          */
         public OperationMetadata() {
-//            td_countdown = new AtomicInteger(0); // countdown Idx0/1 when executed/committed
-//            fd_countdown = new AtomicInteger(0); // countdown when executed
-//            ld_countdown = new AtomicInteger(0); // countdown when executed
-            td_countdown = 0; // countdown Idx0/1 when executed/committed
-            fd_countdown = 0; // countdown when executed
-            ld_countdown = 0; // countdown when executed
+            td_countdown = new AtomicInteger(0); // countdown Idx0/1 when executed/committed
+            fd_countdown = new AtomicInteger(0); // countdown when executed
+            ld_countdown = new AtomicInteger(0); // countdown when executed
+//            td_countdown = 0; // countdown Idx0/1 when executed/committed
+//            fd_countdown = 0; // countdown when executed
+//            ld_countdown = 0; // countdown when executed
         }
     }
 }

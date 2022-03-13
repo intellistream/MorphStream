@@ -55,19 +55,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         SCHEDULER_TYPE scheduler_type = SCHEDULER_TYPE.valueOf(schedulerType);
         switch (scheduler_type) {
             case OG_BFS:
-                context = new OGBFSContext(thisTaskId, thread_count);
+            case OG_DFS:
+                context = new OGSContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
             case OG_BFS_A:
-                context = new OGBFSAContext(thisTaskId, thread_count);
-                scheduler.AddContext(thisTaskId, context);
-                break;
-            case OG_DFS:
-                context = new OGDFSContext(thisTaskId, thread_count);
-                scheduler.AddContext(thisTaskId, context);
-                break;
             case OG_DFS_A:
-                context = new OGDFSAContext(thisTaskId, thread_count);
+                context = new OGSAContext(thisTaskId, thread_count);
                 scheduler.AddContext(thisTaskId, context);
                 break;
             case OG_NS:

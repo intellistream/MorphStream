@@ -107,8 +107,8 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
      * @return
      */
     public Operation next(Context context) {
-        Operation operation = context.ready_oc;
-        context.ready_oc = null;
+        Operation operation = context.ready_op;
+        context.ready_op = null;
         return operation;
     }
 
@@ -123,7 +123,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
      */
     @Override
     protected void DISTRIBUTE(Operation task, Context context) {
-        context.ready_oc = task;
+        context.ready_op = task;
     }
 
     /**
