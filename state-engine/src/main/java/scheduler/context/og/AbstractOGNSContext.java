@@ -1,15 +1,15 @@
 package scheduler.context.og;
 
 import scheduler.statemanager.og.OperationChainStateListener;
-import scheduler.struct.og.nonstructured.AbstractNSOperationChain;
-import scheduler.struct.og.nonstructured.NSOperation;
+import scheduler.struct.og.OperationChain;
 
 import java.util.ArrayDeque;
 
-public abstract class AbstractOGNSContext<ExecutionUnit extends NSOperation, SchedulingUnit extends AbstractNSOperationChain<ExecutionUnit>> extends OGSchedulerContext<SchedulingUnit> {
+public abstract class AbstractOGNSContext extends OGSchedulerContext {
 
-    public ArrayDeque<SchedulingUnit> IsolatedOC;
-    public ArrayDeque<SchedulingUnit> OCwithChildren;
+
+    public ArrayDeque<OperationChain> IsolatedOC;
+    public ArrayDeque<OperationChain> OCwithChildren;
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
@@ -34,14 +34,17 @@ public abstract class AbstractOGNSContext<ExecutionUnit extends NSOperation, Sch
     }
 
     @Override
-    public SchedulingUnit createTask(String tableName, String pKey, long bid) {
-        throw new UnsupportedOperationException("Unsupported.");
-    }
-
-    @Override
     public boolean finished() {
         assert scheduledOPs <= totalOsToSchedule;
         return scheduledOPs == totalOsToSchedule;
+    }
+
+    @Override
+    public OperationChain createTask(String tableName, String pKey, long bid) {
+        OperationChain oc = new OperationChain(tableName, pKey, bid);
+        oc.setContext(this);
+//        operationChains.add(oc);
+        return oc;
     }
 
     public OperationChainStateListener getListener() {

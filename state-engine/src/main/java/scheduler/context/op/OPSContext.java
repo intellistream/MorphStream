@@ -14,7 +14,7 @@ public class OPSContext extends OPSchedulerContext {
     public int currentLevelIndex;
     public int totalThreads;
     public int maxLevel;//total number of operations to process per thread.
-    public Operation ready_oc;//ready operation chain per thread.
+    public Operation ready_op;//ready operation per thread.
     public ConcurrentLinkedQueue<OnParentUpdatedSignal> layerBuildHelperQueue = new ConcurrentLinkedQueue<>();
 
     public OPSContext(int thisThreadId) {
