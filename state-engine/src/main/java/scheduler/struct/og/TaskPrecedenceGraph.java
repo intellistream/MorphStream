@@ -73,7 +73,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext<SchedulingUn
         this.totalThreads = totalThreads;
         this.delta = delta;
         this.NUM_ITEMS = NUM_ITEMS;
-        threadToContextMap = new HashMap<>();
+        threadToContextMap = new ConcurrentHashMap<>();
         threadToOCs = new ConcurrentHashMap<>();
         //shared data structure.
         this.app = app;

@@ -121,7 +121,7 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 20000;//checkpoint per thread.
+    public int checkpoint_interval = 10000;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
 //    public String generator = "OCGenerator";

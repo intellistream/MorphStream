@@ -3,7 +3,10 @@ package scheduler.collector;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
+/**
+ * Gather information for decision trees and determine when to switch and which scheduler to switch to
+ * Created by curry on 3/10/2022.
+ */
 public class Collector {
     /*
     Num of TD,LD,PD
@@ -32,12 +35,14 @@ public class Collector {
     private double R_of_A;
     private double B_R_of_A;
     private boolean isRuntime=true;
+    private int threadCount;
     private final List<String[]> workloadConfig=new ArrayList<>();
     private final HashMap<Integer,Integer> currentWorkload=new HashMap<>();
     /**
      *  Init the collector
      */
     public void InitCollector(int threadCount){
+        this.threadCount=threadCount;
         for (int i=0;i<threadCount;i++){
             currentWorkload.put(i,0);
         }
@@ -67,9 +72,9 @@ public class Collector {
     /**
      * Implement the decision tree
      * Return the decision of the scheduler switching
-     * Abort(Eager:1,Lazy:0)
-     * Units(OP:1,OG:0)
-     * Exploration(Non:00,BF:01,DF:10)
+     * Abort(Eager:1,Lazy:0)(first bit)
+     * Units(OP:1,OG:0)(second bit)
+     * Exploration(Non:00,BF:01,DF:10)(the highest bit)
      * "OG_NS","OG_NS_A","OP_NS","OP_NS_A","OG_BFS","OG_BFS_A","OP_BFS","OP_BFS_A", "OG_DFS","OG_DFS_A","OP_DFS","OP_DFS_A"
      *  0000     0001     0010     0011     0100     0101       0110     0111        1000     1001       1010     1011
      * @return
@@ -128,7 +133,7 @@ public class Collector {
         }else{
             int workloadId=this.currentWorkload.get(threadId);
             long currentId= Long.parseLong(workloadConfig.get(workloadId)[workloadConfig.get(workloadId).length-1]);
-            if (markId>=currentId){
+            if (currentId<=markId+threadCount-threadId-1){
                 currentWorkload.put(threadId,currentWorkload.get(threadId)+1);
                 return true;
             }else

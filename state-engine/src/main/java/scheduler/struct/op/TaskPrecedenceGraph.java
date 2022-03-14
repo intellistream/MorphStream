@@ -65,7 +65,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         this.delta = delta;
         this.NUM_ITEMS = NUM_ITEMS;
         // all parameters in this class should be thread safe.
-        threadToContextMap = new HashMap<>();
+        threadToContextMap = new ConcurrentHashMap<>();
         threadToOCs = new ConcurrentHashMap<>();
         this.app = app;
         //create holder.
