@@ -32,6 +32,7 @@ public abstract class TxnManager implements ITxnManager {
     protected static HashMap<String,IScheduler> schedulerPool;
 
     protected static Collector collector=new Collector();
+    protected static String currentSchedulerType;
 
     public static void CreateScheduler(String schedulerType, int threadCount, int numberOfStates, int app) {
         switch (schedulerType) {
@@ -85,6 +86,7 @@ public abstract class TxnManager implements ITxnManager {
      */
     public void SwitchScheduler(String schedulerType){
         scheduler=schedulerPool.get(schedulerType);
+        currentSchedulerType=schedulerType;
     }
 
     /**
