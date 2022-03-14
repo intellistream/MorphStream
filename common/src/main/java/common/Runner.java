@@ -57,7 +57,7 @@ public abstract class Runner implements IRunner {
      * TStream Specific Parameters.
      */
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 4;// default total execution threads
+    public int tthread = 1;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_MorphStream;
 //    public int CCOption = CCOption_SStore;
@@ -65,14 +65,14 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-   // public String scheduler = "OG_DFS"
+    public String scheduler = "OG_BFS";
     //        public String scheduler = "OG_BFS_A";
 //    public String scheduler = "OG_DFS";
 //    public String scheduler = "OG_DFS_A";
 //    public String scheduler = "OG_NS";
 //    public String scheduler = "OG_NS_A";
 //    public String scheduler = "OP_NS";
-    public String scheduler = "OP_NS_A";
+//    public String scheduler = "OP_NS_A";
 //    public String scheduler = "OP_BFS";
 //    public String scheduler = "OP_BFS_A";
 //    public String scheduler = "OP_DFS";
@@ -86,18 +86,12 @@ public abstract class Runner implements IRunner {
     /**
      * Dynamic Scheduler
      */
-    @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
-    public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
     public boolean isDynamic = false;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
-    public String schedulerPools = "OP_NS_A,OP_BFS_A,OP_BFS,OG_BFS";
+    public String schedulerPools = "OG_DFS,OP_DFS";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
     public String defaultScheduler = "OG_DFS";
-    @Parameter(names = {"--bottomLine"}, description = "BottomLine for(TD,LD,PD,SUM,VDD,R_of_A)")
-    public String bottomLine = "2,3,5,10,0.6,0.7";
-    @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")
-    public String WorkloadConfig = "1,3,4,0.5,0.6,1,1,39999;1,6,4,0.5,0.7,1,1,79999;3,6,3,0.5,0.7,1,1,100000";
 
     /**
      * Benchmarking Specific Parameters.
@@ -121,7 +115,7 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 10000;//checkpoint per thread.
+    public int checkpoint_interval = 20000;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
 //    public String generator = "OCGenerator";
@@ -225,11 +219,7 @@ public abstract class Runner implements IRunner {
         /* Dynamic Workload Configuration*/
         config.put("isDynamic",isDynamic);
         config.put("schedulersPool",schedulerPools);
-        config.put("defaultScheduler",scheduler);
-        config.put("isRuntime",isRuntime);
-        config.put("bottomLine",bottomLine);
-        config.put("WorkloadConfig",WorkloadConfig);
-
+        config.put("defaultScheduler",defaultScheduler);
         System.setProperty("my.log", metric_path);
     }
 }
