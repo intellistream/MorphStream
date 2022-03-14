@@ -1,5 +1,8 @@
 package transaction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scheduler.collector.Collector;
 import scheduler.impl.IScheduler;
 import scheduler.impl.og.structured.OGBFSScheduler;
 import scheduler.impl.og.structured.OGBFSAScheduler;
@@ -16,14 +19,19 @@ import scheduler.impl.op.structured.OPDFSAScheduler;
 import scheduler.impl.op.structured.OPDFSScheduler;
 
 import java.util.HashMap;
-import java.util.List;
+
+import static common.CONTROL.enable_log;
 
 /**
  * Every thread has its own TxnManager.
  */
 public abstract class TxnManager implements ITxnManager {
+    private static final Logger log = LoggerFactory.getLogger(TxnManager.class);
     protected static IScheduler scheduler;
+
     protected static HashMap<String,IScheduler> schedulerPool;
+
+    protected static Collector collector=new Collector();
 
     public static void CreateScheduler(String schedulerType, int threadCount, int numberOfStates, int app) {
         switch (schedulerType) {
@@ -74,18 +82,22 @@ public abstract class TxnManager implements ITxnManager {
     /**
      * Switch scheduler every punctuation
      * When the workload changes and the scheduler is no longer applicable
-     * @return
      */
-    public boolean SwitchScheduler(){
-        //TODO: implement the scheduler switching
-        return true;
+    public void SwitchScheduler(String schedulerType){
+        scheduler=schedulerPool.get(schedulerType);
     }
 
     /**
      * Configure the bottom line for triggering scheduler switching in Collector
      */
-    public static void setBottomLine(){
-
+    public static void setBottomLine(String bottomLine){
+        collector.setBottomLine(bottomLine);
+    }
+    /**
+     * Configure the bottom line for triggering scheduler switching in Collector
+     */
+    public static void setWorkloadConfig(String config){
+        collector.setWorkloadConfig(config);
     }
 
     /**
@@ -95,9 +107,11 @@ public abstract class TxnManager implements ITxnManager {
         TxnManager.schedulerPool=new HashMap<>();
         String[] scheduler =schedulerPool.split(",");
         for(int i=0;i<scheduler.length;i++ ){
-            TxnManager.schedulerPool.put(scheduler[i],CreateSchedulerByType(schedulerPool,threadCount,numberOfStates,app));
+            TxnManager.schedulerPool.put(scheduler[i],CreateSchedulerByType(scheduler[i],threadCount,numberOfStates,app));
         }
+        collector.InitCollector(threadCount);
         TxnManager.scheduler=TxnManager.schedulerPool.get(defaultScheduler);
+        if(enable_log) log.info("Current Scheduler is "+defaultScheduler);
     }
 
     /**

@@ -3,6 +3,7 @@ package utils;
 import lock.SpinLock;
 
 import java.util.HashMap;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,6 +19,8 @@ public class SOURCE_CONTROL {
     private CyclicBarrier endBarrier;
     private CyclicBarrier finalEndBarrier;
 
+    private CyclicBarrier switchSchedulerBarrier;
+
     private Phaser dLevelEndBarrier;
     private HashMap<Integer, Integer> iteration;
 
@@ -30,6 +33,7 @@ public class SOURCE_CONTROL {
         startBarrier = new CyclicBarrier(number_threads);
         endBarrier = new CyclicBarrier(number_threads);
         finalEndBarrier = new CyclicBarrier(number_threads);
+        switchSchedulerBarrier=new CyclicBarrier(number_threads);
         dLevelEndBarrier = new Phaser(number_threads);
         iteration = new HashMap<>();
         for (int i = 0; i < number_threads; i++) {
@@ -82,6 +86,15 @@ public class SOURCE_CONTROL {
             ex.printStackTrace();
         }
     }
+     public void waitForSchedulerSwitch(int threadId){
+        try{
+            switchSchedulerBarrier.await();
+        } catch (BrokenBarrierException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+     }
 
     public void oneThreadCompleted() {
         dLevelEndBarrier.arriveAndDeregister();

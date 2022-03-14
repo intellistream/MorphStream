@@ -124,6 +124,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     public TableOCs getTableOCs(String table_name) {
         return operationChains.get(table_name);
     }
+    public boolean isThreadTOCsReady(){return threadToOCs.size()==totalThreads; }
 
     public ConcurrentHashMap<String, TableOCs> getOperationChains() {
         return operationChains;

@@ -133,6 +133,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext<SchedulingUn
     public TableOCs<SchedulingUnit> getTableOCs(String table_name) {
         return operationChains.get(table_name);
     }
+    public boolean isThreadTOCsReady(){return threadToOCs.size()==totalThreads; }
 
     public ConcurrentHashMap<String, TableOCs<SchedulingUnit>> getOperationChains() {
         return operationChains;

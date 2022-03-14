@@ -326,7 +326,10 @@ public abstract class OGScheduler<Context extends OGSchedulerContext<SchedulingU
     @Override
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);
-        tpg.setOCs(context);
+        /*Thread to OCs does not need reconfigure*/
+        if (!tpg.isThreadTOCsReady()){
+            tpg.setOCs(context);
+        }
     }
 
     protected boolean isConflicted(Context context, SchedulingUnit operationChain, ExecutionUnit operation) {

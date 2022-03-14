@@ -1,6 +1,8 @@
 package transaction.impl.ordered;
 
 import db.DatabaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.StorageManager;
@@ -12,11 +14,12 @@ import utils.SOURCE_CONTROL;
 import java.util.LinkedList;
 import java.util.concurrent.BrokenBarrierException;
 
+import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.INSERT_ONLY;
 import static transaction.context.TxnAccess.Access;
 
 public class TxnManagerTStream extends TxnManagerDedicatedAsy {
-
+    private static final Logger log = LoggerFactory.getLogger(TxnManagerTStream.class);
     public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw, String schedulerType) {
         super(storageManager, thisComponentId, thisTaskId, thread_countw, numberOfStates, schedulerType);
     }
@@ -59,5 +62,15 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
         MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
         MeasureTools.SCHEDULE_TIME_RECORD(thread_Id, num_events);
+        //Sync to switch scheduler(more overhead) decide by the mark_ID or runtime information
+        if(collector.timeToSwitch(mark_ID,thread_Id)){
+            String schedulerType=collector.getDecision(thread_Id);
+            if(thread_Id==0){
+                this.SwitchScheduler(schedulerType);
+                if(enable_log) log.info("Current Scheduler is "+schedulerType+" MarkId "+mark_ID);
+            }
+            SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
+            this.setSchedulerContext(thread_Id, (int) thread_count_,schedulerType);
+        }
     }
 }

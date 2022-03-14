@@ -110,6 +110,10 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext, NSOperatio
                 set_op = new NSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
+            case READ_WRITE_READ:
+                set_op = new NSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
+                        request.d_record, request.record_ref, request.function);
+                break;
             default:
                 throw new RuntimeException("Unexpected operation");
         }

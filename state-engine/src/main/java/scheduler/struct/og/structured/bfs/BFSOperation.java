@@ -46,6 +46,11 @@ public class BFSOperation extends AbstractOperation {
                                                              SchemaRecordRef record_ref) {
         this(pKey, context, table_name, txn_context, bid, accessType, d_record, record_ref, null, null, null, null);
     }
+    public <Context extends OGSchedulerContext> BFSOperation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+                                                             CommonMetaTypes.AccessType accessType, TableRecord d_record,
+                                                             SchemaRecordRef record_ref,Function function) {
+        this(pKey, context, table_name, txn_context, bid, accessType, d_record, record_ref, function, null, null, null);
+    }
 
     public <Context extends OGSchedulerContext> BFSOperation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,

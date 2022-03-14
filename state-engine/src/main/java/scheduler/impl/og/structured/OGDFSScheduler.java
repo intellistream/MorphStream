@@ -66,6 +66,10 @@ public class OGDFSScheduler extends AbstractOGDFSScheduler<OGDFSContext> {
                 set_op = new DFSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
                         request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                 break;
+            case READ_WRITE_READ:
+                set_op = new DFSOperation(request.src_key, targetContext, request.table_name, request.txn_context, bid, request.accessType,
+                        request.d_record, request.record_ref, request.function);
+                break;
             default:
                 throw new UnsupportedOperationException();
         }

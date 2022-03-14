@@ -48,8 +48,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         this.thisComponentId = thisComponentId;
         thread_count_ = thread_count;
         is_first_access_ = true;
-
-
+        this.setSchedulerContext(thisTaskId,thread_count,schedulerType);
+//        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
+    }
+    public void setSchedulerContext(int thisTaskId, int thread_count,String schedulerType){
         SCHEDULER_TYPE scheduler_type = SCHEDULER_TYPE.valueOf(schedulerType);
         switch (scheduler_type) {
             case OG_BFS:
@@ -98,9 +100,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
         }
-//        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
     }
-
     public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
