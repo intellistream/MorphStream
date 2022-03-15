@@ -19,8 +19,8 @@ JNI_JAVA_SOURCES := $(patsubst %,$(TARGET_DIR)/%.class,$(subst .,/,$(JAVA_CLASSE
 
 JAVA_BUILD_DIR := $(TARGET_DIR)
 
-#JAVA_HOME ?= /usr/java/default
-JAVA_HOME :=/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home
+JAVA_HOME ?= /usr/java/default
+#JAVA_HOME :=/Library/Java/JavaVirtualMachines/jdk1.8.0_191.jdk/Contents/Home
 JAVA_LIB := $(JAVA_HOME)/jre/lib
 JVM_SHARED_LIBS := -L$(JAVA_LIB)/amd64/server -L$(JAVA_LIB)/i386/server  -L$(JAVA_LIB)/amd64/jrockit/ -L$(JAVA_LIB)/i386/jrockit/ -L$(JAVA_LIB)/ppc64le/server -L$(JAVA_LIB)/ppc64le/jrockit/
 
@@ -43,7 +43,7 @@ $(TARGET): $(JNI_HEADERS) $(JNI_SOURCES)
 
 $(JNI_HEADERS): $(JNI_JAVA_SOURCES)
 	mkdir -p $(TARGET_DIR)/jni
-	javac -h -force -classpath $(JAVAH_CLASSPATH) -d $(WORKING_DIR) $(JAVA_CLASSES)
+	javah -force -classpath $(JAVAH_CLASSPATH) -d $(WORKING_DIR) $(JAVA_CLASSES)
 
 clean:
 	rm $(TARGET)

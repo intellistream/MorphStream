@@ -118,8 +118,8 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 ocs.add(accOC);
                 ocs.add(beOC);
             }else if(app==2){
-                SchedulingUnit speedOC=context.createTask("segment_speed",_key,0);
-                SchedulingUnit cntOC=context.createTask("segment_cnt",_key,0);
+                OperationChain speedOC=context.createTask("segment_speed",_key,0);
+                OperationChain cntOC=context.createTask("segment_cnt",_key,0);
                 operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, speedOC);
                 operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, cntOC);
                 ocs.add(speedOC);
