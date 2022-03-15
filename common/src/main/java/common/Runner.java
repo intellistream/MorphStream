@@ -57,7 +57,7 @@ public abstract class Runner implements IRunner {
      * TStream Specific Parameters.
      */
     @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 2;// default total execution threads
+    public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_MorphStream;
 //    public int CCOption = CCOption_SStore;
@@ -89,7 +89,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
-    public boolean isDynamic = true;
+    public boolean isDynamic = false;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
     public String schedulerPools = "OP_NS_A,OP_BFS_A,OP_BFS,OG_BFS";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
@@ -97,7 +97,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--bottomLine"}, description = "BottomLine for(TD,LD,PD,SUM,VDD,R_of_A)")
     public String bottomLine = "2,3,5,10,0.6,0.7";
     @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")
-    public String WorkloadConfig = "1,3,4,0.5,0.6,1,1,19999;1,6,4,0.5,0.7,1,1,39999;3,6,3,0.5,0.7,1,1,59999;3,6,3,0.5,0.8,0,0,100000";
+    public String WorkloadConfig = "1,3,4,0.5,0.6,1,1,39999;1,6,4,0.5,0.7,1,1,79999;3,6,3,0.5,0.7,1,1,100000";
 
     /**
      * Benchmarking Specific Parameters.

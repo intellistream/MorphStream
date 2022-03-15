@@ -30,6 +30,7 @@ public abstract class TxnManager implements ITxnManager {
     protected static IScheduler scheduler;
 
     protected static HashMap<String,IScheduler> schedulerPool;
+    protected static boolean enableDynamic=false;
 
     protected static Collector collector=new Collector();
     protected static String currentSchedulerType;
@@ -113,6 +114,7 @@ public abstract class TxnManager implements ITxnManager {
         }
         collector.InitCollector(threadCount);
         TxnManager.scheduler=TxnManager.schedulerPool.get(defaultScheduler);
+        enableDynamic=true;
         if(enable_log) log.info("Current Scheduler is "+defaultScheduler);
     }
 
