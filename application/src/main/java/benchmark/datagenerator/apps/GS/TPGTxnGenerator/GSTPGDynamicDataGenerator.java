@@ -1,9 +1,9 @@
 package benchmark.datagenerator.apps.GS.TPGTxnGenerator;
-
-import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.Transaction.GSEvent;
+import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
+import benchmark.dynamicWorkloadGenerator.DynamicWorkloadGenerator;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,77 +16,85 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import static common.CONTROL.*;
+import static common.CONTROL.enable_log;
+import static common.CONTROL.enable_states_partition;
 
-/**
- * \textbf{Workload Configurations.}
- * We extend SL for workload sensitivity study by tweaking its workload generation for varying dependency characteristics. The default configuration and varying values of parameters are summarized in \tony{Table~\ref{}}.
- * Specifically, we vary the following parameters during workload generation.
- * \begin{enumerate}
- * \item \textbf{Ratio of State Access Types:}
- * We vary the ratio of functional dependencies in the workload by tuning the ratio between transfer (w/ functional dependency) and deposit (w/o functional dependency) requests in the input stream.
- * \item \textbf{State Access Skewness:}
- * To present a more realistic scenario, we model the access distribution as Zipfian skew, where certain states are more likely to be accessed than others. The skewness is controlled by the parameter $\theta$ of the Zipfian distribution. More skewed state access also stands for more temporal dependencies in the workload.
- * \item \textbf{Transaction Length:}
- * We vary the number of operations in the same transaction, which essentially determines the logical dependency depth.
- * \item \textbf{Transaction Aborts:}
- * Transaction will be aborted when balance will become negative. To systematically evaluate the effectiveness of \system in handling transaction aborts, we insert artificial abort in state transactions and vary its ratio in the workload.
- * \end{enumerate}
- */
-public class GSTPGDataGenerator extends DataGenerator {
-    private static final Logger LOG = LoggerFactory.getLogger(GSTPGDataGenerator.class);
-
-    private final int NUM_ACCESS; // transaction length, 4 or 8 or longer
-    private final int State_Access_Skewness; // ratio of state access, following zipf distribution
-    private final int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
-    private final int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
-    private final int Transaction_Length;
+public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
+    private static final Logger LOG = LoggerFactory.getLogger(GSTPGDynamicDataGenerator.class);
+    private int NUM_ACCESS; // transaction length, 4 or 8 or longer
+    private int State_Access_Skewness; // ratio of state access, following zipf distribution
+    private int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
+    private int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
+    private int Transaction_Length;
+    private int tthread;
     // control the number of txns overlap with each other.
-    private final ArrayList<Integer> generatedKeys = new ArrayList<>();
+    private ArrayList<Integer> generatedKeys = new ArrayList<>();
     // independent transactions.
-    private final boolean isUnique = false;
-    private final FastZipfGenerator keyZipf;
+    private boolean isUnique = false;
+    private FastZipfGenerator keyZipf;
 
     private int floor_interval;
     public FastZipfGenerator[] partitionedKeyZipf;
 
-
-    private final Random random = new Random(0); // the transaction type decider
+    private Random random = new Random(0); // the transaction type decider
     public transient FastZipfGenerator p_generator; // partition generator
-    private final HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
+    private HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
+    private HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
-    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
+    public GSTPGDynamicDataGenerator(DynamicDataGeneratorConfig dynamicDataConfig) {
+        super(dynamicDataConfig);
+        events = new ArrayList<>(nTuples);
+    }
 
-    public GSTPGDataGenerator(GSTPGDataGeneratorConfig dataConfig) {
-        super(dataConfig);
+    @Override
+    public void switchConfiguration() {
+        State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
+        NUM_ACCESS = dynamicDataConfig.NUM_ACCESS;
+        Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
+        Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
+        Transaction_Length = dynamicDataConfig.Transaction_Length;
 
-        State_Access_Skewness = dataConfig.State_Access_Skewness;
-        NUM_ACCESS = dataConfig.NUM_ACCESS;
-        Ratio_of_Transaction_Aborts = dataConfig.Ratio_of_Transaction_Aborts;
-        Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
-        Transaction_Length = dataConfig.Transaction_Length;
-
-        int nKeyState = dataConfig.getnKeyStates();
-
-        // allocate levels for each key, to prevent circular.
-//        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
+        int nKeyState = dynamicDataConfig.getnKeyStates();
         int MAX_LEVEL = 256;
         for (int i = 0; i < nKeyState; i++) {
             idToLevel.put(i, i% MAX_LEVEL);
         }
-
-        events = new ArrayList<>(nTuples);
-        // zipf state access generator
         keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
-        configure_store(1, (double) State_Access_Skewness / 100, dataConfig.getTotalThreads(), nKeyState);
+        configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
         p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
     }
 
-    public static void main(String[] args) {
-        FastZipfGenerator fastZipfGenerator = new FastZipfGenerator(10, 1, 0);
-        fastZipfGenerator.show_sample();
+    @Override
+    protected void generateTuple() {
+        GSEvent event;
+        event = randomEvent();
+        events.add(event);
+    }
+
+    @Override
+    public void dumpGeneratedDataToFile() {
+        if (enable_log) LOG.info("++++++" + nGeneratedIds.size());
+
+        if (enable_log) LOG.info("Dumping transactions...");
+        try {
+            dataOutputHandler.sinkEvents(events);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        File versionFile = new File(dynamicDataConfig.getRootPath().substring(0, dynamicDataConfig.getRootPath().length() - 1)
+                + String.format("_%d.txt", dynamicDataConfig.getTotalEvents()));
+        try {
+            versionFile.createNewFile();
+            FileWriter fileWriter = new FileWriter(versionFile);
+            fileWriter.write(String.format("Total number of threads  : %d\n", dynamicDataConfig.getTotalThreads()));
+            fileWriter.write(String.format("Total Events      : %d\n", dynamicDataConfig.getTotalEvents()));
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void configure_store(double scale_factor, double theta, int tthread, int numItems) {
@@ -95,13 +103,6 @@ public class GSTPGDataGenerator extends DataGenerator {
         for (int i = 0; i < tthread; i++) {
             partitionedKeyZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), theta, i * floor_interval, 12345678);
         }
-    }
-
-    protected void generateTuple() {
-        GSEvent event;
-        event = randomEvent();
-//        System.out.println(eventID);
-        events.add(event);
     }
 
     private GSEvent randomEvent() {
@@ -138,7 +139,7 @@ public class GSTPGDataGenerator extends DataGenerator {
                                 }
                             }
                         }
-                        partitionId = (partitionId + 1) % dataConfig.getTotalThreads();
+                        partitionId = (partitionId + 1) % dynamicDataConfig.getTotalThreads();
                     }
                 }
             } else {
@@ -180,6 +181,8 @@ public class GSTPGDataGenerator extends DataGenerator {
         eventID++;
         return t;
     }
+
+
 
     public int key_to_partition(int key) {
         return (int) Math.floor((double) key / floor_interval);
@@ -228,36 +231,6 @@ public class GSTPGDataGenerator extends DataGenerator {
         return key;
     }
 
-    public void dumpGeneratedDataToFile() {
-        if (enable_log) LOG.info("++++++" + nGeneratedIds.size());
 
-        if (enable_log) LOG.info("Dumping transactions...");
-        try {
-            dataOutputHandler.sinkEvents(events);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
-                + String.format("_%d.txt", dataConfig.getTotalEvents()));
-        try {
-            versionFile.createNewFile();
-            FileWriter fileWriter = new FileWriter(versionFile);
-            fileWriter.write(String.format("Total number of threads  : %d\n", dataConfig.getTotalThreads()));
-            fileWriter.write(String.format("Total Events      : %d\n", dataConfig.getTotalEvents()));
-            fileWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void clearDataStructures() {
-        if (events != null) {
-            events.clear();
-        }
-        events = new ArrayList<>();
-        // clear the data structure in super class
-        super.clearDataStructures();
-    }
 }

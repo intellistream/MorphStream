@@ -9,7 +9,6 @@ import execution.runtime.boltThread;
 import execution.runtime.executorThread;
 import execution.runtime.spoutThread;
 import optimization.OptimizationManager;
-import org.apache.zookeeper.txn.Txn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.TxnManager;

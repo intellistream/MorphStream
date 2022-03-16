@@ -34,7 +34,7 @@ public class Collector {
      */
     private double R_of_A;
     private double B_R_of_A;
-    private boolean isRuntime=true;
+    private boolean isRuntime = true;
     private int threadCount;
     private final List<String[]> workloadConfig=new ArrayList<>();
     private final HashMap<Integer,Integer> currentWorkload=new HashMap<>();

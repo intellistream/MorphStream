@@ -19,8 +19,8 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-//    public String application = "StreamLedger";
-        public String application = "GrepSum";
+    public String application = "StreamLedger";
+    //public String application = "GrepSum";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -98,6 +98,15 @@ public abstract class Runner implements IRunner {
     public String bottomLine = "2,3,5,10,0.6,0.7";
     @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")
     public String WorkloadConfig = "1,3,4,0.5,0.6,1,1,39999;1,6,4,0.5,0.7,1,1,79999;3,6,3,0.5,0.7,1,1,100000";
+
+    /**
+     * Dynamic workload
+     */
+    @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
+
+    public String  workloadType = "";
+    @Parameter(names = {"-shiftRate-"}, description = "control the rate of the workload shift")
+    public int shiftRate  = 5;
 
     /**
      * Benchmarking Specific Parameters.
@@ -222,13 +231,18 @@ public abstract class Runner implements IRunner {
         config.put("size_tuple", size_tuple);
         config.put("verbose", verbose);
 
-        /* Dynamic Workload Configuration*/
+        /* Dynamic switch scheduler*/
         config.put("isDynamic",isDynamic);
         config.put("schedulersPool",schedulerPools);
         config.put("defaultScheduler",scheduler);
         config.put("isRuntime",isRuntime);
         config.put("bottomLine",bottomLine);
         config.put("WorkloadConfig",WorkloadConfig);
+
+        /* Dynamic Workload Configuration*/
+        config.put("application",application);
+        config.put("workloadType",workloadType);
+        config.put("shiftRate",shiftRate);
 
         System.setProperty("my.log", metric_path);
     }
