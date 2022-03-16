@@ -197,8 +197,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     @Override
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);
-        tpg.setOCs(context);
+        /*Thread to OCs does not need reconfigure*/
+        if (!tpg.isThreadTOCsReady()){
+            tpg.setOCs(context);
+        }
     }
+
 
     /**
      * Submit requests to target thread --> data shuffling is involved.
@@ -241,6 +245,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 case READ_WRITE_COND_READN:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
+                    break;
+                case READ_WRITE_READ:
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.record_ref, request.function, null, null, null);
                     break;
                 default:
                     throw new UnsupportedOperationException();
