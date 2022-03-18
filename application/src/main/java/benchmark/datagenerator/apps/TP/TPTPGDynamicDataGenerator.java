@@ -18,6 +18,10 @@ import java.util.Random;
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
 
+/**
+ * Dynamic workload generator for toll processing
+ * Created by curry on 18/3/22
+ */
 public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(TPTPGDynamicDataGenerator.class);
     private int State_Access_Skewness; // ratio of state access, following zipf distribution

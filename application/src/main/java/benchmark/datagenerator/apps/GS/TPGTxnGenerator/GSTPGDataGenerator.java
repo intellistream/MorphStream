@@ -1,7 +1,6 @@
 package benchmark.datagenerator.apps.GS.TPGTxnGenerator;
 
 import benchmark.datagenerator.DataGenerator;
-import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.Transaction.GSEvent;
 import common.tools.FastZipfGenerator;
