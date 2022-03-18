@@ -24,10 +24,13 @@ public abstract class DynamicWorkloadGenerator extends DataGenerator {
 
     @Override
     public void generateStream() {
+        //Init the Configuration
+        switchConfiguration();
         for (int tupleNumber = 0; tupleNumber < nTuples + dynamicDataConfig.getTotalThreads(); tupleNumber++) {
             if (tupleNumber%dynamicDataConfig.getCheckpoint_interval()* dynamicDataConfig.getShiftRate()* dynamicDataConfig.getTotalThreads() == 0) {
-                dynamicDataConfig.nextDataGeneratorConfig();
-                switchConfiguration();
+                if (dynamicDataConfig.nextDataGeneratorConfig()) {
+                    switchConfiguration();
+                }
             }
             generateTuple();
         }

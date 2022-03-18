@@ -1,11 +1,11 @@
 package combo;
 
+import benchmark.DataHolder;
 import common.bolts.transactional.tp.*;
 import common.collections.Configuration;
-import common.collections.OsUtils;
-import common.constants.BaseConstants;
 import common.datatype.AbstractLRBTuple;
 import common.datatype.PositionReport;
+import common.param.TxnEvent;
 import common.param.lr.LREvent;
 import components.context.TopologyContext;
 import execution.ExecutionGraph;
@@ -14,12 +14,9 @@ import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 import static common.CONTROL.*;
 import static content.Content.*;
@@ -27,7 +24,7 @@ import static content.Content.*;
 public class TPCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(TPCombo.class);
     private static final long serialVersionUID = -2394340130331865581L;
-    HashMap<Short, Integer> keys = new HashMap();
+    HashMap<Integer, Integer> keys = new HashMap();
     DescriptiveStatistics stats = new DescriptiveStatistics();
     int concurrency = 0;
     int pre_concurrency = 0;
@@ -40,8 +37,8 @@ public class TPCombo extends SPOUTCombo {
     }
 
     private boolean check_conflict(LREvent pre_event, LREvent event) {
-        Short pre_segment = pre_event.getPOSReport().getSegment();
-        Short current_segment = event.getPOSReport().getSegment();
+        Integer pre_segment = pre_event.getPOSReport().getSegment();
+        Integer current_segment = event.getPOSReport().getSegment();
         return pre_segment.equals(current_segment);
     }
 
@@ -55,7 +52,7 @@ public class TPCombo extends SPOUTCombo {
 
     protected void show_stats() {
         for (Object myevent : myevents) {
-            Short segment = ((LREvent) myevent).getPOSReport().getSegment();
+            Integer segment = ((LREvent) myevent).getPOSReport().getSegment();
             stats.addValue(segment);
             boolean containsKey = keys.containsKey(segment);
             if (containsKey) {
@@ -64,7 +61,7 @@ public class TPCombo extends SPOUTCombo {
                 keys.put(segment, 1);
             }
         }
-        for (Map.Entry<Short, Integer> entry : keys.entrySet()) {
+        for (Map.Entry<Integer, Integer> entry : keys.entrySet()) {
             LOG.info("SEGMENT:" + entry.getKey() + " " + "Counter:" + entry.getValue());
         }
         LOG.info(stats.toString());
@@ -102,7 +99,7 @@ public class TPCombo extends SPOUTCombo {
                             Integer.parseInt(token[4]), // xway
                             Short.parseShort(token[5]), // lane
                             Short.parseShort(token[6]), // direction
-                            Short.parseShort(token[7]), // segment
+                            Integer.parseInt(token[7]), // segment
                             Integer.parseInt(token[8])),
                             tthread,
                             bid)
@@ -115,33 +112,17 @@ public class TPCombo extends SPOUTCombo {
 
     @Override
     public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) {
-        int i = 0;
-        int bid = 0;
-        Scanner sc = null;
-        try {
-            sc = new Scanner(new File(file_name));
-            for (int j = 0; j < taskId; j++) {
-                sc.nextLine();
-            }
-            while (sc.hasNextLine() && bid < config.getInt("totalEvents") ) {
-                String record = sc.nextLine();
-                Object event = create_new_event(record, bid);
-                if (event == null) {
-                } else {
-                    myevents[i++] = event;
-                    bid++;
-                    if (i == num_events_per_thread) break;
-                    for (int j = 0; j < (tthread - 1) * combo_bid_size; j++) {
-                        if (sc.hasNextLine())
-                            sc.nextLine();//skip un-related.
-                    }
-                }
-            }
-            if (enable_debug)
-                show_stats();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        int storageIndex = 0;
+        //Load OnlineBiding Events.
+        for (int index = taskId; index < DataHolder.events.size(); ) {
+            TxnEvent event = DataHolder.events.get(index).cloneEvent();
+            mybids[storageIndex] = event.getBid();
+            myevents[storageIndex++] = event;
+            if (storageIndex == num_events_per_thread)
+                break;
+            index += tthread * combo_bid_size;
         }
+        assert (storageIndex == num_events_per_thread);
     }
 
     @Override
@@ -166,7 +147,7 @@ public class TPCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                bolt = new TPBolt_ts(0, sink);
+                bolt = new TPBolt_ts_s(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
@@ -177,22 +158,8 @@ public class TPCombo extends SPOUTCombo {
         }
         //do preparation.
         bolt.prepare(config, context, collector);
-        if (enable_shared_state)
-            bolt.loadDB(config, context, collector);
-        String OS_prefix = null;
-        if (OsUtils.isWindows()) {
-            OS_prefix = "win.";
-        } else {
-            OS_prefix = "unix.";
-        }
-        String path;
-        if (OsUtils.isMac()) {
-            path = config.getString(getConfigKey(OS_prefix.concat(BaseConstants.BaseConf.SPOUT_TEST_PATH)));
-        } else {
-            path = config.getString(getConfigKey(OS_prefix.concat(BaseConstants.BaseConf.SPOUT_PATH)));
-        }
-        String file = System.getProperty("user.home").concat("/data/app/").concat(path);
-        loadEvent(file, config, context, collector);
+        bolt.loadDB(config, context, collector);
+        loadEvent(config.getString("rootFilePath"), config, context, collector);
         sink.checkpoint_interval = checkpoint_interval;
     }
 }

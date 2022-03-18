@@ -1,12 +1,7 @@
 package benchmark.dynamicWorkloadGenerator;
 
 import benchmark.datagenerator.DataGeneratorConfig;
-import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
-import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import common.collections.Configuration;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Generate dynamic workload configuration
@@ -27,6 +22,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     public int Ratio_of_Transaction_Aborts;
     public int Transaction_Length;
     public int Ratio_Of_Deposit;
+    public int Ratio_Of_Buying;
 
     public void initialize(Configuration config) {
         super.initialize(config);
@@ -40,6 +36,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
         Ratio_of_Transaction_Aborts = config.getInt("Ratio_of_Transaction_Aborts", 0);
         Transaction_Length = config.getInt("Transaction_Length", 1);
         Ratio_Of_Deposit = config.getInt("Ratio_Of_Deposit", 0);
+        Ratio_Of_Buying=config.getInt("Ratio_Of_Buying",0);
     }
 
     public int getCheckpoint_interval() {
@@ -53,8 +50,9 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
      * Generate the configuration based on type and application
      * @return
      */
-    public void nextDataGeneratorConfig() {
-
+    public boolean nextDataGeneratorConfig() {
+        //TODO: how to switch
+        return false;
     }
 
     public String getType() {

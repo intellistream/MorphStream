@@ -19,8 +19,10 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "StreamLedger";
+    //public String application = "StreamLedger";
     //public String application = "GrepSum";
+    //public String application = "OnlineBiding";
+    public String application = "TollProcessing";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -65,7 +67,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "OG_BFS";
+    public String scheduler = "OP_BFS";
     //        public String scheduler = "OG_BFS_A";
 //    public String scheduler = "OG_DFS";
 //    public String scheduler = "OG_DFS_A";
@@ -135,10 +137,13 @@ public abstract class Runner implements IRunner {
     public String generator = "TPGGenerator";
 //    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 100000;
+    public int totalEvents = 10000;
 
     @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
     public Integer Ratio_Of_Deposit = 25;
+
+    @Parameter(names = {"--buying_ratio"}, description = "Ratio of buying for OB.")
+    public Integer Ratio_Of_Buying = 25;
 
     @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
     public Integer State_Access_Skewness = 0;
@@ -156,7 +161,7 @@ public abstract class Runner implements IRunner {
     public Integer numberOfDLevels = 1024;
 
     @Parameter(names = {"--isCyclic"}, description = "isCyclic of generated OC.")
-    public int isCyclic = 1;
+    public int isCyclic = 0;
 
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
     public Integer complexity = 100000;
@@ -188,7 +193,11 @@ public abstract class Runner implements IRunner {
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
 
-        config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        if (application.equals("OnlineBiding")){
+            config.put("Ratio_Of_Buying", Ratio_Of_Buying);
+        }else {
+            config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        }
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);

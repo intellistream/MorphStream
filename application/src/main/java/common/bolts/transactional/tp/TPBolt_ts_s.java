@@ -37,13 +37,12 @@ public class TPBolt_ts_s extends TPBolt {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager=new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(),thread_Id,
                 NUM_SEGMENTS,this.context.getThisComponent().getNumTasks(),config.getString("scheduler","BF"));
-        LREvents=new ArrayDeque<>();
+        LREvents = new ArrayDeque<>();
     }
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
                 , context.getGraph());
     }
-
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()){

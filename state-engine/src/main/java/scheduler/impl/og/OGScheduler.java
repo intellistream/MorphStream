@@ -14,6 +14,9 @@ import scheduler.struct.op.MetaTypes;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
+import storage.datatype.DoubleDataBox;
+import storage.datatype.IntDataBox;
+import transaction.function.AVG;
 import transaction.function.DEC;
 import transaction.function.INC;
 import transaction.function.SUM;
@@ -22,6 +25,7 @@ import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import static content.common.CommonMetaTypes.AccessType.*;
@@ -73,7 +77,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             EXPLORE(context);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
 //            MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
-            PROCESS(context, mark_ID);
+             PROCESS(context, mark_ID);
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
@@ -195,12 +199,35 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
             success = operation.success[0];
-            Transfer_Fun(operation, mark_ID, clean);
+            if (this.tpg.getApp() == 1) {//SL
+                Transfer_Fun(operation, mark_ID, clean);
+            } else {//OB
+                AppConfig.randomDelay();
+                List<DataBox> d_record = operation.condition_records[0].content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType).getValues();
+                long askPrice = d_record.get(1).getLong();//price
+                long left_qty = d_record.get(2).getLong();//available qty;
+                long bidPrice = operation.condition.arg1;
+                long bid_qty = operation.condition.arg2;
+                if (bidPrice > askPrice || bid_qty < left_qty) {
+                    d_record.get(2).setLong(left_qty - operation.function.delta_long);//new quantity.
+                    operation.success[0]++;
+                }
+            }
             if (operation.success[0] == success) {
                 operation.isFailed = true;
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
-            Depo_Fun(operation, mark_ID, clean);
+            if (this.tpg.getApp() == 1) { //SL
+                Depo_Fun(operation, mark_ID, clean);
+            } else {
+                AppConfig.randomDelay();
+                SchemaRecord srcRecord = operation.s_record.content_.ReadAccess(operation.bid,mark_ID,clean,operation.accessType);
+                List<DataBox> values = srcRecord.getValues();
+                if (operation.function instanceof INC) {
+                    values.get(2).setLong(values.get(2).getLong() + operation.function.delta_long);
+                } else
+                    throw new UnsupportedOperationException();
+            }
         } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
             success = operation.success[0];
             GrepSum_Fun(operation, mark_ID, clean);
@@ -210,6 +237,30 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             if (operation.success[0] == success) {
                 operation.isFailed = true;
             }
+        } else if (operation.accessType.equals(READ_WRITE_READ)) {
+            //TODO: implement the operation
+            assert operation.record_ref != null;
+            AppConfig.randomDelay();
+            List<DataBox> srcRecord = operation.s_record.record_.getValues();
+            if (operation.function instanceof AVG) {
+                double latestAvgSpeeds = srcRecord.get(1).getDouble();
+                double lav;
+                if (latestAvgSpeeds == 0) {//not initialized
+                    lav = operation.function.delta_double;
+                } else
+                    lav = (latestAvgSpeeds + operation.function.delta_double) / 2;
+
+                srcRecord.get(1).setDouble(lav);//write to state.
+                operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
+            } else {
+                HashSet cnt_segment = srcRecord.get(1).getHashSet();
+                cnt_segment.add(operation.function.delta_int);//update hashset; updated state also. TODO: be careful of this.
+                operation.record_ref.setRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
+            }
+        } else if (operation.accessType.equals(WRITE_ONLY)) {
+            //OB-Alert
+            AppConfig.randomDelay();
+            operation.d_record.record_.getValues().get(1).setLong(operation.value);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -330,7 +381,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         Operation headerOperation = null;
         Operation set_op;
         for (Request request : context.requests) {
-            set_op = constructOp(operationGraph, request);
+             set_op = constructOp(operationGraph, request);
             if (txnOpId == 0)
                 headerOperation = set_op;
             // addOperation an operation id for the operation for the purpose of temporal dependency construction
@@ -347,6 +398,11 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         Operation set_op;
         Context targetContext = getTargetContext(request.src_key);
         switch (request.accessType) {
+            case WRITE_ONLY:
+                set_op = new Operation(request.src_key, null, request.table_name, null, null, null,
+                        null, request.txn_context, request.accessType, null, request.d_record, bid, targetContext);
+                set_op.value = request.value;
+                break;
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
                 set_op = new Operation(request.src_key, request.function, request.table_name, null, request.condition_records, request.condition,
@@ -356,6 +412,10 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             case READ_WRITE_COND_READN:
                 set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, request.condition_records, request.condition,
                         request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
+                break;
+            case READ_WRITE_READ:
+                set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, null, null,
+                        null, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
                 break;
             default:
                 throw new RuntimeException("Unexpected operation");

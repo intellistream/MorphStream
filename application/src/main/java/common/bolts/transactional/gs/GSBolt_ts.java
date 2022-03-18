@@ -120,7 +120,7 @@ public class GSBolt_ts extends GSBolt {
             READ_POST(event);
         }
     }
-
+    int i=0;
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
@@ -132,7 +132,11 @@ public class GSBolt_ts extends GSBolt {
             {
                 MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
                 {
+                    if (i==1){
+                        System.out.println();
+                    }
                     transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
+                    i++;
                     READ_REQUEST_CORE();
                 }
                 MeasureTools.END_TXN_TIME_MEASURE(thread_Id);

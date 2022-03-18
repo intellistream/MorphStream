@@ -23,6 +23,7 @@ public class Request {
     public final int[] success;
     public final int column_id;
     public final double[] enqueue_time;
+    public long value;
 
     public Request() {
         this(null, null, null);
@@ -33,6 +34,16 @@ public class Request {
                    CommonMetaTypes.AccessType accessType,
                    String table_name) {
         this(txn_context, accessType, table_name, null);
+    }
+    //Write-only
+    public Request(TxnContext txn_context,
+                   CommonMetaTypes.AccessType accessType,
+                   String src_key,
+                   String table_name,
+                   TableRecord d_record,
+                   long value) {
+        this(txn_context, accessType, table_name, src_key, null, d_record, null, null);
+        this.value = value;
     }
 
     public Request(TxnContext txn_context,

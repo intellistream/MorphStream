@@ -127,13 +127,13 @@ public class MorphStreamRunner extends Runner {
                     break;
                 }
                 case "OnlineBiding": {
-                    config.put("app", 2);
+                    config.put("app", 3);
                     int threads = Math.max(1, (int) Math.floor((tthread)));
                     config.put(OB_THREADS, threads);
                     break;
                 }
                 case "TollProcessing": {
-                    config.put("app", 3);
+                    config.put("app", 2);
                     int threads = Math.max(1, (int) Math.floor((tthread)));
                     config.put(Executor_Threads, threads);
                     break;
@@ -269,9 +269,30 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
-                } else {
+                } else if (config.getString("common").equals("OnlineBiding")){
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("NUM_ACCESS"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else if (config.getString("common").equals("TollProcessing")){
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("NUM_ACCESS"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else
                     throw new UnsupportedOperationException();
-                }
                 File file = new File(statsFolderPath);
                 log.info("Dumping stats to...");
                 log.info(String.valueOf(file.getAbsoluteFile()));

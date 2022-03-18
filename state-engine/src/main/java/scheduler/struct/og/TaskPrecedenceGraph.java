@@ -54,6 +54,11 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         } else if (app == 1) {
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 2 ) {
+            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 3) {
+            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
 //        threadToOCs.get(context.thisThreadId).clear();
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
@@ -83,9 +88,11 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         } else if (app == 1) {//SL
             operationChains.put("accounts", new TableOCs<>(totalThreads));
             operationChains.put("bookEntries", new TableOCs<>(totalThreads));
-        } else if(app==2){//TP
+        } else if(app == 2) {//TP
             operationChains.put("segment_speed",new TableOCs<>(totalThreads));
             operationChains.put("segment_cnt",new TableOCs<>(totalThreads));
+        } else if (app == 3) {
+            operationChains.put("goods",new TableOCs<>(totalThreads));
         }
     }
 
@@ -117,13 +124,17 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
                 ocs.add(accOC);
                 ocs.add(beOC);
-            }else if(app==2){
+            } else if( app == 2) {
                 OperationChain speedOC=context.createTask("segment_speed",_key,0);
                 OperationChain cntOC=context.createTask("segment_cnt",_key,0);
                 operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, speedOC);
                 operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, cntOC);
                 ocs.add(speedOC);
                 ocs.add(cntOC);
+            } else if (app == 3){
+                OperationChain gsOC = context.createTask("goods", _key, 0);
+                operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
+                ocs.add(gsOC);
             }
         }
         threadToOCs.put(context.thisThreadId, ocs);
@@ -488,5 +499,9 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 
     public Collection<Context> getContexts() {
         return threadToContextMap.values();
+    }
+
+    public int getApp() {
+        return app;
     }
 }
