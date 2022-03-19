@@ -175,8 +175,8 @@ public final class CountTuple extends common.util.datatypes.StreamValues impleme
      * @return the VID of this tuple
      */
     @Override
-    public final Short getSegment() {
-        return (Short) super.get(SEG_IDX);
+    public final int getSegment() {
+        return (Integer) super.get(SEG_IDX);
     }
 
     /**

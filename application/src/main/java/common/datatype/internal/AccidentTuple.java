@@ -126,8 +126,8 @@ public final class AccidentTuple extends common.util.datatypes.StreamValues impl
      * @return the segment of this tuple
      */
     @Override
-    public final Short getSegment() {
-        return (Short) super.get(SEG_IDX);
+    public final int getSegment() {
+        return (Integer) super.get(SEG_IDX);
     }
 
     /**

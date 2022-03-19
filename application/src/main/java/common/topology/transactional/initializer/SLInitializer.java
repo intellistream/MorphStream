@@ -7,6 +7,8 @@ import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGenerator;
 import benchmark.datagenerator.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDynamicDataGenerator;
+import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
@@ -68,12 +70,17 @@ public class SLInitializer extends TableInitilizer {
     }
 
     protected void createTPGGenerator(Configuration config) {
-
-        SLTPGDataGeneratorConfig dataConfig = new SLTPGDataGeneratorConfig();
-        dataConfig.initialize(config);
-
-        configurePath(dataConfig);
-        dataGenerator = new SLTPGDataGenerator(dataConfig);
+        if (config.getBoolean("isDynamic")) {
+            DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
+            dynamicDataGeneratorConfig.initialize(config);
+            configurePath(dynamicDataGeneratorConfig);
+            dataGenerator=new SLTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
+        } else {
+            SLTPGDataGeneratorConfig dataConfig = new SLTPGDataGeneratorConfig();
+            dataConfig.initialize(config);
+            configurePath(dataConfig);
+            dataGenerator = new SLTPGDataGenerator(dataConfig);
+        }
     }
 
     protected void createLayeredOCGenerator(Configuration config) {
@@ -106,6 +113,15 @@ public class SLInitializer extends TableInitilizer {
                                 ((SLTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
                                 ((SLTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
                                 ((SLTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
+                                AppConfig.isCyclic)
+                        .getBytes(StandardCharsets.UTF_8));
+            else if(dataConfig instanceof DynamicDataGeneratorConfig)
+                bytes = digest.digest(String.format("%d_%d_%d_%s_%s_%s",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTotalEvents(),
+                                dataConfig.getnKeyStates(),
+                                ((DynamicDataGeneratorConfig) dataConfig).getType(),
+                                ((DynamicDataGeneratorConfig) dataConfig).getApp(),
                                 AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
             else

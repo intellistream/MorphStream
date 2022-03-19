@@ -1,10 +1,15 @@
 package common.topology.transactional.initializer;
 
+import benchmark.DataHolder;
+import benchmark.datagenerator.DataGenerator;
+import benchmark.datagenerator.DataGeneratorConfig;
+import benchmark.datagenerator.apps.OB.OBTPGDynamicDataGenerator;
+import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
+import common.param.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
-import common.param.ob.OBParam;
 import common.param.ob.ToppingEvent;
 import db.Database;
 import db.DatabaseException;
@@ -19,11 +24,13 @@ import storage.datatype.IntDataBox;
 import storage.datatype.LongDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
+import utils.AppConfig;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 import static common.CONTROL.enable_log;
@@ -32,7 +39,6 @@ import static common.Constants.Event_Path;
 import static common.constants.OnlineBidingSystemConstants.Constant.*;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
-import static utils.PartitionHelper.getPartition_interval;
 
 //import static xerial.jnuma.Numa.setLocalAlloc;
 public class OBInitializer extends TableInitilizer {
@@ -40,19 +46,66 @@ public class OBInitializer extends TableInitilizer {
     //triple decisions
     protected int[] triple_decision = new int[]{0, 0, 0, 0, 0, 0, 1, 2};//6:1:1 buy, alert, topping_handle.
     private int i = 0;
+    private final int numberOfStates;
+    private String dataRootPath;
+    private DataGenerator dataGenerator;
+    private final DataGeneratorConfig dataConfig;
+    private final int partitionOffset;
+    private final int NUM_ACCESS;
+    private final int Transaction_Length;
+    private SplittableRandom rnd = new SplittableRandom();
 
-    public OBInitializer(Database db, double theta, int tthread, Configuration config) {
+    public OBInitializer(Database db, int numberOfStates,double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
+        floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
+        this.dataRootPath = config.getString("rootFilePath");
+        this.partitionOffset = numberOfStates / tthread;
+        this.NUM_ACCESS = config.getInt("NUM_ACCESS");
+        this.Transaction_Length = config.getInt("Transaction_Length");
+        this.numberOfStates = numberOfStates;
         configure_store(theta, tthread, NUM_ITEMS);
+        createTPGGenerator(config);
+        dataConfig = dataGenerator.getDataConfig();
+    }
+
+    protected void createTPGGenerator(Configuration config) {
+        DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
+        dynamicDataGeneratorConfig.initialize(config);
+        configurePath(dynamicDataGeneratorConfig);
+        dataGenerator = new OBTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
+    }
+
+    private void configurePath(DynamicDataGeneratorConfig dynamicDataGeneratorConfig) {
+        MessageDigest digest;
+        String subFolder = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes;
+            bytes = digest.digest(String.format("%d_%d_%d_%s_%s_%s",
+                            dynamicDataGeneratorConfig.getTotalThreads(),
+                            dynamicDataGeneratorConfig.getTotalEvents(),
+                            dynamicDataGeneratorConfig.getnKeyStates(),
+                            dynamicDataGeneratorConfig.getType(),
+                            dynamicDataGeneratorConfig.getApp(),
+                            AppConfig.isCyclic)
+                    .getBytes(StandardCharsets.UTF_8));
+            subFolder = OsUtils.osWrapperPostFix(
+                    DatatypeConverter.printHexBinary(bytes));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        dynamicDataGeneratorConfig.setRootPath(dynamicDataGeneratorConfig.getRootPath() + OsUtils.OS_wrapper(subFolder));
+        dynamicDataGeneratorConfig.setIdsPath(dynamicDataGeneratorConfig.getIdsPath() + OsUtils.OS_wrapper(subFolder));
+        this.dataRootPath += OsUtils.OS_wrapper(subFolder);
     }
 
     @Override
     public void loadDB(int thread_id, int NUMTasks) {
-        int partition_interval = getPartition_interval();
+        int partition_interval = (int) Math.ceil(numberOfStates / (double) NUMTasks);;
         int left_bound = thread_id * partition_interval;
         int right_bound;
         if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
-            right_bound = NUM_ITEMS;
+            right_bound = numberOfStates;
         } else {
             right_bound = (thread_id + 1) * partition_interval;
         }
@@ -65,11 +118,11 @@ public class OBInitializer extends TableInitilizer {
 
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks) {
-        int partition_interval = getPartition_interval();
+        int partition_interval = (int) Math.ceil(numberOfStates / (double) NUMTasks);
         int left_bound = thread_id * partition_interval;
         int right_bound;
         if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
-            right_bound = NUM_ITEMS;
+            right_bound = numberOfStates;
         } else {
             right_bound = (thread_id + 1) * partition_interval;
         }
@@ -134,83 +187,92 @@ public class OBInitializer extends TableInitilizer {
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
-    /**
-     * OB
-     *
-     * @param partition_id
-     * @param bid_array
-     * @param number_of_partitions
-     * @param bid
-     * @param rnd
-     * @return
-     */
-    protected BuyingEvent randomBuyEvents(int partition_id, long[] bid_array, int number_of_partitions, long bid, SplittableRandom rnd) {
-        int pid = partition_id;
-        OBParam param = new OBParam(NUM_ACCESSES_PER_BUY);
-        Set keys = new HashSet();
-        int access_per_partition = (int) Math.ceil(NUM_ACCESSES_PER_BUY / (double) number_of_partitions);
-        int counter = 0;
-        randomkeys(pid, param, keys, access_per_partition, counter, NUM_ACCESSES_PER_BUY);
-        assert !enable_states_partition || verify(keys, partition_id, number_of_partitions);
-        return new BuyingEvent(param.keys(), rnd, partition_id, bid_array, bid, number_of_partitions);
-    }
-
-    protected AlertEvent randomAlertEvents(int partition_id, long[] bid_array, int number_of_partitions, long bid, SplittableRandom rnd) {
-        int pid = partition_id;
-        int num_access = rnd.nextInt(NUM_ACCESSES_PER_ALERT) + 5;
-        OBParam param = new OBParam(num_access);
-        Set keys = new HashSet();
-        int access_per_partition = (int) Math.ceil(num_access / (double) number_of_partitions);
-        int counter = 0;
-        randomkeys(pid, param, keys, access_per_partition, counter, num_access);
-        assert verify(keys, partition_id, number_of_partitions);
-        return new AlertEvent(
-                num_access,
-                param.keys(),
-                rnd,
-                partition_id, bid_array, bid, number_of_partitions
-        );
-    }
-
-    protected ToppingEvent randomToppingEvents(int partition_id, long[] bid_array, int number_of_partitions, long bid, SplittableRandom rnd) {
-        int pid = partition_id;
-        int num_access = rnd.nextInt(NUM_ACCESSES_PER_TOP) + 5;
-        OBParam param = new OBParam(num_access);
-        Set keys = new HashSet();
-        int access_per_partition = (int) Math.ceil(num_access / (double) number_of_partitions);
-        int counter = 0;
-        randomkeys(pid, param, keys, access_per_partition, counter, num_access);
-        assert verify(keys, partition_id, number_of_partitions);
-        return new ToppingEvent(
-                num_access,
-                param.keys(),
-                rnd,
-                partition_id, bid_array, bid, number_of_partitions
-        );
-    }
-
-    protected int next_decision3() {
-        int rt = triple_decision[i];
-        i++;
-        if (i == 8)
-            i = 0;
-        return rt;
-    }
-
     @Override
     public boolean Generate() throws IOException {
-//        String event_path = Event_Path
-//                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition);
-//        return !Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file)));
-        throw new UnsupportedOperationException();
+        String folder = dataRootPath;
+        File file = new File(folder);
+        if (file.exists()) {
+            if (enable_log) LOG.info("Data already exists.. skipping data generation...");
+            return false;
+        }
+        file.mkdirs();
+        dataGenerator.generateStream();//prepare input events.
+        if (enable_log) LOG.info(String.format("Data Generator will dump data at %s.", dataRootPath));
+        dataGenerator.dumpGeneratedDataToFile();
+        if (enable_log) LOG.info("Data Generation is done...");
+        dataGenerator.clearDataStructures();
+        return true;
     }
 
 
     @Override
     protected void Load() throws IOException {
-        throw new UnsupportedOperationException();
+        int totalEvents = dataConfig.getTotalEvents();
+        boolean shufflingActive = dataConfig.getShufflingActive();
+        String folder = dataConfig.getRootPath();
+        File file = new File(folder + "events.txt");
+        long[] p_bids = new long[tthread];
+        if (file.exists()) {
+            if (enable_log) LOG.info("Reading transfer events...");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            loadOnlineBiddingEvents(reader, totalEvents, shufflingActive, p_bids);
+            reader.close();
+        }
     }
-
+     private void loadOnlineBiddingEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, long[] p_bids) throws IOException {
+        String txn = reader.readLine();
+        int count = 0;
+        while (txn != null) {
+            TxnEvent event;
+            String[] split = txn.split(",");
+            if (split.length > 3) {
+                int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
+                int keyLength = NUM_ACCESS*Transaction_Length;
+                HashMap<Integer, Integer> pids = new HashMap<>();
+                int[] keys = new int[keyLength];
+                for (int i = 1; i < keyLength+1; i++) {
+                    keys[i-1] = Integer.parseInt(split[i]);
+                    pids.put((int) (keys[i-1] / partitionOffset), 0);
+                }
+                if (split[split.length-1].equals("1")) {
+                    event = new AlertEvent(keyLength, keys, rnd, npid,  Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(),Arrays.toString(pids.keySet().toArray(new Integer[0])));
+                } else {
+                    event = new ToppingEvent(keyLength, keys, rnd, npid, Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(),Arrays.toString(pids.keySet().toArray(new Integer[0])));
+                }
+            } else {
+                int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
+                int[] keys = new int[NUM_ACCESSES_PER_BUY];
+                HashMap<Integer, Integer> pids = new HashMap<>();
+                for (int i = 1; i < NUM_ACCESSES_PER_BUY+1; i++) {
+                    keys[i-1] = Integer.parseInt(split[i]);
+                    pids.put((int) (keys[i-1] / partitionOffset), 0);
+                }
+                if (split[split.length-1].equals("true")) {
+                    event = new BuyingEvent(keys,npid, Arrays.toString(p_bids),Integer.parseInt(split[0]),pids.size(),Arrays.toString(pids.keySet().toArray(new Integer[0])),true);
+                } else {
+                    event = new BuyingEvent(keys,npid, Arrays.toString(p_bids),Integer.parseInt(split[0]),pids.size(),Arrays.toString(pids.keySet().toArray(new Integer[0])),false);
+                }
+            }
+            DataHolder.events.add(event);
+            if (enable_log) LOG.debug(String.format("%d deposit read...", count));
+            txn = reader.readLine();
+        }
+         if (enable_log) LOG.info("Done reading transfer events...");
+         if (shufflingActive) {
+             shuffleEvents(DataHolder.events, totalEvents);
+         }
+     }
+    private void shuffleEvents(ArrayList<TxnEvent> txnEvents, int totalEvents) {
+        Random random = new Random();
+        int index;
+        TxnEvent temp;
+        for (int i = totalEvents - 1; i > 0; i--) {
+            index = random.nextInt(i + 1);
+            temp = txnEvents.get(index);
+            txnEvents.set(index, txnEvents.get(i));
+            txnEvents.set(i, temp);
+        }
+    }
 
     @Override
     public void store(String file_name) throws IOException {

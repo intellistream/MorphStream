@@ -38,8 +38,9 @@ public class OnlineBiding extends TransactionTopology {
     public TableInitilizer initializeDB(SpinLock[] spinlock_) {
         double theta = config.getDouble("theta", 1);
         int tthread = config.getInt("tthread");
-        setPartition_interval((int) (Math.ceil(NUM_ITEMS / (double) tthread)), tthread);
-        TableInitilizer ini = new OBInitializer(db, theta, tthread, config);
+        int numberOfStates = config.getInt("NUM_ITEMS");
+        setPartition_interval((int) (Math.ceil(numberOfStates / (double) tthread)), tthread);
+        TableInitilizer ini = new OBInitializer(db,numberOfStates, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)

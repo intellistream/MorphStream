@@ -126,7 +126,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         AccessType accessType = AccessType.WRITE_ONLY;
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable));
+            return scheduler.SubmitRequest(context, new Request(txn_context, accessType,primary_key,srcTable,t_record,value));
         } else {
             if (enable_log) log.info("No record is found:" + primary_key);
             return false;

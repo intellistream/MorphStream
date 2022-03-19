@@ -19,8 +19,10 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-//    public String application = "StreamLedger";
-        public String application = "GrepSum";
+    //public String application = "StreamLedger";
+    //public String application = "GrepSum";
+    //public String application = "OnlineBiding";
+    public String application = "TollProcessing";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -65,7 +67,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "OG_BFS";
+    public String scheduler = "OP_BFS";
     //        public String scheduler = "OG_BFS_A";
 //    public String scheduler = "OG_DFS";
 //    public String scheduler = "OG_DFS_A";
@@ -100,6 +102,15 @@ public abstract class Runner implements IRunner {
     public String WorkloadConfig = "1,3,4,0.5,0.6,1,1,39999;1,6,4,0.5,0.7,1,1,79999;3,6,3,0.5,0.7,1,1,100000";
 
     /**
+     * Dynamic workload
+     */
+    @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
+
+    public String  workloadType = "";
+    @Parameter(names = {"-shiftRate-"}, description = "control the rate of the workload shift")
+    public int shiftRate  = 5;
+
+    /**
      * Benchmarking Specific Parameters.
      */
     @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
@@ -126,10 +137,13 @@ public abstract class Runner implements IRunner {
     public String generator = "TPGGenerator";
 //    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 100000;
+    public int totalEvents = 10000;
 
     @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
     public Integer Ratio_Of_Deposit = 25;
+
+    @Parameter(names = {"--buying_ratio"}, description = "Ratio of buying for OB.")
+    public Integer Ratio_Of_Buying = 25;
 
     @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
     public Integer State_Access_Skewness = 0;
@@ -147,7 +161,7 @@ public abstract class Runner implements IRunner {
     public Integer numberOfDLevels = 1024;
 
     @Parameter(names = {"--isCyclic"}, description = "isCyclic of generated OC.")
-    public int isCyclic = 1;
+    public int isCyclic = 0;
 
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
     public Integer complexity = 100000;
@@ -179,7 +193,11 @@ public abstract class Runner implements IRunner {
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
 
-        config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        if (application.equals("OnlineBiding")){
+            config.put("Ratio_Of_Buying", Ratio_Of_Buying);
+        }else {
+            config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        }
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
@@ -222,13 +240,18 @@ public abstract class Runner implements IRunner {
         config.put("size_tuple", size_tuple);
         config.put("verbose", verbose);
 
-        /* Dynamic Workload Configuration*/
+        /* Dynamic switch scheduler*/
         config.put("isDynamic",isDynamic);
         config.put("schedulersPool",schedulerPools);
         config.put("defaultScheduler",scheduler);
         config.put("isRuntime",isRuntime);
         config.put("bottomLine",bottomLine);
         config.put("WorkloadConfig",WorkloadConfig);
+
+        /* Dynamic Workload Configuration*/
+        config.put("application",application);
+        config.put("workloadType",workloadType);
+        config.put("shiftRate",shiftRate);
 
         System.setProperty("my.log", metric_path);
     }

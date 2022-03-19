@@ -5,6 +5,9 @@ import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGenerator;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
+import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDynamicDataGenerator;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
+import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
@@ -68,14 +71,20 @@ public class GSInitializer extends TableInitilizer {
     }
 
     protected void createTPGGenerator(Configuration config) {
+        if(config.getBoolean("isDynamic")) {
+            //TODO:add the dynamic workload dataGenerator
+            DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
+            dynamicDataGeneratorConfig.initialize(config);
+            configurePath(dynamicDataGeneratorConfig);
+            dataGenerator=new GSTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
+        }else {
+            GSTPGDataGeneratorConfig dataConfig = new GSTPGDataGeneratorConfig();
+            dataConfig.initialize(config);
 
-        GSTPGDataGeneratorConfig dataConfig = new GSTPGDataGeneratorConfig();
-        dataConfig.initialize(config);
-
-        configurePath(dataConfig);
-        dataGenerator = new GSTPGDataGenerator(dataConfig);
+            configurePath(dataConfig);
+            dataGenerator = new GSTPGDataGenerator(dataConfig);
+        }
     }
-
     /**
      * Control the input file path.
      * TODO: think carefully which configuration shall vary.
@@ -88,24 +97,33 @@ public class GSInitializer extends TableInitilizer {
      *
      * @param dataConfig
      */
-    private void configurePath(GSTPGDataGeneratorConfig dataConfig) {
+    private void configurePath(DataGeneratorConfig dataConfig) {
         MessageDigest digest;
         String subFolder = null;
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
+            if (dataConfig instanceof GSTPGDataGeneratorConfig)
             bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%s",
                             dataConfig.getTotalThreads(),
                             dataConfig.getTotalEvents(),
                             dataConfig.getnKeyStates(),
-                            dataConfig.NUM_ACCESS,
-                            dataConfig.State_Access_Skewness,
-                            dataConfig.Ratio_of_Overlapped_Keys,
-                            dataConfig.Ratio_of_Transaction_Aborts,
-                            dataConfig.Transaction_Length,
+                            ((GSTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
+                            ((GSTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
+                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
+                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
+                            ((GSTPGDataGeneratorConfig) dataConfig).Transaction_Length,
                             AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
-
+            else
+                bytes = digest.digest(String.format("%d_%d_%d_%s_%s_%s",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTotalEvents(),
+                                dataConfig.getnKeyStates(),
+                                ((DynamicDataGeneratorConfig) dataConfig).getType(),
+                                ((DynamicDataGeneratorConfig) dataConfig).getApp(),
+                                AppConfig.isCyclic)
+                        .getBytes(StandardCharsets.UTF_8));
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(bytes));
         } catch (Exception e) {

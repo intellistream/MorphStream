@@ -31,7 +31,7 @@ import static profiler.Metrics.NUM_ITEMS;
 
 public class OBBolt_ts_s extends OBBolt {
     private static final Logger LOG= LoggerFactory.getLogger(OBBolt_ts_s.class);
-    ArrayDeque<BuyingEvent> buyingEvents;
+    ArrayDeque<BuyingEvent> buyingEvents = new ArrayDeque<>();
     private int alertEvents = 0, toppingEvents = 0;
     public OBBolt_ts_s(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -73,6 +73,7 @@ public class OBBolt_ts_s extends OBBolt {
                 alertEvents = 0;
                 toppingEvents = 0;
             }
+            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id,readSize);
         }else {
             execute_ts_normal(in);
         }
