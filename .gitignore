@@ -1,0 +1,50 @@
+/common/target/
+/stream-engine/target/
+/state-engine/target/
+/application/target/
+/affinity/target/
+/.idea/
+/application/application.iml
+/common/common.iml
+/state-engine/state-engine.iml
+/stream-engine/stream-engine.iml
+.idea/
+/metric_output/
+
+# builds
+build*/*
+_build/
+_install/
+
+# kdevelop
+*.kdev4
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+/.github/
+
+*.iml
+
+logs
+scripts/draw/results*
+scripts/*.jar
