@@ -10,7 +10,6 @@ package StreamLedger;
 
 public class Main {
 
-
     public static void main(String[] args) throws Exception {
         // build up Flink pipeline
         StreamLedgerEvaluator streamLedgerEvaluator = new StreamLedgerEvaluator();

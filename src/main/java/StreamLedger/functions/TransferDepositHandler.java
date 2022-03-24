@@ -93,7 +93,7 @@ public class TransferDepositHandler extends RichMapFunction<Either<DepositEvent,
     public long get(String key) {
         JedisPooled jedis = new JedisPooled("localhost", 6379);
         String value = jedis.get(key);
-        long ret = jedis.get(key) == null ? 0L : Long.parseLong(value);
+        long ret = jedis.get(key) == null ? 10_000_000L : Long.parseLong(value);
         jedis.close();
         return ret;
     }

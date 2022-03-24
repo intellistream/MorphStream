@@ -3,22 +3,15 @@ package StreamLedger;
 import StreamLedger.data.DepositEvent;
 import StreamLedger.data.TransactionEvent;
 import StreamLedger.data.generator.DepositsThenTransactionsSource;
-import StreamLedger.data.generator.SyntheticSources;
-import StreamLedger.functions.DepositHandler;
+import StreamLedger.data.generator.SLTPGDataGeneratorSource;
+import StreamLedger.functions.MetricsRetriever;
 import StreamLedger.functions.TransferDepositHandler;
-import StreamLedger.functions.TransferHandler;
-import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.types.Either;
-import org.redisson.Redisson;
-import org.redisson.api.RedissonClient;
-import org.redisson.api.RedissonReactiveClient;
-import org.redisson.api.RedissonRxClient;
-import org.redisson.config.Config;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPooled;
+
+import java.util.Random;
 
 public class StreamLedgerEvaluator {
 //    @Deprecated
@@ -50,12 +43,17 @@ public class StreamLedgerEvaluator {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         final DataStreamSource<Either<DepositEvent, TransactionEvent>> depositsAndTransactions = env.addSource(
-                new DepositsThenTransactionsSource(1)).setParallelism(1);
+                new SLTPGDataGeneratorSource()).setParallelism(1);
 
         depositsAndTransactions
                 .map(new TransferDepositHandler())
                 .name("Transaction handler")
-                .setParallelism(2)
+                .setParallelism(24)
+                .map(new MetricsRetriever())
+                .filter((FilterFunction<String>) value -> {
+                    Random random = new Random();
+                    return random.nextInt() % 1000 == 0;
+                })
                 .print();
 
         // trigger program execution
