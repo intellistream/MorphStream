@@ -11,21 +11,15 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import redis.clients.jedis.JedisPooled;
 
-import java.io.Serializable;
-
-public class TransferDepositHandler extends RichMapFunction<Either<DepositEvent, TransactionEvent>, TransactionResult> {
+public class TransferDepositHandlerNoLock extends RichMapFunction<Either<DepositEvent, TransactionEvent>, TransactionResult> {
 
     private JedisPooled jedis;
-    private RLock lock;
 
-    public TransferDepositHandler() {}
+    public TransferDepositHandlerNoLock() {}
 
     @Override
     public void open(Configuration parameters) {
         jedis = new JedisPooled("localhost", 6379);
-        // create lock for state access
-        RedissonClient redisson = Redisson.create();
-        lock = redisson.getLock("lock");
     }
 
     @Override
@@ -40,8 +34,6 @@ public class TransferDepositHandler extends RichMapFunction<Either<DepositEvent,
 
     public TransactionResult transfer(TransactionEvent event) {
         TransactionResult transactionResult = null;
-        // lock before executing transaction
-        lock.lock();
 
         final long sourceAccountBalance = get(event.getSourceAccountId());
         final long sourceAssetValue = get(event.getSourceBookEntryId());
@@ -59,7 +51,6 @@ public class TransferDepositHandler extends RichMapFunction<Either<DepositEvent,
             final long newSourceAssets = sourceAssetValue - event.getBookEntryTransfer();
             final long newTargetAssets = targetAssetValue + event.getBookEntryTransfer();
 
-
             randomDelay();
             randomDelay();
             randomDelay();
@@ -76,16 +67,10 @@ public class TransferDepositHandler extends RichMapFunction<Either<DepositEvent,
             // emit result with unchanged balances and a flag to mark transaction as rejected
             transactionResult = new TransactionResult(event, false, sourceAccountBalance, targetAccountBalance);
         }
-
-        lock.unlock();
         return transactionResult;
     }
 
     public TransactionResult deposit(DepositEvent event) {
-
-        // init redis client
-        lock.lock();
-
         long newAccountValue = get(event.getAccountId()) + event.getAccountTransfer();
         long newAssetValue = get(event.getBookEntryId()) + event.getBookEntryTransfer();
 
@@ -95,7 +80,6 @@ public class TransferDepositHandler extends RichMapFunction<Either<DepositEvent,
         set(event.getAccountId(), newAccountValue);
         set(event.getBookEntryId(), newAssetValue);
 
-        lock.unlock();
         return new TransactionResult();
     }
 

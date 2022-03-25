@@ -2,7 +2,6 @@ package StreamLedger;
 
 import StreamLedger.data.DepositEvent;
 import StreamLedger.data.TransactionEvent;
-import StreamLedger.data.generator.DepositsThenTransactionsSource;
 import StreamLedger.data.generator.SLTPGDataGeneratorSource;
 import StreamLedger.functions.MetricsRetriever;
 import StreamLedger.functions.TransferDepositHandler;
@@ -13,33 +12,9 @@ import org.apache.flink.types.Either;
 
 import java.util.Random;
 
-public class StreamLedgerEvaluator {
-//    @Deprecated
-//    public void run() throws Exception {
-//        // Environment setup
-//        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-//
-//        // create and add two data sources
-//        SyntheticSources sources = SyntheticSources.create(env, 1);
-//
-//        // produce the deposits transaction stream
-//        DataStream<DepositEvent> deposits = sources.deposits;
-//
-//        // produce transactions stream
-//        DataStream<TransactionEvent> transfers = sources.transactions;
-//
-//
-//        deposits.map(new DepositHandler())
-//                .setParallelism(2)
-//                .name("Deposit Handler");
-//
-//
-//        transfers.map(new TransferHandler())
-//                .setParallelism(2)
-//                .name("Transfer Handler");
-//    }
+public class StreamLedger {
 
-    public void run() throws Exception {
+    public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         final DataStreamSource<Either<DepositEvent, TransactionEvent>> depositsAndTransactions = env.addSource(
@@ -59,5 +34,4 @@ public class StreamLedgerEvaluator {
         // trigger program execution
         env.execute();
     }
-
 }

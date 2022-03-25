@@ -53,7 +53,7 @@ public class SLTPGDataGeneratorSource extends RichParallelSourceFunction<Either<
     public SLTPGDataGeneratorSource() {
 
         // TODO: temporarily hard coded, will update later
-        Ratio_Of_Deposit = 50;//0-100 (%)
+        Ratio_Of_Deposit = 25;//0-100 (%)
         State_Access_Skewness = 0;
         Ratio_of_Overlapped_Keys = 0;
 

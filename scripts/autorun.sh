@@ -50,6 +50,6 @@ init
 runFlink
 runApp
 
-python -c 'import time; time.sleep('"100"')'
+python -c 'import time; time.sleep('"200"')'
 
 stopFlink
