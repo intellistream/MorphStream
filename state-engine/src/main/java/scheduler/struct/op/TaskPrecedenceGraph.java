@@ -55,10 +55,13 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
 //        threadToOCs.get(context.thisThreadId).clear();
+//        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+//            oc.clear();
+//        }
+//        this.setOCs(context); // TODO: the short cut should be reset, but will take some time.
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear();
         }
-//        this.setOCs(context); // TODO: the short cut should be reset, but will take some time.
     }
 
     /**
