@@ -48,3 +48,9 @@ _install/
 logs
 scripts/draw/results*
 scripts/*.jar
+
+target/
+results/
+*.lock
+*.nolock
+dependency-reduced-pom.xml
