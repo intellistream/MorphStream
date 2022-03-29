@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FLINK_DIR="/home/myc/workspace/flink/build-target"
-FLINK_APP_DIR="/home/myc/workspace/MorphStream"
+FLINK_DIR="/home/shuhao/myc/tools/build-target"
+FLINK_APP_DIR="/home/shuhao/myc/TStream_related/MorphStream"
 
 # run flink clsuter
 function runFlink() {
@@ -15,7 +15,7 @@ function runFlink() {
 
 # clean app specific related data
 function cleanEnv() {
-    mv ${FLINK_DIR}/log/flink-myc-taskexecutor-0-myc-amd.out .
+    mv ${FLINK_DIR}/log/*.out .
     rm -rf /tmp/flink*
     rm ${FLINK_DIR}/log/*
 }
@@ -36,7 +36,8 @@ function stopFlink() {
 init() {
   # app level
   JAR="${FLINK_APP_DIR}/target/StreamLedger-1.0-SNAPSHOT.jar"
-  job="StreamLedger.Main"
+  # job="StreamLedger.StreamLedger"
+  job="StreamLedger.StreamLedgerNoLock"
 }
 
 # run applications
