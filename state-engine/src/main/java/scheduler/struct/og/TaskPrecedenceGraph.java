@@ -61,10 +61,13 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
 //        threadToOCs.get(context.thisThreadId).clear();
+//        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+//            oc.clear();
+//        }
+//        this.setOCs(context);
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear();
         }
-//        this.setOCs(context);
     }
 
     /**

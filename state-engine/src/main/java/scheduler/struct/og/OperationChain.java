@@ -278,6 +278,7 @@ public class OperationChain implements Comparable<OperationChain> {
         operations.clear();
         ocParents.clear();
         ocChildren.clear();
+        isExecuted = false;
         // Non-structured data structure clearance
         needAbortHandling = false;
         failedOperations.clear();
