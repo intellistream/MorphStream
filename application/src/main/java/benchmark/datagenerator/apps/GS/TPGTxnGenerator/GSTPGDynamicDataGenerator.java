@@ -27,6 +27,7 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
     private int Transaction_Length;
     private int tthread;
+    private int nKeyState;
     // control the number of txns overlap with each other.
     private ArrayList<Integer> generatedKeys = new ArrayList<>();
     // independent transactions.
@@ -49,21 +50,75 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     }
 
     @Override
-    public void switchConfiguration() {
-        State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
-        NUM_ACCESS = dynamicDataConfig.NUM_ACCESS;
-        Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
-        Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
-        Transaction_Length = dynamicDataConfig.Transaction_Length;
-
-        int nKeyState = dynamicDataConfig.getnKeyStates();
-        int MAX_LEVEL = 256;
-        for (int i = 0; i < nKeyState; i++) {
-            idToLevel.put(i, i% MAX_LEVEL);
+    public void tranToDecisionConf() {
+        //TD,LD,PD,VDD,R_of_A,isCD,isCC,
+        StringBuilder stringBuilder = new StringBuilder();
+        //TODO:hard code, function not sure
+        double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval();
+        td = td *((double) Ratio_of_Overlapped_Keys/100);
+        stringBuilder.append(td);
+        stringBuilder.append(",");
+        double ld = Transaction_Length * dynamicDataConfig.getCheckpoint_interval();
+        stringBuilder.append(ld);
+        stringBuilder.append(",");
+        double pd = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * ((double) Ratio_of_Overlapped_Keys/100) * NUM_ACCESS;
+        stringBuilder.append(pd);
+        stringBuilder.append(",");
+        stringBuilder.append((double) State_Access_Skewness/100);
+        stringBuilder.append(",");
+        stringBuilder.append((double) Ratio_of_Transaction_Aborts/10000);
+        stringBuilder.append(",");
+        if (AppConfig.isCyclic) {
+            stringBuilder.append("1,");
+        } else {
+            stringBuilder.append("0,");
         }
-        keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
-        configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
-        p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+        if (AppConfig.complexity < 40000){
+            stringBuilder.append("0,");
+        } else {
+            stringBuilder.append("1,");
+        }
+        stringBuilder.append(eventID+dynamicDataConfig.getShiftRate()*dynamicDataConfig.getCheckpoint_interval()*dynamicDataConfig.getTotalThreads());
+        this.tranToDecisionConf.add(stringBuilder.toString());
+    }
+
+    @Override
+    public void switchConfiguration(String type) {
+        switch (type) {
+            case "default" :
+                State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
+                NUM_ACCESS = dynamicDataConfig.NUM_ACCESS;
+                Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
+                Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
+                Transaction_Length = dynamicDataConfig.Transaction_Length;
+
+                nKeyState = dynamicDataConfig.getnKeyStates();
+                int MAX_LEVEL = 256;
+                for (int i = 0; i < nKeyState; i++) {
+                    idToLevel.put(i, i% MAX_LEVEL);
+                }
+                keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
+                configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
+                p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+            break;
+            case "LD" :
+                Transaction_Length = dynamicDataConfig.Transaction_Length;
+            break;
+            case "isCyclic" :
+                Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
+                State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
+                keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
+                configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
+                p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+                AppConfig.isCyclic = true;
+            break;
+            case "complexity" :
+                AppConfig.complexity = 80000;
+            break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + type);
+        }
+        tranToDecisionConf();
     }
 
     @Override

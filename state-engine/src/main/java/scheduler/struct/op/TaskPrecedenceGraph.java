@@ -126,7 +126,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, cntOC);
                 ocs.add(speedOC);
                 ocs.add(cntOC);
-            } else if (app ==3) {
+            } else if (app == 3) {
                 OperationChain gsOC = context.createTask("goods", _key);
                 operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);

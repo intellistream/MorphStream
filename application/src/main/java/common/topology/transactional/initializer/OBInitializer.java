@@ -227,7 +227,7 @@ public class OBInitializer extends TableInitilizer {
             String[] split = txn.split(",");
             if (split.length > 3) {
                 int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
-                int keyLength = NUM_ACCESS*Transaction_Length;
+                int keyLength = 1*Transaction_Length;
                 HashMap<Integer, Integer> pids = new HashMap<>();
                 int[] keys = new int[keyLength];
                 for (int i = 1; i < keyLength+1; i++) {
@@ -338,11 +338,25 @@ public class OBInitializer extends TableInitilizer {
         w.close();
     }
 
+    @Override
+    public List<String> getTranToDecisionConf() {
+        return dataGenerator.getTranToDecisionConf();
+    }
+
     public void creates_Table(Configuration config) {
         RecordSchema s = Goods();
         db.createTable(s, "goods");
         try {
             prepare_input_events(config.getInt("totalEvents"));
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){//input data already exist
+                StringBuilder stringBuilder = new StringBuilder();
+                for(String decision:getTranToDecisionConf()){
+                    stringBuilder.append(decision);
+                    stringBuilder.append(";");
+                }
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                config.put("WorkloadConfig",stringBuilder.toString());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

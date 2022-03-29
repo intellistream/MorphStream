@@ -2,6 +2,7 @@ package benchmark.dynamicWorkloadGenerator;
 
 import benchmark.datagenerator.DataGeneratorConfig;
 import common.collections.Configuration;
+import utils.AppConfig;
 
 /**
  * Generate dynamic workload configuration
@@ -15,6 +16,8 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     private String app;
     /* Control the rate of the workload*/
     private int shiftRate;
+    /* The workload is in which phase */
+    private int phase;
     private int checkpoint_interval;
     public int State_Access_Skewness;
     public int NUM_ACCESS;
@@ -37,6 +40,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
         Transaction_Length = config.getInt("Transaction_Length", 1);
         Ratio_Of_Deposit = config.getInt("Ratio_Of_Deposit", 0);
         Ratio_Of_Buying=config.getInt("Ratio_Of_Buying",0);
+        phase = 0;
     }
 
     public int getCheckpoint_interval() {
@@ -50,9 +54,17 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
      * Generate the configuration based on type and application
      * @return
      */
-    public boolean nextDataGeneratorConfig() {
-        //TODO: how to switch
-        return false;
+    public String nextDataGeneratorConfig() {
+        switch (type){
+            case "0" :
+                return setConfigurationForSL();
+            case "1" :
+                return setConfigurationForOB();
+            case "2" :
+                return setConfigurationForGS();
+            default:
+                throw new IllegalStateException("Unexpected value: " + type);
+        }
     }
 
     public String getType() {
@@ -61,5 +73,61 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
 
     public String getApp() {
         return app;
+    }
+
+    private String setConfigurationForSL() {
+        switch (phase){
+            case 0:
+                phase++;
+                return "default";
+            case 1:
+                phase++;
+                this.State_Access_Skewness = 85;
+                return "skew";
+            case 2:
+                phase++;
+                this.Ratio_Of_Deposit = 80;
+                return "PD";
+            default:
+                return null;
+        }
+    }
+    private String setConfigurationForOB() {
+        switch (phase){
+            case 0:
+                phase++;
+                return "default";
+            case 1:
+                phase++;
+                this.State_Access_Skewness = 85;// 100
+                return "skew";
+            case 2:
+                phase++;
+                this.Ratio_of_Transaction_Aborts = 8000;// 10000
+                return "abort";
+            default:
+                return null;
+        }
+    }
+    private String setConfigurationForGS() {
+        switch (phase){
+            case 0:
+                phase++;
+                return "default";
+            case 1:
+                phase++;
+                this.Transaction_Length = 8;
+                return "LD";
+            case 2:
+                phase++;
+                this.Ratio_of_Transaction_Aborts = 8000;// 10000
+                this.State_Access_Skewness = 85;
+                return "isCyclic";
+            case 3:
+                phase++;
+                return "complexity";
+            default:
+                return null;
+        }
     }
 }

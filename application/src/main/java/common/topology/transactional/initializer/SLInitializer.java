@@ -325,6 +325,11 @@ public class SLInitializer extends TableInitilizer {
 
     }
 
+    @Override
+    public List<String> getTranToDecisionConf() {
+        return dataGenerator.getTranToDecisionConf();
+    }
+
     private void loadTransferDepositEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
         String txn = reader.readLine();
         int count = 0;
@@ -417,6 +422,15 @@ public class SLInitializer extends TableInitilizer {
         db.createTable(b, "bookEntries");
         try {
             prepare_input_events(config.getInt("totalEvents"));
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
+                StringBuilder stringBuilder = new StringBuilder();
+                for(String decision:getTranToDecisionConf()){
+                    stringBuilder.append(decision);
+                    stringBuilder.append(";");
+                }
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                config.put("WorkloadConfig",stringBuilder.toString());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -294,6 +294,11 @@ public class TPInitializer extends TableInitilizer {
     public void store(String file_name) {
     }
 
+    @Override
+    public List<String> getTranToDecisionConf() {
+        return dataGenerator.getTranToDecisionConf();
+    }
+
     protected String getConfigKey(String template) {
         return String.format(template, "tptxn");//TODO: make it flexible in future.
     }
@@ -305,6 +310,15 @@ public class TPInitializer extends TableInitilizer {
         db.createTable(b, "segment_cnt");
         try {
             prepare_input_events(config.getInt("totalEvents"));
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
+                StringBuilder stringBuilder = new StringBuilder();
+                for(String decision:getTranToDecisionConf()){
+                    stringBuilder.append(decision);
+                    stringBuilder.append(";");
+                }
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                config.put("WorkloadConfig",stringBuilder.toString());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

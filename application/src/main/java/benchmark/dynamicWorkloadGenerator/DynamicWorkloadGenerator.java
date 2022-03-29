@@ -3,6 +3,9 @@ package benchmark.dynamicWorkloadGenerator;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Generate dynamic workload
@@ -12,33 +15,40 @@ import benchmark.datagenerator.DataGeneratorConfig;
  * Created by curry on 16/3/22.
  */
 public abstract class DynamicWorkloadGenerator extends DataGenerator {
+    protected List<String> tranToDecisionConf =new ArrayList<>();
     protected DynamicDataGeneratorConfig dynamicDataConfig;
     public DynamicWorkloadGenerator(DynamicDataGeneratorConfig dynamicDataConfig) {
         super(dynamicDataConfig);
         this.dynamicDataConfig=dynamicDataConfig;
     }
 
-    private String[] tranToDecisionConf() {
-        return null;
-    }
+    /**
+     * Each application may be different
+     */
+    public abstract void tranToDecisionConf();
 
     @Override
     public void generateStream() {
         //Init the Configuration
-        switchConfiguration();
         for (int tupleNumber = 0; tupleNumber < nTuples + dynamicDataConfig.getTotalThreads(); tupleNumber++) {
-            if (tupleNumber%dynamicDataConfig.getCheckpoint_interval()* dynamicDataConfig.getShiftRate()* dynamicDataConfig.getTotalThreads() == 0) {
-                if (dynamicDataConfig.nextDataGeneratorConfig()) {
-                    switchConfiguration();
+            if (tupleNumber%(dynamicDataConfig.getCheckpoint_interval()* dynamicDataConfig.getShiftRate()* dynamicDataConfig.getTotalThreads()) == 0) {
+                String type = dynamicDataConfig.nextDataGeneratorConfig();
+                if (type != null) {
+                    switchConfiguration(type);
                 }
             }
             generateTuple();
         }
     }
-    public abstract void switchConfiguration();
+    public abstract void switchConfiguration(String type);
 
     @Override
     public DynamicDataGeneratorConfig getDataConfig() {
         return dynamicDataConfig;
+    }
+
+    @Override
+    public List<String> getTranToDecisionConf() {
+        return tranToDecisionConf;
     }
 }

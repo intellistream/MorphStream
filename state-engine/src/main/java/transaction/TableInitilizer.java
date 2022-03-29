@@ -11,6 +11,7 @@ import scheduler.context.SchedulerContext;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.SplittableRandom;
 
@@ -151,5 +152,6 @@ public abstract class TableInitilizer {
     protected abstract void Load() throws IOException;
 
     public abstract void store(String file_path) throws IOException;
+    public abstract List<String> getTranToDecisionConf();
 
 }

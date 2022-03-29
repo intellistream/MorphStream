@@ -6,6 +6,8 @@ import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * Data generator for benchmarks, this class contains all common methods and attributes that can be used in each application
  */
@@ -45,5 +47,8 @@ public abstract class DataGenerator {
     }
     /* Switch configuration, used in the dynamic data generator*/
 
+    public List<String> getTranToDecisionConf() {
+        return null;
+    }
 
 }

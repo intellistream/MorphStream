@@ -8,6 +8,7 @@ import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDynamicDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
+import benchmark.dynamicWorkloadGenerator.DynamicWorkloadGenerator;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
@@ -382,6 +383,11 @@ public class GSInitializer extends TableInitilizer {
         w.close();
     }
 
+    @Override
+    public List<String> getTranToDecisionConf() {
+        return dataGenerator.getTranToDecisionConf();
+    }
+
     private RecordSchema MicroTableSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -397,6 +403,15 @@ public class GSInitializer extends TableInitilizer {
         db.createTable(s, "MicroTable");
         try {
             prepare_input_events(config.getInt("totalEvents"));
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() !=0){
+                StringBuilder stringBuilder = new StringBuilder();
+                for(String decision:getTranToDecisionConf()){
+                    stringBuilder.append(decision);
+                    stringBuilder.append(";");
+                }
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                config.put("WorkloadConfig",stringBuilder.toString());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

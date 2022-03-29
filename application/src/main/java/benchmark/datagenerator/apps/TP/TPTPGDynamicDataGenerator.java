@@ -47,7 +47,12 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     }
 
     @Override
-    public void switchConfiguration() {
+    public void tranToDecisionConf() {
+
+    }
+
+    @Override
+    public void switchConfiguration(String type) {
         State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
         Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
         Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;

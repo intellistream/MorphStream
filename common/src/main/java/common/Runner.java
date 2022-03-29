@@ -19,10 +19,10 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    //public String application = "StreamLedger";
+    public String application = "StreamLedger";
     //public String application = "GrepSum";
     //public String application = "OnlineBiding";
-    public String application = "TollProcessing";
+    //public String application = "TollProcessing";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -33,7 +33,7 @@ public abstract class Runner implements IRunner {
     public int NUM_ITEMS = 100_000;//
 //    public int NUM_ITEMS = 500;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
-    public int NUM_ACCESS = 10;//
+    public int NUM_ACCESS = 5;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
     public double ratio_of_read = 0.0; //<=1
     @Parameter(names = {"--ratio_of_multi_partition"}, description = "ratio_of_multi_partition")
@@ -67,8 +67,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "OP_BFS";
-    //        public String scheduler = "OG_BFS_A";
+    public String scheduler = "OP_BFS_A";
+    //public String scheduler = "OG_BFS_A";
 //    public String scheduler = "OG_DFS";
 //    public String scheduler = "OG_DFS_A";
 //    public String scheduler = "OG_NS";
@@ -91,13 +91,13 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
-    public boolean isDynamic = false;
+    public boolean isDynamic = true;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
-    public String schedulerPools = "OP_NS_A,OP_BFS_A,OP_BFS,OG_BFS";
+    public String schedulerPools = "";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
-    public String defaultScheduler = "OG_BFS";
+    public String defaultScheduler = "";
     @Parameter(names = {"--bottomLine"}, description = "BottomLine for(TD,LD,PD,SUM,VDD,R_of_A)")
-    public String bottomLine = "2,3,5,10,0.6,0.7";
+    public String bottomLine = "";
     @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")
     public String WorkloadConfig = "1,3,4,0.5,0.6,1,1,39999;1,6,4,0.5,0.7,1,1,79999;3,6,3,0.5,0.7,1,1,100000";
 
@@ -105,10 +105,9 @@ public abstract class Runner implements IRunner {
      * Dynamic workload
      */
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
-
     public String  workloadType = "";
     @Parameter(names = {"-shiftRate-"}, description = "control the rate of the workload shift")
-    public int shiftRate  = 5;
+    public int shiftRate  = 2;
 
     /**
      * Benchmarking Specific Parameters.
@@ -132,12 +131,12 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 2500;//checkpoint per thread.
+    public int checkpoint_interval = 1500;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
 //    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 10000;
+    public int totalEvents = 48000;
 
     @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
     public Integer Ratio_Of_Deposit = 25;
@@ -152,7 +151,7 @@ public abstract class Runner implements IRunner {
     public Integer Ratio_of_Overlapped_Keys = 10;
 
     @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
-    public Integer Ratio_of_Transaction_Aborts = 0;
+    public Integer Ratio_of_Transaction_Aborts = 500;
 
     @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
     public Integer Transaction_Length = 1;
@@ -164,7 +163,7 @@ public abstract class Runner implements IRunner {
     public int isCyclic = 0;
 
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
-    public Integer complexity = 100000;
+    public Integer complexity = 10000;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -188,7 +187,6 @@ public abstract class Runner implements IRunner {
         config.put("machine", machine);
         config.put("totalEvents", totalEvents);
         config.put("rootFilePath", rootPath);
-        config.put("scheduler", scheduler);
         config.put("generator", generator);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
@@ -240,16 +238,39 @@ public abstract class Runner implements IRunner {
         config.put("size_tuple", size_tuple);
         config.put("verbose", verbose);
 
+        config.put("application",application);
+        switch(application) {
+            case "StreamLedger" :
+                workloadType = "0";
+                bottomLine = "300,3000,500,4000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OP_BFS_A,OP_NS_A,OG_NS_A";
+                defaultScheduler = "OP_BFS_A";
+                break;
+            case "OnlineBiding" :
+                workloadType ="1";
+                bottomLine = "500,5000,1,6000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OG_BFS_A,OG_NS_A,OG_NS";
+                defaultScheduler = "OG_BFS_A";
+                break;
+            case "GrepSum" :
+                workloadType ="2";
+                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
+                defaultScheduler = "OP_NS_A";
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + application);
+        }
         /* Dynamic switch scheduler*/
         config.put("isDynamic",isDynamic);
         config.put("schedulersPool",schedulerPools);
-        config.put("defaultScheduler",scheduler);
+        config.put("defaultScheduler",defaultScheduler);
+        config.put("scheduler", defaultScheduler);
         config.put("isRuntime",isRuntime);
         config.put("bottomLine",bottomLine);
         config.put("WorkloadConfig",WorkloadConfig);
 
         /* Dynamic Workload Configuration*/
-        config.put("application",application);
         config.put("workloadType",workloadType);
         config.put("shiftRate",shiftRate);
 
