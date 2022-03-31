@@ -60,7 +60,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
 //        }
 //        this.setOCs(context); // TODO: the short cut should be reset, but will take some time.
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
-            oc.clear();
+            oc.clear(); // only need to clear all operations from all ocs
         }
     }
 

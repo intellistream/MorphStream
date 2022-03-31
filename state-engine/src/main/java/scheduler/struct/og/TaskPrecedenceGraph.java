@@ -48,25 +48,25 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     private final int app;
 
     public void reset(Context context) {
-        //reset holder.
-        if (app == 0) {
-            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 1) {
-            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 2 ) {
-            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 3) {
-            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        }
+//        //reset holder.
+//        if (app == 0) {
+//            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//        } else if (app == 1) {
+//            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//        } else if (app == 2 ) {
+//            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//        } else if (app == 3) {
+//            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//        }
 //        threadToOCs.get(context.thisThreadId).clear();
 //        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
 //            oc.clear();
 //        }
 //        this.setOCs(context);
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
-            oc.clear();
+            oc.clear(); // only need to clear all operations from all ocs
         }
     }
 
