@@ -126,7 +126,7 @@ public class Collector {
         }
     }
 
-    public boolean timeToSwitch(long markId,int threadId){
+    public boolean timeToSwitch(long markId,int threadId,String currentScheduler){
         if(isRuntime){
             //TODO:collect information runtime
             return false;
@@ -136,7 +136,11 @@ public class Collector {
                 long currentId = Long.parseLong(workloadConfig.get(workloadId)[workloadConfig.get(workloadId).length-1]);
                 if (currentId <= markId+threadCount-threadId){
                     currentWorkload.put(threadId,currentWorkload.get(threadId)+1);
-                    return true;
+                    if(getDecision(threadId).equals(currentScheduler)){
+                        return false;
+                    } else {
+                        return true;
+                    }
                 }
             }
             return false;

@@ -21,7 +21,7 @@ public class SequentialBinding {
         ArrayList<Integer> list = mapping_node[socket];
         Integer core = list.get(cpu);
         cpu++;
-        if (cpu == 24) {//assume one socket 24 cores.
+        if (cpu == 19) {//assume one socket 24 cores.
             socket++;
             cpu = 0;
         }

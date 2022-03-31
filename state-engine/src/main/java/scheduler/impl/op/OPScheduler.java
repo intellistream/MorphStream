@@ -32,12 +32,15 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     private static final Logger log = LoggerFactory.getLogger(OPScheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
-
+    public int groupNum;
     public OPScheduler(int totalThreads, int NUM_ITEMS, int app) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
     }
-
+    @Override
+    public void initTPG(int offset) {
+        tpg.initTPG(offset);
+    }
     /**
      * state to thread mapping
      *
@@ -339,4 +342,5 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         RESET(context);//
 //        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
+
 }

@@ -41,6 +41,11 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
     }
 
+    @Override
+    public void initTPG(int offset) {
+        tpg.initTPG(offset);
+    }
+
     /**
      * state to thread mapping
      *
@@ -450,4 +455,5 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         }
         return false;
     }
+
 }

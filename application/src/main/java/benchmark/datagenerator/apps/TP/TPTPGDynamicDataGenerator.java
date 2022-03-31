@@ -40,6 +40,7 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
+    private boolean enableGroup;
     private HashMap<Integer, Integer> idToLevel = new HashMap<>();
     public TPTPGDynamicDataGenerator(DynamicDataGeneratorConfig dynamicDataConfig) {
         super(dynamicDataConfig);
@@ -56,6 +57,7 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
         Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
         Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
+        this.enableGroup=dynamicDataConfig.enableGroup;
         int nKeyState = dynamicDataConfig.getnKeyStates();
         int MAX_LEVEL = 256;
         for (int i = 0; i < nKeyState; i++) {
@@ -107,7 +109,13 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         int id;
         if (!isUnique) {
             if (enable_states_partition) {
-                int partitionId = key_to_partition(p_generator.next());
+                //Must Determine partitionId from EventId
+                int partitionId;
+                if (enableGroup) {
+                    partitionId = eventID % dynamicDataConfig.getTotalThreads();
+                } else {
+                    partitionId = key_to_partition(p_generator.next());
+                }
                 id = getKey(partitionedKeyZipf[partitionId],partitionId,generatedKeys);
             } else {
                 id = getKey(keyZipf,generatedKeys);

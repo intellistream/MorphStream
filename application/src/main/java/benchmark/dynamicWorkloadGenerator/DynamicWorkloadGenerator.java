@@ -1,7 +1,6 @@
 package benchmark.dynamicWorkloadGenerator;
 
 import benchmark.datagenerator.DataGenerator;
-import benchmark.datagenerator.DataGeneratorConfig;
 
 import java.util.ArrayList;
 import java.util.List;

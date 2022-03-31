@@ -26,6 +26,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     public int Transaction_Length;
     public int Ratio_Of_Deposit;
     public int Ratio_Of_Buying;
+    public boolean enableGroup;
 
     public void initialize(Configuration config) {
         super.initialize(config);
@@ -33,6 +34,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
         this.type = config.getString("workloadType");
         this.shiftRate = config.getInt("shiftRate");
         this.checkpoint_interval = config.getInt("checkpoint");
+        enableGroup = config.getBoolean("isGroup");
         NUM_ACCESS = config.getInt("NUM_ACCESS", 0);
         State_Access_Skewness = config.getInt("State_Access_Skewness", 0);
         Ratio_of_Overlapped_Keys = config.getInt("Ratio_of_Overlapped_Keys", 0);
@@ -62,6 +64,8 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
                 return setConfigurationForOB();
             case "2" :
                 return setConfigurationForGS();
+            case "3" :
+                return setConfigurationForTP();
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
@@ -75,19 +79,27 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
         return app;
     }
 
+    //User defined
     private String setConfigurationForSL() {
         switch (phase){
             case 0:
-                phase++;
+                phase ++;
                 return "default";
             case 1:
-                phase++;
-                this.State_Access_Skewness = 85;
-                return "skew";
+            case 4:
+                phase ++;
+                return "unchanging";
             case 2:
-                phase++;
-                this.Ratio_Of_Deposit = 80;
-                return "PD";
+            case 3:
+                phase ++;
+                this.State_Access_Skewness = this.State_Access_Skewness + 30;
+                return "skew";
+            case 5:
+            case 6:
+            case 7:
+                phase ++;
+                this.Ratio_Of_Deposit = this.Ratio_Of_Deposit + 20 ;
+                return "skew" ;
             default:
                 return null;
         }
@@ -128,6 +140,14 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
                 return "complexity";
             default:
                 return null;
+        }
+    }
+    private String setConfigurationForTP(){
+        if (phase==0){
+            phase ++;
+            return "default";
+        } else {
+            return null;
         }
     }
 }

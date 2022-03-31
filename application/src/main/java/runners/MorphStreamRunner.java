@@ -305,7 +305,7 @@ public class MorphStreamRunner extends Runner {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread, rt);
+                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread, rt,config.getInt("phaseNum"));
             }
         }//end of profile.
     }

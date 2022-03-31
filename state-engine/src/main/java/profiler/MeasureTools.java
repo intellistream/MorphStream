@@ -8,6 +8,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.enable_debug;
@@ -362,10 +364,34 @@ public class MeasureTools {
             e.printStackTrace();
         }
     }
+    private static void WriteThroughputReportRuntime(File file, int tthread, int phase) {
+        try {
+            double[] tr = new double[phase];
+            for (int i = 0; i < phase; i++) {
+                tr[i] = 0;
+                for (int j = 0; j < tthread; j++){
+                    tr[i] = tr[i] + Metrics.Runtime.ThroughputPerPhase.get(j).get(i) * 1E6;//
+                }
+            }
+            BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
+            fileWriter.write("phase_id\t throughput\n");
+            for (int i = 0; i < phase; i++){
+                String output = String.format("%d\t" +
+                                "%-10.4f\t"
+                        , i,tr[i]
+                );
+                fileWriter.write(output + "\n");
+            }
+            fileWriter.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-    public static void METRICS_REPORT(int ccOption, File file, int tthread, double throughput) {
+    public static void METRICS_REPORT(int ccOption, File file, int tthread, double throughput, int phase) {
         WriteThroughputReport(file, throughput);
         AverageTotalTimeBreakdownReport(file, tthread);
+        WriteThroughputReportRuntime(file,tthread,phase);
         if (ccOption == CCOption_MorphStream) {//extra info
             SchedulerTimeBreakdownReport(file, tthread);
         } else {

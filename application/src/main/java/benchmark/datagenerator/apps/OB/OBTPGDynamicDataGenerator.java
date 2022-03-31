@@ -133,6 +133,8 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             case "abort" :
                 Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
             break;
+            case "unchanging" :
+            break;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }

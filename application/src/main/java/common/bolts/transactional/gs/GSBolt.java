@@ -37,8 +37,9 @@ public abstract class GSBolt extends TransactionalBolt {
     protected boolean READ_CORE(MicroEvent event) {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             SchemaRecordRef ref = event.getRecord_refs()[i];
-            if (ref.isEmpty())
+            if (ref.isEmpty()) {
                 return false;//not yet processed.
+            }
             DataBox dataBox = ref.getRecord().getValues().get(1);
             int read_result = Integer.parseInt(dataBox.getString().trim());
             event.result[i] = read_result;

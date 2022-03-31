@@ -21,6 +21,7 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_latency_measurement;
 import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
+import static profiler.Metrics.NUM_ITEMS;
 
 public class TPBolt_ts_s extends TPBolt {
     private static final Logger LOG= LoggerFactory.getLogger(TPBolt_ts_s.class);
@@ -36,7 +37,7 @@ public class TPBolt_ts_s extends TPBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager=new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(),thread_Id,
-                NUM_SEGMENTS,this.context.getThisComponent().getNumTasks(),config.getString("scheduler","BF"));
+                NUM_ITEMS,this.context.getThisComponent().getNumTasks(),config.getString("scheduler","BF"));
         LREvents = new ArrayDeque<>();
     }
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {

@@ -91,7 +91,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
-    public boolean isDynamic = true;
+    public int isDynamic = 0;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
     public String schedulerPools = "";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
@@ -106,8 +106,20 @@ public abstract class Runner implements IRunner {
      */
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String  workloadType = "";
-    @Parameter(names = {"-shiftRate-"}, description = "control the rate of the workload shift")
-    public int shiftRate  = 2;
+    @Parameter(names = {"--shiftRate"}, description = "control the rate of the workload shift")
+    public int shiftRate  = 1;
+    @Parameter(names = {"--phaseNum"}, description = "How many phases")
+    public int phaseNum  = 2;
+
+    /**
+     * Scheduler for group
+     */
+    @Parameter(names = {"--isGroup"}, description = "Group for TP")
+    public int isGroup = 0;
+    @Parameter(names = {"--groupNum"}, description = "How many groups")
+    public int groupNum = 2;
+    @Parameter(names = {"--SchedulersForGroup"}, description = "Schedulers [OG_DFS,OP_DFS]")
+    public String SchedulersForGroup = "";
 
     /**
      * Benchmarking Specific Parameters.
@@ -131,12 +143,12 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 1500;//checkpoint per thread.
+    public int checkpoint_interval = 2500;//checkpoint per thread.
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
 //    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 48000;
+    public int totalEvents = 10000;
 
     @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
     public Integer Ratio_Of_Deposit = 25;
@@ -242,27 +254,41 @@ public abstract class Runner implements IRunner {
         switch(application) {
             case "StreamLedger" :
                 workloadType = "0";
-                bottomLine = "300,3000,500,4000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                bottomLine = "300,3000,500,1200,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_BFS_A,OP_NS_A,OG_NS_A";
                 defaultScheduler = "OP_BFS_A";
+                phaseNum = shiftRate * 8;
                 break;
             case "OnlineBiding" :
                 workloadType ="1";
                 bottomLine = "500,5000,1,6000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OG_BFS_A,OG_NS_A,OG_NS";
                 defaultScheduler = "OG_BFS_A";
+                phaseNum = shiftRate * 3;
                 break;
             case "GrepSum" :
                 workloadType ="2";
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
                 defaultScheduler = "OP_NS_A";
+                phaseNum = shiftRate * 4;
+                break;
+            case "TollProcessing" :
+                workloadType ="3";
+                phaseNum = shiftRate * 1;
+                defaultScheduler = "OG_BFS_A";
+                SchedulersForGroup = "OP_BFS_A,OP_NS_A";
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + application);
         }
         /* Dynamic switch scheduler*/
-        config.put("isDynamic",isDynamic);
+        if (isDynamic == 1) {
+            config.put("isDynamic", true);
+            config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
+        } else {
+            config.put("isDynamic", false);
+        }
         config.put("schedulersPool",schedulerPools);
         config.put("defaultScheduler",defaultScheduler);
         config.put("scheduler", defaultScheduler);
@@ -273,6 +299,17 @@ public abstract class Runner implements IRunner {
         /* Dynamic Workload Configuration*/
         config.put("workloadType",workloadType);
         config.put("shiftRate",shiftRate);
+        config.put("phaseNum",phaseNum);
+
+        /* Group scheduler*/
+        if (isGroup == 1) {
+            config.put("isGroup", true);
+            config.put("groupNum",groupNum);
+            config.put("SchedulersForGroup",SchedulersForGroup);
+            config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
+        } else {
+            config.put("isGroup", false);
+        }
 
         System.setProperty("my.log", metric_path);
     }

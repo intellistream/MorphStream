@@ -122,6 +122,8 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             case "PD" :
                 Ratio_Of_Deposit = dynamicDataConfig.Ratio_Of_Deposit;//0-100 (%)
             break;
+            case "unchanging" :
+            break;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }

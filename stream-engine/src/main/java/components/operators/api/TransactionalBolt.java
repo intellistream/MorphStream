@@ -173,6 +173,6 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         COMPUTE_COMPLEXITY = Metrics.COMPUTE_COMPLEXITY;
         POST_COMPUTE_COMPLEXITY = Metrics.POST_COMPUTE_COMPLEXITY;
         //LOG.DEBUG("NUM_ACCESSES: " + NUM_ACCESSES + " theta:" + theta);
-        SOURCE_CONTROL.getInstance().config(tthread);
+        SOURCE_CONTROL.getInstance().config(tthread,config.getInt("groupNum"));
     }
 }

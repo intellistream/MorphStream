@@ -170,7 +170,6 @@ public class MeasureSink extends BaseSink {
 //                }
 //            }
             latency_map.add(System.nanoTime() - input.getLong(1));
-
         }
     }
 

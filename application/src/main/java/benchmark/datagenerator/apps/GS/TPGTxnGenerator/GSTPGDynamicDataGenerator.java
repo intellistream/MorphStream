@@ -115,6 +115,8 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             case "complexity" :
                 AppConfig.complexity = 80000;
             break;
+            case "unchanging" :
+            break;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }

@@ -9,6 +9,7 @@ import scheduler.context.og.OGNSContext;
 import scheduler.context.og.OGSContext;
 import scheduler.context.og.OGSchedulerContext;
 import scheduler.struct.op.MetaTypes;
+import transaction.TxnManager;
 import transaction.impl.ordered.MyList;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
@@ -86,16 +87,18 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         this.app = app;
         //create holder.
         operationChains = new ConcurrentHashMap<>();
+    }
+    public void initTPG(int offset) {
         if (app == 0) {//GS
-            operationChains.put("MicroTable", new TableOCs<>(totalThreads));
+            operationChains.put("MicroTable", new TableOCs<>(totalThreads,offset));
         } else if (app == 1) {//SL
-            operationChains.put("accounts", new TableOCs<>(totalThreads));
-            operationChains.put("bookEntries", new TableOCs<>(totalThreads));
+            operationChains.put("accounts", new TableOCs<>(totalThreads,offset));
+            operationChains.put("bookEntries", new TableOCs<>(totalThreads,offset));
         } else if(app == 2) {//TP
-            operationChains.put("segment_speed",new TableOCs<>(totalThreads));
-            operationChains.put("segment_cnt",new TableOCs<>(totalThreads));
+            operationChains.put("segment_speed",new TableOCs<>(totalThreads,offset));
+            operationChains.put("segment_cnt",new TableOCs<>(totalThreads,offset));
         } else if (app == 3) {
-            operationChains.put("goods",new TableOCs<>(totalThreads));
+            operationChains.put("goods",new TableOCs<>(totalThreads,offset));
         }
     }
 

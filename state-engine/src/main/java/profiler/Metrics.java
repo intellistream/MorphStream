@@ -2,6 +2,11 @@ package profiler;
 
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static content.common.CommonMetaTypes.kMaxThreadNum;
 
 public class Metrics {
@@ -55,6 +60,8 @@ public class Metrics {
         Total_Record.stream_total[thread_id].addValue(stream_total);
         Total_Record.txn_total[thread_id].addValue(txn_total);
         Total_Record.overhead_total[thread_id].addValue(total_time - stream_total - txn_total);
+        Runtime.ThroughputPerPhase.get(thread_id).add(1 / total_time);
+        Runtime.Start[thread_id]=0;
     }
 
     public static void COMPUTE_PRE_EXE_START_TIME(int thread_id) {
@@ -275,6 +282,8 @@ public class Metrics {
         public static long[] Post = new long[kMaxThreadNum];
         public static long[] TxnStart = new long[kMaxThreadNum];
         public static long[] Txn = new long[kMaxThreadNum];
+        //Runtime throughput per phase
+        public static HashMap<Integer, List<Double>> ThroughputPerPhase =new HashMap<>();
         //USED ONLY BY TStream
         public static long[] PreTxnStart = new long[kMaxThreadNum];
         public static long[] PreTxn = new long[kMaxThreadNum];
@@ -290,6 +299,7 @@ public class Metrics {
                 Txn[i] = 0;
                 PreTxnStart[i] = 0;
                 PreTxn[i] = 0;
+                ThroughputPerPhase.put(i,new ArrayList<>());
             }
         }
     }

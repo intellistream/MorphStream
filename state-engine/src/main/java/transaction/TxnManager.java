@@ -1,5 +1,6 @@
 package transaction;
 
+import org.apache.zookeeper.txn.Txn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.collector.Collector;
@@ -29,11 +30,34 @@ public abstract class TxnManager implements ITxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManager.class);
     protected static IScheduler scheduler;
 
+    /**
+     * For dynamic workload
+     */
     protected static HashMap<String,IScheduler> schedulerPool;
     protected static boolean enableDynamic=false;
-
     protected static Collector collector=new Collector();
     protected static String currentSchedulerType;
+
+    /**
+     * Scheduler for multiple workload
+     */
+    protected static HashMap<Integer,IScheduler> schedulerByGroup;
+    protected static HashMap<Integer,String> schedulerTypeByGroup;
+    public static boolean enableGroup = false;
+    public static int groupNum;
+
+    public static void CreateSchedulerByGroup(String schedulerType, int threadCount,int numberOfStates, int app){
+        schedulerByGroup = new HashMap<>();
+        schedulerTypeByGroup = new HashMap<>();
+        String[] scheduler = schedulerType.split(",");
+        for(int i=0;i<scheduler.length;i++ ){
+            TxnManager.schedulerByGroup.put(i,CreateSchedulerByType(scheduler[i],threadCount/scheduler.length,numberOfStates/scheduler.length,app));
+            TxnManager.schedulerTypeByGroup.put(i,scheduler[i]);
+            TxnManager.schedulerByGroup.get(i).initTPG(i*(threadCount/scheduler.length));
+        }
+        enableGroup = true;
+        groupNum = scheduler.length;
+    }
 
     public static void CreateScheduler(String schedulerType, int threadCount, int numberOfStates, int app) {
         switch (schedulerType) {
@@ -79,6 +103,7 @@ public abstract class TxnManager implements ITxnManager {
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
         }
+        scheduler.initTPG(0);
     }
 
     /**
@@ -111,6 +136,7 @@ public abstract class TxnManager implements ITxnManager {
         String[] scheduler =schedulerPool.split(",");
         for(int i=0;i<scheduler.length;i++ ){
             TxnManager.schedulerPool.put(scheduler[i],CreateSchedulerByType(scheduler[i],threadCount,numberOfStates,app));
+            TxnManager.schedulerPool.get(scheduler[i]).initTPG(0);
         }
         collector.InitCollector(threadCount);
         TxnManager.scheduler=TxnManager.schedulerPool.get(defaultScheduler);
@@ -158,5 +184,4 @@ public abstract class TxnManager implements ITxnManager {
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
         }
     }
-
 }
