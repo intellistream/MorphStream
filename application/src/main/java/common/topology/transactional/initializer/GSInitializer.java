@@ -301,7 +301,7 @@ public class GSInitializer extends TableInitilizer {
             String[] split = txn.split(",");
             int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
             // construct bid array
-            int keyLength = NUM_ACCESS*Transaction_Length;
+            int keyLength = split.length - 2;
             HashMap<Integer, Integer> pids = new HashMap<>();
             long[] keys = new long[keyLength];
             for (int i = 1; i < keyLength+1; i++) {

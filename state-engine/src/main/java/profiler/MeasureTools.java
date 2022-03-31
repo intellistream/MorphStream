@@ -366,8 +366,8 @@ public class MeasureTools {
     }
     private static void WriteThroughputReportRuntime(File file, int tthread, int phase) {
         try {
-            double[] tr = new double[phase];
-            for (int i = 0; i < phase; i++) {
+            double[] tr = new double[Metrics.Runtime.ThroughputPerPhase.get(0).size()];
+            for (int i = 0; i < tr.length; i++) {
                 tr[i] = 0;
                 for (int j = 0; j < tthread; j++){
                     tr[i] = tr[i] + Metrics.Runtime.ThroughputPerPhase.get(j).get(i) * 1E6;//
@@ -375,7 +375,7 @@ public class MeasureTools {
             }
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("phase_id\t throughput\n");
-            for (int i = 0; i < phase; i++){
+            for (int i = 0; i < tr.length; i++){
                 String output = String.format("%d\t" +
                                 "%-10.4f\t"
                         , i,tr[i]

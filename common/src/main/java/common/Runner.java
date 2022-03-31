@@ -159,6 +159,9 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
     public Integer State_Access_Skewness = 0;
 
+    @Parameter(names = {"--multiple_ratio"}, description = "State access skewness.")
+    public Integer Ratio_of_Multiple_State_Access_Ratio = 100;
+
     @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
     public Integer Ratio_of_Overlapped_Keys = 10;
 
@@ -211,6 +214,7 @@ public abstract class Runner implements IRunner {
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
+        config.put("Ratio_of_Multiple_State_Access_Ratio",Ratio_of_Multiple_State_Access_Ratio);
         config.put("Transaction_Length", Transaction_Length);
 
         config.put("numberOfDLevels", numberOfDLevels);
