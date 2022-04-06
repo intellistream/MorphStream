@@ -292,8 +292,12 @@ public class SLInitializer extends TableInitilizer {
         String folder = dataConfig.getRootPath();
         File file = new File(folder);
         if (file.exists()) {
-            if (enable_log) LOG.info("Data already exists.. skipping data generation...");
-            return false;
+            if (config.getBoolean("isDynamic")) {
+                file.delete();
+            } else {
+                if (enable_log) LOG.info("Data already exists.. skipping data generation...");
+                return false;
+            }
         }
         file.mkdirs();
 
