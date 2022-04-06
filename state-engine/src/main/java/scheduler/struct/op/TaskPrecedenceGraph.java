@@ -62,6 +62,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear(); // only need to clear all operations from all ocs
         }
+        if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
     }
 
     /**

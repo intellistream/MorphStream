@@ -68,14 +68,14 @@ public class ExecutionManager {
                 int app = conf.getInt("app");
                 if (conf.getBoolean("isDynamic")) {
                     String schedulers=conf.getString("schedulersPool");
-                    TxnManager.initSchedulerPool(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates,app);
+                    TxnManager.initSchedulerPool(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates, app);
                     //Configure the bottom line for triggering scheduler switching in Collector(include the isRuntime and when to switch)
                     TxnManager.setBottomLine(conf.getString("bottomLine"));
                     if (!conf.getBoolean("isRuntime")) {
                         TxnManager.setWorkloadConfig(conf.getString("WorkloadConfig"));
                     }
                 } else if (conf.getBoolean("isGroup")) {
-                    TxnManager.CreateSchedulerByGroup(conf.getString("SchedulersForGroup"),totalThread,numberOfStates,app);
+                    TxnManager.CreateSchedulerByGroup(conf.getString("SchedulersForGroup"), totalThread, numberOfStates, app);
                 } else {
                     TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates, app);
                 }

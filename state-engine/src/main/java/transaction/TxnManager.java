@@ -28,21 +28,22 @@ import static common.CONTROL.enable_log;
  */
 public abstract class TxnManager implements ITxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManager.class);
-    protected static IScheduler scheduler;
+    protected static IScheduler scheduler; // TODO: this is a bad encapsulation, try to make it non static
+
 
     /**
      * For dynamic workload
      */
-    protected static HashMap<String,IScheduler> schedulerPool;
+    protected static HashMap<String, IScheduler> schedulerPool; // TODO: this is a bad encapsulation
     protected static boolean enableDynamic = false;
-    protected static Collector collector=new Collector();
-    protected static ConcurrentHashMap<Integer,String> currentSchedulerType = new ConcurrentHashMap<>();
+    protected static Collector collector = new Collector();
+    protected static ConcurrentHashMap<Integer, String> currentSchedulerType = new ConcurrentHashMap<>();
 
     /**
      * Scheduler for multiple workload
      */
-    protected static HashMap<Integer,IScheduler> schedulerByGroup;
-    protected static HashMap<Integer,String> schedulerTypeByGroup;
+    protected static HashMap<Integer, IScheduler> schedulerByGroup;
+    protected static HashMap<Integer, String> schedulerTypeByGroup;
     public static boolean enableGroup = false;
     public static int groupNum;
 
@@ -50,10 +51,10 @@ public abstract class TxnManager implements ITxnManager {
         schedulerByGroup = new HashMap<>();
         schedulerTypeByGroup = new HashMap<>();
         String[] scheduler = schedulerType.split(",");
-        for(int i=0;i<scheduler.length;i++ ){
-            TxnManager.schedulerByGroup.put(i,CreateSchedulerByType(scheduler[i],threadCount/scheduler.length,numberOfStates/scheduler.length,app));
-            TxnManager.schedulerTypeByGroup.put(i,scheduler[i]);
-            TxnManager.schedulerByGroup.get(i).initTPG(i*(threadCount/scheduler.length));
+        for(int i = 0; i<scheduler.length; i++ ){
+            TxnManager.schedulerByGroup.put(i,CreateSchedulerByType(scheduler[i], threadCount / scheduler.length, numberOfStates / scheduler.length, app));
+            TxnManager.schedulerTypeByGroup.put(i, scheduler[i]);
+            TxnManager.schedulerByGroup.get(i).initTPG(i * (threadCount / scheduler.length));
         }
         enableGroup = true;
         groupNum = scheduler.length;
@@ -134,20 +135,20 @@ public abstract class TxnManager implements ITxnManager {
     /**
      * Configure the scheduler pool
      */
-    public static void initSchedulerPool(String defaultScheduler,String schedulerPool,int threadCount, int numberOfStates, int app){
-        TxnManager.schedulerPool=new HashMap<>();
-        String[] scheduler =schedulerPool.split(",");
-        for(int i=0;i<scheduler.length;i++ ){
-            TxnManager.schedulerPool.put(scheduler[i],CreateSchedulerByType(scheduler[i],threadCount,numberOfStates,app));
+    public static void initSchedulerPool(String defaultScheduler, String schedulerPool, int threadCount, int numberOfStates, int app) {
+        TxnManager.schedulerPool = new HashMap<>();
+        String[] scheduler = schedulerPool.split(",");
+        for (int i = 0; i < scheduler.length; i++) {
+            TxnManager.schedulerPool.put(scheduler[i], CreateSchedulerByType(scheduler[i], threadCount, numberOfStates, app));
             TxnManager.schedulerPool.get(scheduler[i]).initTPG(0);
         }
-        for (int i = 0; i <threadCount; i++) {
-            TxnManager.currentSchedulerType.put(i,defaultScheduler);
+        for (int i = 0; i < threadCount; i++) {
+            TxnManager.currentSchedulerType.put(i, defaultScheduler);
         }
         collector.InitCollector(threadCount);
-        TxnManager.scheduler=TxnManager.schedulerPool.get(defaultScheduler);
-        log.info("Current Scheduler is "+defaultScheduler + " markId: " +0 );
-        enableDynamic=true;
+        TxnManager.scheduler = TxnManager.schedulerPool.get(defaultScheduler);
+        log.info("Current Scheduler is " + defaultScheduler + " markId: " + 0);
+        enableDynamic = true;
     }
 
     /**

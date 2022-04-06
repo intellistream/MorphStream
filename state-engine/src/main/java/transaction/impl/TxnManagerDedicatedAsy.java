@@ -52,13 +52,14 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         is_first_access_ = true;
         if (enableGroup) {
             dalta = (int) Math.ceil(thread_count / (double) groupNum);
-            this.setSchedulerContextByGroupId(thisTaskId / dalta,thisTaskId,thread_count/groupNum);
-        }else {
-            this.setSchedulerContext(thisTaskId,thread_count,schedulerType);
+            this.setSchedulerContextByGroupId(thisTaskId / dalta, thisTaskId, thread_count / groupNum);
+        } else {
+            this.setSchedulerContext(thisTaskId, thread_count, schedulerType);
         }
 //        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
     }
-    public void setSchedulerContext(int thisTaskId, int thread_count,String schedulerType){
+
+    public void setSchedulerContext(int thisTaskId, int thread_count, String schedulerType){
         SCHEDULER_TYPE scheduler_type = SCHEDULER_TYPE.valueOf(schedulerType);
         switch (scheduler_type) {
             case OG_BFS:
