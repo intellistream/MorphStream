@@ -25,7 +25,7 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
     private int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
     private int Transaction_Length;
-    private int Ratio_of_Multiple_State_Access_Ratio;//ratio of multiple state access per transaction
+    private int Ratio_of_Multiple_State_Access;//ratio of multiple state access per transaction
     private int tthread;
     private int nKeyState;
     // control the number of txns overlap with each other.
@@ -91,7 +91,7 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
                 Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
                 Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
                 Transaction_Length = dynamicDataConfig.Transaction_Length;
-                Ratio_of_Multiple_State_Access_Ratio = dynamicDataConfig.Ratio_of_Multiple_State_Access_Ratio;
+                Ratio_of_Multiple_State_Access = dynamicDataConfig.Ratio_of_Multiple_State_Access;
 
                 nKeyState = dynamicDataConfig.getnKeyStates();
                 int MAX_LEVEL = 256;

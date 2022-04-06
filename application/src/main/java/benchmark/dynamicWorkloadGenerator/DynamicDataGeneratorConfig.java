@@ -2,7 +2,6 @@ package benchmark.dynamicWorkloadGenerator;
 
 import benchmark.datagenerator.DataGeneratorConfig;
 import common.collections.Configuration;
-import utils.AppConfig;
 
 /**
  * Generate dynamic workload configuration
@@ -27,7 +26,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     public int Ratio_Of_Deposit;
     public int Ratio_Of_Buying;
     public boolean enableGroup;
-    public int Ratio_of_Multiple_State_Access_Ratio;
+    public int Ratio_of_Multiple_State_Access;
 
     public void initialize(Configuration config) {
         super.initialize(config);
@@ -43,7 +42,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
         Transaction_Length = config.getInt("Transaction_Length", 1);
         Ratio_Of_Deposit = config.getInt("Ratio_Of_Deposit", 0);
         Ratio_Of_Buying=config.getInt("Ratio_Of_Buying",0);
-        Ratio_of_Multiple_State_Access_Ratio = config.getInt("Ratio_of_Multiple_State_Access_Ratio",100);
+        Ratio_of_Multiple_State_Access = config.getInt("Ratio_of_Multiple_State_Access_Ratio",100);
         phase = 0;
     }
 
