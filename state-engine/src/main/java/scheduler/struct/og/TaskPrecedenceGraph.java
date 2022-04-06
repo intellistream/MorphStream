@@ -38,7 +38,7 @@ import static common.CONTROL.enable_log;
 public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
-    public final Map<Integer, Context> threadToContextMap;
+    public final ConcurrentHashMap<Integer, Context> threadToContextMap;
     public final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final int NUM_ITEMS;
@@ -117,6 +117,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
             right_bound = (context.thisThreadId + 1) * delta;
         }
         String _key;
+        resetOCs(context);
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
             if (app == 0) {
@@ -145,11 +146,23 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         }
         threadToOCs.put(context.thisThreadId, ocs);
     }
+    private void resetOCs(Context context) {
+        if (app == 0) {
+            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 1) {
+            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if( app == 2) {
+            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 3){
+            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        }
+    }
 
     public TableOCs<OperationChain> getTableOCs(String table_name) {
         return operationChains.get(table_name);
     }
-    public boolean isThreadTOCsReady(){return threadToOCs.size()==totalThreads; }
 
     public ConcurrentHashMap<String, TableOCs<OperationChain>> getOperationChains() {
         return operationChains;

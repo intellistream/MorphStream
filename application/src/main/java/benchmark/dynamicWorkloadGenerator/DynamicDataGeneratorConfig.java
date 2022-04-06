@@ -101,7 +101,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
             case 7:
                 phase ++;
                 this.Ratio_Of_Deposit = this.Ratio_Of_Deposit + 20 ;
-                return "skew" ;
+                return "PD" ;
             default:
                 return null;
         }

@@ -109,7 +109,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--shiftRate"}, description = "control the rate of the workload shift")
     public int shiftRate  = 1;
     @Parameter(names = {"--phaseNum"}, description = "How many phases")
-    public int phaseNum  = 2;
+    public int phaseNum  =1;
 
     /**
      * Scheduler for group
@@ -117,7 +117,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--isGroup"}, description = "Group for TP")
     public int isGroup = 0;
     @Parameter(names = {"--groupNum"}, description = "How many groups")
-    public int groupNum = 2;
+    public int groupNum = 1;
     @Parameter(names = {"--SchedulersForGroup"}, description = "Schedulers [OG_DFS,OP_DFS]")
     public String SchedulersForGroup = "";
 
@@ -157,7 +157,7 @@ public abstract class Runner implements IRunner {
     public Integer Ratio_Of_Buying = 25;
 
     @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
-    public Integer State_Access_Skewness = 0;
+    public Integer State_Access_Skewness = 20;
 
     @Parameter(names = {"--multiple_ratio"}, description = "State access skewness.")
     public Integer Ratio_of_Multiple_State_Access_Ratio = 100;
@@ -166,7 +166,7 @@ public abstract class Runner implements IRunner {
     public Integer Ratio_of_Overlapped_Keys = 10;
 
     @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
-    public Integer Ratio_of_Transaction_Aborts = 500;
+    public Integer Ratio_of_Transaction_Aborts = 0;
 
     @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
     public Integer Transaction_Length = 1;
@@ -178,7 +178,7 @@ public abstract class Runner implements IRunner {
     public int isCyclic = 0;
 
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
-    public Integer complexity = 10000;
+    public Integer complexity = 0;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -258,7 +258,8 @@ public abstract class Runner implements IRunner {
         switch(application) {
             case "StreamLedger" :
                 workloadType = "0";
-                bottomLine = "300,3000,500,1200,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                //bottomLine = "300,3000,500,1200,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                bottomLine = 0.2*checkpoint_interval+","+2*checkpoint_interval+","+0.33*checkpoint_interval+","+0.8*checkpoint_interval+","+"0.55,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_BFS_A,OP_NS_A,OG_NS_A";
                 defaultScheduler = "OP_BFS_A";
                 phaseNum = shiftRate * 8;
@@ -290,15 +291,17 @@ public abstract class Runner implements IRunner {
         if (isDynamic == 1) {
             config.put("isDynamic", true);
             config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
+            config.put("schedulersPool",schedulerPools);
+            config.put("defaultScheduler",defaultScheduler);
+            config.put("scheduler", defaultScheduler);
+            config.put("isRuntime",isRuntime);
+            config.put("bottomLine",bottomLine);
+            config.put("WorkloadConfig",WorkloadConfig);
         } else {
             config.put("isDynamic", false);
+            config.put("scheduler", scheduler);
         }
-        config.put("schedulersPool",schedulerPools);
-        config.put("defaultScheduler",defaultScheduler);
-        config.put("scheduler", defaultScheduler);
-        config.put("isRuntime",isRuntime);
-        config.put("bottomLine",bottomLine);
-        config.put("WorkloadConfig",WorkloadConfig);
+
 
         /* Dynamic Workload Configuration*/
         config.put("workloadType",workloadType);
@@ -313,6 +316,7 @@ public abstract class Runner implements IRunner {
             config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
         } else {
             config.put("isGroup", false);
+            config.put("groupNum",1);
         }
 
         System.setProperty("my.log", metric_path);

@@ -42,7 +42,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     protected TxnAccess.AccessList access_list_ = new TxnAccess.AccessList(kMaxAccessNum);
     protected boolean is_first_access_;
-    protected long thread_count_;
+    protected int thread_count_;
     protected int dalta;
 
     public TxnManagerDedicatedAsy(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, int numberOfStates, String schedulerType) {

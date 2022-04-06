@@ -3,6 +3,8 @@ package scheduler.collector;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Gather information for decision trees and determine when to switch and which scheduler to switch to
  * Created by curry on 3/10/2022.
@@ -37,7 +39,7 @@ public class Collector {
     private boolean isRuntime = true;
     private int threadCount;
     private final List<String[]> workloadConfig=new ArrayList<>();
-    private final HashMap<Integer,Integer> currentWorkload=new HashMap<>();//<threadId,phase>
+    private final ConcurrentHashMap<Integer,Integer> currentWorkload=new ConcurrentHashMap<>();//<threadId,phase>
     /**
      *  Init the collector
      */
@@ -133,17 +135,11 @@ public class Collector {
         }else{
             int workloadId = this.currentWorkload.get(threadId);
             if (workloadId < workloadConfig.size() -1){
-                long currentId = Long.parseLong(workloadConfig.get(workloadId)[workloadConfig.get(workloadId).length-1]);
-                if (currentId <= markId+threadCount-threadId){
-                    currentWorkload.put(threadId,currentWorkload.get(threadId)+1);
-                    if(getDecision(threadId).equals(currentScheduler)){
-                        return false;
-                    } else {
-                        return true;
-                    }
-                }
+                currentWorkload.put(threadId,workloadId+1);
+                return !getDecision(threadId).equals(currentScheduler);
+            }else {
+                return false;
             }
-            return false;
         }
     }
 }

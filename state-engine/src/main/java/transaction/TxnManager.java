@@ -20,6 +20,7 @@ import scheduler.impl.op.structured.OPDFSAScheduler;
 import scheduler.impl.op.structured.OPDFSScheduler;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static common.CONTROL.enable_log;
 
@@ -34,9 +35,9 @@ public abstract class TxnManager implements ITxnManager {
      * For dynamic workload
      */
     protected static HashMap<String,IScheduler> schedulerPool;
-    protected static boolean enableDynamic=false;
+    protected static boolean enableDynamic = false;
     protected static Collector collector=new Collector();
-    protected static String currentSchedulerType;
+    protected static ConcurrentHashMap<Integer,String> currentSchedulerType = new ConcurrentHashMap<>();
 
     /**
      * Scheduler for multiple workload
@@ -110,9 +111,12 @@ public abstract class TxnManager implements ITxnManager {
      * Switch scheduler every punctuation
      * When the workload changes and the scheduler is no longer applicable
      */
-    public void SwitchScheduler(String schedulerType){
-        scheduler=schedulerPool.get(schedulerType);
-        currentSchedulerType=schedulerType;
+    public void SwitchScheduler(String schedulerType, int threadId, long markId){
+        currentSchedulerType.put(threadId,schedulerType);
+        if (threadId == 0) {
+            scheduler = schedulerPool.get(schedulerType);
+            log.info("Current Scheduler is "+schedulerType + " markId: " +markId );
+        }
     }
 
     /**
@@ -138,10 +142,13 @@ public abstract class TxnManager implements ITxnManager {
             TxnManager.schedulerPool.put(scheduler[i],CreateSchedulerByType(scheduler[i],threadCount,numberOfStates,app));
             TxnManager.schedulerPool.get(scheduler[i]).initTPG(0);
         }
+        for (int i = 0; i <threadCount; i++) {
+            TxnManager.currentSchedulerType.put(i,defaultScheduler);
+        }
         collector.InitCollector(threadCount);
         TxnManager.scheduler=TxnManager.schedulerPool.get(defaultScheduler);
+        log.info("Current Scheduler is "+defaultScheduler + " markId: " +0 );
         enableDynamic=true;
-        if(enable_log) log.info("Current Scheduler is "+defaultScheduler);
     }
 
     /**

@@ -56,7 +56,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
 
     @Override
     public void tranToDecisionConf() {
-        //TD,LD,PD,VDD,R_of_A,isCD,isCC,
+        //TD,LD,PD,VDD,Skew,R_of_A,isCD,isCC,
         StringBuilder stringBuilder = new StringBuilder();
         //TODO:hard code, function not sure
         double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double)Ratio_Of_Deposit/100) +
