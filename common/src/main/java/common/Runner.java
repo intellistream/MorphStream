@@ -20,7 +20,7 @@ public abstract class Runner implements IRunner {
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
     public String application = "StreamLedger";
-    //public String application = "GrepSum";
+    //public String application = "GrepSum";`
     //public String application = "OnlineBiding";
     //public String application = "TollProcessing";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
@@ -290,13 +290,13 @@ public abstract class Runner implements IRunner {
         /* Dynamic switch scheduler*/
         if (isDynamic == 1) {
             config.put("isDynamic", true);
-            config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
-            config.put("schedulersPool",schedulerPools);
-            config.put("defaultScheduler",defaultScheduler);
+            config.put("totalEvents", phaseNum * tthread * checkpoint_interval);
+            config.put("schedulersPool", schedulerPools);
+            config.put("defaultScheduler", defaultScheduler);
             config.put("scheduler", defaultScheduler);
-            config.put("isRuntime",isRuntime);
-            config.put("bottomLine",bottomLine);
-            config.put("WorkloadConfig",WorkloadConfig);
+            config.put("isRuntime", isRuntime);
+            config.put("bottomLine", bottomLine);
+            config.put("WorkloadConfig", WorkloadConfig);
         } else {
             config.put("isDynamic", false);
             config.put("scheduler", scheduler);
@@ -304,9 +304,9 @@ public abstract class Runner implements IRunner {
 
 
         /* Dynamic Workload Configuration*/
-        config.put("workloadType",workloadType);
-        config.put("shiftRate",shiftRate);
-        config.put("phaseNum",phaseNum);
+        config.put("workloadType", workloadType);
+        config.put("shiftRate", shiftRate);
+        config.put("phaseNum", phaseNum);
 
         /* Group scheduler*/
         if (isGroup == 1) {

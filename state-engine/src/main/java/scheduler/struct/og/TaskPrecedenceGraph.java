@@ -36,6 +36,8 @@ import static common.CONTROL.enable_log;
  * -> Key: OperationChain [ Operation... ]
  */
 public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
+    private static final Logger log = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
+
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
     public final ConcurrentHashMap<Integer, Context> threadToContextMap;
@@ -69,6 +71,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear(); // only need to clear all operations from all ocs
         }
+        if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
     }
 
     /**
