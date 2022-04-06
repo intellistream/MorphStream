@@ -20,7 +20,7 @@ public abstract class Runner implements IRunner {
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
     public String application = "StreamLedger";
-    //public String application = "GrepSum";`
+    //public String application = "GrepSum";
     //public String application = "OnlineBiding";
     //public String application = "TollProcessing";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
