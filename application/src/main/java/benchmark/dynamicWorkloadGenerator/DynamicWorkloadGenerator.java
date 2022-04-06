@@ -22,9 +22,10 @@ public abstract class DynamicWorkloadGenerator extends DataGenerator {
     }
 
     /**
+     * Map the workload characteristics to the TPG properties
      * Each application may be different
      */
-    public abstract void tranToDecisionConf();
+    public abstract void mapToTPGProperties();
 
     @Override
     public void generateStream() {

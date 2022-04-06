@@ -55,7 +55,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     }
 
     @Override
-    public void tranToDecisionConf() {
+    public void mapToTPGProperties() {
         //TD,LD,PD,VDD,Skew,R_of_A,isCD,isCC,
         StringBuilder stringBuilder = new StringBuilder();
         //TODO:hard code, function not sure
@@ -127,7 +127,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
-        tranToDecisionConf();
+        mapToTPGProperties();
     }
     public void configure_store(double scale_factor, double theta, int tthread, int numItems) {
         floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / tthread;

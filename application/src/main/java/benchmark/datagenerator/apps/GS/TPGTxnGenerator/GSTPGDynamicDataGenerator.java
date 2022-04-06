@@ -1,5 +1,4 @@
 package benchmark.datagenerator.apps.GS.TPGTxnGenerator;
-import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.Transaction.GSEvent;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
@@ -51,7 +50,7 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     }
 
     @Override
-    public void tranToDecisionConf() {
+    public void mapToTPGProperties() {
         //TD,LD,PD,VDD,R_of_A,isCD,isCC,
         StringBuilder stringBuilder = new StringBuilder();
         //TODO:hard code, function not sure
@@ -122,7 +121,7 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
-        tranToDecisionConf();
+        mapToTPGProperties();
     }
 
     @Override

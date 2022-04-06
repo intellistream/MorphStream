@@ -99,7 +99,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--bottomLine"}, description = "BottomLine for(TD,LD,PD,SUM,VDD,R_of_A)")
     public String bottomLine = "";
     @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")
-    public String WorkloadConfig = "1,3,4,0.5,0.6,1,1,39999;1,6,4,0.5,0.7,1,1,79999;3,6,3,0.5,0.7,1,1,100000";
+    public String WorkloadConfig = "";
 
     /**
      * Dynamic workload

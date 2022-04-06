@@ -1,6 +1,5 @@
 package transaction;
 
-import org.apache.zookeeper.txn.Txn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.collector.Collector;

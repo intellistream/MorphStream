@@ -48,7 +48,7 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     }
 
     @Override
-    public void tranToDecisionConf() {
+    public void mapToTPGProperties() {
 
     }
 

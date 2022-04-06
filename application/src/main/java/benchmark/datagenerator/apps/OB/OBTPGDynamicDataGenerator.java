@@ -69,7 +69,7 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         events.add(event);
     }
     @Override
-    public void tranToDecisionConf() {
+    public void mapToTPGProperties() {
         //TD,LD,PD,VDD,R_of_A,isCD,isCC,
         StringBuilder stringBuilder = new StringBuilder();
         //TODO:hard code, function not sure
@@ -138,7 +138,7 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
-        tranToDecisionConf();
+        mapToTPGProperties();
     }
 
     @Override
