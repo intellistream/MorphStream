@@ -21,6 +21,8 @@ public class SOURCE_CONTROL {
 
     private CyclicBarrier switchSchedulerBarrier;
 
+    private CyclicBarrier exploreTPGBarrier;
+
     private Phaser dLevelEndBarrier;
     private HashMap<Integer, Integer> iteration;
 
@@ -28,12 +30,13 @@ public class SOURCE_CONTROL {
         return ourInstance;
     }
 
-    public void config(int number_threads) {
+    public void config(int number_threads, int groupNum) {
         totalThreads = number_threads;
         startBarrier = new CyclicBarrier(number_threads);
         endBarrier = new CyclicBarrier(number_threads);
         finalEndBarrier = new CyclicBarrier(number_threads);
-        switchSchedulerBarrier=new CyclicBarrier(number_threads);
+        switchSchedulerBarrier = new CyclicBarrier(number_threads);
+        exploreTPGBarrier = new CyclicBarrier(number_threads);
         dLevelEndBarrier = new Phaser(number_threads);
         iteration = new HashMap<>();
         for (int i = 0; i < number_threads; i++) {
@@ -54,6 +57,13 @@ public class SOURCE_CONTROL {
         }
     }
 
+    public void exploreTPGBarrier(int threadId) {
+        try {
+            exploreTPGBarrier.await();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     public void postStateAccessBarrier(int threadId) {
         try {
             endBarrier.await();

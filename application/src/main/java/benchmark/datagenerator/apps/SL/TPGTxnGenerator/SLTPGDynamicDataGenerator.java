@@ -28,6 +28,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private int Transaction_Length; // transaction length, 4 or 8 or longer
     private int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
     private int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
+    private int nKeyState;
     // control the number of txns overlap with each other.
     private ArrayList<Integer> generatedAcc = new ArrayList<>();
     private ArrayList<Integer> generatedAst = new ArrayList<>();
@@ -52,28 +53,81 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         super(dynamicDataConfig);
         events = new ArrayList<>(nTuples);
     }
+
     @Override
-    public void switchConfiguration() {
-        Ratio_Of_Deposit = dynamicDataConfig.Ratio_Of_Deposit;//0-100 (%)
-        State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
-        Transaction_Length = 4;
-        Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
-        Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
-
-        int nKeyState = dynamicDataConfig.getnKeyStates();
-
-        // allocate levels for each key, to prevent circular.
-//        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
-        int MAX_LEVEL = 256;
-        for (int i = 0; i < nKeyState; i++) {
-            idToLevel.put(i, random.nextInt(MAX_LEVEL));
+    public void mapToTPGProperties() {
+        //TD,LD,PD,VDD,Skew,R_of_A,isCD,isCC,
+        StringBuilder stringBuilder = new StringBuilder();
+        //TODO:hard code, function not sure
+        double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double)Ratio_Of_Deposit/100) +
+                ((double)Ratio_Of_Deposit/100) * 2 * dynamicDataConfig.getCheckpoint_interval();
+        td = td *((double) Ratio_of_Overlapped_Keys/100);
+        stringBuilder.append(td);
+        stringBuilder.append(",");
+        double ld = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double)Ratio_Of_Deposit/100) +
+                ((double)Ratio_Of_Deposit/100) * 2 * dynamicDataConfig.getCheckpoint_interval();
+        stringBuilder.append(ld);
+        stringBuilder.append(",");
+        double pd = (1 - (double)Ratio_Of_Deposit/100) * Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * 2 * ((double) Ratio_of_Overlapped_Keys/100);
+        stringBuilder.append(pd);
+        stringBuilder.append(",");
+        stringBuilder.append((double) State_Access_Skewness/100);
+        stringBuilder.append(",");
+        stringBuilder.append(Ratio_of_Transaction_Aborts/10000);
+        stringBuilder.append(",");
+        if (AppConfig.isCyclic) {
+          stringBuilder.append("1,");
+        } else {
+            stringBuilder.append("0,");
         }
-        // zipf state access generator
-        accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
-        assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
-        configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
-        p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+        if (AppConfig.complexity < 40000){
+            stringBuilder.append("0,");
+        } else {
+            stringBuilder.append("1,");
+        }
+        stringBuilder.append(eventID+dynamicDataConfig.getShiftRate()*dynamicDataConfig.getCheckpoint_interval()*dynamicDataConfig.getTotalThreads());
+        this.tranToDecisionConf.add(stringBuilder.toString());
+    }
 
+    @Override
+    public void switchConfiguration(String type) {
+        switch (type) {
+            case "default" :
+                Ratio_Of_Deposit = dynamicDataConfig.Ratio_Of_Deposit;//0-100 (%)
+                State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
+                Transaction_Length = 4;
+                Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
+                Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
+
+                nKeyState = dynamicDataConfig.getnKeyStates();
+                // allocate levels for each key, to prevent circular.
+//        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
+                int MAX_LEVEL = 256;
+                for (int i = 0; i < nKeyState; i++) {
+                    idToLevel.put(i, random.nextInt(MAX_LEVEL));
+                }
+                // zipf state access generator
+                accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
+                assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
+                configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
+                p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+            break;
+            case "skew" :
+                State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
+                accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
+                assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
+                configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
+                p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+            break;
+            case "PD" :
+                Ratio_Of_Deposit = dynamicDataConfig.Ratio_Of_Deposit;//0-100 (%)
+            break;
+            case "unchanging" :
+            break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + type);
+        }
+        mapToTPGProperties();
     }
     public void configure_store(double scale_factor, double theta, int tthread, int numItems) {
         floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / tthread;

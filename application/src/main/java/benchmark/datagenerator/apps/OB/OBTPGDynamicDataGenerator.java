@@ -33,6 +33,7 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private int Transaction_Length;
     private int tthread;
     private int Ratio_of_Buying;
+    private int nKeyState;
     // control the number of txns overlap with each other.
     private ArrayList<Integer> generatedKeys = new ArrayList<>();
     // independent transactions.
@@ -67,24 +68,77 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         }
         events.add(event);
     }
+    @Override
+    public void mapToTPGProperties() {
+        //TD,LD,PD,VDD,R_of_A,isCD,isCC,
+        StringBuilder stringBuilder = new StringBuilder();
+        //TODO:hard code, function not sure
+        double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double)Ratio_of_Buying/100) +
+                ((double)Ratio_of_Buying/100) * 1 * dynamicDataConfig.getCheckpoint_interval();
+        td = td *((double) Ratio_of_Overlapped_Keys/100);
+        stringBuilder.append(td);
+        stringBuilder.append(",");
+        double ld = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double)Ratio_of_Buying/100) +
+                ((double)Ratio_of_Buying/100) * 1 * dynamicDataConfig.getCheckpoint_interval();
+        stringBuilder.append(ld);
+        stringBuilder.append(",");
+        double pd = 0;
+        stringBuilder.append(pd);
+        stringBuilder.append(",");
+        stringBuilder.append((double) State_Access_Skewness/100);
+        stringBuilder.append(",");
+        stringBuilder.append((double) Ratio_of_Transaction_Aborts/10000);
+        stringBuilder.append(",");
+        if (AppConfig.isCyclic) {
+            stringBuilder.append("1,");
+        } else {
+            stringBuilder.append("0,");
+        }
+        if (AppConfig.complexity < 40000){
+            stringBuilder.append("0,");
+        } else {
+            stringBuilder.append("1,");
+        }
+        stringBuilder.append(eventID+dynamicDataConfig.getShiftRate()*dynamicDataConfig.getCheckpoint_interval()*dynamicDataConfig.getTotalThreads());
+        this.tranToDecisionConf.add(stringBuilder.toString());
+    }
 
     @Override
-    public void switchConfiguration() {
-        State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
-        NUM_ACCESS = dynamicDataConfig.NUM_ACCESS;
-        Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
-        Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
-        Transaction_Length = dynamicDataConfig.Transaction_Length;
-        Ratio_of_Buying=dynamicDataConfig.Ratio_Of_Buying;
+    public void switchConfiguration(String type) {
+        switch (type){
+            case "default" :
+                State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
+                NUM_ACCESS = 1;
+                Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
+                Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
+                Transaction_Length = dynamicDataConfig.Transaction_Length;
+                Ratio_of_Buying=dynamicDataConfig.Ratio_Of_Buying;
 
-        int nKeyState = dynamicDataConfig.getnKeyStates();
-        int MAX_LEVEL = 256;
-        for (int i = 0; i < nKeyState; i++) {
-            idToLevel.put(i, i% MAX_LEVEL);
+                nKeyState = dynamicDataConfig.getnKeyStates();
+                int MAX_LEVEL = 256;
+                for (int i = 0; i < nKeyState; i++) {
+                    idToLevel.put(i, i% MAX_LEVEL);
+                }
+                keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
+                configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
+                p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+            break;
+            case "skew" :
+                State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
+                nKeyState = dynamicDataConfig.getnKeyStates();
+                keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
+                configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
+                p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+            break;
+            case "abort" :
+                Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
+            break;
+            case "unchanging" :
+            break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + type);
         }
-        keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
-        configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
-        p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+        mapToTPGProperties();
     }
 
     @Override

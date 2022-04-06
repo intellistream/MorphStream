@@ -58,19 +58,20 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
     public void start_evaluate(int thread_Id, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-        scheduler.start_evaluation(context, mark_ID, num_events);
+        if (enableGroup) {
+            schedulerByGroup.get(getGroupId(thread_Id)).start_evaluation(context, mark_ID, num_events);
+        } else {
+            scheduler.start_evaluation(context, mark_ID, num_events);
+        }
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
         MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
         MeasureTools.SCHEDULE_TIME_RECORD(thread_Id, num_events);
         //Sync to switch scheduler(more overhead) decide by the mark_ID or runtime information
-        if(enableDynamic&&collector.timeToSwitch(mark_ID,thread_Id)){
-            if(thread_Id==0){
-                String schedulerType=collector.getDecision(thread_Id);
-                this.SwitchScheduler(schedulerType);
-                if(enable_log) log.info("Current Scheduler is "+schedulerType+" MarkId "+mark_ID);
-            }
+        if(enableDynamic&&collector.timeToSwitch(mark_ID,thread_Id,currentSchedulerType.get(thread_Id))){
+            String schedulerType = collector.getDecision(thread_Id);
+            this.SwitchScheduler(schedulerType, thread_Id,mark_ID);
             SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
-            this.setSchedulerContext(thread_Id, (int) thread_count_,currentSchedulerType);
+            this.setSchedulerContext(thread_Id, thread_count_, currentSchedulerType.get(thread_Id));
         }
     }
 }

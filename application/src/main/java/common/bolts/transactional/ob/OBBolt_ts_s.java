@@ -64,7 +64,6 @@ public class OBBolt_ts_s extends OBBolt {
                 BUYING_REQUEST_CORE();
             }
             MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
-            BUYING_REQUEST_POST();
             MeasureTools.BEGIN_POST_TIME_MEASURE(thread_Id);
             BUYING_REQUEST_POST();
             MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
@@ -73,7 +72,7 @@ public class OBBolt_ts_s extends OBBolt {
                 alertEvents = 0;
                 toppingEvents = 0;
             }
-            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id,readSize);
+            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id,num_events);
         }else {
             execute_ts_normal(in);
         }

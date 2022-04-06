@@ -8,10 +8,10 @@ import utils.lib.ConcurrentHashMap;
 public class TableOCs {
     public ConcurrentHashMap<Integer, Holder> threadOCsMap = new ConcurrentHashMap<>();//each op has a holder.
 
-    public TableOCs(Integer num_op) {
+    public TableOCs(Integer num_op,int offset) {
         int i;
         for (i = 0; i < num_op; i++) {
-            threadOCsMap.put(i, new Holder());
+            threadOCsMap.put(i+offset, new Holder());
         }
     }
 }

@@ -74,6 +74,8 @@ public class ExecutionManager {
                     if (!conf.getBoolean("isRuntime")) {
                         TxnManager.setWorkloadConfig(conf.getString("WorkloadConfig"));
                     }
+                } else if (conf.getBoolean("isGroup")) {
+                    TxnManager.CreateSchedulerByGroup(conf.getString("SchedulersForGroup"),totalThread,numberOfStates,app);
                 } else {
                     TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates, app);
                 }

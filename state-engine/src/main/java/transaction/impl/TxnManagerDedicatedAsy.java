@@ -14,6 +14,7 @@ import scheduler.context.op.OPNSContext;
 import scheduler.context.op.OPNSAContext;
 import scheduler.context.op.OPSContext;
 import scheduler.context.op.OPSAContext;
+import scheduler.impl.IScheduler;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
@@ -41,14 +42,20 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     protected TxnAccess.AccessList access_list_ = new TxnAccess.AccessList(kMaxAccessNum);
     protected boolean is_first_access_;
-    protected long thread_count_;
+    protected int thread_count_;
+    protected int dalta;
 
     public TxnManagerDedicatedAsy(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, int numberOfStates, String schedulerType) {
         this.storageManager_ = storageManager;
         this.thisComponentId = thisComponentId;
         thread_count_ = thread_count;
         is_first_access_ = true;
-        this.setSchedulerContext(thisTaskId,thread_count,schedulerType);
+        if (enableGroup) {
+            dalta = (int) Math.ceil(thread_count / (double) groupNum);
+            this.setSchedulerContextByGroupId(thisTaskId / dalta,thisTaskId,thread_count/groupNum);
+        }else {
+            this.setSchedulerContext(thisTaskId,thread_count,schedulerType);
+        }
 //        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
     }
     public void setSchedulerContext(int thisTaskId, int thread_count,String schedulerType){
@@ -95,6 +102,50 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                 throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
         }
     }
+    public void setSchedulerContextByGroupId(int groupId, int thisTaskId, int thread_count){
+        SCHEDULER_TYPE scheduler_type = SCHEDULER_TYPE.valueOf(schedulerTypeByGroup.get(groupId));
+        switch (scheduler_type) {
+            case OG_BFS:
+            case OG_DFS:
+                context = new OGSContext(thisTaskId, thread_count);
+                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
+                break;
+            case OG_BFS_A:
+            case OG_DFS_A:
+                context = new OGSAContext(thisTaskId, thread_count);
+                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
+                break;
+            case OG_NS:
+            case TStream: // original tstream is the same as using GS scheduler..
+                context = new OGNSContext(thisTaskId, thread_count);
+                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
+                break;
+            case OG_NS_A:
+                context = new OGNSAContext(thisTaskId, thread_count);
+                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
+                break;
+            case OP_NS:
+                context = new OPNSContext(thisTaskId);
+                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
+                break;
+            case OP_NS_A:
+                context = new OPNSAContext(thisTaskId);
+                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
+                break;
+            case OP_BFS:
+            case OP_DFS:
+                context = new OPSContext(thisTaskId);
+                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
+                break;
+            case OP_BFS_A:
+            case OP_DFS_A:
+                context = new OPSAContext(thisTaskId);
+                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
+                break;
+            default:
+                throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
+        }
+    }
     public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
@@ -114,7 +165,11 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         AccessType accessType = AccessType.WRITE_ONLY;
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
+            }
         } else {
             if (enable_log) log.info("No record is found:" + primary_key);
             return false;
@@ -126,7 +181,11 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         AccessType accessType = AccessType.WRITE_ONLY;
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType,primary_key,srcTable,t_record,value));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType,primary_key,srcTable,t_record,value));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType,primary_key,srcTable,t_record,value));
+            }
         } else {
             if (enable_log) log.info("No record is found:" + primary_key);
             return false;
@@ -137,7 +196,11 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         AccessType accessType = AccessType.READ_ONLY;
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, enqueue_time));
+            }
         } else {
             if (enable_log) log.info("No record is found:" + primary_key);
             return false;
@@ -149,7 +212,11 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         AccessType accessType = AccessType.READS_ONLY;//read multiple versions.
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable));
+            }
         } else {
             if (enable_log) log.info("No record is found:" + primary_key);
             return false;
@@ -161,8 +228,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         AccessType accessType = AccessType.READ_WRITE;
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(source_key);
         if (s_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                    source_key, s_record, s_record, function, column_id));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        source_key, s_record, s_record, function, column_id));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        source_key, s_record, s_record, function, column_id));
+            }
         } else {
             if (enable_log) log.info("No record is found:" + source_key);
             return false;
@@ -175,8 +247,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         AccessType accessType = AccessType.READ_WRITE;
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                    key, s_record, s_record, function, 1));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, 1));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, 1));
+            }
         } else {
             return false;
         }
@@ -189,8 +266,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         condition_records[0] = s_record;
         if (s_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                    key, s_record, s_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records, condition, success));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records, condition, success));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records, condition, success));
+            }
         } else {
             if (enable_log) log.info("No record is found:" + key);
             return false;
@@ -211,8 +293,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                    key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
+            }
         } else {
             if (enable_log) log.info("No record is found:" + key);
             return false;
@@ -224,8 +311,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         AccessType accessType = AccessType.READ_WRITE_READ;
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                    key, s_record, s_record, function, record_ref));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref));
+            }
         } else {
             if (enable_log) log.info("No record is found:" + key);
             return false;
@@ -249,8 +341,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                    key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
+            }
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
             if (enable_log) log.info("No record is found:" + key);
@@ -273,8 +370,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                    key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+            }
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
             if (enable_log) log.info("No record is found:" + key);
@@ -283,12 +385,20 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     public void BeginTransaction(TxnContext txn_context) {
-        scheduler.TxnSubmitBegin(context);
+        if (enableGroup) {
+            schedulerByGroup.get(getGroupId(txn_context.thread_Id)).TxnSubmitBegin(context);
+        } else {
+            scheduler.TxnSubmitBegin(context);
+        }
     }
 
     @Override
     public boolean CommitTransaction(TxnContext txn_context) {
-        scheduler.TxnSubmitFinished(context);
+        if (enableGroup) {
+            schedulerByGroup.get(getGroupId(txn_context.thread_Id)).TxnSubmitFinished(context);
+        } else {
+            scheduler.TxnSubmitFinished(context);
+        }
         return true;
     }
 
@@ -311,5 +421,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     @Override
     public boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
+    }
+
+    public int getGroupId(int thisTaskId){
+        int groupId = thisTaskId / dalta;
+        return groupId;
     }
 }

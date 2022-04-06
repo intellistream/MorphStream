@@ -20,7 +20,7 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
         int threadId = context.thisThreadId;
 //        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().preStateAccessBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        SOURCE_CONTROL.getInstance().exploreTPGBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
 
     protected void ProcessedToNextLevel(Context context) {

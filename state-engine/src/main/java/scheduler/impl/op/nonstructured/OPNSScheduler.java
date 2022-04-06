@@ -25,7 +25,6 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     @Override
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
-//        System.out.println(threadId + " first explore tpg");
 
         INITIALIZE(context);
 //        System.out.println(threadId + " first explore tpg complete, start to process");
