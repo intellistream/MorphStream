@@ -67,7 +67,7 @@ public class GSTPGDataGenerator extends DataGenerator {
         Ratio_of_Transaction_Aborts = dataConfig.Ratio_of_Transaction_Aborts;
         Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
         Transaction_Length = dataConfig.Transaction_Length;
-        Ratio_of_Multiple_State_Access = dataConfig.Ratio_of_Multiple_State_Access_Ratio;
+        Ratio_of_Multiple_State_Access = dataConfig.Ratio_of_Multiple_State_Access;
 
         int nKeyState = dataConfig.getnKeyStates();
 

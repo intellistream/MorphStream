@@ -120,6 +120,8 @@ public abstract class Runner implements IRunner {
     public int groupNum = 1;
     @Parameter(names = {"--SchedulersForGroup"}, description = "Schedulers [OG_DFS,OP_DFS]")
     public String SchedulersForGroup = "";
+    @Parameter(names = {"--skewGroup"}, description = "skew for groups")
+    public String skewGroup = "20,80";
 
     /**
      * Benchmarking Specific Parameters.
@@ -160,7 +162,7 @@ public abstract class Runner implements IRunner {
     public Integer State_Access_Skewness = 20;
 
     @Parameter(names = {"--multiple_ratio"}, description = "State access skewness.")
-    public Integer Ratio_of_Multiple_State_Access_Ratio = 100;
+    public Integer Ratio_of_Multiple_State_Access = 100;
 
     @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
     public Integer Ratio_of_Overlapped_Keys = 10;
@@ -214,7 +216,7 @@ public abstract class Runner implements IRunner {
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
-        config.put("Ratio_of_Multiple_State_Access_Ratio",Ratio_of_Multiple_State_Access_Ratio);
+        config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
         config.put("Transaction_Length", Transaction_Length);
 
         config.put("numberOfDLevels", numberOfDLevels);
@@ -314,6 +316,7 @@ public abstract class Runner implements IRunner {
             config.put("groupNum",groupNum);
             config.put("SchedulersForGroup",SchedulersForGroup);
             config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
+            config.put("skewGroup",skewGroup);
         } else {
             config.put("isGroup", false);
             config.put("groupNum",1);

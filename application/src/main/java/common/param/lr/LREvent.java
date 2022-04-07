@@ -55,9 +55,6 @@ public class LREvent extends TxnEvent {
         return bid;
     }
 
-    public long[] getBid_array() {
-        return new long[0];
-    }
 
     @Override
     public LREvent cloneEvent() {

@@ -23,8 +23,10 @@ import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_log;
@@ -38,6 +40,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     protected final StorageManager storageManager_;
     protected final String thisComponentId;
+    public HashMap<String, SchedulerContext> contexts;
     public SchedulerContext context;
 
     protected TxnAccess.AccessList access_list_ = new TxnAccess.AccessList(kMaxAccessNum);
@@ -50,103 +53,67 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         this.thisComponentId = thisComponentId;
         thread_count_ = thread_count;
         is_first_access_ = true;
+        contexts = new HashMap<>();
         if (enableGroup) {
             dalta = (int) Math.ceil(thread_count / (double) groupNum);
-            this.setSchedulerContextByGroupId(thisTaskId / dalta, thisTaskId, thread_count / groupNum);
+            this.setSchedulerContext(thisTaskId, thread_count / groupNum, schedulerTypeByGroup.get(thisTaskId / dalta), schedulerByGroup.get(thisTaskId / dalta) );
+            context = contexts.get(schedulerTypeByGroup.get(thisTaskId / dalta));
+        } else if (enableDynamic) {
+            for (Map.Entry<String, IScheduler> entry : schedulerPool.entrySet()) {
+                this.setSchedulerContext(thisTaskId, thread_count, entry.getKey(), entry.getValue());
+            }
+            context = contexts.get(schedulerType);
         } else {
-            this.setSchedulerContext(thisTaskId, thread_count, schedulerType);
+            this.setSchedulerContext(thisTaskId, thread_count, schedulerType, scheduler);
+            context = contexts.get(schedulerType);
         }
 //        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
     }
 
-    public void setSchedulerContext(int thisTaskId, int thread_count, String schedulerType){
+    public void setSchedulerContext(int thisTaskId, int thread_count, String schedulerType ,IScheduler scheduler){
         SCHEDULER_TYPE scheduler_type = SCHEDULER_TYPE.valueOf(schedulerType);
+        SchedulerContext schedulerContext;
         switch (scheduler_type) {
             case OG_BFS:
             case OG_DFS:
-                context = new OGSContext(thisTaskId, thread_count);
-                scheduler.AddContext(thisTaskId, context);
+                schedulerContext = new OGSContext(thisTaskId, thread_count);
                 break;
             case OG_BFS_A:
             case OG_DFS_A:
-                context = new OGSAContext(thisTaskId, thread_count);
-                scheduler.AddContext(thisTaskId, context);
+                schedulerContext = new OGSAContext(thisTaskId, thread_count);
                 break;
             case OG_NS:
             case TStream: // original tstream is the same as using GS scheduler..
-                context = new OGNSContext(thisTaskId, thread_count);
-                scheduler.AddContext(thisTaskId, context);
+                schedulerContext = new OGNSContext(thisTaskId, thread_count);
                 break;
             case OG_NS_A:
-                context = new OGNSAContext(thisTaskId, thread_count);
-                scheduler.AddContext(thisTaskId, context);
+                schedulerContext = new OGNSAContext(thisTaskId, thread_count);
                 break;
             case OP_NS:
-                context = new OPNSContext(thisTaskId);
-                scheduler.AddContext(thisTaskId, context);
+                schedulerContext = new OPNSContext(thisTaskId);
                 break;
             case OP_NS_A:
-                context = new OPNSAContext(thisTaskId);
-                scheduler.AddContext(thisTaskId, context);
+                schedulerContext = new OPNSAContext(thisTaskId);
                 break;
             case OP_BFS:
             case OP_DFS:
-                context = new OPSContext(thisTaskId);
-                scheduler.AddContext(thisTaskId, context);
+                schedulerContext = new OPSContext(thisTaskId);
                 break;
             case OP_BFS_A:
             case OP_DFS_A:
-                context = new OPSAContext(thisTaskId);
-                scheduler.AddContext(thisTaskId, context);
+                schedulerContext = new OPSAContext(thisTaskId);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
         }
+        contexts.put(schedulerType, schedulerContext);
+        scheduler.AddContext(thisTaskId, schedulerContext);
     }
-    public void setSchedulerContextByGroupId(int groupId, int thisTaskId, int thread_count){
-        SCHEDULER_TYPE scheduler_type = SCHEDULER_TYPE.valueOf(schedulerTypeByGroup.get(groupId));
-        switch (scheduler_type) {
-            case OG_BFS:
-            case OG_DFS:
-                context = new OGSContext(thisTaskId, thread_count);
-                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
-                break;
-            case OG_BFS_A:
-            case OG_DFS_A:
-                context = new OGSAContext(thisTaskId, thread_count);
-                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
-                break;
-            case OG_NS:
-            case TStream: // original tstream is the same as using GS scheduler..
-                context = new OGNSContext(thisTaskId, thread_count);
-                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
-                break;
-            case OG_NS_A:
-                context = new OGNSAContext(thisTaskId, thread_count);
-                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
-                break;
-            case OP_NS:
-                context = new OPNSContext(thisTaskId);
-                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
-                break;
-            case OP_NS_A:
-                context = new OPNSAContext(thisTaskId);
-                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
-                break;
-            case OP_BFS:
-            case OP_DFS:
-                context = new OPSContext(thisTaskId);
-                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
-                break;
-            case OP_BFS_A:
-            case OP_DFS_A:
-                context = new OPSAContext(thisTaskId);
-                schedulerByGroup.get(groupId).AddContext(thisTaskId, context);
-                break;
-            default:
-                throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
-        }
+
+    public void switchContext(String schedulerType) {
+        context = contexts.get(schedulerType);
     }
+
     public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
