@@ -11,7 +11,8 @@ function ResetParameters() {
   isCyclic=0
   isDynamic=0
   rootFilePath="/home/shuhao/jjzhao/data"
-  totalEvents=`expr $checkpointInterval \* $tthread \* 8`
+  shiftRate=2
+  totalEvents=`expr $checkpointInterval \* $tthread \* 8 \*$shiftRate`
 }
 
 function runTStream() {
@@ -26,7 +27,8 @@ function runTStream() {
           --isCyclic $isCyclic \
           --rootFilePath $rootFilePath \
           --isDynamic $isDynamic \
-          --totalEvents $totalEvents"
+          --totalEvents $totalEvents \
+          --shiftRate $shiftRate"
   java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
@@ -38,7 +40,8 @@ function runTStream() {
     --isCyclic $isCyclic \
     --rootFilePath $rootFilePath \
     --isDynamic $isDynamic \
-    --totalEvents $totalEvents
+    --totalEvents $totalEvents \
+    --shiftRate $shiftRate
 }
 
 # run basic experiment for different algorithms
