@@ -364,21 +364,31 @@ public class MeasureTools {
             e.printStackTrace();
         }
     }
-    private static void WriteThroughputReportRuntime(File file, int tthread, int phase) {
+    private static void WriteThroughputReportRuntime(File file, int tthread, int phase, int shiftRate) {
         try {
             double[] tr = new double[Metrics.Runtime.ThroughputPerPhase.get(0).size()];
+            //every punctuation
             for (int i = 0; i < tr.length; i++) {
                 tr[i] = 0;
                 for (int j = 0; j < tthread; j++){
                     tr[i] = tr[i] + Metrics.Runtime.ThroughputPerPhase.get(j).get(i) * 1E6;//
                 }
             }
+            //every phase
+            double[] tr_p = new double[tr.length / shiftRate];
+            for (int i = 0; i < tr_p.length; i++) {
+                tr_p[i] = 0;
+                for (int j = i * shiftRate; j < (i + 1) * shiftRate; j++) {
+                    tr_p[i] = tr_p[i] + tr[j];
+                }
+                tr_p[i] = tr_p[i] / shiftRate;
+            }
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("phase_id\t throughput\n");
-            for (int i = 0; i < tr.length; i++){
+            for (int i = 0; i < tr_p.length; i++){
                 String output = String.format("%d\t" +
                                 "%-10.4f\t"
-                        , i,tr[i]
+                        , i,tr_p[i]
                 );
                 fileWriter.write(output + "\n");
             }
@@ -388,10 +398,10 @@ public class MeasureTools {
         }
     }
 
-    public static void METRICS_REPORT(int ccOption, File file, int tthread, double throughput, int phase) {
+    public static void METRICS_REPORT(int ccOption, File file, int tthread, double throughput, int phase, int shiftRate) {
         WriteThroughputReport(file, throughput);
         AverageTotalTimeBreakdownReport(file, tthread);
-        WriteThroughputReportRuntime(file,tthread,phase);
+        WriteThroughputReportRuntime(file, tthread, phase, shiftRate);
         if (ccOption == CCOption_MorphStream) {//extra info
             SchedulerTimeBreakdownReport(file, tthread);
         } else {

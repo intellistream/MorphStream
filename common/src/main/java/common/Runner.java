@@ -121,7 +121,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--SchedulersForGroup"}, description = "Schedulers [OG_DFS,OP_DFS]")
     public String SchedulersForGroup = "";
     @Parameter(names = {"--skewGroup"}, description = "skew for groups")
-    public String skewGroup = "20,80";
+    public String skewGroup = "0,100";
 
     /**
      * Benchmarking Specific Parameters.

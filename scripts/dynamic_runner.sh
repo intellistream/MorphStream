@@ -2,7 +2,7 @@
 
 function ResetParameters() {
   app="StreamLedger"
-  checkpointInterval=5120
+  checkpointInterval=10240
   tthread=24
   scheduler="OP_BFS_A"
   CCOption=3 #TSTREAM
