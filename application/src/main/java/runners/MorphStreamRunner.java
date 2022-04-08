@@ -262,7 +262,7 @@ public class MorphStreamRunner extends Runner {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
                             config.getInt("NUM_ITEMS"),
-                            config.getInt("NUM_ACCESS"),
+                            config.getInt("Ratio_of_Multiple_State_Access"),
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
                             config.getInt("Ratio_of_Transaction_Aborts"),
