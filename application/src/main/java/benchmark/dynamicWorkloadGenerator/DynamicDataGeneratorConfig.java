@@ -10,7 +10,7 @@ import common.collections.Configuration;
  */
 public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     /* The type of the dynamic workload */
-    private String type;
+    private String[] phaseType;
     /* Application, the configuration maybe different for the same type of workload */
     private String app;
     /* Control the rate of the workload*/
@@ -33,8 +33,8 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     public void initialize(Configuration config) {
         super.initialize(config);
         this.app = config.getString("application");
-        this.type = config.getString("workloadType");
         this.shiftRate = config.getInt("shiftRate");
+        this.phaseType = config.getString("workloadType").split(",");
         this.checkpoint_interval = config.getInt("checkpoint");
         enableGroup = config.getBoolean("isGroup");
         NUM_ACCESS = config.getInt("NUM_ACCESS", 0);
@@ -64,22 +64,66 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
      * @return
      */
     public String nextDataGeneratorConfig() {
-        switch (type){
-            case "0" :
-                return setConfigurationForSL();
-            case "1" :
-                return setConfigurationForOB();
-            case "2" :
-                return setConfigurationForGS();
-            case "3" :
-                return setConfigurationForTP();
-            default:
-                throw new IllegalStateException("Unexpected value: " + type);
+        String phaseType;
+        if (phase < this.phaseType.length){
+            phaseType = this.phaseType[phase];
+            phase ++;
+        } else {
+            return null;
         }
-    }
-
-    public String getType() {
-        return type;
+        switch (phaseType){
+            case "default" :
+            case "unchanging" :
+                return phaseType;
+            case "Up_skew":
+                if (this.State_Access_Skewness + 20 <= 100) {
+                    this.State_Access_Skewness = this.State_Access_Skewness + 20;
+                    return "skew";
+                } else {
+                    return "unchanging";
+                }
+            case "Down_skew":
+                if (this.State_Access_Skewness - 20 >= 0) {
+                    this.State_Access_Skewness = this.State_Access_Skewness - 20;
+                    return "skew";
+                } else {
+                    return "unchanging";
+                }
+            case "Up_PD":
+                if (this.app.equals("StreamLedger")) {
+                    if (this.Ratio_Of_Deposit - 20 >= 0) {
+                        this.Ratio_Of_Deposit = this.Ratio_Of_Deposit - 20 ;
+                        return "PD";
+                    } else {
+                        return "unchanging";
+                    }
+                }
+            case "Down_PD":
+                if (this.app.equals("StreamLedger")) {
+                    if (this.Ratio_Of_Deposit + 20 <= 100) {
+                        this.Ratio_Of_Deposit = this.Ratio_Of_Deposit + 20 ;
+                        return "PD";
+                    } else {
+                        return "unchanging";
+                    }
+                }
+            case "Up_abort":
+                if (this.Ratio_of_Transaction_Aborts + 2000 <= 10000) {
+                    this.Ratio_of_Transaction_Aborts = this.Ratio_of_Transaction_Aborts + 2000;
+                    return "abort";
+                } else {
+                    return "unchanging";
+                }
+            case "Down_abort":
+                if (this.Ratio_of_Transaction_Aborts - 2000 >= 0) {
+                    this.Ratio_of_Transaction_Aborts = this.Ratio_of_Transaction_Aborts - 2000;
+                    return "abort";
+                } else {
+                    return "unchanging";
+                }
+            default:
+                return null;
+        }
     }
 
     public String getApp() {

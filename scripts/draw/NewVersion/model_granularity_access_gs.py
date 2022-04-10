@@ -36,7 +36,7 @@ matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
 FIGURE_FOLDER = './results/model/granularity'
-FILE_FOLER = '/home/shuhao/data/stats'
+FILE_FOLER = '/home/shuhao/jjzhao/data/stats'
 
 
 def ConvertEpsToPdf(dir_filename):
@@ -97,7 +97,7 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
 
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
-def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
+def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
     w, h = 2, len(x_axis)
     y = [[] for _ in range(w)]
 
@@ -119,7 +119,7 @@ def ReadFileSL(x_axis, tthread, batchInterval, NUM_ITEMS, deposit_ratio, key_ske
 
     return y
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
+def getPathGS(algo, events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skeiwness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
     return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}_{}'\
         .format(algo, tthread, events, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
 
@@ -171,5 +171,5 @@ if __name__ == '__main__':
                           abort_ratio, txn_length, isCyclic, complexity)
     DrawFigure(x_values, y_values, legend_labels,
                'Ratio of Multiple State Access', 'Throughput (K/sec)', 0,
-               400, 'GS_granularity_comparison_t{}_b{}_{}_{}_{}_{}_{}_{}_{}_{}'
-                .format(tthread, NUM_ITEMS, batchInterval, deposit_ratio, key_skewness, NUM_ACCESS, abort_ratio, txn_length, isCyclic, complexity), legend)
+               400, 'GS_granularity_comparison_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
+                .format(tthread, NUM_ITEMS, batchInterval, key_skewness, NUM_ACCESS, abort_ratio, txn_length, isCyclic, complexity), legend)

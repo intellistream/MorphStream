@@ -73,7 +73,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         stringBuilder.append(",");
         stringBuilder.append((double) State_Access_Skewness/100);
         stringBuilder.append(",");
-        stringBuilder.append(Ratio_of_Transaction_Aborts/10000);
+        stringBuilder.append((double) Ratio_of_Transaction_Aborts/10000);
         stringBuilder.append(",");
         if (AppConfig.isCyclic) {
           stringBuilder.append("1,");
@@ -121,6 +121,9 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             break;
             case "PD" :
                 Ratio_Of_Deposit = dynamicDataConfig.Ratio_Of_Deposit;//0-100 (%)
+            break;
+            case "abort":
+                Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
             break;
             case "unchanging" :
             break;

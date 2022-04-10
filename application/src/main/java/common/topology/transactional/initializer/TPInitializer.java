@@ -79,7 +79,6 @@ public class TPInitializer extends TableInitilizer {
                             dynamicDataGeneratorConfig.getTotalThreads(),
                             dynamicDataGeneratorConfig.getTotalEvents(),
                             dynamicDataGeneratorConfig.getnKeyStates(),
-                            dynamicDataGeneratorConfig.getType(),
                             dynamicDataGeneratorConfig.getApp(),
                             AppConfig.isCyclic)
                     .getBytes(StandardCharsets.UTF_8));

@@ -15,7 +15,7 @@ function ResetParameters() {
   rootFilePath="/home/shuhao/jjzhao/data"
 
   key_skewness=20
-  overlap_ratio=10
+  overlap_ratio=30
   abort_ratio=0
 }
 
@@ -34,7 +34,8 @@ function runTStream() {
           --isDynamic $isDynamic \
           --totalEvents $totalEvents \
           --multiple_ratio $multiple_ratio \
-          --NUM_ACCESS $NUM_ACCESS"
+          --NUM_ACCESS $NUM_ACCESS \
+          --overlap_ratio $overlap_ratio"
   java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
@@ -48,7 +49,8 @@ function runTStream() {
     --isDynamic $isDynamic \
     --totalEvents $totalEvents \
     --multiple_ratio $multiple_ratio \
-    --NUM_ACCESS $NUM_ACCESS
+    --NUM_ACCESS $NUM_ACCESS \
+    --overlap_ratio $overlap_ratio
 }
 
 function gs_runner() { # multi-batch exp

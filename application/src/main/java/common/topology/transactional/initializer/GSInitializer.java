@@ -122,7 +122,6 @@ public class GSInitializer extends TableInitilizer {
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
                                 dataConfig.getnKeyStates(),
-                                ((DynamicDataGeneratorConfig) dataConfig).getType(),
                                 ((DynamicDataGeneratorConfig) dataConfig).getApp(),
                                 AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));

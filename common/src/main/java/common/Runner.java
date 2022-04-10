@@ -105,7 +105,7 @@ public abstract class Runner implements IRunner {
      * Dynamic workload
      */
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
-    public String  workloadType = "";
+    public String  workloadType = "default";
     @Parameter(names = {"--shiftRate"}, description = "control the rate of the workload shift")
     public int shiftRate  = 1;
     @Parameter(names = {"--phaseNum"}, description = "How many phases")
@@ -257,31 +257,28 @@ public abstract class Runner implements IRunner {
         config.put("verbose", verbose);
 
         config.put("application",application);
+
+        String phaseType[]=workloadType.split(",");
         switch(application) {
             case "StreamLedger" :
-                workloadType = "0";
                 //bottomLine = "300,3000,500,1200,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                bottomLine = 0.2*checkpoint_interval+","+2*checkpoint_interval+","+0.33*checkpoint_interval+","+0.8*checkpoint_interval+","+"0.55,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                schedulerPools = "OP_BFS_A,OP_NS_A,OG_NS_A";
-                defaultScheduler = "OP_BFS_A";
-                phaseNum = shiftRate * 8;
+                bottomLine = 0.2*checkpoint_interval+","+2*checkpoint_interval+","+0.33*checkpoint_interval+","+0.8*checkpoint_interval+","+"0.55,0.7";//TD,LD,PD,SUM,VDD,R_of_A
+                defaultScheduler = "OG_BFS_A";
+                phaseNum = shiftRate * phaseType.length;
                 break;
             case "OnlineBiding" :
-                workloadType ="1";
                 bottomLine = "500,5000,1,6000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OG_BFS_A,OG_NS_A,OG_NS";
                 defaultScheduler = "OG_BFS_A";
-                phaseNum = shiftRate * 3;
+                phaseNum = shiftRate * phaseType.length;
                 break;
             case "GrepSum" :
-                workloadType ="2";
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
                 defaultScheduler = "OP_NS_A";
-                phaseNum = shiftRate * 4;
+                phaseNum = shiftRate * phaseType.length;
                 break;
             case "TollProcessing" :
-                workloadType ="3";
                 phaseNum = shiftRate * 1;
                 defaultScheduler = "OG_BFS_A";
                 SchedulersForGroup = "OG_BFS_A,OG_NS_A";
