@@ -71,7 +71,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear(); // only need to clear all operations from all ocs
         }
-        if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
+        log.info("===Clear current data for the next batch===");
     }
 
     /**
@@ -237,7 +237,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 }
                 context.totalOsToSchedule += oc.getOperations().size();
                 context.operationChains.add(oc);
-                if (!((OperationChain) oc).context.equals(context)) {
+                if (!oc.context.equals(context)) {
                     throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
                 }
                 if (!oc.hasParents()) {
@@ -247,7 +247,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         } else {
             throw new UnsupportedOperationException("Unsupported.");
         }
-        if (enable_log) LOG.info("average length of oc:" + context.totalOsToSchedule / ocs.size());
+        if (enable_log) LOG.info("total ops to schedule:" + context.totalOsToSchedule);
     }
 
     private void circularDetect(Context context, Collection<OperationChain> ocs, HashSet<OperationChain> scannedOCs, HashSet<OperationChain> circularOCs, HashSet<OperationChain> resolvedOC) {
@@ -277,6 +277,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             if (!oc.getOperations().isEmpty()) {
                 resetOC(oc);
+                context.operationChains.add(oc);
             }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads();
@@ -286,7 +287,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         } else if (context instanceof OGNSContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
-                    if (!((OperationChain) oc).context.equals(context)) {
+                    if (!oc.context.equals(context)) {
                         throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
                     }
                     if (!oc.hasParents()) {
@@ -349,7 +350,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         for (OperationChain oc : nonNullOCs) {
             context.totalOsToSchedule += oc.getOperations().size();
             context.operationChains.add(oc);
-            if (!((OperationChain) oc).context.equals(context)) {
+            if (!oc.context.equals(context)) {
                 throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
             }
             if (!oc.hasParents()) {
@@ -382,7 +383,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         assert context instanceof AbstractOGNSContext;
         for (OperationChain oc : nonNullOCs) {
             context.operationChains.add(oc);
-            if (!((OperationChain) oc).context.equals(context)) {
+            if (!oc.context.equals(context)) {
                 throw new RuntimeException("context of the OC should always be the same as those who submit the OC");
             }
             if (!oc.hasParents()) {

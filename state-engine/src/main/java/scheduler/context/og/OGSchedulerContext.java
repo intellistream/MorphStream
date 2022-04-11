@@ -13,7 +13,7 @@ public abstract class OGSchedulerContext implements SchedulerContext {
     public ArrayDeque<Request> requests;
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.
-    public Set<OperationChain> operationChains = new HashSet<>();
+    public Set<OperationChain> operationChains = new HashSet<>(); // TODO: For test purpose. Can be further removed
     public int fd = 0;
 
 
@@ -30,6 +30,7 @@ public abstract class OGSchedulerContext implements SchedulerContext {
         scheduledOPs = 0;
         totalOsToSchedule = 0;
         busyWaitQueue.clear();
+        operationChains.clear();
     }
 
     public void redo() {
