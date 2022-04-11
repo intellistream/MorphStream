@@ -76,7 +76,6 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
                 for (int j = i * (tthread /dynamicDataConfig.groupNum); j < (i + 1) * (tthread /dynamicDataConfig.groupNum); j++) {
                     partitionedKeyZipf[j] = new FastZipfGenerator((int) (floor_interval * scale_factor), Double.parseDouble(b_ls[i]) / 100 , j * floor_interval, 12345678);
                 }
-                partitionedKeyZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), Double.parseDouble(b_ls[i]) / 100 , i * floor_interval, 12345678);
             }
         } else {
             for (int i = 0; i < tthread; i++) {
@@ -122,7 +121,7 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
                 //Must Determine partitionId from EventId
                 int partitionId;
                 if (enableGroup) {
-                    partitionId = (eventID % dynamicDataConfig.getTotalThreads()) / (dynamicDataConfig.getTotalThreads() / dynamicDataConfig.groupNum);
+                    partitionId = (eventID % dynamicDataConfig.getTotalThreads());
                 } else {
                     partitionId = key_to_partition(p_generator.next());
                 }
