@@ -383,6 +383,7 @@ public class MeasureTools {
                 }
                 tr_p[i] = tr_p[i] / shiftRate;
             }
+            StringBuilder stringBuilder = new StringBuilder();
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("phase_id\t throughput\n");
             for (int i = 0; i < tr_p.length; i++){
@@ -390,9 +391,11 @@ public class MeasureTools {
                                 "%-10.4f\t"
                         , i,tr_p[i]
                 );
+                stringBuilder.append(output);
                 fileWriter.write(output + "\n");
             }
             fileWriter.close();
+            if (enable_log) log.info(String.valueOf(stringBuilder));
         } catch (Exception e) {
             e.printStackTrace();
         }
