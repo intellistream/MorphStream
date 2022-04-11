@@ -248,15 +248,24 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             AppConfig.randomDelay();
             List<DataBox> srcRecord = operation.s_record.record_.getValues();
             if (operation.function instanceof AVG) {
-                double latestAvgSpeeds = srcRecord.get(1).getDouble();
-                double lav;
-                if (latestAvgSpeeds == 0) {//not initialized
-                    lav = operation.function.delta_double;
-                } else
-                    lav = (latestAvgSpeeds + operation.function.delta_double) / 2;
+                success = operation.success[0];
+                if (operation.condition.arg1 < operation.condition.arg2) {
+                    double latestAvgSpeeds = srcRecord.get(1).getDouble();
+                    double lav;
+                    if (latestAvgSpeeds == 0) {//not initialized
+                        lav = operation.function.delta_double;
+                    } else
+                        lav = (latestAvgSpeeds + operation.function.delta_double) / 2;
 
-                srcRecord.get(1).setDouble(lav);//write to state.
-                operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
+                    srcRecord.get(1).setDouble(lav);//write to state.
+                    operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
+                    synchronized (operation.success) {
+                        operation.success[0]++;
+                    }
+                }
+                if (operation.success[0] == success) {
+                    operation.isFailed = true;
+                }
             } else {
                 HashSet cnt_segment = srcRecord.get(1).getHashSet();
                 cnt_segment.add(operation.function.delta_int);//update hashset; updated state also. TODO: be careful of this.
@@ -419,8 +428,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                         request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
                 break;
             case READ_WRITE_READ:
-                set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, null, null,
-                        null, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
+                set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, null, request.condition,
+                        request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
                 break;
             default:
                 throw new RuntimeException("Unexpected operation");

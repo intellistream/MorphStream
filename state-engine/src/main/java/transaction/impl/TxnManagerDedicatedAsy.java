@@ -110,7 +110,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         scheduler.AddContext(thisTaskId, schedulerContext);
     }
 
-    public void switchContext(String schedulerType) {
+    public void  switchContext(String schedulerType) {
         context = contexts.get(schedulerType);
     }
 
@@ -285,6 +285,23 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
                         key, s_record, s_record, function, record_ref));
+            }
+        } else {
+            if (enable_log) log.info("No record is found:" + key);
+            return false;
+        }
+    }
+    @Override
+    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function,Condition condition, int[] success) throws DatabaseException {
+        AccessType accessType = AccessType.READ_WRITE_READ;
+        TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
+        if (s_record != null) {
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref, condition, success));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref, condition, success));
             }
         } else {
             if (enable_log) log.info("No record is found:" + key);

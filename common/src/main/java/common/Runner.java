@@ -263,7 +263,6 @@ public abstract class Runner implements IRunner {
             case "StreamLedger" :
                 //bottomLine = "300,3000,500,1200,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 bottomLine = 0.2*checkpoint_interval+","+2*checkpoint_interval+","+0.33*checkpoint_interval+","+0.8*checkpoint_interval+","+"0.55,0.7";//TD,LD,PD,SUM,VDD,R_of_A
-                defaultScheduler = "OG_BFS_A";
                 phaseNum = shiftRate * phaseType.length;
                 break;
             case "OnlineBiding" :

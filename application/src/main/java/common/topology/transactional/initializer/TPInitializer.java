@@ -75,7 +75,7 @@ public class TPInitializer extends TableInitilizer {
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
-            bytes = digest.digest(String.format("%d_%d_%d_%s_%s_%s",
+            bytes = digest.digest(String.format("%d_%d_%d_%s_%s",
                             dynamicDataGeneratorConfig.getTotalThreads(),
                             dynamicDataGeneratorConfig.getTotalEvents(),
                             dynamicDataGeneratorConfig.getnKeyStates(),

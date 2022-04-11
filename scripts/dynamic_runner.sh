@@ -8,7 +8,7 @@ function ResetParameters() {
   defaultScheduler="OG_BFS_A"
   CCOption=3 #TSTREAM
   complexity=10000
-  NUM_ITEMS=122880
+  NUM_ITEMS=245760
   deposit_ratio=95
 
 
@@ -17,8 +17,8 @@ function ResetParameters() {
   workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
   schedulerPool="OG_BFS_A,OG_NS_A,OP_NS_A,OP_NS"
   rootFilePath="/home/shuhao/jjzhao/data"
-  shiftRate=2
-  totalEvents=`expr $checkpointInterval \* $tthread \* 13 \*$shiftRate`
+  shiftRate=1
+  totalEvents=`expr $checkpointInterval \* $tthread \* 13 \* $shiftRate`
 }
 
 function runTStream() {

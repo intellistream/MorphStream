@@ -228,6 +228,11 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     @Override
+    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, Condition condition, int[] success) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, Condition condition, int[] success) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
