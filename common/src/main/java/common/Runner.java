@@ -105,7 +105,7 @@ public abstract class Runner implements IRunner {
      * Dynamic workload
      */
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
-    public String  workloadType = "";
+    public String  workloadType = "default";
     @Parameter(names = {"--shiftRate"}, description = "control the rate of the workload shift")
     public int shiftRate  = 1;
     @Parameter(names = {"--phaseNum"}, description = "How many phases")
@@ -120,6 +120,8 @@ public abstract class Runner implements IRunner {
     public int groupNum = 1;
     @Parameter(names = {"--SchedulersForGroup"}, description = "Schedulers [OG_DFS,OP_DFS]")
     public String SchedulersForGroup = "";
+    @Parameter(names = {"--skewGroup"}, description = "skew for groups")
+    public String skewGroup = "0,100";
 
     /**
      * Benchmarking Specific Parameters.
@@ -160,7 +162,7 @@ public abstract class Runner implements IRunner {
     public Integer State_Access_Skewness = 20;
 
     @Parameter(names = {"--multiple_ratio"}, description = "State access skewness.")
-    public Integer Ratio_of_Multiple_State_Access_Ratio = 100;
+    public Integer Ratio_of_Multiple_State_Access = 100;
 
     @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
     public Integer Ratio_of_Overlapped_Keys = 10;
@@ -214,7 +216,7 @@ public abstract class Runner implements IRunner {
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
-        config.put("Ratio_of_Multiple_State_Access_Ratio",Ratio_of_Multiple_State_Access_Ratio);
+        config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
         config.put("Transaction_Length", Transaction_Length);
 
         config.put("numberOfDLevels", numberOfDLevels);
@@ -255,34 +257,30 @@ public abstract class Runner implements IRunner {
         config.put("verbose", verbose);
 
         config.put("application",application);
+
+        String phaseType[]=workloadType.split(",");
         switch(application) {
             case "StreamLedger" :
-                workloadType = "0";
                 //bottomLine = "300,3000,500,1200,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                bottomLine = 0.2*checkpoint_interval+","+2*checkpoint_interval+","+0.33*checkpoint_interval+","+0.8*checkpoint_interval+","+"0.55,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                schedulerPools = "OP_BFS_A,OP_NS_A,OG_NS_A";
-                defaultScheduler = "OP_BFS_A";
-                phaseNum = shiftRate * 8;
+                bottomLine = 0.2*checkpoint_interval+","+2*checkpoint_interval+","+0.4*checkpoint_interval+","+0.8*checkpoint_interval+","+"0.3,0.7";//TD,LD,PD,SUM,VDD,R_of_A
+                phaseNum = shiftRate * phaseType.length;
                 break;
             case "OnlineBiding" :
-                workloadType ="1";
                 bottomLine = "500,5000,1,6000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OG_BFS_A,OG_NS_A,OG_NS";
                 defaultScheduler = "OG_BFS_A";
-                phaseNum = shiftRate * 3;
+                phaseNum = shiftRate * phaseType.length;
                 break;
             case "GrepSum" :
-                workloadType ="2";
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
                 defaultScheduler = "OP_NS_A";
-                phaseNum = shiftRate * 4;
+                phaseNum = shiftRate * phaseType.length;
                 break;
             case "TollProcessing" :
-                workloadType ="3";
                 phaseNum = shiftRate * 1;
                 defaultScheduler = "OG_BFS_A";
-                SchedulersForGroup = "OP_BFS_A,OP_NS_A";
+                SchedulersForGroup = "OG_BFS_A,OG_NS_A";
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + application);
@@ -314,6 +312,7 @@ public abstract class Runner implements IRunner {
             config.put("groupNum",groupNum);
             config.put("SchedulersForGroup",SchedulersForGroup);
             config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
+            config.put("skewGroup",skewGroup);
         } else {
             config.put("isGroup", false);
             config.put("groupNum",1);

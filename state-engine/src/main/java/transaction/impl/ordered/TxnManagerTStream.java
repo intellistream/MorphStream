@@ -70,8 +70,8 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
         if (enableDynamic && collector.timeToSwitch(mark_ID,thread_Id,currentSchedulerType.get(thread_Id))){
             String schedulerType = collector.getDecision(thread_Id);
             this.SwitchScheduler(schedulerType, thread_Id,mark_ID);
+            this.switchContext(schedulerType);
             SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
-            this.setSchedulerContext(thread_Id, thread_count_, currentSchedulerType.get(thread_Id));
         }
     }
 }

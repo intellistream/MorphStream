@@ -65,9 +65,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     }
 
     public static void LA_RESETALL(TxnManager txnManager, int tthread) {
-        for (int k = 0; k < tthread; k++) {
-            txnManager.getOrderLock(k).reset();
-        }
+        txnManager.getOrderLock(tthread).reset();
     }
 
     public static void LA_UNLOCKALL(TxnManager txnManager, int tthread) {

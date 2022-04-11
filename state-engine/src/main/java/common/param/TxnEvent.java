@@ -55,6 +55,7 @@ public class TxnEvent implements Comparable<TxnEvent> {
         this.bid = bid;
         this.pid = 0;
         number_of_partitions = 1;
+        success = new int[1];
     }
 
     public long getBid() {

@@ -105,7 +105,7 @@ public class GSInitializer extends TableInitilizer {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
             if (dataConfig instanceof GSTPGDataGeneratorConfig)
-            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%s",
+            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%d_%s",
                             dataConfig.getTotalThreads(),
                             dataConfig.getTotalEvents(),
                             dataConfig.getnKeyStates(),
@@ -114,6 +114,7 @@ public class GSInitializer extends TableInitilizer {
                             ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
                             ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
                             ((GSTPGDataGeneratorConfig) dataConfig).Transaction_Length,
+                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
                             AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
             else
@@ -121,7 +122,6 @@ public class GSInitializer extends TableInitilizer {
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
                                 dataConfig.getnKeyStates(),
-                                ((DynamicDataGeneratorConfig) dataConfig).getType(),
                                 ((DynamicDataGeneratorConfig) dataConfig).getApp(),
                                 AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
