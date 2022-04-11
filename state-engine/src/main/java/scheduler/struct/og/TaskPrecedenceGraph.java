@@ -217,16 +217,17 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 //        LOG.info("id: " + context.thisThreadId + " fd: " + context.fd);
         if (context instanceof OGSContext) {
             ((OGSContext) context).buildBucketPerThread(ocs, resolvedOC);
-            if (AppConfig.isCyclic) { // if the constructed OCs are not cyclic, skip this.
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                if (context.thisThreadId == 0) {
-                    for (Context curContext : threadToContextMap.values()) {
-                        if (((OGSContext) curContext).maxLevel > maxLevel) {
-                            maxLevel = ((OGSContext) curContext).maxLevel;
-                        }
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            if (context.thisThreadId == 0) { // gather
+                for (Context curContext : threadToContextMap.values()) {
+                    if (((OGSContext) curContext).maxLevel > maxLevel) {
+                        maxLevel = ((OGSContext) curContext).maxLevel;
                     }
                 }
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            }
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            ((OGSContext) context).maxLevel = maxLevel; // scatter
+            if (AppConfig.isCyclic) { // if the constructed OCs are not cyclic, skip this.
                 ((OGSContext) context).putBusyWaitOCs(resolvedOC, maxLevel);
             }
             if (enable_log) LOG.info("MaxLevel:" + (((OGSContext) context).maxLevel));
