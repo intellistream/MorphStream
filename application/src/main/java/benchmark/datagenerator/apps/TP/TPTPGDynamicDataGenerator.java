@@ -68,16 +68,17 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
     }
     public void configure_store(double scale_factor, double theta, int tthread, int numItems) {
+        floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / tthread;
+        partitionedKeyZipf = new FastZipfGenerator[tthread];//overhead_total number of working threads.
         if (dynamicDataConfig.enableGroup) {
-            floor_interval = (int) Math.floor(numItems / (double) dynamicDataConfig.groupNum);//NUM_ITEMS / tthread;
-            partitionedKeyZipf = new FastZipfGenerator[dynamicDataConfig.groupNum];//overhead_total number of working threads.
             String b_ls[]=dynamicDataConfig.skewGroup.split(",");
             for (int i = 0; i < dynamicDataConfig.groupNum; i++) {
+                for (int j = i * (tthread /dynamicDataConfig.groupNum); j < (i + 1) * (tthread /dynamicDataConfig.groupNum); j++) {
+                    partitionedKeyZipf[j] = new FastZipfGenerator((int) (floor_interval * scale_factor), Double.parseDouble(b_ls[i]) / 100 , j * floor_interval, 12345678);
+                }
                 partitionedKeyZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), Double.parseDouble(b_ls[i]) / 100 , i * floor_interval, 12345678);
             }
         } else {
-            floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / tthread;
-            partitionedKeyZipf = new FastZipfGenerator[tthread];//overhead_total number of working threads.
             for (int i = 0; i < tthread; i++) {
                 partitionedKeyZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), theta, i * floor_interval, 12345678);
             }
