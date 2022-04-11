@@ -288,7 +288,7 @@ public class OperationChain implements Comparable<OperationChain> {
     }
 
     // ------------------ Non-Structured Methods ------------------------
-    public void setContext(AbstractOGNSContext context) {
+    public void setContext(OGSchedulerContext context) {
         if (this.context == null) {
             this.context = context;
         }

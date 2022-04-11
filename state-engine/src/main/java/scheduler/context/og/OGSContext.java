@@ -27,15 +27,15 @@ public class OGSContext extends OGSchedulerContext {
         super.reset();
         allocatedLayeredOCBucket.clear();
         currentLevel = 0;
-        currentLevelIndex=0;
-        maxLevel=0;
+        currentLevelIndex = 0;
+        maxLevel = 0;
     }
 
     @Override
     public void redo() {
         super.redo();
         currentLevel = 0;
-        currentLevelIndex=0;
+        currentLevelIndex = 0;
     }
 
     @Override
@@ -52,13 +52,13 @@ public class OGSContext extends OGSchedulerContext {
     @Override
     public boolean finished() {
 //        return scheduledOPs == totalOsToSchedule && !needAbortHandling; // not sure whether we need to check this condition.
-        return scheduledOPs == totalOsToSchedule && busyWaitQueue.isEmpty();
+        return scheduledOPs == totalOsToSchedule && currentLevel == maxLevel && busyWaitQueue.isEmpty();
     }
 
     public boolean exploreFinished() {
 //        return scheduledOPs == totalOsToSchedule && !needAbortHandling; // not sure whether we need to check this condition.
-        assert scheduledOPs <= totalOsToSchedule;
-        return scheduledOPs == totalOsToSchedule;
+        assert scheduledOPs <= totalOsToSchedule && currentLevel <= maxLevel;
+        return scheduledOPs == totalOsToSchedule && currentLevel == maxLevel;
     }
 
     /**

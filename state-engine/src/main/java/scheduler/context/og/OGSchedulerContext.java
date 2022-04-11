@@ -30,6 +30,7 @@ public abstract class OGSchedulerContext implements SchedulerContext {
         scheduledOPs = 0;
         totalOsToSchedule = 0;
         busyWaitQueue.clear();
+        operationChains.clear();
     }
 
     public void redo() {
