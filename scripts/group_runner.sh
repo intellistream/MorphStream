@@ -4,15 +4,16 @@ function ResetParameters() {
   app="TollProcessing"
   checkpointInterval=20480
   tthread=24
-  scheduler="OP_BFS_A"
+  scheduler="OG_DFS_A"
   CCOption=3 #TSTREAM
   complexity=10000
   NUM_ITEMS=495120
   isCyclic=0
   isGroup=0
   groupNum=1
-  SchedulersForGroup="OG_BFS_A,OG_NS";
+  SchedulersForGroup="OG_DFS_A,OG_NS";
   skewGroup="0,100"
+  high_abort_ratio=8000
   rootFilePath="/home/shuhao/jjzhao/data"
 }
 
@@ -32,7 +33,8 @@ function runTStream() {
           --totalEvents $totalEvents \
           --groupNum $groupNum \
           --skewGroup $skewGroup \
-          --SchedulersForGroup $SchedulersForGroup"
+          --SchedulersForGroup $SchedulersForGroup \
+          --high_abort_ratio $high_abort_ratio"
   java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
@@ -47,7 +49,8 @@ function runTStream() {
     --totalEvents $totalEvents \
     --groupNum $groupNum \
     --skewGroup $skewGroup \
-    --SchedulersForGroup $SchedulersForGroup
+    --SchedulersForGroup $SchedulersForGroup \
+    --high_abort_ratio $high_abort_ratio
 }
 
 # run basic experiment for different algorithms
@@ -56,7 +59,7 @@ function baselineEvaluation() {
   groupNum=2
   runTStream
   ResetParameters
-  for scheduler in TStream OG_BFS_A OG_NS
+  for scheduler in TStream OG_DFS_A OG_NS
   do
       runTStream
   done
