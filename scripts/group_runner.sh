@@ -56,7 +56,7 @@ function baselineEvaluation() {
   groupNum=2
   runTStream
   ResetParameters
-  for scheduler in TStream OG_BFS_A OG_NS_A
+  for scheduler in TStream OG_BFS_A OG_NS
   do
       runTStream
   done

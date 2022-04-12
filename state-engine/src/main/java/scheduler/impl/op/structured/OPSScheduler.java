@@ -20,7 +20,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
     @Override
     public void INITIALIZE(Context context) {
         tpg.firstTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     protected void ProcessedToNextLevel(Context context) {
@@ -42,7 +42,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
         Operation next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
             while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
                 ProcessedToNextLevel(context);
                 next = Next(context);
             }

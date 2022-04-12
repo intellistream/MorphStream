@@ -38,7 +38,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");
@@ -65,12 +65,12 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     public void INITIALIZE(Context context) {
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(Context context) {
         tpg.secondTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     /**

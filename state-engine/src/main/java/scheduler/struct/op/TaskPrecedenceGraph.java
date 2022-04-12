@@ -271,7 +271,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 resetOp(oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
         if (context instanceof OPSContext) {
             if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));

@@ -41,7 +41,7 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
         Operation next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
             while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
                 //all threads come to the current level.
                 if (needAbortHandling.get()) {
                     if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
@@ -101,14 +101,14 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     protected void abortHandling(Context context) {
         MarkOperationsToAbort(context);
 
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         IdentifyRollbackLevel(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         SetRollbackLevel(context);
 
         RollbackToCorrectLayerForRedo(context);
         ResumeExecution(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     //TODO: mark operations of aborted transaction to be aborted.
