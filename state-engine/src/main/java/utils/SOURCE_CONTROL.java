@@ -77,7 +77,7 @@ public class SOURCE_CONTROL {
     public void exploreTPGBarrier(int threadId) {
         try {
             if (isGroup) {
-                exploreTPGBarrierByGroup[threadId/(totalThreads / dalta)].await();
+                exploreTPGBarrierByGroup[threadId / dalta].await();
             } else {
                 exploreTPGBarrier.await();
             }
@@ -104,7 +104,7 @@ public class SOURCE_CONTROL {
     public void waitForOtherThreads(int threadId) {
         try {
             if (isGroup) {
-                dLevelEndBarrierByGroup[threadId/(totalThreads / dalta)].arriveAndAwaitAdvance();
+                dLevelEndBarrierByGroup[threadId / dalta].arriveAndAwaitAdvance();
             } else {
                 dLevelEndBarrier.arriveAndAwaitAdvance();
             }
@@ -133,7 +133,7 @@ public class SOURCE_CONTROL {
 
     public void oneThreadCompleted(int threadId) {
         if (isGroup) {
-            dLevelEndBarrierByGroup[threadId/(totalThreads / dalta)].arriveAndDeregister();
+            dLevelEndBarrierByGroup[threadId / dalta].arriveAndDeregister();
         } else {
             dLevelEndBarrier.arriveAndDeregister();
         }
