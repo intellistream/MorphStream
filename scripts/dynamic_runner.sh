@@ -8,7 +8,7 @@ function ResetParameters() {
   defaultScheduler="OG_BFS_A"
   CCOption=3 #TSTREAM
   complexity=10000
-  NUM_ITEMS=245760
+  NUM_ITEMS=491520
   deposit_ratio=95
 
 
@@ -22,7 +22,7 @@ function ResetParameters() {
 }
 
 function runTStream() {
-  echo "java -Xms100g -Xmx100g -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms200g -Xmx200g -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --tthread $tthread \
@@ -39,7 +39,7 @@ function runTStream() {
           --shiftRate $shiftRate \
           --workloadType $workloadType \
           --schedulerPool $schedulerPool"
-  java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms200g -Xmx200g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
