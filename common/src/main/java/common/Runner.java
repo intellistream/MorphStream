@@ -280,7 +280,6 @@ public abstract class Runner implements IRunner {
             case "TollProcessing" :
                 phaseNum = shiftRate * 1;
                 defaultScheduler = "OG_BFS_A";
-                SchedulersForGroup = "OG_BFS_A,OG_NS_A";
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + application);

@@ -11,6 +11,7 @@ function ResetParameters() {
   isCyclic=0
   isGroup=0
   groupNum=1
+  SchedulersForGroup="OG_BFS_A,OG_NS";
   skewGroup="0,100"
   rootFilePath="/home/shuhao/jjzhao/data"
 }
@@ -30,7 +31,8 @@ function runTStream() {
           --isGroup $isGroup \
           --totalEvents $totalEvents \
           --groupNum $groupNum \
-          --skewGroup $skewGroup"
+          --skewGroup $skewGroup \
+          --SchedulersForGroup $SchedulersForGroup"
   java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
@@ -44,7 +46,8 @@ function runTStream() {
     --isGroup $isGroup \
     --totalEvents $totalEvents \
     --groupNum $groupNum \
-    --skewGroup $skewGroup
+    --skewGroup $skewGroup \
+    --SchedulersForGroup $SchedulersForGroup
 }
 
 # run basic experiment for different algorithms
