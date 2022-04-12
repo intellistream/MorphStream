@@ -211,6 +211,19 @@ public class MeasureSink extends BaseSink {
                 sb.append("===99th===" + "\n");
                 sb.append(latency.getPercentile(99) + "\n");
                 w.write(sb.toString());
+                w.write("Percentile\t Latency\n");
+                w.write(String.format("%d\t" +
+                                "%-10.4f\t"
+                        , 0.5,latency.getPercentile(0.5)));
+                for (int i = 20; i < 100; i += 20){
+                    String output = String.format("%d\t" +
+                                    "%-10.4f\t"
+                            , i,latency.getPercentile(i));
+                    w.write(output + "\n");
+                }
+                w.write(String.format("%d\t" +
+                                "%-10.4f\t"
+                        , 99,latency.getPercentile(99)));
                 w.close();
                 f.close();
             } catch (IOException e) {
