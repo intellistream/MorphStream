@@ -122,6 +122,8 @@ public abstract class Runner implements IRunner {
     public String SchedulersForGroup = "";
     @Parameter(names = {"--skewGroup"}, description = "skew for groups")
     public String skewGroup = "0,100";
+    @Parameter(names = {"--high_abort_ratio"}, description = "abort ratio for groups")
+    public Integer Ratio_of_Transaction_Aborts_Highest = 0;
 
     /**
      * Benchmarking Specific Parameters.
@@ -312,6 +314,7 @@ public abstract class Runner implements IRunner {
             config.put("SchedulersForGroup",SchedulersForGroup);
             config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
             config.put("skewGroup",skewGroup);
+            config.put("Ratio_of_Transaction_Aborts_Highest",Ratio_of_Transaction_Aborts_Highest);
         } else {
             config.put("isGroup", false);
             config.put("groupNum",1);

@@ -140,7 +140,7 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             if (partitionId < dynamicDataConfig.getTotalThreads()/dynamicDataConfig.groupNum){
                 isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts;
             } else {
-                isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts + 9000;
+                isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts + dynamicDataConfig.Ratio_of_Transaction_Aborts_Highest;
             }
         } else {
             isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts;

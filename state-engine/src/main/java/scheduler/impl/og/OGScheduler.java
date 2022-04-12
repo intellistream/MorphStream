@@ -87,6 +87,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
         RESET(context);//
+
 //        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 
