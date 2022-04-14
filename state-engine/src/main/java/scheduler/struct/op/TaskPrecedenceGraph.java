@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
+import scheduler.context.og.OGSContext;
 import scheduler.context.op.OPNSContext;
 import scheduler.context.op.OPSContext;
 import scheduler.context.op.OPSchedulerContext;
@@ -41,6 +42,8 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     public final ConcurrentHashMap<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
     public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
+    private int maxLevel = 0; // just for layered scheduling
+
 
     public void reset(Context context) {
 //        if (app == 0) {
@@ -202,6 +205,17 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 }
             }
             ((OPSContext) context).buildBucketPerThread(context.operations, roots);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            if (context.thisThreadId == 0) { // gather
+                for (Context curContext : threadToContextMap.values()) {
+                    if (((OPSContext) curContext).maxLevel > maxLevel) {
+                        maxLevel = ((OPSContext) curContext).maxLevel;
+                    }
+                }
+            }
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            ((OPSContext) context).maxLevel = maxLevel; // scatter
+
 //            ((OPSContext) context).buildBucketPerThread(threadToOCs.get(context.thisThreadId));
             if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));
         } else if (context instanceof OPNSContext) {

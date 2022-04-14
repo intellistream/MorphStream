@@ -40,6 +40,12 @@ public class OPSContext extends OPSchedulerContext {
     }
 
     @Override
+    public boolean finished() {
+        assert scheduledOPs <= totalOsToSchedule && currentLevel <= maxLevel;
+        return scheduledOPs == totalOsToSchedule && currentLevel == maxLevel;
+    }
+
+    @Override
     public OperationChain createTask(String tableName, String pKey) {
         return new OperationChain(tableName, pKey);
     }
