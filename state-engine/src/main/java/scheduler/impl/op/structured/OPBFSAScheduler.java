@@ -41,7 +41,7 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
         Operation next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
             while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+                SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 //all threads come to the current level.
                 if (needAbortHandling.get()) {
                     if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());

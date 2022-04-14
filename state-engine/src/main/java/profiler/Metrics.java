@@ -20,6 +20,7 @@ public class Metrics {
     public static void RESET_COUNTERS(int thread_id) {
         //reset accumulative counters.
         Runtime.Prepare[thread_id] = 0;
+        Runtime.PreTxn[thread_id] = 0;
     }
 
     public static void COMPUTE_START_TIME(int thread_id) {
@@ -96,7 +97,7 @@ public class Metrics {
     }
 
     public static void COMPUTE_POST_EXE_TIME_ACC(int thread_id) {
-        Runtime.Post[thread_id] += System.nanoTime() - Runtime.PostStart[thread_id];
+        Runtime.Post[thread_id] = System.nanoTime() - Runtime.PostStart[thread_id];
     }
 
     public static void COMPUTE_START_WAIT_TIME(int thread_id) {

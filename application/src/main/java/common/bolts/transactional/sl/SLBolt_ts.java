@@ -110,6 +110,7 @@ public class SLBolt_ts extends SLBolt {
                 TRANSFER_REQUEST_CONSTRUCT((TransactionEvent) event, txnContext);
             } else
                 throw new UnknownError();
+            MeasureTools.END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
         }
     }
 
