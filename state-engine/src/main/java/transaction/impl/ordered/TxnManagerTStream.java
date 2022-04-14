@@ -67,11 +67,13 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
         MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
         MeasureTools.SCHEDULE_TIME_RECORD(thread_Id, num_events);
         //Sync to switch scheduler(more overhead) decide by the mark_ID or runtime information
+        MeasureTools.BEGIN_SCHEDULER_SWITCH_TIME_MEASURE(thread_Id);
         if (enableDynamic && collector.timeToSwitch(mark_ID,thread_Id,currentSchedulerType.get(thread_Id))){
             String schedulerType = collector.getDecision(thread_Id);
             this.SwitchScheduler(schedulerType, thread_Id,mark_ID);
             this.switchContext(schedulerType);
             SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
         }
+        MeasureTools.END_SCHEDULER_SWITCH_TIME_MEASURE(thread_Id);
     }
 }

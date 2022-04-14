@@ -35,6 +35,7 @@ public class Metrics {
         double notify_time = Scheduler.Notify[thread_id] / (double) num_events;
         double first_explore_time = Scheduler.FirstExplore[thread_id] / (double) num_events;
         double caching_time = Scheduler.Caching[thread_id] / (double) num_events;
+        double switch_time = Scheduler.SchedulerSwitch[thread_id] / (double) num_events;
         Scheduler_Record.Explore[thread_id].addValue(explore_time);
         Scheduler_Record.Next[thread_id].addValue(next_time);
         Scheduler_Record.Useful[thread_id].addValue(useful_time);
@@ -42,6 +43,7 @@ public class Metrics {
         Scheduler_Record.Noitfy[thread_id].addValue(notify_time);
         Scheduler_Record.FirstExplore[thread_id].addValue(first_explore_time);
         Scheduler_Record.Caching[thread_id].addValue(caching_time);
+        Scheduler_Record.SchedulerSwitch[thread_id].addValue(switch_time);
         Scheduler.Initialize();
     }
 
@@ -393,6 +395,8 @@ public class Metrics {
         public static DescriptiveStatistics[] Noitfy = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
         public static DescriptiveStatistics[] FirstExplore = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
         public static DescriptiveStatistics[] Caching = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
+        public static DescriptiveStatistics[] SchedulerSwitch = new DescriptiveStatistics[kMaxThreadNum];//SchedulerSwitch time.
+
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
@@ -403,6 +407,7 @@ public class Metrics {
                 Noitfy[i] = new DescriptiveStatistics();
                 FirstExplore[i] = new DescriptiveStatistics();
                 Caching[i] = new DescriptiveStatistics();
+                SchedulerSwitch[i] = new DescriptiveStatistics();
             }
         }
     }
