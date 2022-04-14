@@ -7,7 +7,7 @@ function ResetParameters() {
   checkpointInterval=10240
   tthread=24
   scheduler="BFS"
-  deposit_ratio=50
+  Ratio_of_Multiple_State_Access=100
   key_skewness=0
   overlap_ratio=0
   abort_ratio=0
@@ -27,7 +27,7 @@ function runTStream() {
           --scheduler $scheduler \
           --totalEvents $totalEvents \
           --checkpoint_interval $checkpointInterval \
-          --deposit_ratio $deposit_ratio \
+          --Ratio_of_Multiple_State_Access $Ratio_of_Multiple_State_Access \
           --key_skewness $key_skewness \
           --overlap_ratio $overlap_ratio \
           --abort_ratio $abort_ratio \
@@ -42,7 +42,7 @@ function runTStream() {
     --scheduler $scheduler \
     --totalEvents $totalEvents \
     --checkpoint_interval $checkpointInterval \
-    --deposit_ratio $deposit_ratio \
+    --Ratio_of_Multiple_State_Access $Ratio_of_Multiple_State_Access \
     --key_skewness $key_skewness \
     --overlap_ratio $overlap_ratio \
     --abort_ratio $abort_ratio \
@@ -64,56 +64,6 @@ function withAbortEvaluation() {
   for scheduler in OG_NS_A OP_NS_A
   do
     runTStream
-  done
-}
-
-function granularity_study() {
-  # num of TD
-  ResetParameters
-  NUM_ACCESS=1 # OC level and OP level has similar performance before
-  deposit_ratio=100 # try to avoid the overhead of PD
-  for app in GrepSum
-  do
-    # for tthread in 24
-    for isCyclic in 0
-    do
-      for checkpointInterval in 5120 10240 20480 40960 81920
-      do
-        withAbortEvaluation
-      done
-    done
-  done
-
-  rm -rf /home/shuhao/jjzhao/data
-
-  #isCyclic
-  ResetParameters
-    deposit_ratio=75
-    checkpointInterval=40960
-    for app in GrepSum
-     do
-       for isCyclic in 1
-       do
-           withAbortEvaluation
-       done
-     done
-}
-
-function exploration_strategy_study() {
-# Average num of OP in OC(LD)
-  ResetParameters
-  for app in GrepSum
-  do
-    for isCyclic in 0
-    do
-      for checkpointInterval in 5120 10240 20480 40960 81920
-      do
-        for scheduler in OP_BFS OP_DFS OP_NS
-        do
-          runTStream
-        done
-      done
-    done
   done
 }
 
@@ -154,9 +104,13 @@ function abort_mechanism_study() {
 }
 
 
-
+rm -rf /home/shuhao/jjzhao/data
+abort_mechanism_study
 ResetParameters
 cd draw || exit
 
-echo "model/python model_exploration_strategy_batch.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-python model/model_exploration_strategy_batch.py -i $NUM_ITEMS -d $deposit_ratio -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+echo "newmodel/python model_abort_abortRatio.py -i $NUM_ITEMS -d Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+python model/model_abort_abortRatio.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+ResetParameters
+echo "newmodel/python model_abort_complexity.py -i $NUM_ITEMS -d Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+python model/model_abort_complexity.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
