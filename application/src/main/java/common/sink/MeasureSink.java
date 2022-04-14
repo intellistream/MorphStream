@@ -214,7 +214,7 @@ public class MeasureSink extends BaseSink {
                 w.write("Percentile\t Latency\n");
                 w.write(String.format("%f\t" +
                                 "%-10.4f\t"
-                        , 0.5,latency.getPercentile(0.5)));
+                        , 0.5,latency.getPercentile(0.5)) + "\n");
                 for (double i = 20; i < 100; i += 20){
                     String output = String.format("%f\t" +
                                     "%-10.4f\t"
