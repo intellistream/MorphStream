@@ -293,10 +293,10 @@ public class MeasureTools {
                                     "%-10.2f\t" +
                                     "%-10.2f"
                             , i
-                            , Total_Record.totalProcessTimePerEvent[threadId].getMean()
-                            , Total_Record.stream_total[threadId].getMean()
-                            , Total_Record.txn_total[threadId].getMean()
-                            , Total_Record.overhead_total[threadId].getMean()
+                            , Total_Record.totalProcessTimePerEvent[threadId].getValues()[i]
+                            , Total_Record.stream_total[threadId].getValues()[i]
+                            , Total_Record.txn_total[threadId].getValues()[i]
+                            , Total_Record.overhead_total[threadId].getValues()[i]
                     );
                     log.info(output);
                 }
