@@ -234,6 +234,15 @@ public class MeasureTools {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_CONSTRUCT(thread_id);
     }
+    public static void BEGIN_SCHEDULER_SWITCH_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_SWITCH_START(thread_id);
+    }
+
+    public static void END_SCHEDULER_SWITCH_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_SWITCH(thread_id);
+    }
 
     public static void BEGIN_CACHE_OPERATION_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
