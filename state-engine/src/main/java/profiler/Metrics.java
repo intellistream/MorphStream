@@ -44,7 +44,7 @@ public class Metrics {
         Scheduler_Record.FirstExplore[thread_id].addValue(first_explore_time);
         Scheduler_Record.Caching[thread_id].addValue(caching_time);
         Scheduler_Record.SchedulerSwitch[thread_id].addValue(switch_time);
-        Scheduler.Initialize();
+        Scheduler.Initialize(thread_id);
     }
 
     public static void RECORD_TIME(int thread_id) {
@@ -226,7 +226,7 @@ public class Metrics {
     }
 
     public static void COMPUTE_SWITCH(int thread_id) {
-        Scheduler.SchedulerSwitch[thread_id] += System.nanoTime() - Scheduler.SchedulerSwitchStart[thread_id];
+        Scheduler.SchedulerSwitch[thread_id] = System.nanoTime() - Scheduler.SchedulerSwitchStart[thread_id];
     }
 
     public static void COMPUTE_CACHE_OPERATION_START(int thread_id) {
@@ -384,6 +384,24 @@ public class Metrics {
                 SchedulerSwitchStart[i] = 0;
                 SchedulerSwitch[i] = 0;
             }
+        }
+        public static void Initialize(int i) {
+            NextStart[i] = 0;
+            Next[i] = 0;
+            UsefulStart[i] = 0;
+            Useful[i] = 0;
+            ExploreStart[i] = 0;
+            Explore[i] = 0;
+            ConstructStart[i] = 0;
+            Construct[i] = 0;
+            NotifyStart[i] = 0;
+            Notify[i] = 0;
+            FirstExploreStart[i] = 0;
+            FirstExplore[i] = 0;
+            CachingStart[i] = 0;
+            Caching[i] = 0;
+            SchedulerSwitchStart[i] = 0;
+            SchedulerSwitch[i] = 0;
         }
     }
 
