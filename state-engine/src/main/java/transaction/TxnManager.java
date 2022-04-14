@@ -51,7 +51,7 @@ public abstract class TxnManager implements ITxnManager {
         schedulerByGroup = new HashMap<>();
         schedulerTypeByGroup = new HashMap<>();
         String[] scheduler = schedulerType.split(",");
-        for(int i = 0; i<scheduler.length; i++ ){
+        for (int i = 0; i<scheduler.length; i++ ) {
             TxnManager.schedulerByGroup.put(i,CreateSchedulerByType(scheduler[i], threadCount / scheduler.length, numberOfStates / scheduler.length, app));
             TxnManager.schedulerTypeByGroup.put(i, scheduler[i]);
             TxnManager.schedulerByGroup.get(i).initTPG(i * (threadCount / scheduler.length));
@@ -111,7 +111,7 @@ public abstract class TxnManager implements ITxnManager {
      * Switch scheduler every punctuation
      * When the workload changes and the scheduler is no longer applicable
      */
-    public void SwitchScheduler(String schedulerType, int threadId, long markId){
+    public void SwitchScheduler(String schedulerType, int threadId, long markId) {
         currentSchedulerType.put(threadId,schedulerType);
         if (threadId == 0) {
             scheduler = schedulerPool.get(schedulerType);
