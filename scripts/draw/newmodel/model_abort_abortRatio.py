@@ -36,7 +36,7 @@ matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
 FIGURE_FOLDER = './results/sensitivity'
-FILE_FOLER = '/home/shuhao/TStream/data/stats'
+FILE_FOLER = '/home/shuhao/jjzhao/data/stats'
 
 
 def ConvertEpsToPdf(dir_filename):
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     legend_labels = ["Eager", "Lazy"]
     legend = True
 
-    y_axis = ReadFileGS(x_value, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+    y_axis = ReadFileGS(x_value, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     DrawFigure(x_axis, y_axis, legend_labels, "Ratio of Aborting Txns(%)", "Throughput (K/sec)", "gs_abort_throughput_t{}_b{}_{}_{}_{}_{}_{}_{}_{}"
-                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity),
+                .format(tthread, NUM_ITEMS, batchInterval, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity),
                 legend)

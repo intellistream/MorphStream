@@ -14,6 +14,7 @@ function ResetParameters() {
   CCOption=3 #TSTREAM
   complexity=0
   isCyclic=0
+  rootFilePath="/home/shuhao/jjzhao/data"
 }
 
 function runTStream() {
@@ -27,13 +28,14 @@ function runTStream() {
           --scheduler $scheduler \
           --totalEvents $totalEvents \
           --checkpoint_interval $checkpointInterval \
-          --Ratio_of_Multiple_State_Access $Ratio_of_Multiple_State_Access \
+          --multiple_ratio $Ratio_of_Multiple_State_Access \
           --key_skewness $key_skewness \
           --overlap_ratio $overlap_ratio \
           --abort_ratio $abort_ratio \
           --CCOption $CCOption \
           --complexity $complexity \
-           --isCyclic $isCyclic"
+           --isCyclic $isCyclic \
+           --rootFilePath $rootFilePath"
   java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
@@ -42,13 +44,14 @@ function runTStream() {
     --scheduler $scheduler \
     --totalEvents $totalEvents \
     --checkpoint_interval $checkpointInterval \
-    --Ratio_of_Multiple_State_Access $Ratio_of_Multiple_State_Access \
+    --multiple_ratio $Ratio_of_Multiple_State_Access \
     --key_skewness $key_skewness \
     --overlap_ratio $overlap_ratio \
     --abort_ratio $abort_ratio \
     --CCOption $CCOption \
     --complexity $complexity \
-    --isCyclic $isCyclic
+    --isCyclic $isCyclic \
+    --rootFilePath $rootFilePath
 }
 
 # run basic experiment for different algorithms

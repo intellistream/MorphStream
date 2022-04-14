@@ -7,7 +7,7 @@ function ResetParameters() {
   checkpointInterval=10240
   tthread=24
   scheduler="BFS"
-  Ratio_of_Multiple_State_Access=100
+  multiple_ratio=100
   key_skewness=0
   overlap_ratio=0
   abort_ratio=0
@@ -27,7 +27,7 @@ function runTStream() {
           --scheduler $scheduler \
           --totalEvents $totalEvents \
           --checkpoint_interval $checkpointInterval \
-          --Ratio_of_Multiple_State_Access $Ratio_of_Multiple_State_Access\
+          --multiple_ratio $Ratio_of_Multiple_State_Access\
           --key_skewness $key_skewness \
           --overlap_ratio $overlap_ratio \
           --abort_ratio $abort_ratio \
@@ -42,7 +42,7 @@ function runTStream() {
     --scheduler $scheduler \
     --totalEvents $totalEvents \
     --checkpoint_interval $checkpointInterval \
-    --Ratio_of_Multiple_State_Access $Ratio_of_Multiple_State_Access \
+    --multiple_ratio $Ratio_of_Multiple_State_Access \
     --key_skewness $key_skewness \
     --overlap_ratio $overlap_ratio \
     --abort_ratio $abort_ratio \

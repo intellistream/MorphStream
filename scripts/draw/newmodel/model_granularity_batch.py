@@ -36,7 +36,7 @@ matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
 FIGURE_FOLDER = './results/model/granularity'
-FILE_FOLER = '/home/shuhao/data/stats'
+FILE_FOLER = '/home/shuhao/jjzhao/data/stats'
 
 
 def ConvertEpsToPdf(dir_filename):
@@ -119,7 +119,7 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_Stat
 
     return y
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
+def getPathGS(algo, events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
     return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}_{}'\
         .format(algo, tthread, events, NUM_ITEMS,Ratio_of_Multiple_State_Access , key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
 
