@@ -348,6 +348,23 @@ public class MeasureTools {
                 );
                 fileWriter.write(output + "\n");
                 if (enable_log) log.info(output);
+                for (int i = 0; i < Scheduler_Record.Construct[threadId].getValues().length; i++) {
+                    output = String.format("%d\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t"
+                            , i
+                            , Scheduler_Record.Explore[threadId].getValues()[i]
+                            , Scheduler_Record.Next[threadId].getValues()[i]
+                            , Scheduler_Record.Useful[threadId].getValues()[i]
+                            , Scheduler_Record.Noitfy[threadId].getValues()[i]
+                            , Scheduler_Record.Construct[threadId].getValues()[i]
+                            , Scheduler_Record.FirstExplore[threadId].getValues()[i]);
+                    log.info(output);
+                }
             }
             fileWriter.close();
         } catch (Exception e) {

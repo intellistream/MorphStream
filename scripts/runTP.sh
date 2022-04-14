@@ -4,7 +4,7 @@ function ResetParameters() {
   app="TollProcessing"
   checkpointInterval=20480
   tthread=24
-  scheduler="OG_DFS_A"
+  scheduler="OP_BFS_A"
   CCOption=3 #TSTREAM
   complexity=10000
   NUM_ITEMS=495120
