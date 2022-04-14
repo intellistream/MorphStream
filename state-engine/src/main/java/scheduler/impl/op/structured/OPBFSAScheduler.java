@@ -39,18 +39,29 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     @Override
     public void EXPLORE(Context context) {
         Operation next = Next(context);
-        if (next == null && !context.finished()) { //current level is all processed at the current thread.
-            while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                //all threads come to the current level.
-                if (needAbortHandling.get()) {
-                    if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
-                    abortHandling(context);
-                }
+        while (next == null && !context.finished()) {
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            //all threads come to the current level.
+            if (needAbortHandling.get()) {
+                if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
+                abortHandling(context);
+            }
+            ProcessedToNextLevel(context);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            next = Next(context);
+        }
+        if (context.finished()) {
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            if (needAbortHandling.get()) {
+                if (enable_log)
+                    LOG.debug("aborted after all ocs explored: " + context.thisThreadId + " | " + needAbortHandling.get());
+                abortHandling(context);
                 ProcessedToNextLevel(context);
+                SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 next = Next(context);
             }
         }
+
         DISTRIBUTE(next, context);
     }
 
