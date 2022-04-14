@@ -314,6 +314,19 @@ public class MeasureTools {
                 );
                 fileWriter.write(output + "\n");
                 if (enable_log) log.info(output);
+                for (int i = 0; i < Transaction_Record.index_ratio[threadId].getValues().length; i++) {
+                     output = String.format("%d\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t"
+                            , threadId
+                            , Transaction_Record.index_ratio[threadId].getValues()[i]
+                            , Transaction_Record.useful_ratio[threadId].getValues()[i]
+                            , Transaction_Record.sync_ratio[threadId].getValues()[i]
+                            , ccOption == CCOption_MorphStream ? 0 : Transaction_Record.lock_ratio[threadId].getMean());
+                    log.info(output);
+                }
             }
             fileWriter.close();
         } catch (Exception e) {
