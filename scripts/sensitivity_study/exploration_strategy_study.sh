@@ -14,6 +14,7 @@ function ResetParameters() {
   CCOption=3 #TSTREAM
   complexity=0
   isCyclic=0
+  rootFilePath="/home/shuhao/jjzhao/data"
 }
 
 function runTStream() {
@@ -33,7 +34,8 @@ function runTStream() {
           --abort_ratio $abort_ratio \
           --CCOption $CCOption \
           --complexity $complexity \
-           --isCyclic $isCyclic"
+           --isCyclic $isCyclic \
+           --rootFilePath $rootFilePath"
   java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
@@ -48,7 +50,8 @@ function runTStream() {
     --abort_ratio $abort_ratio \
     --CCOption $CCOption \
     --complexity $complexity \
-    --isCyclic $isCyclic
+    --isCyclic $isCyclic \
+    --rootFilePath $rootFilePath
 }
 
 function exploration_strategy_study() {
