@@ -73,7 +73,7 @@ function withAbortEvaluation() {
 function granularity_study() {
   # num of TD
   ResetParameters
-  NUM_ACCESS=1 # OC level and OP level has similar performance before
+  NUM_ACCESS=2 # OC level and OP level has similar performance before
   for app in GrepSum
   do
     # for tthread in 24
@@ -96,6 +96,17 @@ function granularity_study() {
            withAbortEvaluation
        done
      done
+    #isCyclic
+    ResetParameters
+      checkpointInterval=40960
+      NUM_ACCESS=2
+      for app in GrepSum
+       do
+         for isCyclic in 0 1
+         do
+             withAbortEvaluation
+         done
+       done
 }
 rm -rf /home/shuhao/jjzhao/data
 granularity_study
@@ -103,7 +114,9 @@ ResetParameters
 cd ../draw || exit
 
 echo "newmodel/python model_granularity_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-python model/model_granularity_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 ResetParameters
-echo "newmodel/python model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-python model/model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+echo "newmodel/python model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b 40960 -c $isCyclic -m $complexity"
+python newmodel/model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b 40960 -c $isCyclic -m $complexity
+ResetParameters
+echo "newmodel/python model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n 2 -k $key_skewness -o $overlap_ratio -a $abort_ratio -b 40960 -c $isCyclic -m $complexity"
+python newmodel/model_granularity_cyclic.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n 2 -k $key_skewness -o $overlap_ratio -a $abort_ratio -b 40960 -c $isCyclic -m $complexity
