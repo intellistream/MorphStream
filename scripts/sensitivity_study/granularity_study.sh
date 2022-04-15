@@ -89,6 +89,7 @@ function granularity_study() {
   #isCyclic
   ResetParameters
     checkpointInterval=40960
+    NUM_ACCESS=1
     for app in GrepSum
      do
        for isCyclic in 1
@@ -99,7 +100,6 @@ function granularity_study() {
     #isCyclic
     ResetParameters
       checkpointInterval=40960
-      NUM_ACCESS=2
       for app in GrepSum
        do
          for isCyclic in 0 1

@@ -2,7 +2,7 @@
 
 function ResetParameters() {
   app="TollProcessing"
-  checkpointInterval=20480
+  checkpointInterval=40960
   tthread=24
   scheduler="OG_DFS_A"
   CCOption=3 #TSTREAM
@@ -13,7 +13,7 @@ function ResetParameters() {
   groupNum=1
   SchedulersForGroup="OG_DFS_A,OG_NS";
   skewGroup="0,100"
-  high_abort_ratio=8000
+  high_abort_ratio=1500
   rootFilePath="/home/shuhao/jjzhao/data"
 }
 
