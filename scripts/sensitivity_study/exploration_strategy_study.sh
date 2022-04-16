@@ -59,7 +59,7 @@ function exploration_strategy_study() {
   ResetParameters
   for app in GrepSum
   do
-    for isCyclic in 0
+    for key_skewness in 0 75
     do
       for checkpointInterval in 5120 10240 20480 40960 81920
       do
@@ -72,10 +72,15 @@ function exploration_strategy_study() {
   done
   ResetParameters
   cd draw || exit
+  key_skewness=0
 
   echo "newmodel/python model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
   python newmodel/model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
   ResetParameters
+  key_skewness=75
+  echo "newmodel/python model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python newmodel/model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+
 }
 function skew(){
    ResetParameters
