@@ -28,7 +28,7 @@ public class OPBFSScheduler<Context extends OPSContext> extends OPSScheduler<Con
         Operation next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
             while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+                SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 ProcessedToNextLevel(context);
                 next = Next(context);
             }

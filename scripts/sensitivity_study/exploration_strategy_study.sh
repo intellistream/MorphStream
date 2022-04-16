@@ -70,7 +70,14 @@ function exploration_strategy_study() {
       done
     done
   done
+  ResetParameters
+  cd draw || exit
 
+  echo "newmodel/python model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python newmodel/model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+  ResetParameters
+}
+function skew(){
    ResetParameters
    checkpoint_interval=40960
     for app in GrepSum
@@ -86,16 +93,13 @@ function exploration_strategy_study() {
         done
       done
     done
-
+  ResetParameters
+  checkpoint_interval=40960
+  cd draw || exit
+  echo "newmodel/python model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
+  python newmodel/python model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 }
 
 rm -rf /home/shuhao/jjzhao/data
 exploration_strategy_study
-ResetParameters
-cd draw || exit
 
-echo "newmodel/python model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-python newmodel/model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-ResetParameters
-echo "newmodel/python model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-python newmodel/python model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity

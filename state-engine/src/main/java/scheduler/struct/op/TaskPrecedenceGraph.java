@@ -205,7 +205,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 }
             }
             ((OPSContext) context).buildBucketPerThread(context.operations, roots);
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
             if (context.thisThreadId == 0) { // gather
                 for (Context curContext : threadToContextMap.values()) {
                     if (((OPSContext) curContext).maxLevel > maxLevel) {
@@ -213,7 +213,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     }
                 }
             }
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
             ((OPSContext) context).maxLevel = maxLevel; // scatter
 
 //            ((OPSContext) context).buildBucketPerThread(threadToOCs.get(context.thisThreadId));

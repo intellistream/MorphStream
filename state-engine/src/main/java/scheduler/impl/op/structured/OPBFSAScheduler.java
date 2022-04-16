@@ -40,24 +40,24 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     public void EXPLORE(Context context) {
         Operation next = Next(context);
         while (next == null && !context.finished()) {
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
             //all threads come to the current level.
             if (needAbortHandling.get()) {
                 if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
                 abortHandling(context);
             }
             ProcessedToNextLevel(context);
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
             next = Next(context);
         }
         if (context.finished()) {
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
             if (needAbortHandling.get()) {
                 if (enable_log)
                     LOG.debug("aborted after all ocs explored: " + context.thisThreadId + " | " + needAbortHandling.get());
                 abortHandling(context);
                 ProcessedToNextLevel(context);
-                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+                SOURCE_CONTROL.getInstance().waitForOtherThreads();
                 next = Next(context);
             }
         }
