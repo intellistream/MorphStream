@@ -20,12 +20,10 @@ public class OGBFSScheduler extends AbstractOGBFSScheduler<OGSContext> {
     @Override
     public void EXPLORE(OGSContext context) {
         OperationChain next = Next(context);
-        if (next == null && !context.exploreFinished()) { //current level is all processed at the current thread.
-            while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                ProcessedToNextLevel(context);
-                next = Next(context);
-            }
+        while (next == null && !context.exploreFinished()) {
+            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            ProcessedToNextLevel(context);
+            next = Next(context);
         }
         DISTRIBUTE(next, context);
     }
