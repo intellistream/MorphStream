@@ -99,7 +99,7 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
 
 
 def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
-    w, h = 2, len(x_axis)
+    w, h = 3, len(x_axis)
     y = [[] for _ in range(w)]
 
     for batchInterval in x_axis:
@@ -121,7 +121,7 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_Stat
         op_dfs_path = getPathGS("OP_DFS", events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
-        y[1].append(float(throughput))
+        y[2].append(float(throughput))
     print(y)
     return y
 
