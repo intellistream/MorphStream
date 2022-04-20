@@ -203,8 +203,11 @@ public class MeasureSink extends BaseSink {
                 FileWriter f = null;
                 f = new FileWriter(new File(directory));
                 Writer w = new BufferedWriter(f);
-                for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
-                    w.write(latency.getPercentile(percentile) + "\n");
+//                for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
+//                    w.write(latency.getPercentile(percentile) + "\n");
+//                }
+                for (double lat : latency.getValues()){
+                    w.write(lat + "\n");
                 }
                 sb.append("=======Details=======");
                 sb.append("\n" + latency.toString() + "\n");
