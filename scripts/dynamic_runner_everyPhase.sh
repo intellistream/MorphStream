@@ -65,7 +65,6 @@ function runTStream() {
 function baselineEvaluation() {
   isDynamic=1
   runTStream
-  ResetParameters
 
   scheduler=TStream
   isDynamic=0
@@ -82,6 +81,7 @@ function patEvluation() {
 function phase1() {
   ResetParameters
   workloadType="default,unchanging,unchanging,unchanging"
+  defaultScheduler="OG_BFS_A"
   baselineEvaluation
   patEvluation
 }
@@ -89,6 +89,7 @@ function phase1() {
 function phase2() {
   ResetParameters
   workloadType="default,Up_skew,Up_skew,Up_skew"
+  defaultScheduler="OG_BFS_A"
   baselineEvaluation
   patEvluation
 }
@@ -97,6 +98,7 @@ function phase3() {
   ResetParameters
   key_skewness=80
   workloadType="default,Up_PD,Up_PD,Up_PD"
+  defaultScheduler="OG_NS_A"
   baselineEvaluation
   patEvluation
 }
@@ -107,28 +109,16 @@ function phase4() {
   deposit_ratio=35
   key_skewness=80
   workloadType="default,Up_abort,Up_abort,Up_abort"
+  defaultScheduler="OP_NS_A"
   baselineEvaluation
   patEvluation
 }
 
 function dynamic_runner_everyPhase() { #
- ResetParameters
- for workloadType in "default,unchanging,unchanging,unchanging" "default,Up_skew,Up_skew,Up_skew"
- do
-     baselineEvaluation
-     patEvluation
- done
- ResetParameters
- key_skewness=80
- workloadType="default,Up_PD,Up_PD,Up_PD"
- baselineEvaluation
- patEvluation
- ResetParameters
- deposit_ratio=35
- key_skewness=80
- workloadType="default,Up_abort,Up_abort,Up_abort"
- baselineEvaluation
- patEvluation
+phase1
+phase2
+phase3
+phase4
 }
 dynamic_runner_everyPhase
 #phase1
