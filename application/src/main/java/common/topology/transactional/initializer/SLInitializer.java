@@ -105,7 +105,7 @@ public class SLInitializer extends TableInitilizer {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
             if (dataConfig instanceof SLTPGDataGeneratorConfig)
-                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%s",
+                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%s_%s",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
                                 dataConfig.getnKeyStates(),
@@ -113,10 +113,11 @@ public class SLInitializer extends TableInitilizer {
                                 ((SLTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
                                 ((SLTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
                                 ((SLTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
-                                AppConfig.isCyclic)
+                                AppConfig.isCyclic,
+                                config.getString("workloadType"))
                         .getBytes(StandardCharsets.UTF_8));
             else if(dataConfig instanceof DynamicDataGeneratorConfig)
-                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%s",
+                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%s_%s",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
                                 dataConfig.getnKeyStates(),
@@ -124,7 +125,8 @@ public class SLInitializer extends TableInitilizer {
                                 ((DynamicDataGeneratorConfig) dataConfig).State_Access_Skewness,
                                 ((DynamicDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
                                 ((DynamicDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
-                                AppConfig.isCyclic)
+                                AppConfig.isCyclic,
+                                config.getString("workloadType"))
                         .getBytes(StandardCharsets.UTF_8));
             else
                 bytes = digest.digest(String.format("%d_%d_%d",

@@ -7,7 +7,7 @@ function ResetParameters() {
   scheduler="OG_BFS_A"
   defaultScheduler="OG_BFS_A"
   CCOption=3 #TSTREAM
-  complexity=0
+  complexity=10000
   NUM_ITEMS=491520
   deposit_ratio=95
   key_skewness=20
@@ -68,7 +68,6 @@ function baselineEvaluation() {
   ResetParameters
 
   scheduler=TStream
-  workloadType="default"
   isDynamic=0
   runTStream
 }
@@ -77,7 +76,6 @@ function baselineEvaluation() {
 function patEvluation() {
   isDynamic=0
   CCOption=4 #SSTORE
-  workloadType="default"
   runTStream
 }
 

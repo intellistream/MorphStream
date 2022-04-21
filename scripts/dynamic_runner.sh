@@ -65,7 +65,6 @@ function baselineEvaluation() {
   ResetParameters
 
   scheduler=TStream
-  workloadType="default"
   isDynamic=0
   runTStream
 }
@@ -74,7 +73,6 @@ function baselineEvaluation() {
 function patEvluation() {
   isDynamic=0
   CCOption=4 #SSTORE
-  workloadType="default"
   runTStream
 }
 
