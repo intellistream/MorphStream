@@ -74,7 +74,7 @@ public class SLInitializer extends TableInitilizer {
             DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
-            dataGenerator=new SLTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
+            dataGenerator = new SLTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
         } else {
             SLTPGDataGeneratorConfig dataConfig = new SLTPGDataGeneratorConfig();
             dataConfig.initialize(config);
@@ -295,11 +295,11 @@ public class SLInitializer extends TableInitilizer {
         File file = new File(folder);
         if (file.exists()) {
             if (config.getBoolean("isDynamic")) {
-                file.delete();
-            } else {
-                if (enable_log) LOG.info("Data already exists.. skipping data generation...");
-                return false;
+                //file.delete();
+                dataGenerator.generateTPGProperties();
             }
+            if (enable_log) LOG.info("Data already exists.. skipping data generation...");
+            return false;
         }
         file.mkdirs();
 
