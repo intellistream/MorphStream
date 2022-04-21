@@ -87,6 +87,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
         RESET(context);//
+
 //        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 
@@ -377,7 +378,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     @Override
     public void RESET(Context context) {
 //        SOURCE_CONTROL.getInstance().oneThreadCompleted();
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
 //        SOURCE_CONTROL.getInstance().waitForOtherThreadsAbort();
         context.reset();
         tpg.reset(context);

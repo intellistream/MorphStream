@@ -116,10 +116,10 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     }
     private Event randomTPEvent() {
         int id;
+        int partitionId = 0;
         if (!isUnique) {
             if (enable_states_partition) {
                 //Must Determine partitionId from EventId
-                int partitionId;
                 if (enableGroup) {
                     partitionId = (eventID % dynamicDataConfig.getTotalThreads());
                 } else {
@@ -135,11 +135,17 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         nGeneratedIds.put(id, nGeneratedIds.getOrDefault(id, 0) + 1);
         Event t;
         //TODO: the "isAbort" does not matter, since the operation of Toll processing never abort
-        if (random.nextInt(10000) < Ratio_of_Transaction_Aborts){
-            t = new TollProcessingEvent(eventID,id,true);
-        }else {
-            t = new TollProcessingEvent(eventID,id,false);
+        boolean isAbort;
+        if (dynamicDataConfig.enableGroup) {
+            if (partitionId < dynamicDataConfig.getTotalThreads()/dynamicDataConfig.groupNum){
+                isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts;
+            } else {
+                isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts + dynamicDataConfig.Ratio_of_Transaction_Aborts_Highest;
+            }
+        } else {
+            isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts;
         }
+        t = new TollProcessingEvent(eventID,id,isAbort);
         eventID++;
         return t;
     }

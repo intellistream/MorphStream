@@ -20,6 +20,7 @@ public class Metrics {
     public static void RESET_COUNTERS(int thread_id) {
         //reset accumulative counters.
         Runtime.Prepare[thread_id] = 0;
+        Runtime.PreTxn[thread_id] = 0;
     }
 
     public static void COMPUTE_START_TIME(int thread_id) {
@@ -35,6 +36,7 @@ public class Metrics {
         double notify_time = Scheduler.Notify[thread_id] / (double) num_events;
         double first_explore_time = Scheduler.FirstExplore[thread_id] / (double) num_events;
         double caching_time = Scheduler.Caching[thread_id] / (double) num_events;
+        double switch_time = Scheduler.SchedulerSwitch[thread_id] / (double) num_events;
         Scheduler_Record.Explore[thread_id].addValue(explore_time);
         Scheduler_Record.Next[thread_id].addValue(next_time);
         Scheduler_Record.Useful[thread_id].addValue(useful_time);
@@ -42,6 +44,8 @@ public class Metrics {
         Scheduler_Record.Noitfy[thread_id].addValue(notify_time);
         Scheduler_Record.FirstExplore[thread_id].addValue(first_explore_time);
         Scheduler_Record.Caching[thread_id].addValue(caching_time);
+        Scheduler_Record.SchedulerSwitch[thread_id].addValue(switch_time);
+        Scheduler.Initialize(thread_id);
     }
 
     public static void RECORD_TIME(int thread_id) {
@@ -93,7 +97,7 @@ public class Metrics {
     }
 
     public static void COMPUTE_POST_EXE_TIME_ACC(int thread_id) {
-        Runtime.Post[thread_id] += System.nanoTime() - Runtime.PostStart[thread_id];
+        Runtime.Post[thread_id] = System.nanoTime() - Runtime.PostStart[thread_id];
     }
 
     public static void COMPUTE_START_WAIT_TIME(int thread_id) {
@@ -217,6 +221,13 @@ public class Metrics {
 
     public static void COMPUTE_CONSTRUCT(int thread_id) {
         Scheduler.Construct[thread_id] += System.nanoTime() - Scheduler.ConstructStart[thread_id];
+    }
+    public static void COMPUTE_SWITCH_START(int thread_id) {
+        Scheduler.SchedulerSwitchStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_SWITCH(int thread_id) {
+        Scheduler.SchedulerSwitch[thread_id] = System.nanoTime() - Scheduler.SchedulerSwitchStart[thread_id];
     }
 
     public static void COMPUTE_CACHE_OPERATION_START(int thread_id) {
@@ -351,6 +362,8 @@ public class Metrics {
         public static long[] FirstExplore = new long[kMaxThreadNum];
         public static long[] CachingStart = new long[kMaxThreadNum];
         public static long[] Caching = new long[kMaxThreadNum];
+        public static long[] SchedulerSwitchStart = new long[kMaxThreadNum];
+        public static long[] SchedulerSwitch = new long[kMaxThreadNum];
 
 
         public static void Initialize() {
@@ -369,7 +382,27 @@ public class Metrics {
                 FirstExplore[i] = 0;
                 CachingStart[i] = 0;
                 Caching[i] = 0;
+                SchedulerSwitchStart[i] = 0;
+                SchedulerSwitch[i] = 0;
             }
+        }
+        public static void Initialize(int i) {
+            NextStart[i] = 0;
+            Next[i] = 0;
+            UsefulStart[i] = 0;
+            Useful[i] = 0;
+            ExploreStart[i] = 0;
+            Explore[i] = 0;
+            ConstructStart[i] = 0;
+            Construct[i] = 0;
+            NotifyStart[i] = 0;
+            Notify[i] = 0;
+            FirstExploreStart[i] = 0;
+            FirstExplore[i] = 0;
+            CachingStart[i] = 0;
+            Caching[i] = 0;
+            SchedulerSwitchStart[i] = 0;
+            SchedulerSwitch[i] = 0;
         }
     }
 
@@ -381,6 +414,8 @@ public class Metrics {
         public static DescriptiveStatistics[] Noitfy = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
         public static DescriptiveStatistics[] FirstExplore = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
         public static DescriptiveStatistics[] Caching = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
+        public static DescriptiveStatistics[] SchedulerSwitch = new DescriptiveStatistics[kMaxThreadNum];//SchedulerSwitch time.
+
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
@@ -391,6 +426,7 @@ public class Metrics {
                 Noitfy[i] = new DescriptiveStatistics();
                 FirstExplore[i] = new DescriptiveStatistics();
                 Caching[i] = new DescriptiveStatistics();
+                SchedulerSwitch[i] = new DescriptiveStatistics();
             }
         }
     }

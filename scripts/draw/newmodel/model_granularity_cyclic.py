@@ -35,7 +35,7 @@ matplotlib.rcParams['xtick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['ytick.labelsize'] = TICK_FONT_SIZE
 matplotlib.rcParams['font.family'] = OPT_FONT_NAME
 
-FIGURE_FOLDER = './results/model/granularity'
+FIGURE_FOLDER = './results/model/granularity/cyclic'
 FILE_FOLER = '/home/shuhao/jjzhao/data/stats'
 
 
@@ -79,7 +79,7 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
                    loc='upper center',
                    # mode='expand',
                    shadow=False,
-                   bbox_to_anchor=(0.5, 1.2),
+                   bbox_to_anchor=(0.5, 1.3),
                    columnspacing=0.1,
                    handletextpad=0.2,
                    #                     bbox_transform=ax.transAxes,
@@ -88,7 +88,17 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
                    handlelength=2,
                    )
 
-    plt.xticks(index + 2 * width, x_values)
+    plt.xticks(index + 1 * width, x_values)
+    # plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+    # plt.grid(axis='y', color='gray')
+    # figure.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+
+    # you may need to tune the xticks position to get the best figure.
+    # plt.yscale('log')
+    #
+    # plt.grid(axis='y', color='gray')
+    # figure.yaxis.set_major_locator(LogLocator(base=10))
+    # figure.xaxis.set_major_locator(LinearLocator(5))
     figure.get_xaxis().set_tick_params(direction='in', pad=10)
     figure.get_yaxis().set_tick_params(direction='in', pad=10)
 
@@ -97,18 +107,19 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, y_min, y_max
 
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
-def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
+
+def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
     w, h = 2, len(x_axis)
     y = [[] for _ in range(w)]
 
-    for Ratio_of_Multiple_State_Access in x_axis:
+    for isCyclic in ["true", "false"]:
         events = tthread * batchInterval
         op_gs_path = getPathGS("OP_NS_A", events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
-    for Ratio_of_Multiple_State_Access in x_axis:
+    for isCyclic in ["true", "false"]:
         events = tthread * batchInterval
         op_gs_path = getPathGS("OG_NS_A", events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
@@ -119,16 +130,17 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
 
     return y
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skeiwness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
+
+def getPathGS(algo, events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
     return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}_{}'\
         .format(algo, tthread, events, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
 
 
 if __name__ == '__main__':
     tthread = 24
-    NUM_ITEMS = 122880
+    NUM_ITEMS = 115200
     NUM_ACCESS = 10
-    Ratio_of_Multiple_State_Access = 25
+    Ratio_of_Multiple_State_Access = 100
     key_skewness = 0
     overlap_ratio = 0
     abort_ratio = 0
@@ -138,13 +150,15 @@ if __name__ == '__main__':
     txn_length = 1
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:n:k:o:a:b:c:m:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:m:")
     except getopt.GetoptError:
         print("Error")
 
     for opt, arg in opts:
         if opt in ['-i']:
             NUM_ITEMS = int(arg)
+        elif opt in ['-d']:
+            Ratio_of_Multiple_State_Access = int(arg)
         elif opt in ['-n']:
             NUM_ACCESS = int(arg)
         elif opt in ['-k']:
@@ -163,13 +177,12 @@ if __name__ == '__main__':
         elif opt in ['-m']:
             complexity = int(arg)
 
-    # NUM_ACCESS
-    x_values = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    legend_labels = ["Fine-grained", "Coarse-grained"]
+    x_values = ["Cyclic", "Acyclic"]
+    legend_labels = ["Single Op.", "Group of Op."]
     legend = True
-    y_values = ReadFileGS(x_values, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio,
-                          abort_ratio, txn_length, isCyclic, complexity)
+    
+    y_values = ReadFileGS(x_values, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
     DrawFigure(x_values, y_values, legend_labels,
-               'Ratio of Multiple State Access', 'Throughput (K/sec)', 0,
-               400, 'GS_granularity_comparison_t{}_b{}_{}_{}_{}_{}_{}_{}_{}'
-                .format(tthread, NUM_ITEMS, batchInterval, key_skewness, NUM_ACCESS, abort_ratio, txn_length, isCyclic, complexity), legend)
+               '', 'Throughput (K/sec)', 0,
+               400, 'gs_granularity_comparison_cyclic_t{}_b{}_{}_{}_{}_{}_{}_{}_{}_{}'
+                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity), legend)

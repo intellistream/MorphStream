@@ -21,7 +21,7 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
     public void INITIALIZE(Context context) {
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     /**

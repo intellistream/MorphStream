@@ -2,18 +2,18 @@
 
 function ResetParameters() {
   app="TollProcessing"
-  checkpointInterval=40960
+  checkpointInterval=20480
   tthread=24
-  scheduler="OG_DFS_A"
+  scheduler="OP_BFS_A"
   CCOption=3 #TSTREAM
   complexity=10000
   NUM_ITEMS=495120
   isCyclic=0
   isGroup=0
   groupNum=1
-  SchedulersForGroup="OG_DFS_A,OG_NS";
   skewGroup="0,100"
-  high_abort_ratio=1500
+  abort_ratio=0
+  key_skewness=20
   rootFilePath="/home/shuhao/jjzhao/data"
 }
 
@@ -33,8 +33,8 @@ function runTStream() {
           --totalEvents $totalEvents \
           --groupNum $groupNum \
           --skewGroup $skewGroup \
-          --SchedulersForGroup $SchedulersForGroup \
-          --high_abort_ratio $high_abort_ratio"
+          --abort_ratio $abort_ratio \
+          --key_skewness $key_skewness"
   java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
@@ -49,36 +49,27 @@ function runTStream() {
     --totalEvents $totalEvents \
     --groupNum $groupNum \
     --skewGroup $skewGroup \
-    --SchedulersForGroup $SchedulersForGroup \
-    --high_abort_ratio $high_abort_ratio
+    --abort_ratio abort_ratio \
+     --key_skewness $key_skewness
 }
 
 # run basic experiment for different algorithms
 function baselineEvaluation() {
-  isGroup=1
-  groupNum=2
-  runTStream
-  ResetParameters
-  for scheduler in TStream OG_DFS_A OG_NS
+  for key_skewness in 0 20 40 60 80 100
   do
-      runTStream
+    for scheduler in  OP_BFS_A OP_NS_A OG_BFS_A OG_NS_A
+      do
+          runTStream
+      done
   done
+  ResetParameters
 }
 
 
-function patEvluation() {
-  isGroup=0
-  CCOption=4 #SSTORE
-  runTStream
-}
-
-
-function group_runner() { # multi-batch exp
+function runTP() { # multi-batch exp
  ResetParameters
  app=TollProcessing
  baselineEvaluation
- ResetParameters
- patEvluation
 }
-group_runner
+runTP
 ResetParameters

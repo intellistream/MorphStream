@@ -51,4 +51,13 @@ public abstract class DynamicWorkloadGenerator extends DataGenerator {
     public List<String> getTranToDecisionConf() {
         return tranToDecisionConf;
     }
+
+    @Override
+    public void generateTPGProperties() {
+        String type = dynamicDataConfig.nextDataGeneratorConfig();
+        while (type !=null) {
+            switchConfiguration(type);
+            type = dynamicDataConfig.nextDataGeneratorConfig();
+        }
+    }
 }

@@ -217,7 +217,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 //        LOG.info("id: " + context.thisThreadId + " fd: " + context.fd);
         if (context instanceof OGSContext) {
             ((OGSContext) context).buildBucketPerThread(ocs, resolvedOC);
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             if (context.thisThreadId == 0) { // gather
                 for (Context curContext : threadToContextMap.values()) {
                     if (((OGSContext) curContext).maxLevel > maxLevel) {
@@ -225,7 +225,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                     }
                 }
             }
-            SOURCE_CONTROL.getInstance().waitForOtherThreads();
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             ((OGSContext) context).maxLevel = maxLevel; // scatter
             if (AppConfig.isCyclic) { // if the constructed OCs are not cyclic, skip this.
                 ((OGSContext) context).putBusyWaitOCs(resolvedOC, maxLevel);
@@ -258,7 +258,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 detectAffectedOCs(scannedOCs, circularOCs, oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId); // wait until all threads find the circular ocs.
         int counter = 0;
         for (OperationChain oc : circularOCs) {
             if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
@@ -281,7 +281,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 context.operationChains.add(oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
         if (context instanceof OGSContext) {
             if (enable_log) LOG.info("MaxLevel:" + (((OGSContext) context).maxLevel));
@@ -335,7 +335,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 circularOCs.add(oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId); // wait until all threads find the circular ocs.
         int counter = 0;
         for (OperationChain oc : circularOCs) {
             if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
@@ -380,7 +380,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 circularOCs.add(oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(); // wait until all threads find the circular ocs.
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId); // wait until all threads find the circular ocs.
         assert context instanceof AbstractOGNSContext;
         for (OperationChain oc : nonNullOCs) {
             context.operationChains.add(oc);

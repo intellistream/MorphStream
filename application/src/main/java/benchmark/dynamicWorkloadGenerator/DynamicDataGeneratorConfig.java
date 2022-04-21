@@ -29,6 +29,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     public int Ratio_of_Multiple_State_Access;
     public String skewGroup;
     public int groupNum;
+    public int Ratio_of_Transaction_Aborts_Highest;
 
     public void initialize(Configuration config) {
         super.initialize(config);
@@ -49,6 +50,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
         if (enableGroup) {
             skewGroup = config.getString("skewGroup");
             groupNum = config.getInt("groupNum");
+            Ratio_of_Transaction_Aborts_Highest = config.getInt("Ratio_of_Transaction_Aborts_Highest");
         }
     }
 

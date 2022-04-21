@@ -13,6 +13,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
+import utils.AppConfig;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -118,6 +119,7 @@ public abstract class TPBolt extends TransactionalBolt {
     }
 
     protected void TXN_REQUEST_CORE(LREvent event) {
+        AppConfig.randomDelay();
         DataBox dataBox = event.count_value.getRecord().getValues().get(1);
         HashSet cnt_segment = dataBox.getHashSet();
         cnt_segment.add(event.getPOSReport().getVid());//update hashset; updated state also. TODO: be careful of this.

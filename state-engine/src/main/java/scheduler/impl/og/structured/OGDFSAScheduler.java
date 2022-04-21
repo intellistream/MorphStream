@@ -175,7 +175,7 @@ public class OGDFSAScheduler extends AbstractOGDFSScheduler<OGSAContext> {
         context.rollbackLevel = -1;
         context.isRollbacked = false;
 
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         needAbortHandling.compareAndSet(true, false);
         failedOperations.clear();
         LOG.debug("resume: " + context.thisThreadId);

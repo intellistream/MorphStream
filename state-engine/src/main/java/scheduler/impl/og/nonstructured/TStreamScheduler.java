@@ -18,12 +18,12 @@ public class TStreamScheduler extends OGNSScheduler {
 //        tpg.constructTPG(context);
         tpg.Explore(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     @Override
     public void REINITIALIZE(OGNSContext context) {
         tpg.ReExplore(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 }

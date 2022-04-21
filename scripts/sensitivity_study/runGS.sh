@@ -67,6 +67,6 @@ gs_runner
 ResetParameters
 # draw
 ResetParameters
-cd draw/NewVersion || exit
+cd ../draw/newmodel || exit
 echo "python model_granularity_access_gs.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
   python model_granularity_access_gs.py -i $NUM_ITEMS -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
