@@ -15,7 +15,7 @@ function ResetParameters() {
 
   isCyclic=0
   isDynamic=0
-  workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
+  workloadType="default"
   schedulerPool="OG_BFS_A,OG_NS_A,OP_NS_A,OP_NS"
   rootFilePath="/home/shuhao/jjzhao/data"
   shiftRate=1
@@ -81,8 +81,39 @@ function patEvluation() {
   runTStream
 }
 
+function phase1() {
+  ResetParameters
+  workloadType="default,unchanging,unchanging,unchanging"
+  baselineEvaluation
+  patEvluation
+}
 
-function dynamic_runner_everyPhase() { # multi-batch exp
+function phase2() {
+  ResetParameters
+  workloadType="default,Up_skew,Up_skew,Up_skew"
+  baselineEvaluation
+  patEvluation
+}
+
+function phase3() {
+  ResetParameters
+  key_skewness=80
+  workloadType="default,Up_PD,Up_PD,Up_PD"
+  baselineEvaluation
+  patEvluation
+}
+
+
+function phase4() {
+ ResetParameters
+  deposit_ratio=35
+  key_skewness=80
+  workloadType="default,Up_abort,Up_abort,Up_abort"
+  baselineEvaluation
+  patEvluation
+}
+
+function dynamic_runner_everyPhase() { #
  ResetParameters
  for workloadType in "default,unchanging,unchanging,unchanging" "default,Up_skew,Up_skew,Up_skew"
  do
@@ -96,9 +127,14 @@ function dynamic_runner_everyPhase() { # multi-batch exp
  patEvluation
  ResetParameters
  deposit_ratio=35
+ key_skewness=80
  workloadType="default,Up_abort,Up_abort,Up_abort"
  baselineEvaluation
  patEvluation
 }
-dynamic_runner
+dynamic_runner_everyPhase
+#phase1
+#phase2
+#phase3
+#phase4
 ResetParameters
