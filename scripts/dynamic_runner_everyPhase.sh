@@ -7,7 +7,7 @@ function ResetParameters() {
   scheduler="OG_BFS_A"
   defaultScheduler="OG_BFS_A"
   CCOption=3 #TSTREAM
-  complexity=10000
+  complexity=0
   NUM_ITEMS=491520
   deposit_ratio=95
   key_skewness=20
