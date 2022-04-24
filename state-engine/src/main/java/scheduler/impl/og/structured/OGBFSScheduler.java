@@ -1,7 +1,9 @@
 package scheduler.impl.og.structured;
 
 import scheduler.context.og.OGSContext;
+import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
+import scheduler.struct.op.MetaTypes;
 import utils.SOURCE_CONTROL;
 
 /**
