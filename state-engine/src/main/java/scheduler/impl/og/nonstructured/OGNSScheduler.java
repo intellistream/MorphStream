@@ -23,12 +23,14 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
 
     @Override
     public void INITIALIZE(OGNSContext context) {
+        needAbortHandling = false;
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(OGNSContext context) {
+        needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
