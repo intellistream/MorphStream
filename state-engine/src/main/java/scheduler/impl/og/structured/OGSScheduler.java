@@ -2,10 +2,8 @@ package scheduler.impl.og.structured;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scheduler.context.og.OGNSContext;
 import scheduler.context.og.OGSContext;
 import scheduler.impl.og.OGScheduler;
-import scheduler.impl.og.nonstructured.OGNSScheduler;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
