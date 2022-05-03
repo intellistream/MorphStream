@@ -4,8 +4,8 @@ function ResetParameters() {
   app="StreamLedger"
   checkpointInterval=10240
   tthread=24
-  scheduler="OG_BFS_A"
-  defaultScheduler="OG_BFS_A"
+  scheduler="OG_DFS_A"
+  defaultScheduler="OG_DFS_A"
   CCOption=3 #TSTREAM
   complexity=10000
   NUM_ITEMS=491520
@@ -16,7 +16,7 @@ function ResetParameters() {
   isCyclic=0
   isDynamic=0
   workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
-  schedulerPool="OG_BFS_A,OG_NS_A,OP_NS_A,OP_NS"
+  schedulerPool="OG_DFS_A,OG_NS_A,OP_NS_A,OP_NS"
   rootFilePath="/home/shuhao/jjzhao/data"
   shiftRate=1
   totalEvents=`expr $checkpointInterval \* $tthread \* 13 \* $shiftRate`

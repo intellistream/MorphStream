@@ -24,6 +24,7 @@ import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import profiler.Metrics;
 import topology.TopologySubmitter;
 import utils.AppConfig;
 import utils.SINK_CONTROL;
@@ -42,6 +43,7 @@ import static content.SStoreContentImpl.SSTORE_CONTENT;
 import static content.TStreamContentImpl.T_STREAMCONTENT;
 import static content.common.ContentCommon.content_type;
 import static profiler.MeasureTools.METRICS_REPORT;
+import static profiler.Metrics.timer;
 
 public class MorphStreamRunner extends Runner {
     private static final Logger log = LoggerFactory.getLogger(MorphStreamRunner.class);
@@ -163,6 +165,9 @@ public class MorphStreamRunner extends Runner {
     }
 
     private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
+        if (enable_memory_measurement) {
+            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(),0,  500);
+        }
         TopologySubmitter submitter = new TopologySubmitter();
         try {
             final_topology = submitter.submitTopology(topology, conf);

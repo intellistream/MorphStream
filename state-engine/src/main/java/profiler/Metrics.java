@@ -2,10 +2,7 @@ package profiler;
 
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static content.common.CommonMetaTypes.kMaxThreadNum;
 
@@ -16,6 +13,8 @@ public class Metrics {
     public static int NUM_ACCESSES = 3;//10 as default setting. 2 for short transaction, 10 for long transaction.? --> this is the setting used in YingJun's work. 16 is the default value_list used in 1000core machine.
     public static int NUM_ITEMS = 500_000;//1. 1_000_000; 2. ? ; 3. 1_000  //1_000_000 YCSB has 16 million records, Ledger use 200 million records.
     public static int H2_SIZE;
+    public static Timer timer = new Timer();
+    public static final DescriptiveStatistics usedMemory = new DescriptiveStatistics();
 
     public static void RESET_COUNTERS(int thread_id) {
         //reset accumulative counters.
@@ -173,6 +172,7 @@ public class Metrics {
         Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id]);
         Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id]);
         Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id]);
+        TxnRuntime.Initialize(thread_id);
 //        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
 //        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
 //        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
@@ -184,6 +184,7 @@ public class Metrics {
         Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) number_events);
         Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) number_events);
         Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id] / (double) number_events);
+        TxnRuntime.Initialize(thread_id);
 //        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
 //        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
 //        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
@@ -268,9 +269,6 @@ public class Metrics {
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
-
-
-
                 IndexStart[i] = 0;
                 Index[i] = 0;
                 WaitStart[i] = 0;
@@ -282,6 +280,18 @@ public class Metrics {
                 AbortStart[i] = 0;
                 Abort[i] = 0;
             }
+        }
+        public static void Initialize(int i) {
+            IndexStart[i] = 0;
+            Index[i] = 0;
+            WaitStart[i] = 0;
+            LockStart[i] = 0;
+            Lock[i] = 0;
+            Wait[i] = 0;
+            AccessStart[i] = 0;
+            Access[i] = 0;
+            AbortStart[i] = 0;
+            Abort[i] = 0;
         }
     }
 
@@ -428,6 +438,14 @@ public class Metrics {
                 Caching[i] = new DescriptiveStatistics();
                 SchedulerSwitch[i] = new DescriptiveStatistics();
             }
+        }
+    }
+    public static class RuntimeMemory extends TimerTask {
+        int gb = 1024 * 1024 * 1024;
+        @Override
+        public void run() {
+            long UsedMemory = (java.lang.Runtime.getRuntime().totalMemory() - java.lang.Runtime.getRuntime().freeMemory()) / gb;
+            usedMemory.addValue(UsedMemory);
         }
     }
 }
