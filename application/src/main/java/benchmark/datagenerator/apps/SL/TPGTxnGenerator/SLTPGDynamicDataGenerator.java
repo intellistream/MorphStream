@@ -121,6 +121,9 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             break;
             case "PD" :
                 Ratio_Of_Deposit = dynamicDataConfig.Ratio_Of_Deposit;//0-100 (%)
+                if (Ratio_Of_Deposit < 75) {
+                    AppConfig.isCyclic = true;
+                }
             break;
             case "abort":
                 Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
