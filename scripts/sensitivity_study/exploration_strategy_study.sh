@@ -71,9 +71,8 @@ function exploration_strategy_study() {
     done
   done
   ResetParameters
-  cd draw || exit
+  cd ../draw || exit
   key_skewness=0
-
   echo "newmodel/python model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
   python newmodel/model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
   ResetParameters
@@ -84,7 +83,7 @@ function exploration_strategy_study() {
 }
 function skew(){
    ResetParameters
-   checkpoint_interval=40960
+   checkpointInterval=81920
     for app in GrepSum
     do
       for isCyclic in 0
@@ -99,10 +98,10 @@ function skew(){
       done
     done
   ResetParameters
-  checkpoint_interval=40960
-  cd draw || exit
+  checkpointInterval=81920
+  cd ../draw || exit
   echo "newmodel/python model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
-  python newmodel/python model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+  python newmodel/model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
 }
 
 rm -rf /home/shuhao/jjzhao/data

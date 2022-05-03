@@ -12,7 +12,7 @@ function ResetParameters() {
   isGroup=0
   groupNum=1
   SchedulersForGroup="OG_DFS_A,OG_NS";
-  skewGroup="0,100"
+  skewGroup="20,100"
   high_abort_ratio=1500
   rootFilePath="/home/shuhao/jjzhao/data"
 }

@@ -289,7 +289,7 @@ public abstract class Runner implements IRunner {
         /* Dynamic switch scheduler*/
         if (isDynamic == 1) {
             config.put("isDynamic", true);
-            config.put("totalEvents", phaseNum * tthread * checkpoint_interval);
+            //config.put("totalEvents", phaseNum * tthread * checkpoint_interval);
             config.put("schedulersPool", schedulerPools);
             config.put("defaultScheduler", defaultScheduler);
             config.put("scheduler", defaultScheduler);

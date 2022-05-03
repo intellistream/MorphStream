@@ -89,7 +89,6 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_Stat
 
 
     for key_skewness in x_axis:
-        key_skewness = key_skewness*100
         events = tthread * batchInterval
         op_gs_path = getPathGS("OP_NS", events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
@@ -97,7 +96,6 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_Stat
         y[0].append(float(throughput))
 
     for key_skewness in x_axis:
-        key_skewness = key_skewness*100
         events = tthread * batchInterval
         op_dfs_path = getPathGS("OP_BFS", events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_dfs_path).readlines()
@@ -105,9 +103,8 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_Stat
         y[1].append(float(throughput))
 
     for key_skewness in x_axis:
-        key_skewness = key_skewness*100
         events = tthread * batchInterval
-        op_dfs_path = getPathGS("OP_DFS", events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio,1, isCyclic, complexity)
+        op_dfs_path = getPathGS("OP_DFS", events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(op_dfs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[2].append(float(throughput))
@@ -119,7 +116,7 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_Stat
 
 
 def getPathGS(algo, events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
-    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}'\
+    return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}_{}'\
         .format(algo, tthread, events, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio,1, isCyclic, complexity)
 
 
@@ -164,7 +161,7 @@ if __name__ == '__main__':
             complexity = int(arg)
 
 
-    x_axis = [0, 0.25, 0.5, 0.75, 1]
+    x_value = [0, 25, 50, 75, 100]
     legend_labels = ["NS", "BFS" ,"DFS"]
     legend = True
 

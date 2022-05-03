@@ -10,6 +10,7 @@ function ResetParameters() {
   complexity=10000
   NUM_ITEMS=491520
   deposit_ratio=95
+  key_skewness=0
 
 
   isCyclic=0
@@ -32,6 +33,7 @@ function runTStream() {
           --CCOption $CCOption \
           --complexity $complexity \
           --deposit_ratio $deposit_ratio \
+          --key_skewness $key_skewness \
           --isCyclic $isCyclic \
           --rootFilePath $rootFilePath \
           --isDynamic $isDynamic \
@@ -39,7 +41,7 @@ function runTStream() {
           --shiftRate $shiftRate \
           --workloadType $workloadType \
           --schedulerPool $schedulerPool"
-  java -Xms300g -Xmx300g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
@@ -49,6 +51,7 @@ function runTStream() {
     --CCOption $CCOption \
     --complexity $complexity \
     --deposit_ratio $deposit_ratio \
+    --key_skewness $key_skewness \
     --isCyclic $isCyclic \
     --rootFilePath $rootFilePath \
     --isDynamic $isDynamic \
