@@ -94,7 +94,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
             case "Up_PD":
                 if (this.app.equals("StreamLedger")) {
                     if (this.Ratio_Of_Deposit - 20 >= 0) {
-                        this.Ratio_Of_Deposit = this.Ratio_Of_Deposit - 25 ;
+                        this.Ratio_Of_Deposit = this.Ratio_Of_Deposit - 20 ;
                         return "PD";
                     } else {
                         return "unchanging";
@@ -103,7 +103,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
             case "Down_PD":
                 if (this.app.equals("StreamLedger")) {
                     if (this.Ratio_Of_Deposit + 20 <= 100) {
-                        this.Ratio_Of_Deposit = this.Ratio_Of_Deposit + 25 ;
+                        this.Ratio_Of_Deposit = this.Ratio_Of_Deposit + 20 ;
                         return "PD";
                     } else {
                         return "unchanging";
