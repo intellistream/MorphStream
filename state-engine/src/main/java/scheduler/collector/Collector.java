@@ -87,7 +87,7 @@ public class Collector {
         if((TD+PD+LD)>B_SUM_D){
             if(VDD<B_VDD){
                 //TODO:Switch the DFS(+8) and BFS(+4)
-                flag=flag+8;
+                flag=flag+4;
             }
         }
         if(isCyclicDependency||TD<B_TD||PD>B_PD){

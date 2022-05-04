@@ -4,8 +4,8 @@ function ResetParameters() {
   app="StreamLedger"
   checkpointInterval=10240
   tthread=24
-  scheduler="OG_DFS_A"
-  defaultScheduler="OG_DFS_A"
+  scheduler="OG_BFS_A"
+  defaultScheduler="OG_BFS_A"
   CCOption=3 #TSTREAM
   complexity=10000
   NUM_ITEMS=491520
