@@ -4,16 +4,14 @@ import common.CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static common.CONTROL.enable_debug;
-import static common.CONTROL.enable_log;
+import static common.CONTROL.*;
 import static common.IRunner.CCOption_MorphStream;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static profiler.Metrics.*;
@@ -400,6 +398,28 @@ public class MeasureTools {
         }
     }
 
+    public static void WriteMemoryConsumption(File file) {
+        if (enable_memory_measurement) {
+            timer.cancel();
+            try {
+                FileWriter f = null;
+                f = new FileWriter(new File(file.getPath() + ".txt"));
+                Writer w = new BufferedWriter(f);
+                w.write("UsedMemory\n");
+                for (int i = 0; i < usedMemory.getValues().length; i ++){
+                    String output = String.format("%f\t" +
+                                    "%-10.4f\t"
+                            , (float) i ,usedMemory.getValues()[i]);
+                    w.write(output + "\n");
+                }
+                w.close();
+                f.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private static void WriteThroughputReport(File file, double throughput) {
         try {
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
@@ -450,6 +470,7 @@ public class MeasureTools {
         WriteThroughputReport(file, throughput);
         AverageTotalTimeBreakdownReport(file, tthread);
         WriteThroughputReportRuntime(file, tthread, phase, shiftRate);
+        WriteMemoryConsumption(file);
         if (ccOption == CCOption_MorphStream) {//extra info
             SchedulerTimeBreakdownReport(file, tthread);
         } else {
