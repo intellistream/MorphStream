@@ -65,9 +65,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     }
 
     public static void LA_RESETALL(TxnManager txnManager, int tthread) {
-        for (int k = 0; k < tthread; k++) {
-            txnManager.getOrderLock(k).reset();
-        }
+        txnManager.getOrderLock(tthread).reset();
     }
 
     public static void LA_UNLOCKALL(TxnManager txnManager, int tthread) {
@@ -173,6 +171,10 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         COMPUTE_COMPLEXITY = Metrics.COMPUTE_COMPLEXITY;
         POST_COMPUTE_COMPLEXITY = Metrics.POST_COMPUTE_COMPLEXITY;
         //LOG.DEBUG("NUM_ACCESSES: " + NUM_ACCESSES + " theta:" + theta);
-        SOURCE_CONTROL.getInstance().config(tthread);
+        if (config.getBoolean("isGroup")) {
+            SOURCE_CONTROL.getInstance().config(tthread,config.getInt("groupNum"));
+        } else {
+            SOURCE_CONTROL.getInstance().config(tthread,1);
+        }
     }
 }

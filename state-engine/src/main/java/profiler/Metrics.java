@@ -2,6 +2,8 @@ package profiler;
 
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
+import java.util.*;
+
 import static content.common.CommonMetaTypes.kMaxThreadNum;
 
 public class Metrics {
@@ -11,10 +13,13 @@ public class Metrics {
     public static int NUM_ACCESSES = 3;//10 as default setting. 2 for short transaction, 10 for long transaction.? --> this is the setting used in YingJun's work. 16 is the default value_list used in 1000core machine.
     public static int NUM_ITEMS = 500_000;//1. 1_000_000; 2. ? ; 3. 1_000  //1_000_000 YCSB has 16 million records, Ledger use 200 million records.
     public static int H2_SIZE;
+    public static Timer timer = new Timer();
+    public static final DescriptiveStatistics usedMemory = new DescriptiveStatistics();
 
     public static void RESET_COUNTERS(int thread_id) {
         //reset accumulative counters.
         Runtime.Prepare[thread_id] = 0;
+        Runtime.PreTxn[thread_id] = 0;
     }
 
     public static void COMPUTE_START_TIME(int thread_id) {
@@ -30,6 +35,7 @@ public class Metrics {
         double notify_time = Scheduler.Notify[thread_id] / (double) num_events;
         double first_explore_time = Scheduler.FirstExplore[thread_id] / (double) num_events;
         double caching_time = Scheduler.Caching[thread_id] / (double) num_events;
+        double switch_time = Scheduler.SchedulerSwitch[thread_id] / (double) num_events;
         Scheduler_Record.Explore[thread_id].addValue(explore_time);
         Scheduler_Record.Next[thread_id].addValue(next_time);
         Scheduler_Record.Useful[thread_id].addValue(useful_time);
@@ -37,6 +43,8 @@ public class Metrics {
         Scheduler_Record.Noitfy[thread_id].addValue(notify_time);
         Scheduler_Record.FirstExplore[thread_id].addValue(first_explore_time);
         Scheduler_Record.Caching[thread_id].addValue(caching_time);
+        Scheduler_Record.SchedulerSwitch[thread_id].addValue(switch_time);
+        Scheduler.Initialize(thread_id);
     }
 
     public static void RECORD_TIME(int thread_id) {
@@ -55,6 +63,8 @@ public class Metrics {
         Total_Record.stream_total[thread_id].addValue(stream_total);
         Total_Record.txn_total[thread_id].addValue(txn_total);
         Total_Record.overhead_total[thread_id].addValue(total_time - stream_total - txn_total);
+        Runtime.ThroughputPerPhase.get(thread_id).add(1 / total_time);
+        Runtime.Start[thread_id]=0;
     }
 
     public static void COMPUTE_PRE_EXE_START_TIME(int thread_id) {
@@ -86,7 +96,7 @@ public class Metrics {
     }
 
     public static void COMPUTE_POST_EXE_TIME_ACC(int thread_id) {
-        Runtime.Post[thread_id] += System.nanoTime() - Runtime.PostStart[thread_id];
+        Runtime.Post[thread_id] = System.nanoTime() - Runtime.PostStart[thread_id];
     }
 
     public static void COMPUTE_START_WAIT_TIME(int thread_id) {
@@ -162,6 +172,7 @@ public class Metrics {
         Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id]);
         Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id]);
         Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id]);
+        TxnRuntime.Initialize(thread_id);
 //        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
 //        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
 //        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
@@ -173,6 +184,7 @@ public class Metrics {
         Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) number_events);
         Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) number_events);
         Transaction_Record.sync_ratio[thread_id].addValue(TxnRuntime.Wait[thread_id] / (double) number_events);
+        TxnRuntime.Initialize(thread_id);
 //        Transaction_Record.index_ratio[thread_id].addValue(TxnRuntime.Index[thread_id] / (double) Runtime.Txn[thread_id]);
 //        Transaction_Record.useful_ratio[thread_id].addValue(TxnRuntime.Access[thread_id] / (double) Runtime.Txn[thread_id]);
 //        Transaction_Record.lock_ratio[thread_id].addValue(TxnRuntime.Lock[thread_id] / (double) Runtime.Txn[thread_id]);
@@ -210,6 +222,13 @@ public class Metrics {
 
     public static void COMPUTE_CONSTRUCT(int thread_id) {
         Scheduler.Construct[thread_id] += System.nanoTime() - Scheduler.ConstructStart[thread_id];
+    }
+    public static void COMPUTE_SWITCH_START(int thread_id) {
+        Scheduler.SchedulerSwitchStart[thread_id] = System.nanoTime();
+    }
+
+    public static void COMPUTE_SWITCH(int thread_id) {
+        Scheduler.SchedulerSwitch[thread_id] = System.nanoTime() - Scheduler.SchedulerSwitchStart[thread_id];
     }
 
     public static void COMPUTE_CACHE_OPERATION_START(int thread_id) {
@@ -250,9 +269,6 @@ public class Metrics {
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
-
-
-
                 IndexStart[i] = 0;
                 Index[i] = 0;
                 WaitStart[i] = 0;
@@ -265,6 +281,18 @@ public class Metrics {
                 Abort[i] = 0;
             }
         }
+        public static void Initialize(int i) {
+            IndexStart[i] = 0;
+            Index[i] = 0;
+            WaitStart[i] = 0;
+            LockStart[i] = 0;
+            Lock[i] = 0;
+            Wait[i] = 0;
+            AccessStart[i] = 0;
+            Access[i] = 0;
+            AbortStart[i] = 0;
+            Abort[i] = 0;
+        }
     }
 
     static class Runtime {
@@ -275,6 +303,8 @@ public class Metrics {
         public static long[] Post = new long[kMaxThreadNum];
         public static long[] TxnStart = new long[kMaxThreadNum];
         public static long[] Txn = new long[kMaxThreadNum];
+        //Runtime throughput per phase
+        public static HashMap<Integer, List<Double>> ThroughputPerPhase =new HashMap<>();
         //USED ONLY BY TStream
         public static long[] PreTxnStart = new long[kMaxThreadNum];
         public static long[] PreTxn = new long[kMaxThreadNum];
@@ -290,6 +320,7 @@ public class Metrics {
                 Txn[i] = 0;
                 PreTxnStart[i] = 0;
                 PreTxn[i] = 0;
+                ThroughputPerPhase.put(i,new ArrayList<>());
             }
         }
     }
@@ -341,6 +372,8 @@ public class Metrics {
         public static long[] FirstExplore = new long[kMaxThreadNum];
         public static long[] CachingStart = new long[kMaxThreadNum];
         public static long[] Caching = new long[kMaxThreadNum];
+        public static long[] SchedulerSwitchStart = new long[kMaxThreadNum];
+        public static long[] SchedulerSwitch = new long[kMaxThreadNum];
 
 
         public static void Initialize() {
@@ -359,7 +392,27 @@ public class Metrics {
                 FirstExplore[i] = 0;
                 CachingStart[i] = 0;
                 Caching[i] = 0;
+                SchedulerSwitchStart[i] = 0;
+                SchedulerSwitch[i] = 0;
             }
+        }
+        public static void Initialize(int i) {
+            NextStart[i] = 0;
+            Next[i] = 0;
+            UsefulStart[i] = 0;
+            Useful[i] = 0;
+            ExploreStart[i] = 0;
+            Explore[i] = 0;
+            ConstructStart[i] = 0;
+            Construct[i] = 0;
+            NotifyStart[i] = 0;
+            Notify[i] = 0;
+            FirstExploreStart[i] = 0;
+            FirstExplore[i] = 0;
+            CachingStart[i] = 0;
+            Caching[i] = 0;
+            SchedulerSwitchStart[i] = 0;
+            SchedulerSwitch[i] = 0;
         }
     }
 
@@ -371,6 +424,8 @@ public class Metrics {
         public static DescriptiveStatistics[] Noitfy = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
         public static DescriptiveStatistics[] FirstExplore = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
         public static DescriptiveStatistics[] Caching = new DescriptiveStatistics[kMaxThreadNum];//useful_work time.
+        public static DescriptiveStatistics[] SchedulerSwitch = new DescriptiveStatistics[kMaxThreadNum];//SchedulerSwitch time.
+
 
         public static void Initialize() {
             for (int i = 0; i < kMaxThreadNum; i++) {
@@ -381,7 +436,16 @@ public class Metrics {
                 Noitfy[i] = new DescriptiveStatistics();
                 FirstExplore[i] = new DescriptiveStatistics();
                 Caching[i] = new DescriptiveStatistics();
+                SchedulerSwitch[i] = new DescriptiveStatistics();
             }
+        }
+    }
+    public static class RuntimeMemory extends TimerTask {
+        int gb = 1024 * 1024 * 1024;
+        @Override
+        public void run() {
+            long UsedMemory = (java.lang.Runtime.getRuntime().totalMemory() - java.lang.Runtime.getRuntime().freeMemory()) / gb;
+            usedMemory.addValue(UsedMemory);
         }
     }
 }

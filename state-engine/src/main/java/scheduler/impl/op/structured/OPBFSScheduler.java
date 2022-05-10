@@ -26,12 +26,10 @@ public class OPBFSScheduler<Context extends OPSContext> extends OPSScheduler<Con
     @Override
     public void EXPLORE(Context context) {
         Operation next = Next(context);
-        if (next == null && !context.finished()) { //current level is all processed at the current thread.
-            while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                ProcessedToNextLevel(context);
-                next = Next(context);
-            }
+        while (next == null && !context.finished()) {
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            ProcessedToNextLevel(context);
+            next = Next(context);
         }
         DISTRIBUTE(next, context);
     }

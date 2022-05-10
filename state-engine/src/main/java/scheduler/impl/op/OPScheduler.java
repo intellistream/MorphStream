@@ -14,12 +14,16 @@ import scheduler.struct.op.TaskPrecedenceGraph;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
+import storage.datatype.DoubleDataBox;
+import storage.datatype.IntDataBox;
+import transaction.function.AVG;
 import transaction.function.DEC;
 import transaction.function.INC;
 import transaction.function.SUM;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
+import java.util.HashSet;
 import java.util.List;
 
 import static content.common.CommonMetaTypes.AccessType.*;
@@ -28,12 +32,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     private static final Logger log = LoggerFactory.getLogger(OPScheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
-
     public OPScheduler(int totalThreads, int NUM_ITEMS, int app) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
     }
-
+    @Override
+    public void initTPG(int offset) {
+        tpg.initTPG(offset);
+    }
     /**
      * state to thread mapping
      *
@@ -88,13 +94,36 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
             success = operation.success[0];
-            Transfer_Fun(operation, mark_ID, clean);
+            if (this.tpg.getApp() == 1) {//SL
+                Transfer_Fun(operation, mark_ID, clean);
+            } else {//OB
+                AppConfig.randomDelay();
+                List<DataBox> d_record = operation.condition_records[0].content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType).getValues();
+                long askPrice = d_record.get(1).getLong();//price
+                long left_qty = d_record.get(2).getLong();//available qty;
+                long bidPrice = operation.condition.arg1;
+                long bid_qty = operation.condition.arg2;
+                if (bidPrice > askPrice || bid_qty < left_qty) {
+                    d_record.get(2).setLong(left_qty - operation.function.delta_long);//new quantity.
+                    operation.success[0]++;
+                }
+            }
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {
                 operation.isFailed = true;
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
-            Depo_Fun(operation, mark_ID, clean);
+            if (this.tpg.getApp() == 1) {
+                Depo_Fun(operation, mark_ID, clean);
+            } else {
+                AppConfig.randomDelay();
+                SchemaRecord srcRecord = operation.s_record.content_.ReadAccess(operation.bid,mark_ID,clean,operation.accessType);
+                List<DataBox> values = srcRecord.getValues();
+                if (operation.function instanceof INC) {
+                    values.get(2).setLong(values.get(2).getLong() + operation.function.delta_long);
+                } else
+                    throw new UnsupportedOperationException();
+            }
         } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
             success = operation.success[0];
             GrepSum_Fun(operation, mark_ID, clean);
@@ -105,6 +134,29 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {
                 operation.isFailed = true;
+            }
+        } else if (operation.accessType.equals(WRITE_ONLY)) {
+            //OB-Alert
+            AppConfig.randomDelay();
+            operation.d_record.record_.getValues().get(1).setLong(operation.value);
+        } else if (operation.accessType.equals(READ_WRITE_READ)){
+            assert operation.record_ref != null;
+            AppConfig.randomDelay();
+            List<DataBox> srcRecord = operation.s_record.record_.getValues();
+            if (operation.function instanceof AVG) {
+                double latestAvgSpeeds = srcRecord.get(1).getDouble();
+                double lav;
+                if (latestAvgSpeeds == 0) {//not initialized
+                    lav = operation.function.delta_double;
+                } else
+                    lav = (latestAvgSpeeds + operation.function.delta_double) / 2;
+
+                srcRecord.get(1).setDouble(lav);//write to state.
+                operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
+            } else {
+                HashSet cnt_segment = srcRecord.get(1).getHashSet();
+                cnt_segment.add(operation.function.delta_int);//update hashset; updated state also. TODO: be careful of this.
+                operation.record_ref.setRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             }
         } else {
             throw new UnsupportedOperationException();
@@ -198,9 +250,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);
         /*Thread to OCs does not need reconfigure*/
-        if (!tpg.isThreadTOCsReady()){
-            tpg.setOCs(context);
-        }
+        tpg.setOCs(context);
     }
 
 
@@ -221,7 +271,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     @Override
     public void RESET(Context context) {
-        SOURCE_CONTROL.getInstance().oneThreadCompleted();
+        //SOURCE_CONTROL.getInstance().oneThreadCompleted(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         context.reset();
         tpg.reset(context);
     }
@@ -236,6 +287,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             long bid = request.txn_context.getBID();
             Operation set_op;
             switch (request.accessType) {
+                case WRITE_ONLY:
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, null, null, null, null);
+                    set_op.value = request.value;
+                    break;
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
@@ -284,4 +340,5 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         RESET(context);//
 //        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
+
 }

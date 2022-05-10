@@ -1,12 +1,13 @@
 package common.param.lr;
 
 import common.datatype.PositionReport;
+import common.param.TxnEvent;
 import storage.SchemaRecordRef;
 
 /**
  * Currently only consider position events.
  */
-public class LREvent {
+public class LREvent extends TxnEvent {
     private final int tthread;
     private final long bid;
     private final PositionReport posreport;//input_event associated common.meta data.
@@ -25,6 +26,7 @@ public class LREvent {
      * @param bid
      */
     public LREvent(PositionReport posreport, int tthread, long bid) {
+        super(bid);
         this.posreport = posreport;
         this.tthread = tthread;
 //        vsreport = vehicleSpeedTuple;
@@ -53,7 +55,9 @@ public class LREvent {
         return bid;
     }
 
-    public long[] getBid_array() {
-        return new long[0];
+
+    @Override
+    public LREvent cloneEvent() {
+        return new LREvent(this.posreport,tthread,bid);
     }
 }

@@ -5,13 +5,18 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.context.op.OPSContext;
 import scheduler.impl.op.OPScheduler;
+import scheduler.struct.op.MetaTypes;
 import scheduler.struct.op.Operation;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 
+import static common.CONTROL.enable_log;
+
 public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Context, Operation> {
     private static final Logger log = LoggerFactory.getLogger(OPSScheduler.class);
+
+    public boolean needAbortHandling = false;
 
     public OPSScheduler(int totalThreads, int NUM_ITEMS, int app) {
         super(totalThreads, NUM_ITEMS, app);
@@ -20,7 +25,40 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
     @Override
     public void INITIALIZE(Context context) {
         tpg.firstTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+    }
+
+    public void REINITIALIZE(Context context) {
+        needAbortHandling = false;
+        tpg.secondTimeExploreTPG(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+    }
+
+    @Override
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
+        int threadId = context.thisThreadId;
+
+        INITIALIZE(context);
+
+        do {
+            EXPLORE(context);
+            PROCESS(context, mark_ID);
+        } while (!FINISHED(context));
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        if (needAbortHandling) {
+            if (enable_log) {
+                log.info("need abort handling, rollback and redo");
+            }
+            // identify all aborted operations and transit the state to aborted.
+            REINITIALIZE(context);
+            // rollback to the starting point and redo.
+            do {
+                EXPLORE(context);
+                MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
+                PROCESS(context, mark_ID);
+            } while (!FINISHED(context));
+        }
+        RESET(context);
     }
 
     protected void ProcessedToNextLevel(Context context) {
@@ -42,7 +80,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
         Operation next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
             while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
+                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
                 ProcessedToNextLevel(context);
                 next = Next(context);
             }
@@ -87,9 +125,12 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
         }
 
-        while (context.batchedOperations.size() != 0) {
+        while (!context.batchedOperations.isEmpty()) {
             Operation remove = context.batchedOperations.remove();
             MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+            if (remove.isFailed && !remove.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+                needAbortHandling = true;
+            }
             NOTIFY(remove, context);
             MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }

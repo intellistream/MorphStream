@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
+import scheduler.context.og.OGSContext;
 import scheduler.context.op.OPNSContext;
 import scheduler.context.op.OPSContext;
 import scheduler.context.op.OPSchedulerContext;
@@ -38,22 +39,33 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private final int NUM_ITEMS;
     private final int app;
     CyclicBarrier barrier;
-    public final Map<Integer, Context> threadToContextMap;
+    public final ConcurrentHashMap<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
     public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
+    private int maxLevel = 0; // just for layered scheduling
+
 
     public void reset(Context context) {
-        if (app == 0) {
-            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 1) {
-            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        }
+//        if (app == 0) {
+//            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//        } else if (app == 1) {
+//            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//        } else if (app == 2) {
+//            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//        } else if (app == 3) {
+//            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+//        }
 //        threadToOCs.get(context.thisThreadId).clear();
-        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
-            oc.clear();
-        }
+//        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+//            oc.clear();
+//        }
 //        this.setOCs(context); // TODO: the short cut should be reset, but will take some time.
+        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+            oc.clear(); // only need to clear all operations from all ocs
+        }
+        if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
     }
 
     /**
@@ -70,14 +82,18 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         this.app = app;
         //create holder.
         operationChains = new ConcurrentHashMap<>();
+    }
+    public void initTPG(int offset) {
         if (app == 0) {//GS
-            operationChains.put("MicroTable", new TableOCs(totalThreads));
+            operationChains.put("MicroTable", new TableOCs(totalThreads,offset));
         } else if (app == 1) {//SL
-            operationChains.put("accounts", new TableOCs(totalThreads));
-            operationChains.put("bookEntries", new TableOCs(totalThreads));
-        } else if(app==2){//TP
-            operationChains.put("segment_speed",new TableOCs(totalThreads));
-            operationChains.put("segment_cnt",new TableOCs(totalThreads));
+            operationChains.put("accounts", new TableOCs(totalThreads,offset));
+            operationChains.put("bookEntries", new TableOCs(totalThreads,offset));
+        } else if (app == 2){//TP
+            operationChains.put("segment_speed",new TableOCs(totalThreads,offset));
+            operationChains.put("segment_cnt",new TableOCs(totalThreads,offset));
+        } else if (app == 3) {//OB
+            operationChains.put("goods",new TableOCs(totalThreads,offset));
         }
     }
 
@@ -95,6 +111,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else {
             right_bound = (context.thisThreadId + 1) * delta;
         }
+        resetOCs(context);
         String _key;
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
@@ -109,16 +126,33 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
                 ocs.add(accOC);
                 ocs.add(beOC);
-            } else if(app==2){
+            } else if (app == 2) {
                 OperationChain speedOC=context.createTask("segment_speed",_key);
                 OperationChain cntOC=context.createTask("segment_cnt",_key);
                 operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, speedOC);
                 operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, cntOC);
                 ocs.add(speedOC);
                 ocs.add(cntOC);
+            } else if (app == 3) {
+                OperationChain gsOC = context.createTask("goods", _key);
+                operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
+                ocs.add(gsOC);
             }
         }
         threadToOCs.put(context.thisThreadId, ocs);
+    }
+    private void resetOCs(Context context) {
+        if (app == 0) {
+            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 1) {
+            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if( app == 2) {
+            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 3){
+            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        }
     }
 
     public TableOCs getTableOCs(String table_name) {
@@ -171,6 +205,17 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 }
             }
             ((OPSContext) context).buildBucketPerThread(context.operations, roots);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            if (context.thisThreadId == 0) { // gather
+                for (Context curContext : threadToContextMap.values()) {
+                    if (((OPSContext) curContext).maxLevel > maxLevel) {
+                        maxLevel = ((OPSContext) curContext).maxLevel;
+                    }
+                }
+            }
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            ((OPSContext) context).maxLevel = maxLevel; // scatter
+
 //            ((OPSContext) context).buildBucketPerThread(threadToOCs.get(context.thisThreadId));
             if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));
         } else if (context instanceof OPNSContext) {
@@ -240,7 +285,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 resetOp(oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
         if (context instanceof OPSContext) {
             if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));
@@ -315,5 +360,9 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             }
             curOC.checkPotentialFDChildrenOnNewArrival(op);
         }
+    }
+
+    public int getApp() {
+        return app;
     }
 }

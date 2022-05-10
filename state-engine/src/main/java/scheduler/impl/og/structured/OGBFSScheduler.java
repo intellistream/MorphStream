@@ -1,7 +1,9 @@
 package scheduler.impl.og.structured;
 
 import scheduler.context.og.OGSContext;
+import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
+import scheduler.struct.op.MetaTypes;
 import utils.SOURCE_CONTROL;
 
 /**
@@ -20,12 +22,10 @@ public class OGBFSScheduler extends AbstractOGBFSScheduler<OGSContext> {
     @Override
     public void EXPLORE(OGSContext context) {
         OperationChain next = Next(context);
-        if (next == null && !context.exploreFinished()) { //current level is all processed at the current thread.
-            while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                ProcessedToNextLevel(context);
-                next = Next(context);
-            }
+        while (next == null && !context.exploreFinished()) {
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            ProcessedToNextLevel(context);
+            next = Next(context);
         }
         DISTRIBUTE(next, context);
     }

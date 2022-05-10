@@ -278,6 +278,7 @@ public class OperationChain implements Comparable<OperationChain> {
         operations.clear();
         ocParents.clear();
         ocChildren.clear();
+        isExecuted = false;
         // Non-structured data structure clearance
         needAbortHandling = false;
         failedOperations.clear();
@@ -287,7 +288,7 @@ public class OperationChain implements Comparable<OperationChain> {
     }
 
     // ------------------ Non-Structured Methods ------------------------
-    public void setContext(AbstractOGNSContext context) {
+    public void setContext(OGSchedulerContext context) {
         if (this.context == null) {
             this.context = context;
         }

@@ -19,8 +19,10 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-//    public String application = "StreamLedger";
-        public String application = "GrepSum";
+    public String application = "StreamLedger";
+    //public String application = "GrepSum";
+    //public String application = "OnlineBiding";
+    //public String application = "TollProcessing";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -31,7 +33,7 @@ public abstract class Runner implements IRunner {
     public int NUM_ITEMS = 100_000;//
 //    public int NUM_ITEMS = 500;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
-    public int NUM_ACCESS = 10;//
+    public int NUM_ACCESS = 5;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
     public double ratio_of_read = 0.0; //<=1
     @Parameter(names = {"--ratio_of_multi_partition"}, description = "ratio_of_multi_partition")
@@ -65,8 +67,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "OG_BFS";
-    //        public String scheduler = "OG_BFS_A";
+    public String scheduler = "OP_BFS_A";
+    //public String scheduler = "OG_BFS_A";
 //    public String scheduler = "OG_DFS";
 //    public String scheduler = "OG_DFS_A";
 //    public String scheduler = "OG_NS";
@@ -89,15 +91,39 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
-    public boolean isDynamic = true;
+    public int isDynamic = 0;
     @Parameter(names = {"--schedulerPool"}, description = "Schedulers in the SchedulerPool[OG_DFS,OP_DFS]")
-    public String schedulerPools = "OP_NS_A,OP_BFS_A,OP_BFS,OG_BFS";
+    public String schedulerPools = "";
     @Parameter(names = {"--defaultScheduler"}, description = "Default scheduler")
-    public String defaultScheduler = "OG_BFS";
+    public String defaultScheduler = "";
     @Parameter(names = {"--bottomLine"}, description = "BottomLine for(TD,LD,PD,SUM,VDD,R_of_A)")
-    public String bottomLine = "2,3,5,10,0.6,0.7";
+    public String bottomLine = "";
     @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")
-    public String WorkloadConfig = "1,3,4,0.5,0.6,1,1,39999;1,6,4,0.5,0.7,1,1,79999;3,6,3,0.5,0.7,1,1,100000";
+    public String WorkloadConfig = "";
+
+    /**
+     * Dynamic workload
+     */
+    @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
+    public String  workloadType = "default";
+    @Parameter(names = {"--shiftRate"}, description = "control the rate of the workload shift")
+    public int shiftRate  = 1;
+    @Parameter(names = {"--phaseNum"}, description = "How many phases")
+    public int phaseNum  =1;
+
+    /**
+     * Scheduler for group
+     */
+    @Parameter(names = {"--isGroup"}, description = "Group for TP")
+    public int isGroup = 0;
+    @Parameter(names = {"--groupNum"}, description = "How many groups")
+    public int groupNum = 1;
+    @Parameter(names = {"--SchedulersForGroup"}, description = "Schedulers [OG_DFS,OP_DFS]")
+    public String SchedulersForGroup = "";
+    @Parameter(names = {"--skewGroup"}, description = "skew for groups")
+    public String skewGroup = "0,100";
+    @Parameter(names = {"--high_abort_ratio"}, description = "abort ratio for groups")
+    public Integer Ratio_of_Transaction_Aborts_Highest = 0;
 
     /**
      * Benchmarking Specific Parameters.
@@ -126,13 +152,19 @@ public abstract class Runner implements IRunner {
     public String generator = "TPGGenerator";
 //    public String generator = "OCGenerator";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 100000;
+    public int totalEvents = 10000;
 
     @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
     public Integer Ratio_Of_Deposit = 25;
 
+    @Parameter(names = {"--buying_ratio"}, description = "Ratio of buying for OB.")
+    public Integer Ratio_Of_Buying = 25;
+
     @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
-    public Integer State_Access_Skewness = 0;
+    public Integer State_Access_Skewness = 20;
+
+    @Parameter(names = {"--multiple_ratio"}, description = "State access skewness.")
+    public Integer Ratio_of_Multiple_State_Access = 100;
 
     @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
     public Integer Ratio_of_Overlapped_Keys = 10;
@@ -147,10 +179,10 @@ public abstract class Runner implements IRunner {
     public Integer numberOfDLevels = 1024;
 
     @Parameter(names = {"--isCyclic"}, description = "isCyclic of generated OC.")
-    public int isCyclic = 1;
+    public int isCyclic = 0;
 
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
-    public Integer complexity = 100000;
+    public Integer complexity = 0;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -174,15 +206,19 @@ public abstract class Runner implements IRunner {
         config.put("machine", machine);
         config.put("totalEvents", totalEvents);
         config.put("rootFilePath", rootPath);
-        config.put("scheduler", scheduler);
         config.put("generator", generator);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
 
-        config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        if (application.equals("OnlineBiding")){
+            config.put("Ratio_Of_Buying", Ratio_Of_Buying);
+        }else {
+            config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        }
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
+        config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
         config.put("Transaction_Length", Transaction_Length);
 
         config.put("numberOfDLevels", numberOfDLevels);
@@ -202,7 +238,7 @@ public abstract class Runner implements IRunner {
 
         config.put("checkpoint", checkpoint_interval);
 
-        assert totalEvents / tthread == checkpoint_interval;
+        assert totalEvents % tthread == 0;
 
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);
@@ -222,13 +258,67 @@ public abstract class Runner implements IRunner {
         config.put("size_tuple", size_tuple);
         config.put("verbose", verbose);
 
+        config.put("application",application);
+
+        String phaseType[]=workloadType.split(",");
+        switch(application) {
+            case "StreamLedger" :
+                //bottomLine = "300,3000,500,1200,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                bottomLine = 0.2*checkpoint_interval+","+2*checkpoint_interval+","+0.3*checkpoint_interval+","+0.8*checkpoint_interval+","+"0.3,0.7";//TD,LD,PD,SUM,VDD,R_of_A
+                phaseNum = shiftRate * phaseType.length;
+                break;
+            case "OnlineBiding" :
+                bottomLine = "500,5000,1,6000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OG_BFS_A,OG_NS_A,OG_NS";
+                defaultScheduler = "OG_BFS_A";
+                phaseNum = shiftRate * phaseType.length;
+                break;
+            case "GrepSum" :
+                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
+                defaultScheduler = "OP_NS_A";
+                phaseNum = shiftRate * phaseType.length;
+                break;
+            case "TollProcessing" :
+                phaseNum = shiftRate * 1;
+                defaultScheduler = "OG_BFS_A";
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + application);
+        }
+        /* Dynamic switch scheduler*/
+        if (isDynamic == 1) {
+            config.put("isDynamic", true);
+            //config.put("totalEvents", phaseNum * tthread * checkpoint_interval);
+            config.put("schedulersPool", schedulerPools);
+            config.put("defaultScheduler", defaultScheduler);
+            config.put("scheduler", defaultScheduler);
+            config.put("isRuntime", isRuntime);
+            config.put("bottomLine", bottomLine);
+            config.put("WorkloadConfig", WorkloadConfig);
+        } else {
+            config.put("isDynamic", false);
+            config.put("scheduler", scheduler);
+        }
+
+
         /* Dynamic Workload Configuration*/
-        config.put("isDynamic",isDynamic);
-        config.put("schedulersPool",schedulerPools);
-        config.put("defaultScheduler",scheduler);
-        config.put("isRuntime",isRuntime);
-        config.put("bottomLine",bottomLine);
-        config.put("WorkloadConfig",WorkloadConfig);
+        config.put("workloadType", workloadType);
+        config.put("shiftRate", shiftRate);
+        config.put("phaseNum", phaseNum);
+
+        /* Group scheduler*/
+        if (isGroup == 1) {
+            config.put("isGroup", true);
+            config.put("groupNum",groupNum);
+            config.put("SchedulersForGroup",SchedulersForGroup);
+            config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
+            config.put("skewGroup",skewGroup);
+            config.put("Ratio_of_Transaction_Aborts_Highest",Ratio_of_Transaction_Aborts_Highest);
+        } else {
+            config.put("isGroup", false);
+            config.put("groupNum",1);
+        }
 
         System.setProperty("my.log", metric_path);
     }

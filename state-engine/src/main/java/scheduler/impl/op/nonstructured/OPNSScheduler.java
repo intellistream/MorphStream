@@ -23,9 +23,22 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     }
 
     @Override
+    public void INITIALIZE(Context context) {
+        needAbortHandling = false;
+        tpg.firstTimeExploreTPG(context);
+        context.partitionStateManager.initialize(executableTaskListener);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+    }
+
+    public void REINITIALIZE(Context context) {
+        needAbortHandling = false;
+        tpg.secondTimeExploreTPG(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+    }
+
+    @Override
     public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
-//        System.out.println(threadId + " first explore tpg");
 
         INITIALIZE(context);
 //        System.out.println(threadId + " first explore tpg complete, start to process");
@@ -39,7 +52,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");
@@ -59,19 +72,6 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
         }
         RESET(context);//
 //        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
-    }
-
-
-    @Override
-    public void INITIALIZE(Context context) {
-        tpg.firstTimeExploreTPG(context);
-        context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
-    }
-
-    public void REINITIALIZE(Context context) {
-        tpg.secondTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
     }
 
     /**

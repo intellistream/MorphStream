@@ -21,20 +21,40 @@ public class SOURCE_CONTROL {
 
     private CyclicBarrier switchSchedulerBarrier;
 
+    private CyclicBarrier exploreTPGBarrier;
+
     private Phaser dLevelEndBarrier;
+
+    private boolean isGroup;
+    private int dalta;
+    private CyclicBarrier[] exploreTPGBarrierByGroup;
+    private Phaser[] dLevelEndBarrierByGroup;
+
     private HashMap<Integer, Integer> iteration;
 
     public static SOURCE_CONTROL getInstance() {
         return ourInstance;
     }
 
-    public void config(int number_threads) {
+    public void config(int number_threads, int groupNum) {
         totalThreads = number_threads;
         startBarrier = new CyclicBarrier(number_threads);
         endBarrier = new CyclicBarrier(number_threads);
         finalEndBarrier = new CyclicBarrier(number_threads);
-        switchSchedulerBarrier=new CyclicBarrier(number_threads);
-        dLevelEndBarrier = new Phaser(number_threads);
+        switchSchedulerBarrier = new CyclicBarrier(number_threads);
+        if (groupNum != 1){
+            exploreTPGBarrierByGroup = new CyclicBarrier[groupNum];
+            dLevelEndBarrierByGroup = new Phaser[groupNum];
+            for (int i = 0; i < groupNum; i++) {
+                exploreTPGBarrierByGroup[i] = new CyclicBarrier(number_threads / groupNum);
+                dLevelEndBarrierByGroup[i] = new Phaser(number_threads / groupNum);
+            }
+            dalta = totalThreads / groupNum;
+            isGroup = true;
+        } else {
+            exploreTPGBarrier = new CyclicBarrier(number_threads / groupNum);
+            dLevelEndBarrier = new Phaser(number_threads / groupNum);
+        }
         iteration = new HashMap<>();
         for (int i = 0; i < number_threads; i++) {
             iteration.put(i, 0);
@@ -54,6 +74,17 @@ public class SOURCE_CONTROL {
         }
     }
 
+    public void exploreTPGBarrier(int threadId) {
+        try {
+            if (isGroup) {
+                exploreTPGBarrierByGroup[threadId / dalta].await();
+            } else {
+                exploreTPGBarrier.await();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     public void postStateAccessBarrier(int threadId) {
         try {
             endBarrier.await();
@@ -70,9 +101,13 @@ public class SOURCE_CONTROL {
         }
     }
 
-    public void waitForOtherThreads() {
+    public void waitForOtherThreads(int threadId) {
         try {
-            dLevelEndBarrier.arriveAndAwaitAdvance();
+            if (isGroup) {
+                dLevelEndBarrierByGroup[threadId / dalta].arriveAndAwaitAdvance();
+            } else {
+                dLevelEndBarrier.arriveAndAwaitAdvance();
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -96,8 +131,12 @@ public class SOURCE_CONTROL {
         }
      }
 
-    public void oneThreadCompleted() {
-        dLevelEndBarrier.arriveAndDeregister();
+    public void oneThreadCompleted(int threadId) {
+        if (isGroup) {
+            dLevelEndBarrierByGroup[threadId / dalta].arriveAndDeregister();
+        } else {
+            dLevelEndBarrier.arriveAndDeregister();
+        }
     }
 
 }

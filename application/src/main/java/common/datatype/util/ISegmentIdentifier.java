@@ -28,7 +28,7 @@ import java.io.Serializable;
 public interface ISegmentIdentifier extends Serializable {
     Integer getXWay();
 
-    Short getSegment();
+    int getSegment();
 
     Short getDirection();
 }

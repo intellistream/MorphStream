@@ -81,6 +81,7 @@ public class SLBolt_sstore extends SLBolt_LA {
 
     public void start_evaluate(int thread_Id, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        LA_RESETALL(transactionManager, thread_Id);
         // add bid_array for events
         if (thread_Id == 0) {
             int partitionOffset = config.getInt("NUM_ITEMS") / tthread;
@@ -144,7 +145,7 @@ public class SLBolt_sstore extends SLBolt_LA {
             TRANSFER_LOCK_AHEAD((TransactionEvent) event, txn_context[0]);
         }
         END_LOCK_TIME_MEASURE_ACC(thread_Id);
-//        LA_UNLOCK(_pid, event.num_p(), transactionManager, tthread);
+//      LA_UNLOCK(_pid, event.num_p(), transactionManager, tthread);
         LA_UNLOCK_Reentrance(transactionManager, event.partition_indexs, thread_Id);
         END_WAIT_TIME_MEASURE_ACC(thread_Id);
     }

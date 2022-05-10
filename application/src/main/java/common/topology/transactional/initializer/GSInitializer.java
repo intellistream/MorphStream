@@ -5,6 +5,10 @@ import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGenerator;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
+import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDynamicDataGenerator;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
+import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
+import benchmark.dynamicWorkloadGenerator.DynamicWorkloadGenerator;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
@@ -68,14 +72,20 @@ public class GSInitializer extends TableInitilizer {
     }
 
     protected void createTPGGenerator(Configuration config) {
+        if(config.getBoolean("isDynamic")) {
+            //TODO:add the dynamic workload dataGenerator
+            DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
+            dynamicDataGeneratorConfig.initialize(config);
+            configurePath(dynamicDataGeneratorConfig);
+            dataGenerator=new GSTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
+        }else {
+            GSTPGDataGeneratorConfig dataConfig = new GSTPGDataGeneratorConfig();
+            dataConfig.initialize(config);
 
-        GSTPGDataGeneratorConfig dataConfig = new GSTPGDataGeneratorConfig();
-        dataConfig.initialize(config);
-
-        configurePath(dataConfig);
-        dataGenerator = new GSTPGDataGenerator(dataConfig);
+            configurePath(dataConfig);
+            dataGenerator = new GSTPGDataGenerator(dataConfig);
+        }
     }
-
     /**
      * Control the input file path.
      * TODO: think carefully which configuration shall vary.
@@ -88,24 +98,33 @@ public class GSInitializer extends TableInitilizer {
      *
      * @param dataConfig
      */
-    private void configurePath(GSTPGDataGeneratorConfig dataConfig) {
+    private void configurePath(DataGeneratorConfig dataConfig) {
         MessageDigest digest;
         String subFolder = null;
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
-            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%s",
+            if (dataConfig instanceof GSTPGDataGeneratorConfig)
+            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%d_%s",
                             dataConfig.getTotalThreads(),
                             dataConfig.getTotalEvents(),
                             dataConfig.getnKeyStates(),
-                            dataConfig.NUM_ACCESS,
-                            dataConfig.State_Access_Skewness,
-                            dataConfig.Ratio_of_Overlapped_Keys,
-                            dataConfig.Ratio_of_Transaction_Aborts,
-                            dataConfig.Transaction_Length,
+                            ((GSTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
+                            ((GSTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
+                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
+                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
+                            ((GSTPGDataGeneratorConfig) dataConfig).Transaction_Length,
+                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
                             AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
-
+            else
+                bytes = digest.digest(String.format("%d_%d_%d_%s_%s_%s",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTotalEvents(),
+                                dataConfig.getnKeyStates(),
+                                ((DynamicDataGeneratorConfig) dataConfig).getApp(),
+                                AppConfig.isCyclic)
+                        .getBytes(StandardCharsets.UTF_8));
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(bytes));
         } catch (Exception e) {
@@ -282,7 +301,7 @@ public class GSInitializer extends TableInitilizer {
             String[] split = txn.split(",");
             int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
             // construct bid array
-            int keyLength = NUM_ACCESS*Transaction_Length;
+            int keyLength = split.length - 2;
             HashMap<Integer, Integer> pids = new HashMap<>();
             long[] keys = new long[keyLength];
             for (int i = 1; i < keyLength+1; i++) {
@@ -364,6 +383,11 @@ public class GSInitializer extends TableInitilizer {
         w.close();
     }
 
+    @Override
+    public List<String> getTranToDecisionConf() {
+        return dataGenerator.getTranToDecisionConf();
+    }
+
     private RecordSchema MicroTableSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -379,6 +403,15 @@ public class GSInitializer extends TableInitilizer {
         db.createTable(s, "MicroTable");
         try {
             prepare_input_events(config.getInt("totalEvents"));
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() !=0){
+                StringBuilder stringBuilder = new StringBuilder();
+                for(String decision:getTranToDecisionConf()){
+                    stringBuilder.append(decision);
+                    stringBuilder.append(";");
+                }
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                config.put("WorkloadConfig",stringBuilder.toString());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

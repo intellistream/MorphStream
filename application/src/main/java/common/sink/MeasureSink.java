@@ -108,6 +108,28 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
                     config.getInt("complexity"));
+        } else if (config.getString("common").equals("OnlineBiding")){
+            directory = String.format(statsFolderPattern,
+                    config.getString("common"), scheduler, tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("NUM_ACCESS"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Overlapped_Keys"),
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    config.getInt("Transaction_Length"),
+                    AppConfig.isCyclic,
+                    config.getInt("complexity"));
+        } else if (config.getString("common").equals("TollProcessing")){
+            directory = String.format(statsFolderPattern,
+                    config.getString("common"), scheduler, tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("NUM_ACCESS"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Overlapped_Keys"),
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    config.getInt("Transaction_Length"),
+                    AppConfig.isCyclic,
+                    config.getInt("complexity"));
         } else {
             throw new UnsupportedOperationException();
         }
@@ -148,7 +170,6 @@ public class MeasureSink extends BaseSink {
 //                }
 //            }
             latency_map.add(System.nanoTime() - input.getLong(1));
-
         }
     }
 
@@ -182,14 +203,30 @@ public class MeasureSink extends BaseSink {
                 FileWriter f = null;
                 f = new FileWriter(new File(directory));
                 Writer w = new BufferedWriter(f);
-                for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
-                    w.write(latency.getPercentile(percentile) + "\n");
+//                for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
+//                    w.write(latency.getPercentile(percentile) + "\n");
+//                }
+                for (double lat : latency.getValues()){
+                    w.write(lat + "\n");
                 }
                 sb.append("=======Details=======");
                 sb.append("\n" + latency.toString() + "\n");
                 sb.append("===99th===" + "\n");
                 sb.append(latency.getPercentile(99) + "\n");
                 w.write(sb.toString());
+                w.write("Percentile\t Latency\n");
+                w.write(String.format("%f\t" +
+                                "%-10.4f\t"
+                        , 0.5,latency.getPercentile(0.5)) + "\n");
+                for (double i = 20; i < 100; i += 20){
+                    String output = String.format("%f\t" +
+                                    "%-10.4f\t"
+                            , i,latency.getPercentile(i));
+                    w.write(output + "\n");
+                }
+                w.write(String.format("%d\t" +
+                                "%-10.4f\t"
+                        , 99,latency.getPercentile(99)));
                 w.close();
                 f.close();
             } catch (IOException e) {

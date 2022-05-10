@@ -4,14 +4,14 @@ import common.CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static common.CONTROL.enable_debug;
-import static common.CONTROL.enable_log;
+import static common.CONTROL.*;
 import static common.IRunner.CCOption_MorphStream;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static profiler.Metrics.*;
@@ -232,6 +232,15 @@ public class MeasureTools {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_CONSTRUCT(thread_id);
     }
+    public static void BEGIN_SCHEDULER_SWITCH_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_SWITCH_START(thread_id);
+    }
+
+    public static void END_SCHEDULER_SWITCH_TIME_MEASURE(int thread_id) {
+        if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
+            COMPUTE_SWITCH(thread_id);
+    }
 
     public static void BEGIN_CACHE_OPERATION_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
@@ -284,6 +293,20 @@ public class MeasureTools {
                 );
                 fileWriter.write(output + "\n");
                 if (enable_log) log.info(output);
+                for (int i = 0; i < Total_Record.totalProcessTimePerEvent[threadId].getValues().length; i++) {
+                    output = String.format("%d\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f"
+                            , i
+                            , Total_Record.totalProcessTimePerEvent[threadId].getValues()[i]
+                            , Total_Record.stream_total[threadId].getValues()[i]
+                            , Total_Record.txn_total[threadId].getValues()[i]
+                            , Total_Record.overhead_total[threadId].getValues()[i]
+                    );
+                    log.info(output);
+                }
             }
             fileWriter.close();
         } catch (Exception e) {
@@ -325,11 +348,12 @@ public class MeasureTools {
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("SchedulerTimeBreakdownReport\n");
             if (enable_log) log.info("===OGScheduler Time Breakdown Report===");
-            fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time\n");
+            fileWriter.write("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time\t scheduler_switch\n");
             if (enable_log)
-                log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time");
+                log.info("thread_id\t explore_time\t next_time\t useful_time\t notify_time\t construct_time\t first_explore_time\t scheduler_switch");
             for (int threadId = 0; threadId < tthread; threadId++) {
                 String output = String.format("%d\t" +
+                                "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t" +
                                 "%-10.2f\t" +
@@ -343,13 +367,56 @@ public class MeasureTools {
                         , Scheduler_Record.Noitfy[threadId].getMean()
                         , Scheduler_Record.Construct[threadId].getMean()
                         , Scheduler_Record.FirstExplore[threadId].getMean()
+                        , Scheduler_Record.SchedulerSwitch[threadId].getMean()
                 );
                 fileWriter.write(output + "\n");
                 if (enable_log) log.info(output);
+                for (int i = 0; i < Scheduler_Record.Construct[threadId].getValues().length; i++) {
+                    output = String.format("%d\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t" +
+                                    "%-10.2f\t"
+                            , i
+                            , Scheduler_Record.Explore[threadId].getValues()[i]
+                            , Scheduler_Record.Next[threadId].getValues()[i]
+                            , Scheduler_Record.Useful[threadId].getValues()[i]
+                            , Scheduler_Record.Noitfy[threadId].getValues()[i]
+                            , Scheduler_Record.Construct[threadId].getValues()[i]
+                            , Scheduler_Record.FirstExplore[threadId].getValues()[i]
+                            , Scheduler_Record.SchedulerSwitch[threadId].getValues()[i]
+                    );
+                    log.info(output);
+                }
             }
             fileWriter.close();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void WriteMemoryConsumption(File file) {
+        if (enable_memory_measurement) {
+            timer.cancel();
+            try {
+                FileWriter f = null;
+                f = new FileWriter(new File(file.getPath() + ".txt"));
+                Writer w = new BufferedWriter(f);
+                w.write("UsedMemory\n");
+                for (int i = 0; i < usedMemory.getValues().length; i ++){
+                    String output = String.format("%f\t" +
+                                    "%-10.4f\t"
+                            , (float) i ,usedMemory.getValues()[i]);
+                    w.write(output + "\n");
+                }
+                w.close();
+                f.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -362,10 +429,48 @@ public class MeasureTools {
             e.printStackTrace();
         }
     }
+    private static void WriteThroughputReportRuntime(File file, int tthread, int phase, int shiftRate) {
+        try {
+            double[] tr = new double[Metrics.Runtime.ThroughputPerPhase.get(0).size()];
+            //every punctuation
+            for (int i = 0; i < tr.length; i++) {
+                tr[i] = 0;
+                for (int j = 0; j < tthread; j++){
+                    tr[i] = tr[i] + Metrics.Runtime.ThroughputPerPhase.get(j).get(i) * 1E6;//
+                }
+            }
+            //every phase
+            double[] tr_p = new double[tr.length / shiftRate];
+            for (int i = 0; i < tr_p.length; i++) {
+                tr_p[i] = 0;
+                for (int j = i * shiftRate; j < (i + 1) * shiftRate; j++) {
+                    tr_p[i] = tr_p[i] + tr[j];
+                }
+                tr_p[i] = tr_p[i] / shiftRate;
+            }
+            StringBuilder stringBuilder = new StringBuilder();
+            BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
+            fileWriter.write("phase_id\t throughput\n");
+            for (int i = 0; i < tr_p.length; i++){
+                String output = String.format("%d\t" +
+                                "%-10.4f\t"
+                        , i,tr_p[i]
+                );
+                stringBuilder.append(output);
+                fileWriter.write(output + "\n");
+            }
+            fileWriter.close();
+            if (enable_log) log.info(String.valueOf(stringBuilder));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-    public static void METRICS_REPORT(int ccOption, File file, int tthread, double throughput) {
+    public static void METRICS_REPORT(int ccOption, File file, int tthread, double throughput, int phase, int shiftRate) {
         WriteThroughputReport(file, throughput);
         AverageTotalTimeBreakdownReport(file, tthread);
+        WriteThroughputReportRuntime(file, tthread, phase, shiftRate);
+        WriteMemoryConsumption(file);
         if (ccOption == CCOption_MorphStream) {//extra info
             SchedulerTimeBreakdownReport(file, tthread);
         } else {

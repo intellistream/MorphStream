@@ -39,6 +39,7 @@ public class GSTPGDataGenerator extends DataGenerator {
     private final int State_Access_Skewness; // ratio of state access, following zipf distribution
     private final int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
     private final int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
+    private final int Ratio_of_Multiple_State_Access;//ratio of multiple state access per transaction
     private final int Transaction_Length;
     // control the number of txns overlap with each other.
     private final ArrayList<Integer> generatedKeys = new ArrayList<>();
@@ -66,6 +67,7 @@ public class GSTPGDataGenerator extends DataGenerator {
         Ratio_of_Transaction_Aborts = dataConfig.Ratio_of_Transaction_Aborts;
         Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
         Transaction_Length = dataConfig.Transaction_Length;
+        Ratio_of_Multiple_State_Access = dataConfig.Ratio_of_Multiple_State_Access;
 
         int nKeyState = dataConfig.getnKeyStates();
 
@@ -104,6 +106,12 @@ public class GSTPGDataGenerator extends DataGenerator {
     }
 
     private GSEvent randomEvent() {
+        int NUM_ACCESS;
+        if (random.nextInt(100) < Ratio_of_Multiple_State_Access) {
+            NUM_ACCESS = this.NUM_ACCESS;
+        } else {
+            NUM_ACCESS = 1;
+        }
         int[] keys = new int[NUM_ACCESS*Transaction_Length];
         int writeLevel = -1;
         if (!isUnique) {

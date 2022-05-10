@@ -19,10 +19,12 @@ public interface CONTROL {
     boolean enable_states_partition = true;//must be enabled for PAT/SSTORE.
 
     //latency related.
-    boolean enable_latency_measurement = false;//
+    boolean enable_latency_measurement = true;//
     //    boolean enable_admission_control = enable_latency_measurement;//only enable for TStream
     //profile related.
     boolean enable_profile = true;//enable this only when we want to test for breakdown.
+    //memory profile related
+    boolean enable_memory_measurement = true;
     //engine related.
     boolean enable_engine = true;//1. enable TP_engine. Always enabled. There's no meaning if we disable engine for T-Stream.
     boolean enable_numa_placement = true;//thread placement. always on.

@@ -24,6 +24,7 @@ import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import profiler.Metrics;
 import topology.TopologySubmitter;
 import utils.AppConfig;
 import utils.SINK_CONTROL;
@@ -42,6 +43,7 @@ import static content.SStoreContentImpl.SSTORE_CONTENT;
 import static content.TStreamContentImpl.T_STREAMCONTENT;
 import static content.common.ContentCommon.content_type;
 import static profiler.MeasureTools.METRICS_REPORT;
+import static profiler.Metrics.timer;
 
 public class MorphStreamRunner extends Runner {
     private static final Logger log = LoggerFactory.getLogger(MorphStreamRunner.class);
@@ -127,13 +129,13 @@ public class MorphStreamRunner extends Runner {
                     break;
                 }
                 case "OnlineBiding": {
-                    config.put("app", 2);
+                    config.put("app", 3);
                     int threads = Math.max(1, (int) Math.floor((tthread)));
                     config.put(OB_THREADS, threads);
                     break;
                 }
                 case "TollProcessing": {
-                    config.put("app", 3);
+                    config.put("app", 2);
                     int threads = Math.max(1, (int) Math.floor((tthread)));
                     config.put(Executor_Threads, threads);
                     break;
@@ -163,6 +165,9 @@ public class MorphStreamRunner extends Runner {
     }
 
     private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
+        if (enable_memory_measurement) {
+            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(),0,  500);
+        }
         TopologySubmitter submitter = new TopologySubmitter();
         try {
             final_topology = submitter.submitTopology(topology, conf);
@@ -262,6 +267,17 @@ public class MorphStreamRunner extends Runner {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
                             config.getInt("NUM_ITEMS"),
+                            config.getInt("Ratio_of_Multiple_State_Access"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else if (config.getString("common").equals("OnlineBiding")){
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
                             config.getInt("NUM_ACCESS"),
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
@@ -269,9 +285,19 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
-                } else {
+                } else if (config.getString("common").equals("TollProcessing")){
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("NUM_ACCESS"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else
                     throw new UnsupportedOperationException();
-                }
                 File file = new File(statsFolderPath);
                 log.info("Dumping stats to...");
                 log.info(String.valueOf(file.getAbsoluteFile()));
@@ -284,7 +310,7 @@ public class MorphStreamRunner extends Runner {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread, rt);
+                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread, rt, config.getInt("phaseNum"), config.getInt("shiftRate"));
             }
         }//end of profile.
     }

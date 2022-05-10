@@ -25,7 +25,7 @@ public class BuyingEvent extends TxnEvent {
     /**
      * Creates a new BuyingEvent.
      */
-    public BuyingEvent(int[] itemId, SplittableRandom rnd, int partition_id, long[] bid_array, long bid, int number_of_partitions) {
+    public BuyingEvent(int[] itemId, int partition_id, long[] bid_array, long bid, int number_of_partitions) {
         super(bid, partition_id, bid_array, number_of_partitions);
         this.itemId = itemId;
         record_refs = new SchemaRecordRef[NUM_ACCESSES_PER_BUY];
@@ -34,8 +34,24 @@ public class BuyingEvent extends TxnEvent {
         }
         bid_price = new long[NUM_ACCESSES_PER_BUY];
         bid_qty = new long[NUM_ACCESSES_PER_BUY];
-        setValues(rnd);
+        setValues(false);
     }
+
+    /**
+     * Creates a new BuyingEvent.
+     */
+    public BuyingEvent(int[] itemId, int partition_id, String bid_array, long bid, int number_of_partitions,String partition_index,boolean isAbort) {
+        super(bid, partition_id, bid_array,partition_index, number_of_partitions);
+        this.itemId = itemId;
+        record_refs = new SchemaRecordRef[NUM_ACCESSES_PER_BUY];
+        for (int i = 0; i < NUM_ACCESSES_PER_BUY; i++) {
+            record_refs[i] = new SchemaRecordRef();
+        }
+        bid_price = new long[NUM_ACCESSES_PER_BUY];
+        bid_qty = new long[NUM_ACCESSES_PER_BUY];
+        setValues(isAbort);
+    }
+
 
     /**
      * Loading a BuyingEvent.
@@ -106,14 +122,24 @@ public class BuyingEvent extends TxnEvent {
         return bid_qty;
     }
 
-    private void set_values(int access_id, SplittableRandom rnd) {
-        bid_price[access_id] = rnd.nextLong(MAX_Price);
-        bid_qty[access_id] = rnd.nextLong(MAX_BUY_Transfer);
+    private void set_values(int access_id,boolean isAbort) {
+        if (isAbort) {
+            bid_price[access_id] = -1;
+            bid_qty[access_id] = 100000;
+        } else {
+            bid_price[access_id] = MAX_Price + 1;
+            bid_qty[access_id] = 1;
+        }
     }
 
-    public void setValues(SplittableRandom rnd) {
+    public void setValues(boolean isAbort) {
         for (int access_id = 0; access_id < NUM_ACCESSES_PER_BUY; ++access_id) {
-            set_values(access_id, rnd);
+            set_values(access_id,isAbort);
         }
+    }
+
+    @Override
+    public BuyingEvent cloneEvent() {
+        return new BuyingEvent((int) bid,Arrays.toString(bid_array),pid,number_of_partitions,Arrays.toString(itemId),Arrays.toString(bid_price),Arrays.toString(bid_qty));
     }
 }

@@ -39,24 +39,33 @@ public class OGBFSAScheduler extends AbstractOGBFSScheduler<OGSAContext> {
     @Override
     public void EXPLORE(OGSAContext context) {
         OperationChain next = Next(context);
-        if (next == null && !context.exploreFinished()) { //current level is all processed at the current thread.
-            while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads();
-                //all threads come to the current level.
-                if (needAbortHandling.get()) {
-                    if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
-                    abortHandling(context);
-                }
-                ProcessedToNextLevel(context);
-                next = Next(context);
+        while (next == null && !context.exploreFinished()) {
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            //all threads come to the current level.
+            if (needAbortHandling.get()) {
+                if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
+                abortHandling(context);
             }
+            ProcessedToNextLevel(context);
+            // !!! We have to set a necessary barrier to avoid inconsistent abort handling.
+            // e.g. T1      T2      T3      T4      [lv = 5]
+            //             check   check   check
+            //             lv+1    lv+1    lv+1
+            //             [Process in T2/3/4 failed, need abort handling!]
+            //     T1 check and proceed to abort handling at lv 5, however, the abort happend at lv6!!
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            next = Next(context);
         }
+//        }
         if (context.exploreFinished()) {
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             if (needAbortHandling.get()) {
                 context.busyWaitQueue.clear();
-                if (enable_log) LOG.debug("aborted after all ocs explored: " + context.thisThreadId + " | " + needAbortHandling.get());
+                if (enable_log)
+                    LOG.debug("aborted after all ocs explored: " + context.thisThreadId + " | " + needAbortHandling.get());
                 abortHandling(context);
                 ProcessedToNextLevel(context);
+                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
                 next = Next(context);
             }
         }
@@ -120,9 +129,9 @@ public class OGBFSAScheduler extends AbstractOGBFSScheduler<OGSAContext> {
     protected void abortHandling(OGSAContext context) {
         MarkOperationsToAbort(context);
 
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         IdentifyRollbackLevel(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads();
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         SetRollbackLevel(context);
 
         RollbackToCorrectLayerForRedo(context);

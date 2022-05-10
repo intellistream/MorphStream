@@ -1,5 +1,6 @@
 package combo;
 
+import benchmark.DataHolder;
 import common.bolts.transactional.ob.*;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -103,65 +104,17 @@ public class OBCombo extends SPOUTCombo {
 
     @Override
     public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) {
-        String event_path = Event_Path
-                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition);
-        if (Files.notExists(Paths.get(event_path + OsUtils.OS_wrapper(file_name))))
-            System.exit(-1);
-        Scanner sc;
-        try {
-            sc = new Scanner(new File(event_path + OsUtils.OS_wrapper(file_name)));
-            int i = 0;
-            Object event;
-            for (int j = 0; j < taskId; j++) {
-                sc.nextLine();
-            }
-            while (sc.hasNextLine()) {
-                String read = sc.nextLine();
-                String[] split = read.split(split_exp);
-                if (split[4].endsWith("BuyingEvent")) {//BuyingEvent
-                    event = new BuyingEvent(
-                            Integer.parseInt(split[0]), //bid
-                            split[2], //bid_array
-                            Integer.parseInt(split[1]),//pid
-                            Integer.parseInt(split[3]),//num_of_partition
-                            split[5],//key_array
-                            split[6],//price_array
-                            split[7]  //qty_array
-                    );
-                } else if (split[4].endsWith("AlertEvent")) {//AlertEvent
-                    event = new AlertEvent(
-                            Integer.parseInt(split[0]), //bid
-                            split[2], // bid_array
-                            Integer.parseInt(split[1]),//pid
-                            Integer.parseInt(split[3]),//num_of_partition
-                            Integer.parseInt(split[5]), //num_access
-                            split[6],//key_array
-                            split[7]//price_array
-                    );
-                } else {
-                    event = new ToppingEvent(
-                            Integer.parseInt(split[0]), //bid
-                            split[2], Integer.parseInt(split[1]), //pid
-                            //bid_array
-                            Integer.parseInt(split[3]),//num_of_partition
-                            Integer.parseInt(split[5]), //num_access
-                            split[6],//key_array
-                            split[7]  //top_array
-                    );
-                }
-//                db.eventManager.put(input_event, Integer.parseInt(split[0]));
-                myevents[i++] = event;
-                if (i == num_events_per_thread) break;
-                for (int j = 0; j < (tthread - 1) * combo_bid_size; j++) {
-                    if (sc.hasNextLine())
-                        sc.nextLine();//skip un-related.
-                }
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        int storageIndex = 0;
+        //Load OnlineBiding Events.
+        for (int index = taskId; index < DataHolder.events.size(); ) {
+            TxnEvent event = DataHolder.events.get(index).cloneEvent();
+            mybids[storageIndex] = event.getBid();
+            myevents[storageIndex++] = event;
+            if (storageIndex == num_events_per_thread)
+                break;
+            index += tthread * combo_bid_size;
         }
-        if (enable_log)
-            show_stats();
+        assert (storageIndex == num_events_per_thread);
     }
 
     @Override
@@ -186,7 +139,7 @@ public class OBCombo extends SPOUTCombo {
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                bolt = new OBBolt_ts(0, sink);
+                bolt = new OBBolt_ts_s(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
@@ -197,9 +150,8 @@ public class OBCombo extends SPOUTCombo {
         }
         //do preparation.
         bolt.prepare(config, context, collector);
-        if (enable_shared_state)
-            bolt.loadDB(config, context, collector);
-        loadEvent("OB_Events" + tthread, config, context, collector);
+        bolt.loadDB(config, context, collector);
+        loadEvent(config.getString("rootFilePath"), config, context, collector);
 //        bolt.sink.batch_number_per_wm = batch_number_per_wm;
     }
 }

@@ -13,6 +13,7 @@ import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.function.AVG;
 import transaction.function.CNT;
+import transaction.function.Condition;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
@@ -21,6 +22,7 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_latency_measurement;
 import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
+import static profiler.Metrics.NUM_ITEMS;
 
 public class TPBolt_ts_s extends TPBolt {
     private static final Logger LOG= LoggerFactory.getLogger(TPBolt_ts_s.class);
@@ -36,14 +38,13 @@ public class TPBolt_ts_s extends TPBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager=new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(),thread_Id,
-                NUM_SEGMENTS,this.context.getThisComponent().getNumTasks(),config.getString("scheduler","BF"));
-        LREvents=new ArrayDeque<>();
+                NUM_ITEMS,this.context.getThisComponent().getNumTasks(),config.getString("scheduler","BF"));
+        LREvents = new ArrayDeque<>();
     }
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
                 , context.getGraph());
     }
-
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()){
@@ -84,12 +85,18 @@ public class TPBolt_ts_s extends TPBolt {
     }
     protected void REQUEST_CONSTRUCT(LREvent event,TxnContext txnContext) throws DatabaseException{
         transactionManager.BeginTransaction(txnContext);
+//        transactionManager.Asy_ModifyRecord_Read(txnContext
+//                , "segment_speed"
+//                , String.valueOf(event.getPOSReport().getSegment())
+//                , event.speed_value//holder to be filled up.
+//                , new AVG(event.getPOSReport().getSpeed())
+//        );          //asynchronously return.
         transactionManager.Asy_ModifyRecord_Read(txnContext
-                , "segment_speed"
-                , String.valueOf(event.getPOSReport().getSegment())
-                , event.speed_value//holder to be filled up.
+                , "segment_speed", String.valueOf(event.getPOSReport().getSegment())
+                , event.speed_value
                 , new AVG(event.getPOSReport().getSpeed())
-        );          //asynchronously return.
+                , new Condition(event.getPOSReport().getSpeed(),200)
+                , event.success);
         transactionManager.Asy_ModifyRecord_Read(txnContext
                 , "segment_cnt"
                 , String.valueOf(event.getPOSReport().getSegment())
@@ -106,8 +113,10 @@ public class TPBolt_ts_s extends TPBolt {
     }
 
     private void TXN_REQUEST_CORE_TS(LREvent event) {
-        event.count = event.count_value.getRecord().getValue().getInt();
-        event.lav = event.speed_value.getRecord().getValue().getDouble();
+        if (event.success[0] != 0){
+            event.count = event.count_value.getRecord().getValue().getInt();
+            event.lav = event.speed_value.getRecord().getValue().getDouble();
+        }
     }
     protected void REQUEST_POST() throws InterruptedException {
         for (LREvent event : LREvents) {
