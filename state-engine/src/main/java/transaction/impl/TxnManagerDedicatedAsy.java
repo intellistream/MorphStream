@@ -275,7 +275,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     @Override
-    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function) throws DatabaseException {
+    public boolean Asy_ModifyRecord_Read(TxnContext txn_context,
+                                         String srcTable, String key,
+                                         SchemaRecordRef record_ref,
+                                         Function function) throws DatabaseException {
         AccessType accessType = AccessType.READ_WRITE_READ;
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
