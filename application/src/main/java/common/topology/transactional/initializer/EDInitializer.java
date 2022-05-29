@@ -147,42 +147,6 @@ public class EDInitializer extends TableInitilizer {
         return word;
     }
 
-    // TODO: Add transactional WRITE() to word table
-    // Compute word's frequency in the current window and write into word table
-    public void computeWordFreq(long wID) {
-        //
-    }
-
-    // TODO: Add transactional WRITE() to word table
-    // Compute word's tf-idf value between consecutive data windows and write into word table
-    public void computeWordTfIdf(long wID) {
-        //
-    }
-
-    // Compute word's Term Frequency
-    public double computeTF(List<String> dataWindow, String targetWord) {
-        double result = 0;
-        for (String word : dataWindow) {
-            if (targetWord.equalsIgnoreCase(word))
-                result++;
-        }
-        return result / dataWindow.size();
-    }
-
-    // Compute word's Inverse Document Frequency
-    public double computeIDF(List<List<String>> dataWindow, String targetWord) {
-        double wordCount = 0;
-        for (List<String> doc : dataWindow) {
-            for (String word : doc) {
-                if (targetWord.equalsIgnoreCase(word)) {
-                    wordCount++;
-                    break;
-                }
-            }
-        }
-        return Math.log(dataWindow.size() / wordCount);
-    }
-
     @Override
     public boolean Generate() {
         return true;
@@ -195,6 +159,11 @@ public class EDInitializer extends TableInitilizer {
 
     @Override
     public void store(String file_name) {
+    }
+
+    @Override
+    public List<String> getTranToDecisionConf() {
+        return null;
     }
 
     public void creates_Table(Configuration config) {
