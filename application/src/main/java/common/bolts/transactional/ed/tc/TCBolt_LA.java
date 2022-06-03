@@ -1,16 +1,16 @@
-package common.bolts.transactional.ed.wu;
+package common.bolts.transactional.ed.tc;
 
 import combo.SINKCombo;
 import common.bolts.transactional.ed.tr.TRBolt_ts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WUBolt_ts extends WUBolt{
+public class TCBolt_LA extends TCBolt{
     private static final Logger LOG= LoggerFactory.getLogger(TRBolt_ts.class);
-    public WUBolt_ts(int fid, SINKCombo sink){
+    public TCBolt_LA(int fid, SINKCombo sink){
         super(LOG,fid,sink);
     }
-    public WUBolt_ts(int fid){
+    public TCBolt_LA(int fid){
         super(LOG,fid,null);
     }
 }
