@@ -23,6 +23,7 @@ public abstract class Runner implements IRunner {
     //public String application = "GrepSum";
     //public String application = "OnlineBiding";
     //public String application = "TollProcessing";
+//    public String application = "EventDetection";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -283,6 +284,8 @@ public abstract class Runner implements IRunner {
                 phaseNum = shiftRate * 1;
                 defaultScheduler = "OG_BFS_A";
                 break;
+            case "EventDetection" :
+                //TODO: Add Conf settings to ED
             default:
                 throw new IllegalStateException("Unexpected value: " + application);
         }

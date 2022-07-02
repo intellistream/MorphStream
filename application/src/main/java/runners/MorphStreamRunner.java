@@ -6,15 +6,13 @@ import common.Runner;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
+import common.constants.EventDetectionConstants;
 import common.constants.GrepSumConstants;
 import common.platform.HP_Machine;
 import common.platform.HUAWEI_Machine;
 import common.platform.Platform;
 import common.topology.WordCount;
-import common.topology.transactional.GrepSum;
-import common.topology.transactional.OnlineBiding;
-import common.topology.transactional.StreamLedger;
-import common.topology.transactional.TollProcessing;
+import common.topology.transactional.*;
 import components.Topology;
 import components.TopologyComponent;
 import components.exception.UnhandledCaseException;
@@ -62,6 +60,7 @@ public class MorphStreamRunner extends Runner {
         driver.addApp("StreamLedger", StreamLedger.class);//SL
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP
+        driver.addApp("EventDetection", EventDetection.class);//ED
     }
 
     // Prepared default configuration
@@ -140,6 +139,12 @@ public class MorphStreamRunner extends Runner {
                     config.put(Executor_Threads, threads);
                     break;
                 }
+                case "EventDetection": {
+                    config.put("app", 4);
+                    int threads = Math.max(1, (int) Math.floor((tthread)));
+                    config.put(EventDetectionConstants.Conf.Executor_Threads, threads); //TODO: Double-confirm this Conf settings
+                    break;
+                }
             }
 
         } else {
@@ -214,7 +219,7 @@ public class MorphStreamRunner extends Runner {
         LoadConfiguration();
 
         // Get the descriptor for the given application
-        AppDriver.AppDescriptor app = driver.getApp(application);
+        AppDriver.AppDescriptor app = driver.getApp(application); //TODO: Change to ED
         if (app == null) {
             throw new RuntimeException("The given application name " + application + " is invalid");
         }
@@ -290,6 +295,17 @@ public class MorphStreamRunner extends Runner {
                             config.getString("common"), scheduler, tthread, totalEvents,
                             config.getInt("NUM_ITEMS"),
                             config.getInt("NUM_ACCESS"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else if (config.getString("common").equals("EventDetection")) { //TODO: Double-confirm the Conf settings
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("Ratio_of_Multiple_State_Access"),
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
                             config.getInt("Ratio_of_Transaction_Aborts"),

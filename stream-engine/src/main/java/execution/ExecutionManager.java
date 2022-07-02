@@ -133,7 +133,7 @@ public class ExecutionManager {
                                              int node, long[] cores, CountDownLatch latch) {
         boltThread wt;
         wt = new boltThread(e, context, conf, cores, node, latch,
-                optimizationManager, ThreadMap);
+                optimizationManager, ThreadMap); //Initialize a boltThread using the input ExecutionNode
         wt.setDaemon(true);
         if (!(conf.getBoolean("monte", false) || conf.getBoolean("simulation", false))) {
             wt.start();
