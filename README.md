@@ -1,3 +1,5 @@
+<meta name="robots" content="noindex">
+
 # MorphStream
 
 ![Java CI with Maven](https://github.com/intellistream/MorphStream/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
