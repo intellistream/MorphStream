@@ -61,7 +61,7 @@ public class LockContentImpl extends LockContent {
     }
 
     @Override
-    public void clean_map(long mark_ID) {
+    public void clean_map() {
     }
 
     @Override

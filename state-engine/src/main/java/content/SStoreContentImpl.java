@@ -46,7 +46,7 @@ public class SStoreContentImpl extends SStoreContent {
     }
 
     @Override
-    public void clean_map(long mark_ID) {
+    public void clean_map() {
     }
 
     @Override
