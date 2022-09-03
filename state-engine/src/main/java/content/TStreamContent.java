@@ -139,9 +139,11 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public void clean_map(long previous_mark_ID) {
+    public void clean_map() {
 //        versions = (ConcurrentSkipListMap<Long, SchemaRecord>) versions.tailMap(versions.lastKey());
         versions.headMap(versions.lastKey(), false).clear();
+        //update the record
+        record.updateValues(versions.firstEntry().getValue().getValues());
     }
 
     @Override

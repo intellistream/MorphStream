@@ -156,7 +156,10 @@ public class OperationChain implements Comparable<OperationChain> {
 
     public void clear() {
         potentialChldrenInfo.clear();
-        operations.clear();
+        if (operations.size() != 0) {
+            operations.first().d_record.content_.clean_map();
+            operations.clear();
+        }
         ocParents.clear();
         isExecuted = false;
         // Structured data structure clearance

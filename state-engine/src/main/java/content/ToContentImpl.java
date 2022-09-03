@@ -164,7 +164,7 @@ public class ToContentImpl extends ToContent {
     }
 
     @Override
-    public void clean_map(long mark_ID) {
+    public void clean_map() {
     }
 
     @Override

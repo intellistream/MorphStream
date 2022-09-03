@@ -16,7 +16,7 @@ public class LREvent extends TxnEvent {
     public SchemaRecordRef speed_value;
     public SchemaRecordRef count_value;
     private long timestamp;
-//    private final AvgVehicleSpeedTuple vsreport;//intermediate input.
+//  private final AvgVehicleSpeedTuple vsreport;//intermediate input.
 
     /**
      * creating a new LREvent.
@@ -29,7 +29,7 @@ public class LREvent extends TxnEvent {
         super(bid);
         this.posreport = posreport;
         this.tthread = tthread;
-//        vsreport = vehicleSpeedTuple;
+//      vsreport = vehicleSpeedTuple;
         this.bid = bid;
         speed_value = new SchemaRecordRef();
         count_value = new SchemaRecordRef();
@@ -54,7 +54,6 @@ public class LREvent extends TxnEvent {
     public long getBid() {
         return bid;
     }
-
 
     @Override
     public LREvent cloneEvent() {

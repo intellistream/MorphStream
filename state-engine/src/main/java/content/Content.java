@@ -59,7 +59,7 @@ public interface Content {
 
     SchemaRecord readValues(long ts, long previous_mark_ID, boolean clean);
 
-    void clean_map(long mark_ID);
+    void clean_map();
 
     void updateValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record);
 
