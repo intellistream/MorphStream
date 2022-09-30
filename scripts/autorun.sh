@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FLINK_DIR="/home/shuhao/myc/tools/build-target"
-FLINK_APP_DIR="/home/shuhao/myc/TStream_related/MorphStream"
+FLINK_DIR="/home/myc/build-target"
+FLINK_APP_DIR="/home/myc/workspace/MorphStream"
 
 # run flink clsuter
 function runFlink() {
@@ -51,6 +51,6 @@ init
 runFlink
 runApp
 
-python -c 'import time; time.sleep('"200"')'
+python3 -c 'import time; time.sleep('"200"')'
 
 stopFlink
