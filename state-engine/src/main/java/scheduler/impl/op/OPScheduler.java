@@ -11,6 +11,7 @@ import scheduler.struct.AbstractOperation;
 import scheduler.struct.op.MetaTypes;
 import scheduler.struct.op.Operation;
 import scheduler.struct.op.TaskPrecedenceGraph;
+import scheduler.struct.op.WindowDescriptor;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
@@ -23,6 +24,7 @@ import transaction.function.SUM;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -158,7 +160,17 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 cnt_segment.add(operation.function.delta_int);//update hashset; updated state also. TODO: be careful of this.
                 operation.record_ref.setRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             }
-        } else {
+        } else if (operation.accessType.equals(WINDOWED_READ_ONLY)) {
+            assert operation.record_ref != null;
+            success = operation.success[0];
+            AppConfig.randomDelay();
+            Windowed_GrepSum_Fun(operation, mark_ID, clean);
+            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            // operation success check, number of operation succeeded does not increase after execution
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
+        }else {
             throw new UnsupportedOperationException();
         }
 
@@ -246,6 +258,42 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        }
     }
 
+    protected void Windowed_GrepSum_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        int keysLength = operation.condition_records.length;
+
+        long sum = 0;
+
+        // apply function
+        AppConfig.randomDelay();
+
+        for (int i = 0; i < keysLength; i++) {
+//            long start = System.nanoTime();
+//            while (System.nanoTime() - start < 10000) {}
+            assert operation.windowContext.isWindowed();
+            List<SchemaRecord> schemaRecordRange = operation.condition_records[i].content_.readPreValuesRange(operation.bid, operation.windowContext.getRange());
+            sum += schemaRecordRange.stream().mapToLong(schemaRecord -> schemaRecord.getValues().get(1).getLong()).sum();
+        }
+
+        sum /= keysLength;
+
+        if (operation.function.delta_long != -1) {
+            // read
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+            if (operation.function instanceof SUM) {
+                tempo_record.getValues().get(1).setLong(sum);//compute.
+            } else
+                throw new UnsupportedOperationException();
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+        }
+//        else {
+//            log.info("++++++ operation failed: " + operation);
+//        }
+    }
+
     @Override
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);
@@ -305,6 +353,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 case READ_WRITE_READ:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, request.record_ref, request.function, null, null, null);
+                    break;
+                case WINDOWED_READ_ONLY:
+                    WindowDescriptor windowContext = new WindowDescriptor(true, 1);
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success, windowContext);
                     break;
                 default:
                     throw new UnsupportedOperationException();

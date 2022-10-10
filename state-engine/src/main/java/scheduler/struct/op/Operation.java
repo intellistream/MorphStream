@@ -37,7 +37,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private final Deque<Operation> td_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_spec_children; // speculative children to notify.
-    public final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance
+    private final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance
     private final Deque<Operation> td_parents; // the functional dependencies ops to be executed in advance
     private final Deque<Operation> ld_parents; // the functional dependencies ops to be executed in advance
     private final OperationMetadata operationMetadata;
@@ -61,7 +61,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                   CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
-        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
+        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success, null);
     }
 
     public <Context extends OPSchedulerContext> Operation(
@@ -69,7 +69,15 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid);
+        this(pKey, context, table_name, txn_context, bid, accessType, record, record_ref, function, condition, condition_records, success, null);
+    }
+
+    public <Context extends OPSchedulerContext> Operation(
+            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+            CommonMetaTypes.AccessType accessType, TableRecord record,
+            SchemaRecordRef record_ref, Function function, Condition condition,
+            TableRecord[] condition_records, int[] success, WindowDescriptor windowContext) {
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid, windowContext);
         this.context = context;
         this.pKey = pKey;
 
@@ -460,4 +468,5 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //            ld_countdown = 0; // countdown when executed
         }
     }
+
 }

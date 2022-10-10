@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class SStoreContentImpl extends SStoreContent {
@@ -42,6 +43,11 @@ public class SStoreContentImpl extends SStoreContent {
 
     @Override
     public SchemaRecord readPreValues(long ts, long min_ts) {
+        return null;
+    }
+
+    @Override
+    public List<SchemaRecord> readPreValuesRange(long ts, long range) {
         return null;
     }
 

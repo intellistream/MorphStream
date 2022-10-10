@@ -2,8 +2,8 @@ package combo;
 
 import benchmark.DataHolder;
 import common.bolts.transactional.gs.*;
+import common.bolts.transactional.gsw.*;
 import common.collections.Configuration;
-import common.collections.OsUtils;
 import common.param.TxnEvent;
 import common.param.mb.MicroEvent;
 import components.context.TopologyContext;
@@ -12,21 +12,13 @@ import execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayDeque;
-import java.util.Scanner;
 
 import static common.CONTROL.*;
-import static common.Constants.Event_Path;
 import static content.Content.*;
-import static profiler.Metrics.NUM_ACCESSES;
-import static profiler.Metrics.NUM_ITEMS;
 
-public class GSCombo extends SPOUTCombo {
-    private static final Logger LOG = LoggerFactory.getLogger(GSCombo.class);
+public class WindowedGSCombo extends SPOUTCombo {
+    private static final Logger LOG = LoggerFactory.getLogger(WindowedGSCombo.class);
     private static final long serialVersionUID = -2394340130331865581L;
     int concurrency = 0;
     int pre_concurrency = 0;
@@ -34,7 +26,7 @@ public class GSCombo extends SPOUTCombo {
     int cnt = 0;
     ArrayDeque<MicroEvent> prevents = new ArrayDeque<>();
 
-    public GSCombo() {
+    public WindowedGSCombo() {
         super(LOG, 0);
     }
 
@@ -115,23 +107,23 @@ public class GSCombo extends SPOUTCombo {
         sink.prepare(config, context, collector);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_LOCK: {//no-order
-                bolt = new GSBolt_nocc(0, sink);
+                bolt = new WindowedGSBolt_nocc(0, sink);
                 break;
             }
             case CCOption_OrderLOCK: {//LOB
-                bolt = new GSBolt_olb(0, sink);
+                bolt = new WindowedGSBolt_olb(0, sink);
                 break;
             }
             case CCOption_LWM: {//LWM
-                bolt = new GSBolt_lwm(0, sink);
+                bolt = new WindowedGSBolt_lwm(0, sink);
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                bolt = new GSBolt_ts(0, sink);
+                bolt = new WindowedGSBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
-                bolt = new GSBolt_sstore(0, sink);
+                bolt = new WindowedGSBolt_sstore(0, sink);
                 break;
             }
 

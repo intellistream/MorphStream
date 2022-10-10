@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import transaction.context.TxnContext;
 
+import java.util.List;
 import java.util.TreeSet;
 
 import static content.common.ContentCommon.kRecycleLength;
@@ -122,6 +123,11 @@ public class LWMContentImpl extends LWMContent {
 
     @Override
     public SchemaRecord readPreValues(long ts, long min_ts) {
+        return null;
+    }
+
+    @Override
+    public List<SchemaRecord> readPreValuesRange(long ts, long range) {
         return null;
     }
 

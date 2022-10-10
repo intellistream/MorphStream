@@ -164,6 +164,11 @@ public class ToContentImpl extends ToContent {
     }
 
     @Override
+    public List<SchemaRecord> readPreValuesRange(long ts, long range) {
+        return null;
+    }
+
+    @Override
     public void clean_map() {
     }
 

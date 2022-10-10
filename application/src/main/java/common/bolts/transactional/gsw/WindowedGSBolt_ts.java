@@ -1,6 +1,7 @@
-package common.bolts.transactional.gs;
+package common.bolts.transactional.gsw;
 
 import combo.SINKCombo;
+import common.param.TxnEvent;
 import common.param.mb.MicroEvent;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -9,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
-import transaction.function.Condition;
 import transaction.function.SUM;
 import transaction.impl.ordered.TxnManagerTStream;
 
@@ -17,23 +17,24 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_latency_measurement;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
-public class GSBolt_ts extends GSBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(GSBolt_ts.class);
+public class WindowedGSBolt_ts extends WindowedGSBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(WindowedGSBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     private final double write_useful_time = 556;//write-compute time pre-measured.
-    Collection<MicroEvent> microEvents;
+    Collection<MicroEvent> events;
     private int writeEvents;
 
-    public GSBolt_ts(int fid, SINKCombo sink) {
+    public WindowedGSBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
 
     }
 
-    public GSBolt_ts(int fid) {
+    public WindowedGSBolt_ts(int fid) {
         super(LOG, fid, null);
 
     }
@@ -50,12 +51,11 @@ public class GSBolt_ts extends GSBolt {
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             boolean flag = event.READ_EVENT();
-//            if (flag) {//read
-//                read_construct(event, txnContext);
-//            } else {
-//                write_construct(event, txnContext);
-//            }
-            RANGE_WRITE_CONSRUCT((MicroEvent) event, txnContext);
+            if (flag) {//read
+                WINDOW_READ_CONSRUCT(event, txnContext);
+            } else {
+                RANGE_WRITE_CONSRUCT(event, txnContext);
+            }
         }
     }
 
@@ -88,14 +88,40 @@ public class GSBolt_ts extends GSBolt {
                     event.success);          //asynchronously return.
         }
         transactionManager.CommitTransaction(txnContext);
-        microEvents.add(event);
+        events.add(event);
+    }
+
+    private void WINDOW_READ_CONSRUCT(MicroEvent event, TxnContext txnContext) throws DatabaseException {
+        SUM sum = new SUM();
+
+        transactionManager.BeginTransaction(txnContext);
+        // multiple operations will be decomposed
+//        for (int i = 0; i < event.Txn_Length; i++) {
+        int NUM_ACCESS = event.TOTAL_NUM_ACCESS;
+        String[] condition_table = new String[NUM_ACCESS];
+        String[] condition_source = new String[NUM_ACCESS];
+        for (int i = 0; i < NUM_ACCESS; i++) {
+            condition_source[i] = String.valueOf(event.getKeys()[i]);
+            condition_table[i] = "MicroTable";
+        }
+        transactionManager.Asy_WindowReadRecords(
+                txnContext,
+                "MicroTable",
+                String.valueOf(event.getKeys()[i]), // src key to write ahead
+                event.getRecord_refs()[i],//to be fill up.
+                sum,
+                condition_table, condition_source,//condition source, condition id.
+                event.success);          //asynchronously return.
+//        }
+        transactionManager.CommitTransaction(txnContext);
+        events.add(event);
     }
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
-        microEvents = new ArrayDeque<>();
+        events = new ArrayDeque<>();
     }
 
     void READ_REQUEST_CORE() throws InterruptedException {
@@ -109,13 +135,13 @@ public class GSBolt_ts extends GSBolt {
 //                END_POST_TIME_MEASURE_ACC(thread_Id);
 //            }
 //        }
-        for (MicroEvent event : microEvents) {
+        for (MicroEvent event : events) {
             READ_CORE(event);
         }
     }
 
     void READ_POST() throws InterruptedException {
-        for (MicroEvent event : microEvents) {
+        for (MicroEvent event : events) {
             READ_POST(event);
         }
     }
@@ -124,7 +150,7 @@ public class GSBolt_ts extends GSBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         if (in.isMarker()) {
-            int num_events = microEvents.size();
+            int num_events = events.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
              */
@@ -142,7 +168,7 @@ public class GSBolt_ts extends GSBolt {
                 }
                 END_POST_TIME_MEASURE_ACC(thread_Id);
                 //all tuples in the holder is finished.
-                microEvents.clear();
+                events.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
         } else {

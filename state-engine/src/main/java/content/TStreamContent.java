@@ -5,8 +5,10 @@ import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public abstract class TStreamContent implements Content {
@@ -101,8 +103,9 @@ public abstract class TStreamContent implements Content {
         Map.Entry<Long, SchemaRecord> entry = versions.lowerEntry(ts);//always get the original (previous) version.
         if (entry != null) {
             record_at_ts = entry.getValue();
-        } else
+        } else {
             record_at_ts = versions.get(ts);//not modified in last round
+        }
         if (record_at_ts == null || record_at_ts.getValues() == null)
             System.out.println("Read a null value??");
         return record_at_ts;
@@ -128,6 +131,23 @@ public abstract class TStreamContent implements Content {
         }
         return record_at_ts;
     }
+
+    @Override
+    public List<SchemaRecord> readPreValuesRange(long ts, long range) {
+
+        long start = ts - range < 0 ? 0 : ts - range;
+
+        ConcurrentNavigableMap<Long, SchemaRecord> schemaRange = versions.tailMap(start);
+
+        //not modified in last round
+        if (schemaRange.size() == 0)
+            System.out.println("Read a null value??");
+
+        assert schemaRange.size() != 0;
+
+        return new ArrayList<>(schemaRange.values());
+    }
+
 
     @Override
     public void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
@@ -187,3 +207,4 @@ public abstract class TStreamContent implements Content {
         throw new UnsupportedOperationException();
     }
 }
+
