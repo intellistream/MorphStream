@@ -3,6 +3,7 @@ package common.bolts.transactional.gsw;
 import combo.SINKCombo;
 import common.bolts.transactional.sl.GlobalSorter;
 import common.param.TxnEvent;
+import common.param.gsw.WindowedMicroEvent;
 import common.param.mb.MicroEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -28,17 +29,17 @@ import static profiler.MeasureTools.*;
 /**
  * Different from OLB, each executor in SStore has an associated partition id.
  */
-public class WindowedGSBolt_sstore extends WindowedGSBolt_LA {
-    private static final Logger LOG = LoggerFactory.getLogger(WindowedGSBolt_sstore.class);
+public class GSWBolt_sstore extends GSWBolt_LA {
+    private static final Logger LOG = LoggerFactory.getLogger(GSWBolt_sstore.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<Tuple> tuples = new ArrayDeque<>();
 
-    public WindowedGSBolt_sstore(int fid, SINKCombo sink) {
+    public GSWBolt_sstore(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
 
     }
 
-    public WindowedGSBolt_sstore(int fid) {
+    public GSWBolt_sstore(int fid) {
         super(LOG, fid, null);
 
     }
@@ -124,7 +125,7 @@ public class WindowedGSBolt_sstore extends WindowedGSBolt_LA {
     @Override
     protected void LAL_PROCESS(long _bid) throws DatabaseException {
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
-        MicroEvent event = (MicroEvent) input_event;
+        WindowedMicroEvent event = (WindowedMicroEvent) input_event;
         int _pid = event.getPid();
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         //ensures that locks are added in the input_event sequence order.

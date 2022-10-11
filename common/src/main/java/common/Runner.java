@@ -21,6 +21,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
     public String application = "StreamLedger";
     //public String application = "GrepSum";
+    //public String application = "WindowedGrepSum";
     //public String application = "OnlineBiding";
     //public String application = "TollProcessing";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
@@ -172,6 +173,9 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
     public Integer Ratio_of_Transaction_Aborts = 0;
 
+    @Parameter(names = {"--window_ratio"}, description = "Ratio of transaction aborts.")
+    public Integer Ratio_of_Window_Reads = 0;
+
     @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
     public Integer Transaction_Length = 1;
 
@@ -218,6 +222,7 @@ public abstract class Runner implements IRunner {
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
+        config.put("Ratio_of_Window_Reads", Ratio_of_Window_Reads);
         config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
         config.put("Transaction_Length", Transaction_Length);
 
@@ -282,6 +287,12 @@ public abstract class Runner implements IRunner {
             case "TollProcessing" :
                 phaseNum = shiftRate * 1;
                 defaultScheduler = "OG_BFS_A";
+                break;
+            case "WindowedGrepSum" :
+                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
+                defaultScheduler = "OP_NS_A";
+                phaseNum = shiftRate * phaseType.length;
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + application);

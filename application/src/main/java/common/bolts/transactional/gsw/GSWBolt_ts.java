@@ -1,8 +1,7 @@
 package common.bolts.transactional.gsw;
 
 import combo.SINKCombo;
-import common.param.TxnEvent;
-import common.param.mb.MicroEvent;
+import common.param.gsw.WindowedMicroEvent;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
@@ -22,19 +21,19 @@ import static common.CONTROL.enable_latency_measurement;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
-public class WindowedGSBolt_ts extends WindowedGSBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(WindowedGSBolt_ts.class);
+public class GSWBolt_ts extends GSWBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(GSWBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     private final double write_useful_time = 556;//write-compute time pre-measured.
-    Collection<MicroEvent> events;
+    Collection<WindowedMicroEvent> events;
     private int writeEvents;
 
-    public WindowedGSBolt_ts(int fid, SINKCombo sink) {
+    public GSWBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
 
     }
 
-    public WindowedGSBolt_ts(int fid) {
+    public GSWBolt_ts(int fid) {
         super(LOG, fid, null);
 
     }
@@ -47,11 +46,11 @@ public class WindowedGSBolt_ts extends WindowedGSBolt {
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            MicroEvent event = (MicroEvent) input_event;
+            WindowedMicroEvent event = (WindowedMicroEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             boolean flag = event.READ_EVENT();
-            if (flag) {//read
+            if (flag) { //read
                 WINDOW_READ_CONSRUCT(event, txnContext);
             } else {
                 RANGE_WRITE_CONSRUCT(event, txnContext);
@@ -59,12 +58,8 @@ public class WindowedGSBolt_ts extends WindowedGSBolt {
         }
     }
 
-    private void RANGE_WRITE_CONSRUCT(MicroEvent event, TxnContext txnContext) throws DatabaseException {
-        SUM sum;
-        if (event.READ_EVENT()) {
-            sum = new SUM(-1);
-        } else
-            sum = new SUM();
+    private void RANGE_WRITE_CONSRUCT(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException {
+        SUM sum = new SUM();
 
         transactionManager.BeginTransaction(txnContext);
         // multiple operations will be decomposed
@@ -91,7 +86,7 @@ public class WindowedGSBolt_ts extends WindowedGSBolt {
         events.add(event);
     }
 
-    private void WINDOW_READ_CONSRUCT(MicroEvent event, TxnContext txnContext) throws DatabaseException {
+    private void WINDOW_READ_CONSRUCT(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException {
         SUM sum = new SUM();
 
         transactionManager.BeginTransaction(txnContext);
@@ -125,23 +120,13 @@ public class WindowedGSBolt_ts extends WindowedGSBolt {
     }
 
     void READ_REQUEST_CORE() throws InterruptedException {
-//        while (!EventsHolder.isEmpty() && !Thread.interrupted()) {
-//            MicroEvent input_event = EventsHolder.remove();
-//            if (!READ_REQUEST_CORE(input_event))
-//                EventsHolder.offer(input_event);
-//            else {
-//                BEGIN_POST_TIME_MEASURE(thread_Id);
-//                BUYING_REQUEST_POST(input_event);
-//                END_POST_TIME_MEASURE_ACC(thread_Id);
-//            }
-//        }
-        for (MicroEvent event : events) {
+        for (WindowedMicroEvent event : events) {
             READ_CORE(event);
         }
     }
 
     void READ_POST() throws InterruptedException {
-        for (MicroEvent event : events) {
+        for (WindowedMicroEvent event : events) {
             READ_POST(event);
         }
     }

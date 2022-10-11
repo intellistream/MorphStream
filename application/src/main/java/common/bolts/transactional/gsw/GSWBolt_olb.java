@@ -6,16 +6,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import transaction.impl.ordered.TxnManagerOrderLockBlocking;
 
-public class WindowedGSBolt_olb extends WindowedGSBolt_LA {
-    private static final Logger LOG = LoggerFactory.getLogger(WindowedGSBolt_olb.class);
+public class GSWBolt_olb extends GSWBolt_LA {
+    private static final Logger LOG = LoggerFactory.getLogger(GSWBolt_olb.class);
     private static final long serialVersionUID = -5968750340131744744L;
 
-    public WindowedGSBolt_olb(int fid, SINKCombo sink) {
+    public GSWBolt_olb(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
 
     }
 
-    public WindowedGSBolt_olb(int fid) {
+    public GSWBolt_olb(int fid) {
         super(LOG, fid, null);
 
     }

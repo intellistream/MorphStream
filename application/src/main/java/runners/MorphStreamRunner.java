@@ -11,10 +11,7 @@ import common.platform.HP_Machine;
 import common.platform.HUAWEI_Machine;
 import common.platform.Platform;
 import common.topology.WordCount;
-import common.topology.transactional.GrepSum;
-import common.topology.transactional.OnlineBiding;
-import common.topology.transactional.StreamLedger;
-import common.topology.transactional.TollProcessing;
+import common.topology.transactional.*;
 import components.Topology;
 import components.TopologyComponent;
 import components.exception.UnhandledCaseException;
@@ -59,6 +56,7 @@ public class MorphStreamRunner extends Runner {
 
         //Transactional Application
         driver.addApp("GrepSum", GrepSum.class);//GS
+        driver.addApp("WindowedGrepSum", WindowedGrepSum.class);//GS
         driver.addApp("StreamLedger", StreamLedger.class);//SL
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP
@@ -118,6 +116,12 @@ public class MorphStreamRunner extends Runner {
             switch (application) {
                 case "GrepSum": {
                     config.put("app", 0);
+                    int threads = Math.max(1, (int) Math.floor((tthread)));
+                    config.put(GrepSumConstants.Conf.Executor_Threads, threads);
+                    break;
+                }
+                case "WindowedGrepSum": {
+                    config.put("app", 4);
                     int threads = Math.max(1, (int) Math.floor((tthread)));
                     config.put(GrepSumConstants.Conf.Executor_Threads, threads);
                     break;
@@ -296,7 +300,18 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
-                } else
+                } else if (config.getString("common").equals("WindowedGrepSum")) {
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("Ratio_of_Multiple_State_Access"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Window_Reads"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                }  else
                     throw new UnsupportedOperationException();
                 File file = new File(statsFolderPath);
                 log.info("Dumping stats to...");

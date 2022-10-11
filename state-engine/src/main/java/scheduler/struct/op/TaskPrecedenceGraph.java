@@ -94,7 +94,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.put("segment_cnt",new TableOCs(totalThreads,offset));
         } else if (app == 3) {//OB
             operationChains.put("goods",new TableOCs(totalThreads,offset));
-        }
+        } else if (app == 4) {//OB
+            operationChains.put("MicroTable", new TableOCs(totalThreads,offset));
+        } else
+            throw new UnsupportedOperationException();
     }
 
     /**
@@ -137,7 +140,12 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 OperationChain gsOC = context.createTask("goods", _key);
                 operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);
-            }
+            } else if (app == 4) {
+                OperationChain gsOC = context.createTask("MicroTable", _key);
+                operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
+                ocs.add(gsOC);
+            } else
+                throw new UnsupportedOperationException();
         }
         threadToOCs.put(context.thisThreadId, ocs);
     }

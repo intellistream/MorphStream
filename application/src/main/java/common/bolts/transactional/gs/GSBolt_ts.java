@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
-import transaction.function.Condition;
 import transaction.function.SUM;
 import transaction.impl.ordered.TxnManagerTStream;
 
@@ -49,7 +48,7 @@ public class GSBolt_ts extends GSBolt {
             MicroEvent event = (MicroEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            boolean flag = event.READ_EVENT();
+            boolean flag = event.ABORT_EVENT();
 //            if (flag) {//read
 //                read_construct(event, txnContext);
 //            } else {
@@ -61,7 +60,7 @@ public class GSBolt_ts extends GSBolt {
 
     private void RANGE_WRITE_CONSRUCT(MicroEvent event, TxnContext txnContext) throws DatabaseException {
         SUM sum;
-        if (event.READ_EVENT()) {
+        if (event.ABORT_EVENT()) {
             sum = new SUM(-1);
         } else
             sum = new SUM();

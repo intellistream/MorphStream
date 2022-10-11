@@ -1,7 +1,7 @@
 package common.bolts.transactional.gsw;
 
 import combo.SINKCombo;
-import common.param.mb.MicroEvent;
+import common.param.gsw.WindowedMicroEvent;
 import components.operators.api.TransactionalBolt;
 import content.common.CommonMetaTypes;
 import db.DatabaseException;
@@ -21,10 +21,10 @@ import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
-public abstract class WindowedGSBolt extends TransactionalBolt {
+public abstract class GSWBolt extends TransactionalBolt {
     public SINKCombo sink;
 
-    public WindowedGSBolt(Logger log, int fid, SINKCombo sink) {
+    public GSWBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
         this.configPrefix = "gs";
@@ -34,7 +34,7 @@ public abstract class WindowedGSBolt extends TransactionalBolt {
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
 
-    protected boolean READ_CORE(MicroEvent event) {
+    protected boolean READ_CORE(WindowedMicroEvent event) {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             SchemaRecordRef ref = event.getRecord_refs()[i];
             if (ref.isEmpty()) {
@@ -48,7 +48,7 @@ public abstract class WindowedGSBolt extends TransactionalBolt {
     }
 
     //    volatile int com_result = 0;
-    protected void READ_POST(MicroEvent event) throws InterruptedException {
+    protected void READ_POST(WindowedMicroEvent event) throws InterruptedException {
         int sum = 0;
         if (POST_COMPUTE_COMPLEXITY != 0) {
             for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
@@ -74,7 +74,7 @@ public abstract class WindowedGSBolt extends TransactionalBolt {
         sum = 0;
     }
 
-    protected void WRITE_POST(MicroEvent event) throws InterruptedException {
+    protected void WRITE_POST(WindowedMicroEvent event) throws InterruptedException {
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {
@@ -84,7 +84,7 @@ public abstract class WindowedGSBolt extends TransactionalBolt {
         }
     }
 
-    protected void WRITE_CORE(MicroEvent event) {
+    protected void WRITE_CORE(WindowedMicroEvent event) {
 //        long start = System.nanoTime();
         long sum = 0;
         DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
@@ -104,19 +104,19 @@ public abstract class WindowedGSBolt extends TransactionalBolt {
         TargetValue_value.setLong(sum);
     }
 
-    protected void READ_LOCK_AHEAD(MicroEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void READ_LOCK_AHEAD(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_ONLY);
     }
 
-    protected void WRITE_LOCK_AHEAD(MicroEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void WRITE_LOCK_AHEAD(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_WRITE);
     }
 
-    private boolean process_request_noLock(MicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
+    private boolean process_request_noLock(WindowedMicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             boolean rt = transactionManager.SelectKeyRecord_noLock(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
@@ -129,7 +129,7 @@ public abstract class WindowedGSBolt extends TransactionalBolt {
         return false;
     }
 
-    private boolean process_request(MicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
+    private boolean process_request(WindowedMicroEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             boolean rt = transactionManager.SelectKeyRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
             if (rt) {
@@ -141,19 +141,19 @@ public abstract class WindowedGSBolt extends TransactionalBolt {
         return false;
     }
 
-    protected boolean read_request_noLock(MicroEvent event, TxnContext txnContext) throws DatabaseException {
+    protected boolean read_request_noLock(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, READ_ONLY);
     }
 
-    protected boolean write_request_noLock(MicroEvent event, TxnContext txnContext) throws DatabaseException {
+    protected boolean write_request_noLock(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, READ_WRITE);
     }
 
-    protected boolean read_request(MicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected boolean read_request(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         return !process_request(event, txnContext, READ_ONLY);
     }
 
-    protected boolean write_request(MicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected boolean write_request(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         return !process_request(event, txnContext, READ_WRITE);
     }
 
@@ -166,7 +166,7 @@ public abstract class WindowedGSBolt extends TransactionalBolt {
     protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            MicroEvent event = (MicroEvent) input_event;
+            WindowedMicroEvent event = (WindowedMicroEvent) input_event;
             (event).setTimestamp(timestamp);
             boolean flag = event.READ_EVENT();
             if (flag) {//read

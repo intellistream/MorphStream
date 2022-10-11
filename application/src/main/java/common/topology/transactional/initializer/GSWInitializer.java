@@ -6,10 +6,14 @@ import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGenerator;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDynamicDataGenerator;
+import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.GSWTPGDataGenerator;
+import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.GSWTPGDataGeneratorConfig;
+import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.GSWTPGDynamicDataGenerator;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
+import common.param.gsw.WindowedMicroEvent;
 import common.param.mb.MicroEvent;
 import db.Database;
 import db.DatabaseException;
@@ -39,8 +43,8 @@ import static common.Constants.Event_Path;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
 
-public class GSInitializer extends TableInitilizer {
-    private static final Logger LOG = LoggerFactory.getLogger(GSInitializer.class);
+public class GSWInitializer extends TableInitilizer {
+    private static final Logger LOG = LoggerFactory.getLogger(GSWInitializer.class);
     private final int numberOfStates;
     private final int startingValue = 10000;
     //different R-W ratio.
@@ -55,7 +59,7 @@ public class GSInitializer extends TableInitilizer {
     private final int Transaction_Length;
 
 
-    public GSInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
+    public GSWInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
         this.dataRootPath = config.getString("rootFilePath");
@@ -75,13 +79,13 @@ public class GSInitializer extends TableInitilizer {
             DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
-            dataGenerator = new GSTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
+            dataGenerator = new GSWTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
         }else {
-            GSTPGDataGeneratorConfig dataConfig = new GSTPGDataGeneratorConfig();
+            GSWTPGDataGeneratorConfig dataConfig = new GSWTPGDataGeneratorConfig();
             dataConfig.initialize(config);
 
             configurePath(dataConfig);
-            dataGenerator = new GSTPGDataGenerator(dataConfig);
+            dataGenerator = new GSWTPGDataGenerator(dataConfig);
         }
     }
     /**
@@ -102,17 +106,17 @@ public class GSInitializer extends TableInitilizer {
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
-            if (dataConfig instanceof GSTPGDataGeneratorConfig)
+            if (dataConfig instanceof GSWTPGDataGeneratorConfig)
             bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%d_%s",
                             dataConfig.getTotalThreads(),
                             dataConfig.getTotalEvents(),
                             dataConfig.getnKeyStates(),
-                            ((GSTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
-                            ((GSTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
-                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
-                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
-                            ((GSTPGDataGeneratorConfig) dataConfig).Transaction_Length,
-                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
+                            ((GSWTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
+                            ((GSWTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
+                            ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
+                            ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Window_Reads,
+                            ((GSWTPGDataGeneratorConfig) dataConfig).Transaction_Length,
+                            ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
                             AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
             else
@@ -155,33 +159,6 @@ public class GSInitializer extends TableInitilizer {
         return new SchemaRecord(values);
     }
 
-//    /**
-//     * "INSERT INTO MicroTable (key, value_list) VALUES (?, ?);"
-//     */
-//    private void insertMicroRecord(int key, String value, int pid, SpinLock[] spinlock_) {
-//        List<DataBox> values = new ArrayList<>();
-//        values.add(new IntDataBox(key));
-//        values.add(new StringDataBox(value, value.length()));
-//        SchemaRecord schemaRecord = new SchemaRecord(values);
-//        try {
-//            db.InsertRecord("MicroTable", new TableRecord(schemaRecord, pid, spinlock_));
-//        } catch (DatabaseException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void insertMicroRecord(int key, String value) {
-//        List<DataBox> values = new ArrayList<>();
-//        values.add(new IntDataBox(key));
-//        values.add(new StringDataBox(value, value.length()));
-//        SchemaRecord schemaRecord = new SchemaRecord(values);
-//        try {
-//            db.InsertRecord("MicroTable", new TableRecord(schemaRecord));
-//        } catch (DatabaseException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
     @Override
     public void loadDB(int thread_id, int NUM_TASK) {
         loadDB(thread_id, null, NUM_TASK);
@@ -209,44 +186,6 @@ public class GSInitializer extends TableInitilizer {
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
-//    @Override
-//    public void loadDB(int thread_id, int NUMTasks) {
-//        int partition_interval = getPartition_interval();
-//        int left_bound = thread_id * partition_interval;
-//        int right_bound;
-//        if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
-//            right_bound = NUM_ITEMS;
-//        } else {
-//            right_bound = (thread_id + 1) * partition_interval;
-//        }
-//        for (int key = left_bound; key < right_bound; key++) {
-//            String value = GenerateValue(key);
-//            assert value.length() == VALUE_LEN;
-//            insertMicroRecord(key, value);
-//        }
-//        if (enable_log)
-//            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
-//    }
-//
-//    @Override
-//    public void loadDB(int thread_id, SpinLock[] spinlock_, int NUMTasks) {
-//        int partition_interval = getPartition_interval();
-//        int left_bound = thread_id * partition_interval;
-//        int right_bound;
-//        if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
-//            right_bound = NUM_ITEMS;
-//        } else {
-//            right_bound = (thread_id + 1) * partition_interval;
-//        }
-//        for (int key = left_bound; key < right_bound; key++) {
-//            int pid = get_pid(partition_interval, key);
-//            String value = GenerateValue(key);
-//            assert value.length() == VALUE_LEN;
-//            insertMicroRecord(key, value, pid, spinlock_);
-//        }
-//        if (enable_log)
-//            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
-//    }
 
     @Override
     public void loadDB(SchedulerContext context, int thread_id, int NUMTasks) {
@@ -286,12 +225,12 @@ public class GSInitializer extends TableInitilizer {
         if (file.exists()) {
             if (enable_log) LOG.info("Reading transfer events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-            loadMicroEvents(reader, totalEvents, shufflingActive, p_bids);
+            loadWindowedMicroEvents(reader, totalEvents, shufflingActive, p_bids);
             reader.close();
         }
     }
 
-    private void loadMicroEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException  {
+    private void loadWindowedMicroEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
         String txn = reader.readLine();
         int count = 0;
 //        int p_bids[] = new int[tthread];
@@ -308,7 +247,7 @@ public class GSInitializer extends TableInitilizer {
             }
 
             // construct event
-            MicroEvent event = new MicroEvent(
+            WindowedMicroEvent event = new WindowedMicroEvent(
                     Integer.parseInt(split[0]), //bid,
                     npid, //pid
                     Arrays.toString(p_bids), //bid_array

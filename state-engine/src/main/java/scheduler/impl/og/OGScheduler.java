@@ -436,7 +436,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                         request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext, null);
                 break;
             case WINDOWED_READ_ONLY:
-                WindowDescriptor windowContext = new WindowDescriptor(true, 5); // TODO: hard coded this part, to be improved later.
+                WindowDescriptor windowContext = new WindowDescriptor(true, 1); // TODO: hard coded this part, to be improved later.
                 set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, request.condition_records, request.condition,
                         request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext, windowContext);
                 break;

@@ -66,7 +66,7 @@ public class GSBolt_Locks extends GSBolt {
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             MicroEvent event = (MicroEvent) input_event;
-            boolean flag = event.READ_EVENT();
+            boolean flag = event.ABORT_EVENT();
             if (flag) {
                 read_txn_process(event, i, _bid);
             } else {

@@ -1,7 +1,7 @@
 package common.bolts.transactional.gsw;
 
 import combo.SINKCombo;
-import common.param.mb.MicroEvent;
+import common.param.gsw.WindowedMicroEvent;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import org.slf4j.Logger;
@@ -14,21 +14,21 @@ import static profiler.MeasureTools.END_ACCESS_TIME_MEASURE_ACC;
 /**
  * Combine Read-Write for nocc.
  */
-public class WindowedGSBolt_nocc extends WindowedGSBolt_Locks {
-    private static final Logger LOG = LoggerFactory.getLogger(WindowedGSBolt_nocc.class);
+public class GSWBolt_nocc extends GSWBolt_Locks {
+    private static final Logger LOG = LoggerFactory.getLogger(GSWBolt_nocc.class);
     private static final long serialVersionUID = -5968750340131744744L;
 
-    public WindowedGSBolt_nocc(int fid, SINKCombo sink) {
+    public GSWBolt_nocc(int fid, SINKCombo sink) {
         super(fid, sink);
     }
 
     //constructor without compose everything together.
-    public WindowedGSBolt_nocc(int fid) {
+    public GSWBolt_nocc(int fid) {
         super(fid, null);
     }
 
     @Override
-    protected void write_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void write_txn_process(WindowedMicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         write_request(event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         WRITE_CORE(event);
@@ -37,7 +37,7 @@ public class WindowedGSBolt_nocc extends WindowedGSBolt_Locks {
     }
 
     @Override
-    protected void read_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void read_txn_process(WindowedMicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         read_request(event, txn_context[(int) (i - _bid)]);//always success..
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         READ_CORE(event);

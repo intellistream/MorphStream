@@ -14,7 +14,7 @@ public abstract class GSBolt_LA extends GSBolt {
     }
 
     protected void LAL(MicroEvent event, long i, long _bid) throws DatabaseException {
-        boolean flag = event.READ_EVENT();
+        boolean flag = event.ABORT_EVENT();
         if (flag) {//read
             READ_LOCK_AHEAD(event, txn_context[(int) (i - _bid)]);
         } else {
@@ -41,7 +41,7 @@ public abstract class GSBolt_LA extends GSBolt {
         //txn process phase.
         for (long i = _bid; i < _bid + _combo_bid_size; i++) {
             MicroEvent event = (MicroEvent) input_event;
-            boolean flag = event.READ_EVENT();
+            boolean flag = event.ABORT_EVENT();
             if (flag) {//read
                 read_request_noLock(event, txn_context[(int) (i - _bid)]);
                 BEGIN_ACCESS_TIME_MEASURE(thread_Id);

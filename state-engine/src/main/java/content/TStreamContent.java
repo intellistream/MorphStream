@@ -141,9 +141,9 @@ public abstract class TStreamContent implements Content {
 
         //not modified in last round
         if (schemaRange.size() == 0)
-            System.out.println("Read a null value??");
+            System.out.println("Empty window");
 
-        assert schemaRange.size() != 0;
+//        assert schemaRange.size() != 0;
 
         return new ArrayList<>(schemaRange.values());
     }

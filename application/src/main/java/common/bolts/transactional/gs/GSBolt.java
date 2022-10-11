@@ -168,7 +168,7 @@ public abstract class GSBolt extends TransactionalBolt {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             MicroEvent event = (MicroEvent) input_event;
             (event).setTimestamp(timestamp);
-            boolean flag = event.READ_EVENT();
+            boolean flag = event.ABORT_EVENT();
             if (flag) {//read
                 READ_POST(event);
             } else {

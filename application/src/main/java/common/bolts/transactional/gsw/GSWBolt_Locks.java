@@ -1,7 +1,7 @@
 package common.bolts.transactional.gsw;
 
 import combo.SINKCombo;
-import common.param.mb.MicroEvent;
+import common.param.gsw.WindowedMicroEvent;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
@@ -15,15 +15,15 @@ import static profiler.MeasureTools.*;
 /**
  * Combine Read-Write for nocc.
  */
-public class WindowedGSBolt_Locks extends WindowedGSBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(WindowedGSBolt_Locks.class);
+public class GSWBolt_Locks extends GSWBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(GSWBolt_Locks.class);
     private static final long serialVersionUID = -5968750340131744744L;
 
-    public WindowedGSBolt_Locks(int fid, SINKCombo sink) {
+    public GSWBolt_Locks(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
     }
 
-    protected void write_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void write_txn_process(WindowedMicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
         boolean success = write_request(event, txn_context[(int) (i - _bid)]);
         if (success) {
@@ -43,7 +43,7 @@ public class WindowedGSBolt_Locks extends WindowedGSBolt {
         }
     }
 
-    protected void read_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void read_txn_process(WindowedMicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         boolean success = read_request(event, txn_context[(int) (i - _bid)]);
         if (success) {
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
@@ -65,7 +65,7 @@ public class WindowedGSBolt_Locks extends WindowedGSBolt {
     @Override
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            MicroEvent event = (MicroEvent) input_event;
+            WindowedMicroEvent event = (WindowedMicroEvent) input_event;
             boolean flag = event.READ_EVENT();
             if (flag) {
                 read_txn_process(event, i, _bid);

@@ -1,4 +1,4 @@
-package common.param.mb;
+package common.param.gsw;
 
 import common.param.TxnEvent;
 import org.apache.commons.lang.StringUtils;
@@ -17,10 +17,10 @@ import static profiler.Metrics.NUM_ACCESSES;
 /**
  * Support Multi workset since 1 SEP 2018.
  */
-public class MicroEvent extends TxnEvent {
+public class WindowedMicroEvent extends TxnEvent {
     private final SchemaRecordRef[] record_refs;//this is essentially the place-holder..
     private final int[] keys;
-    private final boolean abortFlag; // whether to abort the event
+    private final boolean readFlag;//true: read, false: write.
     public int sum;
     public int TOTAL_NUM_ACCESS;
     public int Txn_Length;
@@ -35,10 +35,10 @@ public class MicroEvent extends TxnEvent {
      * @param flag
      * @param numAccess
      */
-    public MicroEvent(int[] keys, boolean flag, int numAccess, long bid
+    public WindowedMicroEvent(int[] keys, boolean flag, int numAccess, long bid
             , int partition_id, long[] bid_array, int number_of_partitions) {
         super(bid, partition_id, bid_array, number_of_partitions);
-        this.abortFlag = flag;
+        this.readFlag = flag;
         this.keys = keys;
         record_refs = new SchemaRecordRef[numAccess];
         for (int i = 0; i < numAccess; i++) {
@@ -57,14 +57,14 @@ public class MicroEvent extends TxnEvent {
      * @param num_of_partition
      * @param key_array
      */
-    public MicroEvent(int bid, int pid, String bid_array, int num_of_partition,
-                      String key_array, boolean flag) {
+    public WindowedMicroEvent(int bid, int pid, String bid_array, int num_of_partition,
+                              String key_array, boolean flag) {
         super(bid, pid, bid_array, num_of_partition);
         record_refs = new SchemaRecordRef[NUM_ACCESSES];
         for (int i = 0; i < NUM_ACCESSES; i++) {
             record_refs[i] = new SchemaRecordRef();
         }
-        this.abortFlag = flag;
+        this.readFlag = flag;
         String[] key_arrays = key_array.substring(1, key_array.length() - 1).split(",");
         this.keys = new int[key_arrays.length];
         for (int i = 0; i < key_arrays.length; i++) {
@@ -73,8 +73,8 @@ public class MicroEvent extends TxnEvent {
         setValues(keys);
     }
 
-    public MicroEvent(int bid, int pid, String bid_array, String partition_index, int num_of_partition,
-                      String key_array, int TOTAL_NUM_ACCESS, boolean flag) {
+    public WindowedMicroEvent(int bid, int pid, String bid_array, String partition_index, int num_of_partition,
+                              String key_array, int TOTAL_NUM_ACCESS, boolean flag) {
         super(bid, pid, bid_array, partition_index, num_of_partition);
         this.TOTAL_NUM_ACCESS = TOTAL_NUM_ACCESS;
         result = new int[TOTAL_NUM_ACCESS];
@@ -82,7 +82,7 @@ public class MicroEvent extends TxnEvent {
         for (int i = 0; i < TOTAL_NUM_ACCESS; i++) {
             record_refs[i] = new SchemaRecordRef();
         }
-        this.abortFlag = flag;
+        this.readFlag = flag;
         String[] key_arrays = key_array.substring(1, key_array.length() - 1).split(",");
         this.keys = new int[key_arrays.length];
         for (int i = 0; i < key_arrays.length; i++) {
@@ -92,8 +92,8 @@ public class MicroEvent extends TxnEvent {
     }
 
 
-    public MicroEvent(int bid, int pid, String bid_array, String partition_index, int num_of_partition,
-                      String key_array, int TOTAL_NUM_ACCESS, int Transaction_Length, boolean abortFlag) {
+    public WindowedMicroEvent(int bid, int pid, String bid_array, String partition_index, int num_of_partition,
+                              String key_array, int TOTAL_NUM_ACCESS, int Transaction_Length, boolean readFlag) {
         super(bid, pid, bid_array, partition_index, num_of_partition);
         this.TOTAL_NUM_ACCESS = TOTAL_NUM_ACCESS;
         Txn_Length = Transaction_Length;
@@ -102,7 +102,7 @@ public class MicroEvent extends TxnEvent {
         for (int i = 0; i < TOTAL_NUM_ACCESS; i++) {
             record_refs[i] = new SchemaRecordRef();
         }
-        this.abortFlag = abortFlag;
+        this.readFlag = readFlag;
         String[] key_arrays = key_array.substring(1, key_array.length() - 1).split(",");
         this.keys = new int[key_arrays.length];
         for (int i = 0; i < key_arrays.length; i++) {
@@ -139,8 +139,8 @@ public class MicroEvent extends TxnEvent {
         return record_refs;
     }
 
-    public boolean ABORT_EVENT() {
-        return abortFlag;
+    public boolean READ_EVENT() {
+        return readFlag;
     }
 
     private void set_values(int access_id, int key) {
@@ -150,9 +150,9 @@ public class MicroEvent extends TxnEvent {
         value[access_id] = values;
     }
 
-    public MicroEvent cloneEvent() {
-        return new MicroEvent((int) bid, pid,
+    public WindowedMicroEvent cloneEvent() {
+        return new WindowedMicroEvent((int) bid, pid,
                 Arrays.toString(bid_array), Arrays.toString(partition_indexs),
-                number_of_partitions, Arrays.toString(keys), TOTAL_NUM_ACCESS, Txn_Length, abortFlag);
+                number_of_partitions, Arrays.toString(keys), TOTAL_NUM_ACCESS, Txn_Length, readFlag);
     }
 }

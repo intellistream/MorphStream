@@ -1,7 +1,6 @@
 package combo;
 
 import benchmark.DataHolder;
-import common.bolts.transactional.gs.*;
 import common.bolts.transactional.gsw.*;
 import common.collections.Configuration;
 import common.param.TxnEvent;
@@ -17,8 +16,8 @@ import java.util.ArrayDeque;
 import static common.CONTROL.*;
 import static content.Content.*;
 
-public class WindowedGSCombo extends SPOUTCombo {
-    private static final Logger LOG = LoggerFactory.getLogger(WindowedGSCombo.class);
+public class GSWCombo extends SPOUTCombo {
+    private static final Logger LOG = LoggerFactory.getLogger(GSWCombo.class);
     private static final long serialVersionUID = -2394340130331865581L;
     int concurrency = 0;
     int pre_concurrency = 0;
@@ -26,7 +25,7 @@ public class WindowedGSCombo extends SPOUTCombo {
     int cnt = 0;
     ArrayDeque<MicroEvent> prevents = new ArrayDeque<>();
 
-    public WindowedGSCombo() {
+    public GSWCombo() {
         super(LOG, 0);
     }
 
@@ -107,23 +106,23 @@ public class WindowedGSCombo extends SPOUTCombo {
         sink.prepare(config, context, collector);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_LOCK: {//no-order
-                bolt = new WindowedGSBolt_nocc(0, sink);
+                bolt = new GSWBolt_nocc(0, sink);
                 break;
             }
             case CCOption_OrderLOCK: {//LOB
-                bolt = new WindowedGSBolt_olb(0, sink);
+                bolt = new GSWBolt_olb(0, sink);
                 break;
             }
             case CCOption_LWM: {//LWM
-                bolt = new WindowedGSBolt_lwm(0, sink);
+                bolt = new GSWBolt_lwm(0, sink);
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                bolt = new WindowedGSBolt_ts(0, sink);
+                bolt = new GSWBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
-                bolt = new WindowedGSBolt_sstore(0, sink);
+                bolt = new GSWBolt_sstore(0, sink);
                 break;
             }
 
