@@ -2,7 +2,7 @@
 
 function ResetParameters() {
   app="WindowedGrepSum"
-  NUM_ITEMS=122880
+  NUM_ITEMS=12288
   NUM_ACCESS=2
   checkpointInterval=10240
   tthread=24
@@ -10,18 +10,18 @@ function ResetParameters() {
   deposit_ratio=25
   key_skewness=0
   overlap_ratio=0
-  abort_ratio=0
-  window_ratio=1
+  window_trigger_period=1024
   window_size=1024
   CCOption=3 #TSTREAM
   complexity=10000
-  isCyclic=1
+  isCyclic=0
+  rootFilePath="/home/myc/data"
 }
 
 function runTStream() {
-  totalEvents=`expr $checkpointInterval \* $tthread`
+  totalEvents=`expr $checkpointInterval \* $tthread \* 10`
   # NUM_ITEMS=`expr $totalEvents`
-  echo "java -Xms100g -Xmx100g -jar -d64 application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms16g -Xmx16g -jar -d64 application-0.0.2-jar-with-dependencies.jar \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --NUM_ACCESS $NUM_ACCESS \
@@ -32,12 +32,13 @@ function runTStream() {
           --deposit_ratio $deposit_ratio \
           --key_skewness $key_skewness \
           --overlap_ratio $overlap_ratio \
-          --window_ratio $window_ratio \
+          --window_trigger_period $window_trigger_period \
           --window_size $window_size \
           --CCOption $CCOption \
           --complexity $complexity \
-          --isCyclic $isCyclic"
-  java -Xms100g -Xmx100g -Xss100M -jar -d64 application-0.0.2-jar-with-dependencies.jar \
+          --isCyclic $isCyclic
+          --rootFilePath $rootFilePath"
+  java -Xms16g -Xmx16g -Xss100M -jar -d64 application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --NUM_ACCESS $NUM_ACCESS \
@@ -48,12 +49,24 @@ function runTStream() {
     --deposit_ratio $deposit_ratio \
     --key_skewness $key_skewness \
     --overlap_ratio $overlap_ratio \
-    --window_ratio $window_ratio \
+    --window_trigger_period $window_trigger_period \
     --window_size $window_size \
     --CCOption $CCOption \
     --complexity $complexity \
-    --isCyclic $isCyclic
+    --isCyclic $isCyclic \
+    --rootFilePath $rootFilePath
 }
 
 
-runTStream
+
+ResetParameters
+for window_size in 128 1024 10240
+do
+  runTStream
+done
+
+ResetParameters
+for window_trigger_period in 10 100 1000 10000
+do
+  runTStream
+done
