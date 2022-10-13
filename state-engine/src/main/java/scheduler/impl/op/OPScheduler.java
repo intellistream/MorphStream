@@ -170,7 +170,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             if (operation.success[0] == success) {
                 operation.isFailed = true;
             }
-        }else {
+        } else {
             throw new UnsupportedOperationException();
         }
 
@@ -355,7 +355,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                             request.d_record, request.record_ref, request.function, null, null, null);
                     break;
                 case WINDOWED_READ_ONLY:
-                    WindowDescriptor windowContext = new WindowDescriptor(true, 1);
+                    WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success, windowContext);
                     break;

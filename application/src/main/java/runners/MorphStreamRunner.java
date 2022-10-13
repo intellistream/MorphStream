@@ -56,7 +56,7 @@ public class MorphStreamRunner extends Runner {
 
         //Transactional Application
         driver.addApp("GrepSum", GrepSum.class);//GS
-        driver.addApp("WindowedGrepSum", WindowedGrepSum.class);//GS
+        driver.addApp("WindowedGrepSum", WindowedGrepSum.class);//G
         driver.addApp("StreamLedger", StreamLedger.class);//SL
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP

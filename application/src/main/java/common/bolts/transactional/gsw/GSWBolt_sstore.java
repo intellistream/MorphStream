@@ -93,8 +93,8 @@ public class GSWBolt_sstore extends GSWBolt_LA {
             int[] p_bids = new int[(int) tthread];
             HashMap<Integer, Integer> pids = new HashMap<>();
             for (TxnEvent event : GlobalSorter.sortedEvents) {
-                if (event instanceof MicroEvent) {
-                    parseMicroEvent(partitionOffset, (MicroEvent) event, pids);
+                if (event instanceof WindowedMicroEvent) {
+                    parseMicroEvent(partitionOffset, (WindowedMicroEvent) event, pids);
                     event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
                     pids.replaceAll((k, v) -> p_bids[k]++);
                 } else {
@@ -107,7 +107,7 @@ public class GSWBolt_sstore extends GSWBolt_LA {
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
 
-    private void parseMicroEvent(int partitionOffset, MicroEvent event, HashMap<Integer, Integer> pids) {
+    private void parseMicroEvent(int partitionOffset, WindowedMicroEvent event, HashMap<Integer, Integer> pids) {
         for (int key : event.getKeys()) {
             pids.put(key / partitionOffset, 0);
         }

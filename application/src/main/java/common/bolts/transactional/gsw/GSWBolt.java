@@ -42,7 +42,7 @@ public abstract class GSWBolt extends TransactionalBolt {
             }
             DataBox dataBox = ref.getRecord().getValues().get(1);
             int read_result = Integer.parseInt(dataBox.getString().trim());
-            event.result[i] = read_result;
+            event.result.add(read_result);
         }
         return true;
     }
@@ -52,7 +52,7 @@ public abstract class GSWBolt extends TransactionalBolt {
         int sum = 0;
         if (POST_COMPUTE_COMPLEXITY != 0) {
             for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
-                sum += event.result[i];
+                sum += event.result.get(i);
             }
             for (int j = 0; j < POST_COMPUTE_COMPLEXITY; ++j)
                 sum += System.nanoTime();

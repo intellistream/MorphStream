@@ -12,6 +12,7 @@ function ResetParameters() {
   overlap_ratio=0
   abort_ratio=0
   window_ratio=1
+  window_size=1024
   CCOption=3 #TSTREAM
   complexity=10000
   isCyclic=1
@@ -32,6 +33,7 @@ function runTStream() {
           --key_skewness $key_skewness \
           --overlap_ratio $overlap_ratio \
           --window_ratio $window_ratio \
+          --window_size $window_size \
           --CCOption $CCOption \
           --complexity $complexity \
           --isCyclic $isCyclic"
@@ -47,6 +49,7 @@ function runTStream() {
     --key_skewness $key_skewness \
     --overlap_ratio $overlap_ratio \
     --window_ratio $window_ratio \
+    --window_size $window_size \
     --CCOption $CCOption \
     --complexity $complexity \
     --isCyclic $isCyclic

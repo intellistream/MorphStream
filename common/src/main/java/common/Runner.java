@@ -173,8 +173,11 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
     public Integer Ratio_of_Transaction_Aborts = 0;
 
-    @Parameter(names = {"--window_ratio"}, description = "Ratio of transaction aborts.")
+    @Parameter(names = {"--window_ratio"}, description = "Ratio of window events in the transaction.")
     public Integer Ratio_of_Window_Reads = 0;
+
+    @Parameter(names = {"--window_size"}, description = "Window Size for the window operations.")
+    public Integer windowSize = 1024;
 
     @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
     public Integer Transaction_Length = 1;
@@ -233,6 +236,7 @@ public abstract class Runner implements IRunner {
             config.put("isCyclic", false);
         }
         config.put("complexity", complexity);
+        config.put("windowSize", windowSize);
 
         if (CCOption == 4)//S-Store enabled.
             config.put("partition", true);

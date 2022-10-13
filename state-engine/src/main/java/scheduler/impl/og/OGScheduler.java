@@ -7,6 +7,7 @@ import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.og.OGSchedulerContext;
 import scheduler.impl.IScheduler;
+import scheduler.struct.AbstractOperation;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.og.TaskPrecedenceGraph;
@@ -183,6 +184,37 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         }
     }
 
+    protected void Windowed_GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
+        int keysLength = operation.condition_records.length;
+
+        long sum = 0;
+
+        // apply function
+        AppConfig.randomDelay();
+
+        for (int i = 0; i < keysLength; i++) {
+            assert operation.windowContext.isWindowed();
+            List<SchemaRecord> schemaRecordRange = operation.condition_records[i].content_.readPreValuesRange(operation.bid, operation.windowContext.getRange());
+            sum += schemaRecordRange.stream().mapToLong(schemaRecord -> schemaRecord.getValues().get(1).getLong()).sum();
+        }
+
+        sum /= keysLength;
+
+        if (operation.function.delta_long != -1) { // TODO: we use the d_record to store the aggregated result here, will be optimized in the future.
+            // read
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+            if (operation.function instanceof SUM) {
+                tempo_record.getValues().get(1).setLong(sum);//compute.
+            } else
+                throw new UnsupportedOperationException();
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+        }
+    }
+
     /**
      * general operation execution entry method for all schedulers.
      *
@@ -277,6 +309,16 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             //OB-Alert
             AppConfig.randomDelay();
             operation.d_record.record_.getValues().get(1).setLong(operation.value);
+        } else if (operation.accessType.equals(WINDOWED_READ_ONLY)) {
+            assert operation.record_ref != null;
+            success = operation.success[0];
+            AppConfig.randomDelay();
+            Windowed_GrepSum_Fun(operation, mark_ID, clean);
+            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            // operation success check, number of operation succeeded does not increase after execution
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
         } else {
             throw new UnsupportedOperationException();
         }
@@ -436,7 +478,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                         request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext, null);
                 break;
             case WINDOWED_READ_ONLY:
-                WindowDescriptor windowContext = new WindowDescriptor(true, 1); // TODO: hard coded this part, to be improved later.
+                WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
                 set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, request.condition_records, request.condition,
                         request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext, windowContext);
                 break;

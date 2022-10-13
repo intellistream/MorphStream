@@ -160,7 +160,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 3){
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        }
+        } else if (app == 4){
+            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else
+            throw new UnsupportedOperationException();
     }
 
     public TableOCs getTableOCs(String table_name) {

@@ -44,6 +44,7 @@ public class TopologySubmitter {
         }
         // initialize AppConfig
         AppConfig.complexity = conf.getInt("complexity", 100000);
+        AppConfig.windowSize = conf.getInt("windowSize", 1024);
         AppConfig.isCyclic = conf.getBoolean("isCyclic", true);
         //launch
         OM = new OptimizationManager(g, conf);//support different kinds of optimization module.

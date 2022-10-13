@@ -102,8 +102,8 @@ public class GSWBolt_ts extends GSWBolt {
         transactionManager.Asy_WindowReadRecords(
                 txnContext,
                 "MicroTable",
-                String.valueOf(event.getKeys()[i]), // src key to write ahead
-                event.getRecord_refs()[i],//to be fill up.
+                String.valueOf(event.getKeys()[0]), // src key to write ahead
+                event.getRecord_refs()[0],//to be fill up.
                 sum,
                 condition_table, condition_source,//condition source, condition id.
                 event.success);          //asynchronously return.

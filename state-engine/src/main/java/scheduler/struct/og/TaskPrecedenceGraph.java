@@ -102,14 +102,16 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
             operationChains.put("segment_cnt",new TableOCs<>(totalThreads,offset));
         } else if (app == 3) {
             operationChains.put("goods",new TableOCs<>(totalThreads,offset));
-        }
+        } else if (app == 4) {//OB
+            operationChains.put("MicroTable", new TableOCs<>(totalThreads,offset));
+        } else
+            throw new UnsupportedOperationException();
     }
 
     /**
      * Pre-create a bunch of OCs for each key in the table, which reduces the constant overhead during the runtime.
      * @param context
      */
-    // TODO: if running multiple batches, this will be a problem.
     public void setOCs(Context context) {
         ArrayDeque<OperationChain> ocs = new ArrayDeque<>();
         int left_bound = context.thisThreadId * delta;
@@ -145,10 +147,16 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 OperationChain gsOC = context.createTask("goods", _key, 0);
                 operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);
-            }
+            } else if (app == 4) {
+                OperationChain gsOC = context.createTask("MicroTable", _key, 0);
+                operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
+                ocs.add(gsOC);
+            } else
+                throw new UnsupportedOperationException();
         }
         threadToOCs.put(context.thisThreadId, ocs);
     }
+
     private void resetOCs(Context context) {
         if (app == 0) {
             operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
@@ -160,7 +168,10 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
             operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 3){
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        }
+        } else if (app == 4){
+            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else
+            throw new UnsupportedOperationException();
     }
 
     public TableOCs<OperationChain> getTableOCs(String table_name) {

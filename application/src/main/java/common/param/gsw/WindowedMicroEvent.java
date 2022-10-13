@@ -24,7 +24,7 @@ public class WindowedMicroEvent extends TxnEvent {
     public int sum;
     public int TOTAL_NUM_ACCESS;
     public int Txn_Length;
-    public int[] result = new int[TOTAL_NUM_ACCESS]; // TODO: NUM_ACCESSES will be never used.
+    public List<Integer> result = new ArrayList<>(); // TODO: NUM_ACCESSES will be never used.
     private List<DataBox>[] value;//Note, it should be arraylist instead of linkedlist as there's no addOperation/remove later.
     //    public double[] useful_ratio = new double[1];
 
@@ -77,7 +77,7 @@ public class WindowedMicroEvent extends TxnEvent {
                               String key_array, int TOTAL_NUM_ACCESS, boolean flag) {
         super(bid, pid, bid_array, partition_index, num_of_partition);
         this.TOTAL_NUM_ACCESS = TOTAL_NUM_ACCESS;
-        result = new int[TOTAL_NUM_ACCESS];
+        result = new ArrayList<>();
         record_refs = new SchemaRecordRef[TOTAL_NUM_ACCESS];
         for (int i = 0; i < TOTAL_NUM_ACCESS; i++) {
             record_refs[i] = new SchemaRecordRef();
@@ -97,7 +97,7 @@ public class WindowedMicroEvent extends TxnEvent {
         super(bid, pid, bid_array, partition_index, num_of_partition);
         this.TOTAL_NUM_ACCESS = TOTAL_NUM_ACCESS;
         Txn_Length = Transaction_Length;
-        result = new int[TOTAL_NUM_ACCESS];
+        result = new ArrayList<>();
         record_refs = new SchemaRecordRef[TOTAL_NUM_ACCESS];
         for (int i = 0; i < TOTAL_NUM_ACCESS; i++) {
             record_refs[i] = new SchemaRecordRef();

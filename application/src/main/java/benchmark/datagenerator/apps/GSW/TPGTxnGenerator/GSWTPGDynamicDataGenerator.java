@@ -116,6 +116,8 @@ public class GSWTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             case "complexity" :
                 AppConfig.complexity = 80000;
             break;
+            case "windowSize" :
+                AppConfig.windowSize = 1024;
             case "unchanging" :
             break;
             default:
