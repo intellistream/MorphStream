@@ -93,20 +93,20 @@ public class GSWBolt_ts extends GSWBolt {
         // multiple operations will be decomposed
 //        for (int i = 0; i < event.Txn_Length; i++) {
         int NUM_ACCESS = event.TOTAL_NUM_ACCESS;
-        String[] condition_table = new String[NUM_ACCESS];
-        String[] condition_source = new String[NUM_ACCESS];
         for (int i = 0; i < NUM_ACCESS; i++) {
-            condition_source[i] = String.valueOf(event.getKeys()[i]);
-            condition_table[i] = "MicroTable";
+            String[] condition_table = new String[1];
+            String[] condition_source = new String[1];
+            condition_source[0] = String.valueOf(event.getKeys()[i]);
+            condition_table[0] = "MicroTable";
+            transactionManager.Asy_WindowReadRecords(
+                    txnContext,
+                    "MicroTable",
+                    String.valueOf(event.getKeys()[i]), // src key to write ahead
+                    event.getRecord_refs()[i],//to be fill up.
+                    sum,
+                    condition_table, condition_source,//condition source, condition id.
+                    event.success);          //asynchronously return.
         }
-        transactionManager.Asy_WindowReadRecords(
-                txnContext,
-                "MicroTable",
-                String.valueOf(event.getKeys()[0]), // src key to write ahead
-                event.getRecord_refs()[0],//to be fill up.
-                sum,
-                condition_table, condition_source,//condition source, condition id.
-                event.success);          //asynchronously return.
 //        }
         transactionManager.CommitTransaction(txnContext);
         events.add(event);

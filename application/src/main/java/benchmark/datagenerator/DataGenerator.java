@@ -16,6 +16,8 @@ public abstract class DataGenerator {
     protected final int nTuples;
     protected DataGeneratorConfig dataConfig;
     protected IOutputHandler dataOutputHandler; // dump data to the specified path
+    protected int windowCount = 0;
+
 
     public DataGenerator(DataGeneratorConfig dataConfig) {
         this.dataConfig = dataConfig;
@@ -36,6 +38,7 @@ public abstract class DataGenerator {
         for (int tupleNumber = 0; tupleNumber < nTuples + dataConfig.getTotalThreads(); tupleNumber++) {//add a padding to avoid non-integral-divided problem.
             generateTuple();
         }
+        System.out.println(windowCount);
     }
 
     protected abstract void generateTuple();

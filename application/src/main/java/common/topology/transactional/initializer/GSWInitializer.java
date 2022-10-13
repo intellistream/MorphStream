@@ -3,9 +3,6 @@ package common.topology.transactional.initializer;
 import benchmark.DataHolder;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
-import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGenerator;
-import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
-import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDynamicDataGenerator;
 import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.GSWTPGDataGenerator;
 import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.GSWTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.GSWTPGDynamicDataGenerator;
@@ -114,7 +111,7 @@ public class GSWInitializer extends TableInitilizer {
                             ((GSWTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
                             ((GSWTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
                             ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
-                            ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Window_Reads,
+                            ((GSWTPGDataGeneratorConfig) dataConfig).Period_of_Window_Reads,
                             ((GSWTPGDataGeneratorConfig) dataConfig).Transaction_Length,
                             ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
                             AppConfig.isCyclic)

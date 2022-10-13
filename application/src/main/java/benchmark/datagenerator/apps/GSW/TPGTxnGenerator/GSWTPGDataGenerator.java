@@ -38,7 +38,7 @@ public class GSWTPGDataGenerator extends DataGenerator {
 
     private final int NUM_ACCESS; // transaction length, 4 or 8 or longer
     private final int State_Access_Skewness; // ratio of state access, following zipf distribution
-    private final int Ratio_of_Window_Reads; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
+    private final int Period_of_Window_Reads; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
     private final int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
     private final int Ratio_of_Multiple_State_Access;//ratio of multiple state access per transaction
     private final int Transaction_Length;
@@ -60,13 +60,14 @@ public class GSWTPGDataGenerator extends DataGenerator {
 
     private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
+
     // TODO: can specify the window length here, the window event will be generated according to the window length periodically
     public GSWTPGDataGenerator(GSWTPGDataGeneratorConfig dataConfig) {
         super(dataConfig);
 
         State_Access_Skewness = dataConfig.State_Access_Skewness;
         NUM_ACCESS = dataConfig.NUM_ACCESS;
-        Ratio_of_Window_Reads = dataConfig.Ratio_of_Window_Reads;
+        Period_of_Window_Reads = dataConfig.Period_of_Window_Reads;
         Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
         Transaction_Length = dataConfig.Transaction_Length;
         Ratio_of_Multiple_State_Access = dataConfig.Ratio_of_Multiple_State_Access;
@@ -109,7 +110,7 @@ public class GSWTPGDataGenerator extends DataGenerator {
 
     private GSWEvent randomEvent() {
         int NUM_ACCESS;
-        if (random.nextInt(100) < Ratio_of_Multiple_State_Access) {
+        if (eventID % Period_of_Window_Reads == 0) {
             NUM_ACCESS = this.NUM_ACCESS;
         } else {
             NUM_ACCESS = 1;
@@ -170,7 +171,7 @@ public class GSWTPGDataGenerator extends DataGenerator {
             }
         } else {
             // TODO: add transaction length logic
-            for (int i = 0; i <NUM_ACCESS; i++) {
+            for (int i = 0; i < NUM_ACCESS; i++) {
                 keys[i] = getUniqueKey(keyZipf, generatedKeys);
             }
         }
@@ -180,8 +181,9 @@ public class GSWTPGDataGenerator extends DataGenerator {
         }
 
         GSWEvent t;
-        if (random.nextInt(10000) < Ratio_of_Window_Reads) {
+        if (eventID % Period_of_Window_Reads == 0) { // generate a window event every Period_of_Window_Reads
             t = new GSWEvent(eventID, keys, true);
+            windowCount++;
         } else {
             t = new GSWEvent(eventID, keys, false);
         }

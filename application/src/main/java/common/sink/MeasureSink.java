@@ -136,8 +136,8 @@ public class MeasureSink extends BaseSink {
                     config.getInt("NUM_ITEMS"),
                     config.getInt("NUM_ACCESS"),
                     config.getInt("State_Access_Skewness"),
-                    config.getInt("Ratio_of_Overlapped_Keys"),
-                    config.getInt("Ratio_of_Window_Reads"),
+                    config.getInt("Period_of_Window_Reads"),
+                    config.getInt("windowSize"),
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
                     config.getInt("complexity"));
