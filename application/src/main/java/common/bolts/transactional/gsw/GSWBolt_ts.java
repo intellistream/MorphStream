@@ -65,25 +65,25 @@ public class GSWBolt_ts extends GSWBolt {
         transactionManager.BeginTransaction(txnContext);
 
         // multiple operations will be decomposed
-        for (int i = 0; i < event.Txn_Length; i++) {
-            int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
-            String[] condition_table = new String[NUM_ACCESS];
-            String[] condition_source = new String[NUM_ACCESS];
-            for (int j = 0; j < NUM_ACCESS; j++) {
-                int offset = i * NUM_ACCESS + j;
-                condition_source[j] = String.valueOf(event.getKeys()[offset]);
-                condition_table[j] = "MicroTable";
-            }
-            int writeKeyIdx = i * NUM_ACCESS;
-            transactionManager.Asy_ModifyRecord_ReadN(
-                    txnContext,
-                    "MicroTable",
-                    String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
-                    event.getRecord_refs()[writeKeyIdx],//to be fill up.
-                    sum,
-                    condition_table, condition_source,//condition source, condition id.
-                    event.success);          //asynchronously return.
+//        for (int i = 0; i < event.Txn_Length; i++) {
+        int NUM_ACCESS = event.TOTAL_NUM_ACCESS; // todo: hard coded to only write one key
+        String[] condition_table = new String[NUM_ACCESS];
+        String[] condition_source = new String[NUM_ACCESS];
+        for (int j = 0; j < NUM_ACCESS; j++) {
+            int offset = i * NUM_ACCESS + j;
+            condition_source[j] = String.valueOf(event.getKeys()[offset]);
+            condition_table[j] = "MicroTable";
         }
+        int writeKeyIdx = i * NUM_ACCESS;
+        transactionManager.Asy_ModifyRecord_ReadN(
+                txnContext,
+                "MicroTable",
+                String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
+                event.getRecord_refs()[writeKeyIdx],//to be fill up.
+                sum,
+                condition_table, condition_source,//condition source, condition id.
+                event.success);          //asynchronously return.
+//        }
         transactionManager.CommitTransaction(txnContext);
         events.add(event);
     }
@@ -94,23 +94,25 @@ public class GSWBolt_ts extends GSWBolt {
         transactionManager.BeginTransaction(txnContext);
 
         // multiple operations will be decomposed
-//        for (int i = 0; i < event.Txn_Length; i++) {
-        int NUM_ACCESS = event.TOTAL_NUM_ACCESS;
-        for (int i = 0; i < NUM_ACCESS; i++) {
-            String[] condition_table = new String[1];
-            String[] condition_source = new String[1];
-            condition_source[0] = String.valueOf(event.getKeys()[i]);
-            condition_table[0] = "MicroTable";
+        for (int i = 0; i < event.Txn_Length; i++) {
+            int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
+            String[] condition_table = new String[NUM_ACCESS];
+            String[] condition_source = new String[NUM_ACCESS];
+            for (int j = 0; j < NUM_ACCESS; j++) {
+                int offset = i * NUM_ACCESS + j;
+                condition_source[j] = String.valueOf(event.getKeys()[offset]);
+                condition_table[j] = "MicroTable";
+            }
+            int writeKeyIdx = i * NUM_ACCESS;
             transactionManager.Asy_WindowReadRecords(
                     txnContext,
                     "MicroTable",
-                    String.valueOf(event.getKeys()[i]), // src key to write ahead
-                    event.getRecord_refs()[i],//to be fill up.
+                    String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
+                    event.getRecord_refs()[writeKeyIdx],//to be fill up.
                     sum,
                     condition_table, condition_source,//condition source, condition id.
                     event.success);          //asynchronously return.
         }
-//        }
         transactionManager.CommitTransaction(txnContext);
         events.add(event);
     }

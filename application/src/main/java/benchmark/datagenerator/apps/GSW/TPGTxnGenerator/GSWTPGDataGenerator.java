@@ -11,9 +11,7 @@ import utils.AppConfig;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
 
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
@@ -110,12 +108,17 @@ public class GSWTPGDataGenerator extends DataGenerator {
 
     private GSWEvent randomEvent() {
         int NUM_ACCESS;
+        int Transaction_Length;
         if (eventID % Period_of_Window_Reads == 0) {
             NUM_ACCESS = this.NUM_ACCESS;
+            Transaction_Length = this.Transaction_Length;
         } else {
             NUM_ACCESS = 1;
+            Transaction_Length = 1;
         }
         int[] keys = new int[NUM_ACCESS*Transaction_Length];
+        // record each write key of operation, make them unique
+        Set<Integer> writeKeys = new HashSet<>(Transaction_Length);
         int writeLevel = -1;
         if (!isUnique) {
             if (enable_states_partition) {
@@ -124,27 +127,18 @@ public class GSWTPGDataGenerator extends DataGenerator {
                     for (int i = 0; i < NUM_ACCESS; i++) {
                         int offset = j * NUM_ACCESS + i;
                         if (AppConfig.isCyclic) {
-                            int key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
-                            if (offset % NUM_ACCESS == 0) {
-                                // make sure this one is different with other write key
-                                for (int k = 0; k < j; k++) {
-                                    while (keys[k*NUM_ACCESS] == key) {
-                                        key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
-                                    }
-                                }
-                            }
-                            keys[offset] = key;
+                            getUniqueKeyIfIsWriteTarget(NUM_ACCESS, keys, writeKeys, partitionId, offset);
                         } else {
-                            // TODO: correct it later
-                            keys[offset] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                            // TODO: correct it later, acyclic + transaction length > 1 is buggy
+                            getUniqueKeyIfIsWriteTarget(NUM_ACCESS, keys, writeKeys, partitionId, offset);
                             if (i == 0) {
                                 while (idToLevel.get(keys[offset]) == 0) {
-                                    keys[offset] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                                    getUniqueKeyIfIsWriteTarget(NUM_ACCESS, keys, writeKeys, partitionId, offset);
                                 }
                                 writeLevel = idToLevel.get(keys[offset]);
                             } else {
                                 while (writeLevel <= idToLevel.get(keys[offset])) {
-                                    keys[offset] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+                                    getUniqueKeyIfIsWriteTarget(NUM_ACCESS, keys, writeKeys, partitionId, offset);
                                 }
                             }
                         }
@@ -190,6 +184,18 @@ public class GSWTPGDataGenerator extends DataGenerator {
         // increase the timestamp i.e. transaction id
         eventID++;
         return t;
+    }
+
+    private void getUniqueKeyIfIsWriteTarget(int NUM_ACCESS, int[] keys, Set<Integer> writeKeys, int partitionId, int offset) {
+        int key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+        if (offset % NUM_ACCESS == 0) {
+            // make sure this one is different with other write key
+            while (writeKeys.contains(key)) {
+                key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
+            }
+            writeKeys.add(key);
+        }
+        keys[offset] = key;
     }
 
     public int key_to_partition(int key) {
