@@ -145,7 +145,7 @@ if __name__ == '__main__':
     NUM_ACCESS = 2
     deposit_ratio = 25
     key_skewness = 0
-    window_trigger_period = 1
+    window_trigger_period = 100
     window_size = 1024
     batchInterval = 10240
     isCyclic = "false"
@@ -161,15 +161,15 @@ if __name__ == '__main__':
         if opt in ['-i']:
             NUM_ITEMS = int(arg)
         elif opt in ['-d']:
-            deposit_ratio = int(arg)
+            tthread = int(arg)
         elif opt in ['-n']:
             NUM_ACCESS = int(arg)
         elif opt in ['-k']:
             key_skewness = int(arg)
         elif opt in ['-o']:
-            overlap_ratio = int(arg)
-        elif opt in ['-a']:
             window_trigger_period = int(arg)
+        elif opt in ['-a']:
+            window_size = int(arg)
         elif opt in ['-b']:
             batchInterval = int(arg)
         elif opt in ['-c']:

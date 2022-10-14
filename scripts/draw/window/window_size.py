@@ -141,11 +141,11 @@ def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window
 
 if __name__ == '__main__':
     tthread = 24
-    NUM_ITEMS = 12288
-    NUM_ACCESS = 2
+    NUM_ITEMS = 3072
+    NUM_ACCESS = 1
     deposit_ratio = 25
     key_skewness = 0
-    window_trigger_period = 1024
+    window_trigger_period = 100
     window_size = 1024
     batchInterval = 10240
     isCyclic = "false"
@@ -161,15 +161,15 @@ if __name__ == '__main__':
         if opt in ['-i']:
             NUM_ITEMS = int(arg)
         elif opt in ['-d']:
-            deposit_ratio = int(arg)
+            tthread = int(arg)
         elif opt in ['-n']:
             NUM_ACCESS = int(arg)
         elif opt in ['-k']:
             key_skewness = int(arg)
         elif opt in ['-o']:
-            overlap_ratio = int(arg)
-        elif opt in ['-a']:
             window_trigger_period = int(arg)
+        elif opt in ['-a']:
+            window_size = int(arg)
         elif opt in ['-b']:
             batchInterval = int(arg)
         elif opt in ['-c']:
@@ -180,7 +180,7 @@ if __name__ == '__main__':
         elif opt in ['-m']:
             complexity = int(arg)
 
-    x_value = [128, 1024, 10240]
+    x_value = [1, 128, 1024, 10240]
     legend_labels = ["MorphStream"]
     # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
     legend = False

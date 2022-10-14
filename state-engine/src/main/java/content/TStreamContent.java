@@ -140,10 +140,10 @@ public abstract class TStreamContent implements Content {
         ConcurrentNavigableMap<Long, SchemaRecord> schemaRange = versions.tailMap(start);
 
         //not modified in last round
-        if (schemaRange.size() == 0)
-            System.out.println("Empty window");
-        else
-            System.out.println(schemaRange.size());
+//        if (schemaRange.size() == 0)
+//            System.out.println("Empty window");
+//        else
+//            System.out.println(schemaRange.size());
 
 //        assert schemaRange.size() != 0;
 

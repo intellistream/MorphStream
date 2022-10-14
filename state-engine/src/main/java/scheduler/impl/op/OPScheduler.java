@@ -4,6 +4,7 @@ package scheduler.impl.op;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import scala.App;
 import scheduler.Request;
 import scheduler.impl.IScheduler;
 import scheduler.context.op.OPSchedulerContext;
@@ -266,6 +267,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         // apply function
         AppConfig.randomDelay();
 
+
         for (int i = 0; i < keysLength; i++) {
 //            long start = System.nanoTime();
 //            while (System.nanoTime() - start < 10000) {}
@@ -274,7 +276,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             sum += schemaRecordRange.stream().mapToLong(schemaRecord -> schemaRecord.getValues().get(1).getLong()).sum();
         }
 
-        sum /= keysLength;
+        sum /= (long) keysLength * AppConfig.windowSize;
 
         if (operation.function.delta_long != -1) {
             // read

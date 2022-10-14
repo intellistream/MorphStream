@@ -2,15 +2,15 @@
 
 function ResetParameters() {
   app="WindowedGrepSum"
-  NUM_ITEMS=12288
-  NUM_ACCESS=2
-  checkpointInterval=10240
+  NUM_ITEMS=3072
+  NUM_ACCESS=1
+  checkpointInterval=102400
   tthread=24
   scheduler="OP_NS"
   deposit_ratio=25
   key_skewness=0
   overlap_ratio=0
-  window_trigger_period=1024
+  window_trigger_period=100
   window_size=1024
   CCOption=3 #TSTREAM
   complexity=10000
@@ -19,7 +19,7 @@ function ResetParameters() {
 }
 
 function runTStream() {
-  totalEvents=`expr $checkpointInterval \* $tthread \* 10`
+  totalEvents=`expr $checkpointInterval \* $tthread`
   # NUM_ITEMS=`expr $totalEvents`
   echo "java -Xms16g -Xmx16g -jar -d64 application-0.0.2-jar-with-dependencies.jar \
           --app $app \
@@ -60,13 +60,18 @@ function runTStream() {
 
 
 ResetParameters
-for window_size in 128 1024 10240
+for window_size in 1 1024 10240 102400
 do
   runTStream
 done
+#
+#ResetParameters
+#for window_trigger_period in 10 100 1000 10000
+#do
+#  runTStream
+#done
 
 ResetParameters
-for window_trigger_period in 10 100 1000 10000
-do
-  runTStream
-done
+cd draw/window || exit
+python window_size.py -i $NUM_ITEMS -b $checkpointInterval -d $tthread -o $window_trigger_period -a $window_size
+#python window_trigger_period.py -i $NUM_ITEMS -b $checkpointInterval -d $tthread -o $window_trigger_period -a $window_size

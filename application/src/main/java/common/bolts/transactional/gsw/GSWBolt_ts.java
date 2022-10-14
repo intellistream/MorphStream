@@ -13,6 +13,7 @@ import transaction.function.SUM;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -62,6 +63,7 @@ public class GSWBolt_ts extends GSWBolt {
         SUM sum = new SUM();
 
         transactionManager.BeginTransaction(txnContext);
+
         // multiple operations will be decomposed
         for (int i = 0; i < event.Txn_Length; i++) {
             int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
@@ -90,6 +92,7 @@ public class GSWBolt_ts extends GSWBolt {
         SUM sum = new SUM();
 
         transactionManager.BeginTransaction(txnContext);
+
         // multiple operations will be decomposed
 //        for (int i = 0; i < event.Txn_Length; i++) {
         int NUM_ACCESS = event.TOTAL_NUM_ACCESS;
