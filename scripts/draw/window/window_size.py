@@ -117,14 +117,14 @@ def DrawFigure(x_values, y_values, legend_labels, x_label, y_label, filename, al
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight', format='pdf')
 
 
-def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, isCyclic, complexity):
+def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, transaction_length, isCyclic, complexity):
     w, h = 1, len(x_axis)
     y = [[] for _ in range(w)]
 
 
     for window_size in x_axis:
         events = tthread * batchInterval
-        op_gs_path = getPathGS("OP_NS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, isCyclic, complexity)
+        op_gs_path = getPathGS("OP_NS", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, transaction_length, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
@@ -134,9 +134,9 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewne
     return y
 
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window_ratio, window_size, isCyclic, complexity):
+def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, window_ratio, window_size, transaction_length, isCyclic, complexity):
     return FILE_FOLER + '/WindowedGrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}_{}'\
-        .format(algo, tthread, events, NUM_ITEMS, 100, key_skewness, window_ratio, window_size, 1, isCyclic, complexity)
+        .format(algo, tthread, events, NUM_ITEMS, 100, key_skewness, window_ratio, window_size, transaction_length, isCyclic, complexity)
 
 
 if __name__ == '__main__':
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     transaction_length = 1
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:m:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:d:n:k:o:a:b:c:m:t:")
     except getopt.GetoptError:
         print("Error")
 
@@ -172,6 +172,8 @@ if __name__ == '__main__':
             window_size = int(arg)
         elif opt in ['-b']:
             batchInterval = int(arg)
+        elif opt in ['-t']:
+            transaction_length = int(arg)
         elif opt in ['-c']:
             if int(arg) == 1:
                 isCyclic = "true"
@@ -180,11 +182,11 @@ if __name__ == '__main__':
         elif opt in ['-m']:
             complexity = int(arg)
 
-    x_value = [1, 128, 1024, 10240]
+    x_value = [1000, 10000, 100000]
     legend_labels = ["MorphStream"]
     # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
     legend = False
-    y_axis = ReadFileGS(x_value, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, isCyclic, complexity)
+    y_axis = ReadFileGS(x_value, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, transaction_length, isCyclic, complexity)
     DrawFigure(x_value, y_axis, legend_labels, "Event Time Window Size", "Throughput(K/sec)", "window_size"
                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, window_trigger_period, window_size, isCyclic, complexity),
                legend)

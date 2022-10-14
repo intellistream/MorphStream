@@ -2,10 +2,10 @@
 
 function ResetParameters() {
   app="WindowedGrepSum"
-  NUM_ITEMS=3072
+  NUM_ITEMS=1024
   NUM_ACCESS=1
   checkpointInterval=102400
-  tthread=24
+  tthread=16
   scheduler="OP_NS"
   deposit_ratio=25
   key_skewness=0
@@ -14,6 +14,7 @@ function ResetParameters() {
   window_size=1024
   CCOption=3 #TSTREAM
   complexity=10000
+  txn_length=100
   isCyclic=0
   rootFilePath="/home/myc/data"
 }
@@ -36,7 +37,8 @@ function runTStream() {
           --window_size $window_size \
           --CCOption $CCOption \
           --complexity $complexity \
-          --isCyclic $isCyclic
+          --isCyclic $isCyclic \
+          --txn_length $txn_length \
           --rootFilePath $rootFilePath"
   java -Xms16g -Xmx16g -Xss100M -jar -d64 application-0.0.2-jar-with-dependencies.jar \
     --app $app \
@@ -54,24 +56,25 @@ function runTStream() {
     --CCOption $CCOption \
     --complexity $complexity \
     --isCyclic $isCyclic \
+    --txn_length $txn_length \
     --rootFilePath $rootFilePath
 }
 
 
 
-ResetParameters
-for window_size in 1 1024 10240 102400
-do
-  runTStream
-done
-#
 #ResetParameters
-#for window_trigger_period in 10 100 1000 10000
+#for window_size in 1000 10000 100000
+#do
+#  runTStream
+#done
+
+#ResetParameters
+#for window_trigger_period in 100 1000 10000
 #do
 #  runTStream
 #done
 
 ResetParameters
 cd draw/window || exit
-python window_size.py -i $NUM_ITEMS -b $checkpointInterval -d $tthread -o $window_trigger_period -a $window_size
-#python window_trigger_period.py -i $NUM_ITEMS -b $checkpointInterval -d $tthread -o $window_trigger_period -a $window_size
+#python window_size.py -i $NUM_ITEMS -b $checkpointInterval -t $txn_length -d $tthread -o $window_trigger_period -a $window_size
+python window_trigger_period.py -i $NUM_ITEMS -b $checkpointInterval -t $txn_length -d $tthread -o $window_trigger_period -a $window_size
