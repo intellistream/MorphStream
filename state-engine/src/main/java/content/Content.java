@@ -55,6 +55,8 @@ public interface Content {
 
     SchemaRecord readPreValues(long ts);
 
+    SchemaRecord readPreRangeValues(long ts, int range);
+
     SchemaRecord readPreValues(long ts, long min_ts);
 
     SchemaRecord readValues(long ts, long previous_mark_ID, boolean clean);

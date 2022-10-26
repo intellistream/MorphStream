@@ -108,6 +108,12 @@ public abstract class TStreamContent implements Content {
         return record_at_ts;
     }
 
+    @Override
+    public SchemaRecord readPreRangeValues(long startTs, int range) {
+        SchemaRecord record_in_range = null;
+        return record_in_range;
+    }
+
     /**
      * @param ts
      * @return null if the value does not reach the expected min_ts. otherwise, return the value.

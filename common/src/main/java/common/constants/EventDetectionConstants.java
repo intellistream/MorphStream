@@ -23,6 +23,15 @@ public interface EventDetectionConstants {
         String INSERTOR = "insertor";
         String SEQUNCER = "sequencer";
         String EXECUTOR = "executor";
+        String SPOUT = "spout"; //TODO: Verify this
+        String TR = "TR";
+        String WU = "WU";
+        String FU = "FU";
+        String TC = "TC";
+        String SC = "SC";
+        String CU = "CU";
+        String ES = "ES";
+        String SINK = "sink";
     }
 
     interface Constant {
