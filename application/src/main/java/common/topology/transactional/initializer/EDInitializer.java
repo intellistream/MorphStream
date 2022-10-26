@@ -1,5 +1,6 @@
 package common.topology.transactional.initializer;
 
+import benchmark.datagenerator.DataGeneratorConfig;
 import common.collections.Configuration;
 import db.Database;
 import db.DatabaseException;
@@ -10,11 +11,7 @@ import org.slf4j.LoggerFactory;
 import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.TableRecord;
-import storage.datatype.DataBox;
-import storage.datatype.DoubleDataBox;
-import storage.datatype.LongDataBox;
-import storage.datatype.HashSetDataBox;
-import storage.datatype.StringDataBox;
+import storage.datatype.*;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
 
@@ -33,6 +30,17 @@ public class EDInitializer extends TableInitilizer {
     public EDInitializer(Database db, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
     }
+
+    //TODO: Implement this
+    protected void createTPGGenerator(Configuration config) {}
+
+    /**
+     * Control the input file path.
+     * TODO: think carefully which configuration shall vary.
+     *
+     * @param dataConfig
+     */
+    private void configurePath(DataGeneratorConfig dataConfig) {}
 
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks) {
@@ -54,52 +62,115 @@ public class EDInitializer extends TableInitilizer {
         //
     }
 
+    //TODO: Implement this
     private void insertTweetRecord(long tID, long cID, String tValue, int pid, SpinLock[] spinlock_) {
-        try {
-            if (spinlock_ != null)
-                db.InsertRecord("bookEntries", new TableRecord(TweetRecord(tID, cID, tValue), pid, spinlock_));
-            else
-                db.InsertRecord("bookEntries", new TableRecord(TweetRecord(tID, cID, tValue)));
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            if (spinlock_ != null)
+//                db.InsertRecord("bookEntries", new TableRecord(TweetRecord(tID, cID, tValue), pid, spinlock_));
+//            else
+//                db.InsertRecord("bookEntries", new TableRecord(TweetRecord(tID, cID, tValue)));
+//        } catch (DatabaseException e) {
+//            e.printStackTrace();
+//        }
     }
 
+    //TODO: Implement this
     private void insertClusterRecord(long cID, double growthRate, int pid, SpinLock[] spinlock_) {
-        try {
-            if (spinlock_ != null)
-                db.InsertRecord("bookEntries", new TableRecord(ClusterRecord(cID, growthRate), pid, spinlock_));
-            else
-                db.InsertRecord("bookEntries", new TableRecord(ClusterRecord(cID, growthRate)));
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            if (spinlock_ != null)
+//                db.InsertRecord("bookEntries", new TableRecord(ClusterRecord(cID, growthRate), pid, spinlock_));
+//            else
+//                db.InsertRecord("bookEntries", new TableRecord(ClusterRecord(cID, growthRate)));
+//        } catch (DatabaseException e) {
+//            e.printStackTrace();
+//        }
     }
 
-    private SchemaRecord TweetRecord(long tID, long cID, String tValue) {
+    //TODO: Implement HashMapDataBox datatype
+    private SchemaRecord GlobalWordRecord(long wordID, String wordValue, int countOccurWindow, double tfIdf, int lastWindow, HashSet windowMap) {
         List<DataBox> values = new ArrayList<>();
-        values.add(new LongDataBox(tID));
-        values.add(new LongDataBox(cID));
-        values.add(new StringDataBox(tValue, tValue.length()));
+        values.add(new LongDataBox(wordID));
+        values.add(new StringDataBox(wordValue));
+        values.add(new IntDataBox(countOccurWindow));
+        values.add(new DoubleDataBox(tfIdf));
+        values.add(new IntDataBox(lastWindow));
+        values.add(new HashSetDataBox(windowMap));
         return new SchemaRecord(values);
     }
 
-    private SchemaRecord ClusterRecord(long cID, double growthRate) {
+    private SchemaRecord LocalWordRecord(long wordID, String wordValue, HashSet tweetMap, int frequency, boolean isBurst) {
         List<DataBox> values = new ArrayList<>();
-        values.add(new LongDataBox(cID));
-        values.add(new DoubleDataBox(growthRate));
+        values.add(new LongDataBox(wordID));
+        values.add(new StringDataBox(wordValue));
+        values.add(new HashSetDataBox(tweetMap));
+        values.add(new IntDataBox(frequency));
+        values.add(new BoolDataBox(isBurst));
         return new SchemaRecord(values);
     }
 
-    private RecordSchema TweetSchema() {
+    private SchemaRecord LocalTweetRecord(long tweetID, String tweetValue, long clusterID, HashSet wordMap) {
+        List<DataBox> values = new ArrayList<>();
+        values.add(new LongDataBox(tweetID));
+        values.add(new StringDataBox(tweetValue));
+        values.add(new LongDataBox(clusterID));
+        values.add(new HashSetDataBox(wordMap));
+        return new SchemaRecord(values);
+    }
+
+    private SchemaRecord ClusterRecord(long clusterID, HashSet tweetList, long aliveTime, long countNewTweet) {
+        List<DataBox> values = new ArrayList<>();
+        values.add(new LongDataBox(clusterID));
+        values.add(new HashSetDataBox(tweetList));
+        values.add(new LongDataBox(aliveTime));
+        values.add(new LongDataBox(countNewTweet));
+        return new SchemaRecord(values);
+    }
+
+    private RecordSchema GlobalWordSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new LongDataBox());
+        dataBoxes.add(new StringDataBox());
+        dataBoxes.add(new IntDataBox());
+        dataBoxes.add(new DoubleDataBox());
+        dataBoxes.add(new IntDataBox());
+        dataBoxes.add(new HashSetDataBox());
+        fieldNames.add("Word_ID");
+        fieldNames.add("Word_Value");
+        fieldNames.add("Count_Occur_Window");
+        fieldNames.add("TF_IDF");
+        fieldNames.add("Last_Window");
+        fieldNames.add("Window_Map");
+        return new RecordSchema(fieldNames, dataBoxes);
+    }
+
+    private RecordSchema LocalWordTable() {
+        List<DataBox> dataBoxes = new ArrayList<>();
+        List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new LongDataBox());
         dataBoxes.add(new StringDataBox());
+        dataBoxes.add(new HashSetDataBox());
+        dataBoxes.add(new IntDataBox());
+        dataBoxes.add(new BoolDataBox());
+        fieldNames.add("Word_ID");
+        fieldNames.add("Word_Value");
+        fieldNames.add("Tweet_Map");
+        fieldNames.add("Frequency");
+        fieldNames.add("Is_Burst");
+        return new RecordSchema(fieldNames, dataBoxes);
+    }
+
+    private RecordSchema LocalTweetSchema() {
+        List<DataBox> dataBoxes = new ArrayList<>();
+        List<String> fieldNames = new ArrayList<>();
+        dataBoxes.add(new LongDataBox());
+        dataBoxes.add(new StringDataBox());
+        dataBoxes.add(new LongDataBox());
+        dataBoxes.add(new HashSetDataBox());
         fieldNames.add("Tweet_ID");
-        fieldNames.add("Cluster_ID");
         fieldNames.add("Tweet_Value");
+        fieldNames.add("Cluster_ID");
+        fieldNames.add("Word_Map");
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
@@ -107,9 +178,13 @@ public class EDInitializer extends TableInitilizer {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new LongDataBox());
-        dataBoxes.add(new DoubleDataBox());
+        dataBoxes.add(new HashSetDataBox());
+        dataBoxes.add(new LongDataBox());
+        dataBoxes.add(new LongDataBox());
         fieldNames.add("Cluster_ID");
-        fieldNames.add("Growth_Rate");
+        fieldNames.add("Tweet_List");
+        fieldNames.add("Alive_Time");
+        fieldNames.add("Count_New_Tweet");
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
@@ -167,9 +242,29 @@ public class EDInitializer extends TableInitilizer {
     }
 
     public void creates_Table(Configuration config) {
-        RecordSchema tweet = TweetSchema();
-        db.createTable(tweet, "tweet");
+        RecordSchema globalWord = GlobalWordSchema();
+        db.createTable(globalWord, "global_word_table");
+        RecordSchema localWord = LocalWordTable();
+        db.createTable(localWord, "local_word_table");
+        RecordSchema localTweet = LocalTweetSchema();
+        db.createTable(localTweet, "local_tweet_table");
         RecordSchema cluster = ClusterSchema();
-        db.createTable(cluster, "cluster");
+        db.createTable(cluster, "cluster_table");
+
+        //TODO: Check this
+        try {
+            prepare_input_events(config.getInt("totalEvents"));
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
+                StringBuilder stringBuilder = new StringBuilder();
+                for(String decision:getTranToDecisionConf()){
+                    stringBuilder.append(decision);
+                    stringBuilder.append(";");
+                }
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                config.put("WorkloadConfig",stringBuilder.toString());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

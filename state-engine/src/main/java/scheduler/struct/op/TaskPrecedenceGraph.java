@@ -94,6 +94,12 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.put("segment_cnt",new TableOCs(totalThreads,offset));
         } else if (app == 3) {//OB
             operationChains.put("goods",new TableOCs(totalThreads,offset));
+        } else if (app == 4) {//ED
+            //TODO: Put ED tables into operation chain
+            operationChains.put("global_word_table", new TableOCs(totalThreads,offset));
+            operationChains.put("local_word_table", new TableOCs(totalThreads,offset));
+            operationChains.put("local_tweet_table", new TableOCs(totalThreads,offset));
+            operationChains.put("cluster_table", new TableOCs(totalThreads,offset));
         }
     }
 
@@ -137,6 +143,20 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 OperationChain gsOC = context.createTask("goods", _key);
                 operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);
+            } else if (app == 4) {
+                //TODO: Add ED here
+                OperationChain globalWordOC = context.createTask("global_word_table", _key);
+                OperationChain localWordOC = context.createTask("local_word_table", _key);
+                OperationChain localTweetOC = context.createTask("local_tweet_table", _key);
+                OperationChain clusterOC = context.createTask("cluster_table", _key);
+                operationChains.get("global_word_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, globalWordOC);
+                operationChains.get("local_word_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, localWordOC);
+                operationChains.get("local_tweet_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, localTweetOC);
+                operationChains.get("cluster_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, clusterOC);
+                ocs.add(globalWordOC);
+                ocs.add(localWordOC);
+                ocs.add(localTweetOC);
+                ocs.add(clusterOC);
             }
         }
         threadToOCs.put(context.thisThreadId, ocs);
@@ -152,6 +172,12 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 3){
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 4) {
+            //TODO: Add ED tables here
+            operationChains.get("globalWordTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("localWordTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("localTweetTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("clusterTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
     }
 
