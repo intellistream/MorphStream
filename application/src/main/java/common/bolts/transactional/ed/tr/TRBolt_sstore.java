@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TRBolt_sstore extends TRBolt{
-    private static final Logger LOG= LoggerFactory.getLogger(TRBolt_ts.class);
+    private static final Logger LOG= LoggerFactory.getLogger(TRBolt_sstore.class);
     public TRBolt_sstore(int fid, SINKCombo sink){
         super(LOG,fid,sink);
     }

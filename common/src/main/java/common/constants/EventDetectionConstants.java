@@ -25,11 +25,15 @@ public interface EventDetectionConstants {
         String EXECUTOR = "executor";
         String SPOUT = "spout"; //TODO: Verify this
         String TR = "TR";
+        String TRG = "TRG";
         String WU = "WU";
+        String WUG = "WUG";
         String FU = "FU";
         String TC = "TC";
+        String TCG = "TCG";
         String SC = "SC";
         String CU = "CU";
+        String CUG = "CUG";
         String ES = "ES";
         String SINK = "sink";
     }

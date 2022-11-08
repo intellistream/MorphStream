@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class WUBolt_ts extends WUBolt{
-    private static final Logger LOG= LoggerFactory.getLogger(TRBolt_ts.class);
+    private static final Logger LOG= LoggerFactory.getLogger(WUBolt_ts.class);
     public WUBolt_ts(int fid, SINKCombo sink){
         super(LOG,fid,sink);
     }
