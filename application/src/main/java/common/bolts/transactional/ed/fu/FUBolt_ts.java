@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FUBolt_ts extends FUBolt{
-    private static final Logger LOG= LoggerFactory.getLogger(TRBolt_ts.class);
+    private static final Logger LOG= LoggerFactory.getLogger(FUBolt_ts.class);
     public FUBolt_ts(int fid, SINKCombo sink){
         super(LOG,fid,sink);
     }

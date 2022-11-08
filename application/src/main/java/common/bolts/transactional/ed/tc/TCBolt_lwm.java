@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TCBolt_lwm extends TCBolt{
-    private static final Logger LOG= LoggerFactory.getLogger(TRBolt_ts.class);
+    private static final Logger LOG= LoggerFactory.getLogger(TCBolt_lwm.class);
     public TCBolt_lwm(int fid, SINKCombo sink){
         super(LOG,fid,sink);
     }

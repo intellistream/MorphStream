@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ESBolt_olb extends ESBolt{
-    private static final Logger LOG= LoggerFactory.getLogger(TRBolt_ts.class);
+    private static final Logger LOG= LoggerFactory.getLogger(ESBolt_olb.class);
     public ESBolt_olb(int fid, SINKCombo sink){
         super(LOG,fid,sink);
     }

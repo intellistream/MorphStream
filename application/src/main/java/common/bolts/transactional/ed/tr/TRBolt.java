@@ -27,7 +27,7 @@ public abstract class TRBolt extends TransactionalBolt {
     public TRBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
-        this.configPrefix = "trtxn"; // TODO: Register this bolt in Config
+        this.configPrefix = "ed_trg"; // TODO: Register this bolt in Config
     }
 
     // Method used to compute the output value, here it's a tuple (word, tweetID)
