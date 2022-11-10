@@ -12,6 +12,7 @@ public class AppConfig {
     static Random random = new Random();
     public static int complexity;
     public static boolean isCyclic = true;
+    public static int windowSize = 1024; // default window size is 1024
 
 //    public static long randomDelay() {
 //        int delay = random.nextInt(complexity);
