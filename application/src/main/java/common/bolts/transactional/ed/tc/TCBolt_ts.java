@@ -93,7 +93,7 @@ public class TCBolt_ts extends TCBolt{
             SchemaRecord windowCountRecord = event.windowCountRecord.getRecord();
 
             if (frequencyRecord == null || windowSizeRecord == null || countOccurWindowRecord == null || windowCountRecord == null) {
-                if (enable_log) LOG.debug(event.getBid() + " | " + event.getWordId());
+                if (enable_log) LOG.debug(event.getBid() + " | " + event.getWordValue());
             }
 
             //Pass read results to event, they will be used to compute tf-idf in TC_REQUEST_POST().

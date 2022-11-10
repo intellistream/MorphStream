@@ -48,16 +48,26 @@ public class EventDetection extends TransactionTopology {
         sink = loadSink();
     }
 
+    /**
+     * Load Data Later by Executors.
+     *
+     * @param spinlock_
+     * @return TableInitilizer
+     */
+
+    //TODO: Copied from GSW, change accordingly
     @Override
     public TableInitilizer initializeDB(SpinLock[] spinlock_) {
         double theta = config.getDouble("theta", 1);
         int tthread = config.getInt("tthread");
-        setPartition_interval((int) (Math.ceil(NUM_SEGMENTS / (double) tthread)), tthread);
-        TableInitilizer ini = new EDInitializer(db, theta, tthread, config);
+        int numberOfStates = config.getInt("NUM_ITEMS");
+        setPartition_interval((int) (Math.ceil(numberOfStates / (double) tthread)), tthread);
+        TableInitilizer ini = new EDInitializer(db, numberOfStates, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)
                 spinlock_[i] = new SpinLock();
+            //initilize order locks.
             PartitionedOrderLock.getInstance().initilize(tthread);
         }
         return ini;
