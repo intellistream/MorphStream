@@ -94,6 +94,8 @@ public interface ITxnManager {
 
     boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
+    public boolean InsertRecordRead(TxnContext txn_context, String table_name, SchemaRecord record, SchemaRecordRef record_ref, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
+
     boolean SelectKeyRecord(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException;
 
     boolean lock_ahead(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;

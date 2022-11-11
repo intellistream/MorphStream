@@ -2,6 +2,8 @@ package common.bolts.transactional.ed.tr;
 
 import combo.SINKCombo;
 import common.param.ed.tr.TREvent;
+import common.param.sl.DepositEvent;
+import common.param.sl.TransactionEvent;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
@@ -19,56 +21,46 @@ import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public abstract class TRBolt extends TransactionalBolt {
 
-    SINKCombo sink; // the default "next bolt"
-    String[] words = {"Apple", "Banana", "Orange", "Grape"}; // assume there are words in the input tweet
-    int tweetID = 1000; // assume this is the tweetID after the initial WRITE(new tweet)
-    Tuple tuple;
+    SINKCombo sink; //TODO:Default sink for measurement
 
     public TRBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
-        this.configPrefix = "ed_trg"; // TODO: Register this bolt in Config
-    }
-
-    // Method used to compute the output value, here it's a tuple (word, tweetID)
-    List<Object> getOutputTuple(String word) {
-        List<Object> outputTuple = new ArrayList<Object>();
-        outputTuple.add(word);
-        outputTuple.add(tweetID); // TODO: Used default tweetID, need to replace with the actual registered tweetID
-        return outputTuple;
+        this.configPrefix = "ed_tr"; // TODO: Register this bolt in Config
     }
 
     @Override
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
 
-    // Method for post-process
-    void REQUEST_POST(TREvent event) throws InterruptedException {
-        // Things to be pushed to the next bolt: (word, tweetID)
+    //post stream processing phase..
+    protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
+        BEGIN_POST_TIME_MEASURE(thread_Id);
+        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+            ((TREvent) input_event).setTimestamp(timestamp);
+            TWEET_REGISTRANT_REQUEST_POST((TREvent) input_event);
+        }
+        END_POST_TIME_MEASURE(thread_Id);
+    }
+
+    protected void TWEET_REGISTRANT_REQUEST_POST(TREvent event) throws InterruptedException {
+        //TODO: Refer to GSWBolt, we can perform some correctness measurement here
+//        int sum = 0; //Pass this sum value to sink for measurement
+//        if (POST_COMPUTE_COMPLEXITY != 0) {
+//            for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
+//                sum += event.result.get(i);
+//            }
+//            for (int j = 0; j < POST_COMPUTE_COMPLEXITY; ++j)
+//                sum += System.nanoTime();
+//        }
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {
-            // for word in tweet: push the tuples (word, tweetID) to the next bolt
-            for (String word : words) {
-                List<Object> outputTuple = getOutputTuple(word);
-                if (enable_latency_measurement)
-                  tuple = new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, outputTuple, event.getTimestamp()));
-              else
-                  tuple = null;
-              sink.execute(tuple); // TODO: Replace Sink with the next bolt
+            if (enable_latency_measurement) {
+                //Pass the read result of new tweet's ID (assigned by table) to sink
+                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.tweetIDResult, event.getTimestamp())));
             }
         }
-    }
-
-    @Override
-    protected void POST_PROCESS(long bid, long timestamp, int combo_bid_size) throws InterruptedException {
-        BEGIN_POST_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            TREvent event = (TREvent) input_event;
-            ((TREvent) input_event).setTimestamp(timestamp);
-            REQUEST_POST(event);
-        }
-        END_POST_TIME_MEASURE(thread_Id);
     }
 
 }

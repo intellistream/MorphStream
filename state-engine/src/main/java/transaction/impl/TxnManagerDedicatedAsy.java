@@ -128,6 +128,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
+    //TODO: Implement this
+    public boolean InsertRecordRead(TxnContext txn_context, String table_name, SchemaRecord record, SchemaRecordRef record_ref, LinkedList<Long> gap) throws DatabaseException, InterruptedException {
+        AccessType accessType = AccessType.INSERT_ONLY;
+        return false;
+    }
+
     @Override
     public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String primary_key, List<DataBox> value, double[] enqueue_time) throws DatabaseException {
         AccessType accessType = AccessType.WRITE_ONLY;
