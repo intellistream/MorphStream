@@ -1,7 +1,6 @@
 package common.bolts.transactional.ed.tc;
 
 import combo.SINKCombo;
-import common.bolts.transactional.ed.tr.TRBolt_ts;
 import common.param.ed.tc.TCEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;

@@ -1,6 +1,7 @@
 package common.bolts.transactional.ed.tr;
 
 import combo.SINKCombo;
+import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

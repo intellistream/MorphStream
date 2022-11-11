@@ -11,8 +11,6 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
 import common.param.ed.tr.TREvent;
-import common.param.mb.MicroEvent;
-import common.param.sl.TransactionEvent;
 import db.Database;
 import db.DatabaseException;
 import javafx.application.Application;
@@ -187,9 +185,7 @@ public class EDInitializer extends TableInitilizer {
 
             //Construct String[] words from readLine()
             String[] words = new String[3]; //TODO: Hard-coded number of words in tweet
-            for (int i=2; i<5; i++) {
-                words[i-2] = split[i];
-            }
+            System.arraycopy(split, 2, words, 0, 3);
 
             // Construct TR Event
             TREvent event = new TREvent(
@@ -198,8 +194,8 @@ public class EDInitializer extends TableInitilizer {
                     Arrays.toString(p_bids), //bid_arrary
                     Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
                     2,//num_of_partition TODO: Hard-coded number of arguments in TR Event
-                    Long.parseLong(split[1]),//tweetID
-                    words //words
+                    split[1],//String tweetID
+                    words //String[] words
             );
 
             DataHolder.events.add(event);
@@ -308,16 +304,16 @@ public class EDInitializer extends TableInitilizer {
 
 
     //TODO: Implement HashMapDataBox datatype to replace HashSet
-    private void insertWordRecord(String wordValue, HashSet tweetMap, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency, int pid, SpinLock[] spinlock_) {
-        try {
-            if (spinlock_ != null)
-                db.InsertRecord("word_table", new TableRecord(WordRecord(wordValue, tweetMap, countOccurWindow, tfIdf, lastOccurWindow, frequency), pid, spinlock_));
-            else
-                db.InsertRecord("word_table", new TableRecord(WordRecord(wordValue, tweetMap, countOccurWindow, tfIdf, lastOccurWindow, frequency)));
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
-    }
+//    private void insertWordRecord(String wordValue, HashSet tweetMap, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency, int pid, SpinLock[] spinlock_) {
+//        try {
+//            if (spinlock_ != null)
+//                db.InsertRecord("word_table", new TableRecord(WordRecord(wordValue, tweetMap, countOccurWindow, tfIdf, lastOccurWindow, frequency), pid, spinlock_));
+//            else
+//                db.InsertRecord("word_table", new TableRecord(WordRecord(wordValue, tweetMap, countOccurWindow, tfIdf, lastOccurWindow, frequency)));
+//        } catch (DatabaseException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     //TODO: Implement HashMapDataBox datatype to replace HashSet
     //Shouldn't be called inside ED initializer.
@@ -345,11 +341,10 @@ public class EDInitializer extends TableInitilizer {
 //        }
 //    }
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
-    private SchemaRecord WordRecord(String wordValue, HashSet tweetMap, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {
+    private SchemaRecord WordRecord(String wordValue, HashSet tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(wordValue));       //Primary key
-        values.add(new HashSetDataBox(tweetMap));
+        values.add(new HashSetDataBox(tweetList));
         values.add(new IntDataBox(countOccurWindow));
         values.add(new DoubleDataBox(tfIdf));
         values.add(new IntDataBox(lastOccurWindow));
@@ -358,18 +353,18 @@ public class EDInitializer extends TableInitilizer {
     }
 
     //TODO: Implement HashMapDataBox datatype to replace HashSet
-    private SchemaRecord TweetRecord(long tweetID, HashSet wordMap, int computeTime) {
+    private SchemaRecord TweetRecord(String tweetID, HashSet wordMap, int computeTime) {
         List<DataBox> values = new ArrayList<>();
-        values.add(new LongDataBox(tweetID));           //Primary key
+        values.add(new StringDataBox(tweetID));           //Primary key
         values.add(new HashSetDataBox(wordMap));
         values.add(new IntDataBox(computeTime));
         return new SchemaRecord(values);
     }
 
     //TODO: Implement HashMapDataBox datatype to replace HashSet
-    private SchemaRecord ClusterRecord(long clusterID, HashSet tweetList, int aliveTime, int countNewTweet) {
+    private SchemaRecord ClusterRecord(String clusterID, HashSet tweetList, int aliveTime, int countNewTweet) {
         List<DataBox> values = new ArrayList<>();
-        values.add(new LongDataBox(clusterID));         //Primary key
+        values.add(new StringDataBox(clusterID));         //Primary key
         values.add(new HashSetDataBox(tweetList));
         values.add(new IntDataBox(aliveTime));
         values.add(new IntDataBox(countNewTweet));
@@ -387,7 +382,7 @@ public class EDInitializer extends TableInitilizer {
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new IntDataBox());
         fieldNames.add("Word_Value");             //Primary key
-        fieldNames.add("Tweet_Map");
+        fieldNames.add("Tweet_List");
         fieldNames.add("Count_Occur_Window");
         fieldNames.add("TF_IDF");
         fieldNames.add("Last_Occur_Window");
@@ -399,7 +394,7 @@ public class EDInitializer extends TableInitilizer {
     private RecordSchema TweetSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
-        dataBoxes.add(new LongDataBox());
+        dataBoxes.add(new StringDataBox());
         dataBoxes.add(new HashSetDataBox());
         dataBoxes.add(new IntDataBox());
         fieldNames.add("Tweet_ID");
@@ -413,7 +408,7 @@ public class EDInitializer extends TableInitilizer {
     private RecordSchema ClusterSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
-        dataBoxes.add(new LongDataBox());
+        dataBoxes.add(new StringDataBox());
         dataBoxes.add(new HashSetDataBox());
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new IntDataBox());

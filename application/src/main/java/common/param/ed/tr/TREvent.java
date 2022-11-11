@@ -1,20 +1,26 @@
 package common.param.ed.tr;
 
 import common.param.TxnEvent;
+import storage.SchemaRecord;
+import storage.SchemaRecordRef;
 
 import java.util.Arrays;
+import java.util.HashSet;
 
 public class TREvent extends TxnEvent {
-    private final long tweetID;
+    private final String tweetID; //TODO: If we let table assign ID when inserting tweet, this tweetID is not need anymore
     private final String[] words;
+    public SchemaRecordRef tweetRecordRef;//The Read result from INSERT, read the tweetID that is assigned by table
+    public String tweetIDResult;
 
-    public TREvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions, long tweetID, String[] words) {
+    public TREvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions, String tweetID, String[] words) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.tweetID = tweetID;
         this.words = words;
+        this.tweetRecordRef = new SchemaRecordRef();
     }
 
-    public long getTweetID() {
+    public String getTweetID() {
         return this.tweetID;
     }
 
