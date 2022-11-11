@@ -1,7 +1,6 @@
 package common.param.ed.tr;
 
 import common.param.TxnEvent;
-import common.param.ed.tc.TCEvent;
 
 import java.util.Arrays;
 
