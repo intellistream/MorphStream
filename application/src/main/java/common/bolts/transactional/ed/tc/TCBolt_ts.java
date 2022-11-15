@@ -77,7 +77,8 @@ public class TCBolt_ts extends TCBolt{
     protected void TC_REQUEST_CONSTRUCT(TCEvent event, TxnContext txnContext) throws DatabaseException {
         //it simply constructs the operations and return.
         transactionManager.BeginTransaction(txnContext);
-        //define txn operation here
+
+        //TODO: Define txn operation here
 
         transactionManager.CommitTransaction(txnContext);
         tcEvents.add(event);

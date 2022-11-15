@@ -80,7 +80,7 @@ public class TRBolt_ts extends TRBolt{
             TREvent event = (TREvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            TWEET_REGISTRANT_CONSTRUCT(event, txnContext);
+            TWEET_REGISTRANT_REQUEST_CONSTRUCT(event, txnContext);
         }
     }
 
@@ -94,7 +94,7 @@ public class TRBolt_ts extends TRBolt{
     }
 
     //TODO: Complete the tweet registration request construct
-    protected void TWEET_REGISTRANT_CONSTRUCT(TREvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void TWEET_REGISTRANT_REQUEST_CONSTRUCT(TREvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
 
         HashSet<String> wordHashSet = new HashSet<>(Arrays.asList(event.getWords())); //Convert String[] to HashSet
         SchemaRecord tweetRecord = TweetRecord(event.getTweetID(), wordHashSet, -1); //Set default computeTime to -1

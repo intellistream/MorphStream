@@ -54,6 +54,7 @@ public abstract class TRBolt extends TransactionalBolt {
 //                sum += System.nanoTime();
 //        }
         if (!enable_app_combo) {
+            //TODO: Add delta to bid, remember to emit as Event
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {
             if (enable_latency_measurement) {

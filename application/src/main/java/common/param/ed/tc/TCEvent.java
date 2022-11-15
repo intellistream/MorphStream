@@ -16,6 +16,8 @@ public class TCEvent extends TxnEvent {
     public int countOccurWindow;
     public int windowCount;
     public double tfIdf;
+    public String[] tweetIDList;
+    public boolean isBursty;
 
     public TCEvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions, String wordValue) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);

@@ -16,10 +16,7 @@ import storage.TableRecord;
 import storage.datatype.DataBox;
 import storage.datatype.DoubleDataBox;
 import storage.datatype.IntDataBox;
-import transaction.function.AVG;
-import transaction.function.DEC;
-import transaction.function.INC;
-import transaction.function.SUM;
+import transaction.function.*;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
@@ -244,6 +241,26 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        else {
 //            log.info("++++++ operation failed: " + operation);
 //        }
+    }
+
+    // ED: Word Update
+    protected void WordUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid); //condition_record[0] stores the current word's record
+        final int oldCountOccurWindow = preValues.getValues().get(2).getInt();
+        final int oldLastOccurWindow = preValues.getValues().get(4).getInt();
+        final int oldFrequency = preValues.getValues().get(5).getInt();
+
+        // apply function
+        AppConfig.randomDelay();
+
+        // read
+        SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord tempo_record = new SchemaRecord(wordRecord);//tempo record
+
+        if (operation.function instanceof Append) {
+            tempo_record.getValues().get(1).addItem(operation.function.item);//compute, append new tweetID into word's tweetList
+        } else
+            throw new UnsupportedOperationException();
     }
 
     @Override

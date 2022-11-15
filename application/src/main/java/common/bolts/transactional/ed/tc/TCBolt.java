@@ -1,6 +1,7 @@
 package common.bolts.transactional.ed.tc;
 
 import combo.SINKCombo;
+import common.param.ed.cu.CUEvent;
 import common.param.ed.tc.TCEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
@@ -44,17 +45,19 @@ public class TCBolt extends TransactionalBolt {
     }
 
     protected void TC_REQUEST_POST(TCEvent event) throws InterruptedException {
-        double tfIdf = 0;
-        double tf = (double) event.frequency / event.windowSize;
-        double idf = -1 * (Math.log((double) event.countOccurWindow / event.windowCount));
-        tfIdf = tf * idf;
+
+        //TODO: Read isBurst result from TCEvent
+
         if (!enable_app_combo) {
-            //TODO: Increase bid by delta, compare with old tf-idf, and update tfIdf value of word
-            collector.emit(event.getBid(), tfIdf, event.getTimestamp());//the tuple is finished.
+            //TODO: Increase bid by delta, emit new_bid, tweetID, and isBurst
+            for (String tweetID : event.tweetIDList) {
+                //TODO: Initialize a new CU Event and pass to collector
+                collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
+            }
         } else {
             if (enable_latency_measurement) {
                 //TODO: Pass computation result "true" to sink to measure performance
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, tfIdf, event.getTimestamp())));
+                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));
             }
         }
     }
