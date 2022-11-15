@@ -253,7 +253,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // TRANSFER_AST
+    @Override // TRANSFER_AST, ED_WU
     public boolean Asy_ModifyRecord(TxnContext txn_context,
                                     String srcTable, String key,
                                     Function function,

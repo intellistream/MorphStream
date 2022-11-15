@@ -341,14 +341,14 @@ public class EDInitializer extends TableInitilizer {
 //        }
 //    }
 
-    private SchemaRecord WordRecord(String wordValue, HashSet tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {
+    private SchemaRecord WordRecord(String wordValue, String[] tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {
         List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(wordValue));       //Primary key
-        values.add(new HashSetDataBox(tweetList));
-        values.add(new IntDataBox(countOccurWindow));
-        values.add(new DoubleDataBox(tfIdf));
-        values.add(new IntDataBox(lastOccurWindow));
-        values.add(new IntDataBox(frequency));
+        values.add(new StringDataBox(wordValue));       //Primary key: 0
+        values.add(new ListStringDataBox(tweetList)); // 1
+        values.add(new IntDataBox(countOccurWindow)); // 2
+        values.add(new DoubleDataBox(tfIdf)); // 3
+        values.add(new IntDataBox(lastOccurWindow)); // 4
+        values.add(new IntDataBox(frequency)); // 5
         return new SchemaRecord(values);
     }
 

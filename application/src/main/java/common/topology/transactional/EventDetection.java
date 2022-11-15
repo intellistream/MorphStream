@@ -2,8 +2,6 @@ package common.topology.transactional;
 
 import common.bolts.transactional.ed.cu.*;
 import common.bolts.transactional.ed.es.*;
-import common.bolts.transactional.ed.fu.*;
-import common.bolts.transactional.ed.sc.*;
 import common.bolts.transactional.ed.tc.*;
 import common.bolts.transactional.ed.tr.*;
 import common.bolts.transactional.ed.wu.*;
@@ -104,7 +102,7 @@ public class EventDetection extends TransactionTopology {
                         builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_olb(0)//
                                 , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.SPOUT));
-                        builder.setBolt(EventDetectionConstants.Component.WU, new FUBolt_olb(0)//
+                        builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_olb(0)//
                                 , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.TR));
                         builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_olb(0)//
