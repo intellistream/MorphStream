@@ -95,7 +95,7 @@ public class WUBolt_ts extends WUBolt{
         String[] wordTable = new String[]{"word_table"}; //condition source table
         String[] wordID = new String[]{event.getWord()}; //condition source key
         Append append = new Append(event.getTweetID());
-        Condition condition = new Condition(); //not used
+        Condition condition = new Condition(event.getCurrWindow(), event.getWord()); //pass the current window info to scheduler
 
         transactionManager.Asy_ModifyRecord(txnContext,
                 "word_table", // source_table
