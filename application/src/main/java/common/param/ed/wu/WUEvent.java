@@ -12,11 +12,13 @@ public class WUEvent extends TxnEvent {
     public volatile SchemaRecordRef frequency = new SchemaRecordRef();
     public volatile SchemaRecordRef lastOccurWindow = new SchemaRecordRef();
     public volatile SchemaRecordRef countOccurWindow = new SchemaRecordRef();
+    private final int currWindow;
 
-    public WUEvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions, String word, String tweetID) {
+    public WUEvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions, String word, String tweetID, int currWindow) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.word = word;
         this.tweetID = tweetID;
+        this.currWindow = currWindow;
     }
 
     public String getWord() {
@@ -27,7 +29,9 @@ public class WUEvent extends TxnEvent {
         return this.tweetID;
     }
 
+    public int getCurrWindow() {return this.currWindow;}
+
     public WUEvent cloneEvent() {
-        return new WUEvent((int) bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, word, tweetID);
+        return new WUEvent((int) bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, word, tweetID, currWindow);
     }
 }

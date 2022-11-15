@@ -13,13 +13,12 @@ import scheduler.struct.op.Operation;
 import scheduler.struct.op.TaskPrecedenceGraph;
 import storage.SchemaRecord;
 import storage.TableRecord;
-import storage.datatype.DataBox;
-import storage.datatype.DoubleDataBox;
-import storage.datatype.IntDataBox;
+import storage.datatype.*;
 import transaction.function.*;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -246,21 +245,52 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     // ED: Word Update
     protected void WordUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid); //condition_record[0] stores the current word's record
-        final int oldCountOccurWindow = preValues.getValues().get(2).getInt();
-        final int oldLastOccurWindow = preValues.getValues().get(4).getInt();
-        final int oldFrequency = preValues.getValues().get(5).getInt();
 
-        // apply function
-        AppConfig.randomDelay();
+        if (preValues != null) { // word exits in wordTable
+            final int oldCountOccurWindow = preValues.getValues().get(2).getInt();
+            final int oldLastOccurWindow = preValues.getValues().get(4).getInt();
+            final int oldFrequency = preValues.getValues().get(5).getInt();
 
-        // read
-        SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
-        SchemaRecord tempo_record = new SchemaRecord(wordRecord);//tempo record
+            // apply function
+            AppConfig.randomDelay();
 
-        if (operation.function instanceof Append) {
-            tempo_record.getValues().get(1).addItem(operation.function.item);//compute, append new tweetID into word's tweetList
-        } else
-            throw new UnsupportedOperationException();
+            // read
+            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
+
+            // Update word's tweetList
+            if (operation.function instanceof Append) {
+                tempo_record.getValues().get(1).addItem(operation.function.item); //compute, append new tweetID into word's tweetList
+            } else
+                throw new UnsupportedOperationException();
+
+            // Update word's window info
+            if (oldLastOccurWindow < operation.condition.arg1) { //oldLastOccurWindow less than currentWindow
+                tempo_record.getValues().get(2).incLong(oldCountOccurWindow, 1); //compute, increase countOccurWindow by 1
+                tempo_record.getValues().get(4).setInt((int) operation.condition.arg1); //compute, set lastOccurWindow to currentWindow
+            }
+
+            // Update word's inner-window frequency
+            tempo_record.getValues().get(5).incLong(oldFrequency, 1); //compute, increase word's frequency by 1
+
+        } else { // word not exit in wordTable
+            SchemaRecord newWordRecord = WordRecord(operation.condition.stringArg1, new String[0],
+                    1, -1, (int) operation.condition.arg1, 1);
+
+            //TODO: Insert into word table
+        }
+
+    }
+
+    private SchemaRecord WordRecord(String wordValue, String[] tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {
+        List<DataBox> values = new ArrayList<>();
+        values.add(new StringDataBox(wordValue));       //Primary key: 0
+        values.add(new ListStringDataBox(tweetList)); // 1
+        values.add(new IntDataBox(countOccurWindow)); // 2
+        values.add(new DoubleDataBox(tfIdf)); // 3
+        values.add(new IntDataBox(lastOccurWindow)); // 4
+        values.add(new IntDataBox(frequency)); // 5
+        return new SchemaRecord(values);
     }
 
     @Override
