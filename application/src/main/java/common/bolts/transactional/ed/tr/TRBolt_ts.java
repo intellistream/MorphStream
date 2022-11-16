@@ -98,13 +98,11 @@ public class TRBolt_ts extends TRBolt{
 
         HashSet<String> wordHashSet = new HashSet<>(Arrays.asList(event.getWords())); //Convert String[] to HashSet
         SchemaRecord tweetRecord = TweetRecord(event.getTweetID(), wordHashSet, -1); //Set default computeTime to -1
-        LinkedList<Long> gap = new LinkedList<>();
 
         transactionManager.BeginTransaction(txnContext);
 
-        //TODO: Check the Insert operation in TxnManagerDedicatedAsy
-        // What is the gap argument in this method?
-        transactionManager.InsertRecordRead(txnContext, "tweet_table", tweetRecord, event.tweetRecordRef, gap);
+        //TODO: Check the Insert operation in TxnManagerDedicatedAsy, is this even a transaction?
+        transactionManager.InsertNewRecord("tweet_table", event.getTweetID(), tweetRecord);
 
         transactionManager.CommitTransaction(txnContext);
 
@@ -112,7 +110,7 @@ public class TRBolt_ts extends TRBolt{
     }
 
     //TODO
-    // This method should read the INSERT result as new tweet's tweetID
+    // This method should read the INSERT result as new tweet's tweetID (Or, use tweetID in dataset as the primary key)
     private void TWEET_REGISTRANT_REQUEST_CORE() throws InterruptedException {
         for (TREvent event : trEvents) {
 

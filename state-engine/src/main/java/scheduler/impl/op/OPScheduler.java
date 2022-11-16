@@ -92,7 +92,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             success = operation.success[0];
             if (this.tpg.getApp() == 1) {//SL
                 Transfer_Fun(operation, mark_ID, clean);
-            } else {//OB
+            } else if (this.tpg.getApp() == 3) {//OB
                 AppConfig.randomDelay();
                 List<DataBox> d_record = operation.condition_records[0].content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType).getValues();
                 long askPrice = d_record.get(1).getLong();//price
@@ -103,6 +103,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     d_record.get(2).setLong(left_qty - operation.function.delta_long);//new quantity.
                     operation.success[0]++;
                 }
+            } else if (this.tpg.getApp() == 4) {//ED_WU
+                //TODO: Add condition to check which operator in ED is it calling
+                WordUpdate_Fun(operation, mark_ID, clean);
             }
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {
