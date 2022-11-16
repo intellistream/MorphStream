@@ -23,10 +23,7 @@ import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_log;
@@ -128,10 +125,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
-    //TODO: Implement this
-    public boolean InsertRecordRead(TxnContext txn_context, String table_name, SchemaRecord record, SchemaRecordRef record_ref, LinkedList<Long> gap) throws DatabaseException, InterruptedException {
-        AccessType accessType = AccessType.INSERT_ONLY;
-        return false;
+    //TODO: Verify this
+    public void InsertNewRecord(String table_name, String key, SchemaRecord record) throws DatabaseException {
+//        AccessType type = AccessType.INSERT_ONLY;
+        if (storageManager_.getTable(table_name).SelectKeyRecord(key) == null) { //Only insert if no existing record matching with input primary_key
+            TableRecord tableRecord = new TableRecord(record);
+            storageManager_.InsertRecord(table_name, tableRecord);
+        }
     }
 
     @Override
