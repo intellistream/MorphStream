@@ -86,7 +86,7 @@ public class GSBolt_ts extends GSBolt {
                     event.getRecord_refs()[writeKeyIdx],//to be fill up.
                     sum,
                     condition_table, condition_source,//condition source, condition id.
-                    event.success);          //asynchronously return.
+                    event.success, "gs");          //asynchronously return.
         }
         transactionManager.CommitTransaction(txnContext);
         microEvents.add(event);

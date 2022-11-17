@@ -103,7 +103,8 @@ public class WUBolt_ts extends WUBolt{
                 append, // append new tweetID to word's tweetList
                 wordTable, wordID, //condition_source_table, condition_source_key
                 condition,
-                event.success
+                event.success,
+                "ed_wu"
                 );
 
         transactionManager.CommitTransaction(txnContext);

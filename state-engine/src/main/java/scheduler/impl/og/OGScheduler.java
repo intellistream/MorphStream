@@ -417,22 +417,22 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         switch (request.accessType) {
             case WRITE_ONLY:
                 set_op = new Operation(request.src_key, null, request.table_name, null, null, null,
-                        null, request.txn_context, request.accessType, null, request.d_record, bid, targetContext);
+                        null, request.txn_context, request.accessType, request.operator_name, null, request.d_record, bid, targetContext);
                 set_op.value = request.value;
                 break;
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
                 set_op = new Operation(request.src_key, request.function, request.table_name, null, request.condition_records, request.condition,
-                        request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
+                        request.success, request.txn_context, request.accessType, request.operator_name, request.d_record, request.d_record, bid, targetContext);
                 break;
             case READ_WRITE_COND_READ:
             case READ_WRITE_COND_READN:
                 set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, request.condition_records, request.condition,
-                        request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
+                        request.success, request.txn_context, request.accessType, request.operator_name, request.d_record, request.d_record, bid, targetContext);
                 break;
             case READ_WRITE_READ:
                 set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, null, request.condition,
-                        request.success, request.txn_context, request.accessType, request.d_record, request.d_record, bid, targetContext);
+                        request.success, request.txn_context, request.accessType, request.operator_name, request.d_record, request.d_record, bid, targetContext);
                 break;
             default:
                 throw new RuntimeException("Unexpected operation");

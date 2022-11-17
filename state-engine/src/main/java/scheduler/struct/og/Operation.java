@@ -43,8 +43,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
 
     public <Context extends OGSchedulerContext> Operation(String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
-                     TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid, Context context) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, s_record, d_record, bid);
+                     TxnContext txn_context, CommonMetaTypes.AccessType accessType, String operator_name, TableRecord s_record, TableRecord d_record, long bid, Context context) {
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, operator_name, s_record, d_record, bid);
 
         this.pKey = pKey;
 

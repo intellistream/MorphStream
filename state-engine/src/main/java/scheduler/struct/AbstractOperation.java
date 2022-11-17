@@ -21,6 +21,7 @@ public abstract class AbstractOperation {
     public final String table_name;
     public final TxnContext txn_context;
     public final CommonMetaTypes.AccessType accessType;
+    public final String operator_name;
     public final TableRecord d_record;
     public final long bid;
     public volatile TableRecordRef records_ref;//for cross-record dependency.
@@ -35,7 +36,7 @@ public abstract class AbstractOperation {
     public int[] success;
 
     public AbstractOperation(Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
-                             TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid) {
+                             TxnContext txn_context, CommonMetaTypes.AccessType accessType, String operator_name, TableRecord s_record, TableRecord d_record, long bid) {
         this.function = function;
         this.table_name = table_name;
         this.record_ref = record_ref;//this holds events' record_ref.
@@ -44,6 +45,7 @@ public abstract class AbstractOperation {
         this.success = success;
         this.txn_context = txn_context;
         this.accessType = accessType;
+        this.operator_name = operator_name;
         this.s_record = s_record;
         this.d_record = d_record;
         this.bid = bid;
