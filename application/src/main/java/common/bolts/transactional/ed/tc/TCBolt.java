@@ -33,25 +33,25 @@ public class TCBolt extends TransactionalBolt {
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
 
-    //TODO: Referred from SLBolt, need double-check
     //post stream processing phase..
     protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             ((TCEvent) input_event).setTimestamp(timestamp);
-            TC_REQUEST_POST((TCEvent) input_event);
+            TREND_CALCULATE_REQUEST_POST((TCEvent) input_event);
         }
         END_POST_TIME_MEASURE(thread_Id);
     }
 
-    protected void TC_REQUEST_POST(TCEvent event) throws InterruptedException {
+    protected void TREND_CALCULATE_REQUEST_POST(TCEvent event) throws InterruptedException {
 
-        //TODO: Read isBurst result from TCEvent
+        //Read isBurst result from TCEvent
+        boolean isBurst = event.isBurst;
 
         if (!enable_app_combo) {
             //TODO: Increase bid by delta, emit new_bid, tweetID, and isBurst
             for (String tweetID : event.tweetIDList) {
-                //TODO: Initialize a new CU Event and pass to collector
+                //TODO: Initialize a new CU Event and pass to collector, pass isBurst to CU Event
                 collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
             }
         } else {

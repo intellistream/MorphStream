@@ -80,7 +80,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         int success;
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             success = operation.success[0];
-            Transfer_Fun(operation, mark_ID, clean);
+            if (this.tpg.getApp() == 1) { //SL
+                Transfer_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) { //ED-TC
+                TrendCalculate_Fun(operation, mark_ID, clean);
+            }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
@@ -245,7 +249,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        }
     }
 
-    // ED: Word Update
+    //TODO: Implement this
+    protected void TweetRegistrant_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {}
+
+    // ED: Word Update - Asy_ModifyRecord
     protected void WordUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid); //condition_record[0] stores the current word's record
 
@@ -276,6 +283,13 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             // Update word's inner-window frequency
             tempo_record.getValues().get(5).incLong(oldFrequency, 1); //compute, increase word's frequency by 1
 
+            //TODO: Check the following two lines
+            //Update record's version (in this request, s_record == d_record)
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+
         } else { // word not exit in wordTable
             SchemaRecord newWordRecord = WordRecord(operation.condition.stringArg1, new String[0],
                     1, -1, (int) operation.condition.arg1, 1);
@@ -283,6 +297,52 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             //TODO: Insert into word table, write empty word record with new word
         }
 
+    }
+
+    // ED: Trend Calculate - Asy_ModifyRecord_Read
+    protected void TrendCalculate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+
+        if (preValues != null) {
+            final String[] tweetList = preValues.getValues().get(1).getStringList().toArray(new String[0]);
+            final int countOccurWindow = preValues.getValues().get(2).getInt();
+            final double oldTfIdf = preValues.getValues().get(3).getDouble();
+            final int frequency = preValues.getValues().get(5).getInt();
+
+            // apply function
+            AppConfig.randomDelay();
+
+            // read
+            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
+
+            // Compute word's tf-idf
+            if (operation.function instanceof TFIDF) {
+                int windowSize = (int) operation.condition.arg1; //window count
+                int windowCount = (int) operation.condition.arg2; //window size
+                double tf = (double) frequency / windowSize;
+                double idf = -1 * (Math.log((double) countOccurWindow / windowCount));
+                double newTfIdf = tf * idf;
+                double difference = newTfIdf - oldTfIdf;
+
+                tempo_record.getValues().get(3).setDouble(newTfIdf); //compute: update tf-idf
+                tempo_record.getValues().get(5).setInt(0); //compute: reset frequency to zero
+                if (difference >= 10) { //TODO: Change this threshold
+                    tempo_record.getValues().get(6).setBool(true); //compute: set isBurst to true
+                } else {
+                    tempo_record.getValues().get(6).setBool(false); //compute: set isBurst to false
+                }
+
+                //TODO: Check the following two lines
+                //Update record's version (in this request, s_record == d_record)
+                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                synchronized (operation.success) {
+                    operation.success[0]++;
+                }
+
+            } else
+                throw new UnsupportedOperationException();
+        }
     }
 
     private SchemaRecord WordRecord(String wordValue, String[] tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {

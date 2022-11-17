@@ -1,6 +1,7 @@
 package common.bolts.transactional.ed.wu;
 
 import combo.SINKCombo;
+import common.param.ed.tc.TCEvent;
 import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -64,33 +65,25 @@ public class WUBolt_ts extends WUBolt{
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
-        BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
+        MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             WUEvent event = (WUEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            WORD_UPDATE_REQUEST_CONSTRUCT(event, txnContext);
+            if (event != null) {
+                WORD_UPDATE_REQUEST_CONSTRUCT(event, txnContext);
+            } else {
+                throw new UnknownError();
+            }
+            MeasureTools.END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
         }
-    }
-
-    private SchemaRecord WordRecord(String wordValue, HashSet tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(wordValue));       //Primary key
-        values.add(new HashSetDataBox(tweetList));
-        values.add(new IntDataBox(countOccurWindow));
-        values.add(new DoubleDataBox(tfIdf));
-        values.add(new IntDataBox(lastOccurWindow));
-        values.add(new IntDataBox(frequency));
-        return new SchemaRecord(values);
     }
 
     protected void WORD_UPDATE_REQUEST_CONSTRUCT(WUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
 
 
         transactionManager.BeginTransaction(txnContext);
-
-        //TODO: Define TxnOperation for WU
 
         String[] wordTable = new String[]{"word_table"}; //condition source table
         String[] wordID = new String[]{event.getWord()}; //condition source key

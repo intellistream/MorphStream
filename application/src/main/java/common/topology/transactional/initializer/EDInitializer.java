@@ -31,8 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 
-import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
+import static common.CONTROL.*;
 import static common.Constants.Event_Path;
 import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static profiler.Metrics.NUM_ITEMS;
@@ -341,7 +340,7 @@ public class EDInitializer extends TableInitilizer {
 //        }
 //    }
 
-    private SchemaRecord WordRecord(String wordValue, String[] tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {
+    private SchemaRecord WordRecord(String wordValue, String[] tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency, boolean isBurst) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(wordValue));       //Primary key: 0
         values.add(new ListStringDataBox(tweetList)); // 1
@@ -349,6 +348,7 @@ public class EDInitializer extends TableInitilizer {
         values.add(new DoubleDataBox(tfIdf)); // 3
         values.add(new IntDataBox(lastOccurWindow)); // 4
         values.add(new IntDataBox(frequency)); // 5
+        values.add(new BoolDataBox(isBurst)); // 6
         return new SchemaRecord(values);
     }
 
@@ -376,17 +376,19 @@ public class EDInitializer extends TableInitilizer {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new StringDataBox());       //Primary key
-        dataBoxes.add(new HashSetDataBox());
+        dataBoxes.add(new ListStringDataBox());
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new DoubleDataBox());
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new IntDataBox());
+        dataBoxes.add(new BoolDataBox());
         fieldNames.add("Word_Value");             //Primary key
         fieldNames.add("Tweet_List");
         fieldNames.add("Count_Occur_Window");
         fieldNames.add("TF_IDF");
         fieldNames.add("Last_Occur_Window");
         fieldNames.add("Frequency");
+        fieldNames.add("Is_Burst");
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
