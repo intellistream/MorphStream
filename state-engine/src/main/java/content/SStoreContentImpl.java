@@ -46,6 +46,11 @@ public class SStoreContentImpl extends SStoreContent {
     }
 
     @Override
+    public SchemaRecord readPreRangeValues(long startTs, int range) {
+        return null;
+    }
+
+    @Override
     public void clean_map() {
     }
 

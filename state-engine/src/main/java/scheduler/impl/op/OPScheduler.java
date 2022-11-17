@@ -21,6 +21,7 @@ import utils.SOURCE_CONTROL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 import static content.common.CommonMetaTypes.AccessType.*;
 
@@ -103,8 +104,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     d_record.get(2).setLong(left_qty - operation.function.delta_long);//new quantity.
                     operation.success[0]++;
                 }
-            } else if (this.tpg.getApp() == 4) {//ED_WU
-                //TODO: Add condition to check which operator in ED is it calling
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_wu")) {//ed_wu
                 WordUpdate_Fun(operation, mark_ID, clean);
             }
             // operation success check, number of operation succeeded does not increase after execution
@@ -280,7 +280,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             SchemaRecord newWordRecord = WordRecord(operation.condition.stringArg1, new String[0],
                     1, -1, (int) operation.condition.arg1, 1);
 
-            //TODO: Insert into word table
+            //TODO: Insert into word table, write empty word record with new word
         }
 
     }
@@ -338,22 +338,22 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             Operation set_op;
             switch (request.accessType) {
                 case WRITE_ONLY:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType, request.operator_name,
                             request.d_record, null, null, null, null);
                     set_op.value = request.value;
                     break;
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType, request.operator_name,
                             request.d_record, request.function, request.condition, request.condition_records, request.success);
                     break;
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType, request.operator_name,
                             request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                     break;
                 case READ_WRITE_READ:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType, request.operator_name,
                             request.d_record, request.record_ref, request.function, null, null, null);
                     break;
                 default:

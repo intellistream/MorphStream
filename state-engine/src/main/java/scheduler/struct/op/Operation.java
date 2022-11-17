@@ -60,16 +60,16 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     /****************************Defined by MYC*************************************/
 
     public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
-        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success);
+                                                  CommonMetaTypes.AccessType accessType, String operator_name, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
+        this(pKey, context, table_name, txn_context, bid, accessType, operator_name, d_record, null, function, condition, condition_records, success);
     }
 
     public <Context extends OPSchedulerContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-            CommonMetaTypes.AccessType accessType, TableRecord record,
+            CommonMetaTypes.AccessType accessType, String operator_name, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid);
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, operator_name, record, record, bid);
         this.context = context;
         this.pKey = pKey;
 

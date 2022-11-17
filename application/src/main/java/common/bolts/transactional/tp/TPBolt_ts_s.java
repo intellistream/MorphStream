@@ -96,12 +96,14 @@ public class TPBolt_ts_s extends TPBolt {
                 , event.speed_value
                 , new AVG(event.getPOSReport().getSpeed())
                 , new Condition(event.getPOSReport().getSpeed(),200)
-                , event.success);
+                , event.success
+                , "tp");
         transactionManager.Asy_ModifyRecord_Read(txnContext
                 , "segment_cnt"
                 , String.valueOf(event.getPOSReport().getSegment())
                 , event.count_value//holder to be filled up.
                 , new CNT(event.getPOSReport().getVid())
+                , "tp"
         );          //asynchronously return.
         transactionManager.CommitTransaction(txnContext);
         LREvents.add(event);
