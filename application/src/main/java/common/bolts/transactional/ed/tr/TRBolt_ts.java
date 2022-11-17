@@ -2,6 +2,7 @@ package common.bolts.transactional.ed.tr;
 
 import combo.SINKCombo;
 import common.bolts.transactional.sl.TransactionResult;
+import common.param.ed.tc.TCEvent;
 import common.param.ed.tr.TREvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
@@ -45,7 +46,6 @@ public class TRBolt_ts extends TRBolt{
     //To be used in Combo
     public TRBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-
     }
 
     //To be used in ED Topology
@@ -74,13 +74,18 @@ public class TRBolt_ts extends TRBolt{
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
-        BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
+        MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TREvent event = (TREvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            TWEET_REGISTRANT_REQUEST_CONSTRUCT(event, txnContext);
+            if (event != null) {
+                TWEET_REGISTRANT_REQUEST_CONSTRUCT(event, txnContext);
+            } else {
+                throw new UnknownError();
+            }
+            MeasureTools.END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
         }
     }
 
@@ -101,7 +106,7 @@ public class TRBolt_ts extends TRBolt{
 
         transactionManager.BeginTransaction(txnContext);
 
-        //TODO: Check the Insert operation in TxnManagerDedicatedAsy, is this even a transaction?
+        //TODO: Implement insertion with write to invalid records
         transactionManager.InsertNewRecord("tweet_table", event.getTweetID(), tweetRecord);
 
         transactionManager.CommitTransaction(txnContext);

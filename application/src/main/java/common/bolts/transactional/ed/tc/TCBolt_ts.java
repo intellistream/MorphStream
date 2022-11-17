@@ -10,25 +10,24 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import storage.SchemaRecord;
-import storage.datatype.DataBox;
+import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
+import transaction.function.Condition;
+import transaction.function.TFIDF;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
-import static common.CONTROL.enable_log;
 import static profiler.MeasureTools.*;
+import static profiler.Metrics.NUM_ITEMS;
 
 public class TCBolt_ts extends TCBolt{
     private static final Logger LOG= LoggerFactory.getLogger(TCBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<TCEvent> tcEvents;
-//    Collection<TCEvent> tcEvents;
 
     public TCBolt_ts(int fid, SINKCombo sink){
         super(LOG,fid,sink);
@@ -37,13 +36,11 @@ public class TCBolt_ts extends TCBolt{
         super(LOG,fid,null);
     }
 
+    //TODO: Copied from GSWBolt_ts
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        int numberOfStates = config.getInt("NUM_ITEMS");
-        //TODO: Correct the last argument config.getString("scheduler", "ED")), register in config
-        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
-                numberOfStates, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "ED"));
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
         tcEvents = new ArrayDeque<>();
     }
 
@@ -66,7 +63,7 @@ public class TCBolt_ts extends TCBolt{
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             if (event != null) {
-                TC_REQUEST_CONSTRUCT((TCEvent) event, txnContext);
+                TREND_CALCULATE_REQUEST_CONSTRUCT(event, txnContext);
             } else {
                 throw new UnknownError();
             }
@@ -74,39 +71,43 @@ public class TCBolt_ts extends TCBolt{
         }
     }
 
-    protected void TC_REQUEST_CONSTRUCT(TCEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void TREND_CALCULATE_REQUEST_CONSTRUCT(TCEvent event, TxnContext txnContext) throws DatabaseException {
         //it simply constructs the operations and return.
         transactionManager.BeginTransaction(txnContext);
 
-        //TODO: Define txn operation here
+        String[] wordTable = new String[]{"word_table"}; //condition source table
+        String[] wordID = new String[]{event.getWord()}; //condition source key
+        TFIDF tfIdf = new TFIDF();
+        Condition condition = new Condition(event.getWindowSize(), event.getWindowCount()); //arg1: windowSize, arg2: windowCount
+
+        transactionManager.Asy_ModifyRecord_Read(txnContext,
+                "word_table", // source_table
+                event.getWord(),  // source_key
+                event.getWord_record(), // record to be filled up from READ
+                tfIdf, // append new tweetID to word's tweetList
+                wordTable, wordID, //condition_source_table, condition_source_key
+                condition,
+                event.success,
+                "ed_tc"
+        );
 
         transactionManager.CommitTransaction(txnContext);
         tcEvents.add(event);
     }
 
-    private void TC_REQUEST_CORE() throws InterruptedException {
+    private void TREND_CALCULATE_REQUEST_CORE() {
         for (TCEvent event : tcEvents) {
-            //TODO: Put windowSize and windowCount outside of wordTable
-            SchemaRecord frequencyRecord = event.frequencyRecord.getRecord(); //Retrieve the READ result from Asy_WindowReadRecords(), and pass to event.result.
-            SchemaRecord windowSizeRecord = event.windowSizeRecord.getRecord(); //TODO: We may not need to READ here, just update tf-idf is enough, use Asy_ModifyRecord().
-            SchemaRecord countOccurWindowRecord = event.countOccurWindowRecord.getRecord(); //TODO: Define the tf-idf calculation as a function and pass to Request, not inside POST().
-            SchemaRecord windowCountRecord = event.windowCountRecord.getRecord();
-
-            if (frequencyRecord == null || windowSizeRecord == null || countOccurWindowRecord == null || windowCountRecord == null) {
-                if (enable_log) LOG.debug(event.getBid() + " | " + event.getWordValue());
+            SchemaRecordRef ref = event.getWord_record();
+            if (ref.isEmpty()) {
+                continue; //not yet processed.
             }
-
-            //Pass read results to event, they will be used to compute tf-idf in TC_REQUEST_POST().
-            event.frequency = Integer.parseInt(frequencyRecord.getValue().getString().trim());
-            event.windowSize = Integer.parseInt(windowSizeRecord.getValue().getString().trim());
-            event.countOccurWindow = Integer.parseInt(countOccurWindowRecord.getValue().getString().trim());
-            event.windowCount = Integer.parseInt(windowCountRecord.getValue().getString().trim());
+            event.isBurst = ref.getRecord().getValues().get(6).getBool();
         }
     }
 
-    private void TC_REQUEST_POST() throws InterruptedException {
+    private void TREND_CALCULATE_REQUEST_POST() throws InterruptedException {
         for (TCEvent event : tcEvents) {
-            TC_REQUEST_POST(event);
+            TREND_CALCULATE_REQUEST_POST(event);
         }
     }
 
@@ -122,12 +123,12 @@ public class TCBolt_ts extends TCBolt{
                 MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
                 {
                     transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
-                    TC_REQUEST_CORE();
+                    TREND_CALCULATE_REQUEST_CORE();
                 }
                 MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
                 BEGIN_POST_TIME_MEASURE(thread_Id);
                 {
-                    TC_REQUEST_POST();
+                    TREND_CALCULATE_REQUEST_POST();
                 }
                 END_POST_TIME_MEASURE_ACC(thread_Id);
 

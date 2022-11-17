@@ -25,6 +25,11 @@ public class ListStringDataBox extends DataBox {
         this.list = new LinkedList<>(Arrays.asList(list));
     }
 
+    public ListStringDataBox() {
+        this.movingAverageWindow = 100; //TODO: Check this
+        this.list = new LinkedList<>();
+    }
+
     public int getSize() throws DataBoxException {
         return 8 * list.size();
     }
