@@ -213,9 +213,9 @@ public abstract class Runner implements IRunner {
 
         if (application.equals("OnlineBiding")){
             config.put("Ratio_Of_Buying", Ratio_Of_Buying);
-        }else {
+        }else if (application.equals("StreamLedger")) {
             config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
-        }
+        } else {}
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
@@ -286,6 +286,11 @@ public abstract class Runner implements IRunner {
                 break;
             case "EventDetection" :
                 //TODO: Add Conf settings to ED
+                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
+                defaultScheduler = "OP_NS_A";
+                phaseNum = shiftRate * phaseType.length;
+                break;
             default:
                 throw new IllegalStateException("Unexpected value: " + application);
         }

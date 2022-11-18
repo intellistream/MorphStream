@@ -7,10 +7,6 @@ import common.bolts.transactional.ed.tr.*;
 import common.bolts.transactional.ed.wu.*;
 import common.collections.Configuration;
 import common.constants.EventDetectionConstants;
-import common.constants.GrepSumConstants;
-
-import common.constants.LinearRoadConstants.Field;
-import common.datatype.util.LRTopologyControl;
 import common.topology.transactional.initializer.EDInitializer;
 
 import components.Topology;
@@ -26,10 +22,8 @@ import topology.TransactionTopology;
 import transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
-import static common.constants.LinearRoadConstants.Conf.Executor_Threads;
-import static common.constants.TPConstants.Component.EXECUTOR;
-import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
-import static common.constants.TPConstants.PREFIX;
+import static common.constants.EventDetectionConstants.Conf.Executor_Threads;
+import static common.constants.EventDetectionConstants.PREFIX;
 import static content.Content.*;
 import static utils.PartitionHelper.setPartition_interval;
 
@@ -74,7 +68,7 @@ public class EventDetection extends TransactionTopology {
     @Override
     public Topology buildTopology() {
         try {
-            spout.setFields(new Fields(Field.TEXT));//output of a spouts
+            spout.setFields(new Fields(EventDetectionConstants.Field.TEXT));//output of a spouts
             builder.setSpout(EventDetectionConstants.Component.SPOUT, spout, spoutThreads); //TODO: Change the constant to FileSpout
             if (enable_app_combo) {
                 //spout only. enable_app_combo should always be false since we are not using combo in Event Detection
@@ -136,28 +130,28 @@ public class EventDetection extends TransactionTopology {
                     }
                     case CCOption_TStream: {//T-Stream
                         builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_ts(0)//
-                                , config.getInt(GrepSumConstants.Conf.Executor_Threads, 2)
+                                , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.SPOUT));
                         builder.setBolt(EventDetectionConstants.Component.TRG, new TRBolt_ts(0)//
-                                , config.getInt(GrepSumConstants.Conf.Executor_Threads, 2)
+                                , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.TR));
                         builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_ts(0)//
                                 , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.TRG));
                         builder.setBolt(EventDetectionConstants.Component.WUG, new TRBolt_ts(0)//
-                                , config.getInt(GrepSumConstants.Conf.Executor_Threads, 2)
+                                , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.WU));
                         builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_ts(0)//
                                 , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.WUG));
                         builder.setBolt(EventDetectionConstants.Component.TCG, new TRBolt_ts(0)//
-                                , config.getInt(GrepSumConstants.Conf.Executor_Threads, 2)
+                                , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.TC));
                         builder.setBolt(EventDetectionConstants.Component.CU, new CUBolt_ts(0)//
                                 , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.TCG));
                         builder.setBolt(EventDetectionConstants.Component.CUG, new TRBolt_ts(0)//
-                                , config.getInt(GrepSumConstants.Conf.Executor_Threads, 2)
+                                , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                                 , new ShuffleGrouping(EventDetectionConstants.Component.CU));
                         builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_ts(0)//
                                 , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)

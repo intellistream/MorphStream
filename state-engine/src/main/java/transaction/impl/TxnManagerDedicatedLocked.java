@@ -7,6 +7,7 @@ import lock.PartitionedOrderLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import scheduler.Request;
 import scheduler.context.og.OGSchedulerContext;
 import storage.*;
 import storage.datatype.DataBox;
@@ -100,12 +101,18 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
 
     public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
+    @Override //Add by zhonghao
     public void InsertNewRecord(String table_name, String key, SchemaRecord record) throws DatabaseException {
 //        AccessType type = AccessType.INSERT_ONLY;
         if (storageManager_.getTable(table_name).SelectKeyRecord(key) == null) { //Only insert if no existing record matching with input primary_key
             TableRecord tableRecord = new TableRecord(record);
             storageManager_.InsertRecord(table_name, tableRecord);
         }
+    }
+
+    @Override
+    public boolean Asy_ModifyRecord_Iteration(TxnContext txn_context, String srcTable, String key, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success, String operator_name) throws DatabaseException {
+        return false;
     }
 
     public boolean SelectKeyRecord(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException, InterruptedException {

@@ -73,12 +73,13 @@ public class TCBolt_ts extends TCBolt{
 
     protected void TREND_CALCULATE_REQUEST_CONSTRUCT(TCEvent event, TxnContext txnContext) throws DatabaseException {
         //it simply constructs the operations and return.
-        transactionManager.BeginTransaction(txnContext);
 
         String[] wordTable = new String[]{"word_table"}; //condition source table
         String[] wordID = new String[]{event.getWord()}; //condition source key
         TFIDF tfIdf = new TFIDF();
         Condition condition = new Condition(event.getWindowSize(), event.getWindowCount()); //arg1: windowSize, arg2: windowCount
+
+        transactionManager.BeginTransaction(txnContext);
 
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "word_table", // source_table
@@ -102,6 +103,7 @@ public class TCBolt_ts extends TCBolt{
                 continue; //not yet processed.
             }
             event.isBurst = ref.getRecord().getValues().get(6).getBool();
+            event.tweetIDList = ref.getRecord().getValues().get(1).getStringList().toArray(new String[0]);
         }
     }
 

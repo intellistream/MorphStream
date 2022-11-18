@@ -15,6 +15,9 @@ import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
+import transaction.function.Condition;
+import transaction.function.Similarity;
+import transaction.function.TFIDF;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
@@ -77,12 +80,25 @@ public class CUBolt_ts extends CUBolt{
         }
     }
 
-    //TODO: Complete the cu request construct
     protected void CLUSTER_UPDATE_REQUEST_CONSTRUCT(CUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+
+        String[] conditionSourceTable = new String[]{"cluster_table"}; //condition source table to iterate
+        String[] conditionSourceKey = new String[]{""}; //condition source key, set to null
+        Similarity function = new Similarity();
+        Condition condition = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
 
         transactionManager.BeginTransaction(txnContext);
 
-        //TODO: Define CU Txn Operation
+        transactionManager.Asy_ModifyRecord_Iteration(
+                txnContext,
+                "tweet_table", // source_table
+                event.getTweetID(),  // source_key
+                function, // determine the most similar cluster
+                conditionSourceTable, conditionSourceKey, //condition_source_table, condition_source_key
+                condition,
+                event.success,
+                "ed_cu"
+        );
 
         transactionManager.CommitTransaction(txnContext);
 

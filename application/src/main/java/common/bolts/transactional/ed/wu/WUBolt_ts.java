@@ -82,13 +82,12 @@ public class WUBolt_ts extends WUBolt{
 
     protected void WORD_UPDATE_REQUEST_CONSTRUCT(WUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
 
-
-        transactionManager.BeginTransaction(txnContext);
-
         String[] wordTable = new String[]{"word_table"}; //condition source table
         String[] wordID = new String[]{event.getWord()}; //condition source key
         Append append = new Append(event.getTweetID());
         Condition condition = new Condition(event.getCurrWindow(), event.getWord()); //pass the current window info to scheduler
+
+        transactionManager.BeginTransaction(txnContext);
 
         transactionManager.Asy_ModifyRecord(txnContext,
                 "word_table", // source_table
