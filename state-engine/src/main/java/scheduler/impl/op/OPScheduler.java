@@ -1,6 +1,7 @@
 package scheduler.impl.op;
 
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -18,10 +19,7 @@ import transaction.function.*;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static content.common.CommonMetaTypes.AccessType.*;
 
@@ -110,6 +108,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 }
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_wu")) {//ed_wu
                 WordUpdate_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu")) {//ed_cu
+                ClusterUpdate_Fun(operation, mark_ID, clean);
             }
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {
@@ -304,7 +304,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
 
         if (preValues != null) {
-            final String[] tweetList = preValues.getValues().get(1).getStringList().toArray(new String[0]);
             final int countOccurWindow = preValues.getValues().get(2).getInt();
             final double oldTfIdf = preValues.getValues().get(3).getDouble();
             final int frequency = preValues.getValues().get(5).getInt();
@@ -327,7 +326,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                 tempo_record.getValues().get(3).setDouble(newTfIdf); //compute: update tf-idf
                 tempo_record.getValues().get(5).setInt(0); //compute: reset frequency to zero
-                if (difference >= 10) { //TODO: Change this threshold
+
+                if (difference >= 0.5) { //TODO: Change this threshold
                     tempo_record.getValues().get(6).setBool(true); //compute: set isBurst to true
                 } else {
                     tempo_record.getValues().get(6).setBool(false); //compute: set isBurst to false
@@ -343,6 +343,101 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             } else
                 throw new UnsupportedOperationException();
         }
+    }
+
+    // Cluster Update - Asy_ModifyRecord_Iteration
+    protected void ClusterUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+        SchemaRecord[] preValuesArray = new SchemaRecord[operation.condition_records.length];
+        HashMap<SchemaRecord, Double> similarities = new HashMap<>();
+
+        // apply function
+        AppConfig.randomDelay(); //TODO: Check if this can be placed before read
+
+        // read
+        SchemaRecord tweetRecord = operation.s_record.content_.readPreValues(operation.bid);
+        int computeTime = tweetRecord.getValues().get(2).getInt();
+
+        //TODO: Update tweet's compute time
+
+
+
+
+
+
+
+        //TODO: If not doable, update it in TC Gate
+
+        // input tweet hasn't been computed before & it is burst
+        if (computeTime != operation.condition.arg1 && operation.condition.boolArg1) {
+            String[] tweetWordList = tweetRecord.getValues().get(1).getStringList().toArray(new String[0]);
+            HashMap<String, Integer> tweetMap = new HashMap<>();
+            for (String word : tweetWordList) {tweetMap.put(word, 1);}
+
+            // compute input tweet's cosine similarity with all clusters
+            if (operation.function instanceof Similarity) {
+                for (TableRecord record : operation.condition_records) {
+                    SchemaRecord clusterRecord = record.content_.readPreValues(operation.bid);
+                    int aliveTime = clusterRecord.getValues().get(2).getInt();
+
+                    if (aliveTime >= operation.condition.arg1 - 2) { // cluster has been updated in the past two windows
+                        String[] clusterWordList = clusterRecord.getValues().get(1).getStringList().toArray(new String[0]);
+
+                        // compute cosine similarity
+                        HashMap<String, Integer> clusterMap = new HashMap<>();
+                        for (String word : clusterWordList) {clusterMap.put(word, 1);}
+                        Set<String> both = Sets.newHashSet(clusterMap.keySet());
+                        both.retainAll(tweetMap.keySet());
+                        double scalar = 0, norm1 = 0, norm2 = 0;
+                        for (String k : both) scalar += clusterMap.getOrDefault(k, 0) * tweetMap.getOrDefault(k, 0);
+                        for (String k : clusterMap.keySet()) norm1 += clusterMap.get(k) * clusterMap.get(k);
+                        for (String k : tweetMap.keySet()) norm2 += tweetMap.get(k) * tweetMap.get(k);
+                        double similarity = scalar / Math.sqrt(norm1 * norm2);
+
+                        similarities.put(clusterRecord, similarity);
+                    }
+                }
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            // determine the most similar cluster
+            SchemaRecord maxCluster = Collections.max(similarities.entrySet(), Map.Entry.comparingByValue()).getKey();
+            double maxSimilarity = similarities.get(maxCluster);
+
+            // Compare max similarity with threshold: 0.5
+            if (maxSimilarity >= 0.5) { //TODO: Check the threshold value
+                SchemaRecord tempo_record = new SchemaRecord(maxCluster); //tempo record - the most similar cluster
+                List<String> wordList = maxCluster.getValues().get(1).getStringList();
+                int countNewTweet = maxCluster.getValues().get(3).getInt();
+
+                // Merge input tweet into cluster
+                for (String word : tweetWordList) {
+                    if (!wordList.contains(word)) {wordList.add(word);}
+                }
+
+                tempo_record.getValues().get(1).setStringList(wordList); //compute: merge wordList
+                tempo_record.getValues().get(2).setInt((int) operation.condition.arg1); //compute: aliveTime = currWin
+                tempo_record.getValues().get(3).setInt(countNewTweet + 1); //compute: increment countNewTweet
+
+                //TODO: Check the following two lines
+                //Update record's version (in this request, s_record == d_record)
+                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                synchronized (operation.success) {
+                    operation.success[0]++;
+                }
+
+            } else { // Initialize a new cluster
+                //TODO: Create a new cluster with input tweet
+
+
+
+
+
+            }
+
+        }
+
     }
 
     private SchemaRecord WordRecord(String wordValue, String[] tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {

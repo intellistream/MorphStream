@@ -281,6 +281,43 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
+    @Override // ED_CU
+    public boolean Asy_ModifyRecord_Iteration(TxnContext txn_context,
+                                              String srcTable, String key,
+                                              Function function,
+                                              String[] condition_sourceTable, String[] condition_source,
+                                              Condition condition,
+                                              int[] success,
+                                              String operator_name) throws DatabaseException {
+        AccessType accessType = AccessType.READ_WRITE_COND;
+        TableRecord[] condition_records = new TableRecord[condition_source.length];
+
+        //The 1st element in condition_sourceTable is the iteration_table.
+        Iterator<TableRecord> iterator = storageManager_.getTable(condition_sourceTable[0]).iterator();
+
+        //Pass the entire iteration_table to condition_records
+        int i = 0;
+        while (iterator.hasNext()) {
+            condition_records[i] = iterator.next();
+            i++;
+        }
+
+        //s_record: tweetRecord, d_record: clusterRecord whose similarity is the highest (determined in OpScheduler)
+        TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
+        if (s_record != null) {
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
+                        key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
+                        key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
+            }
+        } else {
+            if (enable_log) log.info("No record is found:" + key);
+            return false;
+        }
+    }
+
     @Override
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String operator_name) throws DatabaseException {
         AccessType accessType = AccessType.READ_WRITE_READ;
@@ -316,7 +353,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // TRANSFER_ACT
+    @Override // TRANSFER_ACT, ED_TC
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                          Function function,
                                          String[] condition_sourceTable, String[] condition_source,

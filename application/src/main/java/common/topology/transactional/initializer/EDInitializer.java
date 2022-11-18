@@ -353,19 +353,19 @@ public class EDInitializer extends TableInitilizer {
     }
 
     //TODO: Implement HashMapDataBox datatype to replace HashSet
-    private SchemaRecord TweetRecord(String tweetID, HashSet wordMap, int computeTime) {
+    private SchemaRecord TweetRecord(String tweetID, String[] wordList, int computeTime) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(tweetID));           //Primary key
-        values.add(new HashSetDataBox(wordMap));
+        values.add(new ListStringDataBox(wordList));
         values.add(new IntDataBox(computeTime));
         return new SchemaRecord(values);
     }
 
     //TODO: Implement HashMapDataBox datatype to replace HashSet
-    private SchemaRecord ClusterRecord(String clusterID, HashSet tweetList, int aliveTime, int countNewTweet) {
+    private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int aliveTime, int countNewTweet) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(clusterID));         //Primary key
-        values.add(new HashSetDataBox(tweetList));
+        values.add(new ListStringDataBox(wordList));
         values.add(new IntDataBox(aliveTime));
         values.add(new IntDataBox(countNewTweet));
         return new SchemaRecord(values);
@@ -397,11 +397,11 @@ public class EDInitializer extends TableInitilizer {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new StringDataBox());
-        dataBoxes.add(new HashSetDataBox());
+        dataBoxes.add(new ListStringDataBox());
         dataBoxes.add(new IntDataBox());
-        fieldNames.add("Tweet_ID");
-        fieldNames.add("Word_Map");
-        fieldNames.add("Compute_Time");
+        fieldNames.add("Tweet_ID"); // 0
+        fieldNames.add("Word_List"); // 1
+        fieldNames.add("Compute_Time"); // 2
 
         return new RecordSchema(fieldNames, dataBoxes);
     }
@@ -411,13 +411,13 @@ public class EDInitializer extends TableInitilizer {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new StringDataBox());
-        dataBoxes.add(new HashSetDataBox());
+        dataBoxes.add(new ListStringDataBox());
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new IntDataBox());
-        fieldNames.add("Cluster_ID");
-        fieldNames.add("Tweet_List");
-        fieldNames.add("Alive_Time");
-        fieldNames.add("Count_New_Tweet");
+        fieldNames.add("Cluster_ID"); // 0
+        fieldNames.add("Word_List"); // 1
+        fieldNames.add("Alive_Time"); // 2
+        fieldNames.add("Count_New_Tweet"); // 3
         return new RecordSchema(fieldNames, dataBoxes);
     }
 

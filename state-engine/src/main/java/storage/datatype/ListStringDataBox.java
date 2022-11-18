@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ListStringDataBox extends DataBox {
     private final int movingAverageWindow;
-    private final LinkedList<String> list;
+    private LinkedList<String> list;
 
     /**
      * Construct an empty StringDataBox.
@@ -37,6 +37,11 @@ public class ListStringDataBox extends DataBox {
     @Override
     public List<String> getStringList() {
         return this.list;
+    }
+
+    @Override
+    public void setStringList(List<String> list) {
+        this.list = new LinkedList<>(list);
     }
 
     @Override
