@@ -267,7 +267,7 @@ public class EDInitializer extends TableInitilizer {
     }
 
 
-    //TODO: This initialize table with some default records. We don't need this in ED.
+    //TODO: This initialize table with some default records.
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
         int partition_interval = (int) Math.ceil(numberOfStates / (double) NUM_TASK);
@@ -283,7 +283,7 @@ public class EDInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
-            //TODO: This initialize table with some default records. We don't need this in ED.
+            //TODO: This initialize table with some default records.
 //            insertWordRecord(_key, startingValue , pid, spinlock);
         }
         if (enable_log)
@@ -302,7 +302,6 @@ public class EDInitializer extends TableInitilizer {
     }
 
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
 //    private void insertWordRecord(String wordValue, HashSet tweetMap, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency, int pid, SpinLock[] spinlock_) {
 //        try {
 //            if (spinlock_ != null)
@@ -314,7 +313,6 @@ public class EDInitializer extends TableInitilizer {
 //        }
 //    }
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
     //Shouldn't be called inside ED initializer.
 //    private void insertTweetRecord(long tweetID, HashSet wordMap, int computeTime, int pid, SpinLock[] spinlock_) {
 //        try {
@@ -327,7 +325,6 @@ public class EDInitializer extends TableInitilizer {
 //        }
 //    }
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
     //Shouldn't be called inside ED initializer.
 //    private void insertClusterRecord(long clusterID, HashSet tweetList, int aliveTime, int countNewTweet, int pid, SpinLock[] spinlock_) {
 //        try {
@@ -352,7 +349,6 @@ public class EDInitializer extends TableInitilizer {
         return new SchemaRecord(values);
     }
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
     private SchemaRecord TweetRecord(String tweetID, String[] wordList, int computeTime) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(tweetID));           //Primary key
@@ -361,17 +357,17 @@ public class EDInitializer extends TableInitilizer {
         return new SchemaRecord(values);
     }
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
-    private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int aliveTime, int countNewTweet) {
+    private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int aliveTime, int countNewTweet, int clusterSize, boolean isEvent) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(clusterID));         //Primary key
         values.add(new ListStringDataBox(wordList));
         values.add(new IntDataBox(aliveTime));
         values.add(new IntDataBox(countNewTweet));
+        values.add(new IntDataBox(clusterSize));
+        values.add(new BoolDataBox(isEvent));
         return new SchemaRecord(values);
     }
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
     private RecordSchema WordSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -392,7 +388,6 @@ public class EDInitializer extends TableInitilizer {
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
     private RecordSchema TweetSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -406,7 +401,6 @@ public class EDInitializer extends TableInitilizer {
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
     private RecordSchema ClusterSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -414,10 +408,14 @@ public class EDInitializer extends TableInitilizer {
         dataBoxes.add(new ListStringDataBox());
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new IntDataBox());
+        dataBoxes.add(new IntDataBox());
+        dataBoxes.add(new BoolDataBox());
         fieldNames.add("Cluster_ID"); // 0
         fieldNames.add("Word_List"); // 1
         fieldNames.add("Alive_Time"); // 2
         fieldNames.add("Count_New_Tweet"); // 3
+        fieldNames.add("Cluster_Size"); // 4
+        fieldNames.add("Is_Event"); // 5
         return new RecordSchema(fieldNames, dataBoxes);
     }
 

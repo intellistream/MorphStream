@@ -41,17 +41,16 @@ public class ESBolt extends TransactionalBolt {
     }
 
     protected void EVENT_SELECT_REQUEST_POST(ESEvent event) throws InterruptedException {
-        //TODO: Refer to GSWBolt, we can perform some correctness measurement here
-//        int sum = 0; //Pass this sum value to sink for measurement
-//        if (POST_COMPUTE_COMPLEXITY != 0) {
-//            for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
-//                sum += event.result.get(i);
-//            }
-//            for (int j = 0; j < POST_COMPUTE_COMPLEXITY; ++j)
-//                sum += System.nanoTime();
-//        }
+        boolean isEvent = event.isEvent;
+        String[] wordList = event.wordList;
+
         if (!enable_app_combo) {
-            //TODO: Add delta to bid, emit event information to sink
+            if (isEvent) {
+                //create output event information
+            } else {
+                //create output non-event information
+            }
+            //TODO: Increase bid by delta, emit output information to sink
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {
             if (enable_latency_measurement) {
