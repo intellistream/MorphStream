@@ -1,6 +1,7 @@
 package scheduler;
 
 import content.common.CommonMetaTypes;
+import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;
@@ -54,6 +55,16 @@ public class Request {
                    String operator_name,
                    String table_name, double[] enqueue_time) {
         this(txn_context, accessType, operator_name, table_name, null, null, null, null, null, null, null, null, null, null, -1, enqueue_time);
+    }
+
+    //TODO: Check this
+    public Request(TxnContext txn_context,
+                   CommonMetaTypes.AccessType accessType,
+                   String operator_name,
+                   String table_name, String source_key,
+                   TableRecord s_record,
+                   double[] enqueue_time) {
+        this(txn_context, accessType, operator_name, table_name, source_key, s_record, null, null, null, null, null, null, null, null, -1, enqueue_time);
     }
 
     //no condition, no ref. no column id

@@ -80,8 +80,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             success = operation.success[0];
             if (this.tpg.getApp() == 1) { //SL
                 Transfer_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) { //ED-TC
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) { //ED_TC
                 TrendCalculate_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) { //ED_ES
+                EventSelection_Fun(operation, mark_ID, clean);
             }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
@@ -299,6 +301,47 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     }
 
+
+    // ED-ES: Asy_ModifyRecord_Read
+    protected void EventSelection_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+
+        if (preValues != null) { // cluster exits in clusterTable
+            int countNewTweet = preValues.getValues().get(3).getInt();
+            int clusterSize = preValues.getValues().get(4).getInt();
+
+            // apply function
+            AppConfig.randomDelay();
+
+            // read
+            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
+
+            tempo_record.getValues().get(3).setInt(0); //compute, reset cluster.countNewTweet to zero
+
+            // compute cluster growth rate
+            if (operation.function instanceof Division) {
+                double growthRate = (double) countNewTweet / clusterSize;
+
+                //TODO: Check growth rate threshold
+                tempo_record.getValues().get(5).setBool(growthRate > 0.5); //compute, update cluster.isEvent
+
+                //TODO: Check the following two lines
+                //Update record's version (in this request, s_record == d_record)
+                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                synchronized (operation.success) {
+                    operation.success[0]++;
+                }
+
+            } else
+                throw new UnsupportedOperationException();
+
+        }
+
+    }
+
+
+
     // ED: Trend Calculate - Asy_ModifyRecord_Read
     protected void TrendCalculate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
@@ -347,8 +390,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     // Cluster Update - Asy_ModifyRecord_Iteration
     protected void ClusterUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
-        SchemaRecord[] preValuesArray = new SchemaRecord[operation.condition_records.length];
         HashMap<SchemaRecord, Double> similarities = new HashMap<>();
 
         // apply function
@@ -410,6 +451,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 SchemaRecord tempo_record = new SchemaRecord(maxCluster); //tempo record - the most similar cluster
                 List<String> wordList = maxCluster.getValues().get(1).getStringList();
                 int countNewTweet = maxCluster.getValues().get(3).getInt();
+                int clusterSize = maxCluster.getValues().get(4).getInt();
 
                 // Merge input tweet into cluster
                 for (String word : tweetWordList) {
@@ -419,6 +461,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 tempo_record.getValues().get(1).setStringList(wordList); //compute: merge wordList
                 tempo_record.getValues().get(2).setInt((int) operation.condition.arg1); //compute: aliveTime = currWin
                 tempo_record.getValues().get(3).setInt(countNewTweet + 1); //compute: increment countNewTweet
+                tempo_record.getValues().get(4).setInt(clusterSize + 1); //compute: increment clusterSize
 
                 //TODO: Check the following two lines
                 //Update record's version (in this request, s_record == d_record)
@@ -439,6 +482,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
     }
+
 
     private SchemaRecord WordRecord(String wordValue, String[] tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {
         List<DataBox> values = new ArrayList<>();

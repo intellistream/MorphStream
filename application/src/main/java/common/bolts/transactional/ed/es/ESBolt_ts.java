@@ -15,6 +15,7 @@ import profiler.MeasureTools;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
+import transaction.function.Division;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
@@ -72,34 +73,38 @@ public class ESBolt_ts extends ESBolt{
         }
     }
 
-    //TODO: Complete the tweet registration request construct
     protected void EVENT_SELECT_REQUEST_CONSTRUCT(ESEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+
+        String[] conditionSourceTable = new String[]{"word_table"}; //condition source table
+        String[] conditionSourceKey = new String[]{event.getClusterID()}; //condition source key
+        Division function = new Division();
 
         transactionManager.BeginTransaction(txnContext);
 
-        //TODO: Define ES Txn Operation
+        transactionManager.Asy_ModifyRecord_Read(txnContext,
+                "cluster_table", // source_table
+                event.getClusterID(),  // source_key
+                event.getClusterRecord(), // record to be filled up from READ
+                function,
+                conditionSourceTable, conditionSourceKey,
+                null, // no condition required
+                event.success,
+                "ed_es"
+        );
 
         transactionManager.CommitTransaction(txnContext);
 
         esEvents.add(event);
     }
 
-    private void EVENT_SELECT_REQUEST_CORE() throws InterruptedException {
+    private void EVENT_SELECT_REQUEST_CORE() {
         for (ESEvent event : esEvents) {
-
-            //TODO: Define ES CORE
-
-//            SchemaRecordRef tweetRecordRef = event.tweetRecordRef;
-//
-//            //INSERT failed
-//            if (tweetRecordRef == null) {
-//                if (enable_log) LOG.debug(event.getBid() + " | " + Arrays.toString(event.getWords()) + "INSERT failed");
-//            }
-//
-//            //INSERT success, pass read result to event. It will be referenced in REQUEST_POST
-//            if (tweetRecordRef != null) {
-//                event.tweetIDResult = tweetRecordRef.getRecord().getValues().get(1).getString().trim(); //Add read result to event.result
-//            }
+            SchemaRecordRef ref = event.getClusterRecord();
+            if (ref.isEmpty()) {
+                continue; //not yet processed.
+            }
+            event.wordList = ref.getRecord().getValues().get(1).getStringList().toArray(new String[0]);
+            event.isEvent = ref.getRecord().getValues().get(5).getBool();
         }
     }
 

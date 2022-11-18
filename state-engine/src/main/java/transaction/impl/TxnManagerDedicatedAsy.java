@@ -166,14 +166,15 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
+    //TODO: Added primary key & s_record in Request construction.
     public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String primary_key, SchemaRecordRef record_ref, double[] enqueue_time, String operator_name) throws DatabaseException {
         AccessType accessType = AccessType.READ_ONLY;
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
         if (t_record != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable, enqueue_time));
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable, primary_key, t_record, enqueue_time));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable, enqueue_time));
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable, primary_key, t_record, enqueue_time));
             }
         } else {
             if (enable_log) log.info("No record is found:" + primary_key);
@@ -353,7 +354,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // TRANSFER_ACT, ED_TC
+    @Override // TRANSFER_ACT, ED_TC, ED_ES
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                          Function function,
                                          String[] condition_sourceTable, String[] condition_source,
