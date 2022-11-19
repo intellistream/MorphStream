@@ -59,7 +59,7 @@ public abstract class TRBolt extends TransactionalBolt {
         } else {
             if (enable_latency_measurement) {
                 //Pass the read result of new tweet's ID (assigned by table) to sink
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.tweetIDResult, event.getTimestamp())));
+                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
             }
         }
     }

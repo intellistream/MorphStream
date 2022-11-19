@@ -45,13 +45,17 @@ public class ESBolt extends TransactionalBolt {
         String[] wordList = event.wordList;
 
         if (!enable_app_combo) {
+            String output = "";
             if (isEvent) {
                 //create output event information
+                output = event.getClusterID() + String.join(",", wordList);
             } else {
                 //create output non-event information
+                output = event.getClusterID() + "is not an Event.";
             }
             //TODO: Increase bid by delta, emit output information to sink
-            collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
+            //the second argument should be output event
+            collector.emit(event.getBid(), output, event.getTimestamp());//the tuple is finished.
         } else {
             if (enable_latency_measurement) {
                 //Pass the read result of new tweet's ID (assigned by table) to sink

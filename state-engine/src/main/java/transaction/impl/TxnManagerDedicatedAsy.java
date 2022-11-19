@@ -125,7 +125,6 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
-    //TODO: Implement insertion with write (future plan)
     public void InsertNewRecord(String table_name, String key, SchemaRecord record) throws DatabaseException {
 //        AccessType type = AccessType.INSERT_ONLY;
         if (storageManager_.getTable(table_name).SelectKeyRecord(key) == null) { //Only insert if no existing record matching with input primary_key
