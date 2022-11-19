@@ -26,6 +26,7 @@ import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.DEC;
 import transaction.function.INC;
+import transaction.function.Insert;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
@@ -89,47 +90,37 @@ public class TRBolt_ts extends TRBolt{
         }
     }
 
-    //TODO: Implement HashMapDataBox datatype to replace HashSet
-    private SchemaRecord TweetRecord(String tweetID, HashSet wordMap, int computeTime) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(tweetID));           //Primary key
-        values.add(new HashSetDataBox(wordMap));
-        values.add(new IntDataBox(computeTime));
-        return new SchemaRecord(values);
-    }
-
-    //TODO: Complete the tweet registration request construct
     protected void TWEET_REGISTRANT_REQUEST_CONSTRUCT(TREvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
 
-        HashSet<String> wordHashSet = new HashSet<>(Arrays.asList(event.getWords())); //Convert String[] to HashSet
-        SchemaRecord tweetRecord = TweetRecord(event.getTweetID(), wordHashSet, -1); //Set default computeTime to -1
+        String[] tweetTable = new String[]{"tweet_table"}; //condition source table
+        String[] tweetID = new String[]{event.getTweetID()}; //condition source key
+        String sourceTable = "tweet_table";
+        String sourceKey = event.getTweetID();
+        Insert function = new Insert(event.getWords());
 
         transactionManager.BeginTransaction(txnContext);
 
-        //TODO: Implement insertion with write to invalid records
-        transactionManager.InsertNewRecord("tweet_table", event.getTweetID(), tweetRecord);
+        //Insert new tweet record by writing to corresponding invalid record
+        transactionManager.Asy_ModifyRecord(txnContext,
+                sourceTable, // source_table
+                sourceKey,  // source_key
+                function, // words in tweet
+                tweetTable, tweetID, //condition_source_table, condition_source_key
+                null, // no condition required
+                event.success,
+                "ed_tr"
+        );
 
         transactionManager.CommitTransaction(txnContext);
 
         trEvents.add(event);
     }
 
-    //TODO
-    // This method should read the INSERT result as new tweet's tweetID (Or, use tweetID in dataset as the primary key)
     private void TWEET_REGISTRANT_REQUEST_CORE() throws InterruptedException {
         for (TREvent event : trEvents) {
 
-            SchemaRecordRef tweetRecordRef = event.tweetRecordRef;
+            //TODO: Implement TR CORE
 
-            //INSERT failed
-            if (tweetRecordRef == null) {
-                if (enable_log) LOG.debug(event.getBid() + " | " + Arrays.toString(event.getWords()) + "INSERT failed");
-            }
-
-            //INSERT success, pass read result to event. It will be referenced in REQUEST_POST
-            if (tweetRecordRef != null) {
-                event.tweetIDResult = tweetRecordRef.getRecord().getValues().get(1).getString().trim(); //Add read result to event.result
-            }
         }
     }
 

@@ -108,6 +108,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     d_record.get(2).setLong(left_qty - operation.function.delta_long);//new quantity.
                     operation.success[0]++;
                 }
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tr")) {//ed_tr
+                TweetRegistrant_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_wu")) {//ed_wu
                 WordUpdate_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu")) {//ed_cu
@@ -144,6 +146,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             //OB-Alert
             AppConfig.randomDelay();
             operation.d_record.record_.getValues().get(1).setLong(operation.value);
+
         } else if (operation.accessType.equals(READ_WRITE_READ)){
             assert operation.record_ref != null;
             AppConfig.randomDelay();
@@ -215,6 +218,18 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
+
+    //TODO: Check this
+    protected void TableIteration_Fun() {
+        /*
+        Use Asy_ModifyRecord_Read, store the iterator of the table into condition and pass to Request.
+        Retrieve the iterator from condition in OpScheduler, and ... how to pass it back to bolts???
+
+        If we can call storageManager directly in Gate Bolt, then just use the iterator to send primary keys to collector...
+
+        */
+    }
+
     protected void GrepSum_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         int keysLength = operation.condition_records.length;
         SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
@@ -251,17 +266,37 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        }
     }
 
-    //TODO: Implement this
-    protected void TweetRegistrant_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {}
+    // ED: Tweet Registrant - Asy_ModifyRecord
+    protected void TweetRegistrant_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+
+        // apply function
+        AppConfig.randomDelay();
+
+        // read
+        SchemaRecord tweetRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
+
+        // Update tweet's wordList
+        if (operation.function instanceof Insert) {
+            tempo_record.getValues().get(1).setStringList(Arrays.asList(operation.function.stringArray)); //compute, update wordList
+        } else
+            throw new UnsupportedOperationException();
+
+        //Update record's version (in this request, s_record == d_record)
+        operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+        synchronized (operation.success) {
+            operation.success[0]++;
+        }
+
+    }
+
 
     // ED: Word Update - Asy_ModifyRecord
     protected void WordUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid); //condition_record[0] stores the current word's record
 
         if (preValues != null) { // word exits in wordTable
-            final int oldCountOccurWindow = preValues.getValues().get(2).getInt();
-            final int oldLastOccurWindow = preValues.getValues().get(4).getInt();
-            final int oldFrequency = preValues.getValues().get(5).getInt();
+            final int oldCountOccurWindow = preValues.getValues().get(3).getInt();
 
             // apply function
             AppConfig.randomDelay();
@@ -270,71 +305,44 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
 
-            // Update word's tweetList
-            if (operation.function instanceof Append) {
-                tempo_record.getValues().get(1).addItem(operation.function.item); //compute, append new tweetID into word's tweetList
-            } else
-                throw new UnsupportedOperationException();
+            if (oldCountOccurWindow != -1) { // word has been stored into table
+                final int oldLastOccurWindow = preValues.getValues().get(5).getInt();
+                final int oldFrequency = preValues.getValues().get(6).getInt();
 
-            // Update word's window info
-            if (oldLastOccurWindow < operation.condition.arg1) { //oldLastOccurWindow less than currentWindow
-                tempo_record.getValues().get(2).incLong(oldCountOccurWindow, 1); //compute, increase countOccurWindow by 1
-                tempo_record.getValues().get(4).setInt((int) operation.condition.arg1); //compute, set lastOccurWindow to currentWindow
+                // Update word's tweetList
+                if (operation.function instanceof Append) {
+                    tempo_record.getValues().get(2).addItem(operation.function.item); //compute, append new tweetID into word's tweetList
+                } else
+                    throw new UnsupportedOperationException();
+
+                // Update word's window info
+                if (oldLastOccurWindow < operation.condition.arg1) { //oldLastOccurWindow less than currentWindow
+                    tempo_record.getValues().get(3).incLong(oldCountOccurWindow, 1); //compute, increase countOccurWindow by 1
+                    tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //compute, set lastOccurWindow to currentWindow
+                }
+
+                // Update word's inner-window frequency
+                tempo_record.getValues().get(6).incLong(oldFrequency, 1); //compute, increase word's frequency by 1
+
+            } else { // word has not been stored into table
+
+                String[] tweetList = {operation.function.item};
+
+                tempo_record.getValues().get(1).setString(operation.condition.stringArg1);
+                tempo_record.getValues().get(2).setStringList(Arrays.asList(tweetList));
+                tempo_record.getValues().get(3).setInt(1);
+                tempo_record.getValues().get(4).setDouble(-1);
+                tempo_record.getValues().get(5).setInt((int) operation.condition.arg1);
+                tempo_record.getValues().get(6).setInt(1);
+                tempo_record.getValues().get(7).setBool(false);
+
             }
 
-            // Update word's inner-window frequency
-            tempo_record.getValues().get(5).incLong(oldFrequency, 1); //compute, increase word's frequency by 1
-
-            //TODO: Check the following two lines
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             synchronized (operation.success) {
                 operation.success[0]++;
             }
-
-        } else { // word not exit in wordTable
-            SchemaRecord newWordRecord = WordRecord(operation.condition.stringArg1, new String[0],
-                    1, -1, (int) operation.condition.arg1, 1);
-
-            //TODO: Insert into word table, write empty word record with new word
-        }
-
-    }
-
-
-    // ED-ES: Asy_ModifyRecord_Read
-    protected void EventSelection_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
-
-        if (preValues != null) { // cluster exits in clusterTable
-            int countNewTweet = preValues.getValues().get(3).getInt();
-            int clusterSize = preValues.getValues().get(4).getInt();
-
-            // apply function
-            AppConfig.randomDelay();
-
-            // read
-            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
-
-            tempo_record.getValues().get(3).setInt(0); //compute, reset cluster.countNewTweet to zero
-
-            // compute cluster growth rate
-            if (operation.function instanceof Division) {
-                double growthRate = (double) countNewTweet / clusterSize;
-
-                //TODO: Check growth rate threshold
-                tempo_record.getValues().get(5).setBool(growthRate > 0.5); //compute, update cluster.isEvent
-
-                //TODO: Check the following two lines
-                //Update record's version (in this request, s_record == d_record)
-                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-                synchronized (operation.success) {
-                    operation.success[0]++;
-                }
-
-            } else
-                throw new UnsupportedOperationException();
 
         }
 
@@ -347,9 +355,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
 
         if (preValues != null) {
-            final int countOccurWindow = preValues.getValues().get(2).getInt();
-            final double oldTfIdf = preValues.getValues().get(3).getDouble();
-            final int frequency = preValues.getValues().get(5).getInt();
+            final int countOccurWindow = preValues.getValues().get(3).getInt();
+            final double oldTfIdf = preValues.getValues().get(4).getDouble();
+            final int frequency = preValues.getValues().get(6).getInt();
 
             // apply function
             AppConfig.randomDelay();
@@ -367,16 +375,15 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 double newTfIdf = tf * idf;
                 double difference = newTfIdf - oldTfIdf;
 
-                tempo_record.getValues().get(3).setDouble(newTfIdf); //compute: update tf-idf
-                tempo_record.getValues().get(5).setInt(0); //compute: reset frequency to zero
+                tempo_record.getValues().get(4).setDouble(newTfIdf); //compute: update tf-idf
+                tempo_record.getValues().get(6).setInt(0); //compute: reset frequency to zero
 
-                if (difference >= 0.5) { //TODO: Change this threshold
-                    tempo_record.getValues().get(6).setBool(true); //compute: set isBurst to true
+                if (difference >= 0.5) { //TODO: Check this threshold
+                    tempo_record.getValues().get(7).setBool(true); //compute: set isBurst to true
                 } else {
-                    tempo_record.getValues().get(6).setBool(false); //compute: set isBurst to false
+                    tempo_record.getValues().get(7).setBool(false); //compute: set isBurst to false
                 }
 
-                //TODO: Check the following two lines
                 //Update record's version (in this request, s_record == d_record)
                 operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
                 synchronized (operation.success) {
@@ -393,7 +400,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         HashMap<SchemaRecord, Double> similarities = new HashMap<>();
 
         // apply function
-        AppConfig.randomDelay(); //TODO: Check if this can be placed before read
+        AppConfig.randomDelay();
 
         // read
         SchemaRecord tweetRecord = operation.s_record.content_.readPreValues(operation.bid);
@@ -438,6 +445,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                         similarities.put(clusterRecord, similarity);
                     }
                 }
+
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -463,7 +471,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 tempo_record.getValues().get(3).setInt(countNewTweet + 1); //compute: increment countNewTweet
                 tempo_record.getValues().get(4).setInt(clusterSize + 1); //compute: increment clusterSize
 
-                //TODO: Check the following two lines
                 //Update record's version (in this request, s_record == d_record)
                 operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
                 synchronized (operation.success) {
@@ -471,7 +478,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 }
 
             } else { // Initialize a new cluster
-                //TODO: Create a new cluster with input tweet
+                //TODO: Create a new cluster with input tweet, write to an invalid cluster
 
 
 
@@ -484,15 +491,42 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
 
-    private SchemaRecord WordRecord(String wordValue, String[] tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(wordValue));       //Primary key: 0
-        values.add(new ListStringDataBox(tweetList)); // 1
-        values.add(new IntDataBox(countOccurWindow)); // 2
-        values.add(new DoubleDataBox(tfIdf)); // 3
-        values.add(new IntDataBox(lastOccurWindow)); // 4
-        values.add(new IntDataBox(frequency)); // 5
-        return new SchemaRecord(values);
+
+    // ED-ES: Asy_ModifyRecord_Read
+    protected void EventSelection_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+
+        if (preValues != null) { // cluster exits in clusterTable
+            int countNewTweet = preValues.getValues().get(3).getInt();
+            int clusterSize = preValues.getValues().get(4).getInt();
+
+            // apply function
+            AppConfig.randomDelay();
+
+            // read
+            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
+
+            tempo_record.getValues().get(3).setInt(0); //compute, reset cluster.countNewTweet to zero
+
+            // compute cluster growth rate
+            if (operation.function instanceof Division) {
+                double growthRate = (double) countNewTweet / clusterSize;
+
+                //TODO: Check growth rate threshold
+                tempo_record.getValues().get(5).setBool(growthRate > 0.5); //compute, update cluster.isEvent
+
+                //Update record's version (in this request, s_record == d_record)
+                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                synchronized (operation.success) {
+                    operation.success[0]++;
+                }
+
+            } else
+                throw new UnsupportedOperationException();
+
+        }
+
     }
 
     @Override

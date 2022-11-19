@@ -100,7 +100,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         } else if(app == 2) {//TP
             operationChains.put("segment_speed",new TableOCs<>(totalThreads,offset));
             operationChains.put("segment_cnt",new TableOCs<>(totalThreads,offset));
-        } else if (app == 3) {
+        } else if (app == 3) {//OB
             operationChains.put("goods",new TableOCs<>(totalThreads,offset));
         }
     }

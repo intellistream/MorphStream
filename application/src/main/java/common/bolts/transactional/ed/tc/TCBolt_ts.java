@@ -75,7 +75,7 @@ public class TCBolt_ts extends TCBolt{
         //it simply constructs the operations and return.
 
         String[] wordTable = new String[]{"word_table"}; //condition source table
-        String[] wordID = new String[]{event.getWord()}; //condition source key
+        String[] wordID = new String[]{event.getWordID()}; //condition source key
         TFIDF tfIdf = new TFIDF();
         Condition condition = new Condition(event.getWindowSize(), event.getWindowCount()); //arg1: windowSize, arg2: windowCount
 
@@ -83,7 +83,7 @@ public class TCBolt_ts extends TCBolt{
 
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "word_table", // source_table
-                event.getWord(),  // source_key
+                event.getWordID(),  // source_key
                 event.getWord_record(), // record to be filled up from READ
                 tfIdf, // append new tweetID to word's tweetList
                 wordTable, wordID, //condition_source_table, condition_source_key

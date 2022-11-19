@@ -183,7 +183,7 @@ public class EDInitializer extends TableInitilizer {
             }
 
             //Construct String[] words from readLine()
-            String[] words = new String[3]; //TODO: Hard-coded number of words in tweet
+            String[] words = new String[3]; //TODO: Hard-coded number of words in tweet: 3
             System.arraycopy(split, 2, words, 0, 3);
 
             // Construct TR Event
@@ -193,7 +193,7 @@ public class EDInitializer extends TableInitilizer {
                     Arrays.toString(p_bids), //bid_arrary
                     Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
                     2,//num_of_partition TODO: Hard-coded number of arguments in TR Event
-                    split[1],//String tweetID
+                    split[1], //tweetID
                     words //String[] words
             );
 
@@ -372,19 +372,21 @@ public class EDInitializer extends TableInitilizer {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new StringDataBox());       //Primary key
+        dataBoxes.add(new StringDataBox());
         dataBoxes.add(new ListStringDataBox());
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new DoubleDataBox());
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new BoolDataBox());
-        fieldNames.add("Word_Value");             //Primary key
-        fieldNames.add("Tweet_List");
-        fieldNames.add("Count_Occur_Window");
-        fieldNames.add("TF_IDF");
-        fieldNames.add("Last_Occur_Window");
-        fieldNames.add("Frequency");
-        fieldNames.add("Is_Burst");
+        fieldNames.add("Word_ID"); // 0
+        fieldNames.add("Word_Value"); // 1
+        fieldNames.add("Tweet_List"); // 2
+        fieldNames.add("Count_Occur_Window"); // 3
+        fieldNames.add("TF_IDF"); // 4
+        fieldNames.add("Last_Occur_Window"); // 5
+        fieldNames.add("Frequency"); // 6
+        fieldNames.add("Is_Burst"); // 7
         return new RecordSchema(fieldNames, dataBoxes);
     }
 

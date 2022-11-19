@@ -8,20 +8,19 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 public class TREvent extends TxnEvent {
-    private final String tweetID; //TODO: If we let table assign ID when inserting tweet, this tweetID is not need anymore
-    private final String[] words;
-    public SchemaRecordRef tweetRecordRef;//The Read result from INSERT, read the tweetID that is assigned by table
-    public String tweetIDResult;
 
-    public TREvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions, String tweetID, String[] words) {
+    private final String tweetID;
+    private final String[] words;
+
+    public TREvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions,
+                   String tweetID, String[] words) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.tweetID = tweetID;
         this.words = words;
-        this.tweetRecordRef = new SchemaRecordRef();
     }
 
     public String getTweetID() {
-        return this.tweetID;
+        return tweetID;
     }
 
     public String[] getWords() {

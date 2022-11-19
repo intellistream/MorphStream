@@ -9,4 +9,5 @@ public abstract class Function {
     public double delta_double;
     public double[] new_value;
     public String item;
+    public String[] stringArray;
 }

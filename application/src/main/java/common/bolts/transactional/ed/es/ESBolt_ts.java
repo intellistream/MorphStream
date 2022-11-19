@@ -1,9 +1,7 @@
 package common.bolts.transactional.ed.es;
 
 import combo.SINKCombo;
-import common.bolts.transactional.ed.tr.TRBolt_ts;
 import common.param.ed.es.ESEvent;
-import common.param.ed.tr.TREvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -12,7 +10,6 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
 import transaction.function.Division;
