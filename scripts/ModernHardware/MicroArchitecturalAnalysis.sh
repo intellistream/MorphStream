@@ -7,23 +7,23 @@ function ResetParameters() {
   scheduler="OG_BFS_A"
   defaultScheduler="OG_BFS_A"
   CCOption=3 #TSTREAM
-  complexity=10000
+  complexity=8000
   NUM_ITEMS=491520
-  deposit_ratio=95
+  deposit_ratio=100
   key_skewness=0
 
 
   isCyclic=0
   isDynamic=0
   workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
-  schedulerPool="OG_DFS_A,OG_NS_A,OP_NS_A,OP_NS"
+  schedulerPool="OG_BFS_A,OG_NS_A,OP_NS_A,OP_NS"
   rootFilePath="/home/shuhao/jjzhao/data"
   shiftRate=1
   totalEvents=`expr $checkpointInterval \* $tthread \* 13 \* $shiftRate`
 }
 
 function runTStream() {
-  echo "java -Xms300g -Xmx300g -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms300g -Xmx300g -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --tthread $tthread \
@@ -41,7 +41,7 @@ function runTStream() {
           --shiftRate $shiftRate \
           --workloadType $workloadType \
           --schedulerPool $schedulerPool"
-  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \

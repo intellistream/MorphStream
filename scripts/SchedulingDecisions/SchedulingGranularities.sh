@@ -14,13 +14,13 @@ function ResetParameters() {
   CCOption=3 #TSTREAM
   complexity=0
   isCyclic=0
-  rootFilePath="/home/shuhao/jjzhao/data"
+  rootFilePath="/home/myc/workspace/jjzhao/expDir/result/SchedulingGranularities"
 }
 
 function runTStream() {
   totalEvents=`expr $checkpointInterval \* $tthread`
   # NUM_ITEMS=`expr $totalEvents`
-  echo "java -Xms100g -Xmx100g -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms100g -Xmx100g -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --NUM_ACCESS $NUM_ACCESS \
@@ -36,7 +36,7 @@ function runTStream() {
           --complexity $complexity \
            --isCyclic $isCyclic \
            --rootFilePath $rootFilePath"
-  java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --NUM_ACCESS $NUM_ACCESS \
@@ -62,51 +62,62 @@ function baselineEvaluation() {
   done
 }
 
-# run basic experiment for different algorithms
-function withAbortEvaluation() {
-  for scheduler in OG_NS_A OP_NS_A
+function cyclic_acyclic() {
+  ResetParameters
+  checkpointInterval=40960
+  for app in GrepSum
   do
-    runTStream
+    for isCyclic in 0 1
+      do
+        for scheduler in OG_NS_A OP_NS_A
+          do
+            runTStream
+          done
+      done
   done
 }
 
-function granularity_study() {
-  # num of TD
+function varying_punctuation_interval() {
   ResetParameters
-  NUM_ACCESS=2 # OC level and OP level has similar performance before
+  NUM_ACCESS=1 # OC level and OP level has similar performance before
   for app in GrepSum
   do
-    # for tthread in 24
     for isCyclic in 0
-    do
-      for checkpointInterval in 5120 10240 20480 40960 81920
       do
-        withAbortEvaluation
+        for checkpointInterval in 5120 10240 20480 40960 81920
+        do
+          for scheduler in OG_NS_A OP_NS_A
+            do
+              runTStream
+            done
+        done
       done
     done
-  done
+}
 
-  #isCyclic
+function varying_ratio_of_multiple_state_access() {
   ResetParameters
-    checkpointInterval=40960
-    NUM_ACCESS=1
-    for app in GrepSum
-     do
-       for isCyclic in 1
+  checkpointInterval=40960
+  NUM_ACCESS=5
+  for app in GrepSum
+  do
+    for isCyclic in 0
+      do
+       for Ratio_of_Multiple_State_Access in 10 30 50 70 90
        do
-           withAbortEvaluation
+          for scheduler in OG_NS_A OP_NS_A
+            do
+              runTStream
+            done
        done
-     done
-    #isCyclic
-    ResetParameters
-      checkpointInterval=40960
-      for app in GrepSum
-       do
-         for isCyclic in 0 1
-         do
-             withAbortEvaluation
-         done
-       done
+      done
+  done
+}
+
+function scheduling_granularity_study() {
+   cyclic_acyclic
+   varying_punctuation_interval
+   varying_ratio_of_multiple_state_access
 }
 rm -rf /home/shuhao/jjzhao/data
 granularity_study

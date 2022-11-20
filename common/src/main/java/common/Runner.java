@@ -192,6 +192,19 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
     public Integer complexity = 0;
 
+    /**
+     * Evaluation parameters
+     */
+    //multicoreEvaluation
+    @Parameter(names = {"--multicoreEvaluation"}, description = "Evaluation the multicoreScalability. Default to be false.")
+    public Integer multicoreEvaluation = 0;
+    @Parameter(names = {"--maxThreads"}, description = "Evaluation the multicoreScalability. The max number of threads.")
+    public Integer maxThreads = 24;
+    //SystemOverhead
+    @Parameter(names = {"--cleanUp"}, description = "Whether to clean temporal objects. Default to be false.")
+    public Integer cleanUp = 0;
+
+
     public Runner() {
         CFG_PATH = "/config/%s.properties";
         if (enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
@@ -340,6 +353,20 @@ public abstract class Runner implements IRunner {
         } else {
             config.put("isGroup", false);
             config.put("groupNum",1);
+        }
+
+        /* Evaluation Configuration */
+        if (multicoreEvaluation == 0) {
+            config.put("multicoreEvaluation",false);
+        } else {
+            config.put("multicoreEvaluation",true);
+        }
+        config.put("maxThreads",maxThreads);
+
+        if (cleanUp == 0) {
+            config.put("cleanUp",false);
+        }else {
+            config.put("cleanUp",true);
         }
 
         System.setProperty("my.log", metric_path);

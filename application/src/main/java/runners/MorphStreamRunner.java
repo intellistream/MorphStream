@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import profiler.Metrics;
+import scheduler.struct.OperationChainCommon;
 import topology.TopologySubmitter;
 import utils.AppConfig;
 import utils.SINK_CONTROL;
@@ -153,7 +154,7 @@ public class MorphStreamRunner extends Runner {
                     break;
                 }
             }
-
+            OperationChainCommon.cleanUp = config.getBoolean("cleanUp");
         } else {
             config.putAll(Configuration.fromStr(configStr));
         }

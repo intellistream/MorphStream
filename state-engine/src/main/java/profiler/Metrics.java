@@ -304,7 +304,7 @@ public class Metrics {
         public static long[] TxnStart = new long[kMaxThreadNum];
         public static long[] Txn = new long[kMaxThreadNum];
         //Runtime throughput per phase
-        public static HashMap<Integer, List<Double>> ThroughputPerPhase =new HashMap<>();
+        public static HashMap<Integer, List<Double>> ThroughputPerPhase = new HashMap<>();
         //USED ONLY BY TStream
         public static long[] PreTxnStart = new long[kMaxThreadNum];
         public static long[] PreTxn = new long[kMaxThreadNum];

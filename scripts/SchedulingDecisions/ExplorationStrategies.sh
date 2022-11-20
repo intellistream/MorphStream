@@ -14,13 +14,13 @@ function ResetParameters() {
   CCOption=3 #TSTREAM
   complexity=0
   isCyclic=0
-  rootFilePath="/home/shuhao/jjzhao/data"
+  rootFilePath="/home/myc/workspace/jjzhao/expDir/result/ExplorationStrategies"
 }
 
 function runTStream() {
   totalEvents=`expr $checkpointInterval \* $tthread`
   # NUM_ITEMS=`expr $totalEvents`
-  echo "java -Xms100g -Xmx100g -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms100g -Xmx100g -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --NUM_ACCESS $NUM_ACCESS \
@@ -36,7 +36,7 @@ function runTStream() {
           --complexity $complexity \
            --isCyclic $isCyclic \
            --rootFilePath $rootFilePath"
-  java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/shuhao/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --NUM_ACCESS $NUM_ACCESS \
@@ -54,22 +54,21 @@ function runTStream() {
     --rootFilePath $rootFilePath
 }
 
-function exploration_strategy_study() {
-# Average num of OP in OC(LD)
+function varying_punctuation_interval() {
   ResetParameters
-  for app in GrepSum
-  do
-    for key_skewness in 0 75
+    for app in GrepSum
     do
-      for checkpointInterval in 5120 10240 20480 40960 81920
+      for key_skewness in 0 75
       do
-        for scheduler in OP_BFS OP_DFS OP_NS
+        for checkpointInterval in 5120 10240 20480 40960 81920
         do
-          runTStream
+          for scheduler in OP_BFS OP_DFS OP_NS
+          do
+            runTStream
+          done
         done
       done
     done
-  done
   ResetParameters
   cd ../draw || exit
   key_skewness=0
@@ -79,29 +78,31 @@ function exploration_strategy_study() {
   key_skewness=75
   echo "newmodel/python model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
   python newmodel/model_exploration_strategy_batch.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
-
 }
-function skew(){
+
+function vary_skew(){
    ResetParameters
    checkpointInterval=81920
-    for app in GrepSum
+   for app in GrepSum
     do
-      for isCyclic in 0
-      do
-        for key_skewness in 0 25 50 75 100
+      for key_skewness in 0 25 50 75 100
         do
           for scheduler in OP_BFS OP_DFS OP_NS OG_BFS OG_DFS OG_NS
           do
             runTStream
           done
         done
-      done
-    done
+   done
   ResetParameters
   checkpointInterval=81920
   cd ../draw || exit
   echo "newmodel/python model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity"
   python newmodel/model_exploration_skewness.py -i $NUM_ITEMS -d $Ratio_of_Multiple_State_Access -n $NUM_ACCESS -k $key_skewness -o $overlap_ratio -a $abort_ratio -b $checkpointInterval -c $isCyclic -m $complexity
+}
+
+function exploration_strategy_study() {
+  varying_punctuation_interval
+  vary_skew
 }
 
 rm -rf /home/shuhao/jjzhao/data
