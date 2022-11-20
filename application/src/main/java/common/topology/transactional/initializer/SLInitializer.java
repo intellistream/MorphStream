@@ -71,7 +71,7 @@ public class SLInitializer extends TableInitilizer {
 
     protected void createTPGGenerator(Configuration config) {
         if (config.getBoolean("isDynamic")) {
-            DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
+            DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
             dataGenerator = new SLTPGDynamicDataGenerator(dynamicDataGeneratorConfig);

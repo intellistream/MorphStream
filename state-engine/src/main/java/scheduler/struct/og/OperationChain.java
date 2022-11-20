@@ -1,6 +1,5 @@
 package scheduler.struct.og;
 
-import scheduler.context.og.AbstractOGNSContext;
 import scheduler.context.og.OGSchedulerContext;
 import transaction.impl.ordered.MyList;
 import utils.lib.ConcurrentHashMap;
@@ -8,6 +7,8 @@ import utils.lib.ConcurrentHashMap;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static scheduler.struct.OperationChainCommon.cleanUp;
 
 /**
  * We still call it OperationChain in TPG but with different representation
@@ -276,7 +277,9 @@ public class OperationChain implements Comparable<OperationChain> {
     public void clear() {
         potentialChldrenInfo.clear();
         if (operations.size() != 0) {
-            operations.first().d_record.content_.clean_map();
+            if (cleanUp) {
+                operations.first().d_record.content_.clean_map();
+            }
             operations.clear();
         }
         ocParents.clear();

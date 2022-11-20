@@ -319,7 +319,7 @@ function abort_mechanism_study() {
 }
 
 # Granularity selection
-# granularity_study.sh
+# SchedulingGranularities.sh
 # Exploration Strategy
 # exploration_strategy_study
 ## Abort mechanism selection
