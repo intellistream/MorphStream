@@ -7,7 +7,6 @@ import java.util.Arrays;
 
 public class ESEvent extends TxnEvent {
     private final String clusterID;
-
     private final SchemaRecordRef cluster_record = new SchemaRecordRef();
     public boolean isEvent;
     public String[] wordList;

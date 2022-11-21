@@ -10,11 +10,16 @@ public class CUEvent extends TxnEvent {
     private final int currWindow;
 
     public CUEvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions,
-                   String tweetID, boolean isBurst, int currWindow) {
+                   String tweetID, boolean isBurst) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.tweetID = tweetID;
         this.isBurst = isBurst;
-        this.currWindow = currWindow;
+        this.currWindow = computeCurrWindow(bid);
+    }
+
+    private int computeCurrWindow(int bid) {
+        int windowSize = 50; //TODO: This is the tweetWindowSize
+        return bid / windowSize;
     }
 
     public String getTweetID() {
@@ -29,6 +34,6 @@ public class CUEvent extends TxnEvent {
 
     public CUEvent cloneEvent() {
         return new CUEvent((int) bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions,
-                tweetID, isBurst, currWindow);
+                tweetID, isBurst);
     }
 }
