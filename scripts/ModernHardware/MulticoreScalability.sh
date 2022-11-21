@@ -45,7 +45,7 @@ function runTStream() {
           --schedulerPool $schedulerPool \
           --multicoreEvaluation $multicoreEvaluation \
           --maxThreads $maxThreads"
-  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms300g -Xmx300g -Xss100M -Xmn150g -XX:+UseG1GC -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
@@ -71,12 +71,10 @@ function runTStream() {
 function baselineEvaluation() {
   isDynamic=1
   runTStream
-  ResetParameters
 
   scheduler=TStream
   isDynamic=0
   runTStream
-  ResetParameters
 }
 
 
