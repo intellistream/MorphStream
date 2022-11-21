@@ -1,5 +1,6 @@
 package transaction.impl;
 
+import com.google.common.collect.Iterators;
 import content.common.CommonMetaTypes;
 import content.common.CommonMetaTypes.AccessType;
 import db.DatabaseException;
@@ -253,7 +254,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // TRANSFER_AST, ED_WU
+    @Override // TRANSFER_AST, ED_TR, ED_WU, ED_CU_Tweet
     public boolean Asy_ModifyRecord(TxnContext txn_context,
                                     String srcTable, String key,
                                     Function function,
@@ -281,7 +282,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // ED_CU
+    @Override // ED_CU_Cluster
     public boolean Asy_ModifyRecord_Iteration(TxnContext txn_context,
                                               String srcTable, String key,
                                               Function function,
@@ -290,10 +291,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                                               int[] success,
                                               String operator_name) throws DatabaseException {
         AccessType accessType = AccessType.READ_WRITE_COND;
-        TableRecord[] condition_records = new TableRecord[condition_source.length];
 
-        //The 1st element in condition_sourceTable is the iteration_table.
+        //The 1st element in condition_sourceTable is the table to be iterated.
         Iterator<TableRecord> iterator = storageManager_.getTable(condition_sourceTable[0]).iterator();
+        TableRecord[] condition_records = new TableRecord[Iterators.size(iterator)];
 
         //Pass the entire iteration_table to condition_records
         int i = 0;

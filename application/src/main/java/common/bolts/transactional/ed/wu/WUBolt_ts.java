@@ -94,7 +94,7 @@ public class WUBolt_ts extends WUBolt{
 
         transactionManager.Asy_ModifyRecord(txnContext,
                 sourceTable, // source_table
-                sourceKey,  // source_key TODO: Convert to hashcode
+                sourceKey,  // source_key
                 append, // append new tweetID to word's tweetList
                 wordTable, wordID, //condition_source_table, condition_source_key
                 condition,

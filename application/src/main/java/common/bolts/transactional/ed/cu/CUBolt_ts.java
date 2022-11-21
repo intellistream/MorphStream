@@ -82,22 +82,38 @@ public class CUBolt_ts extends CUBolt{
 
     protected void CLUSTER_UPDATE_REQUEST_CONSTRUCT(CUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
 
-        String[] conditionSourceTable = new String[]{"cluster_table"}; //condition source table to iterate
-        String[] conditionSourceKey = new String[]{""}; //condition source key, set to null
+        String[] clusterTable = new String[]{"cluster_table"}; //condition source table to iterate
+        String[] clusterKey = new String[]{""}; //condition source key, set to null
         Similarity function = new Similarity();
-        Condition condition = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
+        Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
+
+        String[] tweetTable = new String[]{"tweet_table"}; // condition source table
+        String[] tweetKey = new String[]{event.getTweetID()}; // condition source key
+        Condition condition2 = new Condition(event.getCurrWindow()); //arg1: currentWindow
 
         transactionManager.BeginTransaction(txnContext);
 
+        // Update cluster: merge input tweet into existing cluster, or initialize new cluster
         transactionManager.Asy_ModifyRecord_Iteration(
                 txnContext,
                 "tweet_table", // source_table
                 event.getTweetID(),  // source_key
                 function, // determine the most similar cluster
-                conditionSourceTable, conditionSourceKey, //condition_source_table, condition_source_key
-                condition,
+                clusterTable, clusterKey, //condition_source_table, condition_source_key
+                condition1,
                 event.success,
-                "ed_cu"
+                "ed_cu_cluster"
+        );
+
+        // Update tweet's compute time to the current window
+        transactionManager.Asy_ModifyRecord(txnContext, //TODO: Put tweet's computeTime update else where
+                "tweet_table", // source_table
+                event.getTweetID(),  // source_key
+                null, // no function required
+                tweetTable, tweetKey, //condition_source_table, condition_source_key
+                condition2,
+                event.success,
+                "ed_cu_tweet"
         );
 
         transactionManager.CommitTransaction(txnContext);
