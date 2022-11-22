@@ -3,6 +3,7 @@ package common.bolts.transactional.ed.tc;
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
 import common.param.ed.tc.TCEvent;
+import common.param.ed.wu.WUEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import components.operators.api.TransactionalBolt;
@@ -45,18 +46,21 @@ public class TCBolt extends TransactionalBolt {
 
     protected void TREND_CALCULATE_REQUEST_POST(TCEvent event) throws InterruptedException {
 
-        //Read isBurst result from TCEvent
         boolean isBurst = event.isBurst;
+        double delta = 0.1;
+        int outBid = event.getMyBid(); //TODO: Increase bid by delta
 
         if (!enable_app_combo) {
-            //TODO: Increase bid by delta, emit new_bid, tweetID, and isBurst
+
             for (String tweetID : event.tweetIDList) {
-                //TODO: Initialize a new CU Event and pass to collector, pass isBurst to CU Event
-                collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
+                CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), tweetID, isBurst);
+                GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
+                Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
+
+                collector.emit(outBid, tuple, event.getTimestamp());//emit CU Event tuple to TC Gate
             }
         } else {
             if (enable_latency_measurement) {
-                //TODO: Pass computation result "true" to sink to measure performance
                 sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));
             }
         }

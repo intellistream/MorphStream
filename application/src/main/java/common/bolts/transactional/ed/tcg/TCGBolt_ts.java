@@ -1,22 +1,122 @@
 package common.bolts.transactional.ed.tcg;
 
 import combo.SINKCombo;
-import common.bolts.transactional.ed.trg.TRGBolt;
-import common.param.ed.tr.TREvent;
+import common.param.ed.cu.CUEvent;
+import components.context.TopologyContext;
+import db.DatabaseException;
+import execution.ExecutionGraph;
+import execution.runtime.collector.OutputCollector;
+import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
+import transaction.context.TxnContext;
+import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.concurrent.BrokenBarrierException;
 
-public class TCGBolt_ts extends TRGBolt {
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_latency_measurement;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
+import static profiler.Metrics.NUM_ITEMS;
+
+public class TCGBolt_ts extends TCGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TCGBolt_ts.class);
-    ArrayDeque<TREvent> TRGEvents;
+    private static final long serialVersionUID = -5968750340131744744L;
+    ArrayDeque<CUEvent> cuEvents;
+    private final int pun_interval = 50; //TODO: set punctuation interval to tweet window size
+    private int counter = 0;
 
+    //To be used in Combo
     public TCGBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
     }
 
+    //To be used in ED Topology
     public TCGBolt_ts(int fid) {
         super(LOG, fid, null);
+    }
+
+    @Override
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+        super.initialize(thread_Id, thisTaskId, graph);
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
+        cuEvents = new ArrayDeque<>();
+    }
+
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+//        prepareEvents();
+        loadDB(transactionManager.getSchedulerContext(),
+                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
+        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
+    }
+
+    /**
+     * THIS IS ONLY USED BY TSTREAM.
+     * IT CONSTRUCTS and POSTPONES TXNS.
+     */
+    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
+        MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
+        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+            TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
+            CUEvent event = (CUEvent) input_event;
+            if (enable_latency_measurement)
+                (event).setTimestamp(timestamp);
+            if (event != null) {
+                TC_GATE_REQUEST_CONSTRUCT(event, txnContext);
+            } else {
+                throw new UnknownError();
+            }
+            MeasureTools.END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
+        }
+    }
+
+    protected void TC_GATE_REQUEST_CONSTRUCT(CUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+        cuEvents.add(event);
+    }
+
+    private void TC_GATE_REQUEST_CORE() throws InterruptedException {}
+
+    // Emit all events to collector, then insert one punctuation signal
+    private void TC_GATE_REQUEST_POST() throws InterruptedException {
+        for (CUEvent event : cuEvents) {
+            TC_GATE_REQUEST_POST(event);
+        }
+        insertMaker(cuEvents.getLast());
+    }
+
+    @Override
+    public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+
+        counter++;
+
+        if (counter % pun_interval == 0) {
+            int num_events = cuEvents.size();
+            /**
+             *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
+             */
+            {
+                MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
+                {
+                    transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
+                    TC_GATE_REQUEST_CORE();
+                }
+                MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
+                BEGIN_POST_TIME_MEASURE(thread_Id);
+                {
+                    TC_GATE_REQUEST_POST();
+                }
+                END_POST_TIME_MEASURE_ACC(thread_Id);
+
+                //all tuples in the holder is finished.
+                cuEvents.clear();
+            }
+            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
+        } else {
+            execute_ts_normal(in);
+        }
     }
 }

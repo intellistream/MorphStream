@@ -117,11 +117,11 @@ public class TRBolt_ts extends TRBolt{
     }
 
     private void TWEET_REGISTRANT_REQUEST_CORE() throws InterruptedException {
-        for (TREvent event : trEvents) {
-
-            //TODO: Implement TR CORE
-
-        }
+//        for (TREvent event : trEvents) {
+//
+//            //TODO: Implement TR CORE
+//
+//        }
     }
 
     private void TWEET_REGISTRANT_REQUEST_POST() throws InterruptedException {

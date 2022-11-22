@@ -36,7 +36,6 @@ public class CUBolt_ts extends CUBolt{
     //To be used in Combo
     public CUBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-
     }
 
     //To be used in ED Topology
@@ -69,14 +68,10 @@ public class CUBolt_ts extends CUBolt{
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             CUEvent event = (CUEvent) input_event;
-            if (enable_latency_measurement)
+            if (enable_latency_measurement) {
                 (event).setTimestamp(timestamp);
-            boolean isBurst = event.isBurst();
-            if (isBurst) {
-                CLUSTER_UPDATE_REQUEST_CONSTRUCT(event, txnContext);
-            } else {
-                COMPUTE_TIME_UPDATE_REQUEST_CONSTRUCT(event, txnContext);
             }
+            CLUSTER_UPDATE_REQUEST_CONSTRUCT(event, txnContext);
         }
     }
 
@@ -121,39 +116,7 @@ public class CUBolt_ts extends CUBolt{
         cuEvents.add(event);
     }
 
-    //TODO: Complete the cu request construct
-    protected void COMPUTE_TIME_UPDATE_REQUEST_CONSTRUCT(CUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
-
-        transactionManager.BeginTransaction(txnContext);
-
-        //TODO: Define CU Txn Operation
-
-        transactionManager.CommitTransaction(txnContext);
-
-        cuEvents.add(event);
-    }
-
     private void CLUSTER_UPDATE_REQUEST_CORE() throws InterruptedException {
-
-        //TODO: Implement CU CORE
-
-        for (CUEvent event : cuEvents) {
-
-//            SchemaRecordRef tweetRecordRef = event.tweetRecordRef;
-//
-//            //INSERT failed
-//            if (tweetRecordRef == null) {
-//                if (enable_log) LOG.debug(event.getBid() + " | " + Arrays.toString(event.getWords()) + "INSERT failed");
-//            }
-//
-//            //INSERT success, pass read result to event. It will be referenced in REQUEST_POST
-//            if (tweetRecordRef != null) {
-//                event.tweetIDResult = tweetRecordRef.getRecord().getValues().get(1).getString().trim(); //Add read result to event.result
-//            }
-        }
-    }
-
-    private void COMPUTE_TIME_UPDATE_REQUEST_CORE() throws InterruptedException {
 
         //TODO: Implement CU CORE
 
@@ -179,12 +142,6 @@ public class CUBolt_ts extends CUBolt{
         }
     }
 
-    private void COMPUTE_TIME_UPDATE_REQUEST_POST() throws InterruptedException {
-        for (CUEvent event : cuEvents) {
-            CLUSTER_UPDATE_REQUEST_POST(event);
-        }
-    }
-
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
@@ -198,13 +155,11 @@ public class CUBolt_ts extends CUBolt{
                 {
                     transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
                     CLUSTER_UPDATE_REQUEST_CORE();
-                    //TODO: Do we need to include COMPUTE_TIME_CORE?
                 }
                 MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
                 BEGIN_POST_TIME_MEASURE(thread_Id);
                 {
                     CLUSTER_UPDATE_REQUEST_POST();
-                    //TODO: Do we need to include COMPUTE_TIME_POST?
                 }
                 END_POST_TIME_MEASURE_ACC(thread_Id);
 
