@@ -1,12 +1,14 @@
 package scheduler.impl.og;
 
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
 import scheduler.context.og.OGSchedulerContext;
 import scheduler.impl.IScheduler;
+import scheduler.struct.AbstractOperation;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.og.TaskPrecedenceGraph;
@@ -16,17 +18,12 @@ import storage.TableRecord;
 import storage.datatype.DataBox;
 import storage.datatype.DoubleDataBox;
 import storage.datatype.IntDataBox;
-import transaction.function.AVG;
-import transaction.function.DEC;
-import transaction.function.INC;
-import transaction.function.SUM;
+import transaction.function.*;
 import transaction.impl.ordered.MyList;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 import static content.common.CommonMetaTypes.AccessType.*;
 
@@ -182,6 +179,292 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         }
     }
 
+    // ED: Tweet Registrant - Asy_ModifyRecord
+    protected void TweetRegistrant_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+
+        // apply function
+        AppConfig.randomDelay();
+
+        // read
+        SchemaRecord tweetRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
+
+        // Update tweet's wordList
+        if (operation.function instanceof Insert) {
+            tempo_record.getValues().get(1).setStringList(Arrays.asList(operation.function.stringArray)); //compute, update wordList
+        } else
+            throw new UnsupportedOperationException();
+
+        //Update record's version (in this request, s_record == d_record)
+        operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+        synchronized (operation.success) {
+            operation.success[0]++;
+        }
+
+    }
+
+    // ED: Word Update - Asy_ModifyRecord
+    protected void WordUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid); //condition_record[0] stores the current word's record
+
+        if (preValues != null) { // word exits in wordTable
+            final int oldCountOccurWindow = preValues.getValues().get(3).getInt();
+
+            // apply function
+            AppConfig.randomDelay();
+
+            // read
+            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
+
+            if (oldCountOccurWindow != -1) { // word has been stored into table
+                final int oldLastOccurWindow = preValues.getValues().get(5).getInt();
+                final int oldFrequency = preValues.getValues().get(6).getInt();
+
+                // Update word's tweetList
+                if (operation.function instanceof Append) {
+                    tempo_record.getValues().get(2).addItem(operation.function.item); //compute, append new tweetID into word's tweetList
+                } else
+                    throw new UnsupportedOperationException();
+
+                // Update word's window info
+                if (oldLastOccurWindow < operation.condition.arg1) { //oldLastOccurWindow less than currentWindow
+                    tempo_record.getValues().get(3).incLong(oldCountOccurWindow, 1); //compute, increase countOccurWindow by 1
+                    tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //compute, set lastOccurWindow to currentWindow
+                }
+
+                // Update word's inner-window frequency
+                tempo_record.getValues().get(6).incLong(oldFrequency, 1); //compute, increase word's frequency by 1
+
+            } else { // word has not been stored into table
+
+                String[] tweetList = {operation.function.item};
+
+                tempo_record.getValues().get(1).setString(operation.condition.stringArg1); //wordValue
+                tempo_record.getValues().get(2).setStringList(Arrays.asList(tweetList)); //tweetList
+                tempo_record.getValues().get(3).setInt(1); //countOccurWindow
+                tempo_record.getValues().get(4).setDouble(-1); //TF-IDF
+                tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //lastOccurWindow
+                tempo_record.getValues().get(6).setInt(1); //frequency
+                tempo_record.getValues().get(7).setBool(false); //isBurst
+
+            }
+
+            //Update record's version (in this request, s_record == d_record)
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+
+        }
+
+    }
+
+    // ED: Trend Calculate - Asy_ModifyRecord_Read
+    protected void TrendCalculate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+
+        if (preValues != null) {
+            final int countOccurWindow = preValues.getValues().get(3).getInt();
+            final double oldTfIdf = preValues.getValues().get(4).getDouble();
+            final int frequency = preValues.getValues().get(6).getInt();
+
+            // apply function
+            AppConfig.randomDelay();
+
+            // read
+            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
+
+            // Compute word's tf-idf
+            if (operation.function instanceof TFIDF) {
+                int windowSize = (int) operation.condition.arg1; //window count
+                int windowCount = (int) operation.condition.arg2; //window size
+                double tf = (double) frequency / windowSize;
+                double idf = -1 * (Math.log((double) countOccurWindow / windowCount));
+                double newTfIdf = tf * idf;
+                double difference = newTfIdf - oldTfIdf;
+
+                tempo_record.getValues().get(4).setDouble(newTfIdf); //compute: update tf-idf
+                tempo_record.getValues().get(6).setInt(0); //compute: reset frequency to zero
+
+                if (difference >= 0.5) { //TODO: Check this threshold
+                    tempo_record.getValues().get(7).setBool(true); //compute: set isBurst to true
+                } else {
+                    tempo_record.getValues().get(7).setBool(false); //compute: set isBurst to false
+                }
+
+                //Update record's version (in this request, s_record == d_record)
+                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                synchronized (operation.success) {
+                    operation.success[0]++;
+                }
+
+            } else
+                throw new UnsupportedOperationException();
+        }
+    }
+
+    // ED-CU: Tweet's Compute Time Update - Asy_ModifyRecord
+    protected void ComputeTimeUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid); //condition_record[0] stores the current word's record
+
+        if (preValues != null) { // tweet exits in wordTable
+
+            // apply function
+            AppConfig.randomDelay();
+
+            // read
+            SchemaRecord tweetRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
+
+            // Update tweet's computeTime to the current window
+            tempo_record.getValues().get(2).setInt((int) operation.condition.arg1);
+
+            //Update record's version (in this request, s_record == d_record)
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+
+        }
+
+    }
+
+    // ED-CU: Cluster Update - Asy_ModifyRecord_Iteration
+    protected void ClusterUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        HashMap<SchemaRecord, Double> similarities = new HashMap<>();
+
+        // apply function
+        AppConfig.randomDelay();
+
+        // read
+        SchemaRecord tweetRecord = operation.s_record.content_.readPreValues(operation.bid);
+        int computeTime = tweetRecord.getValues().get(2).getInt();
+
+        // input tweet hasn't been computed before & it is burst
+        if (computeTime != operation.condition.arg1 && operation.condition.boolArg1) {
+            String[] tweetWordList = tweetRecord.getValues().get(1).getStringList().toArray(new String[0]);
+            HashMap<String, Integer> tweetMap = new HashMap<>();
+            for (String word : tweetWordList) {tweetMap.put(word, 1);}
+
+            // compute input tweet's cosine similarity with all clusters
+            if (operation.function instanceof Similarity) {
+
+                //Iterate through all clusters in cluster_table
+                for (TableRecord record : operation.condition_records) {
+                    SchemaRecord clusterRecord = record.content_.readPreValues(operation.bid);
+                    int aliveTime = clusterRecord.getValues().get(2).getInt();
+
+                    if (aliveTime != -1 && aliveTime >= operation.condition.arg1 - 2) { // cluster is valid, and has been updated in the past two windows
+                        String[] clusterWordList = clusterRecord.getValues().get(1).getStringList().toArray(new String[0]);
+
+                        // compute cosine similarity
+                        HashMap<String, Integer> clusterMap = new HashMap<>();
+                        for (String word : clusterWordList) {clusterMap.put(word, 1);}
+                        Set<String> both = Sets.newHashSet(clusterMap.keySet());
+                        both.retainAll(tweetMap.keySet());
+                        double scalar = 0, norm1 = 0, norm2 = 0;
+                        for (String k : both) scalar += clusterMap.getOrDefault(k, 0) * tweetMap.getOrDefault(k, 0);
+                        for (String k : clusterMap.keySet()) norm1 += clusterMap.get(k) * clusterMap.get(k);
+                        for (String k : tweetMap.keySet()) norm2 += tweetMap.get(k) * tweetMap.get(k);
+                        double similarity = scalar / Math.sqrt(norm1 * norm2);
+
+                        similarities.put(clusterRecord, similarity);
+                    }
+                }
+
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            // determine the most similar cluster
+            SchemaRecord maxCluster = Collections.max(similarities.entrySet(), Map.Entry.comparingByValue()).getKey();
+            double maxSimilarity = similarities.get(maxCluster);
+
+            // Compare max similarity with threshold: 0.5
+            if (maxSimilarity >= 0.5) { //TODO: Check the threshold value
+                SchemaRecord tempo_record = new SchemaRecord(maxCluster); //tempo record - the most similar cluster
+                List<String> wordList = maxCluster.getValues().get(1).getStringList();
+                int countNewTweet = maxCluster.getValues().get(3).getInt();
+                int clusterSize = maxCluster.getValues().get(4).getInt();
+
+                // Merge input tweet into cluster
+                for (String word : tweetWordList) {
+                    if (!wordList.contains(word)) {wordList.add(word);}
+                }
+
+                tempo_record.getValues().get(1).setStringList(wordList); //compute: merge wordList
+                tempo_record.getValues().get(2).setInt((int) operation.condition.arg1); //compute: aliveTime = currWin
+                tempo_record.getValues().get(3).setInt(countNewTweet + 1); //compute: increment countNewTweet
+                tempo_record.getValues().get(4).setInt(clusterSize + 1); //compute: increment clusterSize
+
+                //Update record's version (in this request, s_record == d_record)
+                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+
+            } else { // Initialize a new cluster
+
+                // Convert new cluster's wordList to clusterID
+                int newClusterKey = Arrays.toString(tweetWordList).hashCode() % 1007;
+                TableRecord newRecord = operation.condition_records[newClusterKey];
+                SchemaRecord clusterRecord = newRecord.content_.readPreValues(operation.bid);
+                SchemaRecord tempo_record = new SchemaRecord(clusterRecord);
+
+                tempo_record.getValues().get(1).setStringList(Arrays.asList(tweetWordList)); // create wordList
+                tempo_record.getValues().get(2).setInt((int) operation.condition.arg1); // aliveTime = currWin
+                tempo_record.getValues().get(3).setInt(1); // countNewTweet = 1
+                tempo_record.getValues().get(4).setInt(1); // clusterSize = 1
+                tempo_record.getValues().get(5).setBool(false); // isEvent = false
+
+                //Update record's version (in this request, s_record == d_record)
+                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+
+            }
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+
+        }
+
+    }
+
+    // ED-ES: Asy_ModifyRecord_Read
+    protected void EventSelection_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+
+        if (preValues != null) { // cluster exits in clusterTable
+            int countNewTweet = preValues.getValues().get(3).getInt();
+            int clusterSize = preValues.getValues().get(4).getInt();
+
+            // apply function
+            AppConfig.randomDelay();
+
+            // read
+            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
+
+            tempo_record.getValues().get(3).setInt(0); //compute, reset cluster.countNewTweet to zero
+
+            // compute cluster growth rate
+            if (operation.function instanceof Division) {
+                double growthRate = (double) countNewTweet / clusterSize;
+
+                //TODO: Check growth rate threshold
+                tempo_record.getValues().get(5).setBool(growthRate > 0.5); //compute, update cluster.isEvent
+
+                //Update record's version (in this request, s_record == d_record)
+                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                synchronized (operation.success) {
+                    operation.success[0]++;
+                }
+
+            } else
+                throw new UnsupportedOperationException();
+
+        }
+
+    }
+
     /**
      * general operation execution entry method for all schedulers.
      *
@@ -196,10 +479,18 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         int success;
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             success = operation.success[0];
-            Transfer_Fun(operation, mark_ID, clean);
+            if (this.tpg.getApp() == 1) { //SL
+                Transfer_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) { //ED_TC
+                TrendCalculate_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) { //ED_ES
+                EventSelection_Fun(operation, mark_ID, clean);
+            }
+            // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
+            // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {
                 operation.isFailed = true;
             }
@@ -207,7 +498,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             success = operation.success[0];
             if (this.tpg.getApp() == 1) {//SL
                 Transfer_Fun(operation, mark_ID, clean);
-            } else {//OB
+            } else if (this.tpg.getApp() == 3) {//OB
                 AppConfig.randomDelay();
                 List<DataBox> d_record = operation.condition_records[0].content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType).getValues();
                 long askPrice = d_record.get(1).getLong();//price
@@ -218,7 +509,16 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                     d_record.get(2).setLong(left_qty - operation.function.delta_long);//new quantity.
                     operation.success[0]++;
                 }
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tr")) {//ed_tr
+                TweetRegistrant_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_wu")) {//ed_wu
+                WordUpdate_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu_cluster")) {//ed_cu_cluster
+                ClusterUpdate_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu_tweet")) {//ed_cu_tweet
+                ComputeTimeUpdate_Fun(operation, mark_ID, clean);
             }
+            // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {
                 operation.isFailed = true;
             }
@@ -244,7 +544,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 operation.isFailed = true;
             }
         } else if (operation.accessType.equals(READ_WRITE_READ)) {
-            //TODO: implement the operation
             assert operation.record_ref != null;
             AppConfig.randomDelay();
             List<DataBox> srcRecord = operation.s_record.record_.getValues();

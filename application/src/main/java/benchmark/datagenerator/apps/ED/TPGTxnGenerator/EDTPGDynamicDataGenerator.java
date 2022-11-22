@@ -128,9 +128,72 @@ public class EDTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
 
     @Override
     protected void generateTuple() {
-        EDTREvent event;
-        event = randomEvent();
+        EDTREvent event = randomEvent();
         events.add(event);
+    }
+
+
+    private EDTREvent randomEvent() {
+
+        int tweetID = eventID;
+        String[] words = {"wordA", "wordB", "wordC"};
+
+        EDTREvent t = new EDTREvent(eventID, tweetID, words);
+
+        eventID++;
+        return t;
+    }
+
+
+    //Copied from GSW, Method used during randomEvent generation
+    public int key_to_partition(int key) {
+        return (int) Math.floor((double) key / floor_interval);
+    }
+
+    //Copied from GSW, Method used during randomEvent generation
+    private int getKey(FastZipfGenerator zipfGenerator, int partitionId, ArrayList<Integer> generatedKeys) {
+        int key;
+        key = zipfGenerator.next();
+        int next = random.nextInt(100);
+        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
+            if (!generatedKeys.isEmpty()) {
+                int counter = 0;
+                key = generatedKeys.get(random.nextInt(generatedKeys.size()));
+                while (key / floor_interval != partitionId) {
+                    key = generatedKeys.get(random.nextInt(generatedKeys.size()));
+                    counter++;
+                    if (counter >= partitionId) {
+                        key = zipfGenerator.next();
+                        break;
+                    }
+                }
+            }
+        }
+        return key;
+    }
+
+    //Copied from GSW, Method used during randomEvent generation
+    private int getKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+        int srcKey;
+        srcKey = zipfGenerator.next();
+        int next = random.nextInt(100);
+        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
+            if (!generatedKeys.isEmpty()) {
+                srcKey = generatedKeys.get(zipfGenerator.next() % generatedKeys.size());
+            }
+        }
+        return srcKey;
+    }
+
+    //Copied from GSW, Method used during randomEvent generation
+    private int getUniqueKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+        int key;
+        key = zipfGenerator.next();
+        while (generatedKeys.contains(key)) {
+            key = zipfGenerator.next();
+        }
+        generatedKeys.add(key);
+        return key;
     }
 
     @Override
@@ -163,66 +226,6 @@ public class EDTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         for (int i = 0; i < tthread; i++) {
             partitionedKeyZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), theta, i * floor_interval, 12345678);
         }
-    }
-
-    //TODO: Implement this.
-    private EDTREvent randomEvent() {
-        int id = 0;
-        int tweetID = 0;
-        String[] words = {"a", "b", "c"};
-        EDTREvent t = new EDTREvent(id, tweetID, words);
-        return t;
-    }
-
-    //TODO: Copied from GSW, Method used during randomEvent generation
-    public int key_to_partition(int key) {
-        return (int) Math.floor((double) key / floor_interval);
-    }
-
-    //TODO: Copied from GSW, Method used during randomEvent generation
-    private int getKey(FastZipfGenerator zipfGenerator, int partitionId, ArrayList<Integer> generatedKeys) {
-        int key;
-        key = zipfGenerator.next();
-        int next = random.nextInt(100);
-        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
-            if (!generatedKeys.isEmpty()) {
-                int counter = 0;
-                key = generatedKeys.get(random.nextInt(generatedKeys.size()));
-                while (key / floor_interval != partitionId) {
-                    key = generatedKeys.get(random.nextInt(generatedKeys.size()));
-                    counter++;
-                    if (counter >= partitionId) {
-                        key = zipfGenerator.next();
-                        break;
-                    }
-                }
-            }
-        }
-        return key;
-    }
-
-    //TODO: Copied from GSW, Method used during randomEvent generation
-    private int getKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
-        int srcKey;
-        srcKey = zipfGenerator.next();
-        int next = random.nextInt(100);
-        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
-            if (!generatedKeys.isEmpty()) {
-                srcKey = generatedKeys.get(zipfGenerator.next() % generatedKeys.size());
-            }
-        }
-        return srcKey;
-    }
-
-    //TODO: Copied from GSW, Method used during randomEvent generation
-    private int getUniqueKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
-        int key;
-        key = zipfGenerator.next();
-        while (generatedKeys.contains(key)) {
-            key = zipfGenerator.next();
-        }
-        generatedKeys.add(key);
-        return key;
     }
 
 

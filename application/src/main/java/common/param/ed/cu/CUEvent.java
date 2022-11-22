@@ -1,6 +1,8 @@
 package common.param.ed.cu;
 
 import common.param.TxnEvent;
+import static common.CONTROL.wordWindowSize;
+import static common.CONTROL.tweetWindowSize;
 
 import java.util.Arrays;
 
@@ -28,8 +30,7 @@ public class CUEvent extends TxnEvent {
     }
 
     private int computeCurrWindow(int bid) {
-        int windowSize = 50; //TODO: This is the tweetWindowSize
-        return bid / windowSize;
+        return bid / tweetWindowSize;
     }
 
     public int getMyBid() {

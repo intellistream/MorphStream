@@ -38,7 +38,6 @@ public class WUBolt_ts extends WUBolt{
         super(LOG, fid, null);
     }
 
-    //TODO: Copied from GSWBolt_ts
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
@@ -46,7 +45,6 @@ public class WUBolt_ts extends WUBolt{
         wuEvents = new ArrayDeque<>();
     }
 
-    //TODO: Copied from SLBolt_ts, check where this method is used, modify or remove accordingly
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(transactionManager.getSchedulerContext(),

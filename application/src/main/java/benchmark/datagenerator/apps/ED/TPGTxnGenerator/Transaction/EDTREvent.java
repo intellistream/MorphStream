@@ -17,10 +17,14 @@ public class EDTREvent extends Event {
         return tweetID;
     }
 
+    public String[] getWords() {
+        return words;
+    }
 
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder(String.valueOf(id));
+        str.append(",").append(tweetID);
         for (String word : words) {
             str.append(",").append(word);
         }

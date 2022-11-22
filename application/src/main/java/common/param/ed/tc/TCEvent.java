@@ -2,6 +2,8 @@ package common.param.ed.tc;
 
 import common.param.TxnEvent;
 import storage.SchemaRecordRef;
+import static common.CONTROL.wordWindowSize;
+import static common.CONTROL.tweetWindowSize;
 
 import java.util.Arrays;
 
@@ -27,13 +29,12 @@ public class TCEvent extends TxnEvent {
         this.my_partition_index = partition_index;
         this.my_number_of_partitions = number_of_partitions;
         this.wordID = wordID;
-        this.windowSize = 150; //TODO: This is the wordWindowSize
+        this.windowSize = wordWindowSize;
         this.currWindow = computeCurrWindow(bid);
     }
 
     private int computeCurrWindow(int bid) {
-        int windowSize = 50; //TODO: This is the tweetWindowSize
-        return bid / windowSize;
+        return bid / tweetWindowSize;
     }
 
     public int getMyBid() {

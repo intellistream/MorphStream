@@ -1,6 +1,7 @@
 package combo;
 
 import benchmark.DataHolder;
+import common.bolts.transactional.ed.tr.*;
 import common.bolts.transactional.gs.*;
 import common.collections.Configuration;
 import common.param.TxnEvent;
@@ -33,7 +34,7 @@ public class EDCombo extends SPOUTCombo {
     @Override
     public void loadEvent(String filePath, Configuration config, TopologyContext context, OutputCollector collector) {
         int storageIndex = 0;
-        //Load Transfer Events.
+        //Load TR Events.
         for (int index = taskId; index < DataHolder.events.size(); ) {
             TxnEvent event = DataHolder.events.get(index).cloneEvent();
             mybids[storageIndex] = event.getBid();
@@ -42,16 +43,6 @@ public class EDCombo extends SPOUTCombo {
                 break;
             index += tthread * combo_bid_size;
         }
-
-//        //Load Deposit Events.
-//        for (int index = taskId; index < DataHolder.depositEvents.size(); ) {
-//            TxnEvent event = DataHolder.depositEvents.get(index).cloneEvent();
-//            mybids[storageIndex] = event.getBid();
-//            myevents[storageIndex++] = event;
-//            if (storageIndex == num_events_per_thread)
-//                break;
-//            index += tthread * combo_bid_size;
-//        }
         assert (storageIndex == num_events_per_thread);
     }
 
@@ -107,23 +98,23 @@ public class EDCombo extends SPOUTCombo {
         sink.prepare(config, context, collector);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_LOCK: {//no-order
-                bolt = new GSBolt_nocc(0, sink);
+                bolt = new TRBolt_nocc(0, sink);
                 break;
             }
             case CCOption_OrderLOCK: {//LOB
-                bolt = new GSBolt_olb(0, sink);
+                bolt = new TRBolt_olb(0, sink);
                 break;
             }
             case CCOption_LWM: {//LWM
-                bolt = new GSBolt_lwm(0, sink);
+                bolt = new TRBolt_lwm(0, sink);
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                bolt = new GSBolt_ts(0, sink);
+                bolt = new TRBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
-                bolt = new GSBolt_sstore(0, sink);
+                bolt = new TRBolt_sstore(0, sink);
                 break;
             }
 

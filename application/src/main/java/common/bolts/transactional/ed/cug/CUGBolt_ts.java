@@ -19,6 +19,7 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.tweetWindowSize;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
@@ -90,12 +91,9 @@ public class CUGBolt_ts extends CUGBolt {
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        //TODO: set punctuation interval to tweet window size
-        int pun_interval = 50;
-
         counter++;
 
-        if (counter % pun_interval == 0) {
+        if (counter % tweetWindowSize == 0) { //punctuation_interval = wordWindowSize
             int num_events = cuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

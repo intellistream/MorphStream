@@ -6,6 +6,7 @@ import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDataGenerator;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDynamicDataGenerator;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
@@ -92,7 +93,7 @@ public class EDInitializer extends TableInitilizer {
      * @param dataConfig
      */
 
-    //TODO: Copied from GSW Initializer, change accordingly
+    //TODO: Copied from SLInitializer, change accordingly
     private void configurePath(DataGeneratorConfig dataConfig) {
         MessageDigest digest;
         String subFolder = null;
@@ -100,26 +101,28 @@ public class EDInitializer extends TableInitilizer {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
             if (dataConfig instanceof EDTPGDataGeneratorConfig)
-                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%d_%s",
+                bytes = digest.digest(String.format("%d_%d_%d_%s_%s",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
                                 dataConfig.getnKeyStates(),
-                                ((EDTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
-                                ((EDTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
-                                ((EDTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
-                                ((EDTPGDataGeneratorConfig) dataConfig).Period_of_Window_Reads,
-                                ((EDTPGDataGeneratorConfig) dataConfig).Transaction_Length,
-                                ((EDTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
-                                AppConfig.isCyclic)
+                                AppConfig.isCyclic,
+                                config.getString("workloadType"))
+                        .getBytes(StandardCharsets.UTF_8));
+            else if (dataConfig instanceof DynamicDataGeneratorConfig)
+                bytes = digest.digest(String.format("%d_%d_%d_%s_%s",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTotalEvents(),
+                                dataConfig.getnKeyStates(),
+                                AppConfig.isCyclic,
+                                config.getString("workloadType"))
                         .getBytes(StandardCharsets.UTF_8));
             else
-                bytes = digest.digest(String.format("%d_%d_%d_%s_%s_%s",
+                bytes = digest.digest(String.format("%d_%d_%d",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
-                                dataConfig.getnKeyStates(),
-                                ((DynamicDataGeneratorConfig) dataConfig).getApp(),
-                                AppConfig.isCyclic)
+                                dataConfig.getnKeyStates())
                         .getBytes(StandardCharsets.UTF_8));
+
             subFolder = OsUtils.osWrapperPostFix(
                     DatatypeConverter.printHexBinary(bytes));
         } catch (Exception e) {
@@ -160,7 +163,7 @@ public class EDInitializer extends TableInitilizer {
         File file = new File(folder + "events.txt");
         int[] p_bids = new int[tthread];
         if (file.exists()) {
-            if (enable_log) LOG.info("Reading transfer events...");
+            if (enable_log) LOG.info("Reading tweet registrant events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file))); //Put data file into reader
             loadTREvents(reader, totalEvents, shufflingActive, p_bids); //Pass the reader to method
             reader.close();
@@ -179,7 +182,7 @@ public class EDInitializer extends TableInitilizer {
             // Construct bid array
             HashMap<Integer, Integer> pids = new HashMap<>();
             for (int i = 1; i < 5; i++) {
-                pids.put((int) (Long.parseLong(split[i]) / partitionOffset), 0);
+                pids.put((int) (Long.parseLong(String.valueOf(split[i].hashCode())) / partitionOffset), 0); //TODO: Set pid as 0 for all input words
             }
 
             //Construct String[] words from readLine()
@@ -283,8 +286,11 @@ public class EDInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
-            //TODO: This initialize table with some default records.
-//            insertWordRecord(_key, startingValue , pid, spinlock);
+
+            //This initializes table with some default records.
+            String[] wordList = {"word1", "word2", "word3"};
+            int computeTime = 0;
+            insertTweetRecord(_key, wordList, computeTime , pid, spinlock);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -292,80 +298,52 @@ public class EDInitializer extends TableInitilizer {
 
 
     @Override
-    public void loadDB(SchedulerContext context, int thread_id, int NUMTasks) {
-        throw new UnsupportedOperationException();
+    public void loadDB(SchedulerContext context, int thread_id, int NUM_TASK) {
+        loadDB(context, thread_id, null, NUM_TASK);
     }
 
+    /**
+     * TODO: code clean up to deduplicate.
+     *
+     * @param context
+     * @param thread_id
+     * @param spinlock
+     * @param NUM_TASK
+     */
     @Override
-    public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUMTasks) {
-        throw new UnsupportedOperationException();
+    public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUM_TASK) {
+        int partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
+        int left_bound = thread_id * partition_interval;
+        int right_bound;
+        if (thread_id == NUM_TASK - 1) {//last executor need to handle left-over
+            right_bound = config.getInt("NUM_ITEMS");
+        } else {
+            right_bound = (thread_id + 1) * partition_interval;
+        }
+        int pid;
+        String _key;
+        for (int key = left_bound; key < right_bound; key++) {
+            pid = get_pid(partition_interval, key);
+            _key = String.valueOf(key);
+
+            //This initializes table with some default records.
+            String[] wordList = {"word1", "word2", "word3"};
+            int computeTime = 0;
+            insertTweetRecord(_key, wordList, computeTime , pid, spinlock);
+        }
+        if (enable_log)
+            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
-
-//    private void insertWordRecord(String wordValue, HashSet tweetMap, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency, int pid, SpinLock[] spinlock_) {
-//        try {
-//            if (spinlock_ != null)
-//                db.InsertRecord("word_table", new TableRecord(WordRecord(wordValue, tweetMap, countOccurWindow, tfIdf, lastOccurWindow, frequency), pid, spinlock_));
-//            else
-//                db.InsertRecord("word_table", new TableRecord(WordRecord(wordValue, tweetMap, countOccurWindow, tfIdf, lastOccurWindow, frequency)));
-//        } catch (DatabaseException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-    //Shouldn't be called inside ED initializer.
-//    private void insertTweetRecord(long tweetID, HashSet wordMap, int computeTime, int pid, SpinLock[] spinlock_) {
-//        try {
-//            if (spinlock_ != null)
-//                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordMap, computeTime), pid, spinlock_));
-//            else
-//                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordMap, computeTime)));
-//        } catch (DatabaseException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-    //Shouldn't be called inside ED initializer.
-//    private void insertClusterRecord(long clusterID, HashSet tweetList, int aliveTime, int countNewTweet, int pid, SpinLock[] spinlock_) {
-//        try {
-//            if (spinlock_ != null)
-//                db.InsertRecord("cluster_table", new TableRecord(ClusterRecord(clusterID, tweetList, aliveTime, countNewTweet), pid, spinlock_));
-//            else
-//                db.InsertRecord("cluster_table", new TableRecord(ClusterRecord(clusterID, tweetList, aliveTime, countNewTweet)));
-//        } catch (DatabaseException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-    private SchemaRecord WordRecord(String wordValue, String[] tweetList, int countOccurWindow, double tfIdf, int lastOccurWindow, int frequency, boolean isBurst) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(wordValue));       //Primary key: 0
-        values.add(new ListStringDataBox(tweetList)); // 1
-        values.add(new IntDataBox(countOccurWindow)); // 2
-        values.add(new DoubleDataBox(tfIdf)); // 3
-        values.add(new IntDataBox(lastOccurWindow)); // 4
-        values.add(new IntDataBox(frequency)); // 5
-        values.add(new BoolDataBox(isBurst)); // 6
-        return new SchemaRecord(values);
-    }
-
-    private SchemaRecord TweetRecord(String tweetID, String[] wordList, int computeTime) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(tweetID));           //Primary key
-        values.add(new ListStringDataBox(wordList));
-        values.add(new IntDataBox(computeTime));
-        return new SchemaRecord(values);
-    }
-
-    private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int aliveTime, int countNewTweet, int clusterSize, boolean isEvent) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(clusterID));         //Primary key
-        values.add(new ListStringDataBox(wordList));
-        values.add(new IntDataBox(aliveTime));
-        values.add(new IntDataBox(countNewTweet));
-        values.add(new IntDataBox(clusterSize));
-        values.add(new BoolDataBox(isEvent));
-        return new SchemaRecord(values);
+    private void insertTweetRecord(String tweetID, String[] wordList, int computeTime, int pid, SpinLock[] spinlock_) {
+        try {
+            if (spinlock_ != null)
+                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList, computeTime), pid, spinlock_));
+            else
+                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList, computeTime)));
+        } catch (DatabaseException e) {
+            e.printStackTrace();
+        }
     }
 
     private RecordSchema WordSchema() {
@@ -401,6 +379,14 @@ public class EDInitializer extends TableInitilizer {
         fieldNames.add("Compute_Time"); // 2
 
         return new RecordSchema(fieldNames, dataBoxes);
+    }
+
+    private SchemaRecord TweetRecord(String tweetID, String[] wordList, int computeTime) {
+        List<DataBox> values = new ArrayList<>();
+        values.add(new StringDataBox(tweetID, tweetID.length()));
+        values.add(new ListStringDataBox(wordList));
+        values.add(new IntDataBox(computeTime));
+        return new SchemaRecord(values);
     }
 
     private RecordSchema ClusterSchema() {
