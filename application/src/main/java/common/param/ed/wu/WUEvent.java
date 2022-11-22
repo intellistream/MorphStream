@@ -1,7 +1,8 @@
 package common.param.ed.wu;
 
 import common.param.TxnEvent;
-import storage.SchemaRecordRef;
+import static common.CONTROL.wordWindowSize;
+import static common.CONTROL.tweetWindowSize;
 
 import java.util.Arrays;
 
@@ -28,8 +29,7 @@ public class WUEvent extends TxnEvent {
     }
 
     private int computeCurrWindow(int bid) {
-        int windowSize = 50; //TODO: This is the tweetWindowSize
-        return bid / windowSize;
+        return bid / tweetWindowSize;
     }
 
     public int getMyBid() {

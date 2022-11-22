@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerTStream;
+import static common.CONTROL.wordWindowSize;
 
 import java.util.ArrayDeque;
 import java.util.Map;
@@ -90,12 +91,9 @@ public class WUGBolt_ts extends WUGBolt {
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        //TODO: set punctuation interval to word window size
-        int pun_interval = 150;
-
         counter++;
 
-        if (counter % pun_interval == 0) {
+        if (counter % wordWindowSize == 0) { //punctuation_interval = wordWindowSize
             int num_events = wuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

@@ -1,20 +1,19 @@
 package common.bolts.transactional.ed.trg;
 
 import combo.SINKCombo;
-import common.param.ed.tr.TREvent;
 import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
-import transaction.function.Insert;
 import transaction.impl.ordered.TxnManagerTStream;
+import static common.CONTROL.wordWindowSize;
+import static common.CONTROL.tweetWindowSize;
 
 import java.util.ArrayDeque;
 import java.util.Map;
@@ -22,7 +21,6 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_latency_measurement;
-import static common.Constants.DEFAULT_STREAM_ID;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
@@ -32,7 +30,6 @@ public class TRGBolt_ts extends TRGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TRGBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<WUEvent> wuEvents;
-    private final int pun_interval = 50; //TODO: set punctuation interval to tweet window size
     private int counter = 0;
 
     //To be used in Combo
@@ -98,7 +95,7 @@ public class TRGBolt_ts extends TRGBolt {
 
         counter++;
 
-        if (counter % pun_interval == 0) {
+        if (counter % tweetWindowSize == 0) { //punctuation_interval = tweetWindowSize
             int num_events = wuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

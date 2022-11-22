@@ -19,6 +19,7 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.tweetWindowSize;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
@@ -27,7 +28,6 @@ public class TCGBolt_ts extends TCGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TCGBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<CUEvent> cuEvents;
-    private final int pun_interval = 50; //TODO: set punctuation interval to tweet window size
     private int counter = 0;
 
     //To be used in Combo
@@ -93,7 +93,7 @@ public class TCGBolt_ts extends TCGBolt {
 
         counter++;
 
-        if (counter % pun_interval == 0) {
+        if (counter % tweetWindowSize == 0) { //punctuation_interval = wordWindowSize
             int num_events = cuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

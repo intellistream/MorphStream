@@ -18,9 +18,7 @@ import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
 
 public abstract class CUGBolt extends TransactionalBolt {
-
     SINKCombo sink; // the default "next bolt"
-    StorageManager storageManager = db.getStorageManager();
 
     public CUGBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
@@ -33,6 +31,8 @@ public abstract class CUGBolt extends TransactionalBolt {
     }
 
     protected void CU_GATE_REQUEST_POST(CUEvent event) throws InterruptedException, DatabaseException {
+
+        StorageManager storageManager = db.getStorageManager();
 
         double delta = 0.1;
         int outBid = event.getMyBid(); //TODO: Add delta
