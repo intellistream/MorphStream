@@ -53,8 +53,7 @@ public class ESBolt extends TransactionalBolt {
                 //create output non-event information
                 output = event.getClusterID() + "is not an Event.";
             }
-            //TODO: Increase bid by delta, emit output information to sink
-            //the second argument should be output event
+            //the second argument should be event detection output
             collector.emit(event.getBid(), output, event.getTimestamp());//the tuple is finished.
         } else {
             if (enable_latency_measurement) {

@@ -33,29 +33,18 @@ public class CUBolt extends TransactionalBolt {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             ((CUEvent) input_event).setTimestamp(timestamp);
-            boolean isBurst = ((CUEvent) input_event).isBurst();
-            if (isBurst) {
-                CLUSTER_UPDATE_REQUEST_POST((CUEvent) input_event);
-            } else {
-                COMPUTE_TIME_UPDATE_REQUEST_POST((CUEvent) input_event);
-            }
+            CLUSTER_UPDATE_REQUEST_POST((CUEvent) input_event);
         }
         END_POST_TIME_MEASURE(thread_Id);
     }
 
     protected void CLUSTER_UPDATE_REQUEST_POST(CUEvent event) throws InterruptedException {
-        //TODO: Refer to GSWBolt, we can perform some correctness measurement here
-//        int sum = 0; //Pass this sum value to sink for measurement
-//        if (POST_COMPUTE_COMPLEXITY != 0) {
-//            for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
-//                sum += event.result.get(i);
-//            }
-//            for (int j = 0; j < POST_COMPUTE_COMPLEXITY; ++j)
-//                sum += System.nanoTime();
-//        }
+
+        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
+        Tuple tuple = new Tuple(event.getMyBid(), 0, context, generalMsg);
+
         if (!enable_app_combo) {
-            //TODO: Add delta to bid, remember to emit as Event
-            collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
+            collector.emit(event.getMyBid(), tuple, event.getTimestamp());//emit CU Event tuple to CU Gate
         } else {
             if (enable_latency_measurement) {
                 //Pass the information to sink
@@ -64,24 +53,4 @@ public class CUBolt extends TransactionalBolt {
         }
     }
 
-    protected void COMPUTE_TIME_UPDATE_REQUEST_POST(CUEvent event) throws InterruptedException {
-        //TODO: Refer to GSWBolt, we can perform some correctness measurement here
-//        int sum = 0; //Pass this sum value to sink for measurement
-//        if (POST_COMPUTE_COMPLEXITY != 0) {
-//            for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
-//                sum += event.result.get(i);
-//            }
-//            for (int j = 0; j < POST_COMPUTE_COMPLEXITY; ++j)
-//                sum += System.nanoTime();
-//        }
-        if (!enable_app_combo) {
-            //TODO: Add delta to bid, remember to emit as Event
-            collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
-        } else {
-            if (enable_latency_measurement) {
-                //Pass the information to sink
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
-            }
-        }
-    }
 }

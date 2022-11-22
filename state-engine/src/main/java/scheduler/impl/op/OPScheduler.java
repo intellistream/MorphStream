@@ -493,9 +493,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                 //Update record's version (in this request, s_record == d_record)
                 operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-                synchronized (operation.success) {
-                    operation.success[0]++;
-                }
 
             } else { // Initialize a new cluster
 
@@ -513,10 +510,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                 //Update record's version (in this request, s_record == d_record)
                 operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-                synchronized (operation.success) {
-                    operation.success[0]++;
-                }
 
+            }
+            synchronized (operation.success) {
+                operation.success[0]++;
             }
 
         }

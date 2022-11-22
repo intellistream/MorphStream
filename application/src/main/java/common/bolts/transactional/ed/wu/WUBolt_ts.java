@@ -1,7 +1,6 @@
 package common.bolts.transactional.ed.wu;
 
 import combo.SINKCombo;
-import common.param.ed.tc.TCEvent;
 import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -11,13 +10,9 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import storage.SchemaRecord;
-import storage.SchemaRecordRef;
-import storage.datatype.*;
 import transaction.context.TxnContext;
 import transaction.function.Append;
 import transaction.function.Condition;
-import transaction.function.INC;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
@@ -36,7 +31,6 @@ public class WUBolt_ts extends WUBolt{
     //To be used in Combo
     public WUBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-
     }
 
     //To be used in ED Topology
@@ -107,25 +101,7 @@ public class WUBolt_ts extends WUBolt{
         wuEvents.add(event);
     }
 
-    private void WORD_UPDATE_REQUEST_CORE() throws InterruptedException {
-
-        //TODO: Define CORE for WU
-
-        for (WUEvent event : wuEvents) {
-//
-//            SchemaRecordRef tweetRecordRef = event.tweetRecordRef;
-//
-//            //INSERT failed
-//            if (tweetRecordRef == null) {
-//                if (enable_log) LOG.debug(event.getBid() + " | " + Arrays.toString(event.getWords()) + "INSERT failed");
-//            }
-//
-//            //INSERT success, pass read result to event. It will be referenced in REQUEST_POST
-//            if (tweetRecordRef != null) {
-//                event.tweetIDResult = tweetRecordRef.getRecord().getValues().get(1).getString().trim(); //Add read result to event.result
-//            }
-        }
-    }
+    private void WORD_UPDATE_REQUEST_CORE() throws InterruptedException {}
 
     private void WORD_UPDATE_REQUEST_POST() throws InterruptedException {
         for (WUEvent event : wuEvents) {
