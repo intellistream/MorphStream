@@ -28,6 +28,7 @@ import transaction.TableInitilizer;
 import utils.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
+import javax.xml.validation.Schema;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -158,7 +159,7 @@ public class EDInitializer extends TableInitilizer {
 
     @Override
     protected void Load() throws IOException {
-        int totalEvents = dataConfig.getTotalEvents(); //TODO: Verify this totalEvents constant in config
+        int totalEvents = dataConfig.getTotalEvents();
         boolean shufflingActive = dataConfig.getShufflingActive();
         String folder = dataConfig.getRootPath();
         File file = new File(folder + "events.txt");
@@ -317,6 +318,7 @@ public class EDInitializer extends TableInitilizer {
         int partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
         int left_bound = thread_id * partition_interval;
         int right_bound;
+        int tweet_word_count = 3;
         if (thread_id == NUM_TASK - 1) {//last executor need to handle left-over
             right_bound = config.getInt("NUM_ITEMS");
         } else {
@@ -324,14 +326,40 @@ public class EDInitializer extends TableInitilizer {
         }
         int pid;
         String _key;
+
+        //Initialize tweet table
         for (int key = left_bound; key < right_bound; key++) {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
+            String[] wordList = {};
+            int defaultComputeTime = -1;
+            insertTweetRecord(_key, wordList, defaultComputeTime, pid, spinlock);
+        }
 
-            //This initializes table with some default records.
-            String[] wordList = {"word1", "word2", "word3"};
-            int computeTime = 0;
-            insertTweetRecord(_key, wordList, computeTime , pid, spinlock);
+        //Initialize word table
+        for (int key = left_bound; key < right_bound * tweet_word_count; key++) { //assume each tweet has 3 words
+            pid = get_pid(partition_interval, key);
+            _key = String.valueOf(key);
+            String wordValue = "";
+            String[] tweetList = {};
+            int countOccurWindow = -1;
+            double tfIdf = -1;
+            int lastOccurWindow = -1;
+            int frequency = -1;
+            boolean isBurst = false;
+            insertWordRecord(_key, wordValue, tweetList, countOccurWindow, tfIdf, lastOccurWindow, frequency, isBurst, pid, spinlock);
+        }
+
+        //Initialize cluster table
+        for (int key = left_bound; key < right_bound; key++) {
+            pid = get_pid(partition_interval, key);
+            _key = String.valueOf(key);
+            String[] wordList = {};
+            int aliveTime = -1;
+            int countNewTweet = -1;
+            int clusterSize = -1;
+            boolean isEvent = false;
+            insertClusterRecord(_key, wordList, aliveTime, countNewTweet, clusterSize, isEvent, pid, spinlock);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -350,14 +378,30 @@ public class EDInitializer extends TableInitilizer {
 
     private void insertWordRecord(String wordID, String wordValue, String[] tweetList, int countOccurWindow, double tfIdf,
                                   int lastOccurWindow, int frequency, boolean isBurst, int pid, SpinLock[] spinlock_) {
-//        try {
-//            if (spinlock_ != null)
-//                db.InsertRecord("word_table", new TableRecord(WordRecord(wordID, wordList, computeTime), pid, spinlock_));
-//            else
-//                db.InsertRecord("word_table", new TableRecord(WordRecord(tweetID, wordList, computeTime)));
-//        } catch (DatabaseException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            if (spinlock_ != null)
+                db.InsertRecord("word_table", new TableRecord(WordRecord(wordID, wordValue, tweetList, countOccurWindow,
+                        tfIdf, lastOccurWindow, frequency, isBurst), pid, spinlock_));
+            else
+                db.InsertRecord("word_table", new TableRecord(WordRecord(wordID, wordValue, tweetList, countOccurWindow,
+                        tfIdf, lastOccurWindow, frequency, isBurst)));
+        } catch (DatabaseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void insertClusterRecord(String clusterID, String[] wordList, int aliveTime, int countNewTweet, int clusterSize, boolean isEvent,
+                                     int pid, SpinLock[] spinlock_) {
+        try {
+            if (spinlock_ != null)
+                db.InsertRecord("tweet_table", new TableRecord(ClusterRecord(clusterID, wordList, aliveTime, countNewTweet,
+                        clusterSize, isEvent), pid, spinlock_));
+            else
+                db.InsertRecord("tweet_table", new TableRecord(ClusterRecord(clusterID, wordList, aliveTime, countNewTweet,
+                        clusterSize, isEvent)));
+        } catch (DatabaseException e) {
+            e.printStackTrace();
+        }
     }
 
     private RecordSchema WordSchema() {
@@ -433,6 +477,17 @@ public class EDInitializer extends TableInitilizer {
         fieldNames.add("Cluster_Size"); // 4
         fieldNames.add("Is_Event"); // 5
         return new RecordSchema(fieldNames, dataBoxes);
+    }
+
+    private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int aliveTime, int countNewTweet, int clusterSize, boolean isEvent) {
+        List<DataBox> values = new ArrayList<>();
+        values.add(new StringDataBox(clusterID, clusterID.length()));
+        values.add(new ListStringDataBox(wordList));
+        values.add(new IntDataBox(aliveTime));
+        values.add(new IntDataBox(countNewTweet));
+        values.add(new IntDataBox(clusterSize));
+        values.add(new BoolDataBox(isEvent));
+        return new SchemaRecord(values);
     }
 
     @Override

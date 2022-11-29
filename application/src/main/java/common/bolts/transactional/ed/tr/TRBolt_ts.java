@@ -78,7 +78,6 @@ public class TRBolt_ts extends TRBolt{
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            LOG.info("TR Event: " + input_event.toString());
             TREvent event = (TREvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);

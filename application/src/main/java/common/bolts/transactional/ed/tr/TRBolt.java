@@ -41,6 +41,8 @@ public abstract class TRBolt extends TransactionalBolt {
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
+            LOG.info("Posting event: " + event.getBid());
+
             if (!enable_app_combo) {
 //                collector.emit(outBid, tuple, event.getTimestamp());
                 collector.emit(outBid, tuple);
