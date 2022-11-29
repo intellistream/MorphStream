@@ -90,6 +90,9 @@ public class ExecutionManager {
                             , conf, 0, latch); //TODO: schedule to numa node wisely.
                     break;
                 case boltType:
+                    thread = launchBolt_SingleCore(e, new TopologyContext(g, db, e, ThreadMap)
+                            , conf, 0, latch); //TODO: schedule to numa node wisely.
+                    break;
                 case sinkType:
                     thread = launchBolt_SingleCore(e, new TopologyContext(g, db, e, ThreadMap)
                             , conf, 0, latch); //TODO: schedule to numa node wisely.

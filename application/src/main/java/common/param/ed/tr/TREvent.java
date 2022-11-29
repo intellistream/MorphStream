@@ -53,4 +53,12 @@ public class TREvent extends TxnEvent {
     public TREvent cloneEvent() {
         return new TREvent((int) bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, tweetID, words);
     }
+
+    @Override
+    public String toString() {
+        return "TREvent (" + bid + ") {"
+                + "tweetID=" + tweetID
+                + ", words=" + Arrays.toString(words)
+                + '}';
+    }
 }

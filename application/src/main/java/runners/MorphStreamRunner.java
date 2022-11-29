@@ -142,7 +142,8 @@ public class MorphStreamRunner extends Runner {
                 case "EventDetection": {
                     config.put("app", 4);
                     int threads = Math.max(1, (int) Math.floor((tthread)));
-                    config.put(EventDetectionConstants.Conf.Executor_Threads, threads); //TODO: Double-confirm this Conf settings
+                    config.put(EventDetectionConstants.Conf.Executor_Threads, threads);
+                    config.put(EventDetectionConstants.Conf.Gate_Threads, 1);
                     break;
                 }
             }

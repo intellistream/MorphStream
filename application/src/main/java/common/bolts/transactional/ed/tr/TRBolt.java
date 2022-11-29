@@ -15,7 +15,7 @@ import static common.Constants.DEFAULT_STREAM_ID;
 
 public abstract class TRBolt extends TransactionalBolt {
 
-    SINKCombo sink; //TODO:Default sink for measurement
+    SINKCombo sink; //Default sink for measurement
 
     public TRBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
@@ -38,11 +38,12 @@ public abstract class TRBolt extends TransactionalBolt {
         for (String word : words) {
 
             WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), word, tweetID);
-            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
             if (!enable_app_combo) {
-                collector.emit(outBid, tuple, event.getTimestamp());//tuple should be the input of next bolt's execute() method
+//                collector.emit(outBid, tuple, event.getTimestamp());
+                collector.emit(outBid, tuple);
             } else {
                 if (enable_latency_measurement) {
                     //Pass the read result of new tweet's ID (assigned by table) to sink

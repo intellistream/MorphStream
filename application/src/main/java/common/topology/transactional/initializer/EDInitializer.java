@@ -8,6 +8,7 @@ import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDynamicDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
+import clojure.lang.IFn;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
@@ -312,6 +313,7 @@ public class EDInitializer extends TableInitilizer {
      */
     @Override
     public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUM_TASK) {
+        int ED_NUM_ITEMS;
         int partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
         int left_bound = thread_id * partition_interval;
         int right_bound;
@@ -346,6 +348,18 @@ public class EDInitializer extends TableInitilizer {
         }
     }
 
+    private void insertWordRecord(String wordID, String wordValue, String[] tweetList, int countOccurWindow, double tfIdf,
+                                  int lastOccurWindow, int frequency, boolean isBurst, int pid, SpinLock[] spinlock_) {
+//        try {
+//            if (spinlock_ != null)
+//                db.InsertRecord("word_table", new TableRecord(WordRecord(wordID, wordList, computeTime), pid, spinlock_));
+//            else
+//                db.InsertRecord("word_table", new TableRecord(WordRecord(tweetID, wordList, computeTime)));
+//        } catch (DatabaseException e) {
+//            e.printStackTrace();
+//        }
+    }
+
     private RecordSchema WordSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
@@ -366,6 +380,20 @@ public class EDInitializer extends TableInitilizer {
         fieldNames.add("Frequency"); // 6
         fieldNames.add("Is_Burst"); // 7
         return new RecordSchema(fieldNames, dataBoxes);
+    }
+
+    private SchemaRecord WordRecord(String wordID, String wordValue, String[] tweetList, int countOccurWindow, double tfIdf,
+                                    int lastOccurWindow, int frequency, boolean isBurst) {
+        List<DataBox> values = new ArrayList<>();
+        values.add(new StringDataBox(wordID, wordID.length()));
+        values.add(new StringDataBox(wordValue));
+        values.add(new ListStringDataBox(tweetList));
+        values.add(new IntDataBox(countOccurWindow));
+        values.add(new DoubleDataBox(tfIdf));
+        values.add(new IntDataBox(lastOccurWindow));
+        values.add(new IntDataBox(frequency));
+        values.add(new BoolDataBox(isBurst));
+        return new SchemaRecord(values);
     }
 
     private RecordSchema TweetSchema() {

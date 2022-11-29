@@ -54,7 +54,7 @@ public class TRBolt_ts extends TRBolt{
         super(LOG, fid, null);
     }
 
-    //TODO: Copied from GSWBolt_ts
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
@@ -62,7 +62,7 @@ public class TRBolt_ts extends TRBolt{
         trEvents = new ArrayDeque<>();
     }
 
-    //TODO: Copied from SLBolt_ts, check where this method is used, modify or remove accordingly
+
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(transactionManager.getSchedulerContext(),
@@ -78,6 +78,7 @@ public class TRBolt_ts extends TRBolt{
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
+            LOG.info("TR Event: " + input_event.toString());
             TREvent event = (TREvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
@@ -141,7 +142,7 @@ public class TRBolt_ts extends TRBolt{
             {
                 MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
                 {
-                    transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
+//                    transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
                     TWEET_REGISTRANT_REQUEST_CORE();
                 }
                 MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
