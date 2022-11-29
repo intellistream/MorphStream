@@ -139,7 +139,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
             timestamp = 0L;//
         _bid = in.getBID();
         input_event = in.getValue(0);
-        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
+//        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
         sum = 0;
     }
 

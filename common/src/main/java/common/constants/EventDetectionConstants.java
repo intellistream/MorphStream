@@ -16,6 +16,7 @@ public interface EventDetectionConstants {
         String INSERTOR_THREADS = "ed.insert.threads";
         String SELECTOR_THREADS = "ed.selector.threads";
         String Executor_Threads = "ed.executor.threads";
+        String Gate_Threads = "ed.gate.threads";
     }
 
     interface Component extends BaseConstants.BaseComponent {
