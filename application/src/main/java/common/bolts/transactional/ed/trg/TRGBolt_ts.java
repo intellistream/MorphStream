@@ -86,6 +86,7 @@ public class TRGBolt_ts extends TRGBolt {
     private void TR_GATE_REQUEST_POST() throws InterruptedException {
         for (WUEvent event : wuEvents) {
             TR_GATE_REQUEST_POST(event);
+            LOG.info("Posting event: " + event.getBid());
         }
         insertMaker(wuEvents.getLast());
     }
