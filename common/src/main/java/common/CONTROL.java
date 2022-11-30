@@ -41,4 +41,7 @@ public interface CONTROL {
     //ED Window
     int wordWindowSize = 30;
     int tweetWindowSize = 10;
+
+    //Double bid Support
+    boolean enableDoubleBid = true;
 }

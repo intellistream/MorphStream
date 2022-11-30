@@ -57,7 +57,9 @@ public class TCBolt extends TransactionalBolt {
                 GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
                 Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-                collector.emit(outBid, tuple, event.getTimestamp());//emit CU Event tuple to TC Gate
+                LOG.info("Posting event: " + event.getMyBid());
+
+                collector.emit(outBid, tuple);//emit CU Event tuple to TC Gate
             }
         } else {
             if (enable_latency_measurement) {

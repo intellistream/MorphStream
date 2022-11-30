@@ -47,12 +47,8 @@ public class CUGBolt_ts extends CUGBolt {
         cuEvents = new ArrayDeque<>();
     }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-//        prepareEvents();
-        loadDB(transactionManager.getSchedulerContext(),
-                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
-        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
-    }
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.

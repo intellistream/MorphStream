@@ -33,8 +33,10 @@ public class WUBolt extends TransactionalBolt {
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
         Tuple tuple = new Tuple(event.getMyBid(), 0, context, generalMsg);
 
+        LOG.info("Posting event: " + event.getMyBid());
+
         if (!enable_app_combo) {
-            collector.emit(event.getMyBid(), tuple, event.getTimestamp());//emit WU Event tuple to WU Gate
+            collector.emit(event.getMyBid(), tuple);//emit WU Event tuple to WU Gate
         } else {
             if (enable_latency_measurement) {
                 //Pass the read result of new tweet's ID (assigned by table) to sink

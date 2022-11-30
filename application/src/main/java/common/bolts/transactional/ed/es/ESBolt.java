@@ -53,8 +53,11 @@ public class ESBolt extends TransactionalBolt {
                 //create output non-event information
                 output = event.getClusterID() + "is not an Event.";
             }
+
+            LOG.info("Posting event: " + event.getMyBid());
+
             //the second argument should be event detection output
-            collector.emit(event.getBid(), output, event.getTimestamp());//the tuple is finished.
+            collector.emit(event.getBid(), output);//the tuple is finished.
         } else {
             if (enable_latency_measurement) {
                 //Pass the read result of new tweet's ID (assigned by table) to sink

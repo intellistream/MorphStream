@@ -44,18 +44,15 @@ public class TCBolt_ts extends TCBolt{
         tcEvents = new ArrayDeque<>();
     }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-//        prepareEvents();
-        loadDB(transactionManager.getSchedulerContext(),
-                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
-        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
-    }
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
+
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
@@ -78,6 +75,8 @@ public class TCBolt_ts extends TCBolt{
         String[] wordID = new String[]{event.getWordID()}; //condition source key
         TFIDF tfIdf = new TFIDF();
         Condition condition = new Condition(event.getWindowSize(), event.getWindowCount()); //arg1: windowSize, arg2: windowCount
+
+        LOG.info("Constructing TC request: " + event.getMyBid());
 
         transactionManager.BeginTransaction(txnContext);
 

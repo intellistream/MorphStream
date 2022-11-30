@@ -314,7 +314,6 @@ public class EDInitializer extends TableInitilizer {
      */
     @Override
     public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUM_TASK) {
-        int ED_NUM_ITEMS;
         int partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
         int left_bound = thread_id * partition_interval;
         int right_bound;
@@ -336,8 +335,12 @@ public class EDInitializer extends TableInitilizer {
             insertTweetRecord(_key, wordList, defaultComputeTime, pid, spinlock);
         }
 
+        LOG.info("Inserted tweet record from row : " + left_bound + " to " + right_bound);
+
+        int word_left_bound = tweet_word_count * left_bound;
+        int word_right_bound = tweet_word_count * right_bound;
         //Initialize word table
-        for (int key = left_bound; key < right_bound * tweet_word_count; key++) { //assume each tweet has 3 words
+        for (int key = word_left_bound; key < word_right_bound; key++) { //assume each tweet has 3 words
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
             String wordValue = "";
@@ -350,6 +353,8 @@ public class EDInitializer extends TableInitilizer {
             insertWordRecord(_key, wordValue, tweetList, countOccurWindow, tfIdf, lastOccurWindow, frequency, isBurst, pid, spinlock);
         }
 
+        LOG.info("Inserted word record from row : " + word_left_bound + " to " + word_right_bound);
+
         //Initialize cluster table
         for (int key = left_bound; key < right_bound; key++) {
             pid = get_pid(partition_interval, key);
@@ -361,6 +366,9 @@ public class EDInitializer extends TableInitilizer {
             boolean isEvent = false;
             insertClusterRecord(_key, wordList, aliveTime, countNewTweet, clusterSize, isEvent, pid, spinlock);
         }
+
+        LOG.info("Inserted cluster record from row : " + left_bound + " to " + right_bound);
+
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }

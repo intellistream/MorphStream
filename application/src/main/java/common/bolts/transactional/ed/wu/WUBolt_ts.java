@@ -45,12 +45,8 @@ public class WUBolt_ts extends WUBolt{
         wuEvents = new ArrayDeque<>();
     }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-//        prepareEvents();
-        loadDB(transactionManager.getSchedulerContext(),
-                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
-        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
-    }
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -81,6 +77,8 @@ public class WUBolt_ts extends WUBolt{
 
         String sourceTable = "word_table";
         String sourceKey = String.valueOf(event.getWord().hashCode() % 10007);
+
+        LOG.info("Constructing WU request: " + event.getMyBid());
 
         transactionManager.BeginTransaction(txnContext);
 

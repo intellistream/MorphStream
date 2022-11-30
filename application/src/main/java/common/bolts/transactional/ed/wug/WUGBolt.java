@@ -48,7 +48,9 @@ public abstract class WUGBolt extends TransactionalBolt {
                 GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
                 Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-                collector.emit(outBid, tuple, event.getTimestamp());//tuple should be the input of next bolt's execute() method
+                LOG.info("Posting event: " + event.getMyBid());
+
+                collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method
             }
 
         } else {
@@ -66,8 +68,10 @@ public abstract class WUGBolt extends TransactionalBolt {
         //sourceID is used in ???, myIteration is used in SStore
         Tuple marker = new Tuple(outBid, 0, context, new Marker(DEFAULT_STREAM_ID, -1, outBid, 0));
 
+        LOG.info("Inserting marker: " + event.getMyBid());
+
         if (!enable_app_combo) {
-            collector.emit(outBid, marker, event.getTimestamp());//tuple should be the input of next bolt's execute() method
+            collector.emit(outBid, marker);//tuple should be the input of next bolt's execute() method
         } else {
             if (enable_latency_measurement) {
                 sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, "Maker", event.getTimestamp())));

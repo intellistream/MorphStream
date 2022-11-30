@@ -44,11 +44,13 @@ public abstract class CUGBolt extends TransactionalBolt {
             while (clusterIDIterator.hasNext()) {
                 String clusterID = clusterIDIterator.next();
 
+                LOG.info("Posting event: " + event.getMyBid());
+
                 ESEvent outEvent = new ESEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), clusterID);
                 GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
                 Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-                collector.emit(outBid, tuple, event.getTimestamp());//tuple should be the input of next bolt's execute() method
+                collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method
             }
 
         } else {
@@ -66,8 +68,10 @@ public abstract class CUGBolt extends TransactionalBolt {
         //sourceID is used in ???, myIteration is used in SStore
         Tuple marker = new Tuple(outBid, 0, context, new Marker(DEFAULT_STREAM_ID, -1, outBid, 0));
 
+        LOG.info("Inserting marker: " + event.getMyBid());
+
         if (!enable_app_combo) {
-            collector.emit(outBid, marker, event.getTimestamp());//tuple should be the input of next bolt's execute() method
+            collector.emit(outBid, marker);//tuple should be the input of next bolt's execute() method
         } else {
             if (enable_latency_measurement) {
                 sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, "Maker", event.getTimestamp())));
