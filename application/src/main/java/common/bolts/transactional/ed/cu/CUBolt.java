@@ -43,8 +43,10 @@ public class CUBolt extends TransactionalBolt {
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
         Tuple tuple = new Tuple(event.getMyBid(), 0, context, generalMsg);
 
+        LOG.info("Posting event: " + event.getMyBid());
+
         if (!enable_app_combo) {
-            collector.emit(event.getMyBid(), tuple, event.getTimestamp());//emit CU Event tuple to CU Gate
+            collector.emit(event.getMyBid(), tuple);//emit CU Event tuple to CU Gate
         } else {
             if (enable_latency_measurement) {
                 //Pass the information to sink

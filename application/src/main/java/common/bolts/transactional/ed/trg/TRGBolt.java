@@ -36,8 +36,10 @@ public abstract class TRGBolt extends TransactionalBolt {
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
         Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
+        LOG.info("Posting event: " + outBid);
+
         if (!enable_app_combo) {
-            collector.emit(outBid, tuple, event.getTimestamp());//tuple should be the input of next bolt's execute() method
+            collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method
         } else {
             if (enable_latency_measurement) {
                 //Pass the read result of new tweet's ID (assigned by table) to sink
@@ -52,8 +54,10 @@ public abstract class TRGBolt extends TransactionalBolt {
         //sourceID is used in ???, myIteration is used in SStore
         Tuple marker = new Tuple(outBid, 0, context, new Marker(DEFAULT_STREAM_ID, -1, outBid, 0));
 
+        LOG.info("Inserting marker: " + outBid);
+
         if (!enable_app_combo) {
-            collector.emit(outBid, marker, event.getTimestamp());//tuple should be the input of next bolt's execute() method
+            collector.emit(outBid, marker);//tuple should be the input of next bolt's execute() method
         } else {
             if (enable_latency_measurement) {
                 sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, "Maker", event.getTimestamp())));

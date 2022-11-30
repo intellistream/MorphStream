@@ -42,7 +42,6 @@ public class EDSpout extends TransactionalSpout {
     public final String split_exp = ";";
     public int the_end;
     public int global_cnt;
-    public int num_events_per_thread;
     public long[] mybids;
     public Object[] myevents;
     public int counter;
@@ -73,11 +72,11 @@ public class EDSpout extends TransactionalSpout {
             TxnEvent event = DataHolder.events.get(index).cloneEvent();
             mybids[storageIndex] = event.getBid();
             myevents[storageIndex++] = event;
-            if (storageIndex == num_events_per_thread)
+            if (storageIndex == totalEventsPerBatch)
                 break;
-            index += tthread * combo_bid_size;
+            index += combo_bid_size;
         }
-        assert (storageIndex == num_events_per_thread);
+        assert (storageIndex == totalEventsPerBatch);
     }
 
     @Override
@@ -86,7 +85,7 @@ public class EDSpout extends TransactionalSpout {
             if (taskId == 0)
                 sink.start();
         }
-        if (counter < num_events_per_thread) {
+        if (counter < totalEventsPerBatch) {
             Object event = myevents[counter];
 
             long bid = mybids[counter];
@@ -97,12 +96,14 @@ public class EDSpout extends TransactionalSpout {
             }
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
+//            LOG.info("Sending TR Event: " + bid + ", Counter = " + counter);
             this.collector.emit(bid, tuple);
             counter++;
 
             if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
-                if (checkpoint(counter)) {
+                if (counter % tweetWindowSize == 0) {
                     marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration));
+//                    LOG.info("Inserting marker after: " + bid);
                     this.collector.emit(bid, marker);
                 }
             }
@@ -145,17 +146,14 @@ public class EDSpout extends TransactionalSpout {
         totalEventsPerBatch = config.getInt("totalEvents");
         tthread = config.getInt("tthread");
 
-        num_events_per_thread = totalEventsPerBatch / tthread;
-
         if (enable_log) LOG.info("total events... " + totalEventsPerBatch);
-        if (enable_log) LOG.info("total events per thread = " + num_events_per_thread);
         if (enable_log) LOG.info("checkpoint_interval = " + checkpoint_interval);
 
         start_measure = CONTROL.MeasureStart;
 
-        mybids = new long[num_events_per_thread];
-        myevents = new Object[num_events_per_thread];
-        the_end = num_events_per_thread;
+        mybids = new long[totalEventsPerBatch];
+        myevents = new Object[totalEventsPerBatch];
+        the_end = totalEventsPerBatch;
 
         if (config.getInt("CCOption", 0) == CCOption_SStore) {
             global_cnt = (the_end) * tthread;

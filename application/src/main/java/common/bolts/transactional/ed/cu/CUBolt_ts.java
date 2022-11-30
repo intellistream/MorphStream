@@ -43,7 +43,6 @@ public class CUBolt_ts extends CUBolt{
         super(LOG, fid, null);
     }
 
-    //TODO: Copied from GSWBolt_ts
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
@@ -51,13 +50,8 @@ public class CUBolt_ts extends CUBolt{
         cuEvents = new ArrayDeque<>();
     }
 
-    //TODO: Copied from SLBolt_ts, check where this method is used, modify or remove accordingly
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-//        prepareEvents();
-        loadDB(transactionManager.getSchedulerContext(),
-                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
-        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
-    }
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -85,6 +79,8 @@ public class CUBolt_ts extends CUBolt{
         String[] tweetTable = new String[]{"tweet_table"}; // condition source table
         String[] tweetKey = new String[]{event.getTweetID()}; // condition source key
         Condition condition2 = new Condition(event.getCurrWindow()); //arg1: currentWindow
+
+        LOG.info("Constructing CU request: " + event.getMyBid());
 
         transactionManager.BeginTransaction(txnContext);
 
@@ -120,8 +116,8 @@ public class CUBolt_ts extends CUBolt{
 
         //TODO: Implement CU CORE
 
-        for (CUEvent event : cuEvents) {
-
+//        for (CUEvent event : cuEvents) {
+//
 //            SchemaRecordRef tweetRecordRef = event.tweetRecordRef;
 //
 //            //INSERT failed
@@ -133,7 +129,7 @@ public class CUBolt_ts extends CUBolt{
 //            if (tweetRecordRef != null) {
 //                event.tweetIDResult = tweetRecordRef.getRecord().getValues().get(1).getString().trim(); //Add read result to event.result
 //            }
-        }
+//        }
     }
 
     private void CLUSTER_UPDATE_REQUEST_POST() throws InterruptedException {

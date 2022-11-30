@@ -62,7 +62,7 @@ public class TRBolt_ts extends TRBolt{
         trEvents = new ArrayDeque<>();
     }
 
-
+    @Override
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
 //        prepareEvents();
         loadDB(transactionManager.getSchedulerContext(),
@@ -91,6 +91,8 @@ public class TRBolt_ts extends TRBolt{
     }
 
     protected void TWEET_REGISTRANT_REQUEST_CONSTRUCT(TREvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+
+//        LOG.info("Constructing TR request: " + event.getBid());
 
         String[] tweetTable = new String[]{"tweet_table"}; //condition source table
         String[] tweetID = new String[]{event.getTweetID()}; //condition source key

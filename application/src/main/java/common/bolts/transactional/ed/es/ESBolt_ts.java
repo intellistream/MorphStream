@@ -39,7 +39,6 @@ public class ESBolt_ts extends ESBolt{
         super(LOG, fid, null);
     }
 
-    //TODO: Copied from GSWBolt_ts
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
@@ -47,13 +46,8 @@ public class ESBolt_ts extends ESBolt{
         esEvents = new ArrayDeque<>();
     }
 
-    //TODO: Copied from SLBolt_ts, check where this method is used, modify or remove accordingly
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-//        prepareEvents();
-        loadDB(transactionManager.getSchedulerContext(),
-                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
-        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
-    }
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -75,6 +69,8 @@ public class ESBolt_ts extends ESBolt{
         String[] conditionSourceTable = new String[]{"word_table"}; //condition source table
         String[] conditionSourceKey = new String[]{event.getClusterID()}; //condition source key
         Division function = new Division();
+
+        LOG.info("Constructing ES request: " + event.getMyBid());
 
         transactionManager.BeginTransaction(txnContext);
 

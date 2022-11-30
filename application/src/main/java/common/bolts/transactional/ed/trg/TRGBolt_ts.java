@@ -49,12 +49,8 @@ public class TRGBolt_ts extends TRGBolt {
         wuEvents = new ArrayDeque<>();
     }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-//        prepareEvents();
-        loadDB(transactionManager.getSchedulerContext(),
-                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
-        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
-    }
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -77,6 +73,7 @@ public class TRGBolt_ts extends TRGBolt {
     }
 
     protected void TR_GATE_REQUEST_CONSTRUCT(WUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+        LOG.info("Constructing TRG request: " + event.getBid());
         wuEvents.add(event);
     }
 
@@ -96,7 +93,7 @@ public class TRGBolt_ts extends TRGBolt {
 
         counter++;
 
-        if (counter % tweetWindowSize == 0) { //punctuation_interval = tweetWindowSize
+        if (counter % wordWindowSize == 0) { //punctuation_interval = tweetWindowSize
             int num_events = wuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

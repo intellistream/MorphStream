@@ -9,13 +9,14 @@ import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 
-import static common.CONTROL.enable_app_combo;
-import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
 
 public abstract class TRBolt extends TransactionalBolt {
 
     SINKCombo sink; //Default sink for measurement
+
+    private int postCount = 0;
 
     public TRBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
@@ -41,7 +42,11 @@ public abstract class TRBolt extends TransactionalBolt {
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-            LOG.info("Posting event: " + event.getBid());
+//            LOG.info("Posting event: " + event.getBid() + ", Counter = " + postCount);
+            postCount++;
+            if (outBid >= 30) {
+                LOG.info("Posting event: " + event.getBid());
+            }
 
             if (!enable_app_combo) {
 //                collector.emit(outBid, tuple, event.getTimestamp());
