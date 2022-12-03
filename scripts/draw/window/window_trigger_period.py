@@ -187,6 +187,6 @@ if __name__ == '__main__':
     # legend_labels = ["$GS_{OC}$", "$BFS_{OC}$", "$DFS_{OC}$", "$GS_{OP}$", "$BFS_{OP}$", "$DFS_{OP}$", "PAT"]
     legend = False
     y_axis = ReadFileGS(x_value, tthread, batchInterval, NUM_ITEMS, NUM_ACCESS, key_skewness, window_trigger_period, window_size, transaction_length, isCyclic, complexity)
-    DrawFigure(x_value, y_axis, legend_labels, "Window Trigger Period(Event Time)", "Throughput(K/sec)", "window_trigger_period"
+    DrawFigure(x_value, y_axis, legend_labels, "Window Trigger Period (Event Time)", "Throughput(K/sec)", "window_trigger_period"
                .format(tthread, NUM_ITEMS, batchInterval, NUM_ACCESS, key_skewness, window_trigger_period, window_size, isCyclic, complexity),
                legend)
