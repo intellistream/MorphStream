@@ -17,11 +17,13 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_shared_state;
+import static common.CONTROL.fetchWithIndex;
 
 /**
  * Task thread that hosts bolt logic. Receives input Brisk.execution.runtime.tuple,
@@ -105,14 +107,48 @@ public class boltThread extends executorThread {
         }
     }
 
+    protected void _execute_noControl_index(int index) throws InterruptedException, DatabaseException, BrokenBarrierException {
+        Object tuple = fetchResultIndex(index);
+        if (tuple instanceof Tuple) {
+            if (tuple != null) {
+                bolt.execute((Tuple) tuple);
+                cnt += 1;
+            } else {
+                miss++;
+            }
+        } else {
+            if (tuple != null) {
+                bolt.execute((JumboTuple) tuple);
+                cnt += batch;
+            } else {
+                miss++;
+            }
+        }
+    }
+
     protected void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException {
         _execute_noControl();
+    }
+
+    protected void _execute_with_index(int index) throws InterruptedException, DatabaseException, BrokenBarrierException {
+        _execute_noControl_index(index);
+    }
+
+    private int getBoltIndex(String name, int id) {
+        int tthread = conf.getInt("tthread");
+        if (!Objects.equals(name, "sink")) { //bolt or gate
+            return id % (tthread + 1);
+        } else { //sink
+            return -1;
+        }
     }
 
     @Override
     public void run() {
         try {
             Thread.currentThread().setName("Operator:" + executor.getOP() + "\tExecutor ID:" + executor.getExecutorID());
+
+//            int tthread = conf.getInt("tthread");
             binding();
             initilize_queue(this.executor.getExecutorID());
             //do preparation.
@@ -127,7 +163,18 @@ public class boltThread extends executorThread {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            routing();
+
+            if (fetchWithIndex) {
+                int index = getBoltIndex(executor.getOP(), executor.getExecutorID());
+                if (index > 0) { //normal bolt, not gate or sink
+                    routing_with_index(index); //bolt id start from 1
+                } else { //gate or sink
+                    routing();
+                }
+            } else {
+                routing();
+            }
+
         } catch (InterruptedException | BrokenBarrierException ignored) {
         } catch (DatabaseException e) {
             e.printStackTrace();
@@ -161,5 +208,9 @@ public class boltThread extends executorThread {
      */
     private Object fetchResult() {
         return scheduler.fetchResults();
+    }
+
+    private Object fetchResultIndex(int index) {
+        return scheduler.fetchResultsIndex(index);
     }
 }

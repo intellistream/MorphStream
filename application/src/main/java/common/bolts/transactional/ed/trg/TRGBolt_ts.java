@@ -85,7 +85,7 @@ public class TRGBolt_ts extends TRGBolt {
             TR_GATE_REQUEST_POST(event);
             LOG.info("Posting event: " + event.getBid());
         }
-        insertMaker(wuEvents.getLast());
+//        insertMaker(wuEvents.getLast());
     }
 
     @Override

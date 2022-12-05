@@ -81,7 +81,7 @@ public class WUGBolt_ts extends WUGBolt {
         for (WUEvent event : wuEvents) {
             WU_GATE_REQUEST_POST(event);
         }
-        insertMaker(wuEvents.getLast());
+//        insertMaker(wuEvents.getLast());
     }
 
     @Override

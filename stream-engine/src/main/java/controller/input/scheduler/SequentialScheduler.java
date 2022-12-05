@@ -60,4 +60,12 @@ public class SequentialScheduler extends InputStreamController {
         }
         return fetchFromqueue(LQ.get(current++));
     }
+
+    @Override
+    public Object fetchResultsIndex(int index) {
+        if (current == size) {
+            current = 0;
+        }
+        return fetchFromQueue(LQ.get(current++), index);
+    }
 }

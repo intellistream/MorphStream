@@ -105,10 +105,14 @@ public class WUBolt_ts extends WUBolt{
         }
     }
 
+    private boolean doPunctuation() {
+        return wuEvents.size() == wordWindowSize;
+    }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (in.isMarker()) {
+        if (doPunctuation()) {
             int num_events = wuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

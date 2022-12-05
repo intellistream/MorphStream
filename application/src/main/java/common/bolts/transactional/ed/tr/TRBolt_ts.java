@@ -132,10 +132,14 @@ public class TRBolt_ts extends TRBolt{
         }
     }
 
+    private boolean doPunctuation() {
+        return trEvents.size() == tweetWindowSize;
+    }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (in.isMarker()) {
+        if (doPunctuation()) {
             int num_events = trEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

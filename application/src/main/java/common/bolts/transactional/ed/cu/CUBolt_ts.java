@@ -112,25 +112,7 @@ public class CUBolt_ts extends CUBolt{
         cuEvents.add(event);
     }
 
-    private void CLUSTER_UPDATE_REQUEST_CORE() throws InterruptedException {
-
-        //TODO: Implement CU CORE
-
-//        for (CUEvent event : cuEvents) {
-//
-//            SchemaRecordRef tweetRecordRef = event.tweetRecordRef;
-//
-//            //INSERT failed
-//            if (tweetRecordRef == null) {
-//                if (enable_log) LOG.debug(event.getBid() + " | " + Arrays.toString(event.getWords()) + "INSERT failed");
-//            }
-//
-//            //INSERT success, pass read result to event. It will be referenced in REQUEST_POST
-//            if (tweetRecordRef != null) {
-//                event.tweetIDResult = tweetRecordRef.getRecord().getValues().get(1).getString().trim(); //Add read result to event.result
-//            }
-//        }
-    }
+    private void CLUSTER_UPDATE_REQUEST_CORE() throws InterruptedException {}
 
     private void CLUSTER_UPDATE_REQUEST_POST() throws InterruptedException {
         for (CUEvent event : cuEvents) {
@@ -138,10 +120,14 @@ public class CUBolt_ts extends CUBolt{
         }
     }
 
+    private boolean doPunctuation() {
+        return cuEvents.size() == tweetWindowSize;
+    }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (in.isMarker()) {
+        if (doPunctuation()) {
             int num_events = cuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

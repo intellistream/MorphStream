@@ -81,7 +81,7 @@ public class CUGBolt_ts extends CUGBolt {
         for (CUEvent event : cuEvents) {
             CU_GATE_REQUEST_POST(event);
         }
-        insertMaker(cuEvents.getLast());
+//        insertMaker(cuEvents.getLast());
     }
 
     @Override

@@ -100,13 +100,13 @@ public class EDSpout extends TransactionalSpout {
             this.collector.emit(bid, tuple);
             counter++;
 
-            if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
-                if (counter % tweetWindowSize == 0) {
-                    marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration));
-//                    LOG.info("Inserting marker after: " + bid);
-                    this.collector.emit(bid, marker);
-                }
-            }
+//            if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+//                if (counter % tweetWindowSize == 0) {
+//                    marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration));
+////                    LOG.info("Inserting marker after: " + bid);
+//                    this.collector.emit(bid, marker);
+//                }
+//            }
 
             if (counter == the_end) {
 //                    if (ccOption == CCOption_SStore)

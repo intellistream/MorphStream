@@ -44,4 +44,7 @@ public interface CONTROL {
 
     //Double bid Support
     boolean enableDoubleBid = true;
+
+    //Fetch input tuple with matching index
+    boolean fetchWithIndex = true;
 }
