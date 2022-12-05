@@ -107,10 +107,14 @@ public class ESBolt_ts extends ESBolt{
         }
     }
 
+    private boolean doPunctuation() {
+        return esEvents.size() == tweetWindowSize;
+    }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (in.isMarker()) {
+        if (doPunctuation()) {
             int num_events = esEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

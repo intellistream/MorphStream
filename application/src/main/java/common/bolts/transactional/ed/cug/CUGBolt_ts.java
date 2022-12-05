@@ -89,7 +89,7 @@ public class CUGBolt_ts extends CUGBolt {
 
         counter++;
 
-        if (counter % tweetWindowSize == 0) { //punctuation_interval = wordWindowSize
+        if (counter % tweetWindowSize == 0) { //punctuation_interval = tweetWindowSize
             int num_events = cuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
