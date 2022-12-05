@@ -354,6 +354,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     // ED: Trend Calculate - Asy_ModifyRecord_Read
     protected void TrendCalculate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+
+        //This ensures the READ word has appeared in the current window
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
 
         if (preValues != null) {
