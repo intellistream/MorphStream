@@ -66,4 +66,8 @@ public class OptimizationManager extends executorThread {
     @Override
     protected void _execute() {
     }
+
+    @Override
+    protected void _execute_with_index(int index) {
+    }
 }

@@ -49,4 +49,27 @@ public class UniformedScheduler extends InputStreamController {
         }
         return null;
     }
+
+    @Override
+    public Object fetchResultsIndex(int index) {
+//        JumboTuple[] t = new JumboTuple[batch];
+        for (int i = stream_index++; i < streams.length + stream_index; i++) {
+            String streamId = streams[i % streams.length];
+            //assert RQ != null;
+            //final HashMap<Integer, P1C1Queue<JumboTuple>> integerP1C1QueueHashMap = RQ.GetAndUpdate(streamId);
+            Integer[] qids = queues.get(streamId);
+            int queueIdLength = qids.length;
+            for (int j = queue_index++; j < queueIdLength + queue_index; ) {
+                //Integer[] queueId = Arrays.copyOf(integerP1C1QueueHashMap.keySet().toArray(),integerP1C1QueueHashMap.fieldSize(),Integer[].class);
+                int q_index = qids[j % queueIdLength];
+                if (queueIdLength > 1)
+                    //if (enable_log) LOG.DEBUG("Uniformed shoulder, queue index:" + q_index);
+//                for (int b = 0; b < batch; b++) {
+//                    t[b] = fetchFromqueue((P1C1Queue) getRQ().GetAndUpdate(streamId).GetAndUpdate(q_index));
+//                }
+                    return fetchFromQueue(getRQ().get(streamId).get(q_index), index);
+            }
+        }
+        return null;
+    }
 }

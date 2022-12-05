@@ -81,7 +81,7 @@ public class TCGBolt_ts extends TCGBolt {
         for (CUEvent event : cuEvents) {
             TC_GATE_REQUEST_POST(event);
         }
-        insertMaker(cuEvents.getLast());
+//        insertMaker(cuEvents.getLast());
     }
 
     @Override

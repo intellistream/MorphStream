@@ -112,10 +112,14 @@ public class TCBolt_ts extends TCBolt{
         }
     }
 
+    private boolean doPunctuation() {
+        return tcEvents.size() == wordWindowSize;
+    }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (in.isMarker()) {
+        if (doPunctuation()) {
             int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
