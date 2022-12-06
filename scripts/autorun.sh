@@ -2,7 +2,7 @@
 
 PROJECT_DIR="/home/myc/workspace/myc/MorphStream"
 
-FLINK_DIR=${PROJECT_DIR}/flink-1.10
+FLINK_DIR=${PROJECT_DIR}/flink
 REDIS_DIR=${PROJECT_DIR}/redis
 FLINK_APP_DIR=${PROJECT_DIR}
 
@@ -18,11 +18,13 @@ function runFlink() {
 
 function runRedis() {
   echo "INFO: starting Redis Server"
+  ${REDIS_DIR}/src/redis-server &
 }
 
 # clean app specific related data
 function cleanEnv() {
-    mv ${FLINK_DIR}/log/*.out ${job}.out
+    mkdir -p ${job}
+    mv ${FLINK_DIR}/log/*.out ${job}
     rm -rf /tmp/flink*
     rm ${FLINK_DIR}/log/*
 }
@@ -42,6 +44,10 @@ function stopFlink() {
 # clsoe flink clsuter
 function stopRedis() {
     echo "INFO: stopping Redis Server"
+    PID=`ps -ef | grep redis | awk '{print $2}'`
+    if [[ ! -z $PID ]]; then
+      kill -9 ${PID}
+    fi
 }
     
 
@@ -61,7 +67,7 @@ initSLNoLock() {
 # run applications
 function runApp() {
   echo "INFO: ${FLINK_DIR}/bin/flink run -c ${job} ${JAR} &"
-  ${FLINK_DIR}/bin/flink run -c StreamLedger.${job} ${JAR} &
+  ${FLINK_DIR}/bin/flink run -c StreamLedger.${job} ${JAR}
 }
 
 build () {
@@ -69,25 +75,31 @@ build () {
 }
 
 
-# Run SL Exps
+stopRedis
+stopFlink
+
+# # Run SL Exps
 initSL
-runFlink
 runRedis
+runFlink
 
 runApp
 
-python3 -c 'import time; time.sleep('"200"')'
+# python3 -c 'import time; time.sleep('"30"')'
 
-stopRedis
 stopFlink
+stopRedis
+
+python3 -c 'import time; time.sleep('"10"')'
 
 # Run SLNoLock Exps
-initSL
+initSLNoLock
+runRedis
 runFlink
 
 runApp
 
-python3 -c 'import time; time.sleep('"200"')'
+# python3 -c 'import time; time.sleep('"30"')'
 
-stopRedis
 stopFlink
+stopRedis
