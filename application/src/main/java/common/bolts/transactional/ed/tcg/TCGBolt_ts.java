@@ -2,6 +2,7 @@ package common.bolts.transactional.ed.tcg;
 
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
+import common.param.ed.tc.TCEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -13,13 +14,10 @@ import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerTStream;
 
-import java.util.ArrayDeque;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_latency_measurement;
-import static common.CONTROL.tweetWindowSize;
+import static common.CONTROL.*;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
@@ -27,7 +25,9 @@ import static profiler.Metrics.NUM_ITEMS;
 public class TCGBolt_ts extends TCGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TCGBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
-    ArrayDeque<CUEvent> cuEvents;
+    ArrayDeque<TCEvent> tcEvents;
+    List<Double> bidList = new ArrayList<>(); //TODO: Improve this. Only one portion of stored bids will be used
+    HashMap<String, Boolean> tweetMap = new HashMap<>();
     private int counter = 0;
 
     //To be used in Combo
@@ -44,7 +44,7 @@ public class TCGBolt_ts extends TCGBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
-        cuEvents = new ArrayDeque<>();
+        tcEvents = new ArrayDeque<>();
     }
 
     @Override
@@ -54,11 +54,11 @@ public class TCGBolt_ts extends TCGBolt {
      * THIS IS ONLY USED BY TSTREAM.
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
-    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
+    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            CUEvent event = (CUEvent) input_event;
+            TCEvent event = (TCEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             if (event != null) {
@@ -70,18 +70,36 @@ public class TCGBolt_ts extends TCGBolt {
         }
     }
 
-    protected void TC_GATE_REQUEST_CONSTRUCT(CUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
-        cuEvents.add(event);
+    protected void TC_GATE_REQUEST_CONSTRUCT(TCEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+        tcEvents.add(event);
     }
 
-    private void TC_GATE_REQUEST_CORE() throws InterruptedException {}
-
-    // Emit all events to collector, then insert one punctuation signal
-    private void TC_GATE_REQUEST_POST() throws InterruptedException {
-        for (CUEvent event : cuEvents) {
-            TC_GATE_REQUEST_POST(event);
+    //This CORE method updates the mapping of tweetID and isBurst
+    //Its final size is expected to be tweetWindowSize
+    private void TC_GATE_REQUEST_CORE() {
+        for (TCEvent event : tcEvents) {
+            for (String tweetID : event.tweetIDList) {
+                if (!Boolean.TRUE.equals(tweetMap.get(tweetID))) { //Do not update when the value is "not-null and true"
+                    tweetMap.put(tweetID, event.isBurst);
+                }
+            }
         }
-//        insertMaker(cuEvents.getLast());
+    }
+
+    // Emit output information to TCGBolt
+    private void TC_GATE_REQUEST_POST() throws InterruptedException {
+        Iterator<TCEvent> tcEventIterator = tcEvents.iterator();
+        double delta = 0.1;
+
+        for (Map.Entry<String, Boolean> entry : tweetMap.entrySet()) {
+            TCEvent event = tcEventIterator.next();
+            double outBid = event.getMyBid() + delta;
+
+            CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+                    event.getMyNumberOfPartitions(), entry.getKey(), entry.getValue());
+
+            TC_GATE_REQUEST_POST(outBid, outEvent);
+        }
     }
 
     @Override
@@ -89,8 +107,8 @@ public class TCGBolt_ts extends TCGBolt {
 
         counter++;
 
-        if (counter % tweetWindowSize == 0) { //punctuation_interval = wordWindowSize
-            int num_events = cuEvents.size();
+        if (counter % wordWindowSize == 0) { //wait for TC to finish processing all words in the window
+            int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
              */
@@ -108,7 +126,8 @@ public class TCGBolt_ts extends TCGBolt {
                 END_POST_TIME_MEASURE_ACC(thread_Id);
 
                 //all tuples in the holder is finished.
-                cuEvents.clear();
+                tcEvents.clear();
+                tweetMap.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
         } else {

@@ -75,7 +75,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 }
 
                 tuple = new Tuple(bid, this.taskId, context, generalMsg);
-                bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
+                bolt.execute(tuple);  // public Tuple(double bid, int sourceId, TopologyContext context, Message message)
                 counter++;
 
                 if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.

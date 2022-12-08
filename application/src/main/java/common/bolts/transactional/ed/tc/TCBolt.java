@@ -36,21 +36,20 @@ public class TCBolt extends TransactionalBolt {
 
     protected void TREND_CALCULATE_REQUEST_POST(TCEvent event) throws InterruptedException {
 
-        boolean isBurst = event.isBurst;
         double delta = 0.1;
-        int outBid = event.getMyBid(); //TODO: Increase bid by delta
+        double outBid = event.getMyBid() + delta;
 
         if (!enable_app_combo) {
 
-            for (String tweetID : event.tweetIDList) {
-                CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), tweetID, isBurst);
-                GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
-                Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
+//            CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), tweetID, isBurst);
 
-                LOG.info("Posting event: " + event.getMyBid());
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
+            Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-                collector.emit(outBid, tuple);//emit CU Event tuple to TC Gate
-            }
+            LOG.info("Posting event: " + outBid);
+
+            collector.emit(outBid, tuple);//emit CU Event tuple to TC Gate
+
         } else {
             if (enable_latency_measurement) {
                 sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));

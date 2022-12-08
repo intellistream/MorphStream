@@ -67,7 +67,7 @@ public abstract class GSBolt extends TransactionalBolt {
                 collector.emit(event.getBid(), sum, event.getTimestamp());//the tuple is finished finally.
             } else {
                 if (enable_latency_measurement) {
-                    sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, sum, event.getTimestamp())));//(long bid, int sourceId, TopologyContext context, Message message)
+                    sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, sum, event.getTimestamp())));//(double bid, int sourceId, TopologyContext context, Message message)
                 }
             }
         }
@@ -79,7 +79,7 @@ public abstract class GSBolt extends TransactionalBolt {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {
             if (enable_latency_measurement) {
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));//(long bid, int sourceId, TopologyContext context, Message message)
+                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));//(double bid, int sourceId, TopologyContext context, Message message)
             }
         }
     }

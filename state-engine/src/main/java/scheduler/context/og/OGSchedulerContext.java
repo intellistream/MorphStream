@@ -42,5 +42,5 @@ public abstract class OGSchedulerContext implements SchedulerContext {
         requests.push(request);
     }
 
-    public abstract OperationChain createTask(String tableName, String pKey, long bid);
+    public abstract OperationChain createTask(String tableName, String pKey, double bid);
 }

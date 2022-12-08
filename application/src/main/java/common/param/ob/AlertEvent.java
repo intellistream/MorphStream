@@ -22,7 +22,7 @@ public class AlertEvent extends TxnEvent {
     public AlertEvent(
             int num_access, int[] itemId,
             SplittableRandom rnd,
-            int partition_id, String bid_array, long bid, int number_of_partitions,String partition_index) {
+            int partition_id, String bid_array, double bid, int number_of_partitions,String partition_index) {
         super(bid, partition_id, bid_array,partition_index, number_of_partitions);
         this.num_access = num_access;
         record_refs = new SchemaRecordRef[num_access];
@@ -34,7 +34,7 @@ public class AlertEvent extends TxnEvent {
     }
 
 
-    public AlertEvent(int bid, String bid_array, int partition_id, int number_of_partitions,
+    public AlertEvent(double bid, String bid_array, int partition_id, int number_of_partitions,
                       int num_access, String key_array, String alert_array) {
         super(bid, partition_id, bid_array, number_of_partitions);
         this.num_access = num_access;
@@ -98,6 +98,6 @@ public class AlertEvent extends TxnEvent {
 
     @Override
     public AlertEvent cloneEvent() {
-        return new AlertEvent((int) bid,Arrays.toString(bid_array),pid,number_of_partitions,num_access,Arrays.toString(itemId),Arrays.toString(ask_price));
+        return new AlertEvent(bid,Arrays.toString(bid_array),pid,number_of_partitions,num_access,Arrays.toString(itemId),Arrays.toString(ask_price));
     }
 }

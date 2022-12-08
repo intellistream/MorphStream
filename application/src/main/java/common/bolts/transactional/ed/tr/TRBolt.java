@@ -34,7 +34,7 @@ public abstract class TRBolt extends TransactionalBolt {
         String[] words = event.getWords();
         double delta = 0.1;
 
-        int outBid = event.getMyBid(); //TODO: Add delta
+        double outBid = event.getMyBid() + delta;
 
         for (String word : words) {
 
@@ -45,7 +45,7 @@ public abstract class TRBolt extends TransactionalBolt {
 //            LOG.info("Posting event: " + event.getBid() + ", Counter = " + postCount);
             postCount++;
             if (outBid >= 30) {
-                LOG.info("Posting event: " + event.getBid());
+                LOG.info("Posting event: " + outBid);
             }
 
             if (!enable_app_combo) {

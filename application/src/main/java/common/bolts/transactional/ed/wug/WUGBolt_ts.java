@@ -54,9 +54,9 @@ public class WUGBolt_ts extends WUGBolt {
      * THIS IS ONLY USED BY TSTREAM.
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
-    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
+    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             WUEvent event = (WUEvent) input_event;
             if (enable_latency_measurement)

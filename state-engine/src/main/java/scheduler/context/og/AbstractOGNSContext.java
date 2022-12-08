@@ -40,7 +40,7 @@ public abstract class AbstractOGNSContext extends OGSchedulerContext {
     }
 
     @Override
-    public OperationChain createTask(String tableName, String pKey, long bid) {
+    public OperationChain createTask(String tableName, String pKey, double bid) {
         OperationChain oc = new OperationChain(tableName, pKey, bid);
         oc.setContext(this);
 //        operationChains.add(oc);
