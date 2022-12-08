@@ -275,7 +275,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         AppConfig.randomDelay();
 
         // read
-        SchemaRecord tweetRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord tweetRecord = operation.s_record.content_.readPastValues(operation.bid);
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
 
         // Update tweet's wordList
@@ -295,16 +295,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     // ED: Word Update - Asy_ModifyRecord
     protected void WordUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid); //condition_record[0] stores the current word's record
+        SchemaRecord preValues = operation.condition_records[0].content_.readPastValues(operation.bid); //condition_record[0] stores the current word's record
 
-        if (preValues != null) { // word exits in wordTable
+        if (preValues != null) {
             final int oldCountOccurWindow = preValues.getValues().get(3).getInt();
 
             // apply function
             AppConfig.randomDelay();
 
             // read
-            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord wordRecord = operation.s_record.content_.readPastValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
 
             if (oldCountOccurWindow != -1) { // word has been stored into table
@@ -355,8 +355,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     // ED: Trend Calculate - Asy_ModifyRecord_Read
     protected void TrendCalculate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
 
-        //This ensures the READ word has appeared in the current window
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+        //Only READ word whose record is updated in the current window
+        SchemaRecord preValues = operation.condition_records[0].content_.readCurrValues(operation.bid);
 
         if (preValues != null) {
             final int countOccurWindow = preValues.getValues().get(3).getInt();
@@ -367,7 +367,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             AppConfig.randomDelay();
 
             // read
-            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord wordRecord = operation.s_record.content_.readCurrValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
 
             // Compute word's tf-idf
@@ -401,7 +401,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     // ED-CU: Tweet's Compute Time Update - Asy_ModifyRecord
     protected void ComputeTimeUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid); //condition_record[0] stores the current word's record
+        SchemaRecord preValues = operation.condition_records[0].content_.readPastValues(operation.bid);
 
         if (preValues != null) { // tweet exits in wordTable
 
@@ -409,7 +409,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             AppConfig.randomDelay();
 
             // read
-            SchemaRecord tweetRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tweetRecord = operation.s_record.content_.readPastValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
 
             // Update tweet's computeTime to the current window
@@ -433,7 +433,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         AppConfig.randomDelay();
 
         // read
-        SchemaRecord tweetRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord tweetRecord = operation.s_record.content_.readPastValues(operation.bid);
         int computeTime = tweetRecord.getValues().get(2).getInt();
 
         // input tweet hasn't been computed before & it is burst
@@ -447,7 +447,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                 //Iterate through all clusters in cluster_table
                 for (TableRecord record : operation.condition_records) {
-                    SchemaRecord clusterRecord = record.content_.readPreValues(operation.bid);
+                    SchemaRecord clusterRecord = record.content_.readPastValues(operation.bid);
                     int aliveTime = clusterRecord.getValues().get(2).getInt();
 
                     if (aliveTime != -1 && aliveTime >= operation.condition.arg1 - 2) { // cluster is valid, and has been updated in the past two windows
@@ -501,7 +501,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 // Convert new cluster's wordList to clusterID
                 int newClusterKey = Arrays.toString(tweetWordList).hashCode() % 1007;
                 TableRecord newRecord = operation.condition_records[newClusterKey];
-                SchemaRecord clusterRecord = newRecord.content_.readPreValues(operation.bid);
+                SchemaRecord clusterRecord = newRecord.content_.readPastValues(operation.bid);
                 SchemaRecord tempo_record = new SchemaRecord(clusterRecord);
 
                 tempo_record.getValues().get(1).setStringList(Arrays.asList(tweetWordList)); // create wordList
@@ -526,7 +526,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     // ED-ES: Asy_ModifyRecord_Read
     protected void EventSelection_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+
+        //Only READ cluster who has been updated in the current window
+        SchemaRecord preValues = operation.condition_records[0].content_.readCurrValues(operation.bid);
 
         if (preValues != null) { // cluster exits in clusterTable
             int countNewTweet = preValues.getValues().get(3).getInt();
@@ -536,8 +538,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             AppConfig.randomDelay();
 
             // read
-            SchemaRecord wordRecord = operation.s_record.content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
+            SchemaRecord clusterRecord = operation.s_record.content_.readCurrValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(clusterRecord); //tempo record
 
             tempo_record.getValues().get(3).setInt(0); //compute, reset cluster.countNewTweet to zero
 
