@@ -55,6 +55,10 @@ public interface Content {
 
     SchemaRecord readPreValues(long ts);
 
+    SchemaRecord readCurrValues(long ts);
+
+    SchemaRecord readPastValues(long ts);
+
     SchemaRecord readPreRangeValues(long ts, int range);
 
     SchemaRecord readPreValues(long ts, long min_ts);

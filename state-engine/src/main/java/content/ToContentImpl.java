@@ -159,6 +159,16 @@ public class ToContentImpl extends ToContent {
     }
 
     @Override
+    public SchemaRecord readCurrValues(long ts) {
+        return null;
+    }
+
+    @Override
+    public SchemaRecord readPastValues(long ts) {
+        return null;
+    }
+
+    @Override
     public SchemaRecord readPreValues(long ts, long min_ts) {
         return null;
     }

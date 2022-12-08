@@ -66,7 +66,7 @@ public class ESBolt_ts extends ESBolt{
 
     protected void EVENT_SELECT_REQUEST_CONSTRUCT(ESEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
 
-        String[] conditionSourceTable = new String[]{"word_table"}; //condition source table
+        String[] conditionSourceTable = new String[]{"cluster_table"}; //condition source table
         String[] conditionSourceKey = new String[]{event.getClusterID()}; //condition source key
         Division function = new Division();
 
