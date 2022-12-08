@@ -112,7 +112,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         context = contexts.get(schedulerType);
     }
 
-    public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
+    public void start_evaluate(int taskId, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
 

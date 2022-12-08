@@ -86,7 +86,7 @@ public class GSBolt_sstore extends GSBolt_LA {
         }
     }
 
-    public void start_evaluate(int thread_Id, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
+    public void start_evaluate(int thread_Id, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         // add bid_array for events
         if (thread_Id == 0) {
@@ -115,8 +115,8 @@ public class GSBolt_sstore extends GSBolt_LA {
     }
 
     @Override
-    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
 //            System.out.println("thread: "+thread_Id+", event_id: "+_bid);
             TxnEvent event = (TxnEvent) input_event;
             GlobalSorter.addEvent(event);
@@ -124,7 +124,7 @@ public class GSBolt_sstore extends GSBolt_LA {
     }
 
     @Override
-    protected void LAL_PROCESS(long _bid) throws DatabaseException {
+    protected void LAL_PROCESS(double _bid) throws DatabaseException {
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
         MicroEvent event = (MicroEvent) input_event;
         int _pid = event.getPid();

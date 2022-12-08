@@ -21,8 +21,8 @@ public class LWMContentImpl extends LWMContent {
     volatile boolean is_certifying_ = false;
     volatile long read_count_;
     volatile boolean is_writing_ = false;
-    volatile TreeSet<Long> set = new TreeSet<>();
-    volatile long lwm = Long.MAX_VALUE;
+    volatile TreeSet<Double> set = new TreeSet<>();
+    volatile double lwm = Double.MAX_VALUE;
 
     public LWMContentImpl() {
         set.add(lwm);
@@ -77,14 +77,14 @@ public class LWMContentImpl extends LWMContent {
     }
 
     @Override
-    public long GetLWM() {
+    public double GetLWM() {
         return lwm;
     }
 
     @Override
     public SchemaRecord ReadAccess(TxnContext txn_context, CommonMetaTypes.AccessType accessType) {
         int retry_count = 0;
-        long bid = txn_context.getBID();
+        double bid = txn_context.getBID();
         switch (accessType) {
             case READ_ONLY:
                 while (bid > GetLWM() && !Thread.currentThread().isInterrupted()) {
@@ -105,7 +105,7 @@ public class LWMContentImpl extends LWMContent {
         }
         //TODO: there is a null pointer error at this line.
 //        BEGIN_TP_CORE_TIME_MEASURE(txn_context.thread_Id);
-        SchemaRecord record = readValues(bid, -1, false);
+        SchemaRecord record = readValues((long) bid, -1, false);
 //        END_TP_CORE_TIME_MEASURE_TS(txn_context.thread_Id, 1);
         return record;
     }
@@ -175,9 +175,9 @@ public class LWMContentImpl extends LWMContent {
         }
     }
 
-    private void ClearHistory(long min_thread_ts) {
+    private void ClearHistory(double min_thread_ts) {
 //		versions.clear();
-        versions.headMap(min_thread_ts).clear();
+        versions.headMap((long) min_thread_ts).clear();
     }
 
     @Override
@@ -193,7 +193,7 @@ public class LWMContentImpl extends LWMContent {
     }
 
     @Override
-    public synchronized void AddLWM(long ts) {
+    public synchronized void AddLWM(double ts) {
         set.add(ts);
         MaintainLWM();
     }

@@ -36,7 +36,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public int the_end;
     public int global_cnt;
     public int num_events_per_thread;
-    public long[] mybids;
+    public double[] mybids;
     public Object[] myevents;
     public int counter;
     public Tuple tuple;
@@ -67,7 +67,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
             if (counter < num_events_per_thread) {
                 Object event = myevents[counter];
 
-                long bid = mybids[counter];
+                double bid = mybids[counter];
                 if (CONTROL.enable_latency_measurement)
                     generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
                 else {
@@ -135,7 +135,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
         start_measure = CONTROL.MeasureStart;
 
-        mybids = new long[num_events_per_thread];
+        mybids = new double[num_events_per_thread];
         myevents = new Object[num_events_per_thread];
         the_end = num_events_per_thread;
 

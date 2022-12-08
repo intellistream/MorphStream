@@ -170,7 +170,7 @@ public class OGBFSAScheduler extends AbstractOGBFSScheduler<OGSAContext> {
      * @return
      */
     private boolean _MarkOperationsToAbort(OGSAContext context, Operation operation) {
-        long bid = operation.bid;
+        double bid = operation.bid;
         boolean markAny = false;
         //identify bids to be aborted.
         for (Operation failedOp : failedOperations) {

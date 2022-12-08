@@ -26,12 +26,12 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public void SetTimestamp(long timestamp) {
+    public void SetTimestamp(double timestamp) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public long GetTimestamp() {
+    public double GetTimestamp() {
         throw new UnsupportedOperationException();
     }
 
@@ -86,7 +86,7 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public long GetLWM() {
+    public double GetLWM() {
         throw new UnsupportedOperationException();
     }
 
@@ -192,7 +192,7 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public void AddLWM(long ts) {
+    public void AddLWM(double ts) {
         throw new UnsupportedOperationException();
     }
 

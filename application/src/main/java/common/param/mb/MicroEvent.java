@@ -35,8 +35,8 @@ public class MicroEvent extends TxnEvent {
      * @param flag
      * @param numAccess
      */
-    public MicroEvent(int[] keys, boolean flag, int numAccess, long bid
-            , int partition_id, long[] bid_array, int number_of_partitions) {
+    public MicroEvent(int[] keys, boolean flag, int numAccess, double bid
+            , int partition_id, double[] bid_array, int number_of_partitions) {
         super(bid, partition_id, bid_array, number_of_partitions);
         this.flag = flag;
         this.keys = keys;

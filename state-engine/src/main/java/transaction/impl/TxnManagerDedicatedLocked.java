@@ -83,7 +83,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
         return commit_ts;
     }
 
-    public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
+    public void start_evaluate(int taskId, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
 

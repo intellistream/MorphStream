@@ -70,7 +70,7 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
 //    }
 
     @Override
-    public void start_evaluation(Context context, long mark_ID, int num_events) {
+    public void start_evaluation(Context context, double mark_ID, int num_events) {
         INITIALIZE(context);
 
         do {

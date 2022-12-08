@@ -116,7 +116,7 @@ public abstract class TxnManager implements ITxnManager {
      * Switch scheduler every punctuation
      * When the workload changes and the scheduler is no longer applicable
      */
-    public void SwitchScheduler(String schedulerType, int threadId, long markId) {
+    public void SwitchScheduler(String schedulerType, int threadId, double markId) {
         currentSchedulerType.put(threadId,schedulerType);
         if (threadId == 0) {
             scheduler = schedulerPool.get(schedulerType);

@@ -25,17 +25,7 @@ public class CUBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
-    }
-
-    //post stream processing phase..
-    protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
-        BEGIN_POST_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            ((CUEvent) input_event).setTimestamp(timestamp);
-            CLUSTER_UPDATE_REQUEST_POST((CUEvent) input_event);
-        }
-        END_POST_TIME_MEASURE(thread_Id);
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
     protected void CLUSTER_UPDATE_REQUEST_POST(CUEvent event) throws InterruptedException {

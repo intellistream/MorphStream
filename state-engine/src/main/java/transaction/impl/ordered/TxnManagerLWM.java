@@ -168,7 +168,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
 			}
 		}*/
         // install.
-        long commit_timestamp = txn_context.getBID();
+        double commit_timestamp = txn_context.getBID();
         if (is_success) {
 //			long curr_epoch = Epoch.GetEpoch();
 //			commit_timestamp = GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
@@ -176,7 +176,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
                 Access access_ptr = access_list_.GetAccess(i);
                 if (access_ptr.access_type_ == READ_WRITE) {
                     // install from local copy.
-                    access_ptr.access_record_.content_.WriteAccess(commit_timestamp, commit_timestamp, true, access_ptr.local_record_);
+                    access_ptr.access_record_.content_.WriteAccess((long) commit_timestamp, (long) commit_timestamp, true, access_ptr.local_record_);
                 }
             }
         }
@@ -199,7 +199,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
             // clean up.
             for (int i = 0; i < access_list_.access_count_; ++i) {
                 Access access_ptr = access_list_.GetAccess(i);
-                access_ptr.access_record_.content_.DeleteLWM(txn_context.getBID());
+                access_ptr.access_record_.content_.DeleteLWM((long) txn_context.getBID());
                 if (access_ptr.access_type_ == READ_ONLY || access_ptr.access_type_ == READ_WRITE) {
                     access_ptr.local_record_ = null;
                 }

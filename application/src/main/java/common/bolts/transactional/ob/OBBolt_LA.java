@@ -19,7 +19,7 @@ public abstract class OBBolt_LA extends OBBolt {
         super(log, fid, sink);
     }
 
-    protected void LAL(Object event, long i, long _bid) throws DatabaseException {
+    protected void LAL(Object event, double i, double _bid) throws DatabaseException {
         if (event instanceof BuyingEvent) {
             BUYING_REQUEST_LOCKAHEAD((BuyingEvent) event, txn_context[(int) (i - _bid)]);
         } else if (event instanceof AlertEvent) {
@@ -34,7 +34,7 @@ public abstract class OBBolt_LA extends OBBolt {
 
     //lock_ratio-ahead phase.
     @Override
-    protected void LAL_PROCESS(long _bid) throws DatabaseException, InterruptedException {
+    protected void LAL_PROCESS(double _bid) throws DatabaseException, InterruptedException {
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         //ensures that locks are added in the input_event sequence order.
         transactionManager.getOrderLock().blocking_wait(_bid);
@@ -46,9 +46,9 @@ public abstract class OBBolt_LA extends OBBolt {
         END_WAIT_TIME_MEASURE(thread_Id);
     }
 
-    protected void PostLAL_process(long _bid) throws DatabaseException {
+    protected void PostLAL_process(double _bid) throws DatabaseException {
         //txn process phase.
-        for (long i = _bid; i < _bid + _combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + _combo_bid_size; i++) {
             TxnEvent event = (TxnEvent) input_event;
             if (event instanceof BuyingEvent) {
                 BUYING_REQUEST_NOLOCK((BuyingEvent) event, txn_context[(int) (i - _bid)]);

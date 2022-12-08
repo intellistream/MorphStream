@@ -269,7 +269,7 @@ public class OperationChain implements Comparable<OperationChain> {
 
         @Override
         public int compareTo(PotentialChildrenInfo o) {
-            return Long.compare(this.childOp.bid, o.childOp.bid);
+            return Double.compare(this.childOp.bid, o.childOp.bid);
         }
     }
 

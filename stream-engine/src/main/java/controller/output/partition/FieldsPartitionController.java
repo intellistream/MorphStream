@@ -94,21 +94,21 @@ public class FieldsPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, long bid, Object... output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, Object... output) throws InterruptedException {
         int target = chooseTasks(output);
         offer(meta.src_id, target, streamId, bid, output);
         return target;
     }
 
     @Override
-    public int emit(Meta meta, String streamId, long bid, Object output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, Object output) throws InterruptedException {
         int target = chooseTasks(output);
         offer(meta.src_id, target, streamId, bid, output);
         return target;
     }
 
     @Override
-    public int force_emit(Meta meta, String streamId, long bid, Object... output) throws InterruptedException {
+    public int force_emit(Meta meta, String streamId, double bid, Object... output) throws InterruptedException {
         int target = chooseTasks(output);
         force_offer(meta.src_id, target, streamId, bid, output);
         return target;
@@ -122,42 +122,42 @@ public class FieldsPartitionController extends PartitionController {
     }
 
     @Override
-    public int force_emit(Meta meta, String streamId, long bid, char[] output) throws InterruptedException {
+    public int force_emit(Meta meta, String streamId, double bid, char[] output) throws InterruptedException {
         int target = chooseTasks(output);
         force_offer(meta.src_id, target, streamId, bid, output);
         return target;
     }
 
     @Override
-    public int force_emit(Meta meta, String streamId, long bid, StreamValues output) throws InterruptedException {
+    public int force_emit(Meta meta, String streamId, double bid, StreamValues output) throws InterruptedException {
         int target = chooseTasks(output);
         force_offer(meta.src_id, target, streamId, bid, output);
         return target;
     }
 
     @Override
-    public int emit(Meta meta, String streamId, long bid, StreamValues output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, StreamValues output) throws InterruptedException {
         int target = chooseTasks(output);
         offer(meta.src_id, target, streamId, bid, output);
         return target;
     }
 
     @Override
-    public int emit(Meta meta, String streamId, long bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
         int target = chooseTasks(deviceID);
         offer(meta.src_id, target, streamId, bid, deviceID, nextDouble, movingAvergeInstant);
         return target;
     }
 
     @Override
-    public int emit(Meta meta, String streamId, long bid, char[] output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, char[] output) throws InterruptedException {
         int target = chooseTasks(output);
         offer(meta.src_id, target, streamId, bid, output);
         return target;
     }
 
     @Override
-    public int emit(Meta meta, String streamId, long bid, char[] key, long value) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, char[] key, long value) throws InterruptedException {
         int target = chooseTasks(key);
         offer(meta.src_id, target, streamId, bid, key, value);
         return target;
@@ -171,42 +171,42 @@ public class FieldsPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, char[] key, long value, long bid, long TimeStamp) throws InterruptedException {
+    public int emit(Meta meta, String streamId, char[] key, long value, double bid, long TimeStamp) throws InterruptedException {
         int target = chooseTasks(key);
         offer(meta.src_id, target, streamId, key, value, bid, TimeStamp);
         return target;
     }
 
     @Override
-    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, Object... output) {
+    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, Object... output) {
         int target = chooseTasks(output);
         offer_inorder(meta.src_id, target, streamId, bid, gap, output);
         return target;
     }
 
     @Override
-    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, char[] output) {
+    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, char[] output) {
         int target = chooseTasks(output);
         offer_inorder(meta.src_id, target, streamId, bid, gap, output);
         return target;
     }
 
     @Override
-    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, StreamValues output) {
+    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, StreamValues output) {
         int target = chooseTasks(output);
         offer_inorder(meta.src_id, target, streamId, bid, gap, output);
         return target;
     }
 
     @Override
-    public int emit_inorder_single(Meta meta, String streamId, long bid, LinkedList<Long> gap, StreamValues output) {
+    public int emit_inorder_single(Meta meta, String streamId, double bid, LinkedList<Long> gap, StreamValues output) {
         int target = chooseTasks(output);
         offer_inorder_single(meta.src_id, target, streamId, bid, gap, output);
         return target;
     }
 
     //    @Override
-//    public int emit_marked(String streamId, Object... output, long timestamp, long bid) {
+//    public int emit_marked(String streamId, Object... output, long timestamp, double bid) {
 //        /**
 //         * TODO: % is too slow, need some better ways to implement faster hash.
 //         * Further, it causes key skew problem.
