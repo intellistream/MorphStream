@@ -10,13 +10,13 @@ public class ESEvent extends TxnEvent {
     private final SchemaRecordRef cluster_record = new SchemaRecordRef();
     public boolean isEvent;
     public String[] wordList;
-    private final int myBid;
+    private final double myBid;
     private final int myPid;
     private final String my_bid_array;
     private final String my_partition_index;
     private final int my_number_of_partitions;
 
-    public ESEvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions, String clusterID) {
+    public ESEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions, String clusterID) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.myBid = bid;
         this.myPid = pid;
@@ -26,7 +26,7 @@ public class ESEvent extends TxnEvent {
         this.clusterID = clusterID;
     }
 
-    public int getMyBid() {
+    public double getMyBid() {
         return myBid;
     }
     public int getMyPid() {
@@ -51,6 +51,6 @@ public class ESEvent extends TxnEvent {
     }
 
     public ESEvent cloneEvent() {
-        return new ESEvent((int) bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, clusterID);
+        return new ESEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, clusterID);
     }
 }

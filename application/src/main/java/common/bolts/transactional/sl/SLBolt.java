@@ -125,9 +125,9 @@ public abstract class SLBolt extends TransactionalBolt {
     }
 
     //post stream processing phase..
-    protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
+    protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             if (input_event instanceof DepositEvent) {
                 ((DepositEvent) input_event).setTimestamp(timestamp);
                 DEPOSITE_REQUEST_POST((DepositEvent) input_event);

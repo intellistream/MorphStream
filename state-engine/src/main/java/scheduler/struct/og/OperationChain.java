@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class OperationChain implements Comparable<OperationChain> {
     public final String tableName;
     public final String primaryKey;
-    public final long bid;
+    public final double bid;
     protected final MyList<Operation> operations;
     public final AtomicInteger ocParentsCount;
     // OperationChain -> ChildOp that depend on the parent OC in cur OC
@@ -37,7 +37,7 @@ public class OperationChain implements Comparable<OperationChain> {
 
 //    private final HashSet<OperationChain> scanedOCs = new HashSet<>();
 
-    public OperationChain(String tableName, String primaryKey, long bid) {
+    public OperationChain(String tableName, String primaryKey, double bid) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
         this.bid = bid;

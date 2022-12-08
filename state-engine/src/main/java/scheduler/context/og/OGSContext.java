@@ -39,7 +39,7 @@ public class OGSContext extends OGSchedulerContext {
     }
 
     @Override
-    public OperationChain createTask(String tableName, String pKey, long bid) {
+    public OperationChain createTask(String tableName, String pKey, double bid) {
         OperationChain oc = new OperationChain(tableName, pKey, bid);
 //        operationChains.add(oc);
         return oc;

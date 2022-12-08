@@ -10,13 +10,13 @@ public class WUEvent extends TxnEvent {
     private final String word;
     private final String tweetID;
     private final int currWindow;
-    private final int myBid;
+    private final double myBid;
     private final int myPid;
     private final String my_bid_array;
     private final String my_partition_index;
     private final int my_number_of_partitions;
 
-    public WUEvent(int bid, int pid, String bid_array, String partition_index, int number_of_partitions, String word, String tweetID) {
+    public WUEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions, String word, String tweetID) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.myBid = bid;
         this.myPid = pid;
@@ -28,11 +28,11 @@ public class WUEvent extends TxnEvent {
         this.currWindow = computeCurrWindow(bid);
     }
 
-    private int computeCurrWindow(int bid) {
-        return bid / tweetWindowSize;
+    private int computeCurrWindow(double bid) {
+        return (int) bid / tweetWindowSize;
     }
 
-    public int getMyBid() {
+    public double getMyBid() {
         return myBid;
     }
     public int getMyPid() {
@@ -58,6 +58,6 @@ public class WUEvent extends TxnEvent {
     public int getCurrWindow() {return this.currWindow;}
 
     public WUEvent cloneEvent() {
-        return new WUEvent((int) bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, word, tweetID);
+        return new WUEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, word, tweetID);
     }
 }

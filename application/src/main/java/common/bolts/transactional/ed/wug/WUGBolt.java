@@ -35,7 +35,7 @@ public abstract class WUGBolt extends TransactionalBolt {
         StorageManager storageManager = db.getStorageManager();
 
         double delta = 0.1;
-        int outBid = event.getMyBid(); //TODO: Add delta
+        double outBid = event.getMyBid() + delta;
 
         if (!enable_app_combo) {
             Iterator<String> wordIDIterator = storageManager.getTable("word_table").primaryKeyIterator();
@@ -48,7 +48,7 @@ public abstract class WUGBolt extends TransactionalBolt {
                 GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
                 Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-                LOG.info("Posting event: " + event.getMyBid());
+                LOG.info("Posting event: " + outBid);
 
                 collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method
             }
@@ -63,12 +63,12 @@ public abstract class WUGBolt extends TransactionalBolt {
     protected void insertMaker(WUEvent event) throws InterruptedException {
 
         double delta = 0.1;
-        int outBid = event.getMyBid(); //TODO: Add delta
+        double outBid = event.getMyBid() + delta;
 
         //sourceID is used in ???, myIteration is used in SStore
         Tuple marker = new Tuple(outBid, 0, context, new Marker(DEFAULT_STREAM_ID, -1, outBid, 0));
 
-        LOG.info("Inserting marker: " + event.getMyBid());
+        LOG.info("Inserting marker: " + outBid);
 
         if (!enable_app_combo) {
             collector.emit(outBid, marker);//tuple should be the input of next bolt's execute() method

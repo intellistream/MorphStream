@@ -22,7 +22,7 @@ public class ToppingEvent extends TxnEvent {
     public ToppingEvent(
             int num_access, int[] itemId,
             SplittableRandom rnd,
-            int partition_id, String bid_array, long bid, int number_of_partitions,String partition_index) {
+            int partition_id, String bid_array, double bid, int number_of_partitions,String partition_index) {
         super(bid, partition_id, bid_array,partition_index, number_of_partitions);
         record_refs = new SchemaRecordRef[num_access];
         this.num_access = num_access;
@@ -42,7 +42,7 @@ public class ToppingEvent extends TxnEvent {
      * @param key_array
      * @param top_array
      */
-    public ToppingEvent(int bid, String bid_array, int partition_id, int number_of_partitions,
+    public ToppingEvent(double bid, String bid_array, int partition_id, int number_of_partitions,
                         int num_access, String key_array, String top_array) {
         super(bid, partition_id, bid_array, number_of_partitions);
         this.num_access = num_access;
@@ -106,6 +106,6 @@ public class ToppingEvent extends TxnEvent {
 
     @Override
     public ToppingEvent cloneEvent() {
-        return new ToppingEvent((int) bid, Arrays.toString(bid_array),pid,number_of_partitions,num_access,Arrays.toString(itemId),Arrays.toString(itemTopUp));
+        return new ToppingEvent(bid, Arrays.toString(bid_array),pid,number_of_partitions,num_access,Arrays.toString(itemId),Arrays.toString(itemTopUp));
     }
 }

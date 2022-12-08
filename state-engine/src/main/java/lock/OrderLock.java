@@ -46,7 +46,7 @@ public class OrderLock implements Serializable {
 //		counter.getAndIncrement();
 ////		fid = 0;
 //	}
-    public void setBID(long bid) {
+    public void setBID(double bid) {
         this.counter.set(bid);
     }
 

@@ -32,7 +32,7 @@ public abstract class TRGBolt extends TransactionalBolt {
 
     protected void TR_GATE_REQUEST_POST(WUEvent event) throws InterruptedException {
 
-        int outBid = event.getMyBid();
+        double outBid = event.getMyBid();
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
         Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
@@ -50,7 +50,7 @@ public abstract class TRGBolt extends TransactionalBolt {
 
     protected void insertMaker(WUEvent event) throws InterruptedException {
 
-        int outBid = event.getMyBid();
+        double outBid = event.getMyBid();
         //sourceID is used in ???, myIteration is used in SStore
         Tuple marker = new Tuple(outBid, 0, context, new Marker(DEFAULT_STREAM_ID, -1, outBid, 0));
 

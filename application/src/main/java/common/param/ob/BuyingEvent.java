@@ -40,7 +40,7 @@ public class BuyingEvent extends TxnEvent {
     /**
      * Creates a new BuyingEvent.
      */
-    public BuyingEvent(int[] itemId, int partition_id, String bid_array, long bid, int number_of_partitions,String partition_index,boolean isAbort) {
+    public BuyingEvent(int[] itemId, int partition_id, String bid_array, double bid, int number_of_partitions,String partition_index,boolean isAbort) {
         super(bid, partition_id, bid_array,partition_index, number_of_partitions);
         this.itemId = itemId;
         record_refs = new SchemaRecordRef[NUM_ACCESSES_PER_BUY];
@@ -56,7 +56,7 @@ public class BuyingEvent extends TxnEvent {
     /**
      * Loading a BuyingEvent.
      */
-    public BuyingEvent(int bid, String bid_array, int pid, int num_of_partition,
+    public BuyingEvent(double bid, String bid_array, int pid, int num_of_partition,
                        String key_array, String price_array, String qty_array) {
         super(bid, pid, bid_array, num_of_partition);
         record_refs = new SchemaRecordRef[NUM_ACCESSES_PER_BUY];
@@ -140,6 +140,6 @@ public class BuyingEvent extends TxnEvent {
 
     @Override
     public BuyingEvent cloneEvent() {
-        return new BuyingEvent((int) bid,Arrays.toString(bid_array),pid,number_of_partitions,Arrays.toString(itemId),Arrays.toString(bid_price),Arrays.toString(bid_qty));
+        return new BuyingEvent(bid,Arrays.toString(bid_array),pid,number_of_partitions,Arrays.toString(itemId),Arrays.toString(bid_price),Arrays.toString(bid_qty));
     }
 }

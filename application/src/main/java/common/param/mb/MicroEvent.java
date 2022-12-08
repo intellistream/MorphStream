@@ -57,7 +57,7 @@ public class MicroEvent extends TxnEvent {
      * @param num_of_partition
      * @param key_array
      */
-    public MicroEvent(int bid, int pid, String bid_array, int num_of_partition,
+    public MicroEvent(double bid, int pid, String bid_array, int num_of_partition,
                       String key_array, boolean flag) {
         super(bid, pid, bid_array, num_of_partition);
         record_refs = new SchemaRecordRef[NUM_ACCESSES];
@@ -73,7 +73,7 @@ public class MicroEvent extends TxnEvent {
         setValues(keys);
     }
 
-    public MicroEvent(int bid, int pid, String bid_array, String partition_index, int num_of_partition,
+    public MicroEvent(double bid, int pid, String bid_array, String partition_index, int num_of_partition,
                       String key_array, int TOTAL_NUM_ACCESS, boolean flag) {
         super(bid, pid, bid_array, partition_index, num_of_partition);
         this.TOTAL_NUM_ACCESS = TOTAL_NUM_ACCESS;
@@ -92,7 +92,7 @@ public class MicroEvent extends TxnEvent {
     }
 
 
-    public MicroEvent(int bid, int pid, String bid_array, String partition_index, int num_of_partition,
+    public MicroEvent(double bid, int pid, String bid_array, String partition_index, int num_of_partition,
                       String key_array, int TOTAL_NUM_ACCESS, int Transaction_Length, boolean flag) {
         super(bid, pid, bid_array, partition_index, num_of_partition);
         this.TOTAL_NUM_ACCESS = TOTAL_NUM_ACCESS;
@@ -151,7 +151,7 @@ public class MicroEvent extends TxnEvent {
     }
 
     public MicroEvent cloneEvent() {
-        return new MicroEvent((int) bid, pid,
+        return new MicroEvent(bid, pid,
                 Arrays.toString(bid_array), Arrays.toString(partition_indexs),
                 number_of_partitions, Arrays.toString(keys), TOTAL_NUM_ACCESS, Txn_Length, flag);
     }
