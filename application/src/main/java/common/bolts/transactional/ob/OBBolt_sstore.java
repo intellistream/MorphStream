@@ -48,7 +48,7 @@ public class OBBolt_sstore extends OBBolt_LA {
     }
 
     @Override
-    protected void LAL_PROCESS(long _bid) throws DatabaseException {
+    protected void LAL_PROCESS(double _bid) throws DatabaseException {
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
         TxnEvent event = (TxnEvent) input_event;
         int _pid = event.getPid();

@@ -66,7 +66,7 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
+    public void PROCESS(Context context, double mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
@@ -152,7 +152,7 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
      * @return
      */
     private boolean _MarkOperationsToAbort(Context context, Operation operation) {
-        long bid = operation.bid;
+        double bid = operation.bid;
         boolean markAny = false;
         //identify bids to be aborted.
         for (Operation failedOp : failedOperations) {

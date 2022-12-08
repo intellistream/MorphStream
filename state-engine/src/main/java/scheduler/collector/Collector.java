@@ -128,7 +128,7 @@ public class Collector {
         }
     }
 
-    public boolean timeToSwitch(long markId,int threadId,String currentScheduler){
+    public boolean timeToSwitch(double markId,int threadId,String currentScheduler){
         if(isRuntime){
             //TODO:collect information runtime
             return false;

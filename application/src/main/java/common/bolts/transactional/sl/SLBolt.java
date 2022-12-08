@@ -30,7 +30,7 @@ public abstract class SLBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
     protected void DEPOSITE_REQUEST_NOLOCK(DepositEvent event, TxnContext txnContext) throws DatabaseException {
@@ -159,6 +159,6 @@ public abstract class SLBolt extends TransactionalBolt {
         }
     }
 
-    protected void LAL_PROCESS(long _bid) throws InterruptedException, DatabaseException {
+    protected void LAL_PROCESS(double _bid) throws InterruptedException, DatabaseException {
     }
 }

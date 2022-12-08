@@ -25,7 +25,7 @@ public class BuyingEvent extends TxnEvent {
     /**
      * Creates a new BuyingEvent.
      */
-    public BuyingEvent(int[] itemId, int partition_id, long[] bid_array, long bid, int number_of_partitions) {
+    public BuyingEvent(int[] itemId, int partition_id, double[] bid_array, double bid, int number_of_partitions) {
         super(bid, partition_id, bid_array, number_of_partitions);
         this.itemId = itemId;
         record_refs = new SchemaRecordRef[NUM_ACCESSES_PER_BUY];

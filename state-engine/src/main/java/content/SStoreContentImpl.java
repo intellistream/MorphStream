@@ -1,5 +1,6 @@
 package content;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import content.common.CommonMetaTypes;
 import lock.SpinLock;
 import org.slf4j.Logger;
@@ -13,7 +14,7 @@ public class SStoreContentImpl extends SStoreContent {
     private static final Logger LOG = LoggerFactory.getLogger(SStoreContentImpl.class);
     public final int pid;
     final SpinLock spinlock_;//Each partition has a spin lock.
-    AtomicLong timestamp_ = new AtomicLong(0);
+    AtomicDouble timestamp_ = new AtomicDouble(0);
 
     public SStoreContentImpl(SpinLock[] spinlock_, int pid) {
         this.pid = pid;
@@ -21,12 +22,12 @@ public class SStoreContentImpl extends SStoreContent {
     }
 
     @Override
-    public void SetTimestamp(long timestamp) {
+    public void SetTimestamp(double timestamp) {
         timestamp_.set(timestamp);
     }
 
     @Override
-    public long GetTimestamp() {
+    public double GetTimestamp() {
         return timestamp_.get();
     }
 

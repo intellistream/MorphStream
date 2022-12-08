@@ -42,7 +42,7 @@ public class EDSpout extends TransactionalSpout {
     public final String split_exp = ";";
     public int the_end;
     public int global_cnt;
-    public long[] mybids;
+    public double[] mybids;
     public Object[] myevents;
     public int counter;
     public Tuple tuple;
@@ -88,7 +88,7 @@ public class EDSpout extends TransactionalSpout {
         if (counter < totalEventsPerBatch) {
             Object event = myevents[counter];
 
-            long bid = mybids[counter];
+            double bid = mybids[counter];
             if (CONTROL.enable_latency_measurement)
                 generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
             else {
@@ -151,7 +151,7 @@ public class EDSpout extends TransactionalSpout {
 
         start_measure = CONTROL.MeasureStart;
 
-        mybids = new long[totalEventsPerBatch];
+        mybids = new double[totalEventsPerBatch];
         myevents = new Object[totalEventsPerBatch];
         the_end = totalEventsPerBatch;
 

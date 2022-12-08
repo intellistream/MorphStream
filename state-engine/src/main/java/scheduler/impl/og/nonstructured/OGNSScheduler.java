@@ -36,7 +36,7 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
     }
 
     @Override
-    public void start_evaluation(OGNSContext context, long mark_ID, int num_events) {
+    public void start_evaluation(OGNSContext context, double mark_ID, int num_events) {
         INITIALIZE(context);
         do {
             EXPLORE(context);

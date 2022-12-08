@@ -118,9 +118,9 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
 
     @Override
     public boolean CommitTransaction(TxnContext txn_context) {
-        long[] partition_bid = txn_context.partition_bid;
+        double[] partition_bid = txn_context.partition_bid;
         if (partition_bid != null) {
-            long commit_ts;
+            double commit_ts;
             for (int i = 0; i < access_list_.access_count_; ++i) {
                 Access access_ptr = access_list_.GetAccess(i);
                 Content content_ref = access_ptr.access_record_.content_;
@@ -142,7 +142,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
                 }
             }
         } else {
-            long commit_ts = txn_context.getBID();//This makes the execution appears to execute at one atomic time unit. //GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
+            double commit_ts = txn_context.getBID();//This makes the execution appears to execute at one atomic time unit. //GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
             for (int i = 0; i < access_list_.access_count_; ++i) {
                 Access access_ptr = access_list_.GetAccess(i);
                 Content content_ref = access_ptr.access_record_.content_;

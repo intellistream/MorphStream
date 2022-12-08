@@ -28,7 +28,7 @@ public class GSBolt_nocc extends GSBolt_Locks {
     }
 
     @Override
-    protected void write_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void write_txn_process(MicroEvent event, double i, double _bid) throws DatabaseException, InterruptedException {
         write_request(event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         WRITE_CORE(event);
@@ -37,7 +37,7 @@ public class GSBolt_nocc extends GSBolt_Locks {
     }
 
     @Override
-    protected void read_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void read_txn_process(MicroEvent event, double i, double _bid) throws DatabaseException, InterruptedException {
         read_request(event, txn_context[(int) (i - _bid)]);//always success..
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         READ_CORE(event);

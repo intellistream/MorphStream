@@ -25,7 +25,7 @@ public abstract class TCGBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
     protected void TC_GATE_REQUEST_POST(CUEvent event) throws InterruptedException {

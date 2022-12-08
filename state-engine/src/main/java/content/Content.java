@@ -19,9 +19,9 @@ public interface Content {
 
     boolean TryWriteLock();
 
-    void SetTimestamp(long timestamp);
+    void SetTimestamp(double timestamp);
 
-    long GetTimestamp();
+    double GetTimestamp();
 
     void ReleaseReadLock();
 
@@ -48,7 +48,7 @@ public interface Content {
     void RequestAbort(long timestamp);
 
     //LWM
-    long GetLWM();
+    double GetLWM();
 
     //	LWMContentImpl.XLockQueue GetXLockQueue();
     SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType);
@@ -79,7 +79,7 @@ public interface Content {
 
     void ReleaseCertifyLock();
 
-    void AddLWM(long ts);
+    void AddLWM(double ts);
 
     void DeleteLWM(long ts);
 

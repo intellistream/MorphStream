@@ -79,9 +79,9 @@ public class OBBolt_ts_s extends OBBolt {
     }
 
     @Override
-    protected void PRE_TXN_PROCESS(long bid, long timestamp) throws DatabaseException, InterruptedException {
+    protected void PRE_TXN_PROCESS(double bid, long timestamp) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TxnEvent event = (TxnEvent) input_event;
             if (enable_latency_measurement)

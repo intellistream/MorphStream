@@ -5,7 +5,7 @@ import scheduler.Request;
 public interface IScheduler<Context> {
     void INITIALIZE(Context threadId);
 
-    void PROCESS(Context threadId, long mark_ID);
+    void PROCESS(Context threadId, double mark_ID);
 
     void EXPLORE(Context context);
 
@@ -21,7 +21,7 @@ public interface IScheduler<Context> {
 
     void AddContext(int thisTaskId, Context context);
 
-    void start_evaluation(Context context, long mark_ID, int num_events);
+    void start_evaluation(Context context, double mark_ID, int num_events);
 
     void initTPG(int offset);
 }

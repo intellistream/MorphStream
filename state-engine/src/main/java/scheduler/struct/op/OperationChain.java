@@ -150,7 +150,7 @@ public class OperationChain implements Comparable<OperationChain> {
 
         @Override
         public int compareTo(PotentialDependencyInfo o) {
-            return Long.compare(this.op.bid, o.op.bid);
+            return Double.compare(this.op.bid, o.op.bid);
         }
     }
 

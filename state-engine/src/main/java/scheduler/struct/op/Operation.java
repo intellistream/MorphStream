@@ -59,13 +59,13 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     /****************************Defined by MYC*************************************/
 
-    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, double bid,
                                                   CommonMetaTypes.AccessType accessType, String operator_name, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
         this(pKey, context, table_name, txn_context, bid, accessType, operator_name, d_record, null, function, condition, condition_records, success);
     }
 
     public <Context extends OPSchedulerContext> Operation(
-            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+            String pKey, Context context, String table_name, TxnContext txn_context, double bid,
             CommonMetaTypes.AccessType accessType, String operator_name, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success) {
@@ -115,7 +115,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             }
             return this.d_record.getID() - operation.d_record.getID();
         } else
-            return Long.compare(this.bid, operation.bid);
+            return Double.compare(this.bid, operation.bid);
     }
 
     @Override

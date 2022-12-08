@@ -12,7 +12,7 @@ public class TStreamContentImpl extends TStreamContent {
 
     @Override
     public SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType) {
-        return readValues(context.getBID(), -1, false);
+        return readValues((long) context.getBID(), -1, false);
     }
 
     @Override

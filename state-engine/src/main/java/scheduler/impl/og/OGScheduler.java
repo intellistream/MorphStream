@@ -70,7 +70,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
 
-    public void start_evaluation(Context context, long mark_ID, int num_events) {
+    public void start_evaluation(Context context, double mark_ID, int num_events) {
         int threadId = context.thisThreadId;
         INITIALIZE(context);
 
@@ -95,8 +95,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
      * @param previous_mark_ID
      * @param clean
      */
-    protected void Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+    protected void Transfer_Fun(Operation operation, double previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues((long) operation.bid);
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
 
         // apply function
@@ -105,7 +105,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         if (sourceAccountBalance > operation.condition.arg1
                 && sourceAccountBalance > operation.condition.arg2) {
             // read
-            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues((long) operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
             if (operation.function instanceof INC) {
                 tempo_record.getValues().get(1).incLong(sourceAccountBalance, operation.function.delta_long);//compute.
@@ -113,7 +113,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 tempo_record.getValues().get(1).decLong(sourceAccountBalance, operation.function.delta_long);//compute.
             } else
                 throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             synchronized (operation.success) {
                 operation.success[0]++;
             }
@@ -135,17 +135,17 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
      * @param clean
      */
     protected void Depo_Fun(Operation operation, long mark_ID, boolean clean) {
-        SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord srcRecord = operation.s_record.content_.readPreValues((long) operation.bid);
         List<DataBox> values = srcRecord.getValues();
         AppConfig.randomDelay();
         //apply function to modify..
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
-        operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+        operation.s_record.content_.updateMultiValues((long) operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
-    protected void GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
+    protected void GrepSum_Fun(Operation operation, double previous_mark_ID, boolean clean) {
         int keysLength = operation.condition_records.length;
         SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
 
@@ -155,7 +155,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         AppConfig.randomDelay();
 
         for (int i = 0; i < keysLength; i++) {
-            preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
+            preValues[i] = operation.condition_records[i].content_.readPreValues((long) operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
         }
 
@@ -163,7 +163,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
         if (operation.function.delta_long != -1) {
             // read
-            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues((long) operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
             // apply function
 
@@ -172,7 +172,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 tempo_record.getValues().get(1).setLong(sum);//compute.
             } else
                 throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             synchronized (operation.success) {
                 operation.success[0]++;
             }
@@ -180,13 +180,13 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     // ED: Tweet Registrant - Asy_ModifyRecord
-    protected void TweetRegistrant_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void TweetRegistrant_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
         // apply function
         AppConfig.randomDelay();
 
         // read
-        SchemaRecord tweetRecord = operation.s_record.content_.readPastValues(operation.bid);
+        SchemaRecord tweetRecord = operation.s_record.content_.readPastValues((long) operation.bid);
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
 
         // Update tweet's wordList
@@ -196,7 +196,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             throw new UnsupportedOperationException();
 
         //Update record's version (in this request, s_record == d_record)
-        operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+        operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
         synchronized (operation.success) {
             operation.success[0]++;
         }
@@ -204,8 +204,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     // ED: Word Update - Asy_ModifyRecord
-    protected void WordUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPastValues(operation.bid); //condition_record[0] stores the current word's record
+    protected void WordUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPastValues((long) operation.bid); //condition_record[0] stores the current word's record
 
         if (preValues != null) {
             final int oldCountOccurWindow = preValues.getValues().get(3).getInt();
@@ -214,7 +214,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             AppConfig.randomDelay();
 
             // read
-            SchemaRecord wordRecord = operation.s_record.content_.readPastValues(operation.bid);
+            SchemaRecord wordRecord = operation.s_record.content_.readPastValues((long) operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
 
             if (oldCountOccurWindow != -1) { // word has been stored into table
@@ -251,7 +251,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             }
 
             //Update record's version (in this request, s_record == d_record)
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             synchronized (operation.success) {
                 operation.success[0]++;
             }
@@ -261,10 +261,10 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     // ED: Trend Calculate - Asy_ModifyRecord_Read
-    protected void TrendCalculate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void TrendCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
         //Only READ word whose record is updated in the current window
-        SchemaRecord preValues = operation.condition_records[0].content_.readCurrValues(operation.bid);
+        SchemaRecord preValues = operation.condition_records[0].content_.readCurrValues((long) operation.bid);
 
         if (preValues != null) {
             final int countOccurWindow = preValues.getValues().get(3).getInt();
@@ -275,7 +275,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             AppConfig.randomDelay();
 
             // read
-            SchemaRecord wordRecord = operation.s_record.content_.readCurrValues(operation.bid);
+            SchemaRecord wordRecord = operation.s_record.content_.readCurrValues((long) operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
 
             // Compute word's tf-idf
@@ -297,7 +297,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 }
 
                 //Update record's version (in this request, s_record == d_record)
-                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
                 synchronized (operation.success) {
                     operation.success[0]++;
                 }
@@ -308,8 +308,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     // ED-CU: Tweet's Compute Time Update - Asy_ModifyRecord
-    protected void ComputeTimeUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPastValues(operation.bid);
+    protected void ComputeTimeUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+        SchemaRecord preValues = operation.condition_records[0].content_.readPastValues((long) operation.bid);
 
         if (preValues != null) { // tweet exits in wordTable
 
@@ -317,14 +317,14 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             AppConfig.randomDelay();
 
             // read
-            SchemaRecord tweetRecord = operation.s_record.content_.readPastValues(operation.bid);
+            SchemaRecord tweetRecord = operation.s_record.content_.readPastValues((long) operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
 
             // Update tweet's computeTime to the current window
             tempo_record.getValues().get(2).setInt((int) operation.condition.arg1);
 
             //Update record's version (in this request, s_record == d_record)
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             synchronized (operation.success) {
                 operation.success[0]++;
             }
@@ -334,14 +334,14 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     // ED-CU: Cluster Update - Asy_ModifyRecord_Iteration
-    protected void ClusterUpdate_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void ClusterUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
         HashMap<SchemaRecord, Double> similarities = new HashMap<>();
 
         // apply function
         AppConfig.randomDelay();
 
         // read
-        SchemaRecord tweetRecord = operation.s_record.content_.readPastValues(operation.bid);
+        SchemaRecord tweetRecord = operation.s_record.content_.readPastValues((long) operation.bid);
         int computeTime = tweetRecord.getValues().get(2).getInt();
 
         // input tweet hasn't been computed before & it is burst
@@ -355,7 +355,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
                 //Iterate through all clusters in cluster_table
                 for (TableRecord record : operation.condition_records) {
-                    SchemaRecord clusterRecord = record.content_.readPastValues(operation.bid);
+                    SchemaRecord clusterRecord = record.content_.readPastValues((long) operation.bid);
                     int aliveTime = clusterRecord.getValues().get(2).getInt();
 
                     if (aliveTime != -1 && aliveTime >= operation.condition.arg1 - 2) { // cluster is valid, and has been updated in the past two windows
@@ -402,14 +402,14 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 tempo_record.getValues().get(4).setInt(clusterSize + 1); //compute: increment clusterSize
 
                 //Update record's version (in this request, s_record == d_record)
-                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
 
             } else { // Initialize a new cluster
 
                 // Convert new cluster's wordList to clusterID
                 int newClusterKey = Arrays.toString(tweetWordList).hashCode() % 1007;
                 TableRecord newRecord = operation.condition_records[newClusterKey];
-                SchemaRecord clusterRecord = newRecord.content_.readPastValues(operation.bid);
+                SchemaRecord clusterRecord = newRecord.content_.readPastValues((long) operation.bid);
                 SchemaRecord tempo_record = new SchemaRecord(clusterRecord);
 
                 tempo_record.getValues().get(1).setStringList(Arrays.asList(tweetWordList)); // create wordList
@@ -419,7 +419,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 tempo_record.getValues().get(5).setBool(false); // isEvent = false
 
                 //Update record's version (in this request, s_record == d_record)
-                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
 
             }
             synchronized (operation.success) {
@@ -431,10 +431,10 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     // ED-ES: Asy_ModifyRecord_Read
-    protected void EventSelection_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void EventSelection_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
         //Only READ cluster who has been updated in the current window
-        SchemaRecord preValues = operation.condition_records[0].content_.readCurrValues(operation.bid);
+        SchemaRecord preValues = operation.condition_records[0].content_.readCurrValues((long) operation.bid);
 
         if (preValues != null) { // cluster exits in clusterTable
             int countNewTweet = preValues.getValues().get(3).getInt();
@@ -444,7 +444,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             AppConfig.randomDelay();
 
             // read
-            SchemaRecord clusterRecord = operation.s_record.content_.readCurrValues(operation.bid);
+            SchemaRecord clusterRecord = operation.s_record.content_.readCurrValues((long) operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(clusterRecord); //tempo record
 
             tempo_record.getValues().get(3).setInt(0); //compute, reset cluster.countNewTweet to zero
@@ -457,7 +457,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 tempo_record.getValues().get(5).setBool(growthRate > 0.5); //compute, update cluster.isEvent
 
                 //Update record's version (in this request, s_record == d_record)
-                operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
                 synchronized (operation.success) {
                     operation.success[0]++;
                 }
@@ -476,7 +476,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
      * @param mark_ID
      * @param clean
      */
-    public void execute(Operation operation, long mark_ID, boolean clean) {
+    public void execute(Operation operation, double mark_ID, boolean clean) {
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             return; // return if the operation is already aborted
         }
@@ -492,7 +492,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
             }
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {
@@ -504,7 +504,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 Transfer_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 3) {//OB
                 AppConfig.randomDelay();
-                List<DataBox> d_record = operation.condition_records[0].content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType).getValues();
+                List<DataBox> d_record = operation.condition_records[0].content_.ReadAccess((long) operation.bid, (long) mark_ID, clean, operation.accessType).getValues();
                 long askPrice = d_record.get(1).getLong();//price
                 long left_qty = d_record.get(2).getLong();//available qty;
                 long bidPrice = operation.condition.arg1;
@@ -528,10 +528,10 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
             if (this.tpg.getApp() == 1) { //SL
-                Depo_Fun(operation, mark_ID, clean);
+                Depo_Fun(operation, (long) mark_ID, clean);
             } else {
                 AppConfig.randomDelay();
-                SchemaRecord srcRecord = operation.s_record.content_.ReadAccess(operation.bid,mark_ID,clean,operation.accessType);
+                SchemaRecord srcRecord = operation.s_record.content_.ReadAccess((long) operation.bid, (long) mark_ID, clean, operation.accessType);
                 List<DataBox> values = srcRecord.getValues();
                 if (operation.function instanceof INC) {
                     values.get(2).setLong(values.get(2).getLong() + operation.function.delta_long);
@@ -542,7 +542,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             success = operation.success[0];
             GrepSum_Fun(operation, mark_ID, clean);
             if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
             }
             if (operation.success[0] == success) {
                 operation.isFailed = true;
@@ -585,7 +585,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
+    public void PROCESS(Context context, double mark_ID) {
         int threadId = context.thisThreadId;
         MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
         OperationChain next = next(context);
@@ -625,7 +625,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         throw new UnsupportedOperationException();
     }
 
-    public boolean executeWithBusyWait(Context context, OperationChain operationChain, long mark_ID) {
+    public boolean executeWithBusyWait(Context context, OperationChain operationChain, double mark_ID) {
         MyList<Operation> operation_chain_list = operationChain.getOperations();
         for (Operation operation : operation_chain_list) {
             if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
@@ -714,7 +714,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     private Operation constructOp(List<Operation> operationGraph, Request request) {
-        long bid = request.txn_context.getBID();
+        double bid = request.txn_context.getBID();
         Operation set_op;
         Context targetContext = getTargetContext(request.src_key);
         switch (request.accessType) {

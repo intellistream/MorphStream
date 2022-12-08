@@ -53,13 +53,13 @@ public class TPBolt_nocc extends TPBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             txn_process((LREvent) input_event, i, _bid);
         }
     }
 
-    private void txn_process(LREvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void txn_process(LREvent input_event, double i, double _bid) throws DatabaseException, InterruptedException {
         TXN_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         TXN_REQUEST_CORE(input_event);

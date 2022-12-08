@@ -31,7 +31,7 @@ public abstract class GSBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
     protected boolean READ_CORE(MicroEvent event) {
@@ -158,14 +158,14 @@ public abstract class GSBolt extends TransactionalBolt {
     }
 
     //lock_ratio-ahead phase.
-    protected void LAL_PROCESS(long _bid) throws DatabaseException, InterruptedException {
+    protected void LAL_PROCESS(double _bid) throws DatabaseException, InterruptedException {
         //ONLY USED BY LAL, LWM, and PAT.
     }
 
     //post stream processing phase..
-    protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
+    protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             MicroEvent event = (MicroEvent) input_event;
             (event).setTimestamp(timestamp);
             boolean flag = event.READ_EVENT();

@@ -49,7 +49,7 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
+    public void PROCESS(Context context, double mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;

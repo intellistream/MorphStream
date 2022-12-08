@@ -72,9 +72,9 @@ public class TPBolt_ts_s extends TPBolt {
     }
 
     @Override
-    protected void PRE_TXN_PROCESS(long bid, long timestamp) throws DatabaseException, InterruptedException {
+    protected void PRE_TXN_PROCESS(double bid, long timestamp) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
-        for(long i=_bid;i<_bid+_combo_bid_size;i++){
+        for(double i=_bid;i<_bid+_combo_bid_size;i++){
             TxnContext txnContext=new TxnContext(thread_Id,this.fid,i);
             LREvent event=(LREvent) input_event;
             if(enable_latency_measurement){

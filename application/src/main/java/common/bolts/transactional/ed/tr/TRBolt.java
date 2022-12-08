@@ -25,7 +25,7 @@ public abstract class TRBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
     protected void TWEET_REGISTRANT_REQUEST_POST(TREvent event) throws InterruptedException {

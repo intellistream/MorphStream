@@ -25,7 +25,7 @@ public class WUBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
     protected void WORD_UPDATE_REQUEST_POST(WUEvent event) throws InterruptedException {

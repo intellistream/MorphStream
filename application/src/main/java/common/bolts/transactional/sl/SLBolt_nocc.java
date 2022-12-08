@@ -45,8 +45,8 @@ public class SLBolt_nocc extends SLBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             if (input_event instanceof DepositEvent) {
                 depo_txn_process((DepositEvent) input_event, i, _bid);
             } else {
@@ -55,12 +55,12 @@ public class SLBolt_nocc extends SLBolt {
         }
     }
 
-    private void trans_txn_process(TransactionEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void trans_txn_process(TransactionEvent input_event, double i, double _bid) throws DatabaseException, InterruptedException {
         TRANSFER_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success contains index time and other overhead.
         TRANSFER_REQUEST_CORE(input_event);//time to access shared states.
     }
 
-    private void depo_txn_process(DepositEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void depo_txn_process(DepositEvent input_event, double i, double _bid) throws DatabaseException, InterruptedException {
         DEPOSITE_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success contains index time and other overhead.
         DEPOSITE_REQUEST_CORE(input_event);//time to access shared states.
     }

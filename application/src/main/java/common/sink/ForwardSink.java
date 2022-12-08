@@ -36,7 +36,7 @@ public class ForwardSink extends BaseSink {
     @Override
     public void execute(JumboTuple in) throws InterruptedException {
         int bound = in.length;
-        final long bid = in.getBID();
+        final double bid = in.getBID();
         for (int i = 0; i < bound; i++) {
             collector.emit(bid, new StreamValues(in.getMsg(i)));
         }

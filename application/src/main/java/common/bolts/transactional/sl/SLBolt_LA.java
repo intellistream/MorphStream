@@ -15,10 +15,10 @@ public class SLBolt_LA extends SLBolt {
         super(log, fid, sink);
     }
 
-    protected void PostLAL_process(long _bid) throws DatabaseException, InterruptedException {
+    protected void PostLAL_process(double _bid) throws DatabaseException, InterruptedException {
         int _combo_bid_size = 1;
         //txn process phase.
-        for (long i = _bid; i < _bid + _combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + _combo_bid_size; i++) {
             if (input_event instanceof DepositEvent) {
                 DEPOSITE_REQUEST_NOLOCK((DepositEvent) input_event, txn_context[(int) (i - _bid)]);
                 BEGIN_ACCESS_TIME_MEASURE(thread_Id);
@@ -35,7 +35,7 @@ public class SLBolt_LA extends SLBolt {
     }
 
     @Override
-    protected void LAL_PROCESS(long _bid) throws InterruptedException, DatabaseException {
+    protected void LAL_PROCESS(double _bid) throws InterruptedException, DatabaseException {
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         //ensures that locks are added in the input_event sequence order.
         transactionManager.getOrderLock().blocking_wait(_bid);

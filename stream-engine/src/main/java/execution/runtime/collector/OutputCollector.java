@@ -45,32 +45,32 @@ public class OutputCollector<T> {
         }
     }
 
-    private void forwardResult_inorder(String streamId, long bid, LinkedList<Long> gap, Object... data) throws InterruptedException {
+    private void forwardResult_inorder(String streamId, double bid, LinkedList<Long> gap, Object... data) throws InterruptedException {
         assert data != null && sc != null;
         sc.emitOnStream_inorder(meta, streamId, bid, gap, data);
     }
 
-    private void forwardResult_inorder(String streamId, long bid, LinkedList<Long> gap, char[] data) throws InterruptedException {
+    private void forwardResult_inorder(String streamId, double bid, LinkedList<Long> gap, char[] data) throws InterruptedException {
         assert data != null && sc != null;
         sc.emitOnStream_inorder(meta, streamId, bid, gap, data);
     }
 
-    private void forwardResult_inorder(String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
+    private void forwardResult_inorder(String streamId, double bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
         assert tuple != null && sc != null;
         sc.emitOnStream_inorder(meta, streamId, bid, gap, tuple);
     }
 
-    private void forwardResult_inorder_single(String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
+    private void forwardResult_inorder_single(String streamId, double bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
         assert tuple != null && sc != null;
         sc.emitOnStream_inorder_single(meta, streamId, bid, gap, tuple);
     }
 
-    private void forwardResult_inorder_push(String streamId, long bid, LinkedList<Long> gap) throws InterruptedException {
+    private void forwardResult_inorder_push(String streamId, double bid, LinkedList<Long> gap) throws InterruptedException {
         assert sc != null;
         sc.emitOnStream_inorder(meta, streamId, bid, gap);
     }
 
-    public void emit_inorder(long bid, LinkedList<Long> gap, Object... values) {
+    public void emit_inorder(double bid, LinkedList<Long> gap, Object... values) {
         try {
             forwardResult_inorder(DEFAULT_STREAM_ID, bid, gap, values);//package_Tuple(values, streamId)
         } catch (InterruptedException e) {
@@ -78,7 +78,7 @@ public class OutputCollector<T> {
         }
     }
 
-    public void emit_inorder(long bid, LinkedList<Long> gap, char[] values) {
+    public void emit_inorder(double bid, LinkedList<Long> gap, char[] values) {
         try {
             forwardResult_inorder(DEFAULT_STREAM_ID, bid, gap, values);//package_Tuple(values, streamId)
         } catch (InterruptedException e) {
@@ -86,7 +86,7 @@ public class OutputCollector<T> {
         }
     }
 
-    public void emit_inorder_single(String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) {
+    public void emit_inorder_single(String streamId, double bid, LinkedList<Long> gap, StreamValues tuple) {
         try {
             forwardResult_inorder_single(streamId, bid, gap, tuple);//package_Tuple(values, streamId)
         } catch (InterruptedException e) {
@@ -100,12 +100,12 @@ public class OutputCollector<T> {
      * @param data
      * @return
      */
-    public void emit(String streamId, long bid, Object... data) throws InterruptedException {
+    public void emit(String streamId, double bid, Object... data) throws InterruptedException {
         assert data != null && sc != null;
         sc.emitOnStream(meta, streamId, bid, data);
     }
 
-    public void emit(String streamId, long bid, Object data) throws InterruptedException {
+    public void emit(String streamId, double bid, Object data) throws InterruptedException {
         assert data != null && sc != null;
         sc.emitOnStream(meta, streamId, bid, data);
     }
@@ -125,22 +125,22 @@ public class OutputCollector<T> {
         sc.emitOnStream(meta, DEFAULT_STREAM_ID, -1, data);
     }
 
-    public void emit(String streamId, long bid, StreamValues data) throws InterruptedException {
+    public void emit(String streamId, double bid, StreamValues data) throws InterruptedException {
         assert data != null && sc != null;
         sc.emitOnStream(meta, streamId, bid, data);
     }
 
-    public void emit(String streamId, long bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
+    public void emit(String streamId, double bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
         assert sc != null;
         sc.emitOnStream(meta, streamId, bid, deviceID, movingAvergeInstant, nextDouble);
     }
 
-    public void emit(String streamId, long bid, char[] key, long value) throws InterruptedException {
+    public void emit(String streamId, double bid, char[] key, long value) throws InterruptedException {
         assert key != null && sc != null;
         sc.emitOnStream(meta, streamId, bid, key, value);
     }
 
-    public void emit(String streamId, long bid, char[] data) throws InterruptedException {
+    public void emit(String streamId, double bid, char[] data) throws InterruptedException {
         assert data != null && sc != null;
         sc.emitOnStream(meta, streamId, bid, data);
     }
@@ -150,12 +150,12 @@ public class OutputCollector<T> {
         sc.force_emitOnStream(meta, streamId, -1, data);
     }
 
-    public void force_emit(long bid, Object... data) throws InterruptedException {
+    public void force_emit(double bid, Object... data) throws InterruptedException {
         assert data != null && sc != null;
         sc.force_emitOnStream(meta, DEFAULT_STREAM_ID, bid, data);
     }
 
-    public void force_emit(String streamId, long bid, Object... data) throws InterruptedException {
+    public void force_emit(String streamId, double bid, Object... data) throws InterruptedException {
         assert data != null && sc != null;
         sc.force_emitOnStream(meta, streamId, bid, data);
     }
@@ -170,7 +170,7 @@ public class OutputCollector<T> {
         sc.emitOnStream(meta, streamId, data);
     }
 
-    public void emit(String streamId, char[] data, long bid, long timestamp) throws InterruptedException {
+    public void emit(String streamId, char[] data, double bid, long timestamp) throws InterruptedException {
         assert data != null && sc != null;
         sc.emitOnStream(meta, streamId, data, bid, timestamp);
     }
@@ -206,23 +206,23 @@ public class OutputCollector<T> {
      * @since 0.0.4 multiple stream ID added.
      * if left empty, use default stream Id instead.
      */
-    public void emit(long bid, Object... values) throws InterruptedException {
+    public void emit(double bid, Object... values) throws InterruptedException {
         emit(DEFAULT_STREAM_ID, bid, values);
     }
 
-    public void emit(long bid, StreamValues values) throws InterruptedException {
+    public void emit(double bid, StreamValues values) throws InterruptedException {
         emit(DEFAULT_STREAM_ID, bid, values);
     }
 
-    public void emit(long bid, Object values) throws InterruptedException {
+    public void emit(double bid, Object values) throws InterruptedException {
         emit(DEFAULT_STREAM_ID, bid, values);
     }
 
-    public void emit(long bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
+    public void emit(double bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
         emit(DEFAULT_STREAM_ID, bid, deviceID, movingAvergeInstant, nextDouble);
     }
 
-    public void emit(long bid, char[] key, long value) throws InterruptedException {
+    public void emit(double bid, char[] key, long value) throws InterruptedException {
         emit(DEFAULT_STREAM_ID, bid, key, value);
     }
 
@@ -230,7 +230,7 @@ public class OutputCollector<T> {
         force_emit(DEFAULT_STREAM_ID, values);
     }
 
-    public void emit(long bid, char[] values) throws InterruptedException {
+    public void emit(double bid, char[] values) throws InterruptedException {
         emit(DEFAULT_STREAM_ID, bid, values);
     }
 
@@ -238,7 +238,7 @@ public class OutputCollector<T> {
         emit(DEFAULT_STREAM_ID, values);
     }
 
-    public void emit(char[] values, long bid, long timestamp) throws InterruptedException {
+    public void emit(char[] values, double bid, long timestamp) throws InterruptedException {
         emit(DEFAULT_STREAM_ID, values, bid, timestamp);
     }
 
@@ -263,7 +263,7 @@ public class OutputCollector<T> {
         sc.emitOnStream(meta, streamId, key, value);
     }
 
-    public void emit(String streamId, char[] key, long value, long bid, long timestamp) throws InterruptedException {
+    public void emit(String streamId, char[] key, long value, double bid, long timestamp) throws InterruptedException {
         if (executor.isLeafNode()) {
             return;
         }

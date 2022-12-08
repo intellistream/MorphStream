@@ -33,7 +33,7 @@ public abstract class SStoreContent implements Content {
     }
 
     @Override
-    public long GetLWM() {
+    public double GetLWM() {
         throw new UnsupportedOperationException();
     }
 
@@ -73,7 +73,7 @@ public abstract class SStoreContent implements Content {
     }
 
     @Override
-    public void AddLWM(long ts) {
+    public void AddLWM(double ts) {
         throw new UnsupportedOperationException();
     }
 
