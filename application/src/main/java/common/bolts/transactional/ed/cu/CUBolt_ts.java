@@ -97,15 +97,15 @@ public class CUBolt_ts extends CUBolt{
         );
 
         // Update tweet's compute time to the current window
-        transactionManager.Asy_ModifyRecord(txnContext, //TODO: Put tweet's computeTime update else where
-                "tweet_table", // source_table
-                event.getTweetID(),  // source_key
-                null, // no function required
-                tweetTable, tweetKey, //condition_source_table, condition_source_key
-                condition2,
-                event.success,
-                "ed_cu_tweet"
-        );
+//        transactionManager.Asy_ModifyRecord(txnContext,
+//                "tweet_table", // source_table
+//                event.getTweetID(),  // source_key
+//                null, // no function required
+//                tweetTable, tweetKey, //condition_source_table, condition_source_key
+//                condition2,
+//                event.success,
+//                "ed_cu_tweet"
+//        );
 
         transactionManager.CommitTransaction(txnContext);
 

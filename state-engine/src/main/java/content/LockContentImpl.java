@@ -67,6 +67,11 @@ public class LockContentImpl extends LockContent {
     }
 
     @Override
+    public SchemaRecord readPastValues(long ts, long min_ts) {
+        return null;
+    }
+
+    @Override
     public SchemaRecord readPreValues(long ts, long min_ts) {
         return null;
     }

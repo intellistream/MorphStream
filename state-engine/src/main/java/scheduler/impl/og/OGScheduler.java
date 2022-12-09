@@ -307,32 +307,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         }
     }
 
-    // ED-CU: Tweet's Compute Time Update - Asy_ModifyRecord
-    protected void ComputeTimeUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPastValues((long) operation.bid);
-
-        if (preValues != null) { // tweet exits in wordTable
-
-            // apply function
-            AppConfig.randomDelay();
-
-            // read
-            SchemaRecord tweetRecord = operation.s_record.content_.readPastValues((long) operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
-
-            // Update tweet's computeTime to the current window
-            tempo_record.getValues().get(2).setInt((int) operation.condition.arg1);
-
-            //Update record's version (in this request, s_record == d_record)
-            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
-
-        }
-
-    }
-
     // ED-CU: Cluster Update - Asy_ModifyRecord_Iteration
     protected void ClusterUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
         HashMap<SchemaRecord, Double> similarities = new HashMap<>();
@@ -342,10 +316,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
         // read
         SchemaRecord tweetRecord = operation.s_record.content_.readPastValues((long) operation.bid);
-        int computeTime = tweetRecord.getValues().get(2).getInt();
 
-        // input tweet hasn't been computed before & it is burst
-        if (computeTime != operation.condition.arg1 && operation.condition.boolArg1) {
+        // input tweet is burst
+        if (operation.condition.boolArg1) {
             String[] tweetWordList = tweetRecord.getValues().get(1).getStringList().toArray(new String[0]);
             HashMap<String, Integer> tweetMap = new HashMap<>();
             for (String word : tweetWordList) {tweetMap.put(word, 1);}
@@ -353,12 +326,16 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             // compute input tweet's cosine similarity with all clusters
             if (operation.function instanceof Similarity) {
 
-                //Iterate through all clusters in cluster_table
+                // iterate through all clusters in cluster_table
                 for (TableRecord record : operation.condition_records) {
-                    SchemaRecord clusterRecord = record.content_.readPastValues((long) operation.bid);
-                    int aliveTime = clusterRecord.getValues().get(2).getInt();
 
-                    if (aliveTime != -1 && aliveTime >= operation.condition.arg1 - 2) { // cluster is valid, and has been updated in the past two windows
+                    // skip if the cluster has no update in the past two windows
+                    SchemaRecord clusterRecord = record.content_.readPastValues((long) operation.bid, (long) operation.bid-2);
+                    if (clusterRecord == null) {continue;}
+
+                    int clusterSize = clusterRecord.getValues().get(3).getInt();
+
+                    if (clusterSize != -1) { // cluster is valid
                         String[] clusterWordList = clusterRecord.getValues().get(1).getStringList().toArray(new String[0]);
 
                         // compute cosine similarity
@@ -388,8 +365,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             if (maxSimilarity >= 0.5) { //TODO: Check the threshold value
                 SchemaRecord tempo_record = new SchemaRecord(maxCluster); //tempo record - the most similar cluster
                 List<String> wordList = maxCluster.getValues().get(1).getStringList();
-                int countNewTweet = maxCluster.getValues().get(3).getInt();
-                int clusterSize = maxCluster.getValues().get(4).getInt();
+                int countNewTweet = maxCluster.getValues().get(2).getInt();
+                int clusterSize = maxCluster.getValues().get(3).getInt();
 
                 // Merge input tweet into cluster
                 for (String word : tweetWordList) {
@@ -397,9 +374,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 }
 
                 tempo_record.getValues().get(1).setStringList(wordList); //compute: merge wordList
-                tempo_record.getValues().get(2).setInt((int) operation.condition.arg1); //compute: aliveTime = currWin
-                tempo_record.getValues().get(3).setInt(countNewTweet + 1); //compute: increment countNewTweet
-                tempo_record.getValues().get(4).setInt(clusterSize + 1); //compute: increment clusterSize
+                tempo_record.getValues().get(2).setInt(countNewTweet + 1); //compute: increment countNewTweet
+                tempo_record.getValues().get(3).setInt(clusterSize + 1); //compute: increment clusterSize
 
                 //Update record's version (in this request, s_record == d_record)
                 operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
@@ -413,10 +389,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 SchemaRecord tempo_record = new SchemaRecord(clusterRecord);
 
                 tempo_record.getValues().get(1).setStringList(Arrays.asList(tweetWordList)); // create wordList
-                tempo_record.getValues().get(2).setInt((int) operation.condition.arg1); // aliveTime = currWin
-                tempo_record.getValues().get(3).setInt(1); // countNewTweet = 1
-                tempo_record.getValues().get(4).setInt(1); // clusterSize = 1
-                tempo_record.getValues().get(5).setBool(false); // isEvent = false
+                tempo_record.getValues().get(2).setInt(1); // countNewTweet = 1
+                tempo_record.getValues().get(3).setInt(1); // clusterSize = 1
+                tempo_record.getValues().get(4).setBool(false); // isEvent = false
 
                 //Update record's version (in this request, s_record == d_record)
                 operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
@@ -519,8 +494,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 WordUpdate_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu_cluster")) {//ed_cu_cluster
                 ClusterUpdate_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu_tweet")) {//ed_cu_tweet
-                ComputeTimeUpdate_Fun(operation, mark_ID, clean);
             }
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {

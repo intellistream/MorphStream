@@ -132,6 +132,22 @@ public abstract class TStreamContent implements Content {
         return record_at_ts;
     }
 
+    /**
+     * @param ts
+     * @return the latest version equal or less than ts, return null if the latest key is less than min_ts
+     */
+    @Override
+    public SchemaRecord readPastValues(long ts, long min_ts) {
+        Map.Entry<Long, SchemaRecord> entry = versions.floorEntry(ts);
+        if (entry.getKey() < min_ts) {
+            return null;
+        }
+        SchemaRecord record_at_ts = entry.getValue();
+        if (record_at_ts == null || record_at_ts.getValues() == null)
+            System.out.println("TStreamContent: No record under the current ts");
+        return record_at_ts;
+    }
+
     @Override
     public SchemaRecord readPreRangeValues(long startTs, int range) {
         SchemaRecord record_in_range = null;
