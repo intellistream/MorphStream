@@ -52,6 +52,11 @@ public class SStoreContentImpl extends SStoreContent {
     }
 
     @Override
+    public SchemaRecord readPastValues(long ts, long min_ts) {
+        return null;
+    }
+
+    @Override
     public SchemaRecord readPreValues(long ts, long min_ts) {
         return null;
     }

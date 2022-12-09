@@ -291,8 +291,7 @@ public class EDInitializer extends TableInitilizer {
 
             //This initializes table with some default records.
             String[] wordList = {"word1", "word2", "word3"};
-            int computeTime = 0;
-            insertTweetRecord(_key, wordList, computeTime , pid, spinlock);
+            insertTweetRecord(_key, wordList, pid, spinlock);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -331,8 +330,7 @@ public class EDInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
             String[] wordList = {};
-            int defaultComputeTime = -1;
-            insertTweetRecord(_key, wordList, defaultComputeTime, pid, spinlock);
+            insertTweetRecord(_key, wordList, pid, spinlock);
         }
 
         LOG.info("Inserted tweet record from row : " + left_bound + " to " + right_bound);
@@ -360,11 +358,10 @@ public class EDInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
             String[] wordList = {};
-            int aliveTime = -1;
             int countNewTweet = -1;
             int clusterSize = -1;
             boolean isEvent = false;
-            insertClusterRecord(_key, wordList, aliveTime, countNewTweet, clusterSize, isEvent, pid, spinlock);
+            insertClusterRecord(_key, wordList, countNewTweet, clusterSize, isEvent, pid, spinlock);
         }
 
         LOG.info("Inserted cluster record from row : " + left_bound + " to " + right_bound);
@@ -373,12 +370,12 @@ public class EDInitializer extends TableInitilizer {
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
-    private void insertTweetRecord(String tweetID, String[] wordList, int computeTime, int pid, SpinLock[] spinlock_) {
+    private void insertTweetRecord(String tweetID, String[] wordList, int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList, computeTime), pid, spinlock_));
+                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList), pid, spinlock_));
             else
-                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList, computeTime)));
+                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -398,15 +395,13 @@ public class EDInitializer extends TableInitilizer {
         }
     }
 
-    private void insertClusterRecord(String clusterID, String[] wordList, int aliveTime, int countNewTweet, int clusterSize, boolean isEvent,
+    private void insertClusterRecord(String clusterID, String[] wordList, int countNewTweet, int clusterSize, boolean isEvent,
                                      int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("tweet_table", new TableRecord(ClusterRecord(clusterID, wordList, aliveTime, countNewTweet,
-                        clusterSize, isEvent), pid, spinlock_));
+                db.InsertRecord("tweet_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent), pid, spinlock_));
             else
-                db.InsertRecord("tweet_table", new TableRecord(ClusterRecord(clusterID, wordList, aliveTime, countNewTweet,
-                        clusterSize, isEvent)));
+                db.InsertRecord("tweet_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -453,19 +448,16 @@ public class EDInitializer extends TableInitilizer {
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new StringDataBox());
         dataBoxes.add(new ListStringDataBox());
-        dataBoxes.add(new IntDataBox());
         fieldNames.add("Tweet_ID"); // 0
         fieldNames.add("Word_List"); // 1
-        fieldNames.add("Compute_Time"); // 2
 
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
-    private SchemaRecord TweetRecord(String tweetID, String[] wordList, int computeTime) {
+    private SchemaRecord TweetRecord(String tweetID, String[] wordList) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(tweetID, tweetID.length()));
         values.add(new ListStringDataBox(wordList));
-        values.add(new IntDataBox(computeTime));
         return new SchemaRecord(values);
     }
 
@@ -476,22 +468,19 @@ public class EDInitializer extends TableInitilizer {
         dataBoxes.add(new ListStringDataBox());
         dataBoxes.add(new IntDataBox());
         dataBoxes.add(new IntDataBox());
-        dataBoxes.add(new IntDataBox());
         dataBoxes.add(new BoolDataBox());
         fieldNames.add("Cluster_ID"); // 0
         fieldNames.add("Word_List"); // 1
-        fieldNames.add("Alive_Time"); // 2
-        fieldNames.add("Count_New_Tweet"); // 3
-        fieldNames.add("Cluster_Size"); // 4
-        fieldNames.add("Is_Event"); // 5
+        fieldNames.add("Count_New_Tweet"); // 2
+        fieldNames.add("Cluster_Size"); // 3
+        fieldNames.add("Is_Event"); // 4
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
-    private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int aliveTime, int countNewTweet, int clusterSize, boolean isEvent) {
+    private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int countNewTweet, int clusterSize, boolean isEvent) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(clusterID, clusterID.length()));
         values.add(new ListStringDataBox(wordList));
-        values.add(new IntDataBox(aliveTime));
         values.add(new IntDataBox(countNewTweet));
         values.add(new IntDataBox(clusterSize));
         values.add(new BoolDataBox(isEvent));
