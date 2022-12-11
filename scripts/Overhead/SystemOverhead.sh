@@ -17,13 +17,13 @@ function ResetParameters() {
   isDynamic=0
   workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
   schedulerPool="OG_BFS_A,OG_NS_A,OP_NS_A,OP_NS"
-  rootFilePath="/home/myc/workspace/jjzhao/expDir/result/SystemOverhead"
+  rootFilePath="${project_Dir}/result/data/SystemOverhead"
   shiftRate=1
   totalEvents=`expr $checkpointInterval \* $tthread \* 13 \* $shiftRate`
 }
 
 function runTStream() {
-  echo "java -Xms300g -Xmx300g -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms300g -Xmx300g -jar -d64 ${jar_Dir} \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --tthread $tthread \
@@ -41,7 +41,7 @@ function runTStream() {
           --shiftRate $shiftRate \
           --workloadType $workloadType \
           --schedulerPool $schedulerPool"
-  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 $jar_Dir \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \

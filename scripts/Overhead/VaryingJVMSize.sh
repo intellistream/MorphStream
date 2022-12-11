@@ -17,7 +17,7 @@ function ResetParameters() {
   isDynamic=0
   workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
   schedulerPool="OG_BFS_A,OG_NS_A,OP_NS_A,OP_NS"
-  rootFilePath="/home/myc/workspace/jjzhao/expDir/result/VaryingJVMSize"
+  rootFilePath="${project_Dir}/result/data/VaryingJVMSize"
   shiftRate=1
   totalEvents=`expr $checkpointInterval \* $tthread \* 13 \* $shiftRate`
   cleanUp=1
@@ -26,7 +26,7 @@ function ResetParameters() {
 }
 
 function runTStream() {
-  echo "java $jvmConf /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java $jvmConf ${jar_Dir} \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --tthread $tthread \
@@ -45,7 +45,7 @@ function runTStream() {
           --workloadType $workloadType \
           --schedulerPool $schedulerPool \
           --cleanUp $cleanUp"
-  java "$jvmConf" -XX:+PrintGCDetails  -XX:+UseG1GC -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java $jvmConf -XX:+PrintGCDetails  -XX:+UseG1GC -jar -d64 $jar_Dir \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \

@@ -14,13 +14,13 @@ function ResetParameters() {
   CCOption=3 #TSTREAM
   complexity=0
   isCyclic=1
-  rootFilePath="/home/myc/workspace/jjzhao/expDir/result/AbortHandling"
+  rootFilePath="${project_Dir}/result/data/AbortHandling"
 }
 
 function runTStream() {
   totalEvents=`expr $checkpointInterval \* $tthread`
   # NUM_ITEMS=`expr $totalEvents`
-  echo "java -Xms100g -Xmx100g -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms100g -Xmx100g -jar -d64 ${jar_Dir} \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --NUM_ACCESS $NUM_ACCESS \
@@ -36,7 +36,7 @@ function runTStream() {
           --complexity $complexity \
           --isCyclic $isCyclic \
           --rootFilePath $rootFilePath"
-  java -Xms100g -Xmx100g -Xss100M -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms100g -Xmx100g -Xss100M -jar -d64 $jar_Dir \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --NUM_ACCESS $NUM_ACCESS \

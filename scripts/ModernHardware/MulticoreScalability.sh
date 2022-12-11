@@ -17,7 +17,7 @@ function ResetParameters() {
   isDynamic=0
   workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
   schedulerPool="OG_BFS_A,OG_NS_A,OP_NS_A,OP_NS"
-  rootFilePath="/home/myc/workspace/jjzhao/expDir/result/MulticoreScalability"
+  rootFilePath="${project_Dir}/result/data/MulticoreScalability"
   shiftRate=1
   multicoreEvaluation=1
   maxThreads=24
@@ -25,7 +25,7 @@ function ResetParameters() {
 }
 
 function runTStream() {
-  echo "java -Xms300g -Xmx300g -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms300g -Xmx300g -jar -d64 ${jar_Dir} \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --tthread $tthread \
@@ -45,7 +45,7 @@ function runTStream() {
           --schedulerPool $schedulerPool \
           --multicoreEvaluation $multicoreEvaluation \
           --maxThreads $maxThreads"
-  java -Xms300g -Xmx300g -Xss100M -jar -d64 /home/myc/workspace/jjzhao/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms300g -Xmx300g -Xss100M -jar -d64 $jar_Dir \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
