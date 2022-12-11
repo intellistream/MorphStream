@@ -58,7 +58,7 @@ public class OBInitializer extends TableInitilizer {
     public OBInitializer(Database db, int numberOfStates,double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
-        this.dataRootPath = config.getString("rootFilePath");
+        this.dataRootPath = config.getString("rootFilePath") + OsUtils.osWrapperPostFix("stats");
         this.partitionOffset = numberOfStates / tthread;
         this.NUM_ACCESS = config.getInt("NUM_ACCESS");
         this.Transaction_Length = config.getInt("Transaction_Length");
