@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source ../global.sh || exit
 function ResetParameters() {
   app="StreamLedger"
   checkpointInterval=10240
