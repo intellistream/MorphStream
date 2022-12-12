@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source ../global.sh || exit
 function ResetParameters() {
   app="StreamLedger"
   checkpointInterval=10240
@@ -45,7 +45,7 @@ function runTStream() {
           --schedulerPool $schedulerPool \
           --multicoreEvaluation $multicoreEvaluation \
           --maxThreads $maxThreads"
-  java -Xms300g -Xmx300g -Xss100M -jar -d64 $jar_Dir \
+  java -Xms300g -Xmx300g -Xss100M -Xmn150g -jar -d64 $jar_Dir \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \

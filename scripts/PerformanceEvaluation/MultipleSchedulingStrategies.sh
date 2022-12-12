@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source ../global.sh || exit
 function ResetParameters() {
   app="TollProcessing"
   checkpointInterval=40960
