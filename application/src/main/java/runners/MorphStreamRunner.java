@@ -172,7 +172,7 @@ public class MorphStreamRunner extends Runner {
 
     private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
         if (enable_memory_measurement) {
-            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(),0,  500);
+            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(), 0, 500);
         }
         TopologySubmitter submitter = new TopologySubmitter();
         try {
@@ -280,7 +280,7 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
-                } else if (config.getString("common").equals("OnlineBiding")){
+                } else if (config.getString("common").equals("OnlineBiding")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
                             config.getInt("NUM_ITEMS"),
@@ -291,7 +291,7 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
-                } else if (config.getString("common").equals("TollProcessing")){
+                } else if (config.getString("common").equals("TollProcessing")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
                             config.getInt("NUM_ITEMS"),

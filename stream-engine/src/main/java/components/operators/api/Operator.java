@@ -46,7 +46,7 @@ public abstract class Operator implements IOperator {
     public transient Database db;//this is only used if the bolt is transactional bolt. DB is shared by all operators.
     //    public transient TxnContext txn_context;
     public transient TxnContext[] txn_context = new TxnContext[combo_bid_size];
-    public int fid = -1;//if fid is -1 it means it does not participate
+    public int fid = -1;//layer of operator. If fid is -1 it means it does not participate
     public OrderLock lock;//used for lock_ratio-based ordering constraint.
     public String configPrefix = BaseConstants.BASE_PREFIX;
     protected OutputCollector collector;

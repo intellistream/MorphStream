@@ -19,11 +19,11 @@ public abstract class Runner implements IRunner {
      * Workload Specific Parameters.
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "StreamLedger";
-//    public String application = "GrepSum";
-    //public String application = "OnlineBiding";
-    //public String application = "TollProcessing";
-//    public String application = "EventDetection";
+    //  public String application = "StreamLedger";
+    //  public String application = "GrepSum";
+    //  public String application = "OnlineBiding";
+    //  public String application = "TollProcessing";
+    public String application = "EventDetection";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -31,12 +31,9 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-//    public int totalEvents = 10000;
     public int totalEvents = 1000;
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 1000;
-//    public int NUM_ITEMS = 100_000;
-//    public int NUM_ITEMS = 500;//
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 5;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -67,24 +64,24 @@ public abstract class Runner implements IRunner {
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
     public int CCOption = CCOption_MorphStream;
-//    public int CCOption = CCOption_SStore;
-//    public int CCOption = CCOption_LOCK;
+    //    public int CCOption = CCOption_SStore;
+    //    public int CCOption = CCOption_LOCK;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
     public String scheduler = "OP_BFS_A";
-    //public String scheduler = "OG_BFS_A";
-//    public String scheduler = "OG_DFS";
-//    public String scheduler = "OG_DFS_A";
-//    public String scheduler = "OG_NS";
-//    public String scheduler = "OG_NS_A";
-//    public String scheduler = "OP_NS";
-//    public String scheduler = "OP_NS_A";
-//    public String scheduler = "OP_BFS";
-//    public String scheduler = "OP_BFS_A";
-//    public String scheduler = "OP_DFS";
-//    public String scheduler = "OP_DFS_A";
-//    public String scheduler = "TStream";
+    //    public String scheduler = "OG_BFS_A";
+    //    public String scheduler = "OG_DFS";
+    //    public String scheduler = "OG_DFS_A";
+    //    public String scheduler = "OG_NS";
+    //    public String scheduler = "OG_NS_A";
+    //    public String scheduler = "OP_NS";
+    //    public String scheduler = "OP_NS_A";
+    //    public String scheduler = "OP_BFS";
+    //    public String scheduler = "OP_BFS_A";
+    //    public String scheduler = "OP_DFS";
+    //    public String scheduler = "OP_DFS_A";
+    //    public String scheduler = "TStream";
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
@@ -110,11 +107,11 @@ public abstract class Runner implements IRunner {
      * Dynamic workload
      */
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
-    public String  workloadType = "default";
+    public String workloadType = "default";
     @Parameter(names = {"--shiftRate"}, description = "control the rate of the workload shift")
-    public int shiftRate  = 1;
+    public int shiftRate = 1;
     @Parameter(names = {"--phaseNum"}, description = "How many phases")
-    public int phaseNum  =1;
+    public int phaseNum = 1;
 
     /**
      * Scheduler for group
@@ -152,12 +149,12 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-//    public int checkpoint_interval = 2500;//checkpoint per thread.
+    //    public int checkpoint_interval = 2500;//checkpoint per thread.
     public int checkpoint_interval = 10;//checkpoint per thread.
 
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
-//    public String generator = "OCGenerator";
+    //    public String generator = "OCGenerator";
 
     @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
     public Integer Ratio_Of_Deposit = 25;
@@ -215,11 +212,12 @@ public abstract class Runner implements IRunner {
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
 
-        if (application.equals("OnlineBiding")){
+        if (application.equals("OnlineBiding")) {
             config.put("Ratio_Of_Buying", Ratio_Of_Buying);
-        }else if (application.equals("StreamLedger")) {
+        } else if (application.equals("StreamLedger")) {
             config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
-        } else {}
+        } else {
+        }
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
@@ -263,32 +261,32 @@ public abstract class Runner implements IRunner {
         config.put("size_tuple", size_tuple);
         config.put("verbose", verbose);
 
-        config.put("application",application);
+        config.put("application", application);
 
-        String phaseType[]=workloadType.split(",");
-        switch(application) {
-            case "StreamLedger" :
+        String phaseType[] = workloadType.split(",");
+        switch (application) {
+            case "StreamLedger":
                 //bottomLine = "300,3000,500,1200,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                bottomLine = 0.2*checkpoint_interval+","+2*checkpoint_interval+","+0.3*checkpoint_interval+","+0.8*checkpoint_interval+","+"0.3,0.7";//TD,LD,PD,SUM,VDD,R_of_A
+                bottomLine = 0.2 * checkpoint_interval + "," + 2 * checkpoint_interval + "," + 0.3 * checkpoint_interval + "," + 0.8 * checkpoint_interval + "," + "0.3,0.7";//TD,LD,PD,SUM,VDD,R_of_A
                 phaseNum = shiftRate * phaseType.length;
                 break;
-            case "OnlineBiding" :
+            case "OnlineBiding":
                 bottomLine = "500,5000,1,6000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OG_BFS_A,OG_NS_A,OG_NS";
                 defaultScheduler = "OG_BFS_A";
                 phaseNum = shiftRate * phaseType.length;
                 break;
-            case "GrepSum" :
+            case "GrepSum":
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
                 defaultScheduler = "OP_NS_A";
                 phaseNum = shiftRate * phaseType.length;
                 break;
-            case "TollProcessing" :
+            case "TollProcessing":
                 phaseNum = shiftRate * 1;
                 defaultScheduler = "OG_BFS_A";
                 break;
-            case "EventDetection" :
+            case "EventDetection":
                 //TODO: Add Conf settings to ED
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
@@ -313,7 +311,6 @@ public abstract class Runner implements IRunner {
             config.put("scheduler", scheduler);
         }
 
-
         /* Dynamic Workload Configuration*/
         config.put("workloadType", workloadType);
         config.put("shiftRate", shiftRate);
@@ -322,14 +319,14 @@ public abstract class Runner implements IRunner {
         /* Group scheduler*/
         if (isGroup == 1) {
             config.put("isGroup", true);
-            config.put("groupNum",groupNum);
-            config.put("SchedulersForGroup",SchedulersForGroup);
-            config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
-            config.put("skewGroup",skewGroup);
-            config.put("Ratio_of_Transaction_Aborts_Highest",Ratio_of_Transaction_Aborts_Highest);
+            config.put("groupNum", groupNum);
+            config.put("SchedulersForGroup", SchedulersForGroup);
+            config.put("totalEvents", phaseNum * tthread * checkpoint_interval);
+            config.put("skewGroup", skewGroup);
+            config.put("Ratio_of_Transaction_Aborts_Highest", Ratio_of_Transaction_Aborts_Highest);
         } else {
             config.put("isGroup", false);
-            config.put("groupNum",1);
+            config.put("groupNum", 1);
         }
 
         System.setProperty("my.log", metric_path);

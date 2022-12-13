@@ -134,7 +134,7 @@ public class EventDetection extends TransactionTopology {
                     builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_ts(0)
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.SPOUT));
-                    builder.setBolt(EventDetectionConstants.Component.TRG, new TRGBolt_ts(0)
+                    builder.setBolt(EventDetectionConstants.Component.TRG, new TRGBolt_ts(1)
                             , config.getInt(EventDetectionConstants.Conf.Gate_Threads, 1)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TR));
 //                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_ts(0)

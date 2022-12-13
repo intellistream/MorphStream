@@ -1,6 +1,5 @@
 package common.bolts.transactional.ed.trg;
 
-import combo.SINKCombo;
 import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -12,15 +11,12 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerTStream;
-import static common.CONTROL.wordWindowSize;
-import static common.CONTROL.tweetWindowSize;
 
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.*;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
@@ -32,12 +28,6 @@ public class TRGBolt_ts extends TRGBolt {
     ArrayDeque<WUEvent> wuEvents;
     private int counter = 0;
 
-    //To be used in Combo
-    public TRGBolt_ts(int fid, SINKCombo sink) {
-        super(LOG, fid, sink);
-    }
-
-    //To be used in ED Topology
     public TRGBolt_ts(int fid) {
         super(LOG, fid, null);
     }
@@ -50,7 +40,8 @@ public class TRGBolt_ts extends TRGBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    }
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -77,7 +68,8 @@ public class TRGBolt_ts extends TRGBolt {
         wuEvents.add(event);
     }
 
-    private void TR_GATE_REQUEST_CORE() throws InterruptedException {}
+    private void TR_GATE_REQUEST_CORE() throws InterruptedException {
+    }
 
     // Emit all events to collector, then insert one punctuation signal
     private void TR_GATE_REQUEST_POST() throws InterruptedException {
