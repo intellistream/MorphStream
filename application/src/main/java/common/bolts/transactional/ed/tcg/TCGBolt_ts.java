@@ -26,7 +26,6 @@ public class TCGBolt_ts extends TCGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TCGBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<TCEvent> tcEvents;
-    List<Double> bidList = new ArrayList<>(); //TODO: Improve this. Only one portion of stored bids will be used
     HashMap<String, Boolean> tweetMap = new HashMap<>();
     private int counter = 0;
 
@@ -70,35 +69,30 @@ public class TCGBolt_ts extends TCGBolt {
         }
     }
 
+    //Updates the mapping of tweetID and isBurst
     protected void TC_GATE_REQUEST_CONSTRUCT(TCEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         tcEvents.add(event);
-    }
 
-    //This CORE method updates the mapping of tweetID and isBurst
-    //Its final size is expected to be tweetWindowSize
-    private void TC_GATE_REQUEST_CORE() {
-        for (TCEvent event : tcEvents) {
-            for (String tweetID : event.tweetIDList) {
-                if (!Boolean.TRUE.equals(tweetMap.get(tweetID))) { //Do not update when the value is "not-null and true"
-                    tweetMap.put(tweetID, event.isBurst);
-                }
+        for (String tweetID : event.tweetIDList) {
+            if (!Boolean.TRUE.equals(tweetMap.get(tweetID))) { //Do not update when the value is "not-null and true"
+                tweetMap.put(tweetID, event.isBurst);
             }
         }
     }
 
+    private void TC_GATE_REQUEST_CORE() {}
+
     // Emit output information to TCGBolt
     private void TC_GATE_REQUEST_POST() throws InterruptedException {
         Iterator<TCEvent> tcEventIterator = tcEvents.iterator();
-        double delta = 0.1;
 
         for (Map.Entry<String, Boolean> entry : tweetMap.entrySet()) {
             TCEvent event = tcEventIterator.next();
-            double outBid = event.getMyBid() + delta;
 
-            CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+            CUEvent outEvent = new CUEvent(event.getBid(), event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
                     event.getMyNumberOfPartitions(), entry.getKey(), entry.getValue());
 
-            TC_GATE_REQUEST_POST(outBid, outEvent);
+            TC_GATE_REQUEST_POST(event.getBid(), outEvent);
         }
     }
 

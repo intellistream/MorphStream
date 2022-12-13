@@ -81,7 +81,7 @@ public interface Content {
 
     void ReleaseCertifyLock();
 
-    void AddLWM(double ts);
+    void AddLWM(long ts);
 
     void DeleteLWM(long ts);
 

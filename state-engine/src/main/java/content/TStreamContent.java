@@ -208,7 +208,7 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public void AddLWM(double ts) {
+    public void AddLWM(long ts) {
         throw new UnsupportedOperationException();
     }
 

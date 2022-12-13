@@ -28,6 +28,7 @@ public class CUGBolt_ts extends CUGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(CUGBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<CUEvent> cuEvents;
+    private int starting_bid = 0;
     private int counter = 0;
 
     //To be used in Combo
@@ -76,12 +77,11 @@ public class CUGBolt_ts extends CUGBolt {
 
     private void CU_GATE_REQUEST_CORE() throws InterruptedException {}
 
-    // Emit all events to collector, then insert one punctuation signal
+    // Emit all events to collector
     private void CU_GATE_REQUEST_POST() throws InterruptedException, DatabaseException {
-        for (CUEvent event : cuEvents) {
-            CU_GATE_REQUEST_POST(event);
-        }
-//        insertMaker(cuEvents.getLast());
+        CUEvent firstEvent = cuEvents.poll();
+        assert firstEvent != null;
+        CU_GATE_REQUEST_POST(firstEvent.getMyBid());
     }
 
     @Override

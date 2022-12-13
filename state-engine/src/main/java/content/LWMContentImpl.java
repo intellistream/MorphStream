@@ -21,8 +21,8 @@ public class LWMContentImpl extends LWMContent {
     volatile boolean is_certifying_ = false;
     volatile long read_count_;
     volatile boolean is_writing_ = false;
-    volatile TreeSet<Double> set = new TreeSet<>();
-    volatile double lwm = Double.MAX_VALUE;
+    volatile TreeSet<Long> set = new TreeSet<>();
+    volatile long lwm = Long.MAX_VALUE;
 
     public LWMContentImpl() {
         set.add(lwm);
@@ -198,7 +198,7 @@ public class LWMContentImpl extends LWMContent {
     }
 
     @Override
-    public synchronized void AddLWM(double ts) {
+    public synchronized void AddLWM(long ts) {
         set.add(ts);
         MaintainLWM();
     }

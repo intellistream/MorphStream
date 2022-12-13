@@ -93,7 +93,7 @@ public class TRGBolt_ts extends TRGBolt {
 
         counter++;
 
-        if (counter % wordWindowSize == 0) { //punctuation_interval = tweetWindowSize
+        if (counter % wordWindowSize == 0) { //punctuation_interval = wordWindowSize
             int num_events = wuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

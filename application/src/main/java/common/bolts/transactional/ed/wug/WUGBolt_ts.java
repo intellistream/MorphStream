@@ -15,6 +15,8 @@ import transaction.impl.ordered.TxnManagerTStream;
 import static common.CONTROL.wordWindowSize;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 

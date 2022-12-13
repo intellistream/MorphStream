@@ -108,7 +108,7 @@ public class ESBolt_ts extends ESBolt{
     }
 
     private boolean doPunctuation() {
-        return esEvents.size() == tweetWindowSize;
+        return esEvents.size() == clusterTableSize / tthread;
     }
 
     @Override

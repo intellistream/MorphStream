@@ -39,8 +39,9 @@ public interface CONTROL {
     boolean enable_speculative = false;//work in future!
 
     //ED Window
-    int wordWindowSize = 30;
-    int tweetWindowSize = 10;
+    int wordWindowSize = 120;
+    int tweetWindowSize = 40;
+    int clusterTableSize = 40;
 
     //Double bid Support
     boolean enableDoubleBid = true;
