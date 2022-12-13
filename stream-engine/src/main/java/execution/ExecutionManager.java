@@ -11,6 +11,7 @@ import execution.runtime.spoutThread;
 import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import stage.StageManager;
 import transaction.TxnManager;
 import utils.AppConfig;
 
@@ -46,8 +47,7 @@ public class ExecutionManager {
      * TODO: let's think about how to due with multi-thread per core in future..
      * All executors have to sync_ratio for OM to start, so it's safe to do initialization here. E.g., initialize database.
      */
-    public void distributeTasks(Configuration conf,
-                                CountDownLatch latch, Database db) throws UnhandledCaseException {
+    public void distributeTasks(Configuration conf, CountDownLatch latch, Database db) throws UnhandledCaseException {
         g.build_inputScheduler();
         if (enable_shared_state) {
             HashMap<Integer, List<Integer>> stage_map = new HashMap<>();//Stages --> Executors.
@@ -57,8 +57,10 @@ public class ExecutionManager {
             }
             int stage = 0;
             List<Integer> integers;
-            //            TxnProcessingEngine tp_engine = new TxnProcessingEngine(stage);
-            //            tp_engine = TxnProcessingEngine.getInstance();
+
+            /**
+             * One scheduler one stage.
+             */
             do {
                 integers = stage_map.get(stage);
                 if (integers == null) break;
@@ -68,9 +70,8 @@ public class ExecutionManager {
                 int app = conf.getInt("app");
                 if (conf.getBoolean("isDynamic")) {
                     String schedulers = conf.getString("schedulersPool");
-                    TxnManager.initSchedulerPool(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates, app);
-                    //Configure the bottom line for triggering scheduler switching in Collector(include the isRuntime and when to switch)
-                    TxnManager.setBottomLine(conf.getString("bottomLine"));
+                    StageManager.initSchedulerPool(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates, app);
+                    StageManager.setBottomLine(conf.getString("bottomLine"));
                     if (!conf.getBoolean("isRuntime")) {
                         TxnManager.setWorkloadConfig(conf.getString("WorkloadConfig"));
                     }
@@ -121,7 +122,6 @@ public class ExecutionManager {
 
     private executorThread launchSpout_InCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                               int node, long[] cores, CountDownLatch latch) {
-
         spoutThread st;
         st = new spoutThread(e, context, conf, cores, node, latch,
                 ThreadMap);
