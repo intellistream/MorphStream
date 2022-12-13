@@ -58,7 +58,7 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
     @Override
     public void start_evaluate(int thread_Id, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
-        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads of the same operator to come to this line to ensure the TPG is constructed for the current batch.
         if (enableGroup) {
             schedulerByGroup.get(getGroupId(thread_Id)).start_evaluation(context, mark_ID, num_events);
         } else {
