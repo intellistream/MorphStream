@@ -73,7 +73,7 @@ public abstract class SStoreContent implements Content {
     }
 
     @Override
-    public void AddLWM(double ts) {
+    public void AddLWM(long ts) {
         throw new UnsupportedOperationException();
     }
 

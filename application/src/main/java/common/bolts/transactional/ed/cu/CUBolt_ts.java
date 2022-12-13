@@ -76,10 +76,6 @@ public class CUBolt_ts extends CUBolt{
         Similarity function = new Similarity();
         Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
 
-        String[] tweetTable = new String[]{"tweet_table"}; // condition source table
-        String[] tweetKey = new String[]{event.getTweetID()}; // condition source key
-        Condition condition2 = new Condition(event.getCurrWindow()); //arg1: currentWindow
-
         LOG.info("Constructing CU request: " + event.getMyBid());
 
         transactionManager.BeginTransaction(txnContext);
@@ -96,17 +92,6 @@ public class CUBolt_ts extends CUBolt{
                 "ed_cu_cluster"
         );
 
-        // Update tweet's compute time to the current window
-//        transactionManager.Asy_ModifyRecord(txnContext,
-//                "tweet_table", // source_table
-//                event.getTweetID(),  // source_key
-//                null, // no function required
-//                tweetTable, tweetKey, //condition_source_table, condition_source_key
-//                condition2,
-//                event.success,
-//                "ed_cu_tweet"
-//        );
-
         transactionManager.CommitTransaction(txnContext);
 
         cuEvents.add(event);
@@ -121,7 +106,7 @@ public class CUBolt_ts extends CUBolt{
     }
 
     private boolean doPunctuation() {
-        return cuEvents.size() == tweetWindowSize;
+        return cuEvents.size() == tweetWindowSize / tthread;
     }
 
     @Override

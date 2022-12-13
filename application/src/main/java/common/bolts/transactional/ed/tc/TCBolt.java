@@ -41,8 +41,6 @@ public class TCBolt extends TransactionalBolt {
 
         if (!enable_app_combo) {
 
-//            CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), tweetID, isBurst);
-
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 

@@ -113,7 +113,7 @@ public class TCBolt_ts extends TCBolt{
     }
 
     private boolean doPunctuation() {
-        return tcEvents.size() == wordWindowSize;
+        return tcEvents.size() == wordWindowSize / tthread;
     }
 
     @Override

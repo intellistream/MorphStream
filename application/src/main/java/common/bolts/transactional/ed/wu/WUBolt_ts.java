@@ -71,12 +71,12 @@ public class WUBolt_ts extends WUBolt{
     protected void WORD_UPDATE_REQUEST_CONSTRUCT(WUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
 
         String[] wordTable = new String[]{"word_table"}; //condition source table
-        String[] wordID = new String[]{String.valueOf(event.getWord().hashCode() % 10007)}; //condition source key
+        String[] wordID = new String[]{event.getWordID()}; //condition source key
         Append append = new Append(event.getTweetID());
         Condition condition = new Condition(event.getCurrWindow(), event.getWord()); //arg1, stringArg1
 
         String sourceTable = "word_table";
-        String sourceKey = String.valueOf(event.getWord().hashCode() % 10007);
+        String sourceKey = event.getWordID();
 
         LOG.info("Constructing WU request: " + event.getMyBid());
 
@@ -106,7 +106,7 @@ public class WUBolt_ts extends WUBolt{
     }
 
     private boolean doPunctuation() {
-        return wuEvents.size() == wordWindowSize;
+        return wuEvents.size() == wordWindowSize / tthread;
     }
 
     @Override

@@ -96,7 +96,7 @@ public abstract class ToContent implements Content {
     }
 
     @Override
-    public void AddLWM(double ts) {
+    public void AddLWM(long ts) {
         throw new UnsupportedOperationException();
     }
 

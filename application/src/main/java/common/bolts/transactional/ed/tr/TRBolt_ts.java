@@ -133,7 +133,7 @@ public class TRBolt_ts extends TRBolt{
     }
 
     private boolean doPunctuation() {
-        return trEvents.size() == tweetWindowSize;
+        return trEvents.size() == tweetWindowSize / tthread;
     }
 
     @Override
@@ -147,7 +147,7 @@ public class TRBolt_ts extends TRBolt{
             {
                 MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
                 {
-//                    transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
+                    transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
                     TWEET_REGISTRANT_REQUEST_CORE();
                 }
                 MeasureTools.END_TXN_TIME_MEASURE(thread_Id);

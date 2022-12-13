@@ -41,26 +41,7 @@ public abstract class TCGBolt extends TransactionalBolt {
         } else {
             if (enable_latency_measurement) {
                 //Pass the read result of new tweet's ID (assigned by table) to sink
-//                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
-            }
-        }
-    }
-
-    protected void insertMaker(CUEvent event) throws InterruptedException {
-
-        double delta = 0.1;
-        double outBid = event.getMyBid() + delta;
-
-        //sourceID is used in ???, myIteration is used in SStore
-        Tuple marker = new Tuple(outBid, 0, context, new Marker(DEFAULT_STREAM_ID, -1, outBid, 0));
-
-        LOG.info("Inserting marker: " +outBid);
-
-        if (!enable_app_combo) {
-            collector.emit(outBid, marker);//tuple should be the input of next bolt's execute() method
-        } else {
-            if (enable_latency_measurement) {
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, "Maker", event.getTimestamp())));
+                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
             }
         }
     }

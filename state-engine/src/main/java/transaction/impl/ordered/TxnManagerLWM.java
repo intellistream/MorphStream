@@ -76,7 +76,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
                 while (!t_record.content_.AcquireWriteLock() && !Thread.currentThread().isInterrupted()) {//Could it be two transactions concurrently writing the d_record? NO. it's protected by order lock_ratio.
                     txn_context.is_retry_ = true;//retry, no abort..
                 }
-                t_record.content_.AddLWM(txn_context.getBID());
+                t_record.content_.AddLWM((long) txn_context.getBID());
                 break;
             default:
         }

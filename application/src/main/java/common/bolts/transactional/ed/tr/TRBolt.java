@@ -16,8 +16,6 @@ public abstract class TRBolt extends TransactionalBolt {
 
     SINKCombo sink; //Default sink for measurement
 
-    private int postCount = 0;
-
     public TRBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
@@ -33,23 +31,23 @@ public abstract class TRBolt extends TransactionalBolt {
         String tweetID = event.getTweetID();
         String[] words = event.getWords();
         double delta = 0.1;
-
         double outBid = event.getMyBid() + delta;
 
         for (String word : words) {
 
-            WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), word, tweetID);
+            String wordID = String.valueOf(word.hashCode() % 10007);
+            WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(),
+                    word, wordID, tweetID);
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
 //            LOG.info("Posting event: " + event.getBid() + ", Counter = " + postCount);
-            postCount++;
+
             if (outBid >= 30) {
                 LOG.info("Posting event: " + outBid);
             }
 
             if (!enable_app_combo) {
-//                collector.emit(outBid, tuple, event.getTimestamp());
                 collector.emit(outBid, tuple);
             } else {
                 if (enable_latency_measurement) {
