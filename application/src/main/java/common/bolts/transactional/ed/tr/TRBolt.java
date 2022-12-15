@@ -43,9 +43,9 @@ public abstract class TRBolt extends TransactionalBolt {
 
 //            LOG.info("Posting event: " + event.getBid() + ", Counter = " + postCount);
 
-            if (outBid >= 30) {
-                LOG.info("Posting event: " + outBid);
-            }
+//            if (outBid >= 30) {
+//                LOG.info("Posting event: " + outBid);
+//            }
 
             if (!enable_app_combo) {
                 collector.emit(outBid, tuple);

@@ -34,7 +34,7 @@ public abstract class TRGBolt extends TransactionalBolt {
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
         Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-        LOG.info("Posting event: " + outBid);
+//        LOG.info("Posting event: " + outBid);
 
         if (!enable_app_combo) {
             collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method

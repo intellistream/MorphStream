@@ -170,6 +170,7 @@ public class MeasureSink extends BaseSink {
     protected void latency_measure(Tuple input) {
         cnt++;
         if (enable_latency_measurement) {
+//            LOG.info("Fix Me.");
 //            if (cnt == 1) {
 //                start = System.nanoTime();
 //            } else {
@@ -180,7 +181,7 @@ public class MeasureSink extends BaseSink {
 //                    start = end;
 //                }
 //            }
-            latency_map.add(System.nanoTime() - input.getLong(1));
+//            latency_map.add(System.nanoTime() - input.getLong(1));
         }
     }
 
