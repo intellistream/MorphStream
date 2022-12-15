@@ -23,7 +23,7 @@ public class OGBFSScheduler extends AbstractOGBFSScheduler<OGSContext> {
     public void EXPLORE(OGSContext context) {
         OperationChain next = Next(context);
         while (next == null && !context.exploreFinished()) {
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            context.waitForOtherThreads(context.thisThreadId);
             ProcessedToNextLevel(context);
             next = Next(context);
         }

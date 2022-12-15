@@ -7,6 +7,7 @@ import lock.OrderLock;
 import lock.PartitionedOrderLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import stage.Stage;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -30,8 +31,8 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
     public final PartitionedOrderLock orderLock;
     public final OrderLock shared_orderLock;
 
-    public TxnManagerSStore(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
-        super(storageManager, thisComponentId, thisTaskId, thread_count);
+    public TxnManagerSStore(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
+        super(storageManager, thisComponentId, thisTaskId, thread_count,stage);
         this.shared_orderLock = OrderLock.getInstance();
         this.orderLock = PartitionedOrderLock.getInstance();
     }

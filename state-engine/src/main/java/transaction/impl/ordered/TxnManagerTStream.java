@@ -4,6 +4,7 @@ import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import stage.Stage;
 import storage.SchemaRecord;
 import storage.StorageManager;
 import storage.TableRecord;
@@ -14,15 +15,14 @@ import utils.SOURCE_CONTROL;
 import java.util.LinkedList;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.AccessType.INSERT_ONLY;
 import static transaction.context.TxnAccess.Access;
 
 public class TxnManagerTStream extends TxnManagerDedicatedAsy {
     private static final Logger log = LoggerFactory.getLogger(TxnManagerTStream.class);
 
-    public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw, String schedulerType) {
-        super(storageManager, thisComponentId, thisTaskId, thread_countw, numberOfStates, schedulerType);
+    public TxnManagerTStream(StorageManager storageManager, String thisComponentId, int thisTaskId, int numberOfStates, int thread_countw, String schedulerType, Stage stage) {
+        super(storageManager, thisComponentId, thisTaskId, thread_countw, numberOfStates, schedulerType, stage);
     }
 
     @Override
@@ -58,23 +58,10 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
     @Override
     public void start_evaluate(int thread_Id, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         MeasureTools.BEGIN_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
-        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads of the same operator to come to this line to ensure the TPG is constructed for the current batch.
-        if (enableGroup) {
-            schedulerByGroup.get(getGroupId(thread_Id)).start_evaluation(context, mark_ID, num_events);
-        } else {
-            scheduler.start_evaluation(context, mark_ID, num_events);
-        }
-        SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
+        this.stage.getControl().preStateAccessBarrier(thread_Id);//sync for all threads of the same operator to come to this line to ensure the TPG is constructed for the current batch.
+        this.stage.getScheduler().start_evaluation(context, mark_ID, num_events);
+        this.stage.getControl().postStateAccessBarrier(thread_Id);
         MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(thread_Id);
         MeasureTools.SCHEDULE_TIME_RECORD(thread_Id, num_events);
-        //Sync to switch scheduler(more overhead) decide by the mark_ID or runtime information
-        MeasureTools.BEGIN_SCHEDULER_SWITCH_TIME_MEASURE(thread_Id);
-        if (enableDynamic && collector.timeToSwitch(mark_ID, thread_Id, currentSchedulerType.get(thread_Id))) {
-            String schedulerType = collector.getDecision(thread_Id);
-            this.SwitchScheduler(schedulerType, thread_Id, mark_ID);
-            this.switchContext(schedulerType);
-            SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
-        }
-        MeasureTools.END_SCHEDULER_SWITCH_TIME_MEASURE(thread_Id);
     }
 }

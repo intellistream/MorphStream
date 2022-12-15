@@ -45,7 +45,7 @@ public class SLBolt_sstore extends SLBolt_LA {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
+        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
@@ -80,7 +80,7 @@ public class SLBolt_sstore extends SLBolt_LA {
     }
 
     public void start_evaluate(int thread_Id, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
-        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        transactionManager.stage.getControl().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         LA_RESETALL(transactionManager, thread_Id);
         // add bid_array for events
         if (thread_Id == 0) {
@@ -103,7 +103,7 @@ public class SLBolt_sstore extends SLBolt_LA {
             }
             GlobalSorter.sortedEvents.clear();
         }
-        SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
+        transactionManager.stage.getControl().postStateAccessBarrier(thread_Id);
     }
 
     private void parseDepositEvent(int partitionOffset, DepositEvent event, HashMap<Integer, Integer> pids) {

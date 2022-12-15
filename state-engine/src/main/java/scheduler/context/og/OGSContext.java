@@ -1,6 +1,7 @@
 package scheduler.context.og;
 
 import scheduler.struct.og.OperationChain;
+import stage.Stage;
 
 import java.util.*;
 
@@ -15,8 +16,8 @@ public class OGSContext extends OGSchedulerContext {
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
-    public OGSContext(int thisThreadId, int totalThreads) {
-        super(thisThreadId);
+    public OGSContext(int thisThreadId, int totalThreads, Stage stage) {
+        super(thisThreadId,stage);
         this.totalThreads = totalThreads;
         this.allocatedLayeredOCBucket = new HashMap<>();
         requests = new ArrayDeque<>();

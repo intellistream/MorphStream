@@ -26,6 +26,7 @@ import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import stage.Stage;
 import utils.SOURCE_CONTROL;
 
 import java.util.concurrent.BrokenBarrierException;
@@ -109,10 +110,10 @@ public class EDSpout extends TransactionalSpout {
 //            }
 
             if (counter == the_end) {
-//                    if (ccOption == CCOption_SStore)
-//                        MeasureTools.END_TOTAL_TIME_MEASURE(taskId);//otherwise deadlock.
-                SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
-                SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
+                for (Stage stage : context.getStageMap().values()) {
+                    stage.getControl().oneThreadCompleted(taskId);
+                    stage.getControl().finalBarrier(taskId);
+                }
                 if (taskId == 0)
                     sink.end(global_cnt);
             }

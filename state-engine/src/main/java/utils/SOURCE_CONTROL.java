@@ -5,8 +5,11 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Phaser;
 
+/**
+ * One Stage One Control.
+ */
 public class SOURCE_CONTROL {
-    private static final SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
+
     private final long counter = 0;
     private int totalThreads;
 
@@ -19,35 +22,21 @@ public class SOURCE_CONTROL {
     private Phaser dLevelEndBarrier;
 
     private boolean isGroup;
-    private int dalta;
+    private int delta;
     private CyclicBarrier[] exploreTPGBarrierByGroup;
     private Phaser[] dLevelEndBarrierByGroup;
 
     private HashMap<Integer, Integer> iteration;
 
-    public static SOURCE_CONTROL getInstance() {
-        return ourInstance;
-    }
 
-    public void config(int number_threads, int groupNum) {
+    public void config(int number_threads) {
         totalThreads = number_threads;
         startBarrier = new CyclicBarrier(number_threads);
         endBarrier = new CyclicBarrier(number_threads);
         finalEndBarrier = new CyclicBarrier(number_threads);
         switchSchedulerBarrier = new CyclicBarrier(number_threads);
-        if (groupNum != 1) {
-            exploreTPGBarrierByGroup = new CyclicBarrier[groupNum];
-            dLevelEndBarrierByGroup = new Phaser[groupNum];
-            for (int i = 0; i < groupNum; i++) {
-                exploreTPGBarrierByGroup[i] = new CyclicBarrier(number_threads / groupNum);
-                dLevelEndBarrierByGroup[i] = new Phaser(number_threads / groupNum);
-            }
-            dalta = totalThreads / groupNum;
-            isGroup = true;
-        } else {
-            exploreTPGBarrier = new CyclicBarrier(number_threads / groupNum);
-            dLevelEndBarrier = new Phaser(number_threads / groupNum);
-        }
+        exploreTPGBarrier = new CyclicBarrier(number_threads);
+        dLevelEndBarrier = new Phaser(number_threads);
         iteration = new HashMap<>();
         for (int i = 0; i < number_threads; i++) {
             iteration.put(i, 0);
@@ -70,7 +59,7 @@ public class SOURCE_CONTROL {
     public void exploreTPGBarrier(int threadId) {
         try {
             if (isGroup) {
-                exploreTPGBarrierByGroup[threadId / dalta].await();
+                exploreTPGBarrierByGroup[threadId / delta].await();
             } else {
                 exploreTPGBarrier.await();
             }
@@ -98,7 +87,7 @@ public class SOURCE_CONTROL {
     public void waitForOtherThreads(int threadId) {
         try {
             if (isGroup) {
-                dLevelEndBarrierByGroup[threadId / dalta].arriveAndAwaitAdvance();
+                dLevelEndBarrierByGroup[threadId / delta].arriveAndAwaitAdvance();
             } else {
                 dLevelEndBarrier.arriveAndAwaitAdvance();
             }
@@ -128,7 +117,7 @@ public class SOURCE_CONTROL {
 
     public void oneThreadCompleted(int threadId) {
         if (isGroup) {
-            dLevelEndBarrierByGroup[threadId / dalta].arriveAndDeregister();
+            dLevelEndBarrierByGroup[threadId / delta].arriveAndDeregister();
         } else {
             dLevelEndBarrier.arriveAndDeregister();
         }

@@ -27,7 +27,7 @@ public class OPBFSScheduler<Context extends OPSContext> extends OPSScheduler<Con
     public void EXPLORE(Context context) {
         Operation next = Next(context);
         while (next == null && !context.finished()) {
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            context.waitForOtherThreads(context.thisThreadId);
             ProcessedToNextLevel(context);
             next = Next(context);
         }

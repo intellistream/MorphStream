@@ -20,7 +20,7 @@ public class OGNSAScheduler extends AbstractOGNSScheduler<OGNSAContext> {
 //        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     /**

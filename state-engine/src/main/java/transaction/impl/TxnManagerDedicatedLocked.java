@@ -7,8 +7,8 @@ import lock.PartitionedOrderLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import scheduler.Request;
 import scheduler.context.og.OGSchedulerContext;
+import stage.Stage;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
@@ -40,7 +40,8 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     private long local_epoch_;
     private long local_ts_;
 
-    public TxnManagerDedicatedLocked(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
+    public TxnManagerDedicatedLocked(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
+        super(stage);
         this.storageManager_ = storageManager;
         this.thisComponentId = thisComponentId;
         thread_id_ = thisTaskId;

@@ -65,7 +65,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     public Context getTargetContext(String key) {
         // the thread to submit the operation may not be the thread to execute it.
         // we need to find the target context this thread is mapped to.
-        int threadId =  Integer.parseInt(key) / delta;
+        int threadId = Integer.parseInt(key) / delta;
         return tpg.threadToContextMap.get(threadId);
     }
 
@@ -321,7 +321,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         if (operation.condition.boolArg1) {
             String[] tweetWordList = tweetRecord.getValues().get(1).getStringList().toArray(new String[0]);
             HashMap<String, Integer> tweetMap = new HashMap<>();
-            for (String word : tweetWordList) {tweetMap.put(word, 1);}
+            for (String word : tweetWordList) {
+                tweetMap.put(word, 1);
+            }
 
             // compute input tweet's cosine similarity with all clusters
             if (operation.function instanceof Similarity) {
@@ -330,8 +332,10 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 for (TableRecord record : operation.condition_records) {
 
                     // skip if the cluster has no update in the past two windows
-                    SchemaRecord clusterRecord = record.content_.readPastValues((long) operation.bid, (long) operation.bid-2);
-                    if (clusterRecord == null) {continue;}
+                    SchemaRecord clusterRecord = record.content_.readPastValues((long) operation.bid, (long) operation.bid - 2);
+                    if (clusterRecord == null) {
+                        continue;
+                    }
 
                     int clusterSize = clusterRecord.getValues().get(3).getInt();
 
@@ -340,7 +344,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
                         // compute cosine similarity
                         HashMap<String, Integer> clusterMap = new HashMap<>();
-                        for (String word : clusterWordList) {clusterMap.put(word, 1);}
+                        for (String word : clusterWordList) {
+                            clusterMap.put(word, 1);
+                        }
                         Set<String> both = Sets.newHashSet(clusterMap.keySet());
                         both.retainAll(tweetMap.keySet());
                         double scalar = 0, norm1 = 0, norm2 = 0;
@@ -370,7 +376,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
                 // Merge input tweet into cluster
                 for (String word : tweetWordList) {
-                    if (!wordList.contains(word)) {wordList.add(word);}
+                    if (!wordList.contains(word)) {
+                        wordList.add(word);
+                    }
                 }
 
                 tempo_record.getValues().get(1).setStringList(wordList); //compute: merge wordList
@@ -573,17 +581,17 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             }
         } else {
 //            if (AppConfig.isCyclic) {
-                MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
-                next = nextFromBusyWaitQueue(context);
-                MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
-                if (next != null) {
+            MeasureTools.BEGIN_SCHEDULE_NEXT_TIME_MEASURE(context.thisThreadId);
+            next = nextFromBusyWaitQueue(context);
+            MeasureTools.END_SCHEDULE_NEXT_TIME_MEASURE(threadId);
+            if (next != null) {
 //                assert !next.getOperations().isEmpty();
-                    if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
-                        MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
-                        NOTIFY(next, context);
-                        MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
-                    }
+                if (executeWithBusyWait(context, next, mark_ID)) { // only when executed, the notification will start.
+                    MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
+                    NOTIFY(next, context);
+                    MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
                 }
+            }
 //            }
         }
     }
@@ -654,7 +662,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     @Override
     public void RESET(Context context) {
 //        SOURCE_CONTROL.getInstance().oneThreadCompleted();
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
 //        SOURCE_CONTROL.getInstance().waitForOtherThreadsAbort();
         context.reset();
         tpg.reset(context);
@@ -674,7 +682,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         Operation headerOperation = null;
         Operation set_op;
         for (Request request : context.requests) {
-             set_op = constructOp(operationGraph, request);
+            set_op = constructOp(operationGraph, request);
             if (txnOpId == 0)
                 headerOperation = set_op;
             // addOperation an operation id for the operation for the purpose of temporal dependency construction

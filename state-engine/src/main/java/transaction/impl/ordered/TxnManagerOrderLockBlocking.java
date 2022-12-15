@@ -6,6 +6,7 @@ import db.DatabaseException;
 import lock.OrderLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import stage.Stage;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -27,8 +28,8 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerOrderLockBlocking.class);
     public final OrderLock orderLock;
 
-    public TxnManagerOrderLockBlocking(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
-        super(storageManager, thisComponentId, thisTaskId, thread_count);
+    public TxnManagerOrderLockBlocking(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
+        super(storageManager, thisComponentId, thisTaskId, thread_count,stage);
         this.orderLock = OrderLock.getInstance();
     }
 
