@@ -64,7 +64,7 @@ public class TRGBolt_ts extends TRGBolt {
     }
 
     protected void TR_GATE_REQUEST_CONSTRUCT(WUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
-        LOG.info("Constructing TRG request: " + event.getBid());
+//        LOG.info("Constructing TRG request: " + event.getBid());
         wuEvents.add(event);
     }
 
@@ -75,7 +75,7 @@ public class TRGBolt_ts extends TRGBolt {
     private void TR_GATE_REQUEST_POST() throws InterruptedException {
         for (WUEvent event : wuEvents) {
             TR_GATE_REQUEST_POST(event);
-            LOG.info("Posting event: " + event.getBid());
+//            LOG.info("Posting event: " + event.getBid());
         }
 //        insertMaker(wuEvents.getLast());
     }

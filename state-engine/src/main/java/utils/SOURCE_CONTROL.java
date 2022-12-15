@@ -21,13 +21,7 @@ public class SOURCE_CONTROL {
     private CyclicBarrier exploreTPGBarrier;
     private Phaser dLevelEndBarrier;
 
-    private boolean isGroup;
-    private int delta;
-    private CyclicBarrier[] exploreTPGBarrierByGroup;
-    private Phaser[] dLevelEndBarrierByGroup;
-
     private HashMap<Integer, Integer> iteration;
-
 
     public void config(int number_threads) {
         totalThreads = number_threads;
@@ -58,11 +52,9 @@ public class SOURCE_CONTROL {
 
     public void exploreTPGBarrier(int threadId) {
         try {
-            if (isGroup) {
-                exploreTPGBarrierByGroup[threadId / delta].await();
-            } else {
-                exploreTPGBarrier.await();
-            }
+
+            exploreTPGBarrier.await();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -84,13 +76,17 @@ public class SOURCE_CONTROL {
         }
     }
 
+    public void checkFinalBarrier(int threadId) {
+        try {
+            finalEndBarrier.await();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void waitForOtherThreads(int threadId) {
         try {
-            if (isGroup) {
-                dLevelEndBarrierByGroup[threadId / delta].arriveAndAwaitAdvance();
-            } else {
-                dLevelEndBarrier.arriveAndAwaitAdvance();
-            }
+            dLevelEndBarrier.arriveAndAwaitAdvance();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -116,11 +112,7 @@ public class SOURCE_CONTROL {
     }
 
     public void oneThreadCompleted(int threadId) {
-        if (isGroup) {
-            dLevelEndBarrierByGroup[threadId / delta].arriveAndDeregister();
-        } else {
-            dLevelEndBarrier.arriveAndDeregister();
-        }
+        dLevelEndBarrier.arriveAndDeregister();
     }
 
 }

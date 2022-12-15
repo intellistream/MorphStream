@@ -21,15 +21,17 @@ public class SINKCombo extends MeasureSink {
 
     public void end(int global_cnt) {
         double results = helper.EndMeasurement(global_cnt);
-//        SINK_CONTROL.getInstance().lock();
-//        if (proceed) {
         measure_end(results);
-//        }
     }
 
     @Override
     public void execute(Tuple input) throws InterruptedException {
         latency_measure(input);
+
+        if (cnt == the_end) {
+            end(global_cnt);
+        }
+
     }
 
     public void display() {

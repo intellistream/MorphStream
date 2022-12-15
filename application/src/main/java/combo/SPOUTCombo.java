@@ -89,7 +89,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 if (counter == the_end) {
                     for (Stage stage : context.getStageMap().values()) {
                         stage.getControl().oneThreadCompleted(taskId);
-                        stage.getControl().finalBarrier(taskId);
+                        stage.getControl().checkFinalBarrier(taskId);
                     }
                     if (taskId == 0)
                         sink.end(global_cnt);

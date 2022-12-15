@@ -99,15 +99,6 @@ public class EDSpout extends TransactionalSpout {
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
             this.collector.emit(bid, tuple);
             counter++;
-
-            if (counter == the_end) {
-                context.getStageMap().get(this.executor.operator.getFID()).getControl().oneThreadCompleted(taskId);
-                for (Stage stage : context.getStageMap().values()) {
-                    stage.getControl().finalBarrier(taskId);
-                }
-                if (taskId == 0)
-                    sink.end(global_cnt);
-            }
         }
     }
 
