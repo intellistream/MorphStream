@@ -16,7 +16,7 @@ If you use MorphStream in your paper, please cite our work.
 * **[ICDE]** Shuhao Zhang, Bingsheng He, Daniel Dahlmeier, Amelie Chi Zhou, Thomas Heinze. Revisiting the design of data stream processing systems on multi-core processors, ICDE, 2017 (code: https://github.com/ShuhaoZhangTony/ProfilingStudy)
 * **[SIGMOD]** Shuhao Zhang, Jiong He, Chi Zhou (Amelie), Bingsheng He. BriskStream: Scaling Stream Processing on Multicore Architectures, SIGMOD, 2019 (code: https://github.com/Xtra-Computing/briskstream)
 * **[ICDE]** Shuhao Zhang, Yingjun Wu, Feng Zhang, Bingsheng He. Towards Concurrent Stateful Stream Processing on Multicore Processors, ICDE, 2020
-* **[xxx]** We have an anonymized submission under review. Stay tuned.
+* **[SIGMOD]**Yancan Mao#, Jianjun Zhao, Shuhao Zhang, and Haikun Liu, Volker Markl. MorphStream: Adaptive Scheduling for Scalable Transactional Stream Processing on Multicores, SIGMOD, 2023 (To Appear).
 ```
 @INPROCEEDINGS{9101749,  
 author={Zhang, Shuhao and Wu, Yingjun and Zhang, Feng and He, Bingsheng},  
