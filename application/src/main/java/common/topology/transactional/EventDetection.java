@@ -131,10 +131,10 @@ public class EventDetection extends TransactionTopology {
                     break;
                 }
                 case CCOption_TStream: {//T-Stream
-                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_ts(0)
+                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_ts(1)//Spout has a fid of zero.
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.SPOUT));
-                    builder.setBolt(EventDetectionConstants.Component.TRG, new TRGBolt_ts(1)
+                    builder.setBolt(EventDetectionConstants.Component.TRG, new TRGBolt_ts(2)
                             , config.getInt(EventDetectionConstants.Conf.Gate_Threads, 1)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TR));
 //                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_ts(0)

@@ -94,6 +94,7 @@ public class boltThread extends executorThread {
             if (tuple != null) {
                 bolt.execute((Tuple) tuple);
                 cnt += 1;
+                LOG.info(this.executor.toString() + "get tuple:" + ((Tuple) tuple).getBID());
             } else {
                 miss++;
             }
