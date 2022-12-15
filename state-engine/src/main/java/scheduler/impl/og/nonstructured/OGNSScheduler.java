@@ -26,13 +26,13 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
         needAbortHandling = false;
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(OGNSContext context) {
         needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
             EXPLORE(context);
             PROCESS(context, mark_ID);
         } while (!FINISHED(context));
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");

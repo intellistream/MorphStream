@@ -8,6 +8,7 @@ import execution.ExecutionGraph;
 import execution.ExecutionNode;
 import execution.runtime.executorThread;
 import execution.runtime.tuple.impl.Fields;
+import stage.Stage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,7 +18,7 @@ import java.util.Map;
  * A TopologyContext is created for each executor.
  * It is given to bolts and spouts in their "Loading" and "open"
  * methods, respectively. This object provides information about the component's
- * place within the Brisk.topology, such as Task ids, inputs and outputs, etc.
+ * place within the topology, such as task ids, inputs and outputs, etc.
  * <profiling/>
  */
 public class TopologyContext {
@@ -27,16 +28,23 @@ public class TopologyContext {
     private static HashMap<Integer, executorThread> threadMap;
     private final int _taskId;
 
+    public HashMap<Integer, Stage> getStageMap() {
+        return stageMap;
+    }
+
+    private final HashMap<Integer, Stage> stageMap;
+
     /**
      * Instead of Store Brisk.topology, we Store Brisk.execution graph directly!
      * This is a global access memory structure,
      */
-    public TopologyContext(ExecutionGraph g, Database db, ExecutionNode executor, HashMap<Integer, executorThread> threadMap) {
+    public TopologyContext(ExecutionGraph g, Database db, ExecutionNode executor, HashMap<Integer, executorThread> threadMap, HashMap<Integer, Stage> stageMap) {
 
         TopologyContext.graph = g;
         TopologyContext.db = db;
         TopologyContext.threadMap = threadMap;
         this._taskId = executor.getExecutorID();
+        this.stageMap = stageMap;
     }
 
     public Database getDb() {

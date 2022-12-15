@@ -1,9 +1,7 @@
 package common.bolts.transactional.ed.cu;
 
 import combo.SINKCombo;
-import common.bolts.transactional.ed.tr.TRBolt_ts;
 import common.param.ed.cu.CUEvent;
-import common.param.ed.tr.TREvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -12,12 +10,9 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import storage.SchemaRecord;
-import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Similarity;
-import transaction.function.TFIDF;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
@@ -46,7 +41,7 @@ public class CUBolt_ts extends CUBolt{
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         cuEvents = new ArrayDeque<>();
     }
 

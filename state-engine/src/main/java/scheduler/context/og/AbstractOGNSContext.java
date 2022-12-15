@@ -2,6 +2,7 @@ package scheduler.context.og;
 
 import scheduler.statemanager.og.OperationChainStateListener;
 import scheduler.struct.og.OperationChain;
+import stage.Stage;
 
 import java.util.ArrayDeque;
 
@@ -13,8 +14,8 @@ public abstract class AbstractOGNSContext extends OGSchedulerContext {
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
-    public AbstractOGNSContext(int thisThreadId) {
-        super(thisThreadId);
+    public AbstractOGNSContext(int thisThreadId, Stage stage) {
+        super(thisThreadId, stage);
         IsolatedOC = new ArrayDeque<>();
         OCwithChildren = new ArrayDeque<>();
     }

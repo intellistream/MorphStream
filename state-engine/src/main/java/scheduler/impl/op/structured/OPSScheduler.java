@@ -25,13 +25,13 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
     @Override
     public void INITIALIZE(Context context) {
         tpg.firstTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(Context context) {
         needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
             EXPLORE(context);
             PROCESS(context, mark_ID);
         } while (!FINISHED(context));
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");
@@ -80,7 +80,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
         Operation next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
             while (next == null) {
-                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+                context.waitForOtherThreads(context.thisThreadId);
                 ProcessedToNextLevel(context);
                 next = Next(context);
             }

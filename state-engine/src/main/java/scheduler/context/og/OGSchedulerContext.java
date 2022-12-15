@@ -3,6 +3,7 @@ package scheduler.context.og;
 import scheduler.Request;
 import scheduler.context.SchedulerContext;
 import scheduler.struct.og.OperationChain;
+import stage.Stage;
 
 import java.util.*;
 
@@ -10,6 +11,7 @@ import java.util.*;
 public abstract class OGSchedulerContext implements SchedulerContext {
     public final ArrayDeque<OperationChain> busyWaitQueue;
     public int thisThreadId;
+    private final Stage stage;
     public ArrayDeque<Request> requests;
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.
@@ -17,8 +19,9 @@ public abstract class OGSchedulerContext implements SchedulerContext {
     public int fd = 0;
 
 
-    protected OGSchedulerContext(int thisThreadId) {
+    protected OGSchedulerContext(int thisThreadId, Stage stage) {
         this.thisThreadId = thisThreadId;
+        this.stage = stage;
         requests = new ArrayDeque<>();
         busyWaitQueue = new ArrayDeque<>(); // this is used to store those ocs that does not finished
     }
@@ -43,4 +46,12 @@ public abstract class OGSchedulerContext implements SchedulerContext {
     }
 
     public abstract OperationChain createTask(String tableName, String pKey, double bid);
+
+    public void waitForOtherThreads(int thisThreadId) {
+        stage.getControl().waitForOtherThreads(thisThreadId);
+    }
+
+    public void exploreTPGBarrier(int thisThreadId) {
+        stage.getControl().exploreTPGBarrier(thisThreadId);
+    }
 }

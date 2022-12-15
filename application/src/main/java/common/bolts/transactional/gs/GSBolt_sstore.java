@@ -48,7 +48,7 @@ public class GSBolt_sstore extends GSBolt_LA {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
+        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);
         if (!enable_states_partition) {
             if (enable_log) LOG.info("Please enable `enable_states_partition` for PAT scheme");
             System.exit(-1);
@@ -87,7 +87,7 @@ public class GSBolt_sstore extends GSBolt_LA {
     }
 
     public void start_evaluate(int thread_Id, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
-        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        transactionManager.stage.getControl().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         // add bid_array for events
         if (thread_Id == 0) {
             int partitionOffset = config.getInt("NUM_ITEMS") / tthread;
@@ -105,7 +105,7 @@ public class GSBolt_sstore extends GSBolt_LA {
             }
             GlobalSorter.sortedEvents.clear();
         }
-        SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
+        transactionManager.stage.getControl().postStateAccessBarrier(thread_Id);
     }
 
     private void parseMicroEvent(int partitionOffset, MicroEvent event, HashMap<Integer, Integer> pids) {

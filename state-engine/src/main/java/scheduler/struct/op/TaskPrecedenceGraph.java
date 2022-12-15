@@ -226,7 +226,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 }
             }
             ((OPSContext) context).buildBucketPerThread(context.operations, roots);
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            context.waitForOtherThreads(context.thisThreadId);
             if (context.thisThreadId == 0) { // gather
                 for (Context curContext : threadToContextMap.values()) {
                     if (((OPSContext) curContext).maxLevel > maxLevel) {
@@ -234,7 +234,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     }
                 }
             }
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            context.waitForOtherThreads(context.thisThreadId);
             ((OPSContext) context).maxLevel = maxLevel; // scatter
 
 //            ((OPSContext) context).buildBucketPerThread(threadToOCs.get(context.thisThreadId));
@@ -306,7 +306,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 resetOp(oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
         if (context instanceof OPSContext) {
             if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));

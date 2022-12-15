@@ -3,6 +3,7 @@ package transaction.impl.ordered;
 import content.common.CommonMetaTypes;
 import db.DatabaseException;
 import lock.OrderLock;
+import stage.Stage;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -22,8 +23,8 @@ import static transaction.context.TxnAccess.Access;
 public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     final OrderLock orderLock;
 
-    public TxnManagerLWM(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
-        super(storageManager, thisComponentId, thisTaskId, thread_count);
+    public TxnManagerLWM(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
+        super(storageManager, thisComponentId, thisTaskId, thread_count,stage);
         this.orderLock = OrderLock.getInstance();
     }
 

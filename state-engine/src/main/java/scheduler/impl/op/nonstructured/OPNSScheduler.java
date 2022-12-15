@@ -27,13 +27,13 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
         needAbortHandling = false;
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(Context context) {
         needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");

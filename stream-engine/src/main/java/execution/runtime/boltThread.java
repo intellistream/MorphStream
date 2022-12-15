@@ -34,7 +34,7 @@ public class boltThread extends executorThread {
     private final static Logger LOG = LoggerFactory.getLogger(boltThread.class);
     private final BoltExecutor bolt;
     private final OutputCollector collector;
-    private final InputStreamController scheduler;
+    private final InputStreamController inputStreamController;
     private int miss = 0;
 
     /**
@@ -52,7 +52,7 @@ public class boltThread extends executorThread {
             , HashMap<Integer, executorThread> threadMap) {
         super(e, conf, context, cpu, node, latch, threadMap);
         bolt = (BoltExecutor) e.op;
-        scheduler = e.getInputStreamController();
+        inputStreamController = e.getInputStreamController();
         this.collector = new OutputCollector(e, context, conf.getInt("totalEvents"));
         batch = conf.getInt("batch", 100);
         bolt.setExecutionNode(e);
@@ -148,7 +148,6 @@ public class boltThread extends executorThread {
         try {
             Thread.currentThread().setName("Operator:" + executor.getOP() + "\tExecutor ID:" + executor.getExecutorID());
 
-//            int tthread = conf.getInt("tthread");
             binding();
             initilize_queue(this.executor.getExecutorID());
             //do preparation.
@@ -207,10 +206,10 @@ public class boltThread extends executorThread {
      * @since 0.0.7 we addOperation a tuple txn module so that we can support customized txn rules in Brisk.execution.runtime.tuple fetching.
      */
     private Object fetchResult() {
-        return scheduler.fetchResults();
+        return inputStreamController.fetchResults();
     }
 
     private Object fetchResultIndex(int index) {
-        return scheduler.fetchResultsIndex(index);
+        return inputStreamController.fetchResultsIndex(index);
     }
 }

@@ -1,11 +1,7 @@
 package common.bolts.transactional.ed.tr;
 
 import combo.SINKCombo;
-import common.bolts.transactional.sl.TransactionResult;
-import common.param.ed.tc.TCEvent;
 import common.param.ed.tr.TREvent;
-import common.param.sl.DepositEvent;
-import common.param.sl.TransactionEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -16,16 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import profiler.MeasureTools;
-import storage.SchemaRecord;
-import storage.SchemaRecordRef;
-import storage.datatype.DataBox;
-import storage.datatype.HashSetDataBox;
-import storage.datatype.IntDataBox;
-import storage.datatype.StringDataBox;
 import transaction.context.TxnContext;
-import transaction.function.Condition;
-import transaction.function.DEC;
-import transaction.function.INC;
 import transaction.function.Insert;
 import transaction.impl.ordered.TxnManagerTStream;
 
@@ -33,7 +20,6 @@ import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
-import static common.CONTROL.enable_log;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
@@ -58,7 +44,7 @@ public class TRBolt_ts extends TRBolt{
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         trEvents = new ArrayDeque<>();
     }
 

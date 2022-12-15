@@ -160,10 +160,10 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
         context.rollbackLevel = -1;
         context.isRollbacked = false;
 
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         needAbortHandling.compareAndSet(true, false);
         failedOperations.clear();
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         if (enable_log) LOG.debug("resume: " + context.thisThreadId);
     }
 
