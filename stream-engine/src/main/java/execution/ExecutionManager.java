@@ -40,7 +40,6 @@ public class ExecutionManager {
 
     }
 
-
     /**
      * Launch threads for each executor in executionGraph
      * We make sure no interference among threads --> one thread one core.
@@ -50,24 +49,25 @@ public class ExecutionManager {
     public void distributeTasks(Configuration conf,
                                 CountDownLatch latch, Database db) throws UnhandledCaseException {
         g.build_inputScheduler();
-        //TODO: support multi-stages later.
         if (enable_shared_state) {
             HashMap<Integer, List<Integer>> stage_map = new HashMap<>();//Stages --> Executors.
             for (ExecutionNode e : g.getExecutionNodeArrayList()) {
                 stage_map.putIfAbsent(e.op.getStage(), new LinkedList<>());
                 stage_map.get(e.op.getStage()).add(e.getExecutorID());
             }
-            int stage = 0;//currently only stage 0 is required..
-            List<Integer> integers = stage_map.get(stage);
-//            TxnProcessingEngine tp_engine = new TxnProcessingEngine(stage);
-//            tp_engine = TxnProcessingEngine.getInstance();
-            if (integers != null) {
+            int stage = 0;
+            List<Integer> integers;
+            //            TxnProcessingEngine tp_engine = new TxnProcessingEngine(stage);
+            //            tp_engine = TxnProcessingEngine.getInstance();
+            do {
+                integers = stage_map.get(stage);
+                if (integers == null) break;
                 int totalThread = conf.getInt("tthread");
                 int numberOfStates = conf.getInt("NUM_ITEMS");
                 String schedulerType = conf.getString("scheduler");
                 int app = conf.getInt("app");
                 if (conf.getBoolean("isDynamic")) {
-                    String schedulers=conf.getString("schedulersPool");
+                    String schedulers = conf.getString("schedulersPool");
                     TxnManager.initSchedulerPool(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates, app);
                     //Configure the bottom line for triggering scheduler switching in Collector(include the isRuntime and when to switch)
                     TxnManager.setBottomLine(conf.getString("bottomLine"));
@@ -79,7 +79,8 @@ public class ExecutionManager {
                 } else {
                     TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates, app);
                 }
-            }
+                stage++;
+            } while (true);
         }
         executorThread thread = null;
         long start = System.currentTimeMillis();

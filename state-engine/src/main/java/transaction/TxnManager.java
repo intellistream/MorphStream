@@ -1,32 +1,25 @@
 package transaction;
 
-import db.DatabaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.collector.Collector;
 import scheduler.impl.IScheduler;
-import scheduler.impl.og.structured.OGBFSScheduler;
-import scheduler.impl.og.structured.OGBFSAScheduler;
-import scheduler.impl.og.structured.OGDFSScheduler;
-import scheduler.impl.og.structured.OGDFSAScheduler;
-import scheduler.impl.og.nonstructured.OGNSScheduler;
 import scheduler.impl.og.nonstructured.OGNSAScheduler;
+import scheduler.impl.og.nonstructured.OGNSScheduler;
 import scheduler.impl.og.nonstructured.TStreamScheduler;
+import scheduler.impl.og.structured.OGBFSAScheduler;
+import scheduler.impl.og.structured.OGBFSScheduler;
+import scheduler.impl.og.structured.OGDFSAScheduler;
+import scheduler.impl.og.structured.OGDFSScheduler;
 import scheduler.impl.op.nonstructured.OPNSAScheduler;
 import scheduler.impl.op.nonstructured.OPNSScheduler;
 import scheduler.impl.op.structured.OPBFSAScheduler;
 import scheduler.impl.op.structured.OPBFSScheduler;
 import scheduler.impl.op.structured.OPDFSAScheduler;
 import scheduler.impl.op.structured.OPDFSScheduler;
-import storage.TableRecordRef;
-import storage.datatype.DataBox;
-import transaction.context.TxnContext;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static common.CONTROL.enable_log;
 
 /**
  * Every thread has its own TxnManager.

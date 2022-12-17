@@ -1,28 +1,21 @@
 package utils;
 
-import lock.SpinLock;
-
 import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Phaser;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class SOURCE_CONTROL {
     private static final SOURCE_CONTROL ourInstance = new SOURCE_CONTROL();
-    static SpinLock counterLock = new SpinLock();
     private final long counter = 0;
-    private final AtomicInteger wm = new AtomicInteger(0);// it is already volatiled.
-    volatile boolean success = false;
     private int totalThreads;
+
+    //TODO: BUG: As we can't live with compo design for ED, we need to reformat this part of code.
     private CyclicBarrier startBarrier;
     private CyclicBarrier endBarrier;
     private CyclicBarrier finalEndBarrier;
-
     private CyclicBarrier switchSchedulerBarrier;
-
     private CyclicBarrier exploreTPGBarrier;
-
     private Phaser dLevelEndBarrier;
 
     private boolean isGroup;
@@ -42,7 +35,7 @@ public class SOURCE_CONTROL {
         endBarrier = new CyclicBarrier(number_threads);
         finalEndBarrier = new CyclicBarrier(number_threads);
         switchSchedulerBarrier = new CyclicBarrier(number_threads);
-        if (groupNum != 1){
+        if (groupNum != 1) {
             exploreTPGBarrierByGroup = new CyclicBarrier[groupNum];
             dLevelEndBarrierByGroup = new Phaser[groupNum];
             for (int i = 0; i < groupNum; i++) {
@@ -85,6 +78,7 @@ public class SOURCE_CONTROL {
             e.printStackTrace();
         }
     }
+
     public void postStateAccessBarrier(int threadId) {
         try {
             endBarrier.await();
@@ -121,15 +115,16 @@ public class SOURCE_CONTROL {
             ex.printStackTrace();
         }
     }
-     public void waitForSchedulerSwitch(int threadId){
-        try{
+
+    public void waitForSchedulerSwitch(int threadId) {
+        try {
             switchSchedulerBarrier.await();
         } catch (BrokenBarrierException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-     }
+    }
 
     public void oneThreadCompleted(int threadId) {
         if (isGroup) {
