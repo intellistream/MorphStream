@@ -31,7 +31,7 @@ public abstract class TCGBolt extends TransactionalBolt {
 
     protected void TC_GATE_REQUEST_POST(double bid, CUEvent event) throws InterruptedException {
 
-        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
+        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
         Tuple tuple = new Tuple(bid, 0, context, generalMsg);
 
         LOG.info("Posting event: " + bid);

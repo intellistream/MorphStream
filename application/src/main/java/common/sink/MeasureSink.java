@@ -165,6 +165,7 @@ public class MeasureSink extends BaseSink {
     public void execute(Tuple input) throws InterruptedException {
         check(cnt, input);
         cnt++;
+        LOG.info("Sink received tuple: " + cnt);
     }
 
     protected void latency_measure(Tuple input) {

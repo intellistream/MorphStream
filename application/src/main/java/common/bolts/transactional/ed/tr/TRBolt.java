@@ -35,20 +35,17 @@ public abstract class TRBolt extends TransactionalBolt {
 
         for (String word : words) {
 
-            String wordID = String.valueOf(word.hashCode() % 10007);
+            String wordID = String.valueOf(Math.abs(word.hashCode()) % 10007);
             WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(),
                     word, wordID, tweetID);
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-//            LOG.info("Posting event: " + event.getBid() + ", Counter = " + postCount);
-
-//            if (outBid >= 30) {
-//                LOG.info("Posting event: " + outBid);
-//            }
+//            LOG.info("Posting event: " + event.getBid());
 
             if (!enable_app_combo) {
                 collector.emit(outBid, tuple);
+//                collector.
             } else {
                 if (enable_latency_measurement) {
                     //Pass the read result of new tweet's ID (assigned by table) to sink

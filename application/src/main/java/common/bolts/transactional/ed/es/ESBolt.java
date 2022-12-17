@@ -15,15 +15,13 @@ import static common.Constants.DEFAULT_STREAM_ID;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
-//TODO: As the last bolt, ES needs to be connected with Sink.
-
 public class ESBolt extends TransactionalBolt {
-    SINKCombo sink; //TODO:Default sink for measurement
+    SINKCombo sink;
 
     public ESBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
-        this.configPrefix = "ed_es"; // TODO: Register this bolt in Config
+        this.configPrefix = "ed_es";
     }
 
     @Override

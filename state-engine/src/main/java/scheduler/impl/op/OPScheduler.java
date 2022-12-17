@@ -284,7 +284,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         SchemaRecord preValues = operation.condition_records[0].content_.readPastValues((long) operation.bid); //condition_record[0] stores the current word's record
 
         if (preValues != null) {
-            final int oldCountOccurWindow = preValues.getValues().get(3).getInt();
+            final long oldCountOccurWindow = preValues.getValues().get(3).getLong();
 
             // apply function
             AppConfig.randomDelay();
@@ -295,7 +295,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
             if (oldCountOccurWindow != -1) { // word has been stored into table
                 final int oldLastOccurWindow = preValues.getValues().get(5).getInt();
-                final int oldFrequency = preValues.getValues().get(6).getInt();
+                final long oldFrequency = preValues.getValues().get(6).getLong();
 
                 // Update word's tweetList
                 if (operation.function instanceof Append) {
@@ -310,7 +310,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 }
 
                 // Update word's inner-window frequency
-                tempo_record.getValues().get(6).incLong(oldFrequency, 1); //compute, increase word's frequency by 1
+                tempo_record.getValues().get(6).incLong((long) oldFrequency, (long) 1); //compute, increase word's frequency by 1
 
             } else { // word has not been stored into table
 
@@ -318,10 +318,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                 tempo_record.getValues().get(1).setString(operation.condition.stringArg1); //wordValue
                 tempo_record.getValues().get(2).setStringList(Arrays.asList(tweetList)); //tweetList
-                tempo_record.getValues().get(3).setInt(1); //countOccurWindow
+                tempo_record.getValues().get(3).setLong(1); //countOccurWindow
                 tempo_record.getValues().get(4).setDouble(-1); //TF-IDF
                 tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //lastOccurWindow
-                tempo_record.getValues().get(6).setInt(1); //frequency
+                tempo_record.getValues().get(6).setLong(1); //frequency
                 tempo_record.getValues().get(7).setBool(false); //isBurst
 
             }

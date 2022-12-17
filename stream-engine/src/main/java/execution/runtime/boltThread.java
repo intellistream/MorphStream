@@ -18,12 +18,12 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_shared_state;
 import static common.CONTROL.fetchWithIndex;
+import static common.Constants.DEFAULT_STREAM_ID;
 
 /**
  * Task thread that hosts bolt logic. Receives input Brisk.execution.runtime.tuple,
@@ -81,6 +81,14 @@ public class boltThread extends executorThread {
         }
         return dump.toString();
     }
+
+    ExecutorService inputExecutor = Executors.newCachedThreadPool();
+    Callable<Object> task = new Callable<Object>() {
+        public Object call() {
+            return fetchResult();
+        }
+    };
+    Future<Object> future = inputExecutor.submit(task);
 
     /**
      * Be very careful for this method..

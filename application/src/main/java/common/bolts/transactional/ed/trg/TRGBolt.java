@@ -31,10 +31,10 @@ public abstract class TRGBolt extends TransactionalBolt {
     protected void TR_GATE_REQUEST_POST(WUEvent event) throws InterruptedException {
 
         double outBid = event.getMyBid();
-        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
+        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
         Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-//        LOG.info("Posting event: " + outBid);
+        LOG.info("Posting event: " + outBid);
 
         if (!enable_app_combo) {
             collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method
