@@ -78,7 +78,7 @@ public class WUBolt_ts extends WUBolt{
         String sourceTable = "word_table";
         String sourceKey = event.getWordID();
 
-        LOG.info("Constructing WU request: " + event.getMyBid());
+//        LOG.info("Constructing WU request: " + event.getMyBid());
 
         transactionManager.BeginTransaction(txnContext);
 

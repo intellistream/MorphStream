@@ -57,8 +57,6 @@ public class EDInitializer extends TableInitilizer {
     private final int NUM_ACCESS;
     private final int Transaction_Length;
 
-
-    //TODO: Arguments copied from GSW Initializer, change accordingly
     public EDInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
@@ -73,7 +71,6 @@ public class EDInitializer extends TableInitilizer {
         dataConfig = dataGenerator.getDataConfig();
     }
 
-    //TODO: Copied from GSW Initializer, change accordingly
     protected void createTPGGenerator(Configuration config) {
         if (config.getBoolean("isDynamic")) {
             DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
@@ -95,7 +92,6 @@ public class EDInitializer extends TableInitilizer {
      * @param dataConfig
      */
 
-    //TODO: Copied from SLInitializer, change accordingly
     private void configurePath(DataGeneratorConfig dataConfig) {
         MessageDigest digest;
         String subFolder = null;
@@ -381,8 +377,8 @@ public class EDInitializer extends TableInitilizer {
         }
     }
 
-    private void insertWordRecord(String wordID, String wordValue, String[] tweetList, int countOccurWindow, double tfIdf,
-                                  int lastOccurWindow, int frequency, boolean isBurst, int pid, SpinLock[] spinlock_) {
+    private void insertWordRecord(String wordID, String wordValue, String[] tweetList, long countOccurWindow, double tfIdf,
+                                  int lastOccurWindow, long frequency, boolean isBurst, int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
                 db.InsertRecord("word_table", new TableRecord(WordRecord(wordID, wordValue, tweetList, countOccurWindow,
@@ -413,10 +409,10 @@ public class EDInitializer extends TableInitilizer {
         dataBoxes.add(new StringDataBox());       //Primary key
         dataBoxes.add(new StringDataBox());
         dataBoxes.add(new ListStringDataBox());
-        dataBoxes.add(new IntDataBox());
+        dataBoxes.add(new LongDataBox());
         dataBoxes.add(new DoubleDataBox());
         dataBoxes.add(new IntDataBox());
-        dataBoxes.add(new IntDataBox());
+        dataBoxes.add(new LongDataBox());
         dataBoxes.add(new BoolDataBox());
         fieldNames.add("Word_ID"); // 0
         fieldNames.add("Word_Value"); // 1
@@ -429,16 +425,16 @@ public class EDInitializer extends TableInitilizer {
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
-    private SchemaRecord WordRecord(String wordID, String wordValue, String[] tweetList, int countOccurWindow, double tfIdf,
-                                    int lastOccurWindow, int frequency, boolean isBurst) {
+    private SchemaRecord WordRecord(String wordID, String wordValue, String[] tweetList, long countOccurWindow, double tfIdf,
+                                    int lastOccurWindow, long frequency, boolean isBurst) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(wordID, wordID.length()));
         values.add(new StringDataBox(wordValue));
         values.add(new ListStringDataBox(tweetList));
-        values.add(new IntDataBox(countOccurWindow));
+        values.add(new LongDataBox(countOccurWindow));
         values.add(new DoubleDataBox(tfIdf));
         values.add(new IntDataBox(lastOccurWindow));
-        values.add(new IntDataBox(frequency));
+        values.add(new LongDataBox(frequency));
         values.add(new BoolDataBox(isBurst));
         return new SchemaRecord(values);
     }

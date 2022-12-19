@@ -41,7 +41,8 @@ public class TCBolt extends TransactionalBolt {
 
         if (!enable_app_combo) {
 
-            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
+
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
             LOG.info("Posting event: " + outBid);

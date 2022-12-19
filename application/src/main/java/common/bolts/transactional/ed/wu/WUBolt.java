@@ -21,7 +21,7 @@ public class WUBolt extends TransactionalBolt {
     public WUBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
-        this.configPrefix = "ed_wu"; // TODO: Register this bolt in Config
+        this.configPrefix = "ed_wu";
     }
 
     @Override
@@ -29,11 +29,11 @@ public class WUBolt extends TransactionalBolt {
     }
 
     protected void WORD_UPDATE_REQUEST_POST(WUEvent event) throws InterruptedException {
-
-        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
+    
+        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
         Tuple tuple = new Tuple(event.getMyBid(), 0, context, generalMsg);
 
-        LOG.info("Posting event: " + event.getMyBid());
+//        LOG.info("Posting event: " + event.getMyBid());
 
         if (!enable_app_combo) {
             collector.emit(event.getMyBid(), tuple);//emit WU Event tuple to WU Gate

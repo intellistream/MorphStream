@@ -276,7 +276,7 @@ public class OperationChain implements Comparable<OperationChain> {
     public void clear() {
         potentialChldrenInfo.clear();
         if (operations.size() != 0) {
-            operations.first().d_record.content_.clean_map(); //Disable GC
+//            operations.first().d_record.content_.clean_map(); //Disabled GC for ED
             operations.clear();
         }
         ocParents.clear();

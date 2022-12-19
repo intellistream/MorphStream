@@ -245,8 +245,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
         }
+
+//        if (Objects.equals(operator_name, "ed_wu")) {log.info("WU Checking S_Record...");}
+
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
+            if (enable_log) log.info("Record is found:" + key);
 
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
                     key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
