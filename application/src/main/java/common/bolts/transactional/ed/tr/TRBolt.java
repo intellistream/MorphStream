@@ -46,6 +46,7 @@ public abstract class TRBolt extends TransactionalBolt {
             if (!enable_app_combo) {
                 collector.emit(outBid, tuple);
 //                collector.
+
             } else {
                 if (enable_latency_measurement) {
                     //Pass the read result of new tweet's ID (assigned by table) to sink

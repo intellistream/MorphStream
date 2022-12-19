@@ -29,7 +29,7 @@ public class WUBolt extends TransactionalBolt {
     }
 
     protected void WORD_UPDATE_REQUEST_POST(WUEvent event) throws InterruptedException {
-
+    
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
         Tuple tuple = new Tuple(event.getMyBid(), 0, context, generalMsg);
 

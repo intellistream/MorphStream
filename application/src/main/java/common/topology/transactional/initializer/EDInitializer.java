@@ -57,7 +57,6 @@ public class EDInitializer extends TableInitilizer {
     private final int NUM_ACCESS;
     private final int Transaction_Length;
 
-
     public EDInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
