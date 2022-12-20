@@ -31,15 +31,40 @@ If you use MorphStream in your paper, please cite our work.
   for Scalable Transactional Stream Processing on Multicores, SIGMOD, 2023 (To Appear). *:equal contribution
 
 ```
-@INPROCEEDINGS{9101749,  
-author={Zhang, Shuhao and Wu, Yingjun and Zhang, Feng and He, Bingsheng},  
-booktitle={2020 IEEE 36th International Conference on Data Engineering (ICDE)},   
-title={Towards Concurrent Stateful Stream Processing on Multicore Processors},   
-year={2020},  
-volume={},  
-number={},  
-pages={1537-1548},  
-doi={10.1109/ICDE48307.2020.00136}
+@inproceedings{9101749,
+	title        = {Towards Concurrent Stateful Stream Processing on Multicore Processors},
+	author       = {Zhang, Shuhao and Wu, Yingjun and Zhang, Feng and He, Bingsheng},
+	year         = 2020,
+	booktitle    = {2020 IEEE 36th International Conference on Data Engineering (ICDE)},
+	volume       = {},
+	number       = {},
+	pages        = {1537--1548},
+	doi          = {10.1109/ICDE48307.2020.00136}
 }
-
+@inproceedings{10.1145/3299869.3300067,
+	title        = {BriskStream: Scaling Data Stream Processing on Shared-Memory Multicore Architectures},
+	author       = {Zhang, Shuhao and He, Jiong and Zhou, Amelie Chi and He, Bingsheng},
+	year         = 2019,
+	booktitle    = {Proceedings of the 2019 International Conference on Management of Data},
+	location     = {Amsterdam, Netherlands},
+	publisher    = {Association for Computing Machinery},
+	address      = {New York, NY, USA},
+	series       = {SIGMOD '19},
+	pages        = {705–722},
+	doi          = {10.1145/3299869.3300067},
+	isbn         = 9781450356435,
+	url          = {https://doi.org/10.1145/3299869.3300067},
+	numpages     = 18,
+	keywords     = {operator replication and placement, numa-awareness}
+}
+@inproceedings{7930015,
+	title        = {Revisiting the Design of Data Stream Processing Systems on Multi-Core Processors},
+	author       = {Zhang, Shuhao and He, Bingsheng and Dahlmeier, Daniel and Zhou, Amelie Chi and Heinze, Thomas},
+	year         = 2017,
+	booktitle    = {2017 IEEE 33rd International Conference on Data Engineering (ICDE)},
+	volume       = {},
+	number       = {},
+	pages        = {659--670},
+	doi          = {10.1109/ICDE.2017.119}
+}
 ```
