@@ -21,6 +21,7 @@ import java.util.concurrent.BrokenBarrierException;
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
+import static common.bolts.transactional.ed.PunctuationAligner.*;
 
 public class CUBolt_ts extends CUBolt{
     private static final Logger LOG = LoggerFactory.getLogger(CUBolt_ts.class);

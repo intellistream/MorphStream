@@ -95,7 +95,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else if (app == 3) {//OB
             operationChains.put("goods",new TableOCs(totalThreads,offset));
         } else if (app == 4) {//ED
-            //TODO: Put ED tables into operation chain
             operationChains.put("word_table", new TableOCs(totalThreads,offset));
             operationChains.put("tweet_table", new TableOCs(totalThreads,offset));
             operationChains.put("cluster_table", new TableOCs(totalThreads,offset));
@@ -143,7 +142,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);
             } else if (app == 4) {
-                //TODO: Add ED here
                 OperationChain wordOC = context.createTask("word_table", _key);
                 OperationChain tweetOC = context.createTask("tweet_table", _key);
                 OperationChain clusterOC = context.createTask("cluster_table", _key);
@@ -169,7 +167,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else if (app == 3){
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 4) {
-            //TODO: Add ED tables here
             operationChains.get("word_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("tweet_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("cluster_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();

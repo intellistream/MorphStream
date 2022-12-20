@@ -21,6 +21,7 @@ import java.util.concurrent.BrokenBarrierException;
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
+import static common.bolts.transactional.ed.PunctuationAligner.*;
 
 public class ESBolt_ts extends ESBolt{
     private static final Logger LOG = LoggerFactory.getLogger(ESBolt_ts.class);

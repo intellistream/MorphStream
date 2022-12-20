@@ -1,6 +1,7 @@
 package common.bolts.transactional.ed.tr;
 
 import combo.SINKCombo;
+import common.bolts.transactional.ed.PunctuationAligner;
 import common.param.ed.tr.TREvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -20,6 +21,7 @@ import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
+import static common.bolts.transactional.ed.PunctuationAligner.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
@@ -29,6 +31,7 @@ public class TRBolt_ts extends TRBolt{
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
     ArrayDeque<TREvent> trEvents;
+    private boolean doPunctuation;
 
     //To be used in Combo
     public TRBolt_ts(int fid, SINKCombo sink) {
@@ -46,6 +49,7 @@ public class TRBolt_ts extends TRBolt{
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         trEvents = new ArrayDeque<>();
+        doPunctuation = false;
     }
 
     @Override
@@ -78,8 +82,6 @@ public class TRBolt_ts extends TRBolt{
 
     protected void TWEET_REGISTRANT_REQUEST_CONSTRUCT(TREvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
 
-//        LOG.info("Constructing TR request: " + event.getBid());
-
         String[] tweetTable = new String[]{"tweet_table"}; //condition source table
         String[] tweetID = new String[]{event.getTweetID()}; //condition source key
         String sourceTable = "tweet_table";
@@ -101,31 +103,34 @@ public class TRBolt_ts extends TRBolt{
 
         transactionManager.CommitTransaction(txnContext);
 
+//        LOG.info("Adding TR event: " + event.getBid());
         trEvents.add(event);
     }
 
-    private void TWEET_REGISTRANT_REQUEST_CORE() throws InterruptedException {
-//        for (TREvent event : trEvents) {
-//
-//            //TODO: Implement TR CORE
-//
-//        }
-    }
+    private void TWEET_REGISTRANT_REQUEST_CORE() throws InterruptedException {}
 
     private void TWEET_REGISTRANT_REQUEST_POST() throws InterruptedException {
         for (TREvent event : trEvents) {
             TWEET_REGISTRANT_REQUEST_POST(event);
+            LOG.info("Posting TR event: " + event.getBid());
         }
     }
 
-    private boolean doPunctuation() {
-        return trEvents.size() == tweetWindowSize / tthread;
-    }
+    private static final Object trLock = new Object();
 
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (doPunctuation()) {
+        // Need to use synchronized block here to ensure correctness
+        synchronized (trLock) {
+            if (trEventCount.get() > 0 && trEventCount.get() % tweetWindowSize == 0) {
+                doPunctuation = true;
+            }
+        }
+
+        if (doPunctuation) {
+            trBarrier.await();
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation interval: " + trEventCount.get());
             int num_events = trEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -147,9 +152,13 @@ public class TRBolt_ts extends TRBolt{
                 trEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
-        } else {
-            execute_ts_normal(in);
+
+            doPunctuation = false;
         }
+
+        trEventCount.getAndIncrement();
+        execute_ts_normal(in);
+
     }
 
 }

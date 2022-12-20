@@ -250,13 +250,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            if (enable_log) log.info("Record is found:" + key);
+//            if (enable_log) log.info("Record is found:" + key);
 
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
                     key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
 
         } else {
-            if (enable_log) log.info("No record is found:" + key);
+//            if (enable_log) log.info("No record is found:" + key);
             return false;
         }
     }
