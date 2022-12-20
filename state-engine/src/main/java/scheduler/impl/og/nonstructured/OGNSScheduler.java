@@ -6,7 +6,6 @@ import scheduler.context.og.OGNSContext;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
-import utils.SOURCE_CONTROL;
 
 import static common.CONTROL.enable_log;
 
@@ -63,7 +62,7 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
      */
     @Override
     public void EXPLORE(OGNSContext context) {
-         context.partitionStateManager.handleStateTransitions();
+        context.partitionStateManager.handleStateTransitions();
     }
 
     @Override

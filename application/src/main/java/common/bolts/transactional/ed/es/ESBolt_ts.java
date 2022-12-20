@@ -15,14 +15,15 @@ import transaction.context.TxnContext;
 import transaction.function.Division;
 import transaction.impl.ordered.TxnManagerTStream;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
-public class ESBolt_ts extends ESBolt{
+public class ESBolt_ts extends ESBolt {
     private static final Logger LOG = LoggerFactory.getLogger(ESBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
@@ -47,7 +48,8 @@ public class ESBolt_ts extends ESBolt{
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    }
 
     /**
      * THIS IS ONLY USED BY TSTREAM.

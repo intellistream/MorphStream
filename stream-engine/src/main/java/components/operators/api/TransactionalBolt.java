@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import profiler.Metrics;
 import transaction.TxnManager;
-import transaction.context.TxnContext;
-import utils.SOURCE_CONTROL;
 
 import java.util.concurrent.BrokenBarrierException;
 
@@ -49,7 +47,6 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     public static void LA_LOCK(int _pid, int num_P, TxnManager txnManager, double[] bid_array, double _bid, int tthread) {
         for (int k = 0; k < num_P; k++) {
             txnManager.getOrderLock(_pid).blocking_wait(bid_array[_pid], _bid);
-//            LOG.info(_pid + " : " + bid_array[_pid]);
             _pid++;
             if (_pid == tthread)
                 _pid = 0;
@@ -58,9 +55,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
 
     public static void LA_LOCK_Reentrance(TxnManager txnManager, double[] bid_array, int[] partition_indexs, double _bid, int thread_Id) {
         for (int _pid : partition_indexs) {
-//            LOG.info(thread_Id + " try lock: " + _pid);
             txnManager.getOrderLock(_pid).blocking_wait(bid_array[_pid], _bid);
-//            LOG.info(thread_Id + " get lock: " + _pid);
         }
     }
 
@@ -86,8 +81,6 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     public static void LA_UNLOCK_Reentrance(TxnManager txnManager, int[] partition_indexs, int thread_Id) {
         for (int _pid : partition_indexs) {
             txnManager.getOrderLock(_pid).advance();
-//            LOG.info(thread_Id + " release lock: " + _pid);
-
         }
     }
 
@@ -139,12 +132,10 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
             timestamp = 0L;//
         _bid = in.getBID();
         input_event = in.getValue(0);
-//        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
         sum = 0;
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
-        //pre stream processing phase..
         MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
         MeasureTools.END_PREPARE_TIME_MEASURE_ACC(thread_Id);

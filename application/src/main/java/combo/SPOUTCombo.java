@@ -3,7 +3,6 @@ package combo;
 import common.CONTROL;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.tools.FastZipfGenerator;
 import components.context.TopologyContext;
 import components.operators.api.TransactionalBolt;
 import components.operators.api.TransactionalSpout;
@@ -14,9 +13,7 @@ import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
-import profiler.MeasureTools;
 import stage.Stage;
-import utils.SOURCE_CONTROL;
 
 import java.io.FileNotFoundException;
 import java.util.Random;
@@ -24,10 +21,8 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static common.Constants.sinkType;
 import static content.Content.CCOption_SStore;
 import static content.Content.CCOption_TStream;
-import static profiler.Metrics.NUM_ITEMS;
 
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public abstract class SPOUTCombo extends TransactionalSpout {

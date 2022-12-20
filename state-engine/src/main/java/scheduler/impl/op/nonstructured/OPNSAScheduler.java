@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.context.op.OPNSAContext;
 import scheduler.struct.op.Operation;
-import utils.SOURCE_CONTROL;
 
 // TODO: code clean, a lot...
 public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<Context> {

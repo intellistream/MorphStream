@@ -12,7 +12,7 @@ public class OGNSAContext extends AbstractOGNSContext {
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
     public OGNSAContext(int thisThreadId, int totalThreads, Stage stage) {
-        super(thisThreadId,stage);
+        super(thisThreadId, stage);
         partitionStateManager = new PartitionStateManagerWithAbort();
     }
 

@@ -1,7 +1,6 @@
 package common.bolts.transactional.sl;
 
 import combo.SINKCombo;
-import profiler.MeasureTools;
 import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
@@ -12,9 +11,9 @@ import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerSStore;
-import utils.SOURCE_CONTROL;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -25,9 +24,6 @@ import java.util.concurrent.BrokenBarrierException;
 import static common.CONTROL.combo_bid_size;
 import static profiler.MeasureTools.*;
 
-/**
- * Combine Read-Write for nocc.
- */
 public class SLBolt_sstore extends SLBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_sstore.class);
     private static final long serialVersionUID = -5968750340131744744L;
@@ -45,11 +41,10 @@ public class SLBolt_sstore extends SLBolt_LA {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);
+        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-//        prepareEvents();
         context.getGraph().topology.tableinitilizer.loadDB(thread_Id, context.getGraph().topology.spinlock,
                 this.context.getNUMTasks());
     }

@@ -3,37 +3,20 @@ package common.spout;
 import benchmark.DataHolder;
 import combo.SINKCombo;
 import common.CONTROL;
-import common.bolts.transactional.ed.tr.*;
-import common.bolts.transactional.ed.trg.*;
-import common.bolts.transactional.ed.wu.*;
-import common.bolts.transactional.ed.wug.*;
-import common.bolts.transactional.ed.tc.*;
-import common.bolts.transactional.ed.tcg.*;
-import common.bolts.transactional.ed.cu.*;
-import common.bolts.transactional.ed.cug.*;
-import common.bolts.transactional.ed.es.*;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
-import components.context.TopologyContext;
-import components.operators.api.TransactionalBolt;
 import components.operators.api.TransactionalSpout;
-import db.DatabaseException;
 import execution.ExecutionGraph;
-import execution.runtime.collector.OutputCollector;
-import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import stage.Stage;
-import utils.SOURCE_CONTROL;
 
-import java.util.concurrent.BrokenBarrierException;
-
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static content.Content.*;
+import static content.Content.CCOption_SStore;
 
 public class EDSpout extends TransactionalSpout {
 
@@ -52,7 +35,6 @@ public class EDSpout extends TransactionalSpout {
     public int tthread;
     public SINKCombo sink = new SINKCombo();
     protected int totalEventsPerBatch = 0;
-
 
     int start_measure;
 

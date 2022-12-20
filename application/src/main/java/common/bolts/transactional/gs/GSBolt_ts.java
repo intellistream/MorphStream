@@ -16,7 +16,8 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_latency_measurement;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
@@ -25,6 +26,7 @@ public class GSBolt_ts extends GSBolt {
     private static final long serialVersionUID = -5968750340131744744L;
     private final double write_useful_time = 556;//write-compute time pre-measured.
     Collection<MicroEvent> microEvents;
+    int i = 0;
     private int writeEvents;
 
     public GSBolt_ts(int fid, SINKCombo sink) {
@@ -119,7 +121,7 @@ public class GSBolt_ts extends GSBolt {
             READ_POST(event);
         }
     }
-    int i=0;
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 

@@ -11,8 +11,8 @@ import java.util.ArrayDeque;
 
 public abstract class OPSchedulerContext implements SchedulerContext {
     public final ArrayDeque<Operation> batchedOperations;
-    public int thisThreadId;
     private final Stage stage;
+    public int thisThreadId;
     public ArrayDeque<Request> requests;
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.

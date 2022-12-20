@@ -17,7 +17,7 @@ public class OGSContext extends OGSchedulerContext {
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
     public OGSContext(int thisThreadId, int totalThreads, Stage stage) {
-        super(thisThreadId,stage);
+        super(thisThreadId, stage);
         this.totalThreads = totalThreads;
         this.allocatedLayeredOCBucket = new HashMap<>();
         requests = new ArrayDeque<>();

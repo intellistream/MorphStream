@@ -25,7 +25,9 @@ import static common.CONTROL.enable_states_partition;
  * Created by curry on 17/3/22.
  */
 public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
-    private static final Logger LOG= LoggerFactory.getLogger(OBTPGDynamicDataGenerator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OBTPGDynamicDataGenerator.class);
+    public FastZipfGenerator[] partitionedKeyZipf;
+    public transient FastZipfGenerator p_generator; // partition generator
     private int NUM_ACCESS; // transaction length, 4 or 8 or longer
     private int State_Access_Skewness; // ratio of state access, following zipf distribution
     private int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
@@ -39,28 +41,27 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     // independent transactions.
     private boolean isUnique = false;
     private FastZipfGenerator keyZipf;
-
     private int floor_interval;
-    public FastZipfGenerator[] partitionedKeyZipf;
     private Random random = new Random(0); // the transaction type decider
-    public transient FastZipfGenerator p_generator; // partition generator
     private HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
     private HashMap<Integer, Integer> idToLevel = new HashMap<>();
+
     public OBTPGDynamicDataGenerator(DynamicDataGeneratorConfig dynamicDataConfig) {
         super(dynamicDataConfig);
         events = new ArrayList<>(nTuples);
     }
+
     @Override
     protected void generateTuple() {
         Event event;
         int next = random.nextInt(100);
-        if(next < Ratio_of_Buying) {
+        if (next < Ratio_of_Buying) {
             event = randomBuyingEvent();
         } else {
             next = random.nextInt(100);
-            if (next > 50){
+            if (next > 50) {
                 event = randomOBEvent(1);
             } else {
                 event = randomOBEvent(0);
@@ -68,73 +69,74 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         }
         events.add(event);
     }
+
     @Override
     public void mapToTPGProperties() {
         //TD,LD,PD,VDD,R_of_A,isCD,isCC,
         StringBuilder stringBuilder = new StringBuilder();
         //TODO:hard code, function not sure
-        double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double)Ratio_of_Buying/100) +
-                ((double)Ratio_of_Buying/100) * 1 * dynamicDataConfig.getCheckpoint_interval();
-        td = td *((double) Ratio_of_Overlapped_Keys/100);
+        double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double) Ratio_of_Buying / 100) +
+                ((double) Ratio_of_Buying / 100) * 1 * dynamicDataConfig.getCheckpoint_interval();
+        td = td * ((double) Ratio_of_Overlapped_Keys / 100);
         stringBuilder.append(td);
         stringBuilder.append(",");
-        double ld = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double)Ratio_of_Buying/100) +
-                ((double)Ratio_of_Buying/100) * 1 * dynamicDataConfig.getCheckpoint_interval();
+        double ld = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double) Ratio_of_Buying / 100) +
+                ((double) Ratio_of_Buying / 100) * 1 * dynamicDataConfig.getCheckpoint_interval();
         stringBuilder.append(ld);
         stringBuilder.append(",");
         double pd = 0;
         stringBuilder.append(pd);
         stringBuilder.append(",");
-        stringBuilder.append((double) State_Access_Skewness/100);
+        stringBuilder.append((double) State_Access_Skewness / 100);
         stringBuilder.append(",");
-        stringBuilder.append((double) Ratio_of_Transaction_Aborts/10000);
+        stringBuilder.append((double) Ratio_of_Transaction_Aborts / 10000);
         stringBuilder.append(",");
         if (AppConfig.isCyclic) {
             stringBuilder.append("1,");
         } else {
             stringBuilder.append("0,");
         }
-        if (AppConfig.complexity < 40000){
+        if (AppConfig.complexity < 40000) {
             stringBuilder.append("0,");
         } else {
             stringBuilder.append("1,");
         }
-        stringBuilder.append(eventID+dynamicDataConfig.getShiftRate()*dynamicDataConfig.getCheckpoint_interval()*dynamicDataConfig.getTotalThreads());
+        stringBuilder.append(eventID + dynamicDataConfig.getShiftRate() * dynamicDataConfig.getCheckpoint_interval() * dynamicDataConfig.getTotalThreads());
         this.tranToDecisionConf.add(stringBuilder.toString());
     }
 
     @Override
     public void switchConfiguration(String type) {
-        switch (type){
-            case "default" :
+        switch (type) {
+            case "default":
                 State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
                 NUM_ACCESS = 1;
                 Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
                 Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
                 Transaction_Length = dynamicDataConfig.Transaction_Length;
-                Ratio_of_Buying=dynamicDataConfig.Ratio_Of_Buying;
+                Ratio_of_Buying = dynamicDataConfig.Ratio_Of_Buying;
 
                 nKeyState = dynamicDataConfig.getnKeyStates();
                 int MAX_LEVEL = 256;
                 for (int i = 0; i < nKeyState; i++) {
-                    idToLevel.put(i, i% MAX_LEVEL);
+                    idToLevel.put(i, i % MAX_LEVEL);
                 }
                 keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
                 configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
                 p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
-            break;
-            case "skew" :
+                break;
+            case "skew":
                 State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
                 nKeyState = dynamicDataConfig.getnKeyStates();
                 keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
                 configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
                 p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
-            break;
-            case "abort" :
+                break;
+            case "abort":
                 Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
-            break;
-            case "unchanging" :
-            break;
+                break;
+            case "unchanging":
+                break;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
@@ -174,7 +176,7 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     }
 
     private Event randomOBEvent(int isAlert) {
-        int[] keys = new int[NUM_ACCESS*Transaction_Length];
+        int[] keys = new int[NUM_ACCESS * Transaction_Length];
         int writeLevel = -1;
         if (!isUnique) {
             if (enable_states_partition) {
@@ -187,7 +189,7 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
                             if (offset % NUM_ACCESS == 0) {
                                 // make sure this one is different with other write key
                                 for (int k = 0; k < j; k++) {
-                                    while (keys[k*NUM_ACCESS] == key) {
+                                    while (keys[k * NUM_ACCESS] == key) {
                                         key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
                                     }
                                 }
@@ -230,7 +232,7 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             }
         } else {
             // TODO: add transaction length logic
-            for (int i = 0; i <NUM_ACCESS; i++) {
+            for (int i = 0; i < NUM_ACCESS; i++) {
                 keys[i] = getUniqueKey(keyZipf, generatedKeys);
             }
         }
@@ -239,35 +241,36 @@ public class OBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         }
         OBEvent ob;
         if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
-            ob = new OBEvent(eventID,keys,true,isAlert);
+            ob = new OBEvent(eventID, keys, true, isAlert);
         } else {
-            ob = new OBEvent(eventID,keys,false,isAlert);
+            ob = new OBEvent(eventID, keys, false, isAlert);
         }
         eventID++;
         return ob;
     }
-     private Event randomBuyingEvent() {
+
+    private Event randomBuyingEvent() {
         int id;
         if (!isUnique) {
             if (enable_states_partition) {
                 int partitionId = key_to_partition(p_generator.next());
-                id = getKey(partitionedKeyZipf[partitionId],partitionId,generatedKeys);
+                id = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
             } else {
-                id = getKey(keyZipf,generatedKeys);
+                id = getKey(keyZipf, generatedKeys);
             }
         } else {
-            id = getUniqueKey(keyZipf,generatedKeys);
+            id = getUniqueKey(keyZipf, generatedKeys);
         }
-         nGeneratedIds.put(id, nGeneratedIds.getOrDefault(id, 0) + 1);
-         Event t;
-         if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
-             t = new BuyEvent(eventID,id,true);
-         } else {
-             t = new BuyEvent(eventID,id,false);
-         }
-         eventID++;
-         return t;
-     }
+        nGeneratedIds.put(id, nGeneratedIds.getOrDefault(id, 0) + 1);
+        Event t;
+        if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
+            t = new BuyEvent(eventID, id, true);
+        } else {
+            t = new BuyEvent(eventID, id, false);
+        }
+        eventID++;
+        return t;
+    }
 
     public int key_to_partition(int key) {
         return (int) Math.floor((double) key / floor_interval);

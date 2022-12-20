@@ -1,4 +1,5 @@
 package benchmark.datagenerator.apps.GS.TPGTxnGenerator;
+
 import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.Transaction.GSEvent;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
@@ -20,6 +21,8 @@ import static common.CONTROL.enable_states_partition;
 
 public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(GSTPGDynamicDataGenerator.class);
+    public FastZipfGenerator[] partitionedKeyZipf;
+    public transient FastZipfGenerator p_generator; // partition generator
     private int NUM_ACCESS; // transaction length, 4 or 8 or longer
     private int State_Access_Skewness; // ratio of state access, following zipf distribution
     private int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
@@ -33,12 +36,8 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     // independent transactions.
     private boolean isUnique = false;
     private FastZipfGenerator keyZipf;
-
     private int floor_interval;
-    public FastZipfGenerator[] partitionedKeyZipf;
-
     private Random random = new Random(0); // the transaction type decider
-    public transient FastZipfGenerator p_generator; // partition generator
     private HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
@@ -55,37 +54,37 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         StringBuilder stringBuilder = new StringBuilder();
         //TODO:hard code, function not sure
         double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval();
-        td = td *((double) Ratio_of_Overlapped_Keys/100);
+        td = td * ((double) Ratio_of_Overlapped_Keys / 100);
         stringBuilder.append(td);
         stringBuilder.append(",");
         double ld = Transaction_Length * dynamicDataConfig.getCheckpoint_interval();
         stringBuilder.append(ld);
         stringBuilder.append(",");
-        double pd = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * ((double) Ratio_of_Overlapped_Keys/100) * NUM_ACCESS;
+        double pd = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * ((double) Ratio_of_Overlapped_Keys / 100) * NUM_ACCESS;
         stringBuilder.append(pd);
         stringBuilder.append(",");
-        stringBuilder.append((double) State_Access_Skewness/100);
+        stringBuilder.append((double) State_Access_Skewness / 100);
         stringBuilder.append(",");
-        stringBuilder.append((double) Ratio_of_Transaction_Aborts/10000);
+        stringBuilder.append((double) Ratio_of_Transaction_Aborts / 10000);
         stringBuilder.append(",");
         if (AppConfig.isCyclic) {
             stringBuilder.append("1,");
         } else {
             stringBuilder.append("0,");
         }
-        if (AppConfig.complexity < 40000){
+        if (AppConfig.complexity < 40000) {
             stringBuilder.append("0,");
         } else {
             stringBuilder.append("1,");
         }
-        stringBuilder.append(eventID+dynamicDataConfig.getShiftRate()*dynamicDataConfig.getCheckpoint_interval()*dynamicDataConfig.getTotalThreads());
+        stringBuilder.append(eventID + dynamicDataConfig.getShiftRate() * dynamicDataConfig.getCheckpoint_interval() * dynamicDataConfig.getTotalThreads());
         this.tranToDecisionConf.add(stringBuilder.toString());
     }
 
     @Override
     public void switchConfiguration(String type) {
         switch (type) {
-            case "default" :
+            case "default":
                 State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
                 NUM_ACCESS = dynamicDataConfig.NUM_ACCESS;
                 Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
@@ -96,28 +95,28 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
                 nKeyState = dynamicDataConfig.getnKeyStates();
                 int MAX_LEVEL = 256;
                 for (int i = 0; i < nKeyState; i++) {
-                    idToLevel.put(i, i% MAX_LEVEL);
+                    idToLevel.put(i, i % MAX_LEVEL);
                 }
                 keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
                 configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
                 p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
-            break;
-            case "LD" :
+                break;
+            case "LD":
                 Transaction_Length = dynamicDataConfig.Transaction_Length;
-            break;
-            case "isCyclic" :
+                break;
+            case "isCyclic":
                 Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
                 State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
                 keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
                 configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
                 p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
                 AppConfig.isCyclic = true;
-            break;
-            case "complexity" :
+                break;
+            case "complexity":
                 AppConfig.complexity = 80000;
-            break;
-            case "unchanging" :
-            break;
+                break;
+            case "unchanging":
+                break;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
@@ -164,7 +163,7 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     }
 
     private GSEvent randomEvent() {
-        int[] keys = new int[NUM_ACCESS*Transaction_Length];
+        int[] keys = new int[NUM_ACCESS * Transaction_Length];
         int writeLevel = -1;
         if (!isUnique) {
             if (enable_states_partition) {
@@ -177,7 +176,7 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
                             if (offset % NUM_ACCESS == 0) {
                                 // make sure this one is different with other write key
                                 for (int k = 0; k < j; k++) {
-                                    while (keys[k*NUM_ACCESS] == key) {
+                                    while (keys[k * NUM_ACCESS] == key) {
                                         key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
                                     }
                                 }
@@ -220,7 +219,7 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             }
         } else {
             // TODO: add transaction length logic
-            for (int i = 0; i <NUM_ACCESS; i++) {
+            for (int i = 0; i < NUM_ACCESS; i++) {
                 keys[i] = getUniqueKey(keyZipf, generatedKeys);
             }
         }
@@ -239,7 +238,6 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         eventID++;
         return t;
     }
-
 
 
     public int key_to_partition(int key) {
@@ -288,7 +286,6 @@ public class GSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         generatedKeys.add(key);
         return key;
     }
-
 
 
 }

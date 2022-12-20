@@ -20,10 +20,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.*;
 
-import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_shared_state;
-import static common.CONTROL.fetchWithIndex;
-import static common.Constants.DEFAULT_STREAM_ID;
+import static common.CONTROL.*;
 
 /**
  * Task thread that hosts bolt logic. Receives input Brisk.execution.runtime.tuple,
@@ -35,8 +32,14 @@ public class boltThread extends executorThread {
     private final BoltExecutor bolt;
     private final OutputCollector collector;
     private final InputStreamController inputStreamController;
+    ExecutorService inputExecutor = Executors.newCachedThreadPool();
+    Callable<Object> task = new Callable<Object>() {
+        public Object call() {
+            return fetchResult();
+        }
+    };
+    Future<Object> future = inputExecutor.submit(task);
     private int miss = 0;
-
     /**
      * @param e
      * @param context
@@ -81,14 +84,6 @@ public class boltThread extends executorThread {
         }
         return dump.toString();
     }
-
-    ExecutorService inputExecutor = Executors.newCachedThreadPool();
-    Callable<Object> task = new Callable<Object>() {
-        public Object call() {
-            return fetchResult();
-        }
-    };
-    Future<Object> future = inputExecutor.submit(task);
 
     /**
      * Be very careful for this method..

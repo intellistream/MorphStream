@@ -27,7 +27,7 @@ public class TxnManagerLock extends TxnManagerDedicatedLocked {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerLock.class);
 
     public TxnManagerLock(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
-        super(storageManager, thisComponentId, thisTaskId, thread_count,stage);
+        super(storageManager, thisComponentId, thisTaskId, thread_count, stage);
     }
 
     @Override

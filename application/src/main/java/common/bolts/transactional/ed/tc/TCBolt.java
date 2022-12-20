@@ -1,25 +1,16 @@
 package common.bolts.transactional.ed.tc;
 
 import combo.SINKCombo;
-import common.param.ed.cu.CUEvent;
 import common.param.ed.tc.TCEvent;
-import common.param.ed.wu.WUEvent;
-import common.param.sl.DepositEvent;
-import common.param.sl.TransactionEvent;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
-import storage.SchemaRecord;
-import storage.SchemaRecordRef;
-import storage.datatype.DataBox;
-import utils.AppConfig;
 
-import static common.CONTROL.*;
+import static common.CONTROL.enable_app_combo;
+import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
-import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public class TCBolt extends TransactionalBolt {
     SINKCombo sink; // the default "next bolt"

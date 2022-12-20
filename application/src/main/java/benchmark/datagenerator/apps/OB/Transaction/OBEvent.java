@@ -12,12 +12,13 @@ public class OBEvent extends Event {
     private final boolean isAbort;
     private final int isAlert;
 
-    public OBEvent(int id, int[] keys, boolean isAbort, int isAlert){
+    public OBEvent(int id, int[] keys, boolean isAbort, int isAlert) {
         this.id = id;
         this.keys = keys;
         this.isAbort = isAbort;
-        this.isAlert=isAlert;
+        this.isAlert = isAlert;
     }
+
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder(String.valueOf(id));

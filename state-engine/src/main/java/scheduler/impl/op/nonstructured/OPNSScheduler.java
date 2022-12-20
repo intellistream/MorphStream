@@ -7,7 +7,6 @@ import scheduler.context.op.OPNSContext;
 import scheduler.impl.op.OPScheduler;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import scheduler.struct.op.Operation;
-import utils.SOURCE_CONTROL;
 
 import static common.CONTROL.enable_log;
 
@@ -141,7 +140,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     }
 
 
-//    /**
+    //    /**
 //     * Try to get task from local queue.
 //     *
 //     * @param context

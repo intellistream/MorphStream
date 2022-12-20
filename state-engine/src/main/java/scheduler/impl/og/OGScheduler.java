@@ -21,7 +21,6 @@ import storage.datatype.IntDataBox;
 import transaction.function.*;
 import transaction.impl.ordered.MyList;
 import utils.AppConfig;
-import utils.SOURCE_CONTROL;
 
 import java.util.*;
 
@@ -38,11 +37,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
     }
 
-    @Override
-    public void initTPG(int offset) {
-        tpg.initTPG(offset);
-    }
-
     /**
      * state to thread mapping
      *
@@ -53,6 +47,11 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     public static int getTaskId(String key, Integer delta) {
         Integer _key = Integer.valueOf(key);
         return _key / delta;
+    }
+
+    @Override
+    public void initTPG(int offset) {
+        tpg.initTPG(offset);
     }
 
     public Context getTargetContext(TableRecord d_record) {

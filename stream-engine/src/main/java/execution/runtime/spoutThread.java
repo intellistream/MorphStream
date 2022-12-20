@@ -67,7 +67,8 @@ public class spoutThread extends executorThread {
 
     }
 
-    protected void _execute_with_index(int index) throws InterruptedException {}
+    protected void _execute_with_index(int index) throws InterruptedException {
+    }
 
     @Override
     public void run() {

@@ -5,14 +5,13 @@ import java.util.Arrays;
 public class TxnEvent implements Comparable<TxnEvent> {
     protected final double bid;//as msg id.
     protected final int pid;
-    protected double[] bid_array;
     protected final int number_of_partitions;
     public double[] enqueue_time = new double[1];
     public int[] success;
+    public int[] partition_indexs;
+    protected double[] bid_array;
     //embeded state.
     protected long timestamp;//emit timestamp
-
-    public int[] partition_indexs;
 
     public TxnEvent(double bid, int partition_id, String bid_array, String partition_index, int number_of_partitions) {
         this.bid = bid;
@@ -100,7 +99,6 @@ public class TxnEvent implements Comparable<TxnEvent> {
     }
 
     /**
-     *
      * @param event
      * @return
      */

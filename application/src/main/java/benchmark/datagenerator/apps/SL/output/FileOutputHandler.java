@@ -1,7 +1,7 @@
 package benchmark.datagenerator.apps.SL.output;
 
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
 import benchmark.datagenerator.Event;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
 import common.collections.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

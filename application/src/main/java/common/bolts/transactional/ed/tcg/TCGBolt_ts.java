@@ -14,7 +14,10 @@ import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerTStream;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
@@ -47,7 +50,8 @@ public class TCGBolt_ts extends TCGBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    }
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -80,7 +84,8 @@ public class TCGBolt_ts extends TCGBolt {
         }
     }
 
-    private void TC_GATE_REQUEST_CORE() {}
+    private void TC_GATE_REQUEST_CORE() {
+    }
 
     // Emit output information to TCGBolt
     private void TC_GATE_REQUEST_POST() throws InterruptedException {

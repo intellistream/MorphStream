@@ -28,23 +28,14 @@ import static common.constants.BaseConstants.BaseField.TEXT;
 
 public abstract class Operator implements IOperator {
     private static final long serialVersionUID = -7816511217365808709L;
-    /**
-     * Because the flexibility of noSQL stream processing, we force user to tell us the output formulation.
-     */
-    //TODO: This is not a complete list.
-    public static final String map = "map";//Takes one element and produces one element. A map function that doubles the values of the input stream
-    public static final String filter = "filter";//Evaluates a boolean function for each element and retains those for which the function returns true, e.g., A filter that filters out zero values:
-    public static final String reduce = "reduce";//Combine multiple input data into one output data.
-    public static final String w_apply = "w_apply";
     public final Map<String, Double> input_selectivity;//input_selectivity used to capture multi-stream effect.
     public final Map<String, Double> output_selectivity;//output_selectivity can be > 1
     public final double branch_selectivity;
     protected final Map<String, Fields> fields;
-    public double read_selectivity;//the ratio of actual reading..
+    public double read_selectivity;//the ratio of actual reading.
     public boolean scalable = true;
     public TopologyContext context;
     public transient Database db;//this is only used if the bolt is transactional bolt. DB is shared by all operators.
-    //    public transient TxnContext txn_context;
     public transient TxnContext[] txn_context = new TxnContext[combo_bid_size];
     public int fid = -1;//layer of operator. If fid is -1 it means it does not participate
     public OrderLock lock;//used for lock_ratio-based ordering constraint.
@@ -52,7 +43,7 @@ public abstract class Operator implements IOperator {
     protected OutputCollector collector;
     protected Configuration config;
     protected ExecutionNode executor;//who owns this Spout
-    Logger LOG;
+    protected Logger LOG;
     boolean Stateful = false;
     private double window = 1;//by default window fieldSize is 1, means per-tuple execution
     private double results = 0;

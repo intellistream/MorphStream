@@ -7,8 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 public class SStoreContentImpl extends SStoreContent {
     public final static String SSTORE_CONTENT = "SSTORE_CONTENT";
     private static final Logger LOG = LoggerFactory.getLogger(SStoreContentImpl.class);

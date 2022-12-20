@@ -34,4 +34,4 @@ public interface OperationStateListener {
     void onRootStart(Operation operation);
 
     void onOpRollbackAndRedo(Operation operation, MetaTypes.DependencyType dependencyType, OperationStateType parentState, OperationStateType prevParentState);
-    }
+}

@@ -12,14 +12,12 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerTStream;
-import static common.CONTROL.wordWindowSize;
 
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.*;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
@@ -48,7 +46,8 @@ public class WUGBolt_ts extends WUGBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    }
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -74,7 +73,8 @@ public class WUGBolt_ts extends WUGBolt {
         wuEvents.add(event);
     }
 
-    private void WU_GATE_REQUEST_CORE() throws InterruptedException {}
+    private void WU_GATE_REQUEST_CORE() throws InterruptedException {
+    }
 
     // Emit all events to collector, then insert one punctuation signal
     private void WU_GATE_REQUEST_POST() throws InterruptedException, DatabaseException {

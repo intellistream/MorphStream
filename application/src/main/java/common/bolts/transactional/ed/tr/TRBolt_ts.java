@@ -5,26 +5,26 @@ import common.param.ed.tr.TREvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
-
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.function.Insert;
 import transaction.impl.ordered.TxnManagerTStream;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
-import static profiler.MeasureTools.*;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
 
 
-public class TRBolt_ts extends TRBolt{
+public class TRBolt_ts extends TRBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TRBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
@@ -50,10 +50,8 @@ public class TRBolt_ts extends TRBolt{
 
     @Override
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-//        prepareEvents();
         loadDB(transactionManager.getSchedulerContext(),
                 context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
-        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
     }
 
     /**

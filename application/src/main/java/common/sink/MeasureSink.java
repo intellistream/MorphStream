@@ -8,7 +8,6 @@ import common.sink.helper.stable_sink_helper;
 import components.operators.api.BaseSink;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
-import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +19,6 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 
 import static common.CONTROL.*;
-import static common.Constants.STAT_Path;
 import static common.IRunner.CCOption_SStore;
 
 public class MeasureSink extends BaseSink {
@@ -30,12 +28,12 @@ public class MeasureSink extends BaseSink {
     protected static String directory;
     protected final ArrayDeque<Long> latency_map = new ArrayDeque();
     public int checkpoint_interval;
+    public int tthread;
+    public int totalEvents;
     protected stable_sink_helper helper;
     protected int ccOption;
-    public int tthread;
     int cnt = 0;
     long start;
-    public int totalEvents;
 
     public MeasureSink() {
         super(new HashMap<>());
@@ -108,7 +106,7 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
                     config.getInt("complexity"));
-        } else if (config.getString("common").equals("OnlineBiding")){
+        } else if (config.getString("common").equals("OnlineBiding")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
                     config.getInt("NUM_ITEMS"),
@@ -119,7 +117,7 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
                     config.getInt("complexity"));
-        } else if (config.getString("common").equals("TollProcessing")){
+        } else if (config.getString("common").equals("TollProcessing")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
                     config.getInt("NUM_ITEMS"),
@@ -219,7 +217,7 @@ public class MeasureSink extends BaseSink {
 //                for (double percentile = 0.5; percentile <= 100.0; percentile += 0.5) {
 //                    w.write(latency.getPercentile(percentile) + "\n");
 //                }
-                for (double lat : latency.getValues()){
+                for (double lat : latency.getValues()) {
                     w.write(lat + "\n");
                 }
                 sb.append("=======Details=======");
@@ -230,16 +228,16 @@ public class MeasureSink extends BaseSink {
                 w.write("Percentile\t Latency\n");
                 w.write(String.format("%f\t" +
                                 "%-10.4f\t"
-                        , 0.5,latency.getPercentile(0.5)) + "\n");
-                for (double i = 20; i < 100; i += 20){
+                        , 0.5, latency.getPercentile(0.5)) + "\n");
+                for (double i = 20; i < 100; i += 20) {
                     String output = String.format("%f\t" +
                                     "%-10.4f\t"
-                            , i,latency.getPercentile(i));
+                            , i, latency.getPercentile(i));
                     w.write(output + "\n");
                 }
                 w.write(String.format("%d\t" +
                                 "%-10.4f\t"
-                        , 99,latency.getPercentile(99)));
+                        , 99, latency.getPercentile(99)));
                 w.close();
                 f.close();
             } catch (IOException e) {

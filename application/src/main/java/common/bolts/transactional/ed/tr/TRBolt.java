@@ -9,7 +9,8 @@ import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 
-import static common.CONTROL.*;
+import static common.CONTROL.enable_app_combo;
+import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
 
 public abstract class TRBolt extends TransactionalBolt {

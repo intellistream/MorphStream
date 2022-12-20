@@ -8,7 +8,7 @@ import utils.lib.ConcurrentHashMap;
 public class TableOCs<Task extends OperationChain> {
     public ConcurrentHashMap<Integer, Holder<Task>> threadOCsMap = new ConcurrentHashMap<>();//each op has a holder.
 
-    public TableOCs(Integer num_op,int offset) {
+    public TableOCs(Integer num_op, int offset) {
         int i;
         for (i = 0; i < num_op; i++) {
             threadOCsMap.put(i + offset, new Holder());

@@ -28,39 +28,34 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
     public final OPSchedulerContext context;
     public final String pKey;
-
+    public final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance
     private final Deque<Operation> fd_concurrent_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
     private final Deque<Operation> fd_concurrent_parents; // the functional dependencies ops to be executed after this op.
-
     private final Deque<Operation> ld_descendant_operations;
     private final Deque<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
     private final Deque<Operation> td_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_spec_children; // speculative children to notify.
-    public final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance
     private final Deque<Operation> td_parents; // the functional dependencies ops to be executed in advance
     private final Deque<Operation> ld_parents; // the functional dependencies ops to be executed in advance
     private final OperationMetadata operationMetadata;
-    private OperationStateType operationState;
     // operation id under a transaction.
     // an operation id to indicate how many operations in front of this operation in the same transaction.
     public int txnOpId = 0;
     public boolean isFailed;
     public String name;
-
-    // operation group the operation belongs to, it can be used for communication of operation groups.
-    private AbstractOperation ld_head_operation;
-
-    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
-    private int dependencyLevel = -1;
-
     public String[] condition_sourceTable = null;
     public String[] condition_source = null;
+    private OperationStateType operationState;
+    // operation group the operation belongs to, it can be used for communication of operation groups.
+    private AbstractOperation ld_head_operation;
+    private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
+    private int dependencyLevel = -1;
 
     /****************************Defined by MYC*************************************/
 
     public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, double bid,
-                                                  CommonMetaTypes.AccessType accessType, String operator_name, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
+                                                          CommonMetaTypes.AccessType accessType, String operator_name, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
         this(pKey, context, table_name, txn_context, bid, accessType, operator_name, d_record, null, function, condition, condition_records, success);
     }
 
@@ -123,12 +118,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         return bid + "|" + txnOpId + "|" + String.format("%-15s", this.getOperationState());
     }
 
-    public void setTxnOpId(int op_id) {
-        this.txnOpId = op_id;
-    }
-
     public int getTxnOpId() {
         return txnOpId;
+    }
+
+    public void setTxnOpId(int op_id) {
+        this.txnOpId = op_id;
     }
 
     public boolean isRoot() {
@@ -373,7 +368,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //        }
 //        isDependencyLevelCalculated = true;
 //    }
-
     public void layeredNotifyChildren() {
         for (Operation child : getChildren(DependencyType.TD)) {
             ((OPSContext) child.context).layerBuildHelperQueue

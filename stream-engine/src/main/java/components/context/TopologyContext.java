@@ -27,11 +27,6 @@ public class TopologyContext {
     private static Database db;
     private static HashMap<Integer, executorThread> threadMap;
     private final int _taskId;
-
-    public HashMap<Integer, Stage> getStageMap() {
-        return stageMap;
-    }
-
     private final HashMap<Integer, Stage> stageMap;
 
     /**
@@ -45,6 +40,10 @@ public class TopologyContext {
         TopologyContext.threadMap = threadMap;
         this._taskId = executor.getExecutorID();
         this.stageMap = stageMap;
+    }
+
+    public HashMap<Integer, Stage> getStageMap() {
+        return stageMap;
     }
 
     public Database getDb() {

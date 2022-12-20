@@ -1,10 +1,10 @@
 package common.param.ed.cu;
 
 import common.param.TxnEvent;
-import static common.CONTROL.wordWindowSize;
-import static common.CONTROL.tweetWindowSize;
 
 import java.util.Arrays;
+
+import static common.CONTROL.tweetWindowSize;
 
 public class CUEvent extends TxnEvent {
     private final String tweetID;
@@ -36,15 +36,19 @@ public class CUEvent extends TxnEvent {
     public double getMyBid() {
         return myBid;
     }
+
     public int getMyPid() {
         return myPid;
     }
+
     public String getMyBidArray() {
         return my_bid_array;
     }
+
     public String getMyPartitionIndex() {
         return my_partition_index;
     }
+
     public int getMyNumberOfPartitions() {
         return my_number_of_partitions;
     }
@@ -53,7 +57,9 @@ public class CUEvent extends TxnEvent {
         return this.tweetID;
     }
 
-    public int getCurrWindow() {return this.currWindow;}
+    public int getCurrWindow() {
+        return this.currWindow;
+    }
 
     public boolean isBurst() {
         return isBurst;

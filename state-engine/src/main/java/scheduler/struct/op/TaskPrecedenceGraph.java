@@ -4,14 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
-import scheduler.context.og.OGSContext;
 import scheduler.context.op.OPNSContext;
 import scheduler.context.op.OPSContext;
 import scheduler.context.op.OPSchedulerContext;
-import utils.SOURCE_CONTROL;
 import utils.lib.ConcurrentHashMap;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
@@ -35,15 +34,31 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private static final Logger log = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
 
     public final int totalThreads;
+    public final ConcurrentHashMap<Integer, Context> threadToContextMap;
+    public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final int NUM_ITEMS;
     private final int app;
-    CyclicBarrier barrier;
-    public final ConcurrentHashMap<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
-    public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
+    CyclicBarrier barrier;
     private int maxLevel = 0; // just for layered scheduling
 
+
+    /**
+     * @param totalThreads
+     */
+    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS, int app) {
+        barrier = new CyclicBarrier(totalThreads);
+        this.totalThreads = totalThreads;
+        this.delta = delta;
+        this.NUM_ITEMS = NUM_ITEMS;
+        // all parameters in this class should be thread safe.
+        threadToContextMap = new ConcurrentHashMap<>();
+        threadToOCs = new ConcurrentHashMap<>();
+        this.app = app;
+        //create holder.
+        operationChains = new ConcurrentHashMap<>();
+    }
 
     public void reset(Context context) {
 //        if (app == 0) {
@@ -68,42 +83,28 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
     }
 
-    /**
-     * @param totalThreads
-     */
-    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS, int app) {
-        barrier = new CyclicBarrier(totalThreads);
-        this.totalThreads = totalThreads;
-        this.delta = delta;
-        this.NUM_ITEMS = NUM_ITEMS;
-        // all parameters in this class should be thread safe.
-        threadToContextMap = new ConcurrentHashMap<>();
-        threadToOCs = new ConcurrentHashMap<>();
-        this.app = app;
-        //create holder.
-        operationChains = new ConcurrentHashMap<>();
-    }
     public void initTPG(int offset) {
         if (app == 0) {//GS
-            operationChains.put("MicroTable", new TableOCs(totalThreads,offset));
+            operationChains.put("MicroTable", new TableOCs(totalThreads, offset));
         } else if (app == 1) {//SL
-            operationChains.put("accounts", new TableOCs(totalThreads,offset));
-            operationChains.put("bookEntries", new TableOCs(totalThreads,offset));
-        } else if (app == 2){//TP
-            operationChains.put("segment_speed",new TableOCs(totalThreads,offset));
-            operationChains.put("segment_cnt",new TableOCs(totalThreads,offset));
+            operationChains.put("accounts", new TableOCs(totalThreads, offset));
+            operationChains.put("bookEntries", new TableOCs(totalThreads, offset));
+        } else if (app == 2) {//TP
+            operationChains.put("segment_speed", new TableOCs(totalThreads, offset));
+            operationChains.put("segment_cnt", new TableOCs(totalThreads, offset));
         } else if (app == 3) {//OB
-            operationChains.put("goods",new TableOCs(totalThreads,offset));
+            operationChains.put("goods", new TableOCs(totalThreads, offset));
         } else if (app == 4) {//ED
             //TODO: Put ED tables into operation chain
-            operationChains.put("word_table", new TableOCs(totalThreads,offset));
-            operationChains.put("tweet_table", new TableOCs(totalThreads,offset));
-            operationChains.put("cluster_table", new TableOCs(totalThreads,offset));
+            operationChains.put("word_table", new TableOCs(totalThreads, offset));
+            operationChains.put("tweet_table", new TableOCs(totalThreads, offset));
+            operationChains.put("cluster_table", new TableOCs(totalThreads, offset));
         }
     }
 
     /**
      * Pre-create a bunch of OCs for each key in the table, which reduces the constant overhead during the runtime.
+     *
      * @param context
      */
     // TODO: if running multiple batches, this will be a problem.
@@ -132,8 +133,8 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 ocs.add(accOC);
                 ocs.add(beOC);
             } else if (app == 2) {
-                OperationChain speedOC=context.createTask("segment_speed",_key);
-                OperationChain cntOC=context.createTask("segment_cnt",_key);
+                OperationChain speedOC = context.createTask("segment_speed", _key);
+                OperationChain cntOC = context.createTask("segment_cnt", _key);
                 operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, speedOC);
                 operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, cntOC);
                 ocs.add(speedOC);
@@ -157,16 +158,17 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         }
         threadToOCs.put(context.thisThreadId, ocs);
     }
+
     private void resetOCs(Context context) {
         if (app == 0) {
             operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 1) {
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if( app == 2) {
+        } else if (app == 2) {
             operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 3){
+        } else if (app == 3) {
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 4) {
             //TODO: Add ED tables here
@@ -179,7 +181,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     public TableOCs getTableOCs(String table_name) {
         return operationChains.get(table_name);
     }
-    public boolean isThreadTOCsReady(){return threadToOCs.size()==totalThreads; }
+
+    public boolean isThreadTOCsReady() {
+        return threadToOCs.size() == totalThreads;
+    }
 
     public ConcurrentHashMap<String, TableOCs> getOperationChains() {
         return operationChains;
@@ -298,7 +303,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
 //            curOperation.initialize();
 //        }
 //    }
-
     public void secondTimeExploreTPG(Context context) {
         context.redo();
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {

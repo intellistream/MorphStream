@@ -15,14 +15,16 @@ import transaction.function.Append;
 import transaction.function.Condition;
 import transaction.impl.ordered.TxnManagerTStream;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
-import static profiler.MeasureTools.*;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
 
-public class WUBolt_ts extends WUBolt{
+public class WUBolt_ts extends WUBolt {
     private static final Logger LOG = LoggerFactory.getLogger(WUBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
@@ -46,7 +48,8 @@ public class WUBolt_ts extends WUBolt{
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    }
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -90,14 +93,15 @@ public class WUBolt_ts extends WUBolt{
                 condition,
                 event.success,
                 "ed_wu"
-                );
+        );
 
         transactionManager.CommitTransaction(txnContext);
 
         wuEvents.add(event);
     }
 
-    private void WORD_UPDATE_REQUEST_CORE() throws InterruptedException {}
+    private void WORD_UPDATE_REQUEST_CORE() throws InterruptedException {
+    }
 
     private void WORD_UPDATE_REQUEST_POST() throws InterruptedException {
         for (WUEvent event : wuEvents) {

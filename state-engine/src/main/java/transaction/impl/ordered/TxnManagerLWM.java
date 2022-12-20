@@ -24,7 +24,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
     final OrderLock orderLock;
 
     public TxnManagerLWM(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
-        super(storageManager, thisComponentId, thisTaskId, thread_count,stage);
+        super(storageManager, thisComponentId, thisTaskId, thread_count, stage);
         this.orderLock = OrderLock.getInstance();
     }
 

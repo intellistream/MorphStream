@@ -29,15 +29,19 @@ public class TREvent extends TxnEvent {
     public double getMyBid() {
         return myBid;
     }
+
     public int getMyPid() {
         return myPid;
     }
+
     public String getMyBidArray() {
         return my_bid_array;
     }
+
     public String getMyPartitionIndex() {
         return my_partition_index;
     }
+
     public int getMyNumberOfPartitions() {
         return my_number_of_partitions;
     }

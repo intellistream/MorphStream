@@ -1,6 +1,6 @@
 package stage;
 
-public class StageManager implements IStageManager{
+public class StageManager implements IStageManager {
 
 
 }

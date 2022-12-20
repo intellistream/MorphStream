@@ -5,13 +5,15 @@ import scheduler.context.SchedulerContext;
 import scheduler.struct.og.OperationChain;
 import stage.Stage;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Set;
 
 
 public abstract class OGSchedulerContext implements SchedulerContext {
     public final ArrayDeque<OperationChain> busyWaitQueue;
-    public int thisThreadId;
     private final Stage stage;
+    public int thisThreadId;
     public ArrayDeque<Request> requests;
     public int scheduledOPs;//current number of operations processed per thread.
     public int totalOsToSchedule;//total number of operations to process per thread.

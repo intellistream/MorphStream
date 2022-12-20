@@ -32,7 +32,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
     public final OrderLock shared_orderLock;
 
     public TxnManagerSStore(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
-        super(storageManager, thisComponentId, thisTaskId, thread_count,stage);
+        super(storageManager, thisComponentId, thisTaskId, thread_count, stage);
         this.shared_orderLock = OrderLock.getInstance();
         this.orderLock = PartitionedOrderLock.getInstance();
     }
@@ -69,8 +69,6 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
 
     @Override
     protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
-//        record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
-//        if (enable_log) LOG.info("LOCK FOR:" + t_record.record_.getValues().get(0)+" pid:"+txn_context.pid);
         t_record.content_.LockPartitions();//it should always success.
         return true;
     }
@@ -174,42 +172,4 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
         //not in use in this scheme.
     }
 
-    // TODO: this is a bad encapsulation.
-//    @Override
-//    public void start_evaluate(int thread_Id, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
-//        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-//        // add bid_array for events
-//        if (thread_Id == 0) {
-//            int partitionOffset = (int) (orderLock.sortedEvents.size() / thread_count_);
-//            int[] p_bids = new int[(int) thread_count_];
-//            HashMap<Integer, Integer> pids = new HashMap<>();
-//            for (TxnEvent event : orderLock.sortedEvents) {
-//                if (event instanceof TransactionEvent) {
-//                    parseTransactionEvent(partitionOffset, (TransactionEvent) event, pids);
-//                    event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
-//                    pids.replaceAll((k, v) -> p_bids[k]++);
-//                } else if (event instanceof DepositEvent) {
-//                    parseDepositEvent(partitionOffset, pids, (DepositEvent) event);
-//                    event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
-//                    pids.replaceAll((k, v) -> p_bids[k]++);
-//                } else {
-//                    throw new UnsupportedOperationException();
-//                }
-//                pids.clear();
-//            }
-//            orderLock.sortedEvents.clear();
-//        }
-//        SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
-//    }
-//
-//    private void parseDepositEvent(int partitionOffset, HashMap<Integer, Integer> pids, DepositEvent event) {
-//        pids.put((int) (Long.parseLong(event.getAccountId()) / partitionOffset), 0);
-//    }
-//
-//    private void parseTransactionEvent(int partitionOffset, TransactionEvent event, HashMap<Integer, Integer> pids) {
-//        pids.put((int) (Long.parseLong(event.getSourceAccountId()) / partitionOffset), 0);
-//        pids.put((int) (Long.parseLong(event.getSourceBookEntryId()) / partitionOffset), 0);
-//        pids.put((int) (Long.parseLong(event.getTargetAccountId()) / partitionOffset), 0);
-//        pids.put((int) (Long.parseLong(event.getTargetBookEntryId()) / partitionOffset), 0);
-//    }
 }

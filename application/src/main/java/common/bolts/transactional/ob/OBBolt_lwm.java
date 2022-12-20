@@ -28,7 +28,7 @@ public class OBBolt_lwm extends OBBolt_LA {
         super.initialize(thread_Id, thisTaskId, graph);
         sink.configPrefix = this.getConfigPrefix();
         sink.prepare(config, context, collector);
-        transactionManager = new TxnManagerLWM(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);
+        transactionManager = new TxnManagerLWM(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {

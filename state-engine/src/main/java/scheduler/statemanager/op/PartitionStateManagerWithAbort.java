@@ -2,12 +2,11 @@ package scheduler.statemanager.op;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
 import scheduler.impl.op.nonstructured.OPNSAScheduler;
+import scheduler.signal.op.*;
 import scheduler.struct.op.MetaTypes.DependencyType;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import scheduler.struct.op.Operation;
-import scheduler.signal.op.*;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -78,7 +77,7 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
                 onAbortHandlingTransition(operation, (OnNeedAbortHandlingSignal) signal);
             } else if (signal instanceof OnRollbackAndRedoSignal) {
                 onRollbackAndRedoTransition(operation, (OnRollbackAndRedoSignal) signal);
-            }else if (signal instanceof OnRootSignal) {
+            } else if (signal instanceof OnRootSignal) {
                 onRootTransition(operation);
             }
             signal = opSignalQueue.poll();
@@ -162,9 +161,9 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
                 if (!signal.getPrevParentState().equals(OperationStateType.EXECUTED)) {
                     operation.updateDependencies(dependencyType, parentState);
                 }
-                 if (operation.tryReady()) {
-                     readyAction(operation);
-                 }
+                if (operation.tryReady()) {
+                    readyAction(operation);
+                }
             }
         } else if (parentState.equals(OperationStateType.BLOCKED) || parentState.equals(OperationStateType.READY)) {
             // EXECUTED -> BLOCKED, must

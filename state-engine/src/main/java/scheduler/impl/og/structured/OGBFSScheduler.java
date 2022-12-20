@@ -1,10 +1,7 @@
 package scheduler.impl.og.structured;
 
 import scheduler.context.og.OGSContext;
-import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
-import scheduler.struct.op.MetaTypes;
-import utils.SOURCE_CONTROL;
 
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:

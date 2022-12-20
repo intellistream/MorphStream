@@ -6,7 +6,6 @@ import profiler.MeasureTools;
 import scheduler.context.op.OPSAContext;
 import scheduler.struct.op.MetaTypes;
 import scheduler.struct.op.Operation;
-import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -118,7 +117,7 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
         boolean markAny = false;
         ArrayList<Operation> operations;
         int curLevel;
-        for (Map.Entry<Integer, ArrayList<Operation>> operationsEntry: context.allocatedLayeredOCBucket.entrySet()) {
+        for (Map.Entry<Integer, ArrayList<Operation>> operationsEntry : context.allocatedLayeredOCBucket.entrySet()) {
             operations = operationsEntry.getValue();
             curLevel = operationsEntry.getKey();
             for (Operation operation : operations) {

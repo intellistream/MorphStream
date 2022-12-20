@@ -2,7 +2,6 @@ package scheduler.impl.og.structured;
 
 import scheduler.context.og.OGSContext;
 import scheduler.struct.og.OperationChain;
-import utils.SOURCE_CONTROL;
 
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:
@@ -16,7 +15,6 @@ public class AbstractOGBFSScheduler<Context extends OGSContext> extends OGSSched
     public AbstractOGBFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
         super(totalThreads, NUM_ITEMS, app);
     }
-
 
 
     @Override

@@ -6,7 +6,6 @@ import scheduler.context.og.OGSAContext;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
-import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Collection;
