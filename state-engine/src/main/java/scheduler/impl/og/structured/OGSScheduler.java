@@ -8,7 +8,6 @@ import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
 import transaction.impl.ordered.MyList;
-import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 
@@ -29,13 +28,13 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
         int threadId = context.thisThreadId;
 //        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().exploreTPGBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        context.exploreTPGBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
 
     public void REINITIALIZE(Context context) {
         needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     protected void ProcessedToNextLevel(Context context) {
@@ -70,14 +69,14 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
 //    }
 
     @Override
-    public void start_evaluation(Context context, long mark_ID, int num_events) {
+    public void start_evaluation(Context context, double mark_ID, int num_events) {
         INITIALIZE(context);
 
         do {
             EXPLORE(context);
             PROCESS(context, mark_ID);
         } while (!FINISHED(context));
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");

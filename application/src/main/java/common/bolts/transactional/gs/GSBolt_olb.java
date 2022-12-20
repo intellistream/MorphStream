@@ -24,6 +24,6 @@ public class GSBolt_olb extends GSBolt_LA {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerOrderLockBlocking(db.getStorageManager(),
-                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
+                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
     }
 }

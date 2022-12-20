@@ -4,8 +4,6 @@ import combo.SINKCombo;
 import common.bolts.transactional.sl.GlobalSorter;
 import common.param.TxnEvent;
 import common.param.mb.MicroEvent;
-import common.param.sl.DepositEvent;
-import common.param.sl.TransactionEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -16,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerSStore;
-import utils.SOURCE_CONTROL;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -48,7 +45,7 @@ public class GSBolt_sstore extends GSBolt_LA {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
+        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
         if (!enable_states_partition) {
             if (enable_log) LOG.info("Please enable `enable_states_partition` for PAT scheme");
             System.exit(-1);
@@ -86,8 +83,8 @@ public class GSBolt_sstore extends GSBolt_LA {
         }
     }
 
-    public void start_evaluate(int thread_Id, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
-        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+    public void start_evaluate(int thread_Id, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
+        transactionManager.stage.getControl().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         // add bid_array for events
         if (thread_Id == 0) {
             int partitionOffset = config.getInt("NUM_ITEMS") / tthread;
@@ -105,7 +102,7 @@ public class GSBolt_sstore extends GSBolt_LA {
             }
             GlobalSorter.sortedEvents.clear();
         }
-        SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
+        transactionManager.stage.getControl().postStateAccessBarrier(thread_Id);
     }
 
     private void parseMicroEvent(int partitionOffset, MicroEvent event, HashMap<Integer, Integer> pids) {
@@ -115,8 +112,8 @@ public class GSBolt_sstore extends GSBolt_LA {
     }
 
     @Override
-    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
 //            System.out.println("thread: "+thread_Id+", event_id: "+_bid);
             TxnEvent event = (TxnEvent) input_event;
             GlobalSorter.addEvent(event);
@@ -124,7 +121,7 @@ public class GSBolt_sstore extends GSBolt_LA {
     }
 
     @Override
-    protected void LAL_PROCESS(long _bid) throws DatabaseException {
+    protected void LAL_PROCESS(double _bid) throws DatabaseException {
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
         MicroEvent event = (MicroEvent) input_event;
         int _pid = event.getPid();

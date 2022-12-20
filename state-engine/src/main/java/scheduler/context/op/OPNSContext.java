@@ -5,6 +5,7 @@ import scheduler.statemanager.op.OperationStateListener;
 import scheduler.statemanager.op.PartitionStateManager;
 import scheduler.struct.op.Operation;
 import scheduler.struct.op.OperationChain;
+import stage.Stage;
 
 import java.util.ArrayDeque;
 
@@ -15,8 +16,8 @@ public class OPNSContext extends OPSchedulerContext {
     public final ArrayDeque<Operation> OCwithChildren; // task queues to store operations for each thread
 
 
-    public OPNSContext(int thisThreadId) {
-        super(thisThreadId);
+    public OPNSContext(int thisThreadId, Stage stage) {
+        super(thisThreadId, stage);
         taskQueues = new ArrayDeque<>();
         IsolatedOC = new ArrayDeque<>();
         OCwithChildren = new ArrayDeque<>();

@@ -6,6 +6,7 @@ import storage.TableRecord;
 import storage.datatype.DataBox;
 import storage.table.stats.TableStats;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -98,4 +99,6 @@ public abstract class BaseTable implements ITable {
     public int getEntrySize() {
         return this.schema.getEntrySize();
     }
+
+    public abstract Iterator<String> primaryKeyIterator();
 }

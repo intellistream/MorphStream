@@ -87,6 +87,14 @@ public abstract class DataBox implements Comparable, Cloneable {
         throw new DataBoxException("not list type");
     }
 
+    public List<String> getStringList() {
+        throw new DataBoxException("not list type");
+    }
+
+    public void setStringList(List<String> list) {
+        throw new DataBoxException("not list type");
+    }
+
     public void setString(String s, int len) throws DataBoxException {
         throw new DataBoxException("not string type");
     }
@@ -120,6 +128,10 @@ public abstract class DataBox implements Comparable, Cloneable {
     }
 
     public double addItem(Double nextDouble) {
+        throw new DataBoxException("not list type");
+    }
+
+    public String addItem(String nextString) {
         throw new DataBoxException("not list type");
     }
 
@@ -181,6 +193,10 @@ public abstract class DataBox implements Comparable, Cloneable {
             return String.valueOf((this).getTimestamp());
         }
         throw new DataBoxException("Not Implemented");
+    }
+
+    public void setString(String s) throws DataBoxException {
+        throw new DataBoxException("not string type");
     }
 
     public HashSet getHashSet() {

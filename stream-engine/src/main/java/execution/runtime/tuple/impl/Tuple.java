@@ -13,22 +13,22 @@ import java.util.Collection;
  * It's possible to make each Brisk.execution.runtime.tuple intelligent!!
  */
 public class Tuple {
+    public final Message message;
     private final int sourceId;
     //context is not going to be serialized.
     private final TopologyContext context;
     //	private boolean tickerMark = false;
-    private final long bid;
-    public final Message message;
+    private final double bid;
     private long[] partition_bid;
 
-    public Tuple(long bid, int sourceId, TopologyContext context, Message message) {
+    public Tuple(double bid, int sourceId, TopologyContext context, Message message) {
         this.bid = bid;
         this.sourceId = sourceId;
         this.context = context;
         this.message = message;
     }
 
-    public Tuple(long bid, long[] p_bid, int sourceId, TopologyContext context, Message message) {
+    public Tuple(double bid, long[] p_bid, int sourceId, TopologyContext context, Message message) {
         this.bid = bid;
         this.sourceId = sourceId;
         this.context = context;
@@ -153,7 +153,7 @@ public class Tuple {
         return this.message.isMarker();
     }
 
-    public long getBID() {
+    public double getBID() {
         return bid;
     }
 

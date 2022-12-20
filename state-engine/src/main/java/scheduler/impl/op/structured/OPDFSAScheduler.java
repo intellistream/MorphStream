@@ -6,7 +6,6 @@ import profiler.MeasureTools;
 import scheduler.context.op.OPSAContext;
 import scheduler.struct.op.MetaTypes;
 import scheduler.struct.op.Operation;
-import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,7 +57,7 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
+    public void PROCESS(Context context, double mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
@@ -118,7 +117,7 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
         boolean markAny = false;
         ArrayList<Operation> operations;
         int curLevel;
-        for (Map.Entry<Integer, ArrayList<Operation>> operationsEntry: context.allocatedLayeredOCBucket.entrySet()) {
+        for (Map.Entry<Integer, ArrayList<Operation>> operationsEntry : context.allocatedLayeredOCBucket.entrySet()) {
             operations = operationsEntry.getValue();
             curLevel = operationsEntry.getKey();
             for (Operation operation : operations) {
@@ -143,7 +142,7 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
      * @return
      */
     private boolean _MarkOperationsToAbort(Context context, Operation operation) {
-        long bid = operation.bid;
+        double bid = operation.bid;
         boolean markAny = false;
         //identify bids to be aborted.
         for (Operation failedOp : failedOperations) {
@@ -160,10 +159,10 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
         context.rollbackLevel = -1;
         context.isRollbacked = false;
 
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         needAbortHandling.compareAndSet(true, false);
         failedOperations.clear();
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         if (enable_log) LOG.debug("resume: " + context.thisThreadId);
     }
 

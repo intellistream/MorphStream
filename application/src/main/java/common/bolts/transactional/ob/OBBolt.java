@@ -38,13 +38,13 @@ public abstract class OBBolt extends TransactionalBolt {
      * @param bid
      * @param timestamp
      */
-    protected void auth(long bid, Long timestamp) {
+    protected void auth(double bid, Long timestamp) {
 //        System.out.println(generatedString);
 //        stateless_task.random_compute(5);
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
     protected void BUYING_REQUEST_LOCKAHEAD(BuyingEvent event, TxnContext txnContext) throws DatabaseException {
@@ -156,7 +156,7 @@ public abstract class OBBolt extends TransactionalBolt {
             collector.emit(event.getBid(), event.biding_result, event.getTimestamp());//the tuple is finished finally.
         } else {
             if (enable_latency_measurement) {
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.biding_result, event.getTimestamp())));//(long bid, int sourceId, TopologyContext context, Message message)
+                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.biding_result, event.getTimestamp())));//(double bid, int sourceId, TopologyContext context, Message message)
             }
         }
     }
@@ -166,7 +166,7 @@ public abstract class OBBolt extends TransactionalBolt {
             collector.emit(event.getBid(), event.alert_result, event.getTimestamp());//the tuple is finished finally.
         } else {
             if (enable_latency_measurement) {
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.alert_result, event.getTimestamp())));//(long bid, int sourceId, TopologyContext context, Message message)
+                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.alert_result, event.getTimestamp())));//(double bid, int sourceId, TopologyContext context, Message message)
             }
         }
     }
@@ -176,15 +176,15 @@ public abstract class OBBolt extends TransactionalBolt {
             collector.emit(event.getBid(), event.topping_result, event.getTimestamp());//the tuple is finished finally.
         } else {
             if (enable_latency_measurement) {
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.topping_result, event.getTimestamp())));//(long bid, int sourceId, TopologyContext context, Message message)
+                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.topping_result, event.getTimestamp())));//(double bid, int sourceId, TopologyContext context, Message message)
             }
         }
     }
 
     @Override
-    protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
+    protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             TxnEvent event = (TxnEvent) input_event;
             (event).setTimestamp(timestamp);
             if (event instanceof BuyingEvent) {

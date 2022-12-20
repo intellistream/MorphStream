@@ -7,6 +7,7 @@ import java.util.*;
 import static content.common.CommonMetaTypes.kMaxThreadNum;
 
 public class Metrics {
+    public static final DescriptiveStatistics usedMemory = new DescriptiveStatistics();
     public static int COMPUTE_COMPLEXITY = 10;//default setting. 1, 10, 100
     public static int POST_COMPUTE_COMPLEXITY = 1;
     //change to 3 for S_STORE testing.
@@ -14,7 +15,6 @@ public class Metrics {
     public static int NUM_ITEMS = 500_000;//1. 1_000_000; 2. ? ; 3. 1_000  //1_000_000 YCSB has 16 million records, Ledger use 200 million records.
     public static int H2_SIZE;
     public static Timer timer = new Timer();
-    public static final DescriptiveStatistics usedMemory = new DescriptiveStatistics();
 
     public static void RESET_COUNTERS(int thread_id) {
         //reset accumulative counters.
@@ -64,7 +64,7 @@ public class Metrics {
         Total_Record.txn_total[thread_id].addValue(txn_total);
         Total_Record.overhead_total[thread_id].addValue(total_time - stream_total - txn_total);
         Runtime.ThroughputPerPhase.get(thread_id).add(1 / total_time);
-        Runtime.Start[thread_id]=0;
+        Runtime.Start[thread_id] = 0;
     }
 
     public static void COMPUTE_PRE_EXE_START_TIME(int thread_id) {
@@ -223,6 +223,7 @@ public class Metrics {
     public static void COMPUTE_CONSTRUCT(int thread_id) {
         Scheduler.Construct[thread_id] += System.nanoTime() - Scheduler.ConstructStart[thread_id];
     }
+
     public static void COMPUTE_SWITCH_START(int thread_id) {
         Scheduler.SchedulerSwitchStart[thread_id] = System.nanoTime();
     }
@@ -281,6 +282,7 @@ public class Metrics {
                 Abort[i] = 0;
             }
         }
+
         public static void Initialize(int i) {
             IndexStart[i] = 0;
             Index[i] = 0;
@@ -304,7 +306,7 @@ public class Metrics {
         public static long[] TxnStart = new long[kMaxThreadNum];
         public static long[] Txn = new long[kMaxThreadNum];
         //Runtime throughput per phase
-        public static HashMap<Integer, List<Double>> ThroughputPerPhase =new HashMap<>();
+        public static HashMap<Integer, List<Double>> ThroughputPerPhase = new HashMap<>();
         //USED ONLY BY TStream
         public static long[] PreTxnStart = new long[kMaxThreadNum];
         public static long[] PreTxn = new long[kMaxThreadNum];
@@ -320,7 +322,7 @@ public class Metrics {
                 Txn[i] = 0;
                 PreTxnStart[i] = 0;
                 PreTxn[i] = 0;
-                ThroughputPerPhase.put(i,new ArrayList<>());
+                ThroughputPerPhase.put(i, new ArrayList<>());
             }
         }
     }
@@ -396,6 +398,7 @@ public class Metrics {
                 SchedulerSwitch[i] = 0;
             }
         }
+
         public static void Initialize(int i) {
             NextStart[i] = 0;
             Next[i] = 0;
@@ -440,8 +443,10 @@ public class Metrics {
             }
         }
     }
+
     public static class RuntimeMemory extends TimerTask {
         int gb = 1024 * 1024 * 1024;
+
         @Override
         public void run() {
             long UsedMemory = (java.lang.Runtime.getRuntime().totalMemory() - java.lang.Runtime.getRuntime().freeMemory()) / gb;

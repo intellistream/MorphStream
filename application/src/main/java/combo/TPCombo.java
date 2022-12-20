@@ -18,7 +18,7 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
 import static content.Content.*;
 
 public class TPCombo extends SPOUTCombo {

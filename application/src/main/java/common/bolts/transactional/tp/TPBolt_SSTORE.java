@@ -4,8 +4,6 @@ import combo.SINKCombo;
 import common.bolts.transactional.sl.GlobalSorter;
 import common.param.TxnEvent;
 import common.param.lr.LREvent;
-import common.param.sl.DepositEvent;
-import common.param.sl.TransactionEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -16,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerSStore;
-import utils.SOURCE_CONTROL;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -25,7 +22,6 @@ import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_log;
 import static profiler.MeasureTools.*;
 
 /**
@@ -35,6 +31,7 @@ public class TPBolt_SSTORE extends TPBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(TPBolt_SSTORE.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<Tuple> tuples = new ArrayDeque<>();
+
     public TPBolt_SSTORE(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
 
@@ -54,7 +51,7 @@ public class TPBolt_SSTORE extends TPBolt_LA {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerSStore(db.getStorageManager(),
-                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
+                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);
     }
 
     @Override
@@ -81,11 +78,12 @@ public class TPBolt_SSTORE extends TPBolt_LA {
             tuples.add(in);
         }
     }
-    public void start_evaluate(int thread_Id, long mark_ID, int num_events) {
-        SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);
+
+    public void start_evaluate(int thread_Id, double mark_ID, int num_events) {
+        transactionManager.stage.getControl().preStateAccessBarrier(thread_Id);
         LA_RESETALL(transactionManager, thread_Id);
         // add bid_array for events
-        if (thread_Id ==0) {
+        if (thread_Id == 0) {
             int partitionOffset = config.getInt("NUM_ITEMS") / tthread;
             int[] p_bids = new int[(int) tthread];
             HashMap<Integer, Integer> pids = new HashMap<>();
@@ -97,15 +95,16 @@ public class TPBolt_SSTORE extends TPBolt_LA {
             }
             GlobalSorter.sortedEvents.clear();
         }
-        SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
+        transactionManager.stage.getControl().postStateAccessBarrier(thread_Id);
     }
+
     private void parseTollProcessingEvent(int partitionOffset, LREvent event, HashMap<Integer, Integer> pids) {
         pids.put((event.getPOSReport().getSegment() / partitionOffset), 0);
     }
 
     @Override
-    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
 //            System.out.println("thread: "+thread_Id+", event_id: "+_bid);
             TxnEvent event = (TxnEvent) input_event;
             GlobalSorter.addEvent(event);
@@ -113,7 +112,7 @@ public class TPBolt_SSTORE extends TPBolt_LA {
     }
 
     @Override
-    protected void LAL_PROCESS(long _bid) throws DatabaseException {
+    protected void LAL_PROCESS(double _bid) throws DatabaseException {
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
         TxnEvent event = (TxnEvent) input_event;
         int _pid = (event).getPid();

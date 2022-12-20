@@ -6,7 +6,6 @@ import scheduler.context.og.OGNSContext;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
-import utils.SOURCE_CONTROL;
 
 import static common.CONTROL.enable_log;
 
@@ -26,23 +25,23 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
         needAbortHandling = false;
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(OGNSContext context) {
         needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     @Override
-    public void start_evaluation(OGNSContext context, long mark_ID, int num_events) {
+    public void start_evaluation(OGNSContext context, double mark_ID, int num_events) {
         INITIALIZE(context);
         do {
             EXPLORE(context);
             PROCESS(context, mark_ID);
         } while (!FINISHED(context));
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");
@@ -63,7 +62,7 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
      */
     @Override
     public void EXPLORE(OGNSContext context) {
-         context.partitionStateManager.handleStateTransitions();
+        context.partitionStateManager.handleStateTransitions();
     }
 
     @Override

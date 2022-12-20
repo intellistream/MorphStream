@@ -30,7 +30,7 @@ public class OBBolt_nocc extends OBBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerNoLock(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
+        transactionManager = new TxnManagerNoLock(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
@@ -43,8 +43,8 @@ public class OBBolt_nocc extends OBBolt {
         nocc_execute(in);
     }
 
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             if (input_event instanceof BuyingEvent) {
                 buying_txn_process((BuyingEvent) input_event, i, _bid);
             } else if (input_event instanceof AlertEvent) {
@@ -55,21 +55,21 @@ public class OBBolt_nocc extends OBBolt {
         }
     }
 
-    private void topping_txn_process(ToppingEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void topping_txn_process(ToppingEvent input_event, double i, double _bid) throws DatabaseException, InterruptedException {
         TOPPING_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         TOPPING_REQUEST_CORE(input_event);
         END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
-    private void alert_txn_process(AlertEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void alert_txn_process(AlertEvent input_event, double i, double _bid) throws DatabaseException, InterruptedException {
         ALERT_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         ALERT_REQUEST_CORE(input_event);
         END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
-    private void buying_txn_process(BuyingEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void buying_txn_process(BuyingEvent input_event, double i, double _bid) throws DatabaseException, InterruptedException {
         BUYING_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         BUYING_REQUEST_CORE(input_event);

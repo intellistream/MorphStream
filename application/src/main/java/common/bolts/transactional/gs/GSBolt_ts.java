@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
-import transaction.function.Condition;
 import transaction.function.SUM;
 import transaction.impl.ordered.TxnManagerTStream;
 
@@ -17,7 +16,8 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_latency_measurement;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
@@ -26,6 +26,7 @@ public class GSBolt_ts extends GSBolt {
     private static final long serialVersionUID = -5968750340131744744L;
     private final double write_useful_time = 556;//write-compute time pre-measured.
     Collection<MicroEvent> microEvents;
+    int i = 0;
     private int writeEvents;
 
     public GSBolt_ts(int fid, SINKCombo sink) {
@@ -42,9 +43,9 @@ public class GSBolt_ts extends GSBolt {
      * THIS IS ONLY USED BY TSTREAM.
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
-    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
+    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             MicroEvent event = (MicroEvent) input_event;
             if (enable_latency_measurement)
@@ -86,7 +87,7 @@ public class GSBolt_ts extends GSBolt {
                     event.getRecord_refs()[writeKeyIdx],//to be fill up.
                     sum,
                     condition_table, condition_source,//condition source, condition id.
-                    event.success);          //asynchronously return.
+                    event.success, "gs");          //asynchronously return.
         }
         transactionManager.CommitTransaction(txnContext);
         microEvents.add(event);
@@ -95,7 +96,7 @@ public class GSBolt_ts extends GSBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         microEvents = new ArrayDeque<>();
     }
 
@@ -120,7 +121,7 @@ public class GSBolt_ts extends GSBolt {
             READ_POST(event);
         }
     }
-    int i=0;
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 

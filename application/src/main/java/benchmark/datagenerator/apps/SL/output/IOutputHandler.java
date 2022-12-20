@@ -1,8 +1,8 @@
 package benchmark.datagenerator.apps.SL.output;
 
 
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
 import benchmark.datagenerator.Event;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
 
 import java.io.IOException;
 import java.util.ArrayList;

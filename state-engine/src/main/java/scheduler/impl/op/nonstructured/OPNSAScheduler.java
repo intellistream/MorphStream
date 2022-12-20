@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.context.op.OPNSAContext;
 import scheduler.struct.op.Operation;
-import utils.SOURCE_CONTROL;
 
 // TODO: code clean, a lot...
 public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<Context> {
@@ -21,7 +20,7 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
     public void INITIALIZE(Context context) {
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     /**
@@ -49,7 +48,7 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
+    public void PROCESS(Context context, double mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;

@@ -23,7 +23,7 @@ public interface StreamLedgerConstants extends BaseConstants {
         String TEG = "txnGenerator";
         String DT = "depositTxn";
         String TT = "transferTxn";
-        String SL = "CTBolt";
+        String SL = "SLBolt";
     }
 
     interface Constant {

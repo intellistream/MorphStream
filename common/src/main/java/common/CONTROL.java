@@ -11,7 +11,10 @@ public interface CONTROL {
 //    boolean isCyclic = true;
 
     //common.combo optimization
-    boolean enable_app_combo = true;//compose all operators into one.
+
+    //    boolean enable_app_combo = true;//compose all operators into one.
+    boolean enable_app_combo = false;//compose all operators into one.
+
     int combo_bid_size = 1;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
     int sink_combo_bid_size = 200;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
     //db related.
@@ -34,4 +37,15 @@ public interface CONTROL {
     int CORE_PER_SOCKET = 2;//configure this for NUMA placement please.
     int NUM_OF_SOCKETS = 1;//configure this for NUMA placement please.
     boolean enable_speculative = false;//work in future!
+
+    //ED Window
+    int wordWindowSize = 120;
+    int tweetWindowSize = 40;
+    int clusterTableSize = 40;
+
+    //Double bid Support
+    boolean enableDoubleBid = true;
+
+    //Fetch input tuple with matching index
+    boolean fetchWithIndex = false;
 }

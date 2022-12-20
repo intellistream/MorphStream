@@ -26,12 +26,12 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public void SetTimestamp(long timestamp) {
+    public void SetTimestamp(double timestamp) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public long GetTimestamp() {
+    public double GetTimestamp() {
         throw new UnsupportedOperationException();
     }
 
@@ -86,7 +86,7 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public long GetLWM() {
+    public double GetLWM() {
         throw new UnsupportedOperationException();
     }
 
@@ -106,6 +106,52 @@ public abstract class TStreamContent implements Content {
         if (record_at_ts == null || record_at_ts.getValues() == null)
             System.out.println("Read a null value??");
         return record_at_ts;
+    }
+
+    /**
+     * @param ts
+     * @return the version strictly matching ts.
+     */
+    @Override
+    public SchemaRecord readCurrValues(long ts) {
+        SchemaRecord record_at_ts = versions.get(ts);
+        if (record_at_ts == null || record_at_ts.getValues() == null)
+            System.out.println("TStreamContent: No record matching the current ts");
+        return record_at_ts;
+    }
+
+    /**
+     * @param ts
+     * @return the latest version equal or less than ts
+     */
+    @Override
+    public SchemaRecord readPastValues(long ts) {
+        SchemaRecord record_at_ts = versions.floorEntry(ts).getValue();
+        if (record_at_ts == null || record_at_ts.getValues() == null)
+            System.out.println("TStreamContent: No record under the current ts");
+        return record_at_ts;
+    }
+
+    /**
+     * @param ts
+     * @return the latest version equal or less than ts, return null if the latest key is less than min_ts
+     */
+    @Override
+    public SchemaRecord readPastValues(long ts, long min_ts) {
+        Map.Entry<Long, SchemaRecord> entry = versions.floorEntry(ts);
+        if (entry.getKey() < min_ts) {
+            return null;
+        }
+        SchemaRecord record_at_ts = entry.getValue();
+        if (record_at_ts == null || record_at_ts.getValues() == null)
+            System.out.println("TStreamContent: No record under the current ts");
+        return record_at_ts;
+    }
+
+    @Override
+    public SchemaRecord readPreRangeValues(long startTs, int range) {
+        SchemaRecord record_in_range = null;
+        return record_in_range;
     }
 
     /**

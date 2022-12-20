@@ -1,17 +1,15 @@
 package utils;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
 /**
  * store the static config for the app
  */
 public class AppConfig {
-    static Random random = new Random();
     public static int complexity;
     public static boolean isCyclic = true;
+    public static int windowSize = 1024; // default window size is 1024
+    static Random random = new Random();
 
 //    public static long randomDelay() {
 //        int delay = random.nextInt(complexity);
@@ -27,7 +25,7 @@ public class AppConfig {
 //        try {
 //            byte[] b = new byte[0];
 //            for (int i = 1; i < 5; i++) {
-                    // TODO: new a instance to avoid resource contention
+    // TODO: new a instance to avoid resource contention
 //                MessageDigest digest = MessageDigest.getInstance("SHA-256");
 //                b = digest.digest(("XXXXXXXXXXXXXXXXXXXX"+i).getBytes(StandardCharsets.UTF_8));
 //            }
@@ -41,6 +39,7 @@ public class AppConfig {
     // TODO: we follow the OSDI'18 approach to do the computational complexity
     public static void randomDelay() {
         long start = System.nanoTime();
-        while (System.nanoTime() - start < complexity) {}
+        while (System.nanoTime() - start < complexity) {
+        }
     }
 }

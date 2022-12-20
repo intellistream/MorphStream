@@ -35,7 +35,6 @@ public class TPBolt_nocc extends TPBolt {
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-//        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
                 , context.getGraph());
     }
@@ -44,7 +43,7 @@ public class TPBolt_nocc extends TPBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerNoLock(db.getStorageManager(),
-                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
+                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
     }
 
     @Override
@@ -53,13 +52,13 @@ public class TPBolt_nocc extends TPBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
             txn_process((LREvent) input_event, i, _bid);
         }
     }
 
-    private void txn_process(LREvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void txn_process(LREvent input_event, double i, double _bid) throws DatabaseException, InterruptedException {
         TXN_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         TXN_REQUEST_CORE(input_event);

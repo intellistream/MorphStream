@@ -12,7 +12,6 @@ import lock.PartitionedOrderLock;
 import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.Metrics;
 import topology.TransactionTopology;
 import transaction.TableInitilizer;
 

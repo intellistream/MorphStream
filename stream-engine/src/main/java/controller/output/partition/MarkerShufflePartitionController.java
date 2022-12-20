@@ -61,13 +61,13 @@ public class MarkerShufflePartitionController extends ShufflePartitionController
      * @return
      */
     @Override
-    public int emit(Meta meta, String streamId, long bid, Object... output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, Object... output) throws InterruptedException {
         offer(meta.src_id, marker_sink, streamId, bid, output);
         return marker_sink;
     }
 
     @Override
-    public int emit(Meta meta, String streamId, long bid, char[] output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, char[] output) throws InterruptedException {
         offer(meta.src_id, marker_sink, streamId, bid, output);
         return marker_sink;
     }
@@ -83,13 +83,13 @@ public class MarkerShufflePartitionController extends ShufflePartitionController
      * @return
      */
     @Override
-    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, Object... output) {
+    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, Object... output) {
         offer_inorder(meta.src_id, marker_sink, streamId, bid, gap, output);
         return marker_sink;
     }
 
     @Override
-    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, StreamValues output) {
+    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, StreamValues output) {
         offer_inorder(meta.src_id, marker_sink, streamId, bid, gap, output);
         return marker_sink;
     }

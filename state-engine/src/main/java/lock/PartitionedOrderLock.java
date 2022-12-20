@@ -1,11 +1,11 @@
 package lock;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class PartitionedOrderLock implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(PartitionedOrderLock.class);
@@ -41,9 +41,9 @@ public class PartitionedOrderLock implements Serializable {
     }
 
     public class LOCK {
-        public volatile AtomicLong bid = new AtomicLong();
+        public volatile AtomicDouble bid = new AtomicDouble();
 
-        public boolean blocking_wait(final long bid, long _bid) {
+        public boolean blocking_wait(final double bid, double _bid) {
 //            if (!this.counter.compareAndSet(counter, counter))
 //                if (enable_log) LOG.info("not ready for this batch to proceed:" + counter + " lock_ratio @" + this);
             while (!this.bid.compareAndSet(bid, bid)) {
@@ -57,7 +57,7 @@ public class PartitionedOrderLock implements Serializable {
         }
 
         public void advance() {
-            bid.incrementAndGet();//allow next batch to proceed.
+            bid.addAndGet(1);//allow next batch to proceed.
         }
 
         public void reset() {

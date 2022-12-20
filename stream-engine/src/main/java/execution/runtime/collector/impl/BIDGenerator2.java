@@ -1,13 +1,13 @@
 package execution.runtime.collector.impl;
 
-import java.util.concurrent.atomic.AtomicLong;
+import com.google.common.util.concurrent.AtomicDouble;
 
 /**
  * A singleton class
  */
 public class BIDGenerator2 {
     private static final BIDGenerator2 ourInstance = new BIDGenerator2();
-    private final AtomicLong bid = new AtomicLong();
+    private final AtomicDouble bid = new AtomicDouble();
 
     private BIDGenerator2() {
         bid.set(0);
@@ -17,7 +17,7 @@ public class BIDGenerator2 {
         return ourInstance;
     }
 
-    public long getAndIncrement() {
-        return bid.getAndIncrement();
+    public double getAndIncrement() {
+        return bid.addAndGet(1);
     }
 }

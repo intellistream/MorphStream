@@ -110,13 +110,13 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
      * @param output
      * @return
      */
-    public int emit(Meta meta, String streamId, long bid, Object... output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, Object... output) throws InterruptedException {
         int target = chooseTasks(output);
         offer(meta.src_id, target, streamId, bid, output);
         return target;
     }
 
-    public int emit(Meta meta, String streamId, long bid, char[] output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, double bid, char[] output) throws InterruptedException {
         int target = chooseTasks(output);
         offer(meta.src_id, target, streamId, bid, output);
         return target;
@@ -132,7 +132,7 @@ public class PartialKeyGroupingController extends FieldsPartitionController {
      * @param output
      * @return
      */
-    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, Object... output) {
+    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, Object... output) {
         int target = chooseTasks(output);
         offer_inorder(meta.src_id, target, streamId, bid, gap, output);
         return target;

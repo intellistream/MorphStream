@@ -9,10 +9,8 @@ import scheduler.context.og.OGNSContext;
 import scheduler.context.og.OGSContext;
 import scheduler.context.og.OGSchedulerContext;
 import scheduler.struct.op.MetaTypes;
-import transaction.TxnManager;
 import transaction.impl.ordered.MyList;
 import utils.AppConfig;
-import utils.SOURCE_CONTROL;
 import utils.lib.ConcurrentHashMap;
 
 import java.util.*;
@@ -46,9 +44,27 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     private final int NUM_ITEMS;
     private final ConcurrentHashMap<String, TableOCs<OperationChain>> operationChains;//shared data structure.
     private final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
+    private final int app;
     CyclicBarrier barrier;
     private int maxLevel = 0; // just for layered scheduling
-    private final int app;
+
+    /**
+     * @param totalThreads
+     * @param delta
+     * @param app
+     */
+    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS, int app) {
+        barrier = new CyclicBarrier(totalThreads);
+        this.totalThreads = totalThreads;
+        this.delta = delta;
+        this.NUM_ITEMS = NUM_ITEMS;
+        threadToContextMap = new ConcurrentHashMap<>();
+        threadToOCs = new ConcurrentHashMap<>();
+        //shared data structure.
+        this.app = app;
+        //create holder.
+        operationChains = new ConcurrentHashMap<>();
+    }
 
     public void reset(Context context) {
 //        //reset holder.
@@ -74,39 +90,23 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         log.info("===Clear current data for the next batch===");
     }
 
-    /**
-     * @param totalThreads
-     * @param delta
-     * @param app
-     */
-    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS, int app) {
-        barrier = new CyclicBarrier(totalThreads);
-        this.totalThreads = totalThreads;
-        this.delta = delta;
-        this.NUM_ITEMS = NUM_ITEMS;
-        threadToContextMap = new ConcurrentHashMap<>();
-        threadToOCs = new ConcurrentHashMap<>();
-        //shared data structure.
-        this.app = app;
-        //create holder.
-        operationChains = new ConcurrentHashMap<>();
-    }
     public void initTPG(int offset) {
         if (app == 0) {//GS
-            operationChains.put("MicroTable", new TableOCs<>(totalThreads,offset));
+            operationChains.put("MicroTable", new TableOCs<>(totalThreads, offset));
         } else if (app == 1) {//SL
-            operationChains.put("accounts", new TableOCs<>(totalThreads,offset));
-            operationChains.put("bookEntries", new TableOCs<>(totalThreads,offset));
-        } else if(app == 2) {//TP
-            operationChains.put("segment_speed",new TableOCs<>(totalThreads,offset));
-            operationChains.put("segment_cnt",new TableOCs<>(totalThreads,offset));
-        } else if (app == 3) {
-            operationChains.put("goods",new TableOCs<>(totalThreads,offset));
+            operationChains.put("accounts", new TableOCs<>(totalThreads, offset));
+            operationChains.put("bookEntries", new TableOCs<>(totalThreads, offset));
+        } else if (app == 2) {//TP
+            operationChains.put("segment_speed", new TableOCs<>(totalThreads, offset));
+            operationChains.put("segment_cnt", new TableOCs<>(totalThreads, offset));
+        } else if (app == 3) {//OB
+            operationChains.put("goods", new TableOCs<>(totalThreads, offset));
         }
     }
 
     /**
      * Pre-create a bunch of OCs for each key in the table, which reduces the constant overhead during the runtime.
+     *
      * @param context
      */
     // TODO: if running multiple batches, this will be a problem.
@@ -134,14 +134,14 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
                 ocs.add(accOC);
                 ocs.add(beOC);
-            } else if( app == 2) {
-                OperationChain speedOC=context.createTask("segment_speed",_key,0);
-                OperationChain cntOC=context.createTask("segment_cnt",_key,0);
+            } else if (app == 2) {
+                OperationChain speedOC = context.createTask("segment_speed", _key, 0);
+                OperationChain cntOC = context.createTask("segment_cnt", _key, 0);
                 operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, speedOC);
                 operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, cntOC);
                 ocs.add(speedOC);
                 ocs.add(cntOC);
-            } else if (app == 3){
+            } else if (app == 3) {
                 OperationChain gsOC = context.createTask("goods", _key, 0);
                 operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);
@@ -149,16 +149,17 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         }
         threadToOCs.put(context.thisThreadId, ocs);
     }
+
     private void resetOCs(Context context) {
         if (app == 0) {
             operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 1) {
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if( app == 2) {
+        } else if (app == 2) {
             operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 3){
+        } else if (app == 3) {
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
     }
@@ -178,7 +179,6 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         if (request.condition_source != null)
             checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), request.condition_sourceTable, request.condition_source);
     }
-
 
 
     public void firstTimeExploreTPG(Context context) {
@@ -217,7 +217,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 //        LOG.info("id: " + context.thisThreadId + " fd: " + context.fd);
         if (context instanceof OGSContext) {
             ((OGSContext) context).buildBucketPerThread(ocs, resolvedOC);
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            context.waitForOtherThreads(context.thisThreadId);
             if (context.thisThreadId == 0) { // gather
                 for (Context curContext : threadToContextMap.values()) {
                     if (((OGSContext) curContext).maxLevel > maxLevel) {
@@ -225,7 +225,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                     }
                 }
             }
-            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            context.waitForOtherThreads(context.thisThreadId);
             ((OGSContext) context).maxLevel = maxLevel; // scatter
             if (AppConfig.isCyclic) { // if the constructed OCs are not cyclic, skip this.
                 ((OGSContext) context).putBusyWaitOCs(resolvedOC, maxLevel);
@@ -258,7 +258,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 detectAffectedOCs(scannedOCs, circularOCs, oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId); // wait until all threads find the circular ocs.
+        context.waitForOtherThreads(context.thisThreadId); // wait until all threads find the circular ocs.
         int counter = 0;
         for (OperationChain oc : circularOCs) {
             if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
@@ -281,7 +281,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 context.operationChains.add(oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         MeasureTools.BEGIN_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
         if (context instanceof OGSContext) {
             if (enable_log) LOG.info("MaxLevel:" + (((OGSContext) context).maxLevel));
@@ -335,11 +335,11 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 circularOCs.add(oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId); // wait until all threads find the circular ocs.
+        context.waitForOtherThreads(context.thisThreadId); // wait until all threads find the circular ocs.
         int counter = 0;
         for (OperationChain oc : circularOCs) {
             if (Integer.parseInt(oc.primaryKey) / delta == context.thisThreadId) {
-                counter ++;
+                counter++;
                 oc.ocParentsCount.set(0);
                 oc.ocParents.clear();
                 oc.ocChildren.clear();
@@ -380,7 +380,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 circularOCs.add(oc);
             }
         }
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId); // wait until all threads find the circular ocs.
+        context.waitForOtherThreads(context.thisThreadId); // wait until all threads find the circular ocs.
         assert context instanceof AbstractOGNSContext;
         for (OperationChain oc : nonNullOCs) {
             context.operationChains.add(oc);
@@ -395,12 +395,12 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     }
 
     private void detectCircular(OperationChain oc,
-                                   HashMap<OperationChain, Integer> dfn,
-                                   HashMap<OperationChain, Integer> low,
-                                   HashMap<OperationChain, Boolean> inStack,
-                                   Stack<OperationChain> stack,
-                                   int ts,
-                                   HashSet<OperationChain> circularOCs) {
+                                HashMap<OperationChain, Integer> dfn,
+                                HashMap<OperationChain, Integer> low,
+                                HashMap<OperationChain, Boolean> inStack,
+                                Stack<OperationChain> stack,
+                                int ts,
+                                HashSet<OperationChain> circularOCs) {
         if (!oc.getOperations().isEmpty() && !dfn.containsKey(oc)) {
             tarjanDfs(oc, dfn, low, inStack, stack, ts, circularOCs);
         }
@@ -444,6 +444,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 
     /**
      * Scan from the circular OC and find all the children to resolve circular
+     *
      * @param affectedOCs
      * @param circularOCs
      */

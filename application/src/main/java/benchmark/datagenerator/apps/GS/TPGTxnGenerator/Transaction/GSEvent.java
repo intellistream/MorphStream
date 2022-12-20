@@ -1,4 +1,5 @@
 package benchmark.datagenerator.apps.GS.TPGTxnGenerator.Transaction;
+
 import benchmark.datagenerator.Event;
 
 /**

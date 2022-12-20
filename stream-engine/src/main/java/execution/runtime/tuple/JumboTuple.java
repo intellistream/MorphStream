@@ -20,7 +20,7 @@ public class JumboTuple implements Comparable<JumboTuple> {
     public final Message[] msg;
     protected final int sourceId;
     private final TopologyContext context;//context given by producer
-    private final long bid;
+    private final double bid;
     //	private final int targetTasks;//this is no longer required as we avoid the usage of multi-consumer based implementation.
     public int length;//length of batch
 
@@ -34,7 +34,7 @@ public class JumboTuple implements Comparable<JumboTuple> {
         System.arraycopy(clone.msg, 0, msg, 0, length);
     }
 
-    public JumboTuple(int sourceId, long bid, int length, TopologyContext context) {
+    public JumboTuple(int sourceId, double bid, int length, TopologyContext context) {
         this.sourceId = sourceId;
 //		this.targetTasks = targetTasks;
         this.length = length;
@@ -43,7 +43,7 @@ public class JumboTuple implements Comparable<JumboTuple> {
         this.bid = bid;
     }
 
-    public JumboTuple(int sourceId, long bid, int msg_size, TopologyContext context, Message... msg) {
+    public JumboTuple(int sourceId, double bid, int msg_size, TopologyContext context, Message... msg) {
         this.sourceId = sourceId;
 //		this.targetTasks = targetTasks;
         this.context = context;
@@ -60,7 +60,7 @@ public class JumboTuple implements Comparable<JumboTuple> {
      * @param context
      * @param message
      */
-    public JumboTuple(long bid, int sourceId, TopologyContext context, Message message) {
+    public JumboTuple(double bid, int sourceId, TopologyContext context, Message message) {
         this.bid = bid;
         this.sourceId = sourceId;
         this.context = context;
@@ -157,12 +157,12 @@ public class JumboTuple implements Comparable<JumboTuple> {
         return (boolean) getValueByField(field, index_msg);
     }
 
-    public long getBID() {
+    public double getBID() {
         return bid;
     }
 
     @Override
     public int compareTo(JumboTuple o) {
-        return Long.compare(this.bid, o.bid);
+        return Double.compare(this.bid, o.bid);
     }
 }

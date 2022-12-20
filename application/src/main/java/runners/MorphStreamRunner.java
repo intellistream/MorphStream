@@ -6,15 +6,13 @@ import common.Runner;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
+import common.constants.EventDetectionConstants;
 import common.constants.GrepSumConstants;
 import common.platform.HP_Machine;
 import common.platform.HUAWEI_Machine;
 import common.platform.Platform;
 import common.topology.WordCount;
-import common.topology.transactional.GrepSum;
-import common.topology.transactional.OnlineBiding;
-import common.topology.transactional.StreamLedger;
-import common.topology.transactional.TollProcessing;
+import common.topology.transactional.*;
 import components.Topology;
 import components.TopologyComponent;
 import components.exception.UnhandledCaseException;
@@ -62,6 +60,69 @@ public class MorphStreamRunner extends Runner {
         driver.addApp("StreamLedger", StreamLedger.class);//SL
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP
+        driver.addApp("EventDetection", EventDetection.class);//ED
+    }
+
+    public static void main(String[] args) {
+        if (enable_log) log.info("Program Starts..");
+        MorphStreamRunner runner = new MorphStreamRunner();
+        JCommander cmd = new JCommander(runner);
+        try {
+            cmd.parse(args);
+        } catch (ParameterException ex) {
+            if (enable_log) log.error("Argument error: " + ex.getMessage());
+            cmd.usage();
+        }
+        try {
+            runner.run();
+        } catch (InterruptedException ex) {
+            if (enable_log) log.error("Error in running topology locally", ex);
+        }
+    }
+
+    private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
+        if (enable_memory_measurement) {
+            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(), 0, 500);
+        }
+        TopologySubmitter submitter = new TopologySubmitter();
+        try {
+            final_topology = submitter.submitTopology(topology, conf);
+        } catch (UnhandledCaseException e) {
+            e.printStackTrace();
+        }
+        executorThread sinkThread = submitter.getOM().getEM().getSinkThread();
+        long start = System.currentTimeMillis();
+        sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
+        long time_elapsed = (long) ((System.currentTimeMillis() - start) / 1E3 / 60);//in mins
+        if (time_elapsed > 20) {
+            if (enable_log) log.info("Program error, exist...");
+            System.exit(-1);
+        }
+
+        submitter.getOM().join();
+        submitter.getOM().getEM().exist();
+        if (sinkThread.running) {
+            if (enable_log) log.info("The application fails to stop normally, exist...");
+            return -1;
+        } else {
+            if (enable_app_combo) {
+                return SINK_CONTROL.getInstance().throughput;
+            } else {
+                TopologyComponent sink = submitter.getOM().g.getSink().operator;
+                double sum = 0;
+                int cnt = 0;
+                for (ExecutionNode e : sink.getExecutorList()) {
+                    double results = e.op.getResults();
+                    if (results != 0) {
+                        sum += results;
+                    } else {
+                        sum += sum / cnt;
+                    }
+                    cnt++;
+                }
+                return sum;
+            }
+        }
     }
 
     // Prepared default configuration
@@ -140,72 +201,17 @@ public class MorphStreamRunner extends Runner {
                     config.put(Executor_Threads, threads);
                     break;
                 }
+                case "EventDetection": {
+                    config.put("app", 4);
+                    int threads = Math.max(1, (int) Math.floor((tthread)));
+                    config.put(EventDetectionConstants.Conf.Executor_Threads, threads);
+                    config.put(EventDetectionConstants.Conf.Gate_Threads, 1);
+                    break;
+                }
             }
 
         } else {
             config.putAll(Configuration.fromStr(configStr));
-        }
-    }
-
-    public static void main(String[] args) {
-        if (enable_log) log.info("Program Starts..");
-        MorphStreamRunner runner = new MorphStreamRunner();
-        JCommander cmd = new JCommander(runner);
-        try {
-            cmd.parse(args);
-        } catch (ParameterException ex) {
-            if (enable_log) log.error("Argument error: " + ex.getMessage());
-            cmd.usage();
-        }
-        try {
-            runner.run();
-        } catch (InterruptedException ex) {
-            if (enable_log) log.error("Error in running topology locally", ex);
-        }
-    }
-
-    private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
-        if (enable_memory_measurement) {
-            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(),0,  500);
-        }
-        TopologySubmitter submitter = new TopologySubmitter();
-        try {
-            final_topology = submitter.submitTopology(topology, conf);
-        } catch (UnhandledCaseException e) {
-            e.printStackTrace();
-        }
-        executorThread sinkThread = submitter.getOM().getEM().getSinkThread();
-        long start = System.currentTimeMillis();
-        sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
-        long time_elapsed = (long) ((System.currentTimeMillis() - start) / 1E3 / 60);//in mins
-        if (time_elapsed > 20) {
-            if (enable_log) log.info("Program error, exist...");
-            System.exit(-1);
-        }
-
-        submitter.getOM().join();
-        submitter.getOM().getEM().exist();
-        if (sinkThread.running) {
-            if (enable_log) log.info("The application fails to stop normally, exist...");
-            return -1;
-        } else {
-            if (enable_app_combo) {
-                return SINK_CONTROL.getInstance().throughput;
-            } else {
-                TopologyComponent sink = submitter.getOM().g.getSink().operator;
-                double sum = 0;
-                int cnt = 0;
-                for (ExecutionNode e : sink.getExecutorList()) {
-                    double results = e.op.getResults();
-                    if (results != 0) {
-                        sum += results;
-                    } else {
-                        sum += sum / cnt;
-                    }
-                    cnt++;
-                }
-                return sum;
-            }
         }
     }
 
@@ -214,7 +220,7 @@ public class MorphStreamRunner extends Runner {
         LoadConfiguration();
 
         // Get the descriptor for the given application
-        AppDriver.AppDescriptor app = driver.getApp(application);
+        AppDriver.AppDescriptor app = driver.getApp(application); //TODO: Change to ED
         if (app == null) {
             throw new RuntimeException("The given application name " + application + " is invalid");
         }
@@ -274,7 +280,7 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
-                } else if (config.getString("common").equals("OnlineBiding")){
+                } else if (config.getString("common").equals("OnlineBiding")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
                             config.getInt("NUM_ITEMS"),
@@ -285,11 +291,22 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
-                } else if (config.getString("common").equals("TollProcessing")){
+                } else if (config.getString("common").equals("TollProcessing")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
                             config.getInt("NUM_ITEMS"),
                             config.getInt("NUM_ACCESS"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else if (config.getString("common").equals("EventDetection")) { //TODO: Double-confirm the Conf settings
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("Ratio_of_Multiple_State_Access"),
                             config.getInt("State_Access_Skewness"),
                             config.getInt("Ratio_of_Overlapped_Keys"),
                             config.getInt("Ratio_of_Transaction_Aborts"),

@@ -1,6 +1,5 @@
 package scheduler.struct.og;
 
-import scheduler.context.og.AbstractOGNSContext;
 import scheduler.context.og.OGSchedulerContext;
 import transaction.impl.ordered.MyList;
 import utils.lib.ConcurrentHashMap;
@@ -16,12 +15,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class OperationChain implements Comparable<OperationChain> {
     public final String tableName;
     public final String primaryKey;
-    public final long bid;
-    protected final MyList<Operation> operations;
+    public final double bid;
     public final AtomicInteger ocParentsCount;
     // OperationChain -> ChildOp that depend on the parent OC in cur OC
     public final ConcurrentHashMap<OperationChain, Operation> ocParents;
     public final ConcurrentHashMap<OperationChain, Operation> ocChildren;
+    protected final MyList<Operation> operations;
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
     public boolean isExecuted = false;
 
@@ -37,7 +36,7 @@ public class OperationChain implements Comparable<OperationChain> {
 
 //    private final HashSet<OperationChain> scanedOCs = new HashSet<>();
 
-    public OperationChain(String tableName, String primaryKey, long bid) {
+    public OperationChain(String tableName, String primaryKey, double bid) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
         this.bid = bid;
@@ -258,25 +257,10 @@ public class OperationChain implements Comparable<OperationChain> {
         ocParentsCount.set(ocParents.size());
     }
 
-    public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {
-        public OperationChain potentialChildOC;
-        public Operation childOp;
-
-        public PotentialChildrenInfo(OperationChain oc, Operation op) {
-            this.potentialChildOC = oc;
-            this.childOp = op;
-        }
-
-        @Override
-        public int compareTo(PotentialChildrenInfo o) {
-            return Long.compare(this.childOp.bid, o.childOp.bid);
-        }
-    }
-
     public void clear() {
         potentialChldrenInfo.clear();
         if (operations.size() != 0) {
-            operations.first().d_record.content_.clean_map();
+//            operations.first().d_record.content_.clean_map(); //Disabled GC for ED
             operations.clear();
         }
         ocParents.clear();
@@ -332,5 +316,20 @@ public class OperationChain implements Comparable<OperationChain> {
             }
         }
         isDependencyLevelCalculated = true;
+    }
+
+    public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {
+        public OperationChain potentialChildOC;
+        public Operation childOp;
+
+        public PotentialChildrenInfo(OperationChain oc, Operation op) {
+            this.potentialChildOC = oc;
+            this.childOp = op;
+        }
+
+        @Override
+        public int compareTo(PotentialChildrenInfo o) {
+            return Double.compare(this.childOp.bid, o.childOp.bid);
+        }
     }
 }

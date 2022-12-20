@@ -12,16 +12,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * The operationchain only tries to maintain a data structure for the ease of temporal dependencies construction.
  */
 public class OperationChain implements Comparable<OperationChain> {
-    private final String tableName;
-    private final String primaryKey;
-
-    private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
-
-    private final MyList<Operation> operations;
-    public boolean isExecuted = false;
-
     // layered OC related
     public final ConcurrentHashMap<OperationChain, Operation> ocParents; // for layered TPG building
+    private final String tableName;
+    private final String primaryKey;
+    private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
+    private final MyList<Operation> operations;
+    public boolean isExecuted = false;
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
 
@@ -114,7 +111,7 @@ public class OperationChain implements Comparable<OperationChain> {
 
     @Override
     public String toString() {
-        return "{" + tableName + " " + primaryKey + "|" +  isExecuted + "}";//": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
+        return "{" + tableName + " " + primaryKey + "|" + isExecuted + "}";//": dependencies Count: "+dependsUpon.size()+ ": dependents Count: "+dependents.size()+ ": initialDependencyCount: "+totalDependenciesCount+ ": initialDependentsCount: "+totalDependentsCount+"}";
     }
 
     @Override
@@ -139,25 +136,10 @@ public class OperationChain implements Comparable<OperationChain> {
             return -1;
     }
 
-    public class PotentialDependencyInfo implements Comparable<PotentialDependencyInfo> {
-        public OperationChain potentialChildOC;
-        public Operation op;
-
-        public PotentialDependencyInfo(OperationChain oc, Operation op) {
-            this.potentialChildOC = oc;
-            this.op = op;
-        }
-
-        @Override
-        public int compareTo(PotentialDependencyInfo o) {
-            return Long.compare(this.op.bid, o.op.bid);
-        }
-    }
-
     public void clear() {
         potentialChldrenInfo.clear();
         if (operations.size() != 0) {
-            operations.first().d_record.content_.clean_map();
+//            operations.first().d_record.content_.clean_map(); //Disabled GC for ED
             operations.clear();
         }
         ocParents.clear();
@@ -166,7 +148,6 @@ public class OperationChain implements Comparable<OperationChain> {
         isDependencyLevelCalculated = false;
         dependencyLevel = -1;
     }
-
 
     // for layered tpg building
     public synchronized void updateDependencyLevel() {
@@ -194,5 +175,20 @@ public class OperationChain implements Comparable<OperationChain> {
 
     public int getDependencyLevel() {
         return dependencyLevel;
+    }
+
+    public class PotentialDependencyInfo implements Comparable<PotentialDependencyInfo> {
+        public OperationChain potentialChildOC;
+        public Operation op;
+
+        public PotentialDependencyInfo(OperationChain oc, Operation op) {
+            this.potentialChildOC = oc;
+            this.op = op;
+        }
+
+        @Override
+        public int compareTo(PotentialDependencyInfo o) {
+            return Double.compare(this.op.bid, o.op.bid);
+        }
     }
 }

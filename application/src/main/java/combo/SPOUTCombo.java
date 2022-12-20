@@ -3,7 +3,6 @@ package combo;
 import common.CONTROL;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.tools.FastZipfGenerator;
 import components.context.TopologyContext;
 import components.operators.api.TransactionalBolt;
 import components.operators.api.TransactionalSpout;
@@ -14,8 +13,7 @@ import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
-import profiler.MeasureTools;
-import utils.SOURCE_CONTROL;
+import stage.Stage;
 
 import java.io.FileNotFoundException;
 import java.util.Random;
@@ -23,10 +21,8 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static common.Constants.sinkType;
 import static content.Content.CCOption_SStore;
 import static content.Content.CCOption_TStream;
-import static profiler.Metrics.NUM_ITEMS;
 
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public abstract class SPOUTCombo extends TransactionalSpout {
@@ -36,7 +32,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     public int the_end;
     public int global_cnt;
     public int num_events_per_thread;
-    public long[] mybids;
+    public double[] mybids;
     public Object[] myevents;
     public int counter;
     public Tuple tuple;
@@ -67,7 +63,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
             if (counter < num_events_per_thread) {
                 Object event = myevents[counter];
 
-                long bid = mybids[counter];
+                double bid = mybids[counter];
                 if (CONTROL.enable_latency_measurement)
                     generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
                 else {
@@ -75,7 +71,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 }
 
                 tuple = new Tuple(bid, this.taskId, context, generalMsg);
-                bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
+                bolt.execute(tuple);  // public Tuple(double bid, int sourceId, TopologyContext context, Message message)
                 counter++;
 
                 if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
@@ -86,10 +82,10 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 }
 
                 if (counter == the_end) {
-//                    if (ccOption == CCOption_SStore)
-//                        MeasureTools.END_TOTAL_TIME_MEASURE(taskId);//otherwise deadlock.
-                    SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
-                    SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
+                    for (Stage stage : context.getStageMap().values()) {
+                        stage.getControl().oneThreadCompleted(taskId);
+                        stage.getControl().checkFinalBarrier(taskId);
+                    }
                     if (taskId == 0)
                         sink.end(global_cnt);
                 }
@@ -135,7 +131,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
         start_measure = CONTROL.MeasureStart;
 
-        mybids = new long[num_events_per_thread];
+        mybids = new double[num_events_per_thread];
         myevents = new Object[num_events_per_thread];
         the_end = num_events_per_thread;
 

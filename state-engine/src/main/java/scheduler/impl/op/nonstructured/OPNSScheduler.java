@@ -7,7 +7,6 @@ import scheduler.context.op.OPNSContext;
 import scheduler.impl.op.OPScheduler;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import scheduler.struct.op.Operation;
-import utils.SOURCE_CONTROL;
 
 import static common.CONTROL.enable_log;
 
@@ -27,17 +26,17 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
         needAbortHandling = false;
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(Context context) {
         needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
     }
 
     @Override
-    public void start_evaluation(Context context, long mark_ID, int num_events) {
+    public void start_evaluation(Context context, double mark_ID, int num_events) {
         int threadId = context.thisThreadId;
 
         INITIALIZE(context);
@@ -52,7 +51,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
-        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        context.waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");
@@ -99,7 +98,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     }
 
     @Override
-    public void PROCESS(Context context, long mark_ID) {
+    public void PROCESS(Context context, double mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
@@ -141,7 +140,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     }
 
 
-//    /**
+    //    /**
 //     * Try to get task from local queue.
 //     *
 //     * @param context

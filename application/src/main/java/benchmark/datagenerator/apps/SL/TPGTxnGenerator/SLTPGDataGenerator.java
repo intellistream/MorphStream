@@ -1,8 +1,8 @@
 package benchmark.datagenerator.apps.SL.TPGTxnGenerator;
 
 import benchmark.datagenerator.DataGenerator;
-import benchmark.datagenerator.apps.SL.Transaction.SLDepositEvent;
 import benchmark.datagenerator.Event;
+import benchmark.datagenerator.apps.SL.Transaction.SLDepositEvent;
 import benchmark.datagenerator.apps.SL.Transaction.SLTransferEvent;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
@@ -16,7 +16,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import static common.CONTROL.*;
+import static common.CONTROL.enable_log;
+import static common.CONTROL.enable_states_partition;
 
 /**
  * \textbf{Workload Configurations.}
@@ -48,19 +49,16 @@ public class SLTPGDataGenerator extends DataGenerator {
     private final boolean isUnique = false;
     private final FastZipfGenerator accountZipf;
     private final FastZipfGenerator assetZipf;
-
-    private int floor_interval;
-    public FastZipfGenerator[] partitionedAccountZipf;
-    public FastZipfGenerator[] partitionedAssetZipf;
-
-
     private final Random random = new Random(0); // the transaction type decider
-    public transient FastZipfGenerator p_generator; // partition generator
     private final HashMap<Integer, Integer> nGeneratedAccountIds = new HashMap<>();
     private final HashMap<Integer, Integer> nGeneratedAssetIds = new HashMap<>();
+    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
+    public FastZipfGenerator[] partitionedAccountZipf;
+    public FastZipfGenerator[] partitionedAssetZipf;
+    public transient FastZipfGenerator p_generator; // partition generator
+    private int floor_interval;
     private ArrayList<Event> events;
     private int eventID = 0;
-    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
     public SLTPGDataGenerator(SLTPGDataGeneratorConfig dataConfig) {
         super(dataConfig);
@@ -123,23 +121,23 @@ public class SLTPGDataGenerator extends DataGenerator {
             if (enable_states_partition) {
                 int partitionId = key_to_partition(p_generator.next());
                 int[] accKeys = getKeys(partitionedAccountZipf[partitionId],
-                        partitionedAccountZipf[(partitionId+2) % dataConfig.getTotalThreads()],
+                        partitionedAccountZipf[(partitionId + 2) % dataConfig.getTotalThreads()],
                         partitionId,
-                        (partitionId+2) % dataConfig.getTotalThreads(),
+                        (partitionId + 2) % dataConfig.getTotalThreads(),
                         generatedAcc);
                 srcAcc = accKeys[0];
                 dstAcc = accKeys[1];
-                int[] astKeys = getKeys(partitionedAssetZipf[(partitionId+1) % dataConfig.getTotalThreads()],
-                        partitionedAssetZipf[(partitionId+3) % dataConfig.getTotalThreads()],
-                        (partitionId+1) % dataConfig.getTotalThreads(),
-                        (partitionId+3) % dataConfig.getTotalThreads(),
+                int[] astKeys = getKeys(partitionedAssetZipf[(partitionId + 1) % dataConfig.getTotalThreads()],
+                        partitionedAssetZipf[(partitionId + 3) % dataConfig.getTotalThreads()],
+                        (partitionId + 1) % dataConfig.getTotalThreads(),
+                        (partitionId + 3) % dataConfig.getTotalThreads(),
                         generatedAst);
                 srcAst = astKeys[0];
                 dstAst = astKeys[1];
                 assert srcAcc / floor_interval == partitionId;
-                assert srcAst / floor_interval == (partitionId+1) % dataConfig.getTotalThreads();
-                assert dstAcc / floor_interval == (partitionId+2) % dataConfig.getTotalThreads();
-                assert dstAst / floor_interval == (partitionId+3) % dataConfig.getTotalThreads();
+                assert srcAst / floor_interval == (partitionId + 1) % dataConfig.getTotalThreads();
+                assert dstAcc / floor_interval == (partitionId + 2) % dataConfig.getTotalThreads();
+                assert dstAst / floor_interval == (partitionId + 3) % dataConfig.getTotalThreads();
             } else {
                 int[] accKeys = getKeys(accountZipf, generatedAcc);
                 srcAcc = accKeys[0];
@@ -178,11 +176,11 @@ public class SLTPGDataGenerator extends DataGenerator {
     private Event randomDepositEvent() {
         int acc;
         int ast;
-        if(!isUnique) {
+        if (!isUnique) {
             if (enable_states_partition) {
                 int partitionId = key_to_partition(p_generator.next());
                 acc = getKey(partitionedAccountZipf[partitionId], partitionId, generatedAcc);
-                ast = getKey(partitionedAssetZipf[(partitionId+1) % dataConfig.getTotalThreads()], (partitionId+1) % dataConfig.getTotalThreads(), generatedAst);
+                ast = getKey(partitionedAssetZipf[(partitionId + 1) % dataConfig.getTotalThreads()], (partitionId + 1) % dataConfig.getTotalThreads(), generatedAst);
             } else {
                 acc = getKey(accountZipf, generatedAcc);
                 ast = getKey(assetZipf, generatedAst);

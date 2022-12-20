@@ -23,7 +23,6 @@ import transaction.TableInitilizer;
 import static common.CONTROL.enable_app_combo;
 import static common.constants.LinearRoadConstants.Conf.Executor_Threads;
 import static common.constants.TPConstants.Component.EXECUTOR;
-import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static common.constants.TPConstants.PREFIX;
 import static content.Content.*;
 import static utils.PartitionHelper.setPartition_interval;
@@ -47,7 +46,7 @@ public class TollProcessing extends TransactionTopology {
         int tthread = config.getInt("tthread");
         int numberOfStates = config.getInt("NUM_ITEMS");
         setPartition_interval((int) (Math.ceil(numberOfStates / (double) tthread)), tthread);
-        TableInitilizer ini = new TPInitializer(db,numberOfStates, theta, tthread, config);
+        TableInitilizer ini = new TPInitializer(db, numberOfStates, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)

@@ -23,4 +23,8 @@ public class HashTableIndex extends BaseUnorderedIndex {
     public Iterator<TableRecord> iterator() {
         return hash_index_.values().iterator();
     }
+
+    public Iterator<String> primaryKeyIterator() {
+        return hash_index_.keySet().iterator();
+    }
 }

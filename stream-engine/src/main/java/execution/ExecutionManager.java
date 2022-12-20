@@ -11,8 +11,7 @@ import execution.runtime.spoutThread;
 import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.TxnManager;
-import utils.AppConfig;
+import stage.Stage;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -29,6 +28,7 @@ import static common.Constants.*;
 public class ExecutionManager {
     private final static Logger LOG = LoggerFactory.getLogger(ExecutionManager.class);
     public final HashMap<Integer, executorThread> ThreadMap = new HashMap<>();
+    public final HashMap<Integer, Stage> StageMap = new HashMap<>();
     public final AffinityController AC;
     private final OptimizationManager optimizationManager;
     private final ExecutionGraph g;
@@ -40,58 +40,32 @@ public class ExecutionManager {
 
     }
 
-
     /**
      * Launch threads for each executor in executionGraph
      * We make sure no interference among threads --> one thread one core.
      * TODO: let's think about how to due with multi-thread per core in future..
      * All executors have to sync_ratio for OM to start, so it's safe to do initialization here. E.g., initialize database.
      */
-    public void distributeTasks(Configuration conf,
-                                CountDownLatch latch, Database db) throws UnhandledCaseException {
+    public void distributeTasks(Configuration conf, CountDownLatch latch, Database db) throws UnhandledCaseException {
         g.build_inputScheduler();
-        //TODO: support multi-stages later.
         if (enable_shared_state) {
-            HashMap<Integer, List<Integer>> stage_map = new HashMap<>();//Stages --> Executors.
-            for (ExecutionNode e : g.getExecutionNodeArrayList()) {
-                stage_map.putIfAbsent(e.op.getStage(), new LinkedList<>());
-                stage_map.get(e.op.getStage()).add(e.getExecutorID());
-            }
-            int stage = 0;//currently only stage 0 is required..
-            List<Integer> integers = stage_map.get(stage);
-//            TxnProcessingEngine tp_engine = new TxnProcessingEngine(stage);
-//            tp_engine = TxnProcessingEngine.getInstance();
-            if (integers != null) {
-                int totalThread = conf.getInt("tthread");
-                int numberOfStates = conf.getInt("NUM_ITEMS");
-                String schedulerType = conf.getString("scheduler");
-                int app = conf.getInt("app");
-                if (conf.getBoolean("isDynamic")) {
-                    String schedulers=conf.getString("schedulersPool");
-                    TxnManager.initSchedulerPool(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates, app);
-                    //Configure the bottom line for triggering scheduler switching in Collector(include the isRuntime and when to switch)
-                    TxnManager.setBottomLine(conf.getString("bottomLine"));
-                    if (!conf.getBoolean("isRuntime")) {
-                        TxnManager.setWorkloadConfig(conf.getString("WorkloadConfig"));
-                    }
-                } else if (conf.getBoolean("isGroup")) {
-                    TxnManager.CreateSchedulerByGroup(conf.getString("SchedulersForGroup"), totalThread, numberOfStates, app);
-                } else {
-                    TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates, app);
-                }
-            }
+            createStages(conf);
         }
+
         executorThread thread = null;
         long start = System.currentTimeMillis();
         for (ExecutionNode e : g.getExecutionNodeArrayList()) {
             switch (e.operator.type) {
                 case spoutType:
-                    thread = launchSpout_SingleCore(e, new TopologyContext(g, db, e, ThreadMap)
+                    thread = launchSpout_SingleCore(e, new TopologyContext(g, db, e, ThreadMap, StageMap)
                             , conf, 0, latch); //TODO: schedule to numa node wisely.
                     break;
                 case boltType:
+                    thread = launchBolt_SingleCore(e, new TopologyContext(g, db, e, ThreadMap, StageMap)
+                            , conf, 0, latch); //TODO: schedule to numa node wisely.
+                    break;
                 case sinkType:
-                    thread = launchBolt_SingleCore(e, new TopologyContext(g, db, e, ThreadMap)
+                    thread = launchBolt_SingleCore(e, new TopologyContext(g, db, e, ThreadMap, StageMap)
                             , conf, 0, latch); //TODO: schedule to numa node wisely.
                     break;
                 case virtualType:
@@ -115,9 +89,38 @@ public class ExecutionManager {
         if (enable_log) LOG.info("It takes :" + (end - start) / 1000 + " seconds to finish launch the operators.");
     }
 
+    private void createStages(Configuration conf) {
+        HashMap<Integer, List<Integer>> stage_map = new HashMap<>();//Stages --> Executors.
+        for (ExecutionNode e : g.getExecutionNodeArrayList()) {
+            stage_map.putIfAbsent(e.op.getStage(), new LinkedList<>());
+            stage_map.get(e.op.getStage()).add(e.getExecutorID());
+        }
+        int stage = 0;
+        List<Integer> integers;
+
+        /**
+         * Create scheduler and control for each stage.
+         * One stage one scheduler.
+         */
+        do {
+            integers = stage_map.get(stage);
+            if (integers == null) break;
+            StageMap.putIfAbsent(stage, new Stage());
+            int totalThread = integers.size();//Number of threads per stage..
+            int numberOfStates = conf.getInt("NUM_ITEMS");//TODO: Need to be stage aware..
+            String schedulerType = conf.getString("scheduler");
+            int app = conf.getInt("app");
+
+
+            StageMap.get(stage).CreateController(totalThread);
+
+            StageMap.get(stage).CreateScheduler(schedulerType, totalThread, numberOfStates, app);
+            stage++;
+        } while (true);
+    }
+
     private executorThread launchSpout_InCore(ExecutionNode e, TopologyContext context, Configuration conf,
                                               int node, long[] cores, CountDownLatch latch) {
-
         spoutThread st;
         st = new spoutThread(e, context, conf, cores, node, latch,
                 ThreadMap);
@@ -133,7 +136,7 @@ public class ExecutionManager {
                                              int node, long[] cores, CountDownLatch latch) {
         boltThread wt;
         wt = new boltThread(e, context, conf, cores, node, latch,
-                optimizationManager, ThreadMap);
+                optimizationManager, ThreadMap); //Initialize a boltThread using the input ExecutionNode
         wt.setDaemon(true);
         if (!(conf.getBoolean("monte", false) || conf.getBoolean("simulation", false))) {
             wt.start();

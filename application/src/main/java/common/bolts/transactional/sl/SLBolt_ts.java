@@ -49,7 +49,7 @@ public class SLBolt_ts extends SLBolt {
         super.initialize(thread_Id, thisTaskId, graph);
         int numberOfStates = config.getInt("NUM_ITEMS");
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
-                numberOfStates, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BFS"));
+                numberOfStates, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BFS"), this.context.getStageMap().get(this.fid));
         transactionEvents = new ArrayDeque<>();
         depositEvents = new ArrayDeque<>();
     }
@@ -96,9 +96,9 @@ public class SLBolt_ts extends SLBolt {
         }
     }
 
-    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
+    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
-        for (long i = _bid; i < _bid + combo_bid_size; i++) {
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
 //            System.out.println("thread: "+thread_Id+", event_id: "+_bid);
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TxnEvent event = (TxnEvent) input_event;
@@ -137,14 +137,16 @@ public class SLBolt_ts extends SLBolt {
                 decrement1,
                 accTable, accID,//condition source, condition id.
                 condition1,
-                event.success);          //asynchronously return.
+                event.success,
+                "sl");          //asynchronously return.
 
         transactionManager.Asy_ModifyRecord(txnContext,
                 "bookEntries", event.getSourceBookEntryId()
                 , decrement2,
                 astTable, astID,
                 condition2,
-                event.success);   //asynchronously return.
+                event.success,
+                "sl");   //asynchronously return.
 
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "accounts",
@@ -152,7 +154,8 @@ public class SLBolt_ts extends SLBolt {
                 increment1,
                 accTable, accID//condition source, condition id.
                 , condition3,
-                event.success);          //asynchronously return.
+                event.success,
+                "sl");          //asynchronously return.
 
         transactionManager.Asy_ModifyRecord(txnContext,
                 "bookEntries",
@@ -160,7 +163,8 @@ public class SLBolt_ts extends SLBolt {
                 increment2,
                 astTable, astID,
                 condition4,
-                event.success);   //asynchronously return.
+                event.success,
+                "sl");   //asynchronously return.
 
         transactionManager.CommitTransaction(txnContext);
 
@@ -170,8 +174,8 @@ public class SLBolt_ts extends SLBolt {
     protected void DEPOSITE_REQUEST_CONSTRUCT(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         transactionManager.BeginTransaction(txnContext);
-        transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()));// read and modify the account itself.
-        transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()));// read and modify the asset itself.
+        transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()), "sl");// read and modify the account itself.
+        transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()), "sl");// read and modify the asset itself.
         transactionManager.CommitTransaction(txnContext);
 
         depositEvents.add(event);

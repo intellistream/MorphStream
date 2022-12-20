@@ -30,7 +30,7 @@ public abstract class LockContent implements Content {
     }
 
     @Override
-    public long GetLWM() {
+    public double GetLWM() {
         throw new UnsupportedOperationException();
     }
 

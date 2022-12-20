@@ -9,7 +9,7 @@ import storage.SchemaRecordRef;
  */
 public class LREvent extends TxnEvent {
     private final int tthread;
-    private final long bid;
+    private final double bid;
     private final PositionReport posreport;//input_event associated common.meta data.
     public int count;
     public double lav;
@@ -25,7 +25,7 @@ public class LREvent extends TxnEvent {
      * @param tthread
      * @param bid
      */
-    public LREvent(PositionReport posreport, int tthread, long bid) {
+    public LREvent(PositionReport posreport, int tthread, double bid) {
         super(bid);
         this.posreport = posreport;
         this.tthread = tthread;
@@ -51,12 +51,12 @@ public class LREvent extends TxnEvent {
         return posreport.getSegment() % tthread;//which partition does this input_event belongs to.
     }
 
-    public long getBid() {
+    public double getBid() {
         return bid;
     }
 
     @Override
     public LREvent cloneEvent() {
-        return new LREvent(this.posreport,tthread,bid);
+        return new LREvent(this.posreport, tthread, bid);
     }
 }
