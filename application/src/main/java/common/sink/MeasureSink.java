@@ -60,13 +60,6 @@ public class MeasureSink extends BaseSink {
                 , thisTaskId
                 , config.getBoolean("measure", false));
 
-//        directory = STAT_Path
-//                + OsUtils.OS_wrapper(configPrefix)
-//                + OsUtils.OS_wrapper(String.valueOf(config.getInt("checkpoint")));
-
-//        File file = new File(directory);
-//        if (!file.mkdirs()) {
-//        }
         totalEvents = config.getInt("totalEvents");
         tthread = config.getInt("tthread");
 

@@ -358,7 +358,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         int threadId = Integer.parseInt(pKey) / delta;
         ConcurrentHashMap<String, OperationChain> holder = getTableOCs(tableName).threadOCsMap.get(threadId).holder_v1;
         return holder.computeIfAbsent(pKey, s -> threadToContextMap.get(threadId).createTask(tableName, pKey));
-//        return holder.get(pKey);
     }
 
     private OperationChain getOC(String tableName, String pKey, int threadId) {

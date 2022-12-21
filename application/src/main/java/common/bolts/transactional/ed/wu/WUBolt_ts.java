@@ -52,7 +52,7 @@ public class WUBolt_ts extends WUBolt {
     }
 
     /**
-     * THIS IS ONLY USED BY TSTREAM.
+     * THIS IS ONLY USED BY MorphStream.
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
     protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
@@ -81,10 +81,7 @@ public class WUBolt_ts extends WUBolt {
         String sourceTable = "word_table";
         String sourceKey = event.getWordID();
 
-//        LOG.info("Constructing WU request: " + event.getMyBid());
-
         transactionManager.BeginTransaction(txnContext);
-
         transactionManager.Asy_ModifyRecord(txnContext,
                 sourceTable, // source_table
                 sourceKey,  // source_key
@@ -94,9 +91,7 @@ public class WUBolt_ts extends WUBolt {
                 event.success,
                 "ed_wu"
         );
-
         transactionManager.CommitTransaction(txnContext);
-
         wuEvents.add(event);
     }
 
@@ -142,6 +137,4 @@ public class WUBolt_ts extends WUBolt {
             execute_ts_normal(in);
         }
     }
-
-
 }
