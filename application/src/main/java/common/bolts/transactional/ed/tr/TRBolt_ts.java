@@ -182,15 +182,15 @@ public class TRBolt_ts extends TRBolt{
 
     @Override
     public void execute() throws BrokenBarrierException, InterruptedException {
-        if (punctuation.get()) {
+//        if (punctuation.get()) {
             LOG.info("Thread " + this.thread_Id + " has no more event after: " + count);
             trBarrier.await();
 
             transactionManager.start_evaluate(thread_Id, -1, -1);//start lazy evaluation in transaction manager.
 
-            punctuation.set(false);
+//            punctuation.set(false);
 //            LOG.info("Thread " + this.thread_Id + " has event " + in.getBID());
-        }
+//        }
     }
 
 }

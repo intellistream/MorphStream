@@ -98,6 +98,9 @@ public class boltThread extends executorThread {
      */
     protected void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException {
         Object tuple = fetchResult();
+        if (cnt == 196) {
+            System.out.println("");
+        }
         if (tuple instanceof Tuple) {
             if (tuple != null) {
                 bolt.execute((Tuple) tuple);
@@ -111,9 +114,12 @@ public class boltThread extends executorThread {
                 bolt.execute((JumboTuple) tuple);
                 cnt += batch;
             } else {
-                bolt.execute();
+//                bolt.execute();
                 miss++;
             }
+//            if (cnt >= 196) {
+//                bolt.execute();
+//            }
         }
     }
 
