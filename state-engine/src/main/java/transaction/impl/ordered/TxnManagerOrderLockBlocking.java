@@ -29,7 +29,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     public final OrderLock orderLock;
 
     public TxnManagerOrderLockBlocking(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
-        super(storageManager, thisComponentId, thisTaskId, thread_count, stage);
+        super(storageManager, thisComponentId, thisTaskId, thread_count,stage);
         this.orderLock = OrderLock.getInstance();
     }
 

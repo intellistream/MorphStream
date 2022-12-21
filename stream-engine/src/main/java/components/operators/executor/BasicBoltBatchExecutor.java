@@ -31,4 +31,9 @@ public class BasicBoltBatchExecutor extends BoltExecutor {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         _op.execute(in);
     }
+
+    @Override
+    public void execute() throws InterruptedException, DatabaseException, BrokenBarrierException {
+        _op.execute();
+    }
 }

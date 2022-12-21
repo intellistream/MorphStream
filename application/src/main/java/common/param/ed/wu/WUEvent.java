@@ -1,10 +1,10 @@
 package common.param.ed.wu;
 
 import common.param.TxnEvent;
+import static common.CONTROL.wordWindowSize;
+import static common.CONTROL.tweetWindowSize;
 
 import java.util.Arrays;
-
-import static common.CONTROL.tweetWindowSize;
 
 public class WUEvent extends TxnEvent {
     private final String word;
@@ -37,19 +37,15 @@ public class WUEvent extends TxnEvent {
     public double getMyBid() {
         return myBid;
     }
-
     public int getMyPid() {
         return myPid;
     }
-
     public String getMyBidArray() {
         return my_bid_array;
     }
-
     public String getMyPartitionIndex() {
         return my_partition_index;
     }
-
     public int getMyNumberOfPartitions() {
         return my_number_of_partitions;
     }
@@ -65,10 +61,7 @@ public class WUEvent extends TxnEvent {
     public String getTweetID() {
         return this.tweetID;
     }
-
-    public int getCurrWindow() {
-        return this.currWindow;
-    }
+    public int getCurrWindow() {return this.currWindow;}
 
     public WUEvent cloneEvent() {
         return new WUEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, word, wordID, tweetID);

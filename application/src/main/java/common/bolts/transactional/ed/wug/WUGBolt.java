@@ -35,9 +35,7 @@ public abstract class WUGBolt extends TransactionalBolt {
             String wordID = event.getWordID();
 
             TCEvent outEvent = new TCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), wordID);
-
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
-
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
             LOG.info("Posting event: " + outBid);

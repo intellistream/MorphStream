@@ -2,6 +2,8 @@ package execution.runtime.collector.impl;
 
 import com.google.common.util.concurrent.AtomicDouble;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * A singleton class
  */

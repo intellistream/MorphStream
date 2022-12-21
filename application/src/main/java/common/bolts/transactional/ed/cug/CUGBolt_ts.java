@@ -17,10 +17,13 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
+import static common.CONTROL.combo_bid_size;
+import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.tweetWindowSize;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
+import static common.bolts.transactional.ed.PunctuationAligner.*;
 
 public class CUGBolt_ts extends CUGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(CUGBolt_ts.class);
@@ -47,8 +50,7 @@ public class CUGBolt_ts extends CUGBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-    }
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -74,8 +76,7 @@ public class CUGBolt_ts extends CUGBolt {
         cuEvents.add(event);
     }
 
-    private void CU_GATE_REQUEST_CORE() throws InterruptedException {
-    }
+    private void CU_GATE_REQUEST_CORE() throws InterruptedException {}
 
     // Emit all events to collector
     private void CU_GATE_REQUEST_POST() throws InterruptedException, DatabaseException {

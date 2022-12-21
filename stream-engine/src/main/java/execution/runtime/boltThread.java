@@ -20,7 +20,10 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.*;
 
-import static common.CONTROL.*;
+import static common.CONTROL.enable_log;
+import static common.CONTROL.enable_shared_state;
+import static common.CONTROL.fetchWithIndex;
+import static common.Constants.DEFAULT_STREAM_ID;
 
 /**
  * Task thread that hosts bolt logic. Receives input Brisk.execution.runtime.tuple,
@@ -32,14 +35,8 @@ public class boltThread extends executorThread {
     private final BoltExecutor bolt;
     private final OutputCollector collector;
     private final InputStreamController inputStreamController;
-    ExecutorService inputExecutor = Executors.newCachedThreadPool();
-    Callable<Object> task = new Callable<Object>() {
-        public Object call() {
-            return fetchResult();
-        }
-    };
-    Future<Object> future = inputExecutor.submit(task);
     private int miss = 0;
+
     /**
      * @param e
      * @param context
@@ -85,6 +82,14 @@ public class boltThread extends executorThread {
         return dump.toString();
     }
 
+    ExecutorService inputExecutor = Executors.newCachedThreadPool();
+    Callable<Object> task = new Callable<Object>() {
+        public Object call() {
+            return fetchResult();
+        }
+    };
+    Future<Object> future = inputExecutor.submit(task);
+
     /**
      * Be very careful for this method..
      *
@@ -93,6 +98,9 @@ public class boltThread extends executorThread {
      */
     protected void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException {
         Object tuple = fetchResult();
+        if (cnt == 196) {
+            System.out.println("");
+        }
         if (tuple instanceof Tuple) {
             if (tuple != null) {
                 bolt.execute((Tuple) tuple);
@@ -106,8 +114,12 @@ public class boltThread extends executorThread {
                 bolt.execute((JumboTuple) tuple);
                 cnt += batch;
             } else {
+//                bolt.execute();
                 miss++;
             }
+//            if (cnt >= 196) {
+//                bolt.execute();
+//            }
         }
     }
 

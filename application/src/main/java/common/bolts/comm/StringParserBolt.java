@@ -56,4 +56,6 @@ public class StringParserBolt extends MapBolt {
             collector.emit(0, streamValues);
         }
     }
+
+    public void execute() throws InterruptedException {}
 }

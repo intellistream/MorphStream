@@ -67,4 +67,6 @@ public class SplitSentenceBolt extends SplitBolt {
             }
         }
     }
+
+    public void execute() throws InterruptedException {}
 }

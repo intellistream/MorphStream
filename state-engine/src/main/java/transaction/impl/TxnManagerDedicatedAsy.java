@@ -9,15 +9,12 @@ import lock.PartitionedOrderLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.Request;
-import scheduler.context.SchedulerContext;
-import scheduler.context.og.OGNSAContext;
-import scheduler.context.og.OGNSContext;
-import scheduler.context.og.OGSAContext;
-import scheduler.context.og.OGSContext;
-import scheduler.context.op.OPNSAContext;
+import scheduler.context.*;
+import scheduler.context.og.*;
 import scheduler.context.op.OPNSContext;
-import scheduler.context.op.OPSAContext;
+import scheduler.context.op.OPNSAContext;
 import scheduler.context.op.OPSContext;
+import scheduler.context.op.OPSAContext;
 import scheduler.impl.IScheduler;
 import stage.Stage;
 import storage.*;
@@ -28,10 +25,7 @@ import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_log;
@@ -256,13 +250,13 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-            if (enable_log) log.info("Record is found:" + key);
+//            if (enable_log) log.info("Record is found:" + key);
 
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
                     key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
 
         } else {
-            if (enable_log) log.info("No record is found:" + key);
+//            if (enable_log) log.info("No record is found:" + key);
             return false;
         }
     }

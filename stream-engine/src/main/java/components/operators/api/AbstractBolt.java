@@ -26,6 +26,8 @@ public abstract class AbstractBolt extends Operator {
 
     public abstract void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException;
 
+    public abstract void execute() throws BrokenBarrierException, InterruptedException;
+
     public void execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         int bound = in.length;
         for (int i = 0; i < bound; i++) {

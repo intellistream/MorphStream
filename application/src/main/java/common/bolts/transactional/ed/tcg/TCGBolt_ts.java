@@ -14,16 +14,14 @@ import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerTStream;
 
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
 import static profiler.Metrics.NUM_ITEMS;
+import static common.bolts.transactional.ed.PunctuationAligner.*;
 
 public class TCGBolt_ts extends TCGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TCGBolt_ts.class);
@@ -50,8 +48,7 @@ public class TCGBolt_ts extends TCGBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-    }
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -84,8 +81,7 @@ public class TCGBolt_ts extends TCGBolt {
         }
     }
 
-    private void TC_GATE_REQUEST_CORE() {
-    }
+    private void TC_GATE_REQUEST_CORE() {}
 
     // Emit output information to TCGBolt
     private void TC_GATE_REQUEST_POST() throws InterruptedException {

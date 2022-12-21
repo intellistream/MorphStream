@@ -65,7 +65,6 @@ public class StringDataBox extends DataBox {
     public void setString(String s) {
         this.s = s;
     }
-
     @Override
     public void setString(String s, int len) {
         this.s = StringUtils.rightPad(s, len);//String.format("%-" + len + "s", s);

@@ -132,6 +132,17 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
                     config.getInt("complexity"));
+        } else if (config.getString("common").equals("EventDetection")) {
+            directory = String.format(statsFolderPattern,
+                    config.getString("common"), scheduler, tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("NUM_ACCESS"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Overlapped_Keys"),
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    config.getInt("Transaction_Length"),
+                    AppConfig.isCyclic,
+                    config.getInt("complexity"));
         } else {
             throw new UnsupportedOperationException();
         }
@@ -158,6 +169,8 @@ public class MeasureSink extends BaseSink {
         cnt++;
         LOG.info("Sink received tuple: " + cnt);
     }
+
+    public void execute() throws InterruptedException {}
 
     protected void latency_measure(Tuple input) {
         cnt++;

@@ -4,6 +4,8 @@ import combo.SINKCombo;
 import common.bolts.transactional.sl.GlobalSorter;
 import common.param.TxnEvent;
 import common.param.mb.MicroEvent;
+import common.param.sl.DepositEvent;
+import common.param.sl.TransactionEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerSStore;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -45,7 +48,7 @@ public class GSBolt_sstore extends GSBolt_LA {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
+        transactionManager = new TxnManagerSStore(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);
         if (!enable_states_partition) {
             if (enable_log) LOG.info("Please enable `enable_states_partition` for PAT scheme");
             System.exit(-1);

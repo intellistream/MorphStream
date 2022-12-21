@@ -1,22 +1,18 @@
 package common.topology.transactional;
 
-import common.bolts.transactional.ed.cu.CUBolt_lwm;
-import common.bolts.transactional.ed.cu.CUBolt_nocc;
-import common.bolts.transactional.ed.cu.CUBolt_olb;
-import common.bolts.transactional.ed.cu.CUBolt_sstore;
-import common.bolts.transactional.ed.es.ESBolt_lwm;
-import common.bolts.transactional.ed.es.ESBolt_nocc;
-import common.bolts.transactional.ed.es.ESBolt_olb;
-import common.bolts.transactional.ed.es.ESBolt_sstore;
-import common.bolts.transactional.ed.tc.TCBolt_lwm;
-import common.bolts.transactional.ed.tc.TCBolt_nocc;
-import common.bolts.transactional.ed.tc.TCBolt_olb;
-import common.bolts.transactional.ed.tc.TCBolt_sstore;
+import common.bolts.transactional.ed.cu.*;
+import common.bolts.transactional.ed.cug.CUGBolt_ts;
+import common.bolts.transactional.ed.es.*;
+import common.bolts.transactional.ed.tc.*;
+import common.bolts.transactional.ed.tcg.TCGBolt_ts;
 import common.bolts.transactional.ed.tr.*;
+import common.bolts.transactional.ed.trg.TRGBolt_ts;
 import common.bolts.transactional.ed.wu.*;
+import common.bolts.transactional.ed.wug.WUGBolt_ts;
 import common.collections.Configuration;
 import common.constants.EventDetectionConstants;
 import common.topology.transactional.initializer.EDInitializer;
+
 import components.Topology;
 import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
@@ -29,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;
 import transaction.TableInitilizer;
 
+import static common.CONTROL.enable_app_combo;
 import static common.constants.EventDetectionConstants.Conf.Executor_Threads;
 import static common.constants.EventDetectionConstants.PREFIX;
 import static content.Content.*;

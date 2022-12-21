@@ -4,14 +4,12 @@ import combo.SINKCombo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TRBolt_nocc extends TRBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(TRBolt_nocc.class);
-
-    public TRBolt_nocc(int fid, SINKCombo sink) {
-        super(LOG, fid, sink);
+public class TRBolt_nocc extends TRBolt{
+    private static final Logger LOG= LoggerFactory.getLogger(TRBolt_nocc.class);
+    public TRBolt_nocc(int fid, SINKCombo sink){
+        super(LOG,fid,sink);
     }
-
-    public TRBolt_nocc(int fid) {
-        super(LOG, fid, null);
+    public TRBolt_nocc(int fid){
+        super(LOG,fid,null);
     }
 }

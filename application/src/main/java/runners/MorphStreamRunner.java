@@ -63,68 +63,6 @@ public class MorphStreamRunner extends Runner {
         driver.addApp("EventDetection", EventDetection.class);//ED
     }
 
-    public static void main(String[] args) {
-        if (enable_log) log.info("Program Starts..");
-        MorphStreamRunner runner = new MorphStreamRunner();
-        JCommander cmd = new JCommander(runner);
-        try {
-            cmd.parse(args);
-        } catch (ParameterException ex) {
-            if (enable_log) log.error("Argument error: " + ex.getMessage());
-            cmd.usage();
-        }
-        try {
-            runner.run();
-        } catch (InterruptedException ex) {
-            if (enable_log) log.error("Error in running topology locally", ex);
-        }
-    }
-
-    private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
-        if (enable_memory_measurement) {
-            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(), 0, 500);
-        }
-        TopologySubmitter submitter = new TopologySubmitter();
-        try {
-            final_topology = submitter.submitTopology(topology, conf);
-        } catch (UnhandledCaseException e) {
-            e.printStackTrace();
-        }
-        executorThread sinkThread = submitter.getOM().getEM().getSinkThread();
-        long start = System.currentTimeMillis();
-        sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
-        long time_elapsed = (long) ((System.currentTimeMillis() - start) / 1E3 / 60);//in mins
-        if (time_elapsed > 20) {
-            if (enable_log) log.info("Program error, exist...");
-            System.exit(-1);
-        }
-
-        submitter.getOM().join();
-        submitter.getOM().getEM().exist();
-        if (sinkThread.running) {
-            if (enable_log) log.info("The application fails to stop normally, exist...");
-            return -1;
-        } else {
-            if (enable_app_combo) {
-                return SINK_CONTROL.getInstance().throughput;
-            } else {
-                TopologyComponent sink = submitter.getOM().g.getSink().operator;
-                double sum = 0;
-                int cnt = 0;
-                for (ExecutionNode e : sink.getExecutorList()) {
-                    double results = e.op.getResults();
-                    if (results != 0) {
-                        sum += results;
-                    } else {
-                        sum += sum / cnt;
-                    }
-                    cnt++;
-                }
-                return sum;
-            }
-        }
-    }
-
     // Prepared default configuration
     private void LoadConfiguration() {
         if (configStr == null) {
@@ -212,6 +150,68 @@ public class MorphStreamRunner extends Runner {
 
         } else {
             config.putAll(Configuration.fromStr(configStr));
+        }
+    }
+
+    public static void main(String[] args) {
+        if (enable_log) log.info("Program Starts..");
+        MorphStreamRunner runner = new MorphStreamRunner();
+        JCommander cmd = new JCommander(runner);
+        try {
+            cmd.parse(args);
+        } catch (ParameterException ex) {
+            if (enable_log) log.error("Argument error: " + ex.getMessage());
+            cmd.usage();
+        }
+        try {
+            runner.run();
+        } catch (InterruptedException ex) {
+            if (enable_log) log.error("Error in running topology locally", ex);
+        }
+    }
+
+    private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
+        if (enable_memory_measurement) {
+            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(), 0, 500);
+        }
+        TopologySubmitter submitter = new TopologySubmitter();
+        try {
+            final_topology = submitter.submitTopology(topology, conf);
+        } catch (UnhandledCaseException e) {
+            e.printStackTrace();
+        }
+        executorThread sinkThread = submitter.getOM().getEM().getSinkThread();
+        long start = System.currentTimeMillis();
+        sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
+        long time_elapsed = (long) ((System.currentTimeMillis() - start) / 1E3 / 60);//in mins
+        if (time_elapsed > 20) {
+            if (enable_log) log.info("Program error, exist...");
+            System.exit(-1);
+        }
+
+        submitter.getOM().join();
+        submitter.getOM().getEM().exist();
+        if (sinkThread.running) {
+            if (enable_log) log.info("The application fails to stop normally, exist...");
+            return -1;
+        } else {
+            if (enable_app_combo) {
+                return SINK_CONTROL.getInstance().throughput;
+            } else {
+                TopologyComponent sink = submitter.getOM().g.getSink().operator;
+                double sum = 0;
+                int cnt = 0;
+                for (ExecutionNode e : sink.getExecutorList()) {
+                    double results = e.op.getResults();
+                    if (results != 0) {
+                        sum += results;
+                    } else {
+                        sum += sum / cnt;
+                    }
+                    cnt++;
+                }
+                return sum;
+            }
         }
     }
 

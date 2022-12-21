@@ -96,7 +96,7 @@ public interface ITxnManager {
 
     boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
-    void InsertNewRecord(String table_name, String key, SchemaRecord record) throws DatabaseException;
+    void InsertNewRecord(String table_name, String key, SchemaRecord record)  throws DatabaseException;
 
     boolean SelectKeyRecord(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException;
 
@@ -124,5 +124,5 @@ public interface ITxnManager {
         OP_DFS,
         OP_DFS_A,
         TStream // original tstream
-    }
+        }
 }

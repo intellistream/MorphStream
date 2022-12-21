@@ -2,8 +2,11 @@ package common.bolts.transactional.ed.tcg;
 
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
+import common.param.ed.tc.TCEvent;
+import common.param.ed.wu.WUEvent;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
+import execution.runtime.tuple.impl.Marker;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
@@ -29,7 +32,6 @@ public abstract class TCGBolt extends TransactionalBolt {
     protected void TC_GATE_REQUEST_POST(double bid, CUEvent event) throws InterruptedException {
 
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-
         Tuple tuple = new Tuple(bid, 0, context, generalMsg);
 
         LOG.info("Posting event: " + bid);

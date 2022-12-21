@@ -21,21 +21,20 @@ import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
-import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
-import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
+import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
+import static common.bolts.transactional.ed.PunctuationAligner.*;
 
-public class TCBolt_ts extends TCBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(TCBolt_ts.class);
+public class TCBolt_ts extends TCBolt{
+    private static final Logger LOG= LoggerFactory.getLogger(TCBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<TCEvent> tcEvents;
 
-    public TCBolt_ts(int fid, SINKCombo sink) {
-        super(LOG, fid, sink);
+    public TCBolt_ts(int fid, SINKCombo sink){
+        super(LOG,fid,sink);
     }
-
-    public TCBolt_ts(int fid) {
-        super(LOG, fid, null);
+    public TCBolt_ts(int fid){
+        super(LOG,fid,null);
     }
 
     //TODO: Copied from GSWBolt_ts
@@ -47,8 +46,7 @@ public class TCBolt_ts extends TCBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-    }
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.

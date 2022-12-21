@@ -35,6 +35,7 @@ public class TPBolt_nocc extends TPBolt {
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+//        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
                 , context.getGraph());
     }
@@ -43,7 +44,7 @@ public class TPBolt_nocc extends TPBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerNoLock(db.getStorageManager(),
-                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
+                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);
     }
 
     @Override

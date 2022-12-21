@@ -15,15 +15,15 @@ import transaction.function.Condition;
 import transaction.function.Similarity;
 import transaction.impl.ordered.TxnManagerTStream;
 
-import java.util.ArrayDeque;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
+import static common.bolts.transactional.ed.PunctuationAligner.*;
 
-public class CUBolt_ts extends CUBolt {
+public class CUBolt_ts extends CUBolt{
     private static final Logger LOG = LoggerFactory.getLogger(CUBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
@@ -47,8 +47,7 @@ public class CUBolt_ts extends CUBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-    }
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -94,8 +93,7 @@ public class CUBolt_ts extends CUBolt {
         cuEvents.add(event);
     }
 
-    private void CLUSTER_UPDATE_REQUEST_CORE() throws InterruptedException {
-    }
+    private void CLUSTER_UPDATE_REQUEST_CORE() throws InterruptedException {}
 
     private void CLUSTER_UPDATE_REQUEST_POST() throws InterruptedException {
         for (CUEvent event : cuEvents) {

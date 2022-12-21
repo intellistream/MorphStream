@@ -3,6 +3,7 @@ package benchmark.datagenerator.apps.ED.TPGTxnGenerator;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.Transaction.EDTREvent;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGenerator;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,19 +17,22 @@ import java.util.Random;
 
 import static common.CONTROL.enable_log;
 
-public class EDTPGDataGenerator extends DataGenerator {
+public class EDTPGDataGenerator  extends DataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(EDTPGDataGenerator.class);
     private final int Transaction_Length; // transaction length, 4 or 8 or longer
     // independent transactions.
     private final boolean isUnique = false;
+
+    private int floor_interval;
+
+
     private final Random random = new Random(0); // the transaction type decider
+    public transient FastZipfGenerator p_generator; // partition generator
     private final HashMap<Integer, Integer> nGeneratedAccountIds = new HashMap<>();
     private final HashMap<Integer, Integer> nGeneratedAssetIds = new HashMap<>();
-    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
-    public transient FastZipfGenerator p_generator; // partition generator
-    private int floor_interval;
     private ArrayList<Event> events;
     private int eventID = 0;
+    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
 
     public EDTPGDataGenerator(EDTPGDataGeneratorConfig dataConfig) {
@@ -42,7 +46,7 @@ public class EDTPGDataGenerator extends DataGenerator {
 //        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
         int MAX_LEVEL = 256;
         for (int i = 0; i < nKeyState; i++) {
-            idToLevel.put(i, i % MAX_LEVEL);
+            idToLevel.put(i, i% MAX_LEVEL);
         }
 
         events = new ArrayList<>(nTuples); //total number of input events

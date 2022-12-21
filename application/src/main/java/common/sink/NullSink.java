@@ -45,6 +45,8 @@ public class NullSink extends BaseSink {
         }
     }
 
+    public void execute() throws InterruptedException {}
+
     @Override
     protected Logger getLogger() {
         return LOG;

@@ -1,6 +1,7 @@
 package scheduler;
 
 import content.common.CommonMetaTypes;
+import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import transaction.context.TxnContext;

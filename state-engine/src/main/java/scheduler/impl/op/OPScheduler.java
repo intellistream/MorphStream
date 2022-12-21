@@ -6,19 +6,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.Request;
-import scheduler.context.op.OPSchedulerContext;
 import scheduler.impl.IScheduler;
+import scheduler.context.op.OPSchedulerContext;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.op.MetaTypes;
 import scheduler.struct.op.Operation;
 import scheduler.struct.op.TaskPrecedenceGraph;
 import storage.SchemaRecord;
 import storage.TableRecord;
-import storage.datatype.DataBox;
-import storage.datatype.DoubleDataBox;
-import storage.datatype.IntDataBox;
+import storage.datatype.*;
 import transaction.function.*;
 import utils.AppConfig;
+import utils.SOURCE_CONTROL;
 
 import java.util.*;
 
@@ -28,12 +27,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     private static final Logger log = LoggerFactory.getLogger(OPScheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
-
     public OPScheduler(int totalThreads, int NUM_ITEMS, int app) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
     }
-
+    @Override
+    public void initTPG(int offset) {
+        tpg.initTPG(offset);
+    }
     /**
      * state to thread mapping
      *
@@ -46,15 +47,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         return _key / delta;
     }
 
-    @Override
-    public void initTPG(int offset) {
-        tpg.initTPG(offset);
-    }
-
     public Context getTargetContext(String key) {
         // the thread to submit the operation may not be the thread to execute it.
         // we need to find the target context this thread is mapped to.
-        int threadId = Integer.parseInt(key) / delta;
+        int threadId =  Integer.parseInt(key) / delta;
         return tpg.threadToContextMap.get(threadId);
     }
 
@@ -151,7 +147,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             AppConfig.randomDelay();
             operation.d_record.record_.getValues().get(1).setLong(operation.value);
 
-        } else if (operation.accessType.equals(READ_WRITE_READ)) {
+        } else if (operation.accessType.equals(READ_WRITE_READ)){
             assert operation.record_ref != null;
             AppConfig.randomDelay();
             List<DataBox> srcRecord = operation.s_record.record_.getValues();
@@ -341,6 +337,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
 
+
     // ED: Trend Calculate - Asy_ModifyRecord_Read
     protected void TrendCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -402,9 +399,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         if (operation.condition.boolArg1) {
             String[] tweetWordList = tweetRecord.getValues().get(1).getStringList().toArray(new String[0]);
             HashMap<String, Integer> tweetMap = new HashMap<>();
-            for (String word : tweetWordList) {
-                tweetMap.put(word, 1);
-            }
+            for (String word : tweetWordList) {tweetMap.put(word, 1);}
 
             // compute input tweet's cosine similarity with all clusters
             if (operation.function instanceof Similarity) {
@@ -413,10 +408,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 for (TableRecord record : operation.condition_records) {
 
                     // skip if the cluster has no update in the past two windows
-                    SchemaRecord clusterRecord = record.content_.readPastValues((long) operation.bid, (long) operation.bid - 2);
-                    if (clusterRecord == null) {
-                        continue;
-                    }
+                    SchemaRecord clusterRecord = record.content_.readPastValues((long) operation.bid, (long) operation.bid-2);
+                    if (clusterRecord == null) {continue;}
 
                     int clusterSize = clusterRecord.getValues().get(3).getInt();
 
@@ -425,9 +418,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                         // compute cosine similarity
                         HashMap<String, Integer> clusterMap = new HashMap<>();
-                        for (String word : clusterWordList) {
-                            clusterMap.put(word, 1);
-                        }
+                        for (String word : clusterWordList) {clusterMap.put(word, 1);}
                         Set<String> both = Sets.newHashSet(clusterMap.keySet());
                         both.retainAll(tweetMap.keySet());
                         double scalar = 0, norm1 = 0, norm2 = 0;
@@ -457,9 +448,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                 // Merge input tweet into cluster
                 for (String word : tweetWordList) {
-                    if (!wordList.contains(word)) {
-                        wordList.add(word);
-                    }
+                    if (!wordList.contains(word)) {wordList.add(word);}
                 }
 
                 tempo_record.getValues().get(1).setStringList(wordList); //compute: merge wordList
@@ -493,6 +482,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
     }
+
 
 
     // ED-ES: Asy_ModifyRecord_Read

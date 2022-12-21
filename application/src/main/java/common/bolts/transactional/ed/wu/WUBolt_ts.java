@@ -15,16 +15,15 @@ import transaction.function.Append;
 import transaction.function.Condition;
 import transaction.impl.ordered.TxnManagerTStream;
 
-import java.util.ArrayDeque;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
-import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
-import static profiler.MeasureTools.END_POST_TIME_MEASURE_ACC;
+import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
+import static common.bolts.transactional.ed.PunctuationAligner.*;
 
-public class WUBolt_ts extends WUBolt {
+public class WUBolt_ts extends WUBolt{
     private static final Logger LOG = LoggerFactory.getLogger(WUBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
@@ -48,11 +47,10 @@ public class WUBolt_ts extends WUBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-    }
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
 
     /**
-     * THIS IS ONLY USED BY MorphStream.
+     * THIS IS ONLY USED BY TSTREAM.
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
     protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
@@ -81,7 +79,10 @@ public class WUBolt_ts extends WUBolt {
         String sourceTable = "word_table";
         String sourceKey = event.getWordID();
 
+//        LOG.info("Constructing WU request: " + event.getMyBid());
+
         transactionManager.BeginTransaction(txnContext);
+
         transactionManager.Asy_ModifyRecord(txnContext,
                 sourceTable, // source_table
                 sourceKey,  // source_key
@@ -90,13 +91,14 @@ public class WUBolt_ts extends WUBolt {
                 condition,
                 event.success,
                 "ed_wu"
-        );
+                );
+
         transactionManager.CommitTransaction(txnContext);
+
         wuEvents.add(event);
     }
 
-    private void WORD_UPDATE_REQUEST_CORE() throws InterruptedException {
-    }
+    private void WORD_UPDATE_REQUEST_CORE() throws InterruptedException {}
 
     private void WORD_UPDATE_REQUEST_POST() throws InterruptedException {
         for (WUEvent event : wuEvents) {
@@ -133,8 +135,10 @@ public class WUBolt_ts extends WUBolt {
                 wuEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
-        } else {
-            execute_ts_normal(in);
         }
+
+        execute_ts_normal(in);
     }
+
+
 }

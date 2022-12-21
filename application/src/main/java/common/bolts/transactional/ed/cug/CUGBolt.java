@@ -1,12 +1,18 @@
 package common.bolts.transactional.ed.cug;
 
 import combo.SINKCombo;
+import common.param.ed.cu.CUEvent;
+import common.param.ed.es.ESEvent;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
+import execution.runtime.tuple.impl.Marker;
+import execution.runtime.tuple.impl.Tuple;
+import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
+import static common.Constants.DEFAULT_STREAM_ID;
 
 public abstract class CUGBolt extends TransactionalBolt {
     SINKCombo sink; // the default "next bolt"
@@ -32,7 +38,7 @@ public abstract class CUGBolt extends TransactionalBolt {
         if (!enable_app_combo) {
 
             //Iterate through all clusterIDs
-            for (int i = 0; i < clusterTableSize; i++) {
+            for (int i=0; i<clusterTableSize; i++) {
                 LOG.info("Posting event: " + outBid);
 
                 String clusterID = String.valueOf(i);

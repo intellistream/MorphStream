@@ -6,7 +6,9 @@ import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDataGenerator;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDynamicDataGenerator;
+import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
+import clojure.lang.IFn;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
@@ -26,32 +28,35 @@ import transaction.TableInitilizer;
 import utils.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
+import javax.xml.validation.Schema;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 
-import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
+import static common.CONTROL.*;
 import static common.Constants.Event_Path;
+import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
+import static utils.PartitionHelper.getPartition_interval;
 
 public class EDInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(EDInitializer.class);
 
     private final int numberOfStates;
     private final int startingValue = 10000;
-    private final DataGeneratorConfig dataConfig;
-    private final int partitionOffset;
-    private final int NUM_ACCESS;
-    private final int Transaction_Length;
     //different R-W ratio.
     //just enable one of the decision array
     protected transient boolean[] read_decision;
     int i = 0;
     private String dataRootPath;
     private DataGenerator dataGenerator;
+    private final DataGeneratorConfig dataConfig;
+    private final int partitionOffset;
+    private final int NUM_ACCESS;
+    private final int Transaction_Length;
+
 
     public EDInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
@@ -69,7 +74,7 @@ public class EDInitializer extends TableInitilizer {
 
     protected void createTPGGenerator(Configuration config) {
         if (config.getBoolean("isDynamic")) {
-            DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
+            DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
             dataGenerator = new EDTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
@@ -495,19 +500,20 @@ public class EDInitializer extends TableInitilizer {
 
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
                 StringBuilder stringBuilder = new StringBuilder();
-                for (String decision : getTranToDecisionConf()) {
+                for(String decision:getTranToDecisionConf()){
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
-                config.put("WorkloadConfig", stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                config.put("WorkloadConfig",stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
 
     //TODO: Place pre-processing methods outside of system
@@ -538,7 +544,7 @@ public class EDInitializer extends TableInitilizer {
     // Remove all invalid characters but alphabet letters and numbers
     // Remove all extra spaces (is this necessary?)
     public String normalizeWord(String word) {
-        word = word.replaceAll("[^a-zA-Z0-9]+", "");
+        word = word.replaceAll("[^a-zA-Z0-9]+","");
         String regex = "([a-z])\\1{2,}";
         word = word.replaceAll(regex, "$1$1");
         word = word.trim().replaceAll(" +", " ");

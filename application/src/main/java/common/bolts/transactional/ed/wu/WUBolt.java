@@ -1,6 +1,7 @@
 package common.bolts.transactional.ed.wu;
 
 import combo.SINKCombo;
+import common.param.ed.tr.TREvent;
 import common.param.ed.wu.WUEvent;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
@@ -11,6 +12,8 @@ import org.slf4j.Logger;
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public class WUBolt extends TransactionalBolt {
     SINKCombo sink; //Default sink for measurement
@@ -30,7 +33,7 @@ public class WUBolt extends TransactionalBolt {
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
         Tuple tuple = new Tuple(event.getMyBid(), 0, context, generalMsg);
 
-//        LOG.info("Posting event: " + event.getMyBid());
+//        LOG.info("Posting WU event: " + event.getMyBid());
 
         if (!enable_app_combo) {
             collector.emit(event.getMyBid(), tuple);//emit WU Event tuple to WU Gate

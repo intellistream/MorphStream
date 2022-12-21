@@ -9,8 +9,7 @@ import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 
-import static common.CONTROL.enable_app_combo;
-import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
 
 public abstract class TRBolt extends TransactionalBolt {
@@ -47,7 +46,6 @@ public abstract class TRBolt extends TransactionalBolt {
             if (!enable_app_combo) {
                 collector.emit(outBid, tuple);
 //                collector.
-
             } else {
                 if (enable_latency_measurement) {
                     //Pass the read result of new tweet's ID (assigned by table) to sink

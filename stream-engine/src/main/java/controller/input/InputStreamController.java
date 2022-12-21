@@ -51,7 +51,7 @@ public abstract class InputStreamController implements IISC {
         if (peekTuple != null) {
             synchronized (queue) {
                 int bid = (int) ((JumboTuple) peekTuple).getBID();
-                if ((bid + 1) % index == 0) { //increase bid to make it start from 1, avoid zero division
+                if ((bid+1) % index == 0) { //increase bid to make it start from 1, avoid zero division
                     tuple = queue.poll();
                     queue.notifyAll();
                     return tuple;

@@ -8,13 +8,13 @@ import java.util.Arrays;
 public class ESEvent extends TxnEvent {
     private final String clusterID;
     private final SchemaRecordRef cluster_record = new SchemaRecordRef();
+    public boolean isEvent;
+    public String[] wordList;
     private final double myBid;
     private final int myPid;
     private final String my_bid_array;
     private final String my_partition_index;
     private final int my_number_of_partitions;
-    public boolean isEvent;
-    public String[] wordList;
 
     public ESEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions, String clusterID) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
@@ -29,19 +29,15 @@ public class ESEvent extends TxnEvent {
     public double getMyBid() {
         return myBid;
     }
-
     public int getMyPid() {
         return myPid;
     }
-
     public String getMyBidArray() {
         return my_bid_array;
     }
-
     public String getMyPartitionIndex() {
         return my_partition_index;
     }
-
     public int getMyNumberOfPartitions() {
         return my_number_of_partitions;
     }

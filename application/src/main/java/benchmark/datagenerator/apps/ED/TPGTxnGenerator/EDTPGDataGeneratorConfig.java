@@ -25,6 +25,6 @@ public class EDTPGDataGeneratorConfig extends DataGeneratorConfig {
         Ratio_of_Overlapped_Keys = config.getInt("Ratio_of_Overlapped_Keys", 0);
         Period_of_Window_Reads = config.getInt("Period_of_Window_Reads", 1024);
         Transaction_Length = config.getInt("Transaction_Length", 1);
-        Ratio_of_Multiple_State_Access = config.getInt("Ratio_of_Multiple_State_Access", 100);
+        Ratio_of_Multiple_State_Access = config.getInt("Ratio_of_Multiple_State_Access",100);
     }
 }

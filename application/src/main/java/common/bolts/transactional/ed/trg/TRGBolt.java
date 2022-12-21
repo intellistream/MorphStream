@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public abstract class TRGBolt extends TransactionalBolt {
 

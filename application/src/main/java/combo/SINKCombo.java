@@ -1,10 +1,10 @@
 package combo;
 
+import common.Runner;
 import common.sink.MeasureSink;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import static common.CONTROL.clusterTableSize;
 import static common.CONTROL.tweetWindowSize;
 
@@ -35,11 +35,12 @@ public class SINKCombo extends MeasureSink {
         cnt++;
 
         //TODO: Properly define the_end
-        int the_end = 400;
+        int the_end = 1000;
         if (cnt == the_end) {
             LOG.info("Sink finishing...");
             end(global_cnt);
         }
+
     }
 
     public void display() {

@@ -5,9 +5,9 @@ import common.param.TxnEvent;
 import storage.SchemaRecordRef;
 
 import java.util.Arrays;
+import java.util.SplittableRandom;
 
-import static common.constants.OnlineBidingSystemConstants.Constant.MAX_Price;
-import static common.constants.OnlineBidingSystemConstants.Constant.NUM_ACCESSES_PER_BUY;
+import static common.constants.OnlineBidingSystemConstants.Constant.*;
 
 public class BuyingEvent extends TxnEvent {
     //expected state.
@@ -40,8 +40,8 @@ public class BuyingEvent extends TxnEvent {
     /**
      * Creates a new BuyingEvent.
      */
-    public BuyingEvent(int[] itemId, int partition_id, String bid_array, double bid, int number_of_partitions, String partition_index, boolean isAbort) {
-        super(bid, partition_id, bid_array, partition_index, number_of_partitions);
+    public BuyingEvent(int[] itemId, int partition_id, String bid_array, double bid, int number_of_partitions,String partition_index,boolean isAbort) {
+        super(bid, partition_id, bid_array,partition_index, number_of_partitions);
         this.itemId = itemId;
         record_refs = new SchemaRecordRef[NUM_ACCESSES_PER_BUY];
         for (int i = 0; i < NUM_ACCESSES_PER_BUY; i++) {
@@ -122,7 +122,7 @@ public class BuyingEvent extends TxnEvent {
         return bid_qty;
     }
 
-    private void set_values(int access_id, boolean isAbort) {
+    private void set_values(int access_id,boolean isAbort) {
         if (isAbort) {
             bid_price[access_id] = -1;
             bid_qty[access_id] = 100000;
@@ -134,12 +134,12 @@ public class BuyingEvent extends TxnEvent {
 
     public void setValues(boolean isAbort) {
         for (int access_id = 0; access_id < NUM_ACCESSES_PER_BUY; ++access_id) {
-            set_values(access_id, isAbort);
+            set_values(access_id,isAbort);
         }
     }
 
     @Override
     public BuyingEvent cloneEvent() {
-        return new BuyingEvent(bid, Arrays.toString(bid_array), pid, number_of_partitions, Arrays.toString(itemId), Arrays.toString(bid_price), Arrays.toString(bid_qty));
+        return new BuyingEvent(bid,Arrays.toString(bid_array),pid,number_of_partitions,Arrays.toString(itemId),Arrays.toString(bid_price),Arrays.toString(bid_qty));
     }
 }

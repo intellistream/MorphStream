@@ -93,6 +93,8 @@ public class WordCountBolt extends MapBolt {
         }
     }
 
+    public void execute() throws InterruptedException {}
+
     public void display() {
         double size_state;
 //		if (OsUtils.isUnix()) {
