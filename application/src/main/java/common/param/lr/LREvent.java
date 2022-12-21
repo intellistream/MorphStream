@@ -57,6 +57,6 @@ public class LREvent extends TxnEvent {
 
     @Override
     public LREvent cloneEvent() {
-        return new LREvent(this.posreport,tthread,bid);
+        return new LREvent(this.posreport, tthread, bid);
     }
 }

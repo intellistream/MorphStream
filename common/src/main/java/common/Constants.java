@@ -2,13 +2,6 @@ package common;
 
 import common.collections.OsUtils;
 
-/**
- * HPI machine
- * L1d cache:             32K
- * L1i cache:             32K
- * L2 cache:              256K
- * L3 cache:              25600K
- */
 public interface Constants {
     String STAT_Path = System.getProperty("user.home")
 //            + (OsUtils.isMac() ? "" : OsUtils.OS_wrapper("Documents"))
@@ -19,6 +12,15 @@ public interface Constants {
     String Synth_Data_Folder_Path = System.getProperty("user.home")
 //            + (OsUtils.isMac() ? "" : OsUtils.OS_wrapper("Documents"))
             + OsUtils.OS_wrapper("TStream") + OsUtils.OS_wrapper("SYNTH_DATA");
+    /**
+     * Because the flexibility of noSQL stream processing, we force user to tell us the output formulation.
+     */
+    String map = "map";//Takes one element and produces one element. A map function that doubles the values of the input stream
+    String filter = "filter";//Evaluates a boolean function for each element and retains those for which the function returns true,
+    // e.g., A filter that filters out zero values:
+    String reduce = "reduce";//Combine multiple input data into one output data.
+    String w_apply = "w_apply";
+
     char sinkType = 's';
     char spoutType = 'p';
     char boltType = 'b';

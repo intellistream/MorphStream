@@ -51,7 +51,7 @@ public abstract class DataGenerator {
         return null;
     }
 
-    public void generateTPGProperties(){
+    public void generateTPGProperties() {
     }
 
 }

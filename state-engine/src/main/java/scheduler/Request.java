@@ -38,6 +38,7 @@ public class Request {
                    String table_name) {
         this(txn_context, accessType, operator_name, table_name, null);
     }
+
     //Write-only
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,
@@ -91,6 +92,7 @@ public class Request {
                    SchemaRecordRef record_ref) {
         this(txn_context, accessType, operator_name, table_name, src_key, s_record, d_record, function, record_ref, null, null, null, null, null);
     }
+
     //condition. no column id
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,

@@ -6,9 +6,7 @@ import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGenerator;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDynamicDataGenerator;
-import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
-import benchmark.dynamicWorkloadGenerator.DynamicWorkloadGenerator;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
@@ -45,16 +43,16 @@ public class GSInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(GSInitializer.class);
     private final int numberOfStates;
     private final int startingValue = 10000;
+    private final DataGeneratorConfig dataConfig;
+    private final int partitionOffset;
+    private final int NUM_ACCESS;
+    private final int Transaction_Length;
     //different R-W ratio.
     //just enable one of the decision array
     protected transient boolean[] read_decision;
     int i = 0;
     private String dataRootPath;
     private DataGenerator dataGenerator;
-    private final DataGeneratorConfig dataConfig;
-    private final int partitionOffset;
-    private final int NUM_ACCESS;
-    private final int Transaction_Length;
 
 
     public GSInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
@@ -72,13 +70,13 @@ public class GSInitializer extends TableInitilizer {
     }
 
     protected void createTPGGenerator(Configuration config) {
-        if(config.getBoolean("isDynamic")) {
+        if (config.getBoolean("isDynamic")) {
             //TODO:add the dynamic workload dataGenerator
-            DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
+            DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
-            dataGenerator=new GSTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
-        }else {
+            dataGenerator = new GSTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
+        } else {
             GSTPGDataGeneratorConfig dataConfig = new GSTPGDataGeneratorConfig();
             dataConfig.initialize(config);
 
@@ -105,17 +103,17 @@ public class GSInitializer extends TableInitilizer {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
             if (dataConfig instanceof GSTPGDataGeneratorConfig)
-            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%d_%s",
-                            dataConfig.getTotalThreads(),
-                            dataConfig.getTotalEvents(),
-                            dataConfig.getnKeyStates(),
-                            ((GSTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
-                            ((GSTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
-                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
-                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
-                            ((GSTPGDataGeneratorConfig) dataConfig).Transaction_Length,
-                            ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
-                            AppConfig.isCyclic)
+                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%d_%s",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTotalEvents(),
+                                dataConfig.getnKeyStates(),
+                                ((GSTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
+                                ((GSTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
+                                ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
+                                ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
+                                ((GSTPGDataGeneratorConfig) dataConfig).Transaction_Length,
+                                ((GSTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
+                                AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
             else
                 bytes = digest.digest(String.format("%d_%d_%d_%s_%s_%s",
@@ -205,7 +203,7 @@ public class GSInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
 //            assert value.length() == VALUE_LEN;
-            insertMicroRecord(_key, startingValue , pid, spinlock);
+            insertMicroRecord(_key, startingValue, pid, spinlock);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -293,7 +291,7 @@ public class GSInitializer extends TableInitilizer {
         }
     }
 
-    private void loadMicroEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException  {
+    private void loadMicroEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
         String txn = reader.readLine();
         int count = 0;
 //        int p_bids[] = new int[tthread];
@@ -304,9 +302,9 @@ public class GSInitializer extends TableInitilizer {
             int keyLength = split.length - 2;
             HashMap<Integer, Integer> pids = new HashMap<>();
             long[] keys = new long[keyLength];
-            for (int i = 1; i < keyLength+1; i++) {
-                keys[i-1] = Long.parseLong(split[i]);
-                pids.put((int) (keys[i-1] / partitionOffset), 0);
+            for (int i = 1; i < keyLength + 1; i++) {
+                keys[i - 1] = Long.parseLong(split[i]);
+                pids.put((int) (keys[i - 1] / partitionOffset), 0);
             }
 
             // construct event
@@ -319,7 +317,7 @@ public class GSInitializer extends TableInitilizer {
                     Arrays.toString(keys), // key_array
                     keyLength,
                     Transaction_Length,
-                    Boolean.parseBoolean(split[keyLength+1]));
+                    Boolean.parseBoolean(split[keyLength + 1]));
             DataHolder.events.add(event);
             if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();
@@ -403,14 +401,14 @@ public class GSInitializer extends TableInitilizer {
         db.createTable(s, "MicroTable");
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() !=0){
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
                 StringBuilder stringBuilder = new StringBuilder();
-                for(String decision:getTranToDecisionConf()){
+                for (String decision : getTranToDecisionConf()) {
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
-                config.put("WorkloadConfig",stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                config.put("WorkloadConfig", stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();

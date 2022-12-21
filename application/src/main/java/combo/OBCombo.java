@@ -3,7 +3,6 @@ package combo;
 import benchmark.DataHolder;
 import common.bolts.transactional.ob.*;
 import common.collections.Configuration;
-import common.collections.OsUtils;
 import common.param.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
@@ -14,15 +13,9 @@ import execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayDeque;
-import java.util.Scanner;
 
-import static common.CONTROL.*;
-import static common.Constants.Event_Path;
+import static common.CONTROL.combo_bid_size;
 import static content.Content.*;
 
 //TODO: Re-name microbenchmark as GS (Grep and Sum).

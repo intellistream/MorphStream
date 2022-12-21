@@ -22,7 +22,11 @@ import static common.CONTROL.enable_states_partition;
 
 public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(SLTPGDynamicDataGenerator.class);
-
+    // independent transactions.
+    private final boolean isUnique = false;
+    public FastZipfGenerator[] partitionedAccountZipf;
+    public FastZipfGenerator[] partitionedAssetZipf;
+    public transient FastZipfGenerator p_generator; // partition generator
     private int Ratio_Of_Deposit;  // ratio of state access type i.e. deposit or transfer
     private int State_Access_Skewness; // ratio of state access, following zipf distribution
     private int Transaction_Length; // transaction length, 4 or 8 or longer
@@ -32,24 +36,17 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     // control the number of txns overlap with each other.
     private ArrayList<Integer> generatedAcc = new ArrayList<>();
     private ArrayList<Integer> generatedAst = new ArrayList<>();
-    // independent transactions.
-    private final boolean isUnique = false;
     private FastZipfGenerator accountZipf;
     private FastZipfGenerator assetZipf;
-
     private int floor_interval;
-    public FastZipfGenerator[] partitionedAccountZipf;
-    public FastZipfGenerator[] partitionedAssetZipf;
-
-
     private Random random = new Random(0); // the transaction type decider
-    public transient FastZipfGenerator p_generator; // partition generator
     private HashMap<Integer, Integer> nGeneratedAccountIds = new HashMap<>();
     private HashMap<Integer, Integer> nGeneratedAssetIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
     private HashMap<Integer, Integer> idToLevel = new HashMap<>();
-    public SLTPGDynamicDataGenerator(DynamicDataGeneratorConfig dynamicDataConfig){
+
+    public SLTPGDynamicDataGenerator(DynamicDataGeneratorConfig dynamicDataConfig) {
         super(dynamicDataConfig);
         events = new ArrayList<>(nTuples);
     }
@@ -59,40 +56,40 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         //TD,LD,PD,VDD,Skew,R_of_A,isCD,isCC,
         StringBuilder stringBuilder = new StringBuilder();
         //TODO:hard code, function not sure
-        double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double)Ratio_Of_Deposit/100) +
-                ((double)Ratio_Of_Deposit/100) * 2 * dynamicDataConfig.getCheckpoint_interval();
-        td = td *((double) Ratio_of_Overlapped_Keys/100);
+        double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double) Ratio_Of_Deposit / 100) +
+                ((double) Ratio_Of_Deposit / 100) * 2 * dynamicDataConfig.getCheckpoint_interval();
+        td = td * ((double) Ratio_of_Overlapped_Keys / 100);
         stringBuilder.append(td);
         stringBuilder.append(",");
-        double ld = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double)Ratio_Of_Deposit/100) +
-                ((double)Ratio_Of_Deposit/100) * 2 * dynamicDataConfig.getCheckpoint_interval();
+        double ld = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * (1 - (double) Ratio_Of_Deposit / 100) +
+                ((double) Ratio_Of_Deposit / 100) * 2 * dynamicDataConfig.getCheckpoint_interval();
         stringBuilder.append(ld);
         stringBuilder.append(",");
-        double pd = (1 - (double)Ratio_Of_Deposit/100) * Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * 2 * ((double) Ratio_of_Overlapped_Keys/100);
+        double pd = (1 - (double) Ratio_Of_Deposit / 100) * Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * 2 * ((double) Ratio_of_Overlapped_Keys / 100);
         stringBuilder.append(pd);
         stringBuilder.append(",");
-        stringBuilder.append((double) State_Access_Skewness/100);
+        stringBuilder.append((double) State_Access_Skewness / 100);
         stringBuilder.append(",");
-        stringBuilder.append((double) Ratio_of_Transaction_Aborts/10000);
+        stringBuilder.append((double) Ratio_of_Transaction_Aborts / 10000);
         stringBuilder.append(",");
         if (AppConfig.isCyclic) {
-          stringBuilder.append("1,");
+            stringBuilder.append("1,");
         } else {
             stringBuilder.append("0,");
         }
-        if (AppConfig.complexity < 40000){
+        if (AppConfig.complexity < 40000) {
             stringBuilder.append("0,");
         } else {
             stringBuilder.append("1,");
         }
-        stringBuilder.append(eventID+dynamicDataConfig.getShiftRate()*dynamicDataConfig.getCheckpoint_interval()*dynamicDataConfig.getTotalThreads());
+        stringBuilder.append(eventID + dynamicDataConfig.getShiftRate() * dynamicDataConfig.getCheckpoint_interval() * dynamicDataConfig.getTotalThreads());
         this.tranToDecisionConf.add(stringBuilder.toString());
     }
 
     @Override
     public void switchConfiguration(String type) {
         switch (type) {
-            case "default" :
+            case "default":
                 Ratio_Of_Deposit = dynamicDataConfig.Ratio_Of_Deposit;//0-100 (%)
                 State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
                 Transaction_Length = 4;
@@ -111,30 +108,31 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
                 assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
                 configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
                 p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
-            break;
-            case "skew" :
+                break;
+            case "skew":
                 State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
                 accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
                 assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
                 configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
                 p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
-            break;
-            case "PD" :
+                break;
+            case "PD":
                 Ratio_Of_Deposit = dynamicDataConfig.Ratio_Of_Deposit;//0-100 (%)
                 if (Ratio_Of_Deposit < 45) {
                     AppConfig.isCyclic = true;
                 }
-            break;
+                break;
             case "abort":
                 Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
-            break;
-            case "unchanging" :
-            break;
+                break;
+            case "unchanging":
+                break;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
         mapToTPGProperties();
     }
+
     public void configure_store(double scale_factor, double theta, int tthread, int numItems) {
         floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / tthread;
         partitionedAccountZipf = new FastZipfGenerator[tthread];//overhead_total number of working threads.
@@ -144,6 +142,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             partitionedAssetZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), theta, i * floor_interval, 123456789);
         }
     }
+
     @Override
     protected void generateTuple() {
         Event event;
@@ -155,6 +154,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         }
         events.add(event);
     }
+
     @Override
     public void dumpGeneratedDataToFile() {
         if (enable_log) LOG.info("++++++" + nGeneratedAccountIds.size());
@@ -179,6 +179,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             e.printStackTrace();
         }
     }
+
     private Event randomTransferEvent() {
         // make sure source and destination are different
         int srcAcc, dstAcc, srcAst, dstAst;
@@ -187,23 +188,23 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             if (enable_states_partition) {
                 int partitionId = key_to_partition(p_generator.next());
                 int[] accKeys = getKeys(partitionedAccountZipf[partitionId],
-                        partitionedAccountZipf[(partitionId+2) % dynamicDataConfig.getTotalThreads()],
+                        partitionedAccountZipf[(partitionId + 2) % dynamicDataConfig.getTotalThreads()],
                         partitionId,
-                        (partitionId+2) % dynamicDataConfig.getTotalThreads(),
+                        (partitionId + 2) % dynamicDataConfig.getTotalThreads(),
                         generatedAcc);
                 srcAcc = accKeys[0];
                 dstAcc = accKeys[1];
-                int[] astKeys = getKeys(partitionedAssetZipf[(partitionId+1) % dynamicDataConfig.getTotalThreads()],
-                        partitionedAssetZipf[(partitionId+3) % dynamicDataConfig.getTotalThreads()],
-                        (partitionId+1) % dynamicDataConfig.getTotalThreads(),
-                        (partitionId+3) % dynamicDataConfig.getTotalThreads(),
+                int[] astKeys = getKeys(partitionedAssetZipf[(partitionId + 1) % dynamicDataConfig.getTotalThreads()],
+                        partitionedAssetZipf[(partitionId + 3) % dynamicDataConfig.getTotalThreads()],
+                        (partitionId + 1) % dynamicDataConfig.getTotalThreads(),
+                        (partitionId + 3) % dynamicDataConfig.getTotalThreads(),
                         generatedAst);
                 srcAst = astKeys[0];
                 dstAst = astKeys[1];
                 assert srcAcc / floor_interval == partitionId;
-                assert srcAst / floor_interval == (partitionId+1) % dynamicDataConfig.getTotalThreads();
-                assert dstAcc / floor_interval == (partitionId+2) % dynamicDataConfig.getTotalThreads();
-                assert dstAst / floor_interval == (partitionId+3) % dynamicDataConfig.getTotalThreads();
+                assert srcAst / floor_interval == (partitionId + 1) % dynamicDataConfig.getTotalThreads();
+                assert dstAcc / floor_interval == (partitionId + 2) % dynamicDataConfig.getTotalThreads();
+                assert dstAst / floor_interval == (partitionId + 3) % dynamicDataConfig.getTotalThreads();
             } else {
                 int[] accKeys = getKeys(accountZipf, generatedAcc);
                 srcAcc = accKeys[0];
@@ -242,11 +243,11 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private Event randomDepositEvent() {
         int acc;
         int ast;
-        if(!isUnique) {
+        if (!isUnique) {
             if (enable_states_partition) {
                 int partitionId = key_to_partition(p_generator.next());
                 acc = getKey(partitionedAccountZipf[partitionId], partitionId, generatedAcc);
-                ast = getKey(partitionedAssetZipf[(partitionId+1) % dynamicDataConfig.getTotalThreads()], (partitionId+1) % dynamicDataConfig.getTotalThreads(), generatedAst);
+                ast = getKey(partitionedAssetZipf[(partitionId + 1) % dynamicDataConfig.getTotalThreads()], (partitionId + 1) % dynamicDataConfig.getTotalThreads(), generatedAst);
             } else {
                 acc = getKey(accountZipf, generatedAcc);
                 ast = getKey(assetZipf, generatedAst);
@@ -266,6 +267,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         eventID++;
         return t;
     }
+
     public int key_to_partition(int key) {
         return (int) Math.floor((double) key / floor_interval);
     }
@@ -291,6 +293,7 @@ public class SLTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         generatedKeys.add(keys[1]);
         return keys;
     }
+
     private int getKey(FastZipfGenerator zipfGenerator, int partitionId, ArrayList<Integer> generatedKeys) {
         int key;
         key = zipfGenerator.next();

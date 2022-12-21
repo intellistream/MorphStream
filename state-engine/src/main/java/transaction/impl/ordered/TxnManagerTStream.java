@@ -10,7 +10,6 @@ import storage.StorageManager;
 import storage.TableRecord;
 import transaction.context.TxnContext;
 import transaction.impl.TxnManagerDedicatedAsy;
-import utils.SOURCE_CONTROL;
 
 import java.util.LinkedList;
 import java.util.concurrent.BrokenBarrierException;

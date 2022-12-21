@@ -24,6 +24,8 @@ import static common.CONTROL.enable_states_partition;
  */
 public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(TPTPGDynamicDataGenerator.class);
+    public FastZipfGenerator[] partitionedKeyZipf;
+    public transient FastZipfGenerator p_generator; // partition generator
     private int State_Access_Skewness; // ratio of state access, following zipf distribution
     private int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
     private int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
@@ -32,16 +34,14 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     // independent transactions.
     private boolean isUnique = false;
     private FastZipfGenerator keyZipf;
-
     private int floor_interval;
-    public FastZipfGenerator[] partitionedKeyZipf;
     private Random random = new Random(0); // the transaction type decider
-    public transient FastZipfGenerator p_generator; // partition generator
     private HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
     private boolean enableGroup;
     private HashMap<Integer, Integer> idToLevel = new HashMap<>();
+
     public TPTPGDynamicDataGenerator(DynamicDataGeneratorConfig dynamicDataConfig) {
         super(dynamicDataConfig);
         events = new ArrayList<>(nTuples);
@@ -57,24 +57,25 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
         Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
         Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
-        this.enableGroup=dynamicDataConfig.enableGroup;
+        this.enableGroup = dynamicDataConfig.enableGroup;
         int nKeyState = dynamicDataConfig.getnKeyStates();
         int MAX_LEVEL = 256;
         for (int i = 0; i < nKeyState; i++) {
-            idToLevel.put(i, i% MAX_LEVEL);
+            idToLevel.put(i, i % MAX_LEVEL);
         }
         keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
         configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
         p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
     }
+
     public void configure_store(double scale_factor, double theta, int tthread, int numItems) {
         floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / tthread;
         partitionedKeyZipf = new FastZipfGenerator[tthread];//overhead_total number of working threads.
         if (dynamicDataConfig.enableGroup) {
-            String b_ls[]=dynamicDataConfig.skewGroup.split(",");
+            String b_ls[] = dynamicDataConfig.skewGroup.split(",");
             for (int i = 0; i < dynamicDataConfig.groupNum; i++) {
-                for (int j = i * (tthread /dynamicDataConfig.groupNum); j < (i + 1) * (tthread /dynamicDataConfig.groupNum); j++) {
-                    partitionedKeyZipf[j] = new FastZipfGenerator((int) (floor_interval * scale_factor), Double.parseDouble(b_ls[i]) / 100 , j * floor_interval, 12345678);
+                for (int j = i * (tthread / dynamicDataConfig.groupNum); j < (i + 1) * (tthread / dynamicDataConfig.groupNum); j++) {
+                    partitionedKeyZipf[j] = new FastZipfGenerator((int) (floor_interval * scale_factor), Double.parseDouble(b_ls[i]) / 100, j * floor_interval, 12345678);
                 }
             }
         } else {
@@ -114,6 +115,7 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             e.printStackTrace();
         }
     }
+
     private Event randomTPEvent() {
         int id;
         int partitionId = 0;
@@ -125,19 +127,19 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
                 } else {
                     partitionId = key_to_partition(p_generator.next());
                 }
-                id = getKey(partitionedKeyZipf[partitionId],partitionId,generatedKeys);
+                id = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
             } else {
-                id = getKey(keyZipf,generatedKeys);
+                id = getKey(keyZipf, generatedKeys);
             }
         } else {
-            id = getUniqueKey(keyZipf,generatedKeys);
+            id = getUniqueKey(keyZipf, generatedKeys);
         }
         nGeneratedIds.put(id, nGeneratedIds.getOrDefault(id, 0) + 1);
         Event t;
         //TODO: the "isAbort" does not matter, since the operation of Toll processing never abort
         boolean isAbort;
         if (dynamicDataConfig.enableGroup) {
-            if (partitionId < dynamicDataConfig.getTotalThreads()/dynamicDataConfig.groupNum){
+            if (partitionId < dynamicDataConfig.getTotalThreads() / dynamicDataConfig.groupNum) {
                 isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts;
             } else {
                 isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts + dynamicDataConfig.Ratio_of_Transaction_Aborts_Highest;
@@ -145,10 +147,11 @@ public class TPTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         } else {
             isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts;
         }
-        t = new TollProcessingEvent(eventID,id,isAbort);
+        t = new TollProcessingEvent(eventID, id, isAbort);
         eventID++;
         return t;
     }
+
     public int key_to_partition(int key) {
         return (int) Math.floor((double) key / floor_interval);
     }

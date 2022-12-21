@@ -37,21 +37,19 @@ import java.util.List;
 import java.util.Random;
 
 import static common.CONTROL.enable_log;
-import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
-import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
-import static utils.PartitionHelper.getPartition_interval;
 
 public class TPInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(TPInitializer.class);
     private final int numberOfStates;
-    private String dataRootPath;
-    private DataGenerator dataGenerator;
     private final DataGeneratorConfig dataConfig;
     private final int partitionOffset;
     private final int NUM_ACCESS;
     private final int Transaction_Length;
-    public TPInitializer(Database db,int numberOfStates, double theta, int tthread, Configuration config) {
+    private String dataRootPath;
+    private DataGenerator dataGenerator;
+
+    public TPInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
         this.dataRootPath = config.getString("rootFilePath");
@@ -63,12 +61,14 @@ public class TPInitializer extends TableInitilizer {
         createTPGGenerator(config);
         dataConfig = dataGenerator.getDataConfig();
     }
+
     protected void createTPGGenerator(Configuration config) {
         DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
         dynamicDataGeneratorConfig.initialize(config);
         configurePath(dynamicDataGeneratorConfig);
         dataGenerator = new TPTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
     }
+
     private void configurePath(DynamicDataGeneratorConfig dynamicDataGeneratorConfig) {
         MessageDigest digest;
         String subFolder = null;
@@ -94,7 +94,8 @@ public class TPInitializer extends TableInitilizer {
 
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks) {
-        int partition_interval = (int) Math.ceil(numberOfStates / (double) NUMTasks);;
+        int partition_interval = (int) Math.ceil(numberOfStates / (double) NUMTasks);
+        ;
         int left_bound = thread_id * partition_interval;
         int right_bound;
         if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
@@ -241,6 +242,7 @@ public class TPInitializer extends TableInitilizer {
             reader.close();
         }
     }
+
     private void loadTollProcessingEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, long[] p_bids) throws IOException {
         String txn = reader.readLine();
         int count = 0;
@@ -248,26 +250,26 @@ public class TPInitializer extends TableInitilizer {
             LREvent event;
             PositionReport positionReport;
             String[] split = txn.split(",");
-            if (split[split.length-1].equals("true")) {
+            if (split[split.length - 1].equals("true")) {
                 positionReport = new PositionReport((short) 0,
-                        randomNumberGenerator.generate(1,100),
+                        randomNumberGenerator.generate(1, 100),
                         200,
-                        randomNumberGenerator.generate(1,4),
-                        (short)randomNumberGenerator.generate(1,4),
-                        (short)randomNumberGenerator.generate(1,1),
+                        randomNumberGenerator.generate(1, 4),
+                        (short) randomNumberGenerator.generate(1, 4),
+                        (short) randomNumberGenerator.generate(1, 1),
                         Integer.parseInt(split[1]),
-                        randomNumberGenerator.generate(1,100));
+                        randomNumberGenerator.generate(1, 100));
             } else {
                 positionReport = new PositionReport((short) 0,
-                        randomNumberGenerator.generate(1,100),
-                        randomNumberGenerator.generate(60,180),
-                        randomNumberGenerator.generate(1,4),
-                        (short)randomNumberGenerator.generate(1,4),
-                        (short)randomNumberGenerator.generate(1,1),
+                        randomNumberGenerator.generate(1, 100),
+                        randomNumberGenerator.generate(60, 180),
+                        randomNumberGenerator.generate(1, 4),
+                        (short) randomNumberGenerator.generate(1, 4),
+                        (short) randomNumberGenerator.generate(1, 1),
                         Integer.parseInt(split[1]),
-                        randomNumberGenerator.generate(1,100));
+                        randomNumberGenerator.generate(1, 100));
             }
-            event = new LREvent(positionReport,dataConfig.getTotalThreads(),Long.parseLong(split[0]));
+            event = new LREvent(positionReport, dataConfig.getTotalThreads(), Long.parseLong(split[0]));
             DataHolder.events.add(event);
             if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();
@@ -277,6 +279,7 @@ public class TPInitializer extends TableInitilizer {
             shuffleEvents(DataHolder.events, totalEvents);
         }
     }
+
     private void shuffleEvents(ArrayList<TxnEvent> txnEvents, int totalEvents) {
         Random random = new Random();
         int index;
@@ -309,14 +312,14 @@ public class TPInitializer extends TableInitilizer {
         db.createTable(b, "segment_cnt");
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
                 StringBuilder stringBuilder = new StringBuilder();
-                for(String decision:getTranToDecisionConf()){
+                for (String decision : getTranToDecisionConf()) {
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
-                config.put("WorkloadConfig",stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                config.put("WorkloadConfig", stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();

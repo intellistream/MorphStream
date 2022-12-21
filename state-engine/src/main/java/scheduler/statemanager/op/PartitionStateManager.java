@@ -1,10 +1,10 @@
 package scheduler.statemanager.op;
 
 import scheduler.impl.op.nonstructured.OPNSScheduler;
+import scheduler.signal.op.*;
 import scheduler.struct.op.MetaTypes;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import scheduler.struct.op.Operation;
-import scheduler.signal.op.*;
 
 import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;

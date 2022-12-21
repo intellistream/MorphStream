@@ -71,7 +71,7 @@ public class SLInitializer extends TableInitilizer {
 
     protected void createTPGGenerator(Configuration config) {
         if (config.getBoolean("isDynamic")) {
-            DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
+            DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
             dataGenerator = new SLTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
@@ -116,7 +116,7 @@ public class SLInitializer extends TableInitilizer {
                                 AppConfig.isCyclic,
                                 config.getString("workloadType"))
                         .getBytes(StandardCharsets.UTF_8));
-            else if(dataConfig instanceof DynamicDataGeneratorConfig)
+            else if (dataConfig instanceof DynamicDataGeneratorConfig)
                 bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%s_%s",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
@@ -430,14 +430,14 @@ public class SLInitializer extends TableInitilizer {
         db.createTable(b, "bookEntries");
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
                 StringBuilder stringBuilder = new StringBuilder();
-                for(String decision:getTranToDecisionConf()){
+                for (String decision : getTranToDecisionConf()) {
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
-                config.put("WorkloadConfig",stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                config.put("WorkloadConfig", stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();

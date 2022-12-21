@@ -32,6 +32,7 @@ public abstract class TxnManager implements ITxnManager {
 
     /**
      * create Scheduler by flag
+     *
      * @param schedulerType
      * @param threadCount
      * @param numberOfStates

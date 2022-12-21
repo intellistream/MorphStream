@@ -10,7 +10,7 @@ import scheduler.struct.og.OperationChain;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static scheduler.struct.op.MetaTypes.*;
+import static scheduler.struct.op.MetaTypes.OperationStateType;
 
 /**
  * Local to every TPGScheduler context.

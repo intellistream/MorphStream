@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import transaction.context.TxnContext;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * #elif defined(LOCK) || defined(OCC) || defined(SILO) || defined(ST)
  * LockContentImpl content_;

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_latency_measurement;
-import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static profiler.Metrics.NUM_ITEMS;
 
 public class TPBolt_ts_s extends TPBolt {

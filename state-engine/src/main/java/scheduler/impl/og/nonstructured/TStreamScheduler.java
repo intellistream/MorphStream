@@ -1,7 +1,6 @@
 package scheduler.impl.og.nonstructured;
 
 import scheduler.context.og.OGNSContext;
-import utils.SOURCE_CONTROL;
 
 public class TStreamScheduler extends OGNSScheduler {
 

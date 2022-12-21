@@ -3,7 +3,6 @@ package combo;
 import benchmark.DataHolder;
 import common.bolts.transactional.gs.*;
 import common.collections.Configuration;
-import common.collections.OsUtils;
 import common.param.TxnEvent;
 import common.param.mb.MicroEvent;
 import components.context.TopologyContext;
@@ -12,18 +11,10 @@ import execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayDeque;
-import java.util.Scanner;
 
 import static common.CONTROL.*;
-import static common.Constants.Event_Path;
 import static content.Content.*;
-import static profiler.Metrics.NUM_ACCESSES;
-import static profiler.Metrics.NUM_ITEMS;
 
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class GSCombo extends SPOUTCombo {

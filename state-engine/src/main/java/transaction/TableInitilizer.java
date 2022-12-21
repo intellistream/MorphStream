@@ -152,6 +152,7 @@ public abstract class TableInitilizer {
     protected abstract void Load() throws IOException;
 
     public abstract void store(String file_path) throws IOException;
+
     public abstract List<String> getTranToDecisionConf();
 
 }
