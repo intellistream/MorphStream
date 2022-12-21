@@ -97,6 +97,7 @@ public class EDSpout extends TransactionalSpout {
             }
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
+//            LOG.info("ED Spout emitting event " + bid);
             this.collector.emit(bid, tuple);
             counter++;
         }

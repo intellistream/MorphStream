@@ -33,6 +33,8 @@ public class ForwardSink extends BaseSink {
 //not in use
     }
 
+    public void execute() throws InterruptedException {}
+
     @Override
     public void execute(JumboTuple in) throws InterruptedException {
         int bound = in.length;

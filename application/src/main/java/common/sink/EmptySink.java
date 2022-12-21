@@ -26,4 +26,6 @@ public class EmptySink extends BaseSink {
     @Override
     public void execute(JumboTuple in) throws InterruptedException {
     }
+
+    public void execute() throws InterruptedException {}
 }

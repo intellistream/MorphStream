@@ -35,7 +35,7 @@ public class SINKCombo extends MeasureSink {
         cnt++;
 
         //TODO: Properly define the_end
-        int the_end = 500;
+        int the_end = 1000;
         if (cnt == the_end) {
             LOG.info("Sink finishing...");
             end(global_cnt);

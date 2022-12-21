@@ -127,6 +127,8 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         POST_PROCESS(_bid, timestamp, 1);//otherwise deadlock.
     }
 
+    public void execute() throws BrokenBarrierException, InterruptedException {}
+
     @Override
     public boolean checkpoint(int counter) {
         return false;

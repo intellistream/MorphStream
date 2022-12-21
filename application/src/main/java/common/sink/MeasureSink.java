@@ -168,6 +168,8 @@ public class MeasureSink extends BaseSink {
         LOG.info("Sink received tuple: " + cnt);
     }
 
+    public void execute() throws InterruptedException {}
+
     protected void latency_measure(Tuple input) {
         cnt++;
         if (enable_latency_measurement) {

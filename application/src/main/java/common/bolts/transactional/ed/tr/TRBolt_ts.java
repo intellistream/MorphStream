@@ -19,6 +19,7 @@ import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static common.CONTROL.*;
 import static common.bolts.transactional.ed.PunctuationAligner.*;
@@ -32,6 +33,7 @@ public class TRBolt_ts extends TRBolt{
     //write-compute time pre-measured.
     ArrayDeque<TREvent> trEvents;
     private boolean doPunctuation;
+    private static AtomicBoolean punctuation = new AtomicBoolean(false);
 
     //To be used in Combo
     public TRBolt_ts(int fid, SINKCombo sink) {
@@ -112,25 +114,41 @@ public class TRBolt_ts extends TRBolt{
     private void TWEET_REGISTRANT_REQUEST_POST() throws InterruptedException {
         for (TREvent event : trEvents) {
             TWEET_REGISTRANT_REQUEST_POST(event);
-            LOG.info("Posting TR event: " + event.getBid());
+//            LOG.info("Posting TR event: " + event.getBid());
         }
     }
 
     private static final Object trLock = new Object();
-
+    int count = 0;
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         // Need to use synchronized block here to ensure correctness
+//        synchronized (trLock) {
+//            if (trEventCount.get() > 0 && trEventCount.get() % tweetWindowSize == 0) {
+//                doPunctuation = true;
+//            } else {
+//                LOG.info("Thread " + this.thread_Id + " has updated counter to: " + trEventCount.getAndIncrement());
+//            }
+//        }
+
         synchronized (trLock) {
-            if (trEventCount.get() > 0 && trEventCount.get() % tweetWindowSize == 0) {
-                doPunctuation = true;
+            count = trEventCount.incrementAndGet();
+            if (punctuation.get() != true) {
+                LOG.info("Thread " + this.thread_Id + " has updated counter to: " + count + " with event " + in.getBID());
+                if (count % tweetWindowSize == 0) {
+                    punctuation.set(true);
+                    LOG.info("Thread " + this.thread_Id + " changed punc to true");
+                }
             }
         }
 
-        if (doPunctuation) {
+        if (punctuation.get()) {
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation interval: " + count + " with event " + in.getBID());
             trBarrier.await();
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation interval: " + trEventCount.get());
+            LOG.info("Thread " + this.thread_Id + " has event " + in.getBID());
+
+//            LOG.info("Thread " + this.thread_Id + " has updated counter to: " + trEventCount.getAndIncrement());
             int num_events = trEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -153,12 +171,26 @@ public class TRBolt_ts extends TRBolt{
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
 
-            doPunctuation = false;
+            punctuation.set(false);
+            LOG.info("Thread " + this.thread_Id + " changed punc to false");
         }
 
-        trEventCount.getAndIncrement();
+//        trEventCount.getAndIncrement();
         execute_ts_normal(in);
 
+    }
+
+    @Override
+    public void execute() throws BrokenBarrierException, InterruptedException {
+        if (punctuation.get()) {
+            LOG.info("Thread " + this.thread_Id + " has no more event after: " + count);
+            trBarrier.await();
+
+            transactionManager.start_evaluate(thread_Id, -1, -1);//start lazy evaluation in transaction manager.
+
+            punctuation.set(false);
+//            LOG.info("Thread " + this.thread_Id + " has event " + in.getBID());
+        }
     }
 
 }

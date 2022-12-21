@@ -33,7 +33,7 @@ public class WUBolt extends TransactionalBolt {
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
         Tuple tuple = new Tuple(event.getMyBid(), 0, context, generalMsg);
 
-        LOG.info("Posting WU event: " + event.getMyBid());
+//        LOG.info("Posting WU event: " + event.getMyBid());
 
         if (!enable_app_combo) {
             collector.emit(event.getMyBid(), tuple);//emit WU Event tuple to WU Gate

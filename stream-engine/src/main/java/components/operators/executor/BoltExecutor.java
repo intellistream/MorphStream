@@ -24,6 +24,8 @@ public abstract class BoltExecutor implements IExecutor {
 
     public abstract void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException;
 
+    public abstract void execute() throws InterruptedException, DatabaseException, BrokenBarrierException;
+
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         op.prepare(stormConf, context, collector);
@@ -69,4 +71,6 @@ public abstract class BoltExecutor implements IExecutor {
     public double getEmpty() {
         return 0;
     }
+
+
 }

@@ -156,6 +156,10 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
         //not supported yet.
     }
 
+    public void execute() throws InterruptedException {
+        //not supported yet.
+    }
+
     private Long getWindowStartTs(Long endTs) {
         Long res = null;
         if (endTs != null && windowLengthDuration != null) {

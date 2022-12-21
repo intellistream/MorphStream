@@ -111,6 +111,7 @@ public class boltThread extends executorThread {
                 bolt.execute((JumboTuple) tuple);
                 cnt += batch;
             } else {
+                bolt.execute();
                 miss++;
             }
         }
