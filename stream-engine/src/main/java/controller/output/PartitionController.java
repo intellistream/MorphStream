@@ -16,6 +16,7 @@ import execution.runtime.tuple.impl.msgs.IntDoubleDoubleMsg;
 import execution.runtime.tuple.impl.msgs.StringLongMsg;
 import execution.runtime.tuple.impl.msgs.StringMsg;
 import org.jctools.queues.MpscArrayQueue;
+import org.jctools.queues.SpscArrayQueue;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import queue.MPSCController;
@@ -54,7 +55,8 @@ public abstract class PartitionController implements IPartitionController, Seria
     private final QueueController controller;
     private final Collections[] collections;//this may be shared by multiple producers.
     protected Integer[] targetTasks;
-    int threashold;
+    int threshold;
+    boolean shareProducerQueue;
     private int firt_executor_Id;
 
     /**
@@ -110,7 +112,8 @@ public abstract class PartitionController implements IPartitionController, Seria
             controller = new SPSCController(downExecutor_list);
         }
         PartitionController.profile = profile;
-        threashold = conf.getInt("queue_size") - 1;//leave one space for watermark filling!
+        threshold = conf.getInt("queue_size") - 1;//leave one space for watermark filling!
+        shareProducerQueue = conf.getBoolean("shared");
     }
 
     public String toString() {
@@ -247,9 +250,17 @@ public abstract class PartitionController implements IPartitionController, Seria
 
     private boolean bounded_offer(Queue queue, final Object e) {
         do {
-            if (((MpscArrayQueue) queue).offerIfBelowThreshold(e, threashold)) {
-                return true;
+            if (shareProducerQueue) {
+                if (((MpscArrayQueue) queue).offerIfBelowThreshold(e, threshold)) {
+                    return true;
+                }
+            } else { //If producers do not share queue, input queue is a SpscArrayQueue
+                if (queue.offer(e)) {
+                    return true;
+                }
             }
+//            if (Config.)
+
             int timestamp_counter = SPIN_TRIES;
             applyWaitMethod(timestamp_counter);
         } while (!Thread.interrupted()); //clear interrupted flag

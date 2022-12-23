@@ -1,6 +1,7 @@
 package common.bolts.transactional.ed.wu;
 
 import combo.SINKCombo;
+import common.param.ed.tr.TREvent;
 import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -28,6 +29,8 @@ public class WUBolt_ts extends WUBolt{
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
     ArrayDeque<WUEvent> wuEvents;
+    private double windowBoundary;
+    ArrayDeque<Tuple> outWindowEvents;
 
     //To be used in Combo
     public WUBolt_ts(int fid, SINKCombo sink) {
@@ -44,6 +47,8 @@ public class WUBolt_ts extends WUBolt{
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         wuEvents = new ArrayDeque<>();
+        windowBoundary = wordWindowSize;
+        outWindowEvents = new ArrayDeque<>();
     }
 
     @Override
@@ -106,14 +111,22 @@ public class WUBolt_ts extends WUBolt{
         }
     }
 
-    private boolean doPunctuation() {
-        return wuEvents.size() == wordWindowSize / tthread;
-    }
-
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (doPunctuation()) {
+        double bid = in.getBID();
+        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+
+        if (bid >= windowBoundary) {
+            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+            outWindowEvents.add(in);
+
+        } else {
+            execute_ts_normal(in);
+        }
+
+        if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = wuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -135,9 +148,24 @@ public class WUBolt_ts extends WUBolt{
                 wuEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
+
+            //normal-process the previous out-of-window events
+            while (!outWindowEvents.isEmpty()) {
+
+                if (outWindowEvents.poll().getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
+                    WORD_UPDATE_REQUEST_POST((WUEvent) in.getValue(0));
+                    //TODO: Stop this thread?
+
+                } else { //otherwise, continue with normal-processing
+                    execute_ts_normal(outWindowEvents.poll());
+                }
+            }
+
+            windowBoundary += wordWindowSize;
+            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+
         }
 
-        execute_ts_normal(in);
     }
 
 

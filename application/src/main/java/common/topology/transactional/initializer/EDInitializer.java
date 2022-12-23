@@ -203,7 +203,7 @@ public class EDInitializer extends TableInitilizer {
             if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();
         }
-        if (enable_log) LOG.info("Done reading transfer events...");
+        if (enable_log) LOG.info("Done reading TR events...");
         if (shufflingActive) {
             shuffleEvents(DataHolder.events, totalEvents);
         }

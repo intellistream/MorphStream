@@ -45,16 +45,37 @@ public abstract class TRBolt extends TransactionalBolt {
 
             if (!enable_app_combo) {
                 collector.emit(outBid, tuple);
-//                collector.
             } else {
                 if (enable_latency_measurement) {
-                    //Pass the read result of new tweet's ID (assigned by table) to sink
                     sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
                 }
             }
         }
+    }
 
+    protected void EMIT_STOP_SIGNAL(TREvent event) throws InterruptedException {
 
+        String tweetID = event.getTweetID();
+        double delta = 0.1;
+        double outBid = event.getMyBid() + delta;
+
+        for (int i=0; i<tthread; i++) { //send stop signal to all threads
+
+            WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(),
+                    "Stop", "Stop", tweetID);
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
+            Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
+
+            LOG.info("Sending stop signal to downstream: " + outBid);
+
+            if (!enable_app_combo) {
+                collector.emit(outBid, tuple);
+            } else {
+                if (enable_latency_measurement) {
+                    sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
+                }
+            }
+        }
     }
 
 }

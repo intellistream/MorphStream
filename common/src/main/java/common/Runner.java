@@ -54,7 +54,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
-    public boolean shared = true;
+    public boolean shared = false;
     @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
     public int batch = 1;
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)

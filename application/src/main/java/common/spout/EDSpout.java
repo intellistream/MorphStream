@@ -127,8 +127,8 @@ public class EDSpout extends TransactionalSpout {
 
         target_Hz = (int) config.getDouble("targetHz", 10000000);
 
-        totalEventsPerBatch = config.getInt("totalEvents");
         tthread = config.getInt("tthread");
+        totalEventsPerBatch = config.getInt("totalEvents") + tthread; //Add stopping signals
 
         if (enable_log) LOG.info("total events... " + totalEventsPerBatch);
         if (enable_log) LOG.info("checkpoint_interval = " + checkpoint_interval);

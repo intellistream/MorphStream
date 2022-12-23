@@ -24,6 +24,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     public int _combo_bid_size = 1;
     protected int thread_Id;
     protected int tthread;
+    protected int total_events;
     protected int NUM_ACCESSES;
     protected int COMPUTE_COMPLEXITY;
     protected int POST_COMPUTE_COMPLEXITY;
@@ -169,6 +170,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         this.thread_Id = thread_Id;
         tthread = config.getInt("tthread", 0);
+        total_events = config.getInt("totalEvents", 0);
         NUM_ACCESSES = Metrics.NUM_ACCESSES;
         COMPUTE_COMPLEXITY = Metrics.COMPUTE_COMPLEXITY;
         POST_COMPUTE_COMPLEXITY = Metrics.POST_COMPUTE_COMPLEXITY;

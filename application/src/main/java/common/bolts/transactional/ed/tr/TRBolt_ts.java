@@ -32,8 +32,7 @@ public class TRBolt_ts extends TRBolt{
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
     ArrayDeque<TREvent> trEvents;
-    private boolean doPunctuation;
-    private static AtomicBoolean punctuation = new AtomicBoolean(false);
+    private double windowBoundary;
 
     //To be used in Combo
     public TRBolt_ts(int fid, SINKCombo sink) {
@@ -51,7 +50,7 @@ public class TRBolt_ts extends TRBolt{
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         trEvents = new ArrayDeque<>();
-        doPunctuation = false;
+        windowBoundary = tweetWindowSize;
     }
 
     @Override
@@ -105,7 +104,6 @@ public class TRBolt_ts extends TRBolt{
 
         transactionManager.CommitTransaction(txnContext);
 
-//        LOG.info("Adding TR event: " + event.getBid());
         trEvents.add(event);
     }
 
@@ -114,41 +112,20 @@ public class TRBolt_ts extends TRBolt{
     private void TWEET_REGISTRANT_REQUEST_POST() throws InterruptedException {
         for (TREvent event : trEvents) {
             TWEET_REGISTRANT_REQUEST_POST(event);
-//            LOG.info("Posting TR event: " + event.getBid());
+//            LOG.info("Thread " + this.thread_Id + " is posting TR event: " + event.getBid());
         }
     }
 
-    private static final Object trLock = new Object();
-    int count = 0;
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        // Need to use synchronized block here to ensure correctness
-//        synchronized (trLock) {
-//            if (trEventCount.get() > 0 && trEventCount.get() % tweetWindowSize == 0) {
-//                doPunctuation = true;
-//            } else {
-//                LOG.info("Thread " + this.thread_Id + " has updated counter to: " + trEventCount.getAndIncrement());
-//            }
-//        }
+        double bid = in.getBID();
+//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
-        synchronized (trLock) {
-            count = trEventCount.incrementAndGet();
-            if (punctuation.get() != true) {
-                LOG.info("Thread " + this.thread_Id + " has updated counter to: " + count + " with event " + in.getBID());
-                if (count % tweetWindowSize == 0) {
-                    punctuation.set(true);
-                    LOG.info("Thread " + this.thread_Id + " changed punc to true");
-                }
-            }
-        }
+        // Input event is the last event in the current window
+        if (bid >= windowBoundary) {
+//            LOG.info("Thread " + this.thread_Id + " has reached punc before event: " + in.getBID());
 
-        if (punctuation.get()) {
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation interval: " + count + " with event " + in.getBID());
-            trBarrier.await();
-            LOG.info("Thread " + this.thread_Id + " has event " + in.getBID());
-
-//            LOG.info("Thread " + this.thread_Id + " has updated counter to: " + trEventCount.getAndIncrement());
             int num_events = trEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -171,11 +148,17 @@ public class TRBolt_ts extends TRBolt{
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
 
-            punctuation.set(false);
-            LOG.info("Thread " + this.thread_Id + " changed punc to false");
+            windowBoundary += tweetWindowSize;
+//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+
+            // Upon receiving stopping signal, pass it to downstream
+            if (bid >= total_events) {
+                EMIT_STOP_SIGNAL((TREvent) in.getValue(0));
+                //TODO: Stop this thread?
+            }
+
         }
 
-//        trEventCount.getAndIncrement();
         execute_ts_normal(in);
 
     }
@@ -183,11 +166,8 @@ public class TRBolt_ts extends TRBolt{
     @Override
     public void execute() throws BrokenBarrierException, InterruptedException {
 //        if (punctuation.get()) {
-            LOG.info("Thread " + this.thread_Id + " has no more event after: " + count);
             trBarrier.await();
-
             transactionManager.start_evaluate(thread_Id, -1, -1);//start lazy evaluation in transaction manager.
-
 //            punctuation.set(false);
 //            LOG.info("Thread " + this.thread_Id + " has event " + in.getBID());
 //        }
