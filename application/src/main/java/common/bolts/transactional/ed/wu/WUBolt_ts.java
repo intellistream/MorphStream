@@ -85,7 +85,6 @@ public class WUBolt_ts extends WUBolt{
         String sourceKey = event.getWordID();
 
 //        LOG.info("Constructing WU request: " + event.getMyBid());
-
         transactionManager.BeginTransaction(txnContext);
 
         transactionManager.Asy_ModifyRecord(txnContext,
@@ -99,7 +98,6 @@ public class WUBolt_ts extends WUBolt{
                 );
 
         transactionManager.CommitTransaction(txnContext);
-
         wuEvents.add(event);
     }
 
@@ -120,7 +118,6 @@ public class WUBolt_ts extends WUBolt{
         if (bid >= windowBoundary) {
             LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
             outWindowEvents.add(in);
-
         } else {
             execute_ts_normal(in);
         }

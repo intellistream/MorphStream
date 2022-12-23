@@ -3,6 +3,8 @@ package common.bolts.transactional.ed.tcg;
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
 import common.param.ed.tc.TCEvent;
+import common.param.ed.tr.TREvent;
+import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -27,8 +29,9 @@ public class TCGBolt_ts extends TCGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TCGBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<TCEvent> tcEvents;
-    HashMap<String, Boolean> tweetMap = new HashMap<>();
-    private int counter = 0;
+    HashMap<String, Boolean> tweetMap = new HashMap<>(); //tweetID -> isBurst
+    private double windowBoundary;
+    ArrayDeque<Tuple> outWindowEvents;
 
     //To be used in Combo
     public TCGBolt_ts(int fid, SINKCombo sink) {
@@ -45,6 +48,7 @@ public class TCGBolt_ts extends TCGBolt {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         tcEvents = new ArrayDeque<>();
+        windowBoundary = wordWindowSize;
     }
 
     @Override
@@ -87,6 +91,7 @@ public class TCGBolt_ts extends TCGBolt {
     private void TC_GATE_REQUEST_POST() throws InterruptedException {
         Iterator<TCEvent> tcEventIterator = tcEvents.iterator();
 
+        //The tcEvents are only used to inherit event's info such as bid and pid.
         for (Map.Entry<String, Boolean> entry : tweetMap.entrySet()) {
             TCEvent event = tcEventIterator.next();
 
@@ -100,9 +105,19 @@ public class TCGBolt_ts extends TCGBolt {
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        counter++;
+        double bid = in.getBID();
+        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
-        if (counter % wordWindowSize == 0) { //wait for TC to finish processing all words in the window
+        if (bid >= windowBoundary) {
+            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+            outWindowEvents.add(in);
+
+        } else {
+            execute_ts_normal(in);
+        }
+
+        if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -125,8 +140,30 @@ public class TCGBolt_ts extends TCGBolt {
                 tweetMap.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
-        } else {
-            execute_ts_normal(in);
+
+            //normal-process the previous out-of-window events
+            while (!outWindowEvents.isEmpty()) {
+
+                if (outWindowEvents.poll().getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
+                    TCEvent event = (TCEvent) in.getValue(0);
+                    CUEvent outEvent = new CUEvent(event.getBid(), event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+                            event.getMyNumberOfPartitions(), "Stop", false);
+
+                    //TCG do not need to broadcast stop signals.
+                    // There are sufficient stop signals for it to distribute to downstream.
+                    TC_GATE_REQUEST_POST(event.getBid(), outEvent);
+                    //TODO: Stop this thread?
+
+                } else { //otherwise, continue with normal-processing
+                    execute_ts_normal(outWindowEvents.poll());
+                }
+            }
+
+            windowBoundary += wordWindowSize;
+            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+
         }
+
     }
+
 }

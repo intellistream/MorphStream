@@ -1,6 +1,7 @@
 package common.bolts.transactional.ed.wu;
 
 import combo.SINKCombo;
+import common.param.ed.tc.TCEvent;
 import common.param.ed.tr.TREvent;
 import common.param.ed.wu.WUEvent;
 import components.operators.api.TransactionalBolt;
@@ -30,17 +31,23 @@ public class WUBolt extends TransactionalBolt {
 
     protected void WORD_UPDATE_REQUEST_POST(WUEvent event) throws InterruptedException {
 
-        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-        Tuple tuple = new Tuple(event.getMyBid(), 0, context, generalMsg);
-
-//        LOG.info("Posting WU event: " + event.getMyBid());
+        double delta = 0.1;
+        double outBid = event.getMyBid() + delta;
 
         if (!enable_app_combo) {
-            collector.emit(event.getMyBid(), tuple);//emit WU Event tuple to WU Gate
+            String wordID = event.getWordID();
+
+            TCEvent outEvent = new TCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), wordID);
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
+            Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
+
+            LOG.info("Posting event: " + outBid);
+
+            collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method
+
         } else {
             if (enable_latency_measurement) {
-                //Pass the read result of new tweet's ID (assigned by table) to sink
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));
+                sink.execute(new Tuple(event.getMyBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
             }
         }
     }

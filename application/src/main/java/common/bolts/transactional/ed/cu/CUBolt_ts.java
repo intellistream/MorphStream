@@ -2,6 +2,7 @@ package common.bolts.transactional.ed.cu;
 
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
+import common.param.ed.tr.TREvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -21,13 +22,14 @@ import java.util.concurrent.BrokenBarrierException;
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
-import static common.bolts.transactional.ed.PunctuationAligner.*;
 
 public class CUBolt_ts extends CUBolt{
     private static final Logger LOG = LoggerFactory.getLogger(CUBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
     ArrayDeque<CUEvent> cuEvents;
+    private double windowBoundary;
+    ArrayDeque<Tuple> outWindowEvents;
 
     //To be used in Combo
     public CUBolt_ts(int fid, SINKCombo sink) {
@@ -44,6 +46,8 @@ public class CUBolt_ts extends CUBolt{
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         cuEvents = new ArrayDeque<>();
+        windowBoundary = tweetWindowSize;
+        outWindowEvents = new ArrayDeque<>();
     }
 
     @Override
@@ -73,7 +77,6 @@ public class CUBolt_ts extends CUBolt{
         Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
 
         LOG.info("Constructing CU request: " + event.getMyBid());
-
         transactionManager.BeginTransaction(txnContext);
 
         // Update cluster: merge input tweet into existing cluster, or initialize new cluster
@@ -89,7 +92,6 @@ public class CUBolt_ts extends CUBolt{
         );
 
         transactionManager.CommitTransaction(txnContext);
-
         cuEvents.add(event);
     }
 
@@ -101,14 +103,15 @@ public class CUBolt_ts extends CUBolt{
         }
     }
 
-    private boolean doPunctuation() {
-        return cuEvents.size() == tweetWindowSize / tthread;
-    }
-
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (doPunctuation()) {
+        double bid = in.getBID();
+        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+
+        if (bid >= windowBoundary) {// Input event is the last event in the current window
+            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+
             int num_events = cuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -130,8 +133,19 @@ public class CUBolt_ts extends CUBolt{
                 cuEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
-        } else {
-            execute_ts_normal(in);
+
+            windowBoundary += tweetWindowSize;
+            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+
+            // Upon receiving stopping signal, pass it to downstream
+            if (bid >= total_events) {
+                CLUSTER_UPDATE_REQUEST_POST((CUEvent) in.getValue(0));
+                //TODO: Stop this thread?
+            }
         }
+
+        execute_ts_normal(in);
+
     }
+
 }

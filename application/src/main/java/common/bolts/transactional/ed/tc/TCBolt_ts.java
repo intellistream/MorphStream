@@ -23,12 +23,13 @@ import java.util.concurrent.BrokenBarrierException;
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
-import static common.bolts.transactional.ed.PunctuationAligner.*;
 
 public class TCBolt_ts extends TCBolt{
     private static final Logger LOG= LoggerFactory.getLogger(TCBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<TCEvent> tcEvents;
+    private double windowBoundary;
+    ArrayDeque<Tuple> outWindowEvents;
 
     public TCBolt_ts(int fid, SINKCombo sink){
         super(LOG,fid,sink);
@@ -37,12 +38,13 @@ public class TCBolt_ts extends TCBolt{
         super(LOG,fid,null);
     }
 
-    //TODO: Copied from GSWBolt_ts
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         tcEvents = new ArrayDeque<>();
+        windowBoundary = wordWindowSize;
+        outWindowEvents = new ArrayDeque<>();
     }
 
     @Override
@@ -77,8 +79,7 @@ public class TCBolt_ts extends TCBolt{
         TFIDF tfIdf = new TFIDF();
         Condition condition = new Condition(event.getWindowSize(), event.getWindowCount()); //arg1: windowSize, arg2: windowCount
 
-        LOG.info("Constructing TC request: " + event.getMyBid());
-
+//        LOG.info("Constructing TC request: " + event.getMyBid());
         transactionManager.BeginTransaction(txnContext);
 
         transactionManager.Asy_ModifyRecord_Read(txnContext,
@@ -113,14 +114,21 @@ public class TCBolt_ts extends TCBolt{
         }
     }
 
-    private boolean doPunctuation() {
-        return tcEvents.size() == wordWindowSize / tthread;
-    }
-
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (doPunctuation()) {
+        double bid = in.getBID();
+        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+
+        if (bid >= windowBoundary) {
+            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+            outWindowEvents.add(in);
+        } else {
+            execute_ts_normal(in);
+        }
+
+        if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -142,8 +150,22 @@ public class TCBolt_ts extends TCBolt{
                 tcEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
-        } else {
-            execute_ts_normal(in);
+
+            //normal-process the previous out-of-window events
+            while (!outWindowEvents.isEmpty()) {
+                if (outWindowEvents.poll().getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
+                    TREND_CALCULATE_REQUEST_POST((TCEvent) in.getValue(0));
+                    //TODO: Stop this thread?
+
+                } else { //otherwise, continue with normal-processing
+                    execute_ts_normal(outWindowEvents.poll());
+                }
+            }
+
+            windowBoundary += wordWindowSize;
+            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+
         }
+
     }
 }

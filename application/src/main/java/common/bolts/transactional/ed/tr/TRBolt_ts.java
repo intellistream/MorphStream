@@ -122,8 +122,7 @@ public class TRBolt_ts extends TRBolt{
         double bid = in.getBID();
 //        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
-        // Input event is the last event in the current window
-        if (bid >= windowBoundary) {
+        if (bid >= windowBoundary) {// Input event is the last event in the current window
 //            LOG.info("Thread " + this.thread_Id + " has reached punc before event: " + in.getBID());
 
             int num_events = trEvents.size();
