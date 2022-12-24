@@ -11,7 +11,7 @@ public class TCEvent extends TxnEvent {
     private final String wordID;
     private final int windowSize;
     private final int currWindow;
-    private final SchemaRecordRef word_record = new SchemaRecordRef();
+    public SchemaRecordRef word_record = new SchemaRecordRef();
     public String[] tweetIDList;
     public boolean isBurst;
     private final double myBid;
@@ -58,8 +58,6 @@ public class TCEvent extends TxnEvent {
     public int getWindowSize() {return this.windowSize;}
 
     public int getWindowCount() {return this.currWindow;}
-
-    public SchemaRecordRef getWord_record() {return this.word_record;}
 
     public TCEvent cloneEvent() {
         return new TCEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions,

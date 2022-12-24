@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 public class ESEvent extends TxnEvent {
     private final String clusterID;
-    private final SchemaRecordRef cluster_record = new SchemaRecordRef();
+    public SchemaRecordRef cluster_record = new SchemaRecordRef();
     public boolean isEvent;
     public String[] wordList;
     private final double myBid;
@@ -44,10 +44,6 @@ public class ESEvent extends TxnEvent {
 
     public String getClusterID() {
         return this.clusterID;
-    }
-
-    public SchemaRecordRef getClusterRecord() {
-        return cluster_record;
     }
 
     public ESEvent cloneEvent() {

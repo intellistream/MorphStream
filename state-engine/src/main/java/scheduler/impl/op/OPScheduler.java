@@ -80,10 +80,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             success = operation.success[0];
             if (this.tpg.getApp() == 1) { //SL
                 Transfer_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) { //ED_TC
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) {
                 TrendCalculate_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) { //ED_ES
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) {
                 EventSelection_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu")) {
+                ClusterUpdate_Fun(operation, mark_ID, clean);
             }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
@@ -112,8 +114,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 TweetRegistrant_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_wu")) {//ed_wu
                 WordUpdate_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu_cluster")) {//ed_cu_cluster
-                ClusterUpdate_Fun(operation, mark_ID, clean);
             }
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {

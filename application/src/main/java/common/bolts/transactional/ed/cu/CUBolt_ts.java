@@ -2,6 +2,7 @@ package common.bolts.transactional.ed.cu;
 
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
+import common.param.ed.es.ESEvent;
 import common.param.ed.tr.TREvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -11,6 +12,7 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Similarity;
@@ -80,22 +82,31 @@ public class CUBolt_ts extends CUBolt{
         transactionManager.BeginTransaction(txnContext);
 
         // Update cluster: merge input tweet into existing cluster, or initialize new cluster
-        transactionManager.Asy_ModifyRecord_Iteration(
+        transactionManager.Asy_ModifyRecord_Iteration_Read(
                 txnContext,
                 "tweet_table", // source_table
                 event.getTweetID(),  // source_key
+                event.clusterRecord, // record to read from
                 function, // determine the most similar cluster
                 clusterTable, clusterKey, //condition_source_table, condition_source_key
                 condition1,
                 event.success,
-                "ed_cu_cluster"
+                "ed_cu"
         );
 
         transactionManager.CommitTransaction(txnContext);
         cuEvents.add(event);
     }
 
-    private void CLUSTER_UPDATE_REQUEST_CORE() throws InterruptedException {}
+    private void CLUSTER_UPDATE_REQUEST_CORE() throws InterruptedException {
+        for (CUEvent event : cuEvents) {
+            SchemaRecordRef ref = event.clusterRecord;
+            if (ref.isEmpty()) {
+                continue; //not yet processed.
+            }
+            event.updatedClusterID = ref.getRecord().getValues().get(0).toString();
+        }
+    }
 
     private void CLUSTER_UPDATE_REQUEST_POST() throws InterruptedException {
         for (CUEvent event : cuEvents) {

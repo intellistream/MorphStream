@@ -2,6 +2,7 @@ package common.bolts.transactional.ed.cu;
 
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
+import common.param.ed.es.ESEvent;
 import common.param.ed.tr.TREvent;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
@@ -30,17 +31,22 @@ public class CUBolt extends TransactionalBolt {
 
     protected void CLUSTER_UPDATE_REQUEST_POST(CUEvent event) throws InterruptedException {
 
-        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
-        Tuple tuple = new Tuple(event.getMyBid(), 0, context, generalMsg);
+        double delta = 0.1;
+        double outBid = event.getBid() + delta;
+        String updatedClusterID = event.updatedClusterID;
 
-        LOG.info("Posting event: " + event.getMyBid());
+        ESEvent outEvent = new ESEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), updatedClusterID);
+        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
+        Tuple tuple = new Tuple(outEvent.getMyBid(), 0, context, generalMsg);
+
+        LOG.info("Posting event: " + outBid);
 
         if (!enable_app_combo) {
-            collector.emit(event.getMyBid(), tuple);//emit CU Event tuple to CU Gate
+            collector.emit(outBid, tuple);//emit CU Event tuple to CU Gate
         } else {
             if (enable_latency_measurement) {
                 //Pass the information to sink
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
+                sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
             }
         }
     }

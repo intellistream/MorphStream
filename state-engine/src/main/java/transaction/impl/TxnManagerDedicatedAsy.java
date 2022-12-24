@@ -261,7 +261,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // ED_CU_Cluster
+    @Override
     public boolean Asy_ModifyRecord_Iteration(TxnContext txn_context,
                                               String srcTable, String key,
                                               Function function,
@@ -288,6 +288,36 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
                     key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
+
+        } else {
+            if (enable_log) log.info("No record is found:" + key);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean Asy_ModifyRecord_Iteration_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
+                                              Function function, String[] condition_sourceTable, String[] condition_source,
+                                              Condition condition, int[] success, String operator_name) throws DatabaseException {
+        AccessType accessType = AccessType.READ_WRITE_COND_READ;
+
+        //The 1st element in condition_sourceTable is the table to be iterated.
+        Iterator<TableRecord> iterator = storageManager_.getTable(condition_sourceTable[0]).iterator();
+        TableRecord[] condition_records = new TableRecord[Iterators.size(iterator)];
+
+        //Pass the entire iteration_table to condition_records
+        int i = 0;
+        while (iterator.hasNext()) {
+            condition_records[i] = iterator.next();
+            i++;
+        }
+
+        //s_record: tweetRecord, d_record: clusterRecord whose similarity is the highest (determined in OpScheduler)
+        TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
+        if (s_record != null) {
+
+            return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
+                    key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
 
         } else {
             if (enable_log) log.info("No record is found:" + key);

@@ -86,6 +86,8 @@ public interface ITxnManager {
 
     boolean Asy_ModifyRecord_Iteration(TxnContext txn_context, String srcTable, String key, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success, String operator_name) throws DatabaseException;
 
+    boolean Asy_ModifyRecord_Iteration_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success, String operator_name) throws DatabaseException;
+
     boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success, String operator_name) throws DatabaseException;
 
     boolean Asy_ModifyRecord_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, int[] success, String operator_name) throws DatabaseException;

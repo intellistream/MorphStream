@@ -78,7 +78,7 @@ public class ESBolt_ts extends ESBolt{
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "cluster_table", // source_table
                 event.getClusterID(),  // source_key
-                event.getClusterRecord(), // record to be filled up from READ
+                event.cluster_record, // record to be filled up from READ
                 function,
                 conditionSourceTable, conditionSourceKey,
                 null, // no condition required
@@ -93,12 +93,12 @@ public class ESBolt_ts extends ESBolt{
 
     private void EVENT_SELECT_REQUEST_CORE() {
         for (ESEvent event : esEvents) {
-            SchemaRecordRef ref = event.getClusterRecord();
+            SchemaRecordRef ref = event.cluster_record;
             if (ref.isEmpty()) {
                 continue; //not yet processed.
             }
             event.wordList = ref.getRecord().getValues().get(1).getStringList().toArray(new String[0]);
-            event.isEvent = ref.getRecord().getValues().get(5).getBool();
+            event.isEvent = ref.getRecord().getValues().get(4).getBool();
         }
     }
 

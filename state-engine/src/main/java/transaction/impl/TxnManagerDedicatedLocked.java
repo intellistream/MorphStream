@@ -116,6 +116,12 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
         return false;
     }
 
+    public boolean Asy_ModifyRecord_Iteration_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
+                                                   Function function, String[] condition_sourceTable, String[] condition_source,
+                                                   Condition condition, int[] success, String operator_name) throws DatabaseException {
+        return false;
+    }
+
     public boolean SelectKeyRecord(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);//index look up.

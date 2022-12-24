@@ -1,6 +1,8 @@
 package common.param.ed.cu;
 
 import common.param.TxnEvent;
+import storage.SchemaRecordRef;
+
 import static common.CONTROL.wordWindowSize;
 import static common.CONTROL.tweetWindowSize;
 
@@ -15,6 +17,8 @@ public class CUEvent extends TxnEvent {
     private final String my_bid_array;
     private final String my_partition_index;
     private final int my_number_of_partitions;
+    public SchemaRecordRef clusterRecord = new SchemaRecordRef();
+    public String updatedClusterID;
 
     public CUEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions,
                    String tweetID, boolean isBurst) {

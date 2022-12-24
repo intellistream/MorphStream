@@ -85,7 +85,7 @@ public class TCBolt_ts extends TCBolt{
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "word_table", // source_table
                 event.getWordID(),  // source_key
-                event.getWord_record(), // record to be filled up from READ
+                event.word_record, // record to be filled up from READ
                 tfIdf, // append new tweetID to word's tweetList
                 wordTable, wordID, //condition_source_table, condition_source_key
                 condition,
@@ -99,12 +99,12 @@ public class TCBolt_ts extends TCBolt{
 
     private void TREND_CALCULATE_REQUEST_CORE() {
         for (TCEvent event : tcEvents) {
-            SchemaRecordRef ref = event.getWord_record();
+            SchemaRecordRef ref = event.word_record;
             if (ref.isEmpty()) {
                 continue; //not yet processed.
             }
-            event.isBurst = ref.getRecord().getValues().get(6).getBool();
-            event.tweetIDList = ref.getRecord().getValues().get(1).getStringList().toArray(new String[0]);
+            event.isBurst = ref.getRecord().getValues().get(7).getBool();
+            event.tweetIDList = ref.getRecord().getValues().get(2).getStringList().toArray(new String[0]);
         }
     }
 
