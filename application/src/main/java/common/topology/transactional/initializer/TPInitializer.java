@@ -54,7 +54,7 @@ public class TPInitializer extends TableInitilizer {
     public TPInitializer(Database db,int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
-        this.dataRootPath = config.getString("rootFilePath") + OsUtils.osWrapperPostFix("stats");
+        this.dataRootPath = config.getString("rootFilePath") + OsUtils.OS_wrapper("inputs");
         this.partitionOffset = numberOfStates / tthread;
         this.NUM_ACCESS = config.getInt("NUM_ACCESS");
         this.Transaction_Length = config.getInt("Transaction_Length");

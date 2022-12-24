@@ -53,7 +53,7 @@ public class SLInitializer extends TableInitilizer {
         this.numberOfStates = numberOfStates;
         configure_store(theta, tthread, this.numberOfStates);
         this.partitionOffset = this.numberOfStates / tthread;
-        this.dataRootPath = config.getString("rootFilePath") + OsUtils.osWrapperPostFix("stats");
+        this.dataRootPath = config.getString("rootFilePath") + OsUtils.OS_wrapper("inputs");
         String generatorType = config.getString("generator");
         switch (generatorType) {
             case "OCGenerator":
