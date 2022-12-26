@@ -32,7 +32,7 @@ public class WUBolt extends TransactionalBolt {
     protected void WORD_UPDATE_REQUEST_POST(WUEvent event) throws InterruptedException {
 
         double delta = 0.1;
-        double outBid = event.getMyBid() + delta;
+        double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
 
         if (!enable_app_combo) {
             String wordID = event.getWordID();
@@ -47,7 +47,7 @@ public class WUBolt extends TransactionalBolt {
 
         } else {
             if (enable_latency_measurement) {
-                sink.execute(new Tuple(event.getMyBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
+                sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
             }
         }
     }

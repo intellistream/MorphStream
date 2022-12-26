@@ -31,7 +31,7 @@ public abstract class TRBolt extends TransactionalBolt {
         String tweetID = event.getTweetID();
         String[] words = event.getWords();
         double delta = 0.1;
-        double outBid = event.getMyBid() + delta;
+        double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
 
         for (String word : words) {
 
@@ -47,7 +47,7 @@ public abstract class TRBolt extends TransactionalBolt {
                 collector.emit(outBid, tuple);
             } else {
                 if (enable_latency_measurement) {
-                    sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
+                    sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
                 }
             }
         }
@@ -57,7 +57,7 @@ public abstract class TRBolt extends TransactionalBolt {
 
         String tweetID = event.getTweetID();
         double delta = 0.1;
-        double outBid = event.getMyBid() + delta;
+        double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
 
         for (int i=0; i<tthread; i++) { //send stop signal to all threads
 
@@ -72,7 +72,7 @@ public abstract class TRBolt extends TransactionalBolt {
                 collector.emit(outBid, tuple);
             } else {
                 if (enable_latency_measurement) {
-                    sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
+                    sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
                 }
             }
         }

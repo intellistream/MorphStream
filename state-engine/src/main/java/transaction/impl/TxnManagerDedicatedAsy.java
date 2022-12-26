@@ -366,7 +366,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
             if (condition_records[i] == null) {
-                if (enable_log) log.info("No record is found for condition source:" + condition_source[i]);
+//                if (enable_log) log.info("No record is found for condition source:" + condition_source[i]);
                 return false;
             }
         }
@@ -378,7 +378,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
-            if (enable_log) log.info("No record is found:" + key);
+//            if (enable_log) log.info("No record is found:" + key);
             return false;
         }
     }

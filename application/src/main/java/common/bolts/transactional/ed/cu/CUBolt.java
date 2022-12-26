@@ -32,7 +32,7 @@ public class CUBolt extends TransactionalBolt {
     protected void CLUSTER_UPDATE_REQUEST_POST(CUEvent event) throws InterruptedException {
 
         double delta = 0.1;
-        double outBid = event.getBid() + delta;
+        double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
         String updatedClusterID = event.updatedClusterID;
 
         ESEvent outEvent = new ESEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), updatedClusterID);

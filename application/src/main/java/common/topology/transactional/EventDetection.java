@@ -135,9 +135,9 @@ public class EventDetection extends TransactionTopology {
                     builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_ts(2)
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TR));
-//                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_ts(3)
-//                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
-//                            , new ShuffleGrouping(EventDetectionConstants.Component.WU));
+                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_ts(3)
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.WU));
 //                    builder.setBolt(EventDetectionConstants.Component.TCG, new TCGBolt_ts(4)
 //                            , config.getInt(EventDetectionConstants.Conf.Gate_Threads, 1)
 //                            , new ShuffleGrouping(EventDetectionConstants.Component.TC));
@@ -172,7 +172,7 @@ public class EventDetection extends TransactionTopology {
 //                    , new ShuffleGrouping(EventDetectionConstants.Component.ES)
 //            );
             builder.setSink(EventDetectionConstants.Component.SINK, sink, sinkThreads
-                    , new ShuffleGrouping(EventDetectionConstants.Component.WU)
+                    , new ShuffleGrouping(EventDetectionConstants.Component.TC)
             );
 
         } catch (InvalidIDException e) {

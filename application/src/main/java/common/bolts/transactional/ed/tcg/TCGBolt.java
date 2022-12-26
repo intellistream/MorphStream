@@ -30,36 +30,18 @@ public abstract class TCGBolt extends TransactionalBolt {
 
     protected void TC_GATE_REQUEST_POST(double bid, CUEvent event) throws InterruptedException {
 
+        double outBid = Math.round(bid * 10.0) / 10.0;
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-        Tuple tuple = new Tuple(bid, 0, context, generalMsg);
+        Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-        LOG.info("Posting event: " + bid);
+        LOG.info("Posting event: " + outBid);
 
         if (!enable_app_combo) {
-            collector.emit(bid, tuple);
+            collector.emit(outBid, tuple);
         } else {
             if (enable_latency_measurement) {
                 //Pass the read result of new tweet's ID (assigned by table) to sink
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
-            }
-        }
-    }
-
-    protected void EMIT_STOP_SIGNAL(double bid, CUEvent event) throws InterruptedException {
-
-        for (int i=0; i<tthread; i++) { //send stop signal to all threads
-
-            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-            Tuple tuple = new Tuple(bid, 0, context, generalMsg);
-
-            LOG.info("Sending stop signal to downstream: " + bid);
-
-            if (!enable_app_combo) {
-                collector.emit(bid, tuple);
-            } else {
-                if (enable_latency_measurement) {
-                    sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
-                }
+                sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
             }
         }
     }

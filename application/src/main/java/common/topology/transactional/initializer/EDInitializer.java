@@ -463,8 +463,8 @@ public class EDInitializer extends TableInitilizer {
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new StringDataBox());
         dataBoxes.add(new ListStringDataBox());
-        dataBoxes.add(new IntDataBox());
-        dataBoxes.add(new IntDataBox());
+        dataBoxes.add(new LongDataBox());
+        dataBoxes.add(new LongDataBox());
         dataBoxes.add(new BoolDataBox());
         fieldNames.add("Cluster_ID"); // 0
         fieldNames.add("Word_List"); // 1
@@ -478,8 +478,8 @@ public class EDInitializer extends TableInitilizer {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(clusterID, clusterID.length()));
         values.add(new ListStringDataBox(wordList));
-        values.add(new IntDataBox(countNewTweet));
-        values.add(new IntDataBox(clusterSize));
+        values.add(new LongDataBox(countNewTweet));
+        values.add(new LongDataBox(clusterSize));
         values.add(new BoolDataBox(isEvent));
         return new SchemaRecord(values);
     }

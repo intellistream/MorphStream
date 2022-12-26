@@ -37,20 +37,20 @@ public class TCBolt extends TransactionalBolt {
     protected void TREND_CALCULATE_REQUEST_POST(TCEvent event) throws InterruptedException {
 
         double delta = 0.1;
-        double outBid = event.getMyBid() + delta;
+        double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
 
         if (!enable_app_combo) {
 
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-            LOG.info("Posting event: " + outBid);
+//            LOG.info("Posting event: " + outBid);
 
             collector.emit(outBid, tuple);//emit CU Event tuple to TC Gate
 
         } else {
             if (enable_latency_measurement) {
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));
+                sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));
             }
         }
     }

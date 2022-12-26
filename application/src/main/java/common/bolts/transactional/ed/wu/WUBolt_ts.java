@@ -113,17 +113,17 @@ public class WUBolt_ts extends WUBolt{
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         double bid = in.getBID();
-        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
         if (bid >= windowBoundary) {
-            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+//            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
             outWindowEvents.add(in);
         } else {
             execute_ts_normal(in);
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary + " with " + wuEvents.size() + " events.");
+//            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary + " with " + wuEvents.size() + " events.");
             int num_events = wuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -159,7 +159,7 @@ public class WUBolt_ts extends WUBolt{
             }
 
             windowBoundary += tweetWindowSize;
-            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 

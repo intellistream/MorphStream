@@ -31,6 +31,8 @@ public class ESBolt extends TransactionalBolt {
     protected void EVENT_SELECT_REQUEST_POST(ESEvent event) throws InterruptedException {
         boolean isEvent = event.isEvent;
         String[] wordList = event.wordList;
+        double outBid = Math.round(event.getMyBid() * 10.0) / 10.0;
+        LOG.info("Posting event: " + outBid);
 
         if (!enable_app_combo) {
             String output = "";
@@ -42,14 +44,12 @@ public class ESBolt extends TransactionalBolt {
                 output = event.getClusterID() + "is not an Event.";
             }
 
-            LOG.info("Posting event: " + event.getMyBid());
-
             //the second argument should be event detection output
-            collector.emit(event.getBid(), output);//the tuple is finished.
+            collector.emit(outBid, output);//the tuple is finished.
         } else {
             if (enable_latency_measurement) {
                 //Pass the read result of new tweet's ID (assigned by table) to sink
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));
+                sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));
             }
         }
     }

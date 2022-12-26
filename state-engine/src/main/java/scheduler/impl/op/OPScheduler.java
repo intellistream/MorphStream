@@ -345,9 +345,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         SchemaRecord preValues = operation.condition_records[0].content_.readCurrValues((long) operation.bid);
 
         if (preValues != null) {
-            final int countOccurWindow = preValues.getValues().get(3).getInt();
+            final long countOccurWindow = preValues.getValues().get(3).getLong();
             final double oldTfIdf = preValues.getValues().get(4).getDouble();
-            final int frequency = preValues.getValues().get(6).getInt();
+            final long frequency = preValues.getValues().get(6).getLong();
 
             // apply function
             AppConfig.randomDelay();
@@ -366,7 +366,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 double difference = newTfIdf - oldTfIdf;
 
                 tempo_record.getValues().get(4).setDouble(newTfIdf); //compute: update tf-idf
-                tempo_record.getValues().get(6).setInt(0); //compute: reset frequency to zero
+                tempo_record.getValues().get(6).setLong(0); //compute: reset frequency to zero
 
                 if (difference >= 0.5) { //TODO: Check this threshold
                     tempo_record.getValues().get(7).setBool(true); //compute: set isBurst to true
@@ -443,8 +443,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             if (maxSimilarity >= 0.5) { //TODO: Check the threshold value
                 SchemaRecord tempo_record = new SchemaRecord(maxCluster); //tempo record - the most similar cluster
                 List<String> wordList = maxCluster.getValues().get(1).getStringList();
-                int countNewTweet = maxCluster.getValues().get(2).getInt();
-                int clusterSize = maxCluster.getValues().get(3).getInt();
+                long countNewTweet = maxCluster.getValues().get(2).getLong();
+                long clusterSize = maxCluster.getValues().get(3).getLong();
 
                 // Merge input tweet into cluster
                 for (String word : tweetWordList) {
@@ -452,8 +452,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 }
 
                 tempo_record.getValues().get(1).setStringList(wordList); //compute: merge wordList
-                tempo_record.getValues().get(2).setInt(countNewTweet + 1); //compute: increment countNewTweet
-                tempo_record.getValues().get(3).setInt(clusterSize + 1); //compute: increment clusterSize
+                tempo_record.getValues().get(2).incLong(1); //compute: increment countNewTweet
+                tempo_record.getValues().get(3).incLong(1); //compute: increment clusterSize
 
                 //Update record's version (in this request, s_record == d_record)
                 operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
@@ -467,8 +467,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 SchemaRecord tempo_record = new SchemaRecord(clusterRecord);
 
                 tempo_record.getValues().get(1).setStringList(Arrays.asList(tweetWordList)); // create wordList
-                tempo_record.getValues().get(2).setInt(1); // countNewTweet = 1
-                tempo_record.getValues().get(3).setInt(1); // clusterSize = 1
+                tempo_record.getValues().get(2).setLong(1); // countNewTweet = 1
+                tempo_record.getValues().get(3).setLong(1); // clusterSize = 1
                 tempo_record.getValues().get(4).setBool(false); // isEvent = false
 
                 //Update record's version (in this request, s_record == d_record)
