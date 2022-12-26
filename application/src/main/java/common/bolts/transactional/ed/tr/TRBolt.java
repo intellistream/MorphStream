@@ -66,7 +66,7 @@ public abstract class TRBolt extends TransactionalBolt {
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-            LOG.info("Sending stop signal to downstream: " + outBid);
+//            LOG.info("Sending stop signal to downstream: " + outBid);
 
             if (!enable_app_combo) {
                 collector.emit(outBid, tuple);

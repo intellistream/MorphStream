@@ -2,6 +2,7 @@ package common.bolts.transactional.ed.tc;
 
 import combo.SINKCombo;
 import common.param.ed.tc.TCEvent;
+import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -43,7 +44,7 @@ public class TCBolt_ts extends TCBolt{
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         tcEvents = new ArrayDeque<>();
-        windowBoundary = wordWindowSize;
+        windowBoundary = tweetWindowSize;
         outWindowEvents = new ArrayDeque<>();
     }
 
@@ -103,8 +104,8 @@ public class TCBolt_ts extends TCBolt{
             if (ref.isEmpty()) {
                 continue; //not yet processed.
             }
-            event.isBurst = ref.getRecord().getValues().get(7).getBool();
             event.tweetIDList = ref.getRecord().getValues().get(2).getStringList().toArray(new String[0]);
+            event.isBurst = ref.getRecord().getValues().get(7).getBool();
         }
     }
 
@@ -153,16 +154,17 @@ public class TCBolt_ts extends TCBolt{
 
             //normal-process the previous out-of-window events
             while (!outWindowEvents.isEmpty()) {
-                if (outWindowEvents.poll().getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
-                    TREND_CALCULATE_REQUEST_POST((TCEvent) in.getValue(0));
+                Tuple outWindowTuple = outWindowEvents.poll();
+                if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
+                    TREND_CALCULATE_REQUEST_POST((TCEvent) outWindowTuple.getValue(0));
                     //TODO: Stop this thread?
 
                 } else { //otherwise, continue with normal-processing
-                    execute_ts_normal(outWindowEvents.poll());
+                    execute_ts_normal(outWindowTuple);
                 }
             }
 
-            windowBoundary += wordWindowSize;
+            windowBoundary += tweetWindowSize;
             LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }

@@ -2,6 +2,8 @@ package common.bolts.transactional.ed.es;
 
 import combo.SINKCombo;
 import common.param.ed.es.ESEvent;
+import common.param.ed.tc.TCEvent;
+import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -28,6 +30,8 @@ public class ESBolt_ts extends ESBolt{
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
     ArrayDeque<ESEvent> esEvents;
+    private double windowBoundary;
+    ArrayDeque<Tuple> outWindowEvents;
 
     //To be used in Combo
     public ESBolt_ts(int fid, SINKCombo sink) {
@@ -45,6 +49,8 @@ public class ESBolt_ts extends ESBolt{
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         esEvents = new ArrayDeque<>();
+        windowBoundary = tweetWindowSize;
+        outWindowEvents = new ArrayDeque<>();
     }
 
     @Override
@@ -108,14 +114,21 @@ public class ESBolt_ts extends ESBolt{
         }
     }
 
-    private boolean doPunctuation() {
-        return esEvents.size() == clusterTableSize / tthread;
-    }
-
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
-        if (doPunctuation()) {
+        double bid = in.getBID();
+        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+
+        if (bid >= windowBoundary) {
+            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+            outWindowEvents.add(in);
+        } else {
+            execute_ts_normal(in);
+        }
+
+        if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = esEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -137,9 +150,24 @@ public class ESBolt_ts extends ESBolt{
                 esEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
-        } else {
-            execute_ts_normal(in);
+
+            //normal-process the previous out-of-window events
+            while (!outWindowEvents.isEmpty()) {
+                Tuple outWindowTuple = outWindowEvents.poll();
+                if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
+                    EVENT_SELECT_REQUEST_POST((ESEvent) outWindowTuple.getValue(0));
+                    //TODO: Stop this thread?
+
+                } else { //otherwise, continue with normal-processing
+                    execute_ts_normal(outWindowTuple);
+                }
+            }
+
+            windowBoundary += tweetWindowSize;
+            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+
         }
+
     }
 
 }

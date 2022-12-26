@@ -144,12 +144,9 @@ public class EventDetection extends TransactionTopology {
 //                    builder.setBolt(EventDetectionConstants.Component.CU, new CUBolt_ts(5)
 //                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
 //                            , new ShuffleGrouping(EventDetectionConstants.Component.TCG));
-//                    builder.setBolt(EventDetectionConstants.Component.CUG, new CUGBolt_ts(6)
-//                            , config.getInt(EventDetectionConstants.Conf.Gate_Threads, 1)
-//                            , new ShuffleGrouping(EventDetectionConstants.Component.CU));
-//                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_ts(7)
+//                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_ts(6)
 //                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
-//                            , new ShuffleGrouping(EventDetectionConstants.Component.CUG));
+//                            , new ShuffleGrouping(EventDetectionConstants.Component.CU));
                     break;
                 }
                 case CCOption_SStore: {//SStore

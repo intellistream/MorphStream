@@ -17,12 +17,12 @@ import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public class CUBolt extends TransactionalBolt {
-    SINKCombo sink; //TODO:Default sink for measurement
+    SINKCombo sink;
 
     public CUBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
-        this.configPrefix = "ed_cu"; // TODO: Register this bolt in Config
+        this.configPrefix = "ed_cu";
     }
 
     @Override

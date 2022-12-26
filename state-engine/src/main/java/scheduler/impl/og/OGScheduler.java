@@ -207,7 +207,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         SchemaRecord preValues = operation.condition_records[0].content_.readPastValues((long) operation.bid); //condition_record[0] stores the current word's record
 
         if (preValues != null) {
-            final int oldCountOccurWindow = preValues.getValues().get(3).getInt();
+            final long oldCountOccurWindow = preValues.getValues().get(3).getLong();
 
             // apply function
             AppConfig.randomDelay();
@@ -218,7 +218,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
             if (oldCountOccurWindow != -1) { // word has been stored into table
                 final int oldLastOccurWindow = preValues.getValues().get(5).getInt();
-                final int oldFrequency = preValues.getValues().get(6).getInt();
+                final long oldFrequency = preValues.getValues().get(6).getLong();
 
                 // Update word's tweetList
                 if (operation.function instanceof Append) {
@@ -233,7 +233,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 }
 
                 // Update word's inner-window frequency
-                tempo_record.getValues().get(6).incLong(oldFrequency, 1); //compute, increase word's frequency by 1
+                tempo_record.getValues().get(6).incLong((long) oldFrequency, (long) 1); //compute, increase word's frequency by 1
 
             } else { // word has not been stored into table
 
@@ -241,10 +241,10 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
                 tempo_record.getValues().get(1).setString(operation.condition.stringArg1); //wordValue
                 tempo_record.getValues().get(2).setStringList(Arrays.asList(tweetList)); //tweetList
-                tempo_record.getValues().get(3).setInt(1); //countOccurWindow
+                tempo_record.getValues().get(3).setLong(1); //countOccurWindow
                 tempo_record.getValues().get(4).setDouble(-1); //TF-IDF
                 tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //lastOccurWindow
-                tempo_record.getValues().get(6).setInt(1); //frequency
+                tempo_record.getValues().get(6).setLong(1); //frequency
                 tempo_record.getValues().get(7).setBool(false); //isBurst
 
             }
@@ -306,7 +306,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         }
     }
 
-    // ED-CU: Cluster Update - Asy_ModifyRecord_Iteration
+    // ED-CU: Cluster Update - Asy_ModifyRecord_Iteration_Read
     protected void ClusterUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
         HashMap<SchemaRecord, Double> similarities = new HashMap<>();
 
@@ -320,9 +320,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         if (operation.condition.boolArg1) {
             String[] tweetWordList = tweetRecord.getValues().get(1).getStringList().toArray(new String[0]);
             HashMap<String, Integer> tweetMap = new HashMap<>();
-            for (String word : tweetWordList) {
-                tweetMap.put(word, 1);
-            }
+            for (String word : tweetWordList) {tweetMap.put(word, 1);}
 
             // compute input tweet's cosine similarity with all clusters
             if (operation.function instanceof Similarity) {
@@ -331,10 +329,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 for (TableRecord record : operation.condition_records) {
 
                     // skip if the cluster has no update in the past two windows
-                    SchemaRecord clusterRecord = record.content_.readPastValues((long) operation.bid, (long) operation.bid - 2);
-                    if (clusterRecord == null) {
-                        continue;
-                    }
+                    SchemaRecord clusterRecord = record.content_.readPastValues((long) operation.bid, (long) operation.bid-2);
+                    if (clusterRecord == null) {continue;}
 
                     int clusterSize = clusterRecord.getValues().get(3).getInt();
 
@@ -343,9 +339,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
                         // compute cosine similarity
                         HashMap<String, Integer> clusterMap = new HashMap<>();
-                        for (String word : clusterWordList) {
-                            clusterMap.put(word, 1);
-                        }
+                        for (String word : clusterWordList) {clusterMap.put(word, 1);}
                         Set<String> both = Sets.newHashSet(clusterMap.keySet());
                         both.retainAll(tweetMap.keySet());
                         double scalar = 0, norm1 = 0, norm2 = 0;
@@ -375,9 +369,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
                 // Merge input tweet into cluster
                 for (String word : tweetWordList) {
-                    if (!wordList.contains(word)) {
-                        wordList.add(word);
-                    }
+                    if (!wordList.contains(word)) {wordList.add(word);}
                 }
 
                 tempo_record.getValues().get(1).setStringList(wordList); //compute: merge wordList
@@ -467,9 +459,11 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             success = operation.success[0];
             if (this.tpg.getApp() == 1) { //SL
                 Transfer_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) { //ED_TC
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) {
                 TrendCalculate_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) { //ED_ES
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu")) {
+                ClusterUpdate_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) {
                 EventSelection_Fun(operation, mark_ID, clean);
             }
             // check whether needs to return a read results of the operation
@@ -499,8 +493,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 TweetRegistrant_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_wu")) {//ed_wu
                 WordUpdate_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu_cluster")) {//ed_cu_cluster
-                ClusterUpdate_Fun(operation, mark_ID, clean);
             }
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {

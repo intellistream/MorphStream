@@ -82,10 +82,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 Transfer_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) {
                 TrendCalculate_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) {
-                EventSelection_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_cu")) {
                 ClusterUpdate_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) {
+                EventSelection_Fun(operation, mark_ID, clean);
             }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
@@ -385,7 +385,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
     }
 
-    // ED-CU: Cluster Update - Asy_ModifyRecord_Iteration
+    // ED-CU: Cluster Update - Asy_ModifyRecord_Iteration_Read
     protected void ClusterUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
         HashMap<SchemaRecord, Double> similarities = new HashMap<>();
 

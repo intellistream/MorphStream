@@ -41,7 +41,7 @@ public class WUBolt extends TransactionalBolt {
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-            LOG.info("Posting event: " + outBid);
+//            LOG.info("Posting event: " + outBid);
 
             collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method
 

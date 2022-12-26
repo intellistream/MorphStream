@@ -47,7 +47,7 @@ public class WUBolt_ts extends WUBolt{
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         wuEvents = new ArrayDeque<>();
-        windowBoundary = wordWindowSize;
+        windowBoundary = tweetWindowSize;
         outWindowEvents = new ArrayDeque<>();
     }
 
@@ -123,7 +123,7 @@ public class WUBolt_ts extends WUBolt{
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary + " with " + wuEvents.size() + " events.");
             int num_events = wuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -148,17 +148,17 @@ public class WUBolt_ts extends WUBolt{
 
             //normal-process the previous out-of-window events
             while (!outWindowEvents.isEmpty()) {
-
-                if (outWindowEvents.poll().getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
-                    WORD_UPDATE_REQUEST_POST((WUEvent) in.getValue(0));
+                Tuple outWindowTuple = outWindowEvents.poll();
+                if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
+                    WORD_UPDATE_REQUEST_POST((WUEvent) outWindowTuple.getValue(0));
                     //TODO: Stop this thread?
 
                 } else { //otherwise, continue with normal-processing
-                    execute_ts_normal(outWindowEvents.poll());
+                    execute_ts_normal(outWindowTuple);
                 }
             }
 
-            windowBoundary += wordWindowSize;
+            windowBoundary += tweetWindowSize;
             LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
