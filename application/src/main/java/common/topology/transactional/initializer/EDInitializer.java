@@ -6,9 +6,7 @@ import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDataGenerator;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.ED.TPGTxnGenerator.EDTPGDynamicDataGenerator;
-import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
-import clojure.lang.IFn;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
@@ -28,7 +26,6 @@ import transaction.TableInitilizer;
 import utils.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
-import javax.xml.validation.Schema;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -36,20 +33,13 @@ import java.util.*;
 
 import static common.CONTROL.*;
 import static common.Constants.Event_Path;
-import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
-import static utils.PartitionHelper.getPartition_interval;
 
 public class EDInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(EDInitializer.class);
 
     private final int numberOfStates;
-    private final int startingValue = 10000;
-    //different R-W ratio.
-    //just enable one of the decision array
-    protected transient boolean[] read_decision;
-    int i = 0;
     private String dataRootPath;
     private DataGenerator dataGenerator;
     private final DataGeneratorConfig dataConfig;
@@ -350,8 +340,9 @@ public class EDInitializer extends TableInitilizer {
 
         LOG.info("Inserted word record from row : " + word_left_bound + " to " + word_right_bound);
 
+        int cluster_table_size = 100; //TODO: Remove hard-code
         //Initialize cluster table
-        for (int key = left_bound; key < right_bound; key++) {
+        for (int key = left_bound; key < cluster_table_size; key++) {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
             String[] wordList = {};
@@ -361,7 +352,7 @@ public class EDInitializer extends TableInitilizer {
             insertClusterRecord(_key, wordList, countNewTweet, clusterSize, isEvent, pid, spinlock);
         }
 
-        LOG.info("Inserted cluster record from row : " + left_bound + " to " + right_bound);
+        LOG.info("Inserted cluster record from row : " + left_bound + " to " + cluster_table_size);
 
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);

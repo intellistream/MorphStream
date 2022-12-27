@@ -220,7 +220,7 @@ public class MorphStreamRunner extends Runner {
         LoadConfiguration();
 
         // Get the descriptor for the given application
-        AppDriver.AppDescriptor app = driver.getApp(application); //TODO: Change to ED
+        AppDriver.AppDescriptor app = driver.getApp(application);
         if (app == null) {
             throw new RuntimeException("The given application name " + application + " is invalid");
         }

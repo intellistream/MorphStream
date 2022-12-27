@@ -233,7 +233,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 }
 
                 // Update word's inner-window frequency
-                tempo_record.getValues().get(6).incLong((long) oldFrequency, (long) 1); //compute, increase word's frequency by 1
+                tempo_record.getValues().get(6).incLong(oldFrequency, 1); //compute, increase word's frequency by 1
 
             } else { // word has not been stored into table
 
@@ -289,11 +289,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 tempo_record.getValues().get(4).setDouble(newTfIdf); //compute: update tf-idf
                 tempo_record.getValues().get(6).setLong(0); //compute: reset frequency to zero
 
-                if (difference >= 0.5) { //TODO: Check this threshold
-                    tempo_record.getValues().get(7).setBool(true); //compute: set isBurst to true
-                } else {
-                    tempo_record.getValues().get(7).setBool(false); //compute: set isBurst to false
-                }
+                //TODO: Check this threshold
+                tempo_record.getValues().get(7).setBool(difference >= 0.5); //compute: set isBurst accordingly
 
                 //Update record's version (in this request, s_record == d_record)
                 operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
@@ -364,8 +361,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             if (maxSimilarity >= 0.5) { //TODO: Check the threshold value
                 SchemaRecord tempo_record = new SchemaRecord(maxCluster); //tempo record - the most similar cluster
                 List<String> wordList = maxCluster.getValues().get(1).getStringList();
-                long countNewTweet = maxCluster.getValues().get(2).getLong();
-                long clusterSize = maxCluster.getValues().get(3).getLong();
 
                 // Merge input tweet into cluster
                 for (String word : tweetWordList) {
@@ -382,7 +377,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             } else { // Initialize a new cluster
 
                 // Convert new cluster's wordList to clusterID
-                int newClusterKey = Arrays.toString(tweetWordList).hashCode() % 1007;
+                int newClusterKey = Math.abs(Arrays.toString(tweetWordList).hashCode()) % 1007;
                 TableRecord newRecord = operation.condition_records[newClusterKey];
                 SchemaRecord clusterRecord = newRecord.content_.readPastValues((long) operation.bid);
                 SchemaRecord tempo_record = new SchemaRecord(clusterRecord);

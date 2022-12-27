@@ -149,6 +149,7 @@ public abstract class executorThread extends Thread {
         while (running) {
             _execute();
         }
+        LOG.info("Running is set to false");
         end_emit = System.nanoTime();
     }
 

@@ -23,7 +23,6 @@ import java.util.concurrent.*;
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_shared_state;
 import static common.CONTROL.fetchWithIndex;
-import static common.Constants.DEFAULT_STREAM_ID;
 
 /**
  * Task thread that hosts bolt logic. Receives input Brisk.execution.runtime.tuple,
@@ -98,9 +97,6 @@ public class boltThread extends executorThread {
      */
     protected void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException {
         Object tuple = fetchResult();
-        if (cnt == 196) {
-            System.out.println("");
-        }
         if (tuple instanceof Tuple) {
             if (tuple != null) {
                 bolt.execute((Tuple) tuple);
@@ -114,12 +110,8 @@ public class boltThread extends executorThread {
                 bolt.execute((JumboTuple) tuple);
                 cnt += batch;
             } else {
-//                bolt.execute();
                 miss++;
             }
-//            if (cnt >= 196) {
-//                bolt.execute();
-//            }
         }
     }
 
@@ -189,6 +181,8 @@ public class boltThread extends executorThread {
             } else {
                 routing();
             }
+
+            LOG.info("Bolt thread finished routing");
 
         } catch (InterruptedException | BrokenBarrierException ignored) {
         } catch (DatabaseException e) {

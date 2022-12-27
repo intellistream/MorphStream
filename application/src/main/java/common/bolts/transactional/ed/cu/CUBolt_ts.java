@@ -2,8 +2,6 @@ package common.bolts.transactional.ed.cu;
 
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
-import common.param.ed.es.ESEvent;
-import common.param.ed.tr.TREvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -71,14 +69,14 @@ public class CUBolt_ts extends CUBolt{
         }
     }
 
-    protected void CLUSTER_UPDATE_REQUEST_CONSTRUCT(CUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void CLUSTER_UPDATE_REQUEST_CONSTRUCT(CUEvent event, TxnContext txnContext) throws DatabaseException {
 
         String[] clusterTable = new String[]{"cluster_table"}; //condition source table to iterate
-        String[] clusterKey = new String[]{""}; //condition source key, set to null
+        String[] clusterKey = new String[]{String.valueOf(0)}; //condition source key, set to zero
         Similarity function = new Similarity();
         Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
 
-        LOG.info("Constructing CU request: " + event.getMyBid());
+//        LOG.info("Constructing CU request: " + event.getMyBid());
         transactionManager.BeginTransaction(txnContext);
 
         // Update cluster: merge input tweet into existing cluster, or initialize new cluster
@@ -98,7 +96,7 @@ public class CUBolt_ts extends CUBolt{
         cuEvents.add(event);
     }
 
-    private void CLUSTER_UPDATE_REQUEST_CORE() throws InterruptedException {
+    private void CLUSTER_UPDATE_REQUEST_CORE() {
         for (CUEvent event : cuEvents) {
             SchemaRecordRef ref = event.clusterRecord;
             if (ref.isEmpty()) {

@@ -2,7 +2,6 @@ package common.bolts.transactional.ed.tc;
 
 import combo.SINKCombo;
 import common.param.ed.tc.TCEvent;
-import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -61,6 +60,8 @@ public class TCBolt_ts extends TCBolt{
         for (double i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TCEvent event = (TCEvent) input_event;
+
+//            LOG.info("Added event: " + event.getMyBid() + " with _bid " + _bid);
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             if (event != null) {
@@ -119,17 +120,17 @@ public class TCBolt_ts extends TCBolt{
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         double bid = in.getBID();
-        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
         if (bid >= windowBoundary) {
-            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+//            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
             outWindowEvents.add(in);
         } else {
             execute_ts_normal(in);
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -165,7 +166,7 @@ public class TCBolt_ts extends TCBolt{
             }
 
             windowBoundary += tweetWindowSize;
-            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 

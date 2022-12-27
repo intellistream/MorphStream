@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import profiler.Metrics;
 import transaction.TxnManager;
-import transaction.context.TxnContext;
-import utils.SOURCE_CONTROL;
 
 import java.util.concurrent.BrokenBarrierException;
 
@@ -151,6 +149,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
         MeasureTools.END_PREPARE_TIME_MEASURE_ACC(thread_Id);
+//        LOG.info("Bolt " + this.executor + " has event " + _bid);
         PRE_TXN_PROCESS(_bid, timestamp);
     }
 
