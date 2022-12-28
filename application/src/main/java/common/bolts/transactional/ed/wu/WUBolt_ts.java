@@ -22,7 +22,6 @@ import java.util.concurrent.BrokenBarrierException;
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
-import static common.bolts.transactional.ed.PunctuationAligner.*;
 
 public class WUBolt_ts extends WUBolt{
     private static final Logger LOG = LoggerFactory.getLogger(WUBolt_ts.class);

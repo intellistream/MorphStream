@@ -1,9 +1,7 @@
-package common.bolts.transactional.ed.es;
+package common.bolts.transactional.ed.sc;
 
 import combo.SINKCombo;
-import common.param.ed.es.ESEvent;
-import common.param.ed.tc.TCEvent;
-import common.param.ed.wu.WUEvent;
+import common.param.ed.sc.SCEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -14,7 +12,8 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
-import transaction.function.Division;
+import transaction.function.Condition;
+import transaction.function.Similarity;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
@@ -24,22 +23,21 @@ import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
-public class ESBolt_ts extends ESBolt{
-    private static final Logger LOG = LoggerFactory.getLogger(ESBolt_ts.class);
+public class SCBolt_ts extends SCBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(SCBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
-    ArrayDeque<ESEvent> esEvents;
+    ArrayDeque<SCEvent> scEvents;
     private double windowBoundary;
     ArrayDeque<Tuple> outWindowEvents;
 
     //To be used in Combo
-    public ESBolt_ts(int fid, SINKCombo sink) {
+    public SCBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
-
     }
 
     //To be used in ED Topology
-    public ESBolt_ts(int fid) {
+    public SCBolt_ts(int fid) {
         super(LOG, fid, null);
     }
 
@@ -47,7 +45,7 @@ public class ESBolt_ts extends ESBolt{
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
-        esEvents = new ArrayDeque<>();
+        scEvents = new ArrayDeque<>();
         windowBoundary = tweetWindowSize;
         outWindowEvents = new ArrayDeque<>();
     }
@@ -63,53 +61,54 @@ public class ESBolt_ts extends ESBolt{
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (double i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            ESEvent event = (ESEvent) input_event;
-            if (enable_latency_measurement)
+            SCEvent event = (SCEvent) input_event;
+            if (enable_latency_measurement) {
                 (event).setTimestamp(timestamp);
-            EVENT_SELECT_REQUEST_CONSTRUCT(event, txnContext);
+            }
+            SIMILARITY_CALCULATE_REQUEST_CONSTRUCT(event, txnContext);
         }
     }
 
-    protected void EVENT_SELECT_REQUEST_CONSTRUCT(ESEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void SIMILARITY_CALCULATE_REQUEST_CONSTRUCT(SCEvent event, TxnContext txnContext) throws DatabaseException {
 
-        String[] conditionSourceTable = new String[]{"cluster_table"}; //condition source table
-        String[] conditionSourceKey = new String[]{event.getClusterID()}; //condition source key
-        Division function = new Division();
+        String[] clusterTable = new String[]{"cluster_table"}; //condition source table to iterate
+        String[] clusterKey = new String[]{String.valueOf(0)}; //condition source key, set to zero
+        Similarity function = new Similarity();
+        Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
 
-        LOG.info("Constructing ES request: " + event.getMyBid());
-
+//        LOG.info("Constructing CU request: " + event.getMyBid());
         transactionManager.BeginTransaction(txnContext);
 
-        transactionManager.Asy_ModifyRecord_Read(txnContext,
-                "cluster_table", // source_table
-                event.getClusterID(),  // source_key
-                event.cluster_record, // record to be filled up from READ
-                function,
-                conditionSourceTable, conditionSourceKey,
-                null, // no condition required
+        // Update cluster: merge input tweet into existing cluster, or initialize new cluster
+        transactionManager.Asy_ModifyRecord_Iteration_Read(
+                txnContext,
+                "tweet_table", // source_table
+                event.getTweetID(),  // source_key
+                event.tweetRecord, // record to read from
+                function, // determine the most similar cluster
+                clusterTable, clusterKey, //condition_source_table, condition_source_key
+                condition1,
                 event.success,
-                "ed_es"
+                "ed_sc"
         );
 
         transactionManager.CommitTransaction(txnContext);
-
-        esEvents.add(event);
+        scEvents.add(event);
     }
 
-    private void EVENT_SELECT_REQUEST_CORE() {
-        for (ESEvent event : esEvents) {
-            SchemaRecordRef ref = event.cluster_record;
+    private void SIMILARITY_CALCULATE_REQUEST_CORE() {
+        for (SCEvent event : scEvents) {
+            SchemaRecordRef ref = event.tweetRecord;
             if (ref.isEmpty()) {
                 continue; //not yet processed.
             }
-            event.wordList = ref.getRecord().getValues().get(1).getStringList().toArray(new String[0]);
-            event.isEvent = ref.getRecord().getValues().get(4).getBool();
+            event.targetClusterID = ref.getRecord().getValues().get(2).toString();
         }
     }
 
-    private void EVENT_SELECT_REQUEST_POST() throws InterruptedException {
-        for (ESEvent event : esEvents) {
-            EVENT_SELECT_REQUEST_POST(event);
+    private void SIMILARITY_CALCULATE_REQUEST_POST() throws InterruptedException {
+        for (SCEvent event : scEvents) {
+            SIMILARITY_CALCULATE_REQUEST_POST(event);
         }
     }
 
@@ -119,16 +118,10 @@ public class ESBolt_ts extends ESBolt{
         double bid = in.getBID();
         LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
-        if (bid >= windowBoundary) {
+        if (bid >= windowBoundary) {// Input event is the last event in the current window
             LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
-            outWindowEvents.add(in);
-        } else {
-            execute_ts_normal(in);
-        }
 
-        if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
-            int num_events = esEvents.size();
+            int num_events = scEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
              */
@@ -136,36 +129,31 @@ public class ESBolt_ts extends ESBolt{
                 MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
                 {
                     transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
-                    EVENT_SELECT_REQUEST_CORE();
+                    SIMILARITY_CALCULATE_REQUEST_CORE();
                 }
                 MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
                 BEGIN_POST_TIME_MEASURE(thread_Id);
                 {
-                    EVENT_SELECT_REQUEST_POST();
+                    SIMILARITY_CALCULATE_REQUEST_POST();
                 }
                 END_POST_TIME_MEASURE_ACC(thread_Id);
 
                 //all tuples in the holder is finished.
-                esEvents.clear();
+                scEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
-
-            //normal-process the previous out-of-window events
-            while (!outWindowEvents.isEmpty()) {
-                Tuple outWindowTuple = outWindowEvents.poll();
-                if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
-                    EVENT_SELECT_REQUEST_POST((ESEvent) outWindowTuple.getValue(0));
-                    //TODO: Stop this thread?
-
-                } else { //otherwise, continue with normal-processing
-                    execute_ts_normal(outWindowTuple);
-                }
-            }
 
             windowBoundary += tweetWindowSize;
             LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
+            // Upon receiving stopping signal, pass it to downstream
+            if (bid >= total_events) {
+                SIMILARITY_CALCULATE_REQUEST_POST((SCEvent) in.getValue(0));
+                //TODO: Stop this thread?
+            }
         }
+
+        execute_ts_normal(in);
 
     }
 

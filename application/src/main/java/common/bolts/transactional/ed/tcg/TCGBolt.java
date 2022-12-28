@@ -1,7 +1,7 @@
 package common.bolts.transactional.ed.tcg;
 
 import combo.SINKCombo;
-import common.param.ed.cu.CUEvent;
+import common.param.ed.sc.SCEvent;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
@@ -31,7 +31,7 @@ public abstract class TCGBolt extends TransactionalBolt {
     protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
-    protected void TC_GATE_REQUEST_POST(double bid, CUEvent event) throws InterruptedException {
+    protected void TC_GATE_REQUEST_POST(double bid, SCEvent event) throws InterruptedException {
 
         double outBid = Math.round(bid * 10.0) / 10.0;
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());

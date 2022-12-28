@@ -278,7 +278,8 @@ public class EDInitializer extends TableInitilizer {
 
             //This initializes table with some default records.
             String[] wordList = {"word1", "word2", "word3"};
-            insertTweetRecord(_key, wordList, pid, spinlock);
+            String clusterID = "0";
+            insertTweetRecord(_key, wordList, clusterID, pid, spinlock);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -317,7 +318,8 @@ public class EDInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
             String[] wordList = {};
-            insertTweetRecord(_key, wordList, pid, spinlock);
+            String clusterID = "0";
+            insertTweetRecord(_key, wordList, clusterID, pid, spinlock);
         }
 
         LOG.info("Inserted tweet record from row : " + left_bound + " to " + right_bound);
@@ -344,11 +346,11 @@ public class EDInitializer extends TableInitilizer {
         //Initialize cluster table
         for (int key = left_bound; key < cluster_table_size; key++) {
             pid = get_pid(partition_interval, key);
-            _key = String.valueOf(key);
-            String[] wordList = {};
-            int countNewTweet = -1;
-            int clusterSize = -1;
-            boolean isEvent = false;
+            _key = String.valueOf(key); //0
+            String[] wordList = {}; //1
+            int countNewTweet = 0; //2
+            int clusterSize = 0; //3
+            boolean isEvent = false; //4
             insertClusterRecord(_key, wordList, countNewTweet, clusterSize, isEvent, pid, spinlock);
         }
 
@@ -358,12 +360,12 @@ public class EDInitializer extends TableInitilizer {
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
-    private void insertTweetRecord(String tweetID, String[] wordList, int pid, SpinLock[] spinlock_) {
+    private void insertTweetRecord(String tweetID, String[] wordList, String clusterID, int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList), pid, spinlock_));
+                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList, clusterID), pid, spinlock_));
             else
-                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList)));
+                db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList, clusterID)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -436,16 +438,19 @@ public class EDInitializer extends TableInitilizer {
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new StringDataBox());
         dataBoxes.add(new ListStringDataBox());
+        dataBoxes.add(new StringDataBox());
         fieldNames.add("Tweet_ID"); // 0
         fieldNames.add("Word_List"); // 1
+        fieldNames.add("Cluster_ID"); // 2
 
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
-    private SchemaRecord TweetRecord(String tweetID, String[] wordList) {
+    private SchemaRecord TweetRecord(String tweetID, String[] wordList, String clusterID) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(tweetID, tweetID.length()));
         values.add(new ListStringDataBox(wordList));
+        values.add(new StringDataBox(clusterID, clusterID.length()));
         return new SchemaRecord(values);
     }
 

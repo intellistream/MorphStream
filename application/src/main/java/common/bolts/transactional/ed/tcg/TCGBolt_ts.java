@@ -2,6 +2,7 @@ package common.bolts.transactional.ed.tcg;
 
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
+import common.param.ed.sc.SCEvent;
 import common.param.ed.tc.TCEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -108,7 +109,7 @@ public class TCGBolt_ts extends TCGBolt {
         for (Map.Entry<String, Boolean> entry : tweetMap.entrySet()) {
             TCEvent event = tcEventIterator.next();
 
-            CUEvent outEvent = new CUEvent(event.getBid(), event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+            SCEvent outEvent = new SCEvent(event.getBid(), event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
                     event.getMyNumberOfPartitions(), entry.getKey(), entry.getValue());
 
             TC_GATE_REQUEST_POST(event.getBid(), outEvent);
@@ -166,7 +167,7 @@ public class TCGBolt_ts extends TCGBolt {
 
                 if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
                     TCEvent event = (TCEvent) outWindowTuple.getValue(0);
-                    CUEvent outEvent = new CUEvent(event.getBid(), event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+                    SCEvent outEvent = new SCEvent(event.getBid(), event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
                             event.getMyNumberOfPartitions(), "Stop", false);
                     //TCG do not need to broadcast stop signals. There are sufficient stop signals for it to distribute to downstream.
                     TC_GATE_REQUEST_POST(event.getBid(), outEvent);

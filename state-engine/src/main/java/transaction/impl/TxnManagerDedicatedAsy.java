@@ -232,7 +232,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // TRANSFER_AST, ED_TR, ED_WU, ED_CU_Tweet
+    @Override // TRANSFER_AST, ED_TR, ED_WU, ED_CU
     public boolean Asy_ModifyRecord(TxnContext txn_context,
                                     String srcTable, String key,
                                     Function function,
@@ -295,7 +295,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // ED_CU
+    @Override // ED_SC
     public boolean Asy_ModifyRecord_Iteration_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                               Function function, String[] condition_sourceTable, String[] condition_source,
                                               Condition condition, int[] success, String operator_name) throws DatabaseException {

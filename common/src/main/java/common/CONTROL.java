@@ -41,10 +41,7 @@ public interface CONTROL {
     //ED Window
     int wordWindowSize = 120;
     int tweetWindowSize = 40;
-    int clusterTableSize = 40;
-
-    //Double bid Support
-    boolean enableDoubleBid = true;
+    int clusterTableSize = 100;
 
     //Fetch input tuple with matching index
     boolean fetchWithIndex = false;

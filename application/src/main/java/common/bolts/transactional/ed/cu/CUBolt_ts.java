@@ -12,18 +12,20 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
+import transaction.function.Append;
 import transaction.function.Condition;
 import transaction.function.Similarity;
 import transaction.impl.ordered.TxnManagerTStream;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
-public class CUBolt_ts extends CUBolt{
+public class CUBolt_ts extends CUBolt {
     private static final Logger LOG = LoggerFactory.getLogger(CUBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
@@ -34,6 +36,7 @@ public class CUBolt_ts extends CUBolt{
     //To be used in Combo
     public CUBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
+
     }
 
     //To be used in ED Topology
@@ -71,22 +74,20 @@ public class CUBolt_ts extends CUBolt{
 
     protected void CLUSTER_UPDATE_REQUEST_CONSTRUCT(CUEvent event, TxnContext txnContext) throws DatabaseException {
 
-        String[] clusterTable = new String[]{"cluster_table"}; //condition source table to iterate
-        String[] clusterKey = new String[]{String.valueOf(0)}; //condition source key, set to zero
-        Similarity function = new Similarity();
-        Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
+        String[] tweetTable = new String[]{"tweet_table"}; //condition source table
+        String[] tweetKey = new String[]{event.getTweetID()}; //condition source key - tweet to be merged into cluster
+        Condition condition1 = new Condition(event.getCurrWindow()); //arg1: currentWindow
 
 //        LOG.info("Constructing CU request: " + event.getMyBid());
         transactionManager.BeginTransaction(txnContext);
 
         // Update cluster: merge input tweet into existing cluster, or initialize new cluster
-        transactionManager.Asy_ModifyRecord_Iteration_Read(
+        transactionManager.Asy_ModifyRecord(
                 txnContext,
-                "tweet_table", // source_table
-                event.getTweetID(),  // source_key
-                event.clusterRecord, // record to read from
-                function, // determine the most similar cluster
-                clusterTable, clusterKey, //condition_source_table, condition_source_key
+                "cluster_table", // source_table
+                event.getClusterID(),  // source_key
+                null, // no function required
+                tweetTable, tweetKey, //condition_source_table, condition_source_key
                 condition1,
                 event.success,
                 "ed_cu"
@@ -96,15 +97,7 @@ public class CUBolt_ts extends CUBolt{
         cuEvents.add(event);
     }
 
-    private void CLUSTER_UPDATE_REQUEST_CORE() {
-        for (CUEvent event : cuEvents) {
-            SchemaRecordRef ref = event.clusterRecord;
-            if (ref.isEmpty()) {
-                continue; //not yet processed.
-            }
-            event.updatedClusterID = ref.getRecord().getValues().get(0).toString();
-        }
-    }
+    private void CLUSTER_UPDATE_REQUEST_CORE() {}
 
     private void CLUSTER_UPDATE_REQUEST_POST() throws InterruptedException {
         for (CUEvent event : cuEvents) {
@@ -118,9 +111,15 @@ public class CUBolt_ts extends CUBolt{
         double bid = in.getBID();
         LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
-        if (bid >= windowBoundary) {// Input event is the last event in the current window
+        if (bid >= windowBoundary) {
             LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+            outWindowEvents.add(in);
+        } else {
+            execute_ts_normal(in);
+        }
 
+        if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = cuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -143,17 +142,22 @@ public class CUBolt_ts extends CUBolt{
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
 
+            //normal-process the previous out-of-window events
+            while (!outWindowEvents.isEmpty()) {
+                Tuple outWindowTuple = outWindowEvents.poll();
+                if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
+                    CLUSTER_UPDATE_REQUEST_POST((CUEvent) outWindowTuple.getValue(0));
+                    //TODO: Stop this thread?
+
+                } else { //otherwise, continue with normal-processing
+                    execute_ts_normal(outWindowTuple);
+                }
+            }
+
             windowBoundary += tweetWindowSize;
             LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
-            // Upon receiving stopping signal, pass it to downstream
-            if (bid >= total_events) {
-                CLUSTER_UPDATE_REQUEST_POST((CUEvent) in.getValue(0));
-                //TODO: Stop this thread?
-            }
         }
-
-        execute_ts_normal(in);
 
     }
 

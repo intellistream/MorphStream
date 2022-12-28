@@ -1,7 +1,6 @@
 package common.bolts.transactional.ed.tr;
 
 import combo.SINKCombo;
-import common.bolts.transactional.ed.PunctuationAligner;
 import common.param.ed.tr.TREvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -19,10 +18,8 @@ import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static common.CONTROL.*;
-import static common.bolts.transactional.ed.PunctuationAligner.*;
 import static profiler.MeasureTools.*;
 import static profiler.Metrics.NUM_ITEMS;
 
@@ -165,7 +162,7 @@ public class TRBolt_ts extends TRBolt{
     @Override
     public void execute() throws BrokenBarrierException, InterruptedException {
 //        if (punctuation.get()) {
-            trBarrier.await();
+//            trBarrier.await();
             transactionManager.start_evaluate(thread_Id, -1, -1);//start lazy evaluation in transaction manager.
 //            punctuation.set(false);
 //            LOG.info("Thread " + this.thread_Id + " has event " + in.getBID());

@@ -1,26 +1,26 @@
-package common.param.ed.cu;
+package common.param.ed.sc;
 
 import common.param.TxnEvent;
 import storage.SchemaRecordRef;
 
-import static common.CONTROL.wordWindowSize;
-import static common.CONTROL.tweetWindowSize;
-
 import java.util.Arrays;
 
-public class CUEvent extends TxnEvent {
+import static common.CONTROL.tweetWindowSize;
+
+public class SCEvent extends TxnEvent {
     private final String tweetID;
-    private final String clusterID;
+    private final boolean isBurst;
     private final int currWindow;
     private final double myBid;
     private final int myPid;
     private final String my_bid_array;
     private final String my_partition_index;
     private final int my_number_of_partitions;
-    public SchemaRecordRef clusterRecord = new SchemaRecordRef();
+    public SchemaRecordRef tweetRecord = new SchemaRecordRef();
+    public String targetClusterID;
 
-    public CUEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions,
-                   String tweetID, String clusterID) {
+    public SCEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions,
+                   String tweetID, boolean isBurst) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.myBid = bid;
         this.myPid = pid;
@@ -28,7 +28,7 @@ public class CUEvent extends TxnEvent {
         this.my_partition_index = partition_index;
         this.my_number_of_partitions = number_of_partitions;
         this.tweetID = tweetID;
-        this.clusterID = clusterID;
+        this.isBurst = isBurst;
         this.currWindow = computeCurrWindow(bid);
     }
 
@@ -51,16 +51,19 @@ public class CUEvent extends TxnEvent {
     public int getMyNumberOfPartitions() {
         return my_number_of_partitions;
     }
+
     public String getTweetID() {
         return this.tweetID;
     }
-    public String getClusterID() {
-        return this.clusterID;
-    }
+
     public int getCurrWindow() {return this.currWindow;}
 
-    public CUEvent cloneEvent() {
-        return new CUEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions,
-                tweetID, clusterID);
+    public boolean isBurst() {
+        return isBurst;
+    }
+
+    public SCEvent cloneEvent() {
+        return new SCEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions,
+                tweetID, isBurst);
     }
 }

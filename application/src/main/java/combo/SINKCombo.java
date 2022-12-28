@@ -1,6 +1,5 @@
 package combo;
 
-import common.Runner;
 import common.sink.MeasureSink;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
