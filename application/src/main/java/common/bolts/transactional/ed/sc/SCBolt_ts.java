@@ -116,7 +116,7 @@ public class SCBolt_ts extends SCBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         double bid = in.getBID();
-        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
         if (bid >= windowBoundary) {// Input event is the last event in the current window
             LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());

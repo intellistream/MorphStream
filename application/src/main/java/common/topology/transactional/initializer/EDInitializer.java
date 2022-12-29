@@ -389,9 +389,9 @@ public class EDInitializer extends TableInitilizer {
                                      int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("tweet_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent), pid, spinlock_));
+                db.InsertRecord("cluster_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent), pid, spinlock_));
             else
-                db.InsertRecord("tweet_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent)));
+                db.InsertRecord("cluster_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }

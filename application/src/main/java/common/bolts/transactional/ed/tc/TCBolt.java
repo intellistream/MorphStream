@@ -2,6 +2,7 @@ package common.bolts.transactional.ed.tc;
 
 import combo.SINKCombo;
 import common.param.ed.cu.CUEvent;
+import common.param.ed.sc.SCEvent;
 import common.param.ed.tc.TCEvent;
 import common.param.ed.wu.WUEvent;
 import common.param.sl.DepositEvent;
@@ -38,15 +39,18 @@ public class TCBolt extends TransactionalBolt {
 
         double delta = 0.1;
         double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
+        boolean isBurst = event.isBurst;
 
         if (!enable_app_combo) {
+            for (String tweetID : event.tweetIDList) {
+                // LOG.info("Posting event: " + outBid);
+                SCEvent outEvent = new SCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+                        event.getMyNumberOfPartitions(), tweetID, isBurst);
+                GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
+                Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-            Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
-
-//            LOG.info("Posting event: " + outBid);
-
-            collector.emit(outBid, tuple);//emit CU Event tuple to TC Gate
+                collector.emit(outBid, tuple); //emit to SC
+            }
 
         } else {
             if (enable_latency_measurement) {

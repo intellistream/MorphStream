@@ -19,6 +19,7 @@ import scheduler.impl.IScheduler;
 import stage.Stage;
 import storage.*;
 import storage.datatype.DataBox;
+import storage.table.ShareTable;
 import transaction.TxnManager;
 import transaction.context.TxnAccess;
 import transaction.context.TxnContext;
@@ -28,6 +29,7 @@ import transaction.function.Function;
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
+import static common.CONTROL.clusterTableSize;
 import static common.CONTROL.enable_log;
 import static content.common.CommonMetaTypes.kMaxAccessNum;
 
@@ -137,7 +139,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable, enqueue_time));
 
         } else {
-            if (enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + primary_key);
             return false;
         }
     }
@@ -151,7 +153,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, primary_key, srcTable, t_record, value));
 
         } else {
-            if (enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + primary_key);
             return false;
         }
     }
@@ -165,7 +167,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable, primary_key, t_record, enqueue_time));
 
         } else {
-            if (enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + primary_key);
             return false;
         }
     }
@@ -180,7 +182,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable));
 
         } else {
-            if (enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + primary_key);
             return false;
         }
     }
@@ -195,7 +197,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                     source_key, s_record, s_record, function, column_id));
 
         } else {
-            if (enable_log) log.info("No record is found:" + source_key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + source_key);
             return false;
         }
     }
@@ -211,6 +213,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                     key, s_record, s_record, function, 1));
 
         } else {
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;
         }
     }
@@ -227,7 +230,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                     key, s_record, s_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records, condition, success));
 
         } else {
-            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;
         }
     }
@@ -256,7 +259,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                     key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
 
         } else {
-//            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;
         }
     }
@@ -290,7 +293,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                     key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
 
         } else {
-            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;
         }
     }
@@ -302,17 +305,23 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         AccessType accessType = AccessType.READ_WRITE_COND_READ;
 
         //The 1st element in condition_sourceTable is the table to be iterated.
-        Iterator<TableRecord> iterator = storageManager_.getTable(condition_sourceTable[0]).iterator();
-        TableRecord[] condition_records = new TableRecord[Iterators.size(iterator)];
+        ShareTable table = (ShareTable) storageManager_.getTable(condition_sourceTable[0]);
+        TableRecord[] condition_records = new TableRecord[clusterTableSize];
 
-        //Pass the entire iteration_table to condition_records
-        int i = 0;
-        while (iterator.hasNext()) {
-            condition_records[i] = iterator.next();
-            i++;
+        //TODO: Improve this with table iterator
+        for (int i=0; i<clusterTableSize; i++) {
+            TableRecord record = table.SelectKeyRecord(String.valueOf(i));
+            condition_records[i] = record;
         }
 
-        //s_record: tweetRecord, d_record: clusterRecord whose similarity is the highest (determined in OpScheduler)
+        //Pass the entire iteration_table to condition_records
+//        int i = 0;
+//        while (iterator.hasNext()) {
+//            condition_records[i] = iterator.next();
+//            i++;
+//        }
+
+        //For ED_SC - s_record: tweetRecord, d_record: clusterRecord whose similarity is the highest (determined in OpScheduler)
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
 
@@ -320,7 +329,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                     key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
 
         } else {
-            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;
         }
     }
@@ -335,7 +344,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                     key, s_record, s_record, function, record_ref));
 
         } else {
-            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;
         }
     }
@@ -350,7 +359,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
                     key, s_record, s_record, function, record_ref, condition, success));
 
         } else {
-            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;
         }
     }
@@ -366,7 +375,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         for (int i = 0; i < condition_source.length; i++) {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
             if (condition_records[i] == null) {
-//                if (enable_log) log.info("No record is found for condition source:" + condition_source[i]);
+                if (enable_log) log.info(operator_name + ": No record is found for condition source:" + condition_source[i]);
                 return false;
             }
         }
@@ -378,7 +387,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
-//            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;
         }
     }
@@ -404,7 +413,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
-            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;
         }
     }

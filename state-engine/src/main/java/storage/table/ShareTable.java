@@ -91,6 +91,7 @@ public class ShareTable extends BaseTable {
 
     @Override
     public Iterator<TableRecord> iterator() {
+        Iterator<TableRecord> result = primary_index_.iterator();
         return primary_index_.iterator();
     }
 

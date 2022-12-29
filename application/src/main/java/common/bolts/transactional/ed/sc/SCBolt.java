@@ -37,7 +37,7 @@ public class SCBolt extends TransactionalBolt {
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
         Tuple tuple = new Tuple(outEvent.getMyBid(), 0, context, generalMsg);
 
-        LOG.info("Posting event: " + outBid);
+//        LOG.info("Posting event: " + outBid);
 
         if (!enable_app_combo) {
             collector.emit(outBid, tuple);//emit CU Event tuple to CU Gate
