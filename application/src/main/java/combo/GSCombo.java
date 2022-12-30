@@ -6,6 +6,7 @@ import common.collections.Configuration;
 import common.param.TxnEvent;
 import common.param.mb.MicroEvent;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
@@ -99,7 +100,7 @@ public class GSCombo extends SPOUTCombo {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         assert enable_shared_state;//This application requires enable_shared_state.
 
         super.initialize(thread_Id, thisTaskId, graph);

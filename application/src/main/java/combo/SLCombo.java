@@ -7,6 +7,7 @@ import common.param.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
@@ -123,7 +124,7 @@ public class SLCombo extends SPOUTCombo {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
 
         super.initialize(thread_Id, thisTaskId, graph);
 

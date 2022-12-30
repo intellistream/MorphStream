@@ -42,13 +42,13 @@ public class TPBolt_SSTORE extends TPBolt_LA {
 
     }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {
         context.getGraph().topology.tableinitilizer.loadDB(thread_Id, context.getGraph().topology.spinlock,
                 this.context.getNUMTasks());
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerSStore(db.getStorageManager(),
                 this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);

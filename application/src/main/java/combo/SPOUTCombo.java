@@ -106,7 +106,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         if (enable_log) LOG.info("Spout initialize is being called");
         long start = System.nanoTime();
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..

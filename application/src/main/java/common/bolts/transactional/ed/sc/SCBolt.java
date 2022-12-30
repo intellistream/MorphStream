@@ -33,8 +33,13 @@ public class SCBolt extends TransactionalBolt {
         String tweetID = event.getTweetID();
         String targetClusterID = event.targetClusterID;
 
+        if (targetClusterID == null) {
+            LOG.info("Null cluster ID");
+//            throw new NullPointerException(); //TODO: Uncomment after testing
+        }
+
         CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), tweetID, targetClusterID);
-        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent);
+        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
         Tuple tuple = new Tuple(outEvent.getMyBid(), 0, context, generalMsg);
 
 //        LOG.info("Posting event: " + outBid);

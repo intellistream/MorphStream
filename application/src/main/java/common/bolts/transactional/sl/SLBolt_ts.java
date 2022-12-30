@@ -45,7 +45,7 @@ public class SLBolt_ts extends SLBolt {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         int numberOfStates = config.getInt("NUM_ITEMS");
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
@@ -54,7 +54,7 @@ public class SLBolt_ts extends SLBolt {
         depositEvents = new ArrayDeque<>();
     }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {
 //        prepareEvents();
         loadDB(transactionManager.getSchedulerContext(),
                 context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());

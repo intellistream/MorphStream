@@ -8,6 +8,7 @@ import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
@@ -111,7 +112,7 @@ public class OBCombo extends SPOUTCombo {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         sink.configPrefix = this.getConfigPrefix();
         sink.prepare(config, context, collector);

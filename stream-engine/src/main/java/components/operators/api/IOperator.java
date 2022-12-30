@@ -1,6 +1,7 @@
 package components.operators.api;
 
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.impl.OutputFieldsDeclarer;
@@ -17,7 +18,7 @@ public interface IOperator extends Serializable {
      */
     void declareOutputFields(OutputFieldsDeclarer declarer);
 
-    void prepare(Map stormConf, TopologyContext context, OutputCollector collector);
+    void prepare(Map stormConf, TopologyContext context, OutputCollector collector) throws DatabaseException;
 
     /**
      * This is the API to client application code.
@@ -27,6 +28,6 @@ public interface IOperator extends Serializable {
      * @param thisTaskId
      * @param graph
      */
-    void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph);
+    void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException;
 
 }

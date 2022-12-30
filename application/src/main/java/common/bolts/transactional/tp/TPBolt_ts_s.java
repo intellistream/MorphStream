@@ -36,14 +36,14 @@ public class TPBolt_ts_s extends TPBolt {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
                 NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BF"), this.context.getStageMap().get(this.fid));
         LREvents = new ArrayDeque<>();
     }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
                 , context.getGraph());
     }

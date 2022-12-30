@@ -39,7 +39,7 @@ public class TCBolt_ts extends TCBolt{
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         tcEvents = new ArrayDeque<>();
@@ -48,7 +48,7 @@ public class TCBolt_ts extends TCBolt{
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -103,7 +103,8 @@ public class TCBolt_ts extends TCBolt{
         for (TCEvent event : tcEvents) {
             SchemaRecordRef ref = event.word_record;
             if (ref.isEmpty()) {
-                continue; //not yet processed.
+                LOG.info("Thead " + thread_Id + " reads empty word record");
+                throw new NullPointerException();
             }
             event.tweetIDList = ref.getRecord().getValues().get(2).getStringList().toArray(new String[0]);
             event.isBurst = ref.getRecord().getValues().get(7).getBool();
@@ -157,8 +158,7 @@ public class TCBolt_ts extends TCBolt{
             while (!outWindowEvents.isEmpty()) {
                 Tuple outWindowTuple = outWindowEvents.poll();
                 if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
-                    TREND_CALCULATE_REQUEST_POST((TCEvent) outWindowTuple.getValue(0));
-                    //TODO: Stop this thread?
+                    STOP_SIGNAL_POST((TCEvent) outWindowTuple.getValue(0));
 
                 } else { //otherwise, continue with normal-processing
                     execute_ts_normal(outWindowTuple);
@@ -171,4 +171,5 @@ public class TCBolt_ts extends TCBolt{
         }
 
     }
+
 }

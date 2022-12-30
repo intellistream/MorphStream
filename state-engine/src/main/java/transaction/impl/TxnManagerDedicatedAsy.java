@@ -249,17 +249,15 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
         }
 
-//        if (Objects.equals(operator_name, "ed_wu")) {log.info("WU Checking S_Record...");}
-
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        if (s_record != null) {
-//            if (enable_log) log.info("Record is found:" + key);
 
+        if (s_record != null) {
+//            if (enable_log) log.info(operator_name + ": Record is found for key:" + key);
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
                     key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
 
         } else {
-            if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
+            if (enable_log) log.info(operator_name + ": No record is found for " + srcTable + " with key: " + key);
             return false;
         }
     }
@@ -311,6 +309,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         //TODO: Improve this with table iterator
         for (int i=0; i<clusterTableSize; i++) {
             TableRecord record = table.SelectKeyRecord(String.valueOf(i));
+            if (record == null) {
+                if (enable_log) log.info(operator_name + ": No record is found for iteration condition source:" + i);
+                return false;
+            }
             condition_records[i] = record;
         }
 
@@ -321,13 +323,11 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 //            i++;
 //        }
 
-        //For ED_SC - s_record: tweetRecord, d_record: clusterRecord whose similarity is the highest (determined in OpScheduler)
+        //For ED_SC: s_record == d_record == tweetRecord
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
-
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
                     key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
-
         } else {
             if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;

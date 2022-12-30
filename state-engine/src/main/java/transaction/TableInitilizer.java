@@ -4,6 +4,7 @@ import common.collections.Configuration;
 import common.tools.FastZipfGenerator;
 import content.common.TxnParam;
 import db.Database;
+import db.DatabaseException;
 import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,9 +95,9 @@ public abstract class TableInitilizer {
 
     public abstract void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks);
 
-    public abstract void loadDB(SchedulerContext context, int thread_id, int NUMTasks);
+    public abstract void loadDB(SchedulerContext context, int thread_id, int NUMTasks) throws DatabaseException;
 
-    public abstract void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUMTasks);
+    public abstract void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUMTasks) throws DatabaseException;
 
     public int get_pid(int partition_interval, int key) {
         return (int) Math.floor(key / (double) partition_interval);//NUM_ITEMS / tthread;

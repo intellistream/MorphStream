@@ -5,6 +5,7 @@ import common.constants.BaseConstants;
 import common.helper.parser.Parser;
 import common.util.datatypes.StreamValues;
 import components.operators.api.AbstractSpout;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ public class FileSpout extends AbstractSpout {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         int taskId = getContext().getThisTaskIndex();
         int numTasks = config.getInt(getConfigKey(BaseConstants.BaseConf.SPOUT_THREADS));

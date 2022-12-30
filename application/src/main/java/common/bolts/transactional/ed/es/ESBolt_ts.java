@@ -2,8 +2,6 @@ package common.bolts.transactional.ed.es;
 
 import combo.SINKCombo;
 import common.param.ed.es.ESEvent;
-import common.param.ed.tc.TCEvent;
-import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -44,7 +42,7 @@ public class ESBolt_ts extends ESBolt{
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         esEvents = new ArrayDeque<>();
@@ -53,7 +51,7 @@ public class ESBolt_ts extends ESBolt{
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.

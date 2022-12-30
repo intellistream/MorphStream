@@ -10,6 +10,7 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import scheduler.impl.op.OPScheduler;
 import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
@@ -18,6 +19,8 @@ import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
@@ -42,7 +45,7 @@ public class SCBolt_ts extends SCBolt {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         scEvents = new ArrayDeque<>();
@@ -51,7 +54,7 @@ public class SCBolt_ts extends SCBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -74,14 +77,14 @@ public class SCBolt_ts extends SCBolt {
         String[] clusterTable = new String[]{"cluster_table"}; //condition source table to iterate
         String[] clusterKey = new String[]{String.valueOf(0)}; //condition source key, set to zero
         Similarity function = new Similarity();
-        Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
+//        Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
+        Condition condition1 = new Condition(event.getCurrWindow(), true); //TODO: Set to always true for testing
 
 //        LOG.info("Constructing CU request: " + event.getMyBid());
         transactionManager.BeginTransaction(txnContext);
 
         // Update cluster: merge input tweet into existing cluster, or initialize new cluster
-        transactionManager.Asy_ModifyRecord_Iteration_Read(
-                txnContext,
+        transactionManager.Asy_ModifyRecord_Iteration_Read(txnContext,
                 "tweet_table", // source_table
                 event.getTweetID(),  // source_key
                 event.tweetRecord, // record to read from
@@ -96,14 +99,24 @@ public class SCBolt_ts extends SCBolt {
         scEvents.add(event);
     }
 
+    static AtomicInteger totalRefCount = new AtomicInteger(0);
+    static ConcurrentLinkedDeque invalidRefs = new ConcurrentLinkedDeque<>();
+
     private void SIMILARITY_CALCULATE_REQUEST_CORE() {
+
         for (SCEvent event : scEvents) {
             SchemaRecordRef ref = event.tweetRecord;
             if (ref.isEmpty()) {
-                continue; //not yet processed.
+                LOG.info("Thead " + thread_Id + " reads empty tweet record");
+                invalidRefs.add(String.valueOf(event.getBid()));
+//                throw new NullPointerException();
             }
-            event.targetClusterID = ref.getRecord().getValues().get(2).toString();
+            totalRefCount.getAndIncrement();
+//            event.targetClusterID = ref.getRecord().getValues().get(2).toString(); //TODO: Uncomment after testing
         }
+        LOG.info("SCBolt Request counter: " + totalRefCount.get());
+        LOG.info("OP SC Ref counter: " + OPScheduler.opSCRefCounter.get());
+        //TODO: Issue: number of requests in bolts != number of requests received by OpScheduler
     }
 
     private void SIMILARITY_CALCULATE_REQUEST_POST() throws InterruptedException {
@@ -118,9 +131,15 @@ public class SCBolt_ts extends SCBolt {
         double bid = in.getBID();
 //        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
-        if (bid >= windowBoundary) {// Input event is the last event in the current window
-            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+        if (bid >= windowBoundary) {
+//            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+            outWindowEvents.add(in);
+        } else {
+            execute_ts_normal(in);
+        }
 
+        if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = scEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -143,18 +162,66 @@ public class SCBolt_ts extends SCBolt {
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
 
-            windowBoundary += tweetWindowSize;
-            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+            //normal-process the previous out-of-window events
+            while (!outWindowEvents.isEmpty()) {
+                Tuple outWindowTuple = outWindowEvents.poll();
+                if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
+                    SIMILARITY_CALCULATE_REQUEST_POST((SCEvent) outWindowTuple.getValue(0));
 
-            // Upon receiving stopping signal, pass it to downstream
-            if (bid >= total_events) {
-                SIMILARITY_CALCULATE_REQUEST_POST((SCEvent) in.getValue(0));
-                //TODO: Stop this thread?
+                } else { //otherwise, continue with normal-processing
+                    execute_ts_normal(outWindowTuple);
+                }
             }
+
+            windowBoundary += tweetWindowSize;
+//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+
         }
 
-        execute_ts_normal(in);
-
     }
+
+//    @Override
+//    public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+//
+//        double bid = in.getBID();
+////        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+//
+//        if (bid >= windowBoundary) {// Input event is the last event in the current window
+//            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+//
+//            int num_events = scEvents.size();
+//            /**
+//             *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
+//             */
+//            {
+//                MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
+//                {
+//                    transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
+//                    SIMILARITY_CALCULATE_REQUEST_CORE();
+//                }
+//                MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
+//                BEGIN_POST_TIME_MEASURE(thread_Id);
+//                {
+//                    SIMILARITY_CALCULATE_REQUEST_POST();
+//                }
+//                END_POST_TIME_MEASURE_ACC(thread_Id);
+//
+//                //all tuples in the holder is finished.
+//                scEvents.clear();
+//            }
+//            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
+//
+//            windowBoundary += tweetWindowSize;
+//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+//
+//            // Upon receiving stopping signal, pass it to downstream
+//            if (bid >= total_events) {
+//                SIMILARITY_CALCULATE_REQUEST_POST((SCEvent) in.getValue(0));
+//            }
+//        }
+//
+//        execute_ts_normal(in);
+//
+//    }
 
 }

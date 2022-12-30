@@ -2,6 +2,7 @@ package common.bolts.transactional.tp;
 
 import combo.SINKCombo;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
@@ -27,14 +28,14 @@ public class TPBolt_lwm extends TPBolt_LA {
 
     }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {
 //        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
                 , context.getGraph());
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerLWM(db.getStorageManager(),
                 this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);

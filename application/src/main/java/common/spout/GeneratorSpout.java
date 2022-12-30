@@ -1,6 +1,7 @@
 package common.spout;
 
 import components.operators.api.AbstractSpout;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ public class GeneratorSpout extends AbstractSpout {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         int numContestants = 100;
         callGenerator = new PhoneCallGenerator(this.getContext().getThisTaskId(), numContestants);

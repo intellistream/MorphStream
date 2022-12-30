@@ -1,26 +1,16 @@
 package common.bolts.transactional.ed.tc;
 
 import combo.SINKCombo;
-import common.param.ed.cu.CUEvent;
 import common.param.ed.sc.SCEvent;
 import common.param.ed.tc.TCEvent;
-import common.param.ed.wu.WUEvent;
-import common.param.sl.DepositEvent;
-import common.param.sl.TransactionEvent;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
-import storage.SchemaRecord;
-import storage.SchemaRecordRef;
-import storage.datatype.DataBox;
-import utils.AppConfig;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
-import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public class TCBolt extends TransactionalBolt {
     SINKCombo sink; // the default "next bolt"
@@ -51,6 +41,28 @@ public class TCBolt extends TransactionalBolt {
 
                 collector.emit(outBid, tuple); //emit to SC
             }
+
+        } else {
+            if (enable_latency_measurement) {
+                sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));
+            }
+        }
+    }
+
+    protected void STOP_SIGNAL_POST(TCEvent event) throws InterruptedException {
+
+        double delta = 0.1;
+        double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
+        boolean isBurst = event.isBurst;
+
+//        LOG.info("Sending stop signal to SC: " + event.getBid());
+
+        if (!enable_app_combo) {
+            SCEvent outEvent = new SCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+                    event.getMyNumberOfPartitions(), "Stop", isBurst);
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
+            Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
+            collector.emit(outBid, tuple); //emit to SC
 
         } else {
             if (enable_latency_measurement) {

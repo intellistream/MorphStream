@@ -35,7 +35,7 @@ public abstract class TRBolt extends TransactionalBolt {
 
         for (String word : words) {
 
-            String wordID = String.valueOf(Math.abs(word.hashCode()) % 10007);
+            String wordID = String.valueOf(Math.abs(word.hashCode()) % 10007 % 30000);
             WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(),
                     word, wordID, tweetID);
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());

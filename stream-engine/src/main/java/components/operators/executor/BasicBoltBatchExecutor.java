@@ -19,7 +19,7 @@ public class BasicBoltBatchExecutor extends BoltExecutor {
         _op = op;
     }
 
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) throws DatabaseException {
         super.prepare(stormConf, context, collector);
     }
 

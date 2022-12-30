@@ -7,6 +7,7 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
 import components.operators.api.TransactionalSpout;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
@@ -91,7 +92,7 @@ public class EDSpout extends TransactionalSpout {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         if (enable_log) LOG.info("Spout initialize is being called");
         long start = System.nanoTime();
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..

@@ -27,11 +27,11 @@ public abstract class BoltExecutor implements IExecutor {
     public abstract void execute() throws InterruptedException, DatabaseException, BrokenBarrierException;
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) throws DatabaseException {
         op.prepare(stormConf, context, collector);
     }
 
-    public void loadDB(Configuration conf, TopologyContext context, OutputCollector collector) {
+    public void loadDB(Configuration conf, TopologyContext context, OutputCollector collector) throws DatabaseException {
         op.loadDB(conf, context, collector);
     }
 

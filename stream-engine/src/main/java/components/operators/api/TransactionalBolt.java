@@ -166,7 +166,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         this.thread_Id = thread_Id;
         tthread = config.getInt("tthread", 0);
         total_events = config.getInt("totalEvents", 0);

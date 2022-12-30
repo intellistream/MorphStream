@@ -5,6 +5,7 @@ import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.constants.WordCountConstants.Field;
 import components.operators.base.SplitBolt;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Fields;
@@ -35,7 +36,7 @@ public class SplitSentenceBolt extends SplitBolt {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         long pid = OsUtils.getPID();
 //		if (enable_log) LOG.info("PID  = " + pid);

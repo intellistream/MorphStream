@@ -99,6 +99,9 @@ public abstract class BaseTable implements ITable {
     public int getEntrySize() {
         return this.schema.getEntrySize();
     }
+    public String getTableID() {
+        return this.table_Id;
+    }
 
     public abstract Iterator<String> primaryKeyIterator();
 }

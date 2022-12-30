@@ -30,6 +30,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
 import static common.Constants.Event_Path;
@@ -46,7 +47,9 @@ public class EDInitializer extends TableInitilizer {
     private final int partitionOffset;
     private final int NUM_ACCESS;
     private final int Transaction_Length;
-
+    static AtomicInteger tweetInsertCount = new AtomicInteger(0);
+    static AtomicInteger wordInsertCount = new AtomicInteger(0);
+    static AtomicInteger clusterInsertCount = new AtomicInteger(0);
 
     public EDInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
@@ -287,7 +290,7 @@ public class EDInitializer extends TableInitilizer {
 
 
     @Override
-    public void loadDB(SchedulerContext context, int thread_id, int NUM_TASK) {
+    public void loadDB(SchedulerContext context, int thread_id, int NUM_TASK) throws DatabaseException {
         loadDB(context, thread_id, null, NUM_TASK);
     }
 
@@ -300,72 +303,104 @@ public class EDInitializer extends TableInitilizer {
      * @param NUM_TASK
      */
     @Override
-    public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUM_TASK) {
-        int partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
-        int left_bound = thread_id * partition_interval;
-        int right_bound;
-        int tweet_word_count = 3;
+    public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUM_TASK) throws DatabaseException {
+        int tweet_partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
+        int word_partition_interval = tweetWordCount * tweet_partition_interval;
+        int cluster_partition_interval = (int) Math.ceil(clusterTableSize / (double) NUM_TASK);
+
+        int tweet_left_bound = thread_id * tweet_partition_interval;
+        int word_left_bound = tweetWordCount * tweet_left_bound;
+        int cluster_left_bound = thread_id * cluster_partition_interval;
+        int tweet_right_bound;
+        int word_right_bound;
+        int cluster_right_bound;
+
         if (thread_id == NUM_TASK - 1) {//last executor need to handle left-over
-            right_bound = config.getInt("NUM_ITEMS");
+            tweet_right_bound = config.getInt("NUM_ITEMS");
+            word_right_bound = tweetWordCount * tweet_right_bound;
+            cluster_right_bound = clusterTableSize;
         } else {
-            right_bound = (thread_id + 1) * partition_interval;
+            tweet_right_bound = (thread_id + 1) * tweet_partition_interval;
+            word_right_bound = tweetWordCount * tweet_right_bound;
+            cluster_right_bound = (thread_id + 1) * cluster_partition_interval;
         }
+
         int pid;
         String _key;
+        String[] emptyArray = {};
 
-        //Initialize tweet table
-        for (int key = left_bound; key < right_bound; key++) {
-            pid = get_pid(partition_interval, key);
+
+        for (int key = tweet_left_bound; key < tweet_right_bound; key++) {//Initialize tweet table
+            pid = get_pid(tweet_partition_interval, key);
             _key = String.valueOf(key);
-            String[] wordList = {};
-            String clusterID = "0";
-            insertTweetRecord(_key, wordList, clusterID, pid, spinlock);
+            insertTweetRecord(_key, new String[]{}, "0", pid, spinlock);
+            tweetInsertCount.getAndIncrement();
         }
+        if (enable_log) LOG.info("Thread " + thread_id + " inserted tweet record from row : " + tweet_left_bound + " to " + tweet_right_bound);
 
-        LOG.info("Inserted tweet record from row : " + left_bound + " to " + right_bound);
 
-        int word_left_bound = tweet_word_count * left_bound;
-        int word_right_bound = tweet_word_count * right_bound;
-        //Initialize word table
-        for (int key = word_left_bound; key < word_right_bound; key++) { //assume each tweet has 3 words
-            pid = get_pid(partition_interval, key);
+        for (int key = word_left_bound; key < word_right_bound; key++) {//Initialize word table
+            pid = get_pid(word_partition_interval, key);
             _key = String.valueOf(key);
-            String wordValue = "";
-            String[] tweetList = {};
-            int countOccurWindow = -1;
-            double tfIdf = -1;
-            int lastOccurWindow = -1;
-            int frequency = -1;
-            boolean isBurst = false;
-            insertWordRecord(_key, wordValue, tweetList, countOccurWindow, tfIdf, lastOccurWindow, frequency, isBurst, pid, spinlock);
+            insertWordRecord(_key, "", emptyArray, 0, 0, 0, 0, false, pid, spinlock);
+            wordInsertCount.getAndIncrement();
+        }
+        if (enable_log) LOG.info("Thread " + thread_id + " inserted word record from row : " + word_left_bound + " to " + word_right_bound);
+
+
+        for (int key = cluster_left_bound; key < cluster_right_bound; key++) {//Initialize cluster table
+            pid = get_pid(cluster_partition_interval, key);
+            _key = String.valueOf(key);
+            insertClusterRecord(_key, emptyArray, 0, 0, false, pid, spinlock);
+            clusterInsertCount.getAndIncrement();
+        }
+        if (enable_log) LOG.info("Thread " + thread_id + " inserted cluster record from row : " + cluster_left_bound + " to " + cluster_right_bound);
+
+
+        if (tweetInsertCount.get() == config.getInt("NUM_ITEMS")) {// Check if all tweets have been inserted into table
+            int tweetRecordCounter = 0;
+            LOG.info("Expect " + tweetInsertCount.get() + " tweet records to be inserted");
+            Iterator<String> tweetRecordIterator = db.getStorageManager().getTable("tweet_table").primaryKeyIterator();
+            while (tweetRecordIterator.hasNext()) {
+                tweetRecordIterator.next();
+                tweetRecordCounter++;
+            }
+            if (enable_log) LOG.info("There are " + tweetRecordCounter + " tweet records in the table");
         }
 
-        LOG.info("Inserted word record from row : " + word_left_bound + " to " + word_right_bound);
-
-        int cluster_table_size = 100; //TODO: Remove hard-code
-        //Initialize cluster table
-        for (int key = left_bound; key < cluster_table_size; key++) {
-            pid = get_pid(partition_interval, key);
-            _key = String.valueOf(key); //0
-            String[] wordList = {}; //1
-            int countNewTweet = 0; //2
-            int clusterSize = 0; //3
-            boolean isEvent = false; //4
-            insertClusterRecord(_key, wordList, countNewTweet, clusterSize, isEvent, pid, spinlock);
+        if (wordInsertCount.get() == config.getInt("NUM_ITEMS") * tweetWordCount) {// Check if all words have been inserted into table
+            int wordRecordCounter = 0;
+            LOG.info("Expect " + wordInsertCount.get() + " word records to be inserted");
+            Iterator<String> wordRecordIterator = db.getStorageManager().getTable("word_table").primaryKeyIterator();
+            while (wordRecordIterator.hasNext()) {
+                wordRecordIterator.next();
+                wordRecordCounter++;
+            }
+            if (enable_log) LOG.info("There are " + wordRecordCounter + " word records in the table");
         }
 
-        LOG.info("Inserted cluster record from row : " + left_bound + " to " + cluster_table_size);
+        if (clusterInsertCount.get() == clusterTableSize) {// Check if all clusters have been inserted into table
+            int clusterRecordCounter = 0;
+            LOG.info("Expect " + clusterInsertCount.get() + " cluster records to be inserted");
+            Iterator<String> clusterRecordIterator = db.getStorageManager().getTable("cluster_table").primaryKeyIterator();
+            while (clusterRecordIterator.hasNext()) {
+                clusterRecordIterator.next();
+                clusterRecordCounter++;
+            }
+            if (enable_log) LOG.info("There are " + clusterRecordCounter + " cluster records in the table");
+        }
 
-        if (enable_log)
-            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
     private void insertTweetRecord(String tweetID, String[] wordList, String clusterID, int pid, SpinLock[] spinlock_) {
+
         try {
-            if (spinlock_ != null)
+            if (spinlock_ != null) {
                 db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList, clusterID), pid, spinlock_));
-            else
+            }
+            else {
                 db.InsertRecord("tweet_table", new TableRecord(TweetRecord(tweetID, wordList, clusterID)));
+            }
         } catch (DatabaseException e) {
             e.printStackTrace();
         }

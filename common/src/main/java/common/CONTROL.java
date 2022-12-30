@@ -42,6 +42,7 @@ public interface CONTROL {
     int wordWindowSize = 120;
     int tweetWindowSize = 40;
     int clusterTableSize = 100;
+    int tweetWordCount = 3;//Default number of words in each tweet
 
     //Fetch input tuple with matching index
     boolean fetchWithIndex = false;

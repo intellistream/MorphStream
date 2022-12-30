@@ -5,6 +5,7 @@ import components.context.TopologyContext;
 import components.operators.api.AbstractWindowedBolt;
 import components.operators.api.BaseWindowedBolt;
 import components.windowing.*;
+import db.DatabaseException;
 import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
@@ -118,7 +119,7 @@ public class BasicWindowBoltBatchExecutor extends BoltExecutor {
         }
     }
 
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) throws DatabaseException {
         super.prepare(stormConf, context, collector);
         WindowLifecycleListener<Tuple> listener = newWindowLifecycleListener();
         this.windowManager = initWindowManager(listener, stormConf, context, new ConcurrentLinkedQueue<>());

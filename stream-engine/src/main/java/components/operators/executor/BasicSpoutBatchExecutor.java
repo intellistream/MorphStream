@@ -2,6 +2,7 @@ package components.operators.executor;
 
 import components.context.TopologyContext;
 import components.operators.api.AbstractSpout;
+import db.DatabaseException;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
 
@@ -17,7 +18,7 @@ public class BasicSpoutBatchExecutor extends SpoutExecutor {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) throws DatabaseException {
         _op.prepare(stormConf, context, collector);
     }
 

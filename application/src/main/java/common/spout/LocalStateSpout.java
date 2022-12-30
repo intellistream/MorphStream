@@ -4,6 +4,7 @@ import common.constants.BaseConstants.BaseConf;
 import common.constants.GrepSumConstants;
 import common.helper.DataSource;
 import components.operators.api.AbstractSpout;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Fields;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public class LocalStateSpout extends AbstractSpout {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         int taskId = getContext().getThisTaskIndex();
         int numTasks = config.getInt(getConfigKey(BaseConf.SPOUT_THREADS));

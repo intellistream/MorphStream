@@ -10,11 +10,8 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
-import transaction.function.Append;
 import transaction.function.Condition;
-import transaction.function.Similarity;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
@@ -45,7 +42,7 @@ public class CUBolt_ts extends CUBolt {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         cuEvents = new ArrayDeque<>();
@@ -54,7 +51,7 @@ public class CUBolt_ts extends CUBolt {
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -80,6 +77,11 @@ public class CUBolt_ts extends CUBolt {
 
 //        LOG.info("Constructing CU request: " + event.getMyBid());
         transactionManager.BeginTransaction(txnContext);
+
+        String clusterID = event.getClusterID();
+        if (clusterID == null) {
+            LOG.info("Null cluster ID detected");
+        }
 
         // Update cluster: merge input tweet into existing cluster, or initialize new cluster
         transactionManager.Asy_ModifyRecord(

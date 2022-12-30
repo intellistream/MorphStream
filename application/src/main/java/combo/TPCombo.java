@@ -8,6 +8,7 @@ import common.datatype.PositionReport;
 import common.param.TxnEvent;
 import common.param.lr.LREvent;
 import components.context.TopologyContext;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.runtime.collector.OutputCollector;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
@@ -126,7 +127,7 @@ public class TPCombo extends SPOUTCombo {
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         sink.configPrefix = this.getConfigPrefix();
         sink.prepare(config, context, collector);

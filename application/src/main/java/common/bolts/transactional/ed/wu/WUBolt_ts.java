@@ -1,7 +1,6 @@
 package common.bolts.transactional.ed.wu;
 
 import combo.SINKCombo;
-import common.param.ed.tr.TREvent;
 import common.param.ed.wu.WUEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
@@ -42,7 +41,7 @@ public class WUBolt_ts extends WUBolt{
     }
 
     @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         wuEvents = new ArrayDeque<>();
@@ -51,7 +50,7 @@ public class WUBolt_ts extends WUBolt{
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {}
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {}
 
     /**
      * THIS IS ONLY USED BY TSTREAM.
@@ -73,7 +72,7 @@ public class WUBolt_ts extends WUBolt{
         }
     }
 
-    protected void WORD_UPDATE_REQUEST_CONSTRUCT(WUEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void WORD_UPDATE_REQUEST_CONSTRUCT(WUEvent event, TxnContext txnContext) throws DatabaseException {
 
         String[] wordTable = new String[]{"word_table"}; //condition source table
         String[] wordID = new String[]{event.getWordID()}; //condition source key
@@ -100,7 +99,7 @@ public class WUBolt_ts extends WUBolt{
         wuEvents.add(event);
     }
 
-    private void WORD_UPDATE_REQUEST_CORE() throws InterruptedException {}
+    private void WORD_UPDATE_REQUEST_CORE() {}
 
     private void WORD_UPDATE_REQUEST_POST() throws InterruptedException {
         for (WUEvent event : wuEvents) {

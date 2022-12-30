@@ -5,6 +5,7 @@ import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import components.context.TopologyContext;
 import db.Database;
+import db.DatabaseException;
 import execution.ExecutionGraph;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
@@ -177,14 +178,14 @@ public abstract class Operator implements IOperator {
      * @param context
      * @param collector
      */
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {
         this.config = Configuration.fromMap(conf);
         setContext(context);
         this.collector = collector;
         base_initialize(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
     }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
     }
 
@@ -192,11 +193,11 @@ public abstract class Operator implements IOperator {
         graph.topology.tableinitilizer.loadDB(thread_Id, this.context.getNUMTasks());
     }
 
-    public void loadDB(SchedulerContext schedulerContext, int thread_Id, ExecutionGraph graph) {
+    public void loadDB(SchedulerContext schedulerContext, int thread_Id, ExecutionGraph graph) throws DatabaseException {
         graph.topology.tableinitilizer.loadDB(schedulerContext, thread_Id, this.context.getNUMTasks());
     }
 
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         if (enable_log) LOG.info("The operator" + executor.getOP() + "does not require initialization");
     }
 
@@ -207,7 +208,7 @@ public abstract class Operator implements IOperator {
      * @param thisTaskId
      * @param graph
      */
-    private void base_initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+    private void base_initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         if (LOG == null) {
             LOG = LoggerFactory.getLogger(Operator.class);
             if (enable_log) LOG.info("The operator has no LOG, creates a default one for it here.");
