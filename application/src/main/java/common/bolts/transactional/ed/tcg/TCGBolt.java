@@ -35,7 +35,7 @@ public abstract class TCGBolt extends TransactionalBolt {
 
         double outBid = Math.round(bid * 10.0) / 10.0;
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-        Tuple tuple = new Tuple(bid, 0, context, generalMsg);
+        Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
         counter++;
 //        LOG.info("Posting event: " + bid + ", Total post: " + counter);
@@ -48,7 +48,7 @@ public abstract class TCGBolt extends TransactionalBolt {
         }
 
         if (!enable_app_combo) {
-            collector.emit(bid, tuple);
+            collector.emit(outBid, tuple);
         } else {
             if (enable_latency_measurement) {
                 //Pass the read result of new tweet's ID (assigned by table) to sink

@@ -64,6 +64,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     public static AtomicInteger opSCRefCounter = new AtomicInteger(0);
+    public static AtomicInteger opTCRefCounter = new AtomicInteger(0);
 
     /**
      * Used by tpgScheduler.
@@ -85,8 +86,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             if (this.tpg.getApp() == 1) { //SL
                 Transfer_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) {
+                opTCRefCounter.getAndIncrement(); //TODO: Remove after testing
                 TrendCalculate_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_sc")) {
+                opSCRefCounter.getAndIncrement(); //TODO: Remove after testing
                 SimilarityCalculate_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) {
                 EventSelection_Fun(operation, mark_ID, clean);
@@ -99,12 +102,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     SchemaRecord updatedRecord = operation.d_record.content_.readPastValues((long) operation.bid);
                     if (updatedRecord != null) {
                         operation.record_ref.setRecord(updatedRecord);
-                        if (Objects.equals(operation.operator_name, "ed_sc")) {
-                            log.info("Updating record ref for SC");
-                            opSCRefCounter.getAndIncrement();
-                        }
+//                        if (Objects.equals(operation.operator_name, "ed_sc")) {
+//                            log.info("Updating record ref for SC");
+//                        }
                     } else {
-                        log.info(operation.operator_name + ": D_Record not found");
+                        log.info(operation.operator_name + ": D_Record not found"); //TODO: Remove after testing
                         throw new NullPointerException();
                     }
                 }

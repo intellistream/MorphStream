@@ -10,15 +10,18 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
+import scheduler.impl.op.OPScheduler;
 import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.TFIDF;
+import transaction.impl.TxnManagerDedicatedAsy;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
@@ -97,7 +100,10 @@ public class TCBolt_ts extends TCBolt{
 
         transactionManager.CommitTransaction(txnContext);
         tcEvents.add(event);
+        totalRefCount.getAndIncrement();
     }
+
+    static AtomicInteger totalRefCount = new AtomicInteger(0);
 
     private void TREND_CALCULATE_REQUEST_CORE() {
         for (TCEvent event : tcEvents) {
@@ -109,6 +115,8 @@ public class TCBolt_ts extends TCBolt{
             event.tweetIDList = ref.getRecord().getValues().get(2).getStringList().toArray(new String[0]);
             event.isBurst = ref.getRecord().getValues().get(7).getBool();
         }
+//        LOG.info("TCBolt Request counter: " + totalRefCount.get());
+//        LOG.info("OP TC Ref counter: " + OPScheduler.opTCRefCounter.get());
     }
 
     private void TREND_CALCULATE_REQUEST_POST() throws InterruptedException {
@@ -158,7 +166,7 @@ public class TCBolt_ts extends TCBolt{
             while (!outWindowEvents.isEmpty()) {
                 Tuple outWindowTuple = outWindowEvents.poll();
                 if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
-                    STOP_SIGNAL_POST((TCEvent) outWindowTuple.getValue(0));
+                    TREND_CALCULATE_REQUEST_POST((TCEvent) outWindowTuple.getValue(0));
 
                 } else { //otherwise, continue with normal-processing
                     execute_ts_normal(outWindowTuple);

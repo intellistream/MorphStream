@@ -9,12 +9,18 @@ import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
 
 public class SCBolt extends TransactionalBolt {
     SINKCombo sink;
+    static AtomicInteger scPostCount = new AtomicInteger(0);
+    static AtomicInteger scStopCount = new AtomicInteger(0);
+    static ConcurrentSkipListSet<String> scPostTweets = new ConcurrentSkipListSet<>();
 
     public SCBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
@@ -33,9 +39,20 @@ public class SCBolt extends TransactionalBolt {
         String tweetID = event.getTweetID();
         String targetClusterID = event.targetClusterID;
 
-        if (targetClusterID == null) {
-            LOG.info("Null cluster ID");
-//            throw new NullPointerException(); //TODO: Uncomment after testing
+        if (outBid >= total_events) { //Label stopping signals
+            targetClusterID = "Stop";
+            if (scStopCount.incrementAndGet() == 16) {
+                LOG.info("All stop signals are detected");
+            }
+//            LOG.info("Thread " + thread_Id + " is posting stop signal " + outBid);
+        } else {
+            scPostCount.incrementAndGet();
+            scPostTweets.add(tweetID);
+        }
+
+        if (targetClusterID == null) { //SC fail to find the most similar cluster
+            LOG.info("Null cluster ID for event " + event.getBid());
+            throw new NullPointerException();
         }
 
         CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), tweetID, targetClusterID);

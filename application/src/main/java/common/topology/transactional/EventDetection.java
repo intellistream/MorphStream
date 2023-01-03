@@ -1,10 +1,10 @@
 package common.topology.transactional;
 
-import common.bolts.transactional.ed.cu.CUBolt_ts;
+import common.bolts.transactional.ed.cu.*;
 import common.bolts.transactional.ed.es.*;
 import common.bolts.transactional.ed.sc.*;
 import common.bolts.transactional.ed.tc.*;
-import common.bolts.transactional.ed.tcg.TCGBolt_ts;
+import common.bolts.transactional.ed.tcg.*;
 import common.bolts.transactional.ed.tr.*;
 import common.bolts.transactional.ed.wu.*;
 import common.collections.Configuration;
@@ -134,12 +134,12 @@ public class EventDetection extends TransactionTopology {
                     builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_ts(3)
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.WU));
-////                    builder.setBolt(EventDetectionConstants.Component.TCG, new TCGBolt_ts(4)
-////                            , config.getInt(EventDetectionConstants.Conf.Gate_Threads, 1)
-////                            , new ShuffleGrouping(EventDetectionConstants.Component.TC));
-                    builder.setBolt(EventDetectionConstants.Component.SC, new SCBolt_ts(4)
+                    builder.setBolt(EventDetectionConstants.Component.TCG, new TCGBolt_ts(4)
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TC));
+                    builder.setBolt(EventDetectionConstants.Component.SC, new SCBolt_ts(5)
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.TCG));
 //                    builder.setBolt(EventDetectionConstants.Component.CU, new CUBolt_ts(5)
 //                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
 //                            , new ShuffleGrouping(EventDetectionConstants.Component.SC));

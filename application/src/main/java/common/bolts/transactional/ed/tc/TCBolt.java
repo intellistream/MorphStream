@@ -27,20 +27,17 @@ public class TCBolt extends TransactionalBolt {
 
     protected void TREND_CALCULATE_REQUEST_POST(TCEvent event) throws InterruptedException {
 
-        double delta = 0.1;
-        double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
-        boolean isBurst = event.isBurst;
+        double outBid = Math.round(event.getMyBid() * 10.0) / 10.0;
+//        boolean isBurst = event.isBurst;
 
         if (!enable_app_combo) {
-            for (String tweetID : event.tweetIDList) {
-                // LOG.info("Posting event: " + outBid);
-                SCEvent outEvent = new SCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
-                        event.getMyNumberOfPartitions(), tweetID, isBurst);
-                GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
-                Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
+            // LOG.info("Posting event: " + outBid);
+//                SCEvent outEvent = new SCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+//                        event.getMyNumberOfPartitions(), tweetID, isBurst);
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
+            Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-                collector.emit(outBid, tuple); //emit to SC
-            }
+            collector.emit(outBid, tuple); //emit to TCG
 
         } else {
             if (enable_latency_measurement) {
@@ -51,16 +48,16 @@ public class TCBolt extends TransactionalBolt {
 
     protected void STOP_SIGNAL_POST(TCEvent event) throws InterruptedException {
 
-        double delta = 0.1;
-        double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
-        boolean isBurst = event.isBurst;
+//        double delta = 0.1;
+        double outBid = Math.round(event.getMyBid() * 10.0) / 10.0;
+//        boolean isBurst = event.isBurst;
 
 //        LOG.info("Sending stop signal to SC: " + event.getBid());
 
         if (!enable_app_combo) {
-            SCEvent outEvent = new SCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
-                    event.getMyNumberOfPartitions(), "Stop", isBurst);
-            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
+//            SCEvent outEvent = new SCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+//                    event.getMyNumberOfPartitions(), "Stop", isBurst);
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
             collector.emit(outBid, tuple); //emit to SC
 

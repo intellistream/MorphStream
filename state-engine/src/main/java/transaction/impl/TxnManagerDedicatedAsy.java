@@ -28,6 +28,7 @@ import transaction.function.Function;
 
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.clusterTableSize;
 import static common.CONTROL.enable_log;
@@ -296,6 +297,8 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
+    public static AtomicInteger scTMCounter = new AtomicInteger(0);
+
     @Override // ED_SC
     public boolean Asy_ModifyRecord_Iteration_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                               Function function, String[] condition_sourceTable, String[] condition_source,
@@ -326,8 +329,12 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         //For ED_SC: s_record == d_record == tweetRecord
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
+
+            scTMCounter.getAndIncrement(); //TODO: Remove after testing
+
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
                     key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
+
         } else {
             if (enable_log) log.info(operator_name + ": No record is found for key:" + key);
             return false;

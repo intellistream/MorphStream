@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
 import transaction.impl.ordered.TxnManagerTStream;
+import utils.lib.ConcurrentHashMap;
 
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
@@ -26,7 +27,7 @@ public class TCGBolt_ts extends TCGBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TCGBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<TCEvent> tcEvents;
-    HashMap<String, Boolean> tweetMap = new HashMap<>(); //tweetID -> isBurst
+    static ConcurrentHashMap<String, Boolean> tweetMap = new ConcurrentHashMap<>(); //Updated by all threads. Maps tweetID -> isBurst
     private double windowBoundary;
     private int tweetIDFloor;
     ArrayDeque<Tuple> outWindowEvents;
@@ -68,11 +69,8 @@ public class TCGBolt_ts extends TCGBolt {
 //            LOG.info("Added event: " + event.getMyBid() + " with _bid " + _bid);
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            if (event != null) {
-                TC_GATE_REQUEST_CONSTRUCT(event, txnContext);
-            } else {
-                throw new UnknownError();
-            }
+            TC_GATE_REQUEST_CONSTRUCT(event, txnContext);
+
             MeasureTools.END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
         }
     }
@@ -84,10 +82,7 @@ public class TCGBolt_ts extends TCGBolt {
 
         if (event.tweetIDList != null) {
             for (String tweetID : event.tweetIDList) {
-//                if (Integer.parseInt(tweetID) == 39) {
-//                    LOG.info("Received tweet@39");
-//                }
-                if (Integer.parseInt(tweetID) < tweetIDFloor-1) { //Only consider tweets in the current window
+                if (Integer.parseInt(tweetID) < tweetIDFloor || Integer.parseInt(tweetID) >= windowBoundary) { //Only consider tweets in the current window
                     continue;
                 }
                 if (!Boolean.TRUE.equals(tweetMap.get(tweetID))) { //Do not update when the value is "not-null and true"
@@ -95,31 +90,52 @@ public class TCGBolt_ts extends TCGBolt {
                 }
                 assert tweetMap.size() <= tweetWindowSize;
             }
+        } else {
+            LOG.info("No tweetIDList found for event " + event.getBid());
+            throw new NoSuchElementException();
         }
     }
 
     private void TC_GATE_REQUEST_CORE() {}
 
-    // Emit output information to TCGBolt
     private void TC_GATE_REQUEST_POST() throws InterruptedException {
-        Iterator<TCEvent> tcEventIterator = tcEvents.iterator();
 
-        //The tcEvents are only used to inherit event's info such as bid and pid.
-        for (Map.Entry<String, Boolean> entry : tweetMap.entrySet()) {
-            TCEvent event = tcEventIterator.next();
-
-            SCEvent outEvent = new SCEvent(event.getBid(), event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
-                    event.getMyNumberOfPartitions(), entry.getKey(), entry.getValue());
-
-            TC_GATE_REQUEST_POST(event.getBid(), outEvent);
+        int tweet_partition_interval = (int) Math.ceil(tweetWindowSize / (double) tthread);
+        int tweet_left_bound = thread_Id * tweet_partition_interval + tweetIDFloor;
+        int tweet_right_bound;
+        if (thread_Id == tthread - 1) {//last executor need to handle left-over
+            tweet_right_bound = tweetWindowSize + tweetIDFloor;
+        } else {
+            tweet_right_bound = (thread_Id + 1) * tweet_partition_interval + tweetIDFloor;
         }
+
+        TCEvent templateEvent = tcEvents.getFirst();
+        double bid = templateEvent.getBid();
+
+//        if (tweetMap.size() != tweetWindowSize) {
+//            LOG.info("Wrong map size");
+//        }
+
+        for (int i=tweet_left_bound; i<tweet_right_bound; i++) {
+            String tweetID = String.valueOf(i);
+            LOG.info("Emitting event " + bid + " with tweetID " + tweetID);
+            Boolean isBurst = tweetMap.get(tweetID);
+            if (isBurst == null) {
+                LOG.info("Null map value detected");
+            }
+            SCEvent outEvent = new SCEvent(bid, templateEvent.getMyPid(), templateEvent.getMyBidArray(), templateEvent.getMyPartitionIndex(),
+                    templateEvent.getMyNumberOfPartitions(), tweetID, isBurst);
+            TC_GATE_REQUEST_POST(bid, outEvent);
+            bid++;
+        }
+
     }
 
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         double bid = in.getBID();
-        TCEvent newEvent = (TCEvent) in.getValue(0);
+//        TCEvent newEvent = (TCEvent) in.getValue(0);
 //        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 //        LOG.info("Thread " + this.thread_Id + " has event " + bid + " with tweetIDs: " + Arrays.toString(newEvent.tweetIDList));
 
@@ -132,7 +148,7 @@ public class TCGBolt_ts extends TCGBolt {
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-//            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -152,17 +168,13 @@ public class TCGBolt_ts extends TCGBolt {
 
                 //all tuples in the holder is finished.
                 tcEvents.clear();
-                tweetMap.clear();
+//                tweetMap.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
-
-            tweetIDFloor += tweetWindowSize;
 
             //normal-process the previous out-of-window events
             while (!outWindowEvents.isEmpty()) {
                 Tuple outWindowTuple = outWindowEvents.poll();
-
-                execute_ts_normal(outWindowTuple); //continue with normal-processing
 
                 if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
                     TCEvent event = (TCEvent) outWindowTuple.getValue(0);
@@ -172,11 +184,14 @@ public class TCGBolt_ts extends TCGBolt {
                     TC_GATE_REQUEST_POST(event.getBid(), outEvent);
                     //TODO: Stop this thread?
 
+                } else {
+                    execute_ts_normal(outWindowTuple); //continue with normal-processing
                 }
             }
 
+            tweetIDFloor += tweetWindowSize;
             windowBoundary += tweetWindowSize;
-//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 
