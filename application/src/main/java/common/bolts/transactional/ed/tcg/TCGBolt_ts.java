@@ -17,6 +17,8 @@ import utils.lib.ConcurrentHashMap;
 
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
@@ -110,23 +112,21 @@ public class TCGBolt_ts extends TCGBolt {
         }
 
         TCEvent templateEvent = tcEvents.getFirst();
-        double bid = templateEvent.getBid();
-
-//        if (tweetMap.size() != tweetWindowSize) {
-//            LOG.info("Wrong map size");
-//        }
+        double delta = 0.1;
+        double outBid = Math.round((tweet_left_bound + 3 * delta) * 10.0) / 10.0; //TODO: Remove hard code
 
         for (int i=tweet_left_bound; i<tweet_right_bound; i++) {
             String tweetID = String.valueOf(i);
-            LOG.info("Emitting event " + bid + " with tweetID " + tweetID);
             Boolean isBurst = tweetMap.get(tweetID);
             if (isBurst == null) {
                 LOG.info("Null map value detected");
+                throw new NoSuchElementException();
             }
-            SCEvent outEvent = new SCEvent(bid, templateEvent.getMyPid(), templateEvent.getMyBidArray(), templateEvent.getMyPartitionIndex(),
+            SCEvent outEvent = new SCEvent(outBid, templateEvent.getMyPid(), templateEvent.getMyBidArray(), templateEvent.getMyPartitionIndex(),
                     templateEvent.getMyNumberOfPartitions(), tweetID, isBurst);
-            TC_GATE_REQUEST_POST(bid, outEvent);
-            bid++;
+            TC_GATE_REQUEST_POST(outBid, outEvent);
+
+            outBid++;
         }
 
     }
@@ -178,11 +178,12 @@ public class TCGBolt_ts extends TCGBolt {
 
                 if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
                     TCEvent event = (TCEvent) outWindowTuple.getValue(0);
-                    SCEvent outEvent = new SCEvent(event.getBid(), event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
+                    double delta = 0.1;
+                    double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
+                    SCEvent outEvent = new SCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
                             event.getMyNumberOfPartitions(), "Stop", false);
                     //TCG do not need to broadcast stop signals. There are sufficient stop signals for it to distribute to downstream.
-                    TC_GATE_REQUEST_POST(event.getBid(), outEvent);
-                    //TODO: Stop this thread?
+                    TC_GATE_REQUEST_POST(outBid, outEvent);
 
                 } else {
                     execute_ts_normal(outWindowTuple); //continue with normal-processing
@@ -191,7 +192,7 @@ public class TCGBolt_ts extends TCGBolt {
 
             tweetIDFloor += tweetWindowSize;
             windowBoundary += tweetWindowSize;
-            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 

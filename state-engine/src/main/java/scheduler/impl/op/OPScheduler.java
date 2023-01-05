@@ -19,6 +19,7 @@ import transaction.function.*;
 import utils.AppConfig;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.clusterTableSize;
@@ -277,6 +278,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     int trCounter = 0;
+    public static ConcurrentSkipListSet<Integer> updatedTweets = new ConcurrentSkipListSet<>();
     // ED: Tweet Registrant - Asy_ModifyRecord
     protected void TweetRegistrant_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -302,6 +304,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         // Update tweet's wordList
         if (operation.function instanceof Insert) {
             tempo_record.getValues().get(1).setStringList(Arrays.asList(operation.function.stringArray)); //compute, update wordList
+
+            updatedTweets.add(Integer.parseInt(tweetRecord.GetPrimaryKey()));
+
         } else
             throw new UnsupportedOperationException();
 
@@ -433,7 +438,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     int scCounter = 0;
     // ED-SC: Similarity Calculator - Asy_ModifyRecord_Iteration_Read
     protected void SimilarityCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
-        HashMap<SchemaRecord, Double> similarities = new HashMap<>();
 
         // apply function
         AppConfig.randomDelay();
@@ -450,6 +454,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord);
+        HashMap<SchemaRecord, Double> similarities = new HashMap<>();
 
         // input tweet is burst
         if (operation.condition.boolArg1) { //TODO: Set to always true for testing
@@ -524,17 +529,24 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
 
-    int cuCounter = 0;
+    public static ConcurrentSkipListSet<String> missingTweets = new ConcurrentSkipListSet<>();
     // ED-CU: Cluster Updater - Asy_ModifyRecord
     protected void ClusterUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+
+        // apply function
+        AppConfig.randomDelay();
 
         SchemaRecord tweetRecord = operation.condition_records[0].content_.readPastValues((long) operation.bid);
 
         if (tweetRecord != null) {
             final List<String> tweetWordList = tweetRecord.getValues().get(1).getStringList();
 
-            // apply function
-            AppConfig.randomDelay();
+            if (tweetWordList.size() == 1) {
+                missingTweets.add(tweetRecord.GetPrimaryKey());
+                log.info("Tweet " + tweetRecord.GetPrimaryKey() + " has empty word list" + " with bid " + operation.bid);
+//                log.info("Missing tweets: " + missingTweets + " with bid " + operation.bid);
+//                log.info("OP TR updated tweet set: " + OPScheduler.updatedTweets);
+            }
 
             // read
             SchemaRecord clusterRecord = operation.s_record.content_.readPastValues((long) operation.bid);
@@ -542,9 +554,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             if (clusterRecord == null) {
                 log.info("CU: Cluster record not found");
                 throw new NoSuchElementException();
-            } else {
-                cuCounter++;
-//                log.info("CU valid record count: " + cuCounter);
             }
 
             List<String> clusterWordList = clusterRecord.getValues().get(1).getStringList();
@@ -561,7 +570,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            log.info("Merged tweet " + tweetWordList + " into cluster record: " + clusterRecord.GetPrimaryKey());
+//            log.info("Merged tweet " + tweetRecord.GetPrimaryKey() + tweetWordList + " into cluster record: " + clusterRecord.GetPrimaryKey());
 
             synchronized (operation.success) {
                 operation.success[0]++;
@@ -586,23 +595,23 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         SchemaRecord clusterRecord = operation.s_record.content_.readPastValues((long) operation.bid);
 
         if (clusterRecord == null) {
-            log.info("SC: Condition tweet record not found");
+            log.info("SC: Condition cluster record not found");
             throw new NoSuchElementException();
         } else {
             esCounter++;
-            log.info("SC valid record count: " + esCounter);
+//            log.info("SC valid record count: " + esCounter);
         }
 
         // cluster exits in clusterTable
-        int countNewTweet = clusterRecord.getValues().get(3).getInt();
-        int clusterSize = clusterRecord.getValues().get(4).getInt();
+        long countNewTweet = clusterRecord.getValues().get(2).getLong();
+        long clusterSize = clusterRecord.getValues().get(3).getLong();
         SchemaRecord tempo_record = new SchemaRecord(clusterRecord); //tempo record
 
         // compute cluster growth rate
         if (operation.function instanceof Division) {
             double growthRate = (double) countNewTweet / clusterSize;
-            tempo_record.getValues().get(5).setBool(growthRate > 0.5); //compute, update cluster.isEvent //TODO: Check growth rate threshold
-            tempo_record.getValues().get(3).setInt(0); //compute, reset cluster.countNewTweet to zero
+            tempo_record.getValues().get(4).setBool(growthRate > 0.5); //compute, update cluster.isEvent //TODO: Check growth rate threshold
+            tempo_record.getValues().get(2).setLong(0); //compute, reset cluster.countNewTweet to zero
 
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.

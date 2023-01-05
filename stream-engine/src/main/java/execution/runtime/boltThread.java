@@ -182,8 +182,6 @@ public class boltThread extends executorThread {
                 routing();
             }
 
-            LOG.info("Bolt thread finished routing");
-
         } catch (InterruptedException | BrokenBarrierException ignored) {
         } catch (DatabaseException e) {
             e.printStackTrace();

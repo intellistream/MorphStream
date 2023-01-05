@@ -20,7 +20,9 @@ public class SCBolt extends TransactionalBolt {
     SINKCombo sink;
     static AtomicInteger scPostCount = new AtomicInteger(0);
     static AtomicInteger scStopCount = new AtomicInteger(0);
-    static ConcurrentSkipListSet<String> scPostTweets = new ConcurrentSkipListSet<>();
+    static ConcurrentSkipListSet<Integer> scPostTweets = new ConcurrentSkipListSet<>();
+    static ConcurrentSkipListSet<Double> scPostEvents = new ConcurrentSkipListSet<>();
+
 
     public SCBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
@@ -42,16 +44,18 @@ public class SCBolt extends TransactionalBolt {
         if (outBid >= total_events) { //Label stopping signals
             targetClusterID = "Stop";
             if (scStopCount.incrementAndGet() == 16) {
-                LOG.info("All stop signals are detected");
+                LOG.info("All stop signals are detected, posted tweets: " + scPostTweets);
+                LOG.info("All stop signals are detected, posted events: " + scPostEvents);
             }
 //            LOG.info("Thread " + thread_Id + " is posting stop signal " + outBid);
-        } else {
-            scPostCount.incrementAndGet();
-            scPostTweets.add(tweetID);
         }
+        else {
+            scPostCount.incrementAndGet();
+            scPostTweets.add(Integer.parseInt(tweetID));
+        }
+        scPostEvents.add(outBid);
 
         if (targetClusterID == null) { //SC fail to find the most similar cluster
-            LOG.info("Null cluster ID for event " + event.getBid());
             throw new NullPointerException();
         }
 
@@ -59,13 +63,12 @@ public class SCBolt extends TransactionalBolt {
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
         Tuple tuple = new Tuple(outEvent.getMyBid(), 0, context, generalMsg);
 
-//        LOG.info("Posting event: " + outBid);
+//        LOG.info("Thread " + thread_Id + " is posting event: " + outBid);
 
         if (!enable_app_combo) {
             collector.emit(outBid, tuple);//emit CU Event tuple to CU Gate
         } else {
             if (enable_latency_measurement) {
-                //Pass the information to sink
                 sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
             }
         }

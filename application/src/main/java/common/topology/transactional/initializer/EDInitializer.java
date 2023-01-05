@@ -46,7 +46,6 @@ public class EDInitializer extends TableInitilizer {
     private final DataGeneratorConfig dataConfig;
     private final int partitionOffset;
     private final int NUM_ACCESS;
-    private final int Transaction_Length;
     static AtomicInteger tweetInsertCount = new AtomicInteger(0);
     static AtomicInteger wordInsertCount = new AtomicInteger(0);
     static AtomicInteger clusterInsertCount = new AtomicInteger(0);
@@ -57,7 +56,6 @@ public class EDInitializer extends TableInitilizer {
         this.dataRootPath = config.getString("rootFilePath");
         this.partitionOffset = numberOfStates / tthread;
         this.NUM_ACCESS = config.getInt("NUM_ACCESS");
-        this.Transaction_Length = config.getInt("Transaction_Length");
         this.numberOfStates = numberOfStates;
         // set up generator
         configure_store(theta, tthread, numberOfStates);
@@ -333,7 +331,7 @@ public class EDInitializer extends TableInitilizer {
         for (int key = tweet_left_bound; key < tweet_right_bound; key++) {//Initialize tweet table
             pid = get_pid(tweet_partition_interval, key);
             _key = String.valueOf(key);
-            insertTweetRecord(_key, new String[]{}, "0", pid, spinlock);
+            insertTweetRecord(_key, new String[]{"Empty"}, "0", pid, spinlock);
             tweetInsertCount.getAndIncrement();
         }
         if (enable_log) LOG.info("Thread " + thread_id + " inserted tweet record from row : " + tweet_left_bound + " to " + tweet_right_bound);
@@ -391,6 +389,16 @@ public class EDInitializer extends TableInitilizer {
         }
 
     }
+
+//    public int countTweetRecord() throws DatabaseException {
+//        int tweetRecordCount = 0;
+//        Iterator<String> tweetRecordIterator = db.getStorageManager().getTable("tweet_table").primaryKeyIterator();
+//        while (tweetRecordIterator.hasNext()) {
+//            tweetRecordIterator.next();
+//            tweetRecordCount++;
+//        }
+//        return tweetRecordCount;
+//    }
 
     private void insertTweetRecord(String tweetID, String[] wordList, String clusterID, int pid, SpinLock[] spinlock_) {
 
@@ -507,11 +515,11 @@ public class EDInitializer extends TableInitilizer {
 
     private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int countNewTweet, int clusterSize, boolean isEvent) {
         List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(clusterID, clusterID.length()));
-        values.add(new ListStringDataBox(wordList));
-        values.add(new LongDataBox(countNewTweet));
-        values.add(new LongDataBox(clusterSize));
-        values.add(new BoolDataBox(isEvent));
+        values.add(new StringDataBox(clusterID, clusterID.length())); // 0
+        values.add(new ListStringDataBox(wordList)); // 1
+        values.add(new LongDataBox(countNewTweet)); // 2
+        values.add(new LongDataBox(clusterSize)); // 3
+        values.add(new BoolDataBox(isEvent)); // 4
         return new SchemaRecord(values);
     }
 

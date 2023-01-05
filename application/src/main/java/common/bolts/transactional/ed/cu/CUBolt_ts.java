@@ -16,7 +16,10 @@ import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
 import static profiler.MeasureTools.*;
@@ -69,7 +72,11 @@ public class CUBolt_ts extends CUBolt {
         }
     }
 
+    public static ConcurrentSkipListSet<Integer> cuTweets = new ConcurrentSkipListSet<>();
+
     protected void CLUSTER_UPDATE_REQUEST_CONSTRUCT(CUEvent event, TxnContext txnContext) throws DatabaseException {
+
+        cuTweets.add(Integer.parseInt(event.getTweetID()));
 
         String[] tweetTable = new String[]{"tweet_table"}; //condition source table
         String[] tweetKey = new String[]{event.getTweetID()}; //condition source key - tweet to be merged into cluster
@@ -81,6 +88,7 @@ public class CUBolt_ts extends CUBolt {
         String clusterID = event.getClusterID();
         if (clusterID == null) {
             LOG.info("Null cluster ID detected");
+            throw new NoSuchElementException();
         }
 
         // Update cluster: merge input tweet into existing cluster, or initialize new cluster
@@ -107,8 +115,11 @@ public class CUBolt_ts extends CUBolt {
         }
     }
 
+//    public static AtomicInteger cuEventCount = new AtomicInteger(0);
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+//        cuEventCount.incrementAndGet();
 
         double bid = in.getBID();
         LOG.info("Thread " + this.thread_Id + " has event " + bid);
@@ -151,13 +162,16 @@ public class CUBolt_ts extends CUBolt {
                     CLUSTER_UPDATE_REQUEST_POST((CUEvent) outWindowTuple.getValue(0));
                     //TODO: Stop this thread?
 
+//                    LOG.info("CU unique tweet count: " + cuTweets);
+//                    LOG.info("OP TR updated tweet set: " + OPScheduler.updatedTweets);
+
                 } else { //otherwise, continue with normal-processing
                     execute_ts_normal(outWindowTuple);
                 }
             }
 
             windowBoundary += tweetWindowSize;
-            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 
