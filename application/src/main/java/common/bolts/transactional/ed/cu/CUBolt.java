@@ -53,7 +53,7 @@ public class CUBolt extends TransactionalBolt {
         cuPostEvents.add(outBid);
 
         ESEvent outEvent = new ESEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), updatedClusterID);
-        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
+        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
         Tuple tuple = new Tuple(outEvent.getMyBid(), 0, context, generalMsg);
 
 //        LOG.info("Posting event: " + outBid);

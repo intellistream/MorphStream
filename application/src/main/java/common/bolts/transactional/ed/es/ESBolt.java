@@ -52,7 +52,7 @@ public class ESBolt extends TransactionalBolt {
         }
         esPostEvents.add(outBid);
 
-        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
+        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, event.getTimestamp());
         Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
         if (!enable_app_combo) {

@@ -8,18 +8,21 @@ import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
+import utils.lib.ConcurrentHashMap;
+
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
 
 public abstract class TRBolt extends TransactionalBolt {
 
-    SINKCombo sink; //Default sink for measurement
+    SINKCombo sink;
 
     public TRBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
-        this.configPrefix = "ed_tr"; // TODO: Register this bolt in Config
+        this.configPrefix = "ed_tr";
     }
 
     @Override
@@ -38,7 +41,7 @@ public abstract class TRBolt extends TransactionalBolt {
             String wordID = String.valueOf(Math.abs(word.hashCode()) % 10007 % 30000);
             WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(),
                     word, wordID, tweetID);
-            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
 //            LOG.info("Posting event: " + event.getBid());
@@ -63,7 +66,7 @@ public abstract class TRBolt extends TransactionalBolt {
 
             WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(),
                     "Stop", "Stop", tweetID);
-            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
+            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
 //            LOG.info("Sending stop signal to downstream: " + outBid);

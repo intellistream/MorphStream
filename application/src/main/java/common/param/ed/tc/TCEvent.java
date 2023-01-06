@@ -9,6 +9,7 @@ import java.util.Arrays;
 
 public class TCEvent extends TxnEvent {
     private final String wordID;
+    private final String tweetID;
     private final int windowSize;
     private final int currWindow;
     public SchemaRecordRef word_record = new SchemaRecordRef();
@@ -21,7 +22,7 @@ public class TCEvent extends TxnEvent {
     private final int my_number_of_partitions;
 
     public TCEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions,
-                   String wordID) {
+                   String wordID, String tweetID) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.myBid = bid;
         this.myPid = pid;
@@ -29,6 +30,7 @@ public class TCEvent extends TxnEvent {
         this.my_partition_index = partition_index;
         this.my_number_of_partitions = number_of_partitions;
         this.wordID = wordID;
+        this.tweetID = tweetID;
         this.windowSize = wordWindowSize;
         this.currWindow = computeCurrWindow(bid);
     }
@@ -54,13 +56,14 @@ public class TCEvent extends TxnEvent {
     }
 
     public String getWordID() {return this.wordID;}
-
+    public String getTweetID() {
+        return this.tweetID;
+    }
     public int getWindowSize() {return this.windowSize;}
-
     public int getWindowCount() {return this.currWindow;}
 
     public TCEvent cloneEvent() {
         return new TCEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions,
-                wordID);
+                wordID, tweetID);
     }
 }

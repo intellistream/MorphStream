@@ -60,7 +60,7 @@ public class SCBolt extends TransactionalBolt {
         }
 
         CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), tweetID, targetClusterID);
-        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, System.nanoTime());
+        GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
         Tuple tuple = new Tuple(outEvent.getMyBid(), 0, context, generalMsg);
 
 //        LOG.info("Thread " + thread_Id + " is posting event: " + outBid);

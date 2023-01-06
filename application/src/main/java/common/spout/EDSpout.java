@@ -80,7 +80,6 @@ public class EDSpout extends TransactionalSpout {
             }
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
-//            LOG.info("ED Spout emitting event " + bid);
             this.collector.emit(bid, tuple);
             counter++;
         }
@@ -129,7 +128,7 @@ public class EDSpout extends TransactionalSpout {
         }
 
         sink.configPrefix = this.getConfigPrefix();
-        sink.prepare(config, context, collector); //TODO: Initialize sink elsewhere
+        sink.prepare(config, context, collector);
         _combo_bid_size = combo_bid_size;
 
         loadEvent();

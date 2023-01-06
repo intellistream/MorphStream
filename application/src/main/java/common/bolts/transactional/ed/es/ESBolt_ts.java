@@ -68,13 +68,13 @@ public class ESBolt_ts extends ESBolt{
         }
     }
 
-    protected void EVENT_SELECT_REQUEST_CONSTRUCT(ESEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void EVENT_SELECT_REQUEST_CONSTRUCT(ESEvent event, TxnContext txnContext) throws DatabaseException {
 
         String[] conditionSourceTable = new String[]{"cluster_table"}; //condition source table
         String[] conditionSourceKey = new String[]{event.getClusterID()}; //condition source key
         Division function = new Division();
 
-        LOG.info("Constructing ES request: " + event.getMyBid());
+//        LOG.info("Constructing ES request: " + event.getMyBid());
 
         transactionManager.BeginTransaction(txnContext);
 
