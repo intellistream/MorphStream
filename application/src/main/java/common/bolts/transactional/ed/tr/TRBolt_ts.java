@@ -52,7 +52,6 @@ public class TRBolt_ts extends TRBolt{
 
     @Override
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {
-//        prepareEvents();
         loadDB(transactionManager.getSchedulerContext(),
                 context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
         // Aqif: For TStream taskId increases by 1 and executorId is always 0.

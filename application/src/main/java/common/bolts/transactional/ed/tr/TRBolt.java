@@ -8,12 +8,18 @@ import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
+import storage.datatype.DataBox;
+import transaction.context.TxnContext;
+import utils.AppConfig;
 import utils.lib.ConcurrentHashMap;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
+import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
 
 public abstract class TRBolt extends TransactionalBolt {
 
@@ -27,6 +33,27 @@ public abstract class TRBolt extends TransactionalBolt {
 
     @Override
     protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+    }
+
+    //Used in: nocc
+    protected void TWEET_REGISTRANT_REQUEST(TREvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+        transactionManager.SelectKeyRecord(txnContext, "tweet_table", event.getTweetID(), event.tweetRecordRef, READ_WRITE);
+        assert event.tweetRecordRef.getRecord() != null;
+    }
+
+    //Used in: nocc
+    protected void TWEET_REGISTRANT_REQUEST_CORE(TREvent event) throws InterruptedException {
+
+//        BEGIN_ACCESS_TIME_MEASURE(thread_Id); //TODO: Do we need this measure?
+
+        AppConfig.randomDelay();
+
+        List<DataBox> tweetValues = event.tweetRecordRef.getRecord().getValues();
+        tweetValues.get(1).setStringList(Arrays.asList(event.getWords()));
+        collector.force_emit(event.getBid(), null, event.getTimestamp()); //TODO: Check this emit method
+
+//        END_ACCESS_TIME_MEASURE_ACC(thread_Id); //TODO: Do we need this measure?
+
     }
 
     protected void TWEET_REGISTRANT_REQUEST_POST(TREvent event) throws InterruptedException {

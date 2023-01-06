@@ -23,8 +23,6 @@ import org.slf4j.LoggerFactory;
 import topology.TransactionTopology;
 import transaction.TableInitilizer;
 
-import static common.constants.EventDetectionConstants.Conf.Executor_Threads;
-import static common.constants.EventDetectionConstants.PREFIX;
 import static content.Content.*;
 import static utils.PartitionHelper.setPartition_interval;
 
@@ -71,55 +69,73 @@ public class EventDetection extends TransactionTopology {
 
             switch (config.getInt("CCOption", 0)) {
                 case CCOption_LOCK: {//no-order
-                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_nocc(0)//Tweet Registrant
+                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_nocc(1)//Tweet Registrant
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.SPOUT));
-                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_nocc(0)//Word Updater
+                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_nocc(2)//Word Updater
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TR));
-                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_nocc(0)//Trend Calculator
+                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_nocc(3)//Trend Calculator
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.WU));
-                    builder.setBolt(EventDetectionConstants.Component.CU, new SCBolt_nocc(0)//Cluster Updater
+                    builder.setBolt(EventDetectionConstants.Component.TCG, new TCGBolt_nocc(4)//Trend Calculator Gate
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TC));
-                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_nocc(0)//Event Selector
+                    builder.setBolt(EventDetectionConstants.Component.SC, new SCBolt_nocc(5)//Trend Calculator Gate
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.TCG));
+                    builder.setBolt(EventDetectionConstants.Component.CU, new CUBolt_nocc(6)//Cluster Updater
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.SC));
+                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_nocc(7)//Event Selector
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.CU));
                     break;
                 }
                 case CCOption_OrderLOCK: {//LOB
-                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_olb(0)//
+                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_olb(1)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.SPOUT));
-                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_olb(0)//
+                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_olb(2)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TR));
-                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_olb(0)//
+                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_olb(3)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.WU));
-                    builder.setBolt(EventDetectionConstants.Component.CU, new SCBolt_olb(0)//
+                    builder.setBolt(EventDetectionConstants.Component.TCG, new TCGBolt_olb(4)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TC));
-                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_olb(0)//
+                    builder.setBolt(EventDetectionConstants.Component.SC, new SCBolt_olb(5)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.TCG));
+                    builder.setBolt(EventDetectionConstants.Component.CU, new CUBolt_olb(6)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.SC));
+                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_olb(7)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.CU));
                     break;
                 }
                 case CCOption_LWM: {//LWM
-                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_lwm(0)//
+                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_lwm(1)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.SPOUT));
-                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_lwm(0)//
+                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_lwm(2)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TR));
-                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_lwm(0)//
+                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_lwm(3)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.WU));
-                    builder.setBolt(EventDetectionConstants.Component.CU, new SCBolt_lwm(0)//
+                    builder.setBolt(EventDetectionConstants.Component.TCG, new TCGBolt_lwm(4)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TC));
-                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_lwm(0)//
+                    builder.setBolt(EventDetectionConstants.Component.SC, new SCBolt_lwm(5)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.TCG));
+                    builder.setBolt(EventDetectionConstants.Component.CU, new CUBolt_lwm(6)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.SC));
+                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_lwm(7)//
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.CU));
                     break;
@@ -149,20 +165,26 @@ public class EventDetection extends TransactionTopology {
                     break;
                 }
                 case CCOption_SStore: {//SStore
-                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_sstore(0)//
-                            , config.getInt(Executor_Threads, 2)
+                    builder.setBolt(EventDetectionConstants.Component.TR, new TRBolt_sstore(1)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.SPOUT));
-                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_sstore(0)//
-                            , config.getInt(Executor_Threads, 2)
+                    builder.setBolt(EventDetectionConstants.Component.WU, new WUBolt_sstore(2)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TR));
-                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_sstore(0)//
-                            , config.getInt(Executor_Threads, 2)
+                    builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_sstore(3)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.WU));
-                    builder.setBolt(EventDetectionConstants.Component.CU, new SCBolt_sstore(0)//
-                            , config.getInt(Executor_Threads, 2)
+                    builder.setBolt(EventDetectionConstants.Component.TCG, new TCGBolt_sstore(4)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.TC));
-                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_sstore(0)//
-                            , config.getInt(Executor_Threads, 2)
+                    builder.setBolt(EventDetectionConstants.Component.SC, new SCBolt_sstore(5)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.TCG));
+                    builder.setBolt(EventDetectionConstants.Component.CU, new CUBolt_sstore(6)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+                            , new ShuffleGrouping(EventDetectionConstants.Component.SC));
+                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_sstore(7)//
+                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.CU));
                     break;
                 }
@@ -185,6 +207,6 @@ public class EventDetection extends TransactionTopology {
 
     @Override
     public String getConfigPrefix() {
-        return PREFIX;
+        return common.constants.EventDetectionConstants.PREFIX;
     }
 }

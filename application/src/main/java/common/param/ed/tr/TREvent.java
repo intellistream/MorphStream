@@ -1,6 +1,7 @@
 package common.param.ed.tr;
 
 import common.param.TxnEvent;
+import storage.SchemaRecordRef;
 
 import java.util.Arrays;
 
@@ -8,6 +9,7 @@ public class TREvent extends TxnEvent {
 
     private final String tweetID;
     private final String[] words;
+    public volatile SchemaRecordRef tweetRecordRef = new SchemaRecordRef();
     private final double myBid;
     private final int myPid;
     private final String my_bid_array;

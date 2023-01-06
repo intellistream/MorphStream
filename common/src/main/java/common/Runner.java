@@ -65,9 +65,11 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
+//    public int CCOption = CCOption_LOCK;
+//    public int CCOption = CCOption_OrderLOCK;
+//    public int CCOption = CCOption_LWM;
+//    public int CCOption = CCOption_SStore;
     public int CCOption = CCOption_MorphStream;
-    //    public int CCOption = CCOption_SStore;
-    //    public int CCOption = CCOption_LOCK;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
