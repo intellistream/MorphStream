@@ -90,7 +90,7 @@ public class TCBolt_ts extends TCBolt{
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 "word_table", // source_table
                 event.getWordID(),  // source_key
-                event.word_record, // record to be filled up from READ
+                event.wordRecordRef, // record to be filled up from READ
                 tfIdf, // append new tweetID to word's tweetList
                 wordTable, wordID, //condition_source_table, condition_source_key
                 condition,
@@ -107,7 +107,7 @@ public class TCBolt_ts extends TCBolt{
 
     private void TREND_CALCULATE_REQUEST_CORE() {
         for (TCEvent event : tcEvents) {
-            SchemaRecordRef ref = event.word_record;
+            SchemaRecordRef ref = event.wordRecordRef;
             if (ref.isEmpty()) {
                 LOG.info("Thead " + thread_Id + " reads empty word record");
                 throw new NullPointerException();

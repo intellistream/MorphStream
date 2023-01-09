@@ -8,6 +8,7 @@ import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
+import transaction.context.TxnContext;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,6 +34,16 @@ public class SCBolt extends TransactionalBolt {
     @Override
     protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
+
+    //Used in: nocc
+    protected void SIMILARITY_CALCULATE_REQUEST(SCEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+//        transactionManager.SelectKeyRecord(txnContext, "word_table", event.getWordID(), event.wordRecordRef, READ_WRITE);
+//        assert event.wordRecordRef.getRecord() != null;
+    }
+
+    //TODO: Create a shared array that stores a copy of all cluster records to be iterated.
+    // This cluster record array should be updated upon the arrival of the first event in each new window.
+    // In this way, the cluster records only need to be read once from table.
 
     protected void SIMILARITY_CALCULATE_REQUEST_POST(SCEvent event) throws InterruptedException {
 

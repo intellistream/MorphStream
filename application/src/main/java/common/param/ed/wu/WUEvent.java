@@ -1,7 +1,8 @@
 package common.param.ed.wu;
 
 import common.param.TxnEvent;
-import static common.CONTROL.wordWindowSize;
+import storage.SchemaRecordRef;
+
 import static common.CONTROL.tweetWindowSize;
 
 import java.util.Arrays;
@@ -10,6 +11,7 @@ public class WUEvent extends TxnEvent {
     private final String word;
     private final String wordID;
     private final String tweetID;
+    public volatile SchemaRecordRef wordRecordRef = new SchemaRecordRef();
     private final int currWindow;
     private final double myBid;
     private final int myPid;

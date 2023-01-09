@@ -278,7 +278,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     int trCounter = 0;
-    public static ConcurrentSkipListSet<Integer> updatedTweets = new ConcurrentSkipListSet<>();
+    public static ConcurrentSkipListSet<Integer> updatedTweets = new ConcurrentSkipListSet<>(); //remove after testing
     // ED: Tweet Registrant - Asy_ModifyRecord
     protected void TweetRegistrant_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -304,7 +304,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         // Update tweet's wordList
         if (operation.function instanceof Insert) {
             tempo_record.getValues().get(1).setStringList(Arrays.asList(operation.function.stringArray)); //compute, update wordList
-
             updatedTweets.add(Integer.parseInt(tweetRecord.GetPrimaryKey()));
 
         } else
@@ -349,19 +348,18 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
             // Update word's tweetList
             if (operation.function instanceof Append) {
-                tempo_record.getValues().get(2).addItem(operation.function.item); //compute, append new tweetID into word's tweetList
+                tempo_record.getValues().get(2).addItem(operation.function.item); //append new tweetID into word's tweetList
             } else
                 throw new UnsupportedOperationException();
 
             // Update word's window info
             if (oldLastOccurWindow < operation.condition.arg1) { //oldLastOccurWindow less than currentWindow
 //                log.info("WU updates word window info from " + oldLastOccurWindow + " to " + (int) operation.condition.arg1);
-                tempo_record.getValues().get(3).incLong(oldCountOccurWindow, 1); //compute, countOccurWindow += 1
-                tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //compute, update lastOccurWindow to currentWindow
+                tempo_record.getValues().get(3).incLong(oldCountOccurWindow, 1); //countOccurWindow += 1
+                tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //update lastOccurWindow to currentWindow
             }
-
             // Update word's inner-window frequency
-            tempo_record.getValues().get(6).incLong(oldFrequency, 1); //compute, frequency += 1
+            tempo_record.getValues().get(6).incLong(oldFrequency, 1); //frequency += 1
 //            log.info("WU updates " + operation.condition.stringArg1 + " frequency by 1 from " + oldFrequency);
 
         } else { // word record is empty
@@ -369,10 +367,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             tempo_record.getValues().get(1).setString(operation.condition.stringArg1); //wordValue
             tempo_record.getValues().get(2).setStringList(Arrays.asList(tweetList)); //tweetList
             tempo_record.getValues().get(3).setLong(1); //countOccurWindow
-            tempo_record.getValues().get(4).setDouble(0); //TF-IDF
             tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //lastOccurWindow
             tempo_record.getValues().get(6).setLong(1); //frequency
-            tempo_record.getValues().get(7).setBool(false); //isBurst
 //            log.info("WU initiate new word " + operation.condition.stringArg1);
         }
 
@@ -403,7 +399,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //            log.info("TC valid record count: " + tcCounter);
         }
         if (tcCounter >= 600) {
-            log.info("TC has found all valid records: " + tcCounter);
+            log.info("TC has found all valid records: " + tcCounter); //remove after testing
         }
 
         final long oldCountOccurWindow = wordRecord.getValues().get(3).getLong();
@@ -413,8 +409,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         // Compute word's tf-idf
         if (operation.function instanceof TFIDF) {
-            int windowSize = (int) operation.condition.arg1; //window count
-            int windowCount = (int) operation.condition.arg2; //window size
+            int windowSize = (int) operation.condition.arg1;
+            int windowCount = (int) operation.condition.arg2;
             double tf = (double) oldFrequency / windowSize;
             double idf = -1 * (Math.log((double) oldCountOccurWindow / windowCount));
             double newTfIdf = tf * idf;

@@ -39,7 +39,6 @@ import static transaction.State.configure_store;
 
 public class EDInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(EDInitializer.class);
-
     private final int numberOfStates;
     private String dataRootPath;
     private DataGenerator dataGenerator;
@@ -260,7 +259,7 @@ public class EDInitializer extends TableInitilizer {
     }
 
 
-    //TODO: This initialize table with some default records.
+    //TODO: Remove this duplicated loadDB method
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUM_TASK) {
         int partition_interval = (int) Math.ceil(numberOfStates / (double) NUM_TASK);
@@ -300,6 +299,7 @@ public class EDInitializer extends TableInitilizer {
      * @param spinlock
      * @param NUM_TASK
      */
+    //Used in Morphstream
     @Override
     public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUM_TASK) throws DatabaseException {
         int tweet_partition_interval = (int) Math.ceil(config.getInt("NUM_ITEMS") / (double) NUM_TASK);
@@ -356,49 +356,34 @@ public class EDInitializer extends TableInitilizer {
 
 
         if (tweetInsertCount.get() == config.getInt("NUM_ITEMS")) {// Check if all tweets have been inserted into table
-            int tweetRecordCounter = 0;
-            LOG.info("Expect " + tweetInsertCount.get() + " tweet records to be inserted");
-            Iterator<String> tweetRecordIterator = db.getStorageManager().getTable("tweet_table").primaryKeyIterator();
-            while (tweetRecordIterator.hasNext()) {
-                tweetRecordIterator.next();
-                tweetRecordCounter++;
+            if (verifyRecordInsertion("tweet_table", tweetInsertCount.get())) {
+                LOG.info("All tweet records have been successfully inserted");
             }
-            if (enable_log) LOG.info("There are " + tweetRecordCounter + " tweet records in the table");
         }
 
         if (wordInsertCount.get() == config.getInt("NUM_ITEMS") * tweetWordCount) {// Check if all words have been inserted into table
-            int wordRecordCounter = 0;
-            LOG.info("Expect " + wordInsertCount.get() + " word records to be inserted");
-            Iterator<String> wordRecordIterator = db.getStorageManager().getTable("word_table").primaryKeyIterator();
-            while (wordRecordIterator.hasNext()) {
-                wordRecordIterator.next();
-                wordRecordCounter++;
+            if (verifyRecordInsertion("word_table", wordInsertCount.get())) {
+                LOG.info("All word records have been successfully inserted");
             }
-            if (enable_log) LOG.info("There are " + wordRecordCounter + " word records in the table");
         }
 
         if (clusterInsertCount.get() == clusterTableSize) {// Check if all clusters have been inserted into table
-            int clusterRecordCounter = 0;
-            LOG.info("Expect " + clusterInsertCount.get() + " cluster records to be inserted");
-            Iterator<String> clusterRecordIterator = db.getStorageManager().getTable("cluster_table").primaryKeyIterator();
-            while (clusterRecordIterator.hasNext()) {
-                clusterRecordIterator.next();
-                clusterRecordCounter++;
+            if (verifyRecordInsertion("cluster_table", clusterInsertCount.get())) {
+                LOG.info("All cluster records have been successfully inserted");
             }
-            if (enable_log) LOG.info("There are " + clusterRecordCounter + " cluster records in the table");
         }
 
     }
 
-//    public int countTweetRecord() throws DatabaseException {
-//        int tweetRecordCount = 0;
-//        Iterator<String> tweetRecordIterator = db.getStorageManager().getTable("tweet_table").primaryKeyIterator();
-//        while (tweetRecordIterator.hasNext()) {
-//            tweetRecordIterator.next();
-//            tweetRecordCount++;
-//        }
-//        return tweetRecordCount;
-//    }
+    private boolean verifyRecordInsertion(String tableName, int expectedRecordCount) throws DatabaseException {
+        Iterator<String> tableIterator = db.getStorageManager().getTable(tableName).primaryKeyIterator();
+        int recordCount = 0;
+        while (tableIterator.hasNext()) {
+            tableIterator.next();
+            recordCount++;
+        }
+        return recordCount == expectedRecordCount;
+    }
 
     private void insertTweetRecord(String tweetID, String[] wordList, String clusterID, int pid, SpinLock[] spinlock_) {
 

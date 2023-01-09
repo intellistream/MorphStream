@@ -12,7 +12,7 @@ public class TCEvent extends TxnEvent {
     private final String tweetID;
     private final int windowSize;
     private final int currWindow;
-    public SchemaRecordRef word_record = new SchemaRecordRef();
+    public volatile SchemaRecordRef wordRecordRef = new SchemaRecordRef();
     public String[] tweetIDList;
     public boolean isBurst;
     private final double myBid;

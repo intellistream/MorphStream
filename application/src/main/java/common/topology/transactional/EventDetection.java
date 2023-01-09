@@ -33,10 +33,10 @@ public class EventDetection extends TransactionTopology {
         super(topologyName, config);
     }
 
-    public void initialize() {
-        super.initialize();
-        sink = loadSink();
-    }
+//    public void initialize() {
+//        super.initialize();
+//        sink = loadSink();
+//    }
 
     /**
      * Load Data Later by Executors.
@@ -78,18 +78,18 @@ public class EventDetection extends TransactionTopology {
                     builder.setBolt(EventDetectionConstants.Component.TC, new TCBolt_nocc(3)//Trend Calculator
                             , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
                             , new ShuffleGrouping(EventDetectionConstants.Component.WU));
-                    builder.setBolt(EventDetectionConstants.Component.TCG, new TCGBolt_nocc(4)//Trend Calculator Gate
-                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
-                            , new ShuffleGrouping(EventDetectionConstants.Component.TC));
-                    builder.setBolt(EventDetectionConstants.Component.SC, new SCBolt_nocc(5)//Trend Calculator Gate
-                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
-                            , new ShuffleGrouping(EventDetectionConstants.Component.TCG));
-                    builder.setBolt(EventDetectionConstants.Component.CU, new CUBolt_nocc(6)//Cluster Updater
-                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
-                            , new ShuffleGrouping(EventDetectionConstants.Component.SC));
-                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_nocc(7)//Event Selector
-                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
-                            , new ShuffleGrouping(EventDetectionConstants.Component.CU));
+//                    builder.setBolt(EventDetectionConstants.Component.TCG, new TCGBolt_nocc(4)//Trend Calculator Gate
+//                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+//                            , new ShuffleGrouping(EventDetectionConstants.Component.TC));
+//                    builder.setBolt(EventDetectionConstants.Component.SC, new SCBolt_nocc(5)//Trend Calculator Gate
+//                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+//                            , new ShuffleGrouping(EventDetectionConstants.Component.TCG));
+//                    builder.setBolt(EventDetectionConstants.Component.CU, new CUBolt_nocc(6)//Cluster Updater
+//                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+//                            , new ShuffleGrouping(EventDetectionConstants.Component.SC));
+//                    builder.setBolt(EventDetectionConstants.Component.ES, new ESBolt_nocc(7)//Event Selector
+//                            , config.getInt(EventDetectionConstants.Conf.Executor_Threads, 2)
+//                            , new ShuffleGrouping(EventDetectionConstants.Component.CU));
                     break;
                 }
                 case CCOption_OrderLOCK: {//LOB
@@ -190,7 +190,7 @@ public class EventDetection extends TransactionTopology {
                 }
             }
             builder.setSink(EventDetectionConstants.Component.SINK, sink, sinkThreads
-                    , new ShuffleGrouping(EventDetectionConstants.Component.ES)
+                    , new ShuffleGrouping(EventDetectionConstants.Component.TC)
             );
 
         } catch (InvalidIDException e) {

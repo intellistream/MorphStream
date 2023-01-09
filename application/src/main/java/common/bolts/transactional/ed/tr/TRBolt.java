@@ -15,11 +15,15 @@ import utils.lib.ConcurrentHashMap;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public abstract class TRBolt extends TransactionalBolt {
 
@@ -45,17 +49,31 @@ public abstract class TRBolt extends TransactionalBolt {
     protected void TWEET_REGISTRANT_REQUEST_CORE(TREvent event) throws InterruptedException {
 
 //        BEGIN_ACCESS_TIME_MEASURE(thread_Id); //TODO: Do we need this measure?
-
         AppConfig.randomDelay();
 
         List<DataBox> tweetValues = event.tweetRecordRef.getRecord().getValues();
+        if (tweetValues == null) {
+            LOG.info("Tweet record not found");
+            throw new NoSuchElementException();
+        }
         tweetValues.get(1).setStringList(Arrays.asList(event.getWords()));
-        collector.force_emit(event.getBid(), null, event.getTimestamp()); //TODO: Check this emit method
 
 //        END_ACCESS_TIME_MEASURE_ACC(thread_Id); //TODO: Do we need this measure?
-
     }
 
+    //post stream processing phase.. nocc,
+    protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
+        BEGIN_POST_TIME_MEASURE(thread_Id);
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
+            ((TREvent) input_event).setTimestamp(timestamp);
+            TWEET_REGISTRANT_REQUEST_POST((TREvent) input_event);
+        }
+        END_POST_TIME_MEASURE(thread_Id);
+    }
+
+    static AtomicInteger threadPostCount = new AtomicInteger(0);
+
+    //Used in all algorithms
     protected void TWEET_REGISTRANT_REQUEST_POST(TREvent event) throws InterruptedException {
 
         String tweetID = event.getTweetID();
@@ -71,10 +89,11 @@ public abstract class TRBolt extends TransactionalBolt {
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-//            LOG.info("Posting event: " + event.getBid());
+//            LOG.info("Thread " + thread_Id + " posting event: " + event.getBid());
 
             if (!enable_app_combo) {
                 collector.emit(outBid, tuple);
+                LOG.info("Threads " + thread_Id + " posted event count: " + threadPostCount.incrementAndGet());
             } else {
                 if (enable_latency_measurement) {
                     sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
@@ -83,6 +102,7 @@ public abstract class TRBolt extends TransactionalBolt {
         }
     }
 
+    //This is only used for MorphStream/TStream for punctuation control
     protected void EMIT_STOP_SIGNAL(TREvent event) throws InterruptedException {
 
         String tweetID = event.getTweetID();

@@ -64,7 +64,6 @@ public class TCGBolt_ts extends TCGBolt {
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
     protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
-
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (double i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
@@ -116,7 +115,7 @@ public class TCGBolt_ts extends TCGBolt {
             Boolean isBurst = tweetBurstMap.get(tweetID);
 
             tweetEventMap.remove(tweetID);
-            tweetBurstMap.remove(tweetID); //TODO: Improve this
+            tweetBurstMap.remove(tweetID); //TODO: Improve this to make it faster
 
             if (isBurst == null || event == null) {
                 throw new NoSuchElementException();

@@ -15,9 +15,8 @@ import transaction.impl.TxnManagerNoLock;
 import java.util.Map;
 
 import static common.CONTROL.combo_bid_size;
-import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
 
-public class TRBolt_nocc extends TRBolt{
+public class TRBolt_nocc extends TRBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TRBolt_nocc.class);
     private static final long serialVersionUID = -5968750340131744744L;
 
@@ -35,8 +34,8 @@ public class TRBolt_nocc extends TRBolt{
     }
 
     @Override
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) throws DatabaseException {
+        loadDB(null, context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
     }
 
     @Override
@@ -52,7 +51,9 @@ public class TRBolt_nocc extends TRBolt{
     }
 
     private void TR_TXN_PROCESS(TREvent input_event, double i, double _bid) throws DatabaseException, InterruptedException {
-        TWEET_REGISTRANT_REQUEST(input_event, txn_context[(int) (i - _bid)]);
+        TxnContext txnContext = new TxnContext(thread_Id, this.fid, i); //TODO: Improve this, avoid initializing new txnContext everytime by making it as shared var
+//        TWEET_REGISTRANT_REQUEST(input_event, txn_context[(int) (i - _bid)]);
+        TWEET_REGISTRANT_REQUEST(input_event, txnContext);
         TWEET_REGISTRANT_REQUEST_CORE(input_event);
     }
 

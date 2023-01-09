@@ -81,7 +81,6 @@ public class SCBolt_ts extends SCBolt {
 //        Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
         Condition condition1 = new Condition(event.getCurrWindow(), true); //TODO: Set to always true for testing
 
-//        LOG.info("Constructing CU request: " + event.getMyBid());
         transactionManager.BeginTransaction(txnContext);
 
         transactionManager.Asy_ModifyRecord_Iteration_Read(txnContext,
