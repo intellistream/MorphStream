@@ -23,6 +23,7 @@ import transaction.impl.ordered.MyList;
 import utils.AppConfig;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import static common.CONTROL.clusterTableSize;
 import static common.CONTROL.tweetWindowSize;
@@ -181,6 +182,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
     int trCounter = 0;
+    public static ConcurrentSkipListSet<Integer> updatedTweets = new ConcurrentSkipListSet<>(); //remove after testing
     // ED: Tweet Registrant - Asy_ModifyRecord
     protected void TweetRegistrant_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -193,19 +195,18 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             log.info("TR: Empty tweet record not found");
             throw new NoSuchElementException();
         }
-        else {
-            trCounter++;
-//            log.info("TR valid record count: " + trCounter);
-        }
-        if (trCounter >= 200) {
-            log.info("TR has found all valid records: " + trCounter);
-        }
+//        else {
+//            trCounter++;
+////            log.info("TR valid record count: " + trCounter);
+//        }
 
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
 
         // Update tweet's wordList
         if (operation.function instanceof Insert) {
             tempo_record.getValues().get(1).setStringList(Arrays.asList(operation.function.stringArray)); //compute, update wordList
+            updatedTweets.add(Integer.parseInt(tweetRecord.GetPrimaryKey()));
+
         } else
             throw new UnsupportedOperationException();
 
@@ -247,19 +248,18 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
             // Update word's tweetList
             if (operation.function instanceof Append) {
-                tempo_record.getValues().get(2).addItem(operation.function.item); //compute, append new tweetID into word's tweetList
+                tempo_record.getValues().get(2).addItem(operation.function.item); //append new tweetID into word's tweetList
             } else
                 throw new UnsupportedOperationException();
 
             // Update word's window info
             if (oldLastOccurWindow < operation.condition.arg1) { //oldLastOccurWindow less than currentWindow
 //                log.info("WU updates word window info from " + oldLastOccurWindow + " to " + (int) operation.condition.arg1);
-                tempo_record.getValues().get(3).incLong(oldCountOccurWindow, 1); //compute, countOccurWindow += 1
-                tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //compute, update lastOccurWindow to currentWindow
+                tempo_record.getValues().get(3).incLong(oldCountOccurWindow, 1); //countOccurWindow += 1
+                tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //update lastOccurWindow to currentWindow
             }
-
             // Update word's inner-window frequency
-            tempo_record.getValues().get(6).incLong(oldFrequency, 1); //compute, frequency += 1
+            tempo_record.getValues().get(6).incLong(oldFrequency, 1); //frequency += 1
 //            log.info("WU updates " + operation.condition.stringArg1 + " frequency by 1 from " + oldFrequency);
 
         } else { // word record is empty
@@ -267,10 +267,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             tempo_record.getValues().get(1).setString(operation.condition.stringArg1); //wordValue
             tempo_record.getValues().get(2).setStringList(Arrays.asList(tweetList)); //tweetList
             tempo_record.getValues().get(3).setLong(1); //countOccurWindow
-            tempo_record.getValues().get(4).setDouble(0); //TF-IDF
             tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //lastOccurWindow
             tempo_record.getValues().get(6).setLong(1); //frequency
-            tempo_record.getValues().get(7).setBool(false); //isBurst
 //            log.info("WU initiate new word " + operation.condition.stringArg1);
         }
 
@@ -301,7 +299,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 //            log.info("TC valid record count: " + tcCounter);
         }
         if (tcCounter >= 600) {
-            log.info("TC has found all valid records: " + tcCounter);
+            log.info("TC has found all valid records: " + tcCounter); //remove after testing
         }
 
         final long oldCountOccurWindow = wordRecord.getValues().get(3).getLong();
@@ -311,8 +309,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
         // Compute word's tf-idf
         if (operation.function instanceof TFIDF) {
-            int windowSize = (int) operation.condition.arg1; //window count
-            int windowCount = (int) operation.condition.arg2; //window size
+            int windowSize = (int) operation.condition.arg1;
+            int windowCount = (int) operation.condition.arg2;
             double tf = (double) oldFrequency / windowSize;
             double idf = -1 * (Math.log((double) oldCountOccurWindow / windowCount));
             double newTfIdf = tf * idf;
@@ -328,15 +326,14 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 operation.success[0]++;
             }
 
-        } else
-            throw new UnsupportedOperationException();
+        } else throw new UnsupportedOperationException();
+
     }
 
 
     int scCounter = 0;
     // ED-SC: Similarity Calculator - Asy_ModifyRecord_Iteration_Read
     protected void SimilarityCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
-        HashMap<SchemaRecord, Double> similarities = new HashMap<>();
 
         // apply function
         AppConfig.randomDelay();
@@ -353,6 +350,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         }
 
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord);
+        HashMap<SchemaRecord, Double> similarities = new HashMap<>();
 
         // input tweet is burst
         if (operation.condition.boolArg1) { //TODO: Set to always true for testing
@@ -427,17 +425,24 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
 
-    int cuCounter = 0;
+    public static ConcurrentSkipListSet<String> missingTweets = new ConcurrentSkipListSet<>();
     // ED-CU: Cluster Updater - Asy_ModifyRecord
     protected void ClusterUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+
+        // apply function
+        AppConfig.randomDelay();
 
         SchemaRecord tweetRecord = operation.condition_records[0].content_.readPastValues((long) operation.bid);
 
         if (tweetRecord != null) {
             final List<String> tweetWordList = tweetRecord.getValues().get(1).getStringList();
 
-            // apply function
-            AppConfig.randomDelay();
+            if (tweetWordList.size() == 1) {
+                missingTweets.add(tweetRecord.GetPrimaryKey());
+                log.info("Tweet " + tweetRecord.GetPrimaryKey() + " has empty word list" + " with bid " + operation.bid);
+//                log.info("Missing tweets: " + missingTweets + " with bid " + operation.bid);
+//                log.info("OP TR updated tweet set: " + OPScheduler.updatedTweets);
+            }
 
             // read
             SchemaRecord clusterRecord = operation.s_record.content_.readPastValues((long) operation.bid);
@@ -445,9 +450,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             if (clusterRecord == null) {
                 log.info("CU: Cluster record not found");
                 throw new NoSuchElementException();
-            } else {
-                cuCounter++;
-//                log.info("CU valid record count: " + cuCounter);
             }
 
             List<String> clusterWordList = clusterRecord.getValues().get(1).getStringList();
@@ -464,7 +466,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            log.info("Merged tweet " + tweetWordList + " into cluster record: " + clusterRecord.GetPrimaryKey());
+//            log.info("Merged tweet " + tweetRecord.GetPrimaryKey() + tweetWordList + " into cluster record: " + clusterRecord.GetPrimaryKey());
 
             synchronized (operation.success) {
                 operation.success[0]++;
@@ -489,23 +491,23 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         SchemaRecord clusterRecord = operation.s_record.content_.readPastValues((long) operation.bid);
 
         if (clusterRecord == null) {
-            log.info("SC: Condition tweet record not found");
+            log.info("SC: Condition cluster record not found");
             throw new NoSuchElementException();
         } else {
             esCounter++;
-            log.info("SC valid record count: " + esCounter);
+//            log.info("SC valid record count: " + esCounter);
         }
 
         // cluster exits in clusterTable
-        int countNewTweet = clusterRecord.getValues().get(3).getInt();
-        int clusterSize = clusterRecord.getValues().get(4).getInt();
+        long countNewTweet = clusterRecord.getValues().get(2).getLong();
+        long clusterSize = clusterRecord.getValues().get(3).getLong();
         SchemaRecord tempo_record = new SchemaRecord(clusterRecord); //tempo record
 
         // compute cluster growth rate
         if (operation.function instanceof Division) {
             double growthRate = (double) countNewTweet / clusterSize;
-            tempo_record.getValues().get(5).setBool(growthRate > 0.5); //compute, update cluster.isEvent //TODO: Check growth rate threshold
-            tempo_record.getValues().get(3).setInt(0); //compute, reset cluster.countNewTweet to zero
+            tempo_record.getValues().get(4).setBool(growthRate > 0.5); //compute, update cluster.isEvent //TODO: Check growth rate threshold
+            tempo_record.getValues().get(2).setLong(0); //compute, reset cluster.countNewTweet to zero
 
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.

@@ -291,13 +291,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             log.info("TR: Empty tweet record not found");
             throw new NoSuchElementException();
         }
-        else {
-            trCounter++;
-//            log.info("TR valid record count: " + trCounter);
-        }
-        if (trCounter >= 200) {
-            log.info("TR has found all valid records: " + trCounter);
-        }
+//        else {
+//            trCounter++;
+////            log.info("TR valid record count: " + trCounter);
+//        }
 
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
 

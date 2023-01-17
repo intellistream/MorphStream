@@ -48,7 +48,7 @@ public abstract class TRBolt extends TransactionalBolt {
     //Used in: nocc
     protected void TWEET_REGISTRANT_REQUEST_CORE(TREvent event) throws InterruptedException {
 
-//        BEGIN_ACCESS_TIME_MEASURE(thread_Id); //TODO: Do we need this measure?
+//        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         AppConfig.randomDelay();
 
         List<DataBox> tweetValues = event.tweetRecordRef.getRecord().getValues();
@@ -58,10 +58,10 @@ public abstract class TRBolt extends TransactionalBolt {
         }
         tweetValues.get(1).setStringList(Arrays.asList(event.getWords()));
 
-//        END_ACCESS_TIME_MEASURE_ACC(thread_Id); //TODO: Do we need this measure?
+//        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
-    //post stream processing phase.. nocc,
+    //post stream processing phase.. for nocc, olb, lwm and sstore
     protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (double i = _bid; i < _bid + combo_bid_size; i++) {
@@ -93,7 +93,7 @@ public abstract class TRBolt extends TransactionalBolt {
 
             if (!enable_app_combo) {
                 collector.emit(outBid, tuple);
-                LOG.info("Threads " + thread_Id + " posted event count: " + threadPostCount.incrementAndGet());
+//                LOG.info("Threads " + thread_Id + " posted event count: " + threadPostCount.incrementAndGet());
             } else {
                 if (enable_latency_measurement) {
                     sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
@@ -116,7 +116,7 @@ public abstract class TRBolt extends TransactionalBolt {
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 
-//            LOG.info("Sending stop signal to downstream: " + outBid);
+//            LOG.info("Thread " + thread_Id + " sending stop signal: " + outBid);
 
             if (!enable_app_combo) {
                 collector.emit(outBid, tuple);

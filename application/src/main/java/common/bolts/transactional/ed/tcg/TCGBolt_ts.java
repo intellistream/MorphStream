@@ -170,8 +170,12 @@ public class TCGBolt_ts extends TCGBolt {
 
                 if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
                     TC_GATE_REQUEST_POST((TCEvent) outWindowTuple.getValue(0), false);
-                } else {
-                    execute_ts_normal(outWindowTuple); //continue with normal-processing
+                    if (outWindowEvents.isEmpty()) { //stop itself when all stopping signals are posted
+                        this.context.stop_running();
+                    }
+
+                } else { //otherwise, continue with normal-processing
+                    execute_ts_normal(outWindowTuple);
                 }
             }
 

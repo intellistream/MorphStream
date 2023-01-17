@@ -149,7 +149,8 @@ public class TRBolt_ts extends TRBolt{
             // Upon receiving stopping signal, pass it to downstream
             if (bid >= total_events) {
                 EMIT_STOP_SIGNAL((TREvent) in.getValue(0));
-                //TODO: Stop this thread?
+                // Stop itself
+                this.context.stop_running();
             }
 
         }

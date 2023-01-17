@@ -160,7 +160,9 @@ public class CUBolt_ts extends CUBolt {
                 Tuple outWindowTuple = outWindowEvents.poll();
                 if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
                     CLUSTER_UPDATE_REQUEST_POST((CUEvent) outWindowTuple.getValue(0));
-                    //TODO: Stop this thread?
+                    if (outWindowEvents.isEmpty()) { //stop itself when all stopping signals are posted
+                        this.context.stop_running();
+                    }
 
 //                    LOG.info("CU unique tweet count: " + cuTweets);
 //                    LOG.info("OP TR updated tweet set: " + OPScheduler.updatedTweets);

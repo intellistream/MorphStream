@@ -37,11 +37,11 @@ public class SINKCombo extends MeasureSink {
         cnt++;
 
         //TODO: Properly define the_end
-//        int the_end = 216;
-        int the_end = 10000;
+        int the_end = 216;
+//        int the_end = 10000;
         if (cnt >= the_end) {
             LOG.info("Sink has received outputs: " + cnt);
-//            end(global_cnt);
+            end(global_cnt);
         }
 
     }

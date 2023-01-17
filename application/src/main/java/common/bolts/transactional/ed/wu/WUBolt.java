@@ -112,7 +112,7 @@ public class WUBolt extends TransactionalBolt {
 //            LOG.info("Thread " + thread_Id + " posting event: " + event.getBid());
 
             collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method
-            LOG.info("Threads " + thread_Id + " posted event count: " + threadPostCount.incrementAndGet());
+//            LOG.info("Threads " + thread_Id + " posted event count: " + threadPostCount.incrementAndGet());
 
         } else {
             if (enable_latency_measurement) {

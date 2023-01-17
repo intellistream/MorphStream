@@ -167,6 +167,9 @@ public class TCBolt_ts extends TCBolt{
                 Tuple outWindowTuple = outWindowEvents.poll();
                 if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
                     TREND_CALCULATE_REQUEST_POST((TCEvent) outWindowTuple.getValue(0));
+                    if (outWindowEvents.isEmpty()) { //stop itself when all stopping signals are posted
+                        this.context.stop_running();
+                    }
 
                 } else { //otherwise, continue with normal-processing
                     execute_ts_normal(outWindowTuple);

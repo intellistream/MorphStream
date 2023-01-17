@@ -168,6 +168,9 @@ public class SCBolt_ts extends SCBolt {
                 Tuple outWindowTuple = outWindowEvents.poll();
                 if (outWindowTuple.getBID() >= total_events) {//if the out-of-window events are stopping signals, directly pass to downstream
                     SIMILARITY_CALCULATE_REQUEST_POST((SCEvent) outWindowTuple.getValue(0));
+                    if (outWindowEvents.isEmpty()) { //stop itself when all stopping signals are posted
+                        this.context.stop_running();
+                    }
 
 //                    LOG.info("SC input tweet set: " + scTweetSet);
 
