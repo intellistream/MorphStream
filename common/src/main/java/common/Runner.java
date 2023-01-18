@@ -66,7 +66,6 @@ public abstract class Runner implements IRunner {
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
 //    public int CCOption = CCOption_LOCK;
-//    public int CCOption = CCOption_OrderLOCK;
 //    public int CCOption = CCOption_LWM;
 //    public int CCOption = CCOption_SStore;
     public int CCOption = CCOption_MorphStream;

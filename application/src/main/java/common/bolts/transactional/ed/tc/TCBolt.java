@@ -87,7 +87,7 @@ public class TCBolt extends TransactionalBolt {
         double outBid = Math.round(event.getMyBid() * 10.0) / 10.0;
 
         if (!enable_app_combo) {
-//            LOG.info("Thread " + thread_Id + " posting event: " + outBid);
+            LOG.info("Thread " + thread_Id + " posting event: " + outBid);
 
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, event.getTimestamp());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);

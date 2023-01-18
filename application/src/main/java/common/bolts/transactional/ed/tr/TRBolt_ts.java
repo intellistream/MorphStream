@@ -152,7 +152,6 @@ public class TRBolt_ts extends TRBolt{
                 // Stop itself
                 this.context.stop_running();
             }
-
         }
 
         execute_ts_normal(in);

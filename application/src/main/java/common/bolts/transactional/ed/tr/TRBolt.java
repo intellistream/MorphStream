@@ -61,7 +61,7 @@ public abstract class TRBolt extends TransactionalBolt {
 //        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
-    //post stream processing phase.. for nocc, olb, lwm and sstore
+    //post stream processing phase.. for nocc, lwm and sstore
     protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (double i = _bid; i < _bid + combo_bid_size; i++) {

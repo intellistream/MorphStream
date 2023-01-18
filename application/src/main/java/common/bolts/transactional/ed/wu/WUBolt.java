@@ -51,7 +51,7 @@ public class WUBolt extends TransactionalBolt {
 
         List<DataBox> wordValues = event.wordRecordRef.getRecord().getValues();
         if (wordValues == null) {
-            LOG.info("TC: Word record not found");
+            LOG.info("Word record not found");
             throw new NoSuchElementException();
         }
 

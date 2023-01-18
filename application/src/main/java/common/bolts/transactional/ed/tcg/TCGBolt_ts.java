@@ -130,7 +130,7 @@ public class TCGBolt_ts extends TCGBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         double bid = in.getBID();
-//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
         if (bid >= windowBoundary) {
 //            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
