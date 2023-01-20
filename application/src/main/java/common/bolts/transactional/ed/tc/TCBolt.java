@@ -7,6 +7,7 @@ import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
+import storage.SchemaRecordRef;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
 import utils.AppConfig;
@@ -70,6 +71,18 @@ public class TCBolt extends TransactionalBolt {
 //        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
+    //Handling the CORE method as in TCBolt_ts, pass updated record to event
+    protected void CORE_PROCESS() {
+        TCEvent event = (TCEvent) input_event;
+        SchemaRecordRef ref = event.wordRecordRef;
+        if (ref.isEmpty()) {
+            LOG.info("Thead " + thread_Id + " reads empty word record");
+            throw new NullPointerException();
+        }
+        event.tweetIDList = ref.getRecord().getValues().get(2).getStringList().toArray(new String[0]);
+        event.isBurst = ref.getRecord().getValues().get(7).getBool();
+    }
+
     //post stream processing phase.. nocc,
     protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
@@ -87,7 +100,7 @@ public class TCBolt extends TransactionalBolt {
         double outBid = Math.round(event.getMyBid() * 10.0) / 10.0;
 
         if (!enable_app_combo) {
-            LOG.info("Thread " + thread_Id + " posting event: " + outBid);
+//            LOG.info("Thread " + thread_Id + " posting event: " + outBid);
 
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, event.getTimestamp());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);

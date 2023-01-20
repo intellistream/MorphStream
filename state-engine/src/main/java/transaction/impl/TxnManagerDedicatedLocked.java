@@ -118,7 +118,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
 
     public boolean Asy_ModifyRecord_Iteration_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                                    Function function, String[] condition_sourceTable, String[] condition_source,
-                                                   Condition condition, int[] success, String operator_name) throws DatabaseException {
+                                                   Condition condition, int[] success, String operator_name, boolean doUpdate) throws DatabaseException {
         return false;
     }
 

@@ -51,9 +51,9 @@ public class TCGBolt_ts extends TCGBolt {
         tcEvents = new ArrayDeque<>();
         tweetBurstMap = new ConcurrentHashMap<>();
         tweetEventMap = new ConcurrentHashMap<>();
+        outWindowEvents = new ArrayDeque<>();
         windowBoundary = tweetWindowSize;
         tweetIDFloor = 0;
-        outWindowEvents = new ArrayDeque<>();
     }
 
     @Override
@@ -130,7 +130,7 @@ public class TCGBolt_ts extends TCGBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         double bid = in.getBID();
-        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
         if (bid >= windowBoundary) {
 //            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
@@ -141,7 +141,7 @@ public class TCGBolt_ts extends TCGBolt {
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -181,7 +181,6 @@ public class TCGBolt_ts extends TCGBolt {
 
             tweetIDFloor += tweetWindowSize;
             windowBoundary += tweetWindowSize;
-//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 

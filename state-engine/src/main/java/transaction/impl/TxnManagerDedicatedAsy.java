@@ -6,6 +6,7 @@ import content.common.CommonMetaTypes.AccessType;
 import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
+import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.Request;
@@ -297,38 +298,39 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
+
+    //TODO: Remove hardcode
+    private final TableRecord[] sharedConditionRecords = new TableRecord[clusterTableSize]; //Stores records for entire window to avoid repetitive Read
+
     @Override // ED_SC
     public boolean Asy_ModifyRecord_Iteration_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                               Function function, String[] condition_sourceTable, String[] condition_source,
-                                              Condition condition, int[] success, String operator_name) throws DatabaseException {
+                                              Condition condition, int[] success, String operator_name, boolean doUpdate) throws DatabaseException {
         AccessType accessType = AccessType.READ_WRITE_COND_READ;
 
         //The 1st element in condition_sourceTable is the table to be iterated.
         ShareTable table = (ShareTable) storageManager_.getTable(condition_sourceTable[0]);
-        TableRecord[] condition_records = new TableRecord[clusterTableSize];
 
-        //TODO: Improve this with table iterator
-        for (int i=0; i<clusterTableSize; i++) {
-            TableRecord record = table.SelectKeyRecord(String.valueOf(i));
-            if (record == null) {
-                if (enable_log) log.info(operator_name + ": No record is found for iteration condition source:" + i);
-                return false;
+        if (doUpdate) { // doUpdate is true for the first event in each window
+//            TableRecord[] condition_records = new TableRecord[clusterTableSize];
+            for (int i=0; i<clusterTableSize; i++) {
+                TableRecord record = table.SelectKeyRecord(String.valueOf(i));
+                if (record == null) {
+                    if (enable_log) log.info(operator_name + ": No record is found for iteration condition source:" + i);
+                    return false;
+                }
+//                condition_records[i] = record;
+                sharedConditionRecords[i] = record;
             }
-            condition_records[i] = record;
         }
 
-        //Pass the entire iteration_table to condition_records
-//        int i = 0;
-//        while (iterator.hasNext()) {
-//            condition_records[i] = iterator.next();
-//            i++;
-//        }
+        if (ArrayUtils.isEmpty(sharedConditionRecords)) throw new NoSuchElementException();
 
         //For ED_SC: s_record == d_record == tweetRecord
         TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
         if (s_record != null) {
             return stage.getScheduler().SubmitRequest(context, new Request(txn_context, accessType, operator_name, srcTable,
-                    key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success));
+                    key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, sharedConditionRecords, condition, success));
 
         } else {
             if (enable_log) log.info(operator_name + ": No record is found for key:" + key);

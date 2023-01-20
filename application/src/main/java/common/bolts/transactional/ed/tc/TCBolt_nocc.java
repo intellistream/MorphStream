@@ -67,8 +67,9 @@ public class TCBolt_nocc extends TCBolt{
 
             MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id); //TODO: Check measure methods. Modify so that it can sum up the exe time for multiple windows.
             for (Tuple tuple : tuples) {
-                PRE_EXECUTE(tuple); //update input_tuple for TXN_PROCESS and POST_PROCESS
+                PRE_EXECUTE(tuple); //prepare input_tuple for the following methods
                 TXN_PROCESS(_bid);
+                CORE_PROCESS();
                 POST_PROCESS(_bid, timestamp, combo_bid_size);
             }
             MeasureTools.END_TXN_TIME_MEASURE(thread_Id, num_events);
@@ -91,7 +92,6 @@ public class TCBolt_nocc extends TCBolt{
             }
 
             windowBoundary += tweetWindowSize;
-//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 

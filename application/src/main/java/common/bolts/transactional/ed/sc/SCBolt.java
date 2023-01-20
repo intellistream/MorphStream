@@ -9,6 +9,7 @@ import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
 import transaction.context.TxnContext;
+import utils.AppConfig;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,6 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
+import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public class SCBolt extends TransactionalBolt {
     SINKCombo sink;
@@ -39,6 +42,32 @@ public class SCBolt extends TransactionalBolt {
     protected void SIMILARITY_CALCULATE_REQUEST(SCEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
 //        transactionManager.SelectKeyRecord(txnContext, "word_table", event.getWordID(), event.wordRecordRef, READ_WRITE);
 //        assert event.wordRecordRef.getRecord() != null;
+    }
+
+    //Used in: nocc //TODO: Add version control
+    protected void SIMILARITY_CALCULATE_REQUEST_CORE(SCEvent event) {
+
+//        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+        AppConfig.randomDelay();
+
+
+
+//        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
+    }
+
+    //Handling the CORE method as in TCBolt_ts, pass updated record to event
+    protected void CORE_PROCESS() {
+
+    }
+
+    //post stream processing phase.. nocc,
+    protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
+        BEGIN_POST_TIME_MEASURE(thread_Id);
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
+            ((SCEvent) input_event).setTimestamp(timestamp);
+            SIMILARITY_CALCULATE_REQUEST_POST((SCEvent) input_event);
+        }
+        END_POST_TIME_MEASURE(thread_Id);
     }
 
     //TODO: Create a shared array that stores a copy of all cluster records to be iterated.
@@ -77,7 +106,7 @@ public class SCBolt extends TransactionalBolt {
 //        LOG.info("Thread " + thread_Id + " is posting event: " + outBid);
 
         if (!enable_app_combo) {
-            collector.emit(outBid, tuple);//emit CU Event tuple to CU Gate
+            collector.emit(outBid, tuple);
         } else {
             if (enable_latency_measurement) {
                 sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));

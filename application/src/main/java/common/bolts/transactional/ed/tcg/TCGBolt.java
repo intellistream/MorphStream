@@ -16,6 +16,7 @@ import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
 
+
 public abstract class TCGBolt extends TransactionalBolt {
 
     SINKCombo sink;
@@ -43,14 +44,14 @@ public abstract class TCGBolt extends TransactionalBolt {
             tcgPostEvents.add(outBid);
         }
         else {
-            LOG.info("Thread " + thread_Id + " posting stop event: " + outBid);
+//            LOG.info("Thread " + thread_Id + " posting stop event: " + outBid);
             if (tcgStopEvents.incrementAndGet() == 16) {
                 LOG.info("TCG post tweets: " + tweetIDSet);
                 LOG.info("TCG post events: " + tcgPostEvents);
                 LOG.info("TCG stop events: " + tcgStopEvents);
             }
         }
-        LOG.info("Thread " + thread_Id + " posting event: " + outBid);
+//        LOG.info("Thread " + thread_Id + " posting event: " + outBid);
 
         SCEvent outEvent = new SCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),
                 event.getMyNumberOfPartitions(), event.getTweetID(), isBurst);
@@ -61,7 +62,6 @@ public abstract class TCGBolt extends TransactionalBolt {
             collector.emit(outBid, tuple);
         } else {
             if (enable_latency_measurement) {
-                //Pass the read result of new tweet's ID (assigned by table) to sink
                 sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
             }
         }

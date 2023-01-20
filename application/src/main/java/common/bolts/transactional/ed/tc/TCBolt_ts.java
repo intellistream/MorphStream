@@ -10,12 +10,10 @@ import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
-import scheduler.impl.op.OPScheduler;
 import storage.SchemaRecordRef;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.TFIDF;
-import transaction.impl.TxnManagerDedicatedAsy;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
@@ -129,7 +127,7 @@ public class TCBolt_ts extends TCBolt{
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         double bid = in.getBID();
-        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
         if (bid >= windowBoundary) {
 //            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
@@ -139,7 +137,7 @@ public class TCBolt_ts extends TCBolt{
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

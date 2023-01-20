@@ -64,9 +64,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         return tpg.threadToContextMap.get(threadId);
     }
 
-    public static AtomicInteger opSCRefCounter = new AtomicInteger(0);
-    public static AtomicInteger opTCRefCounter = new AtomicInteger(0);
-
     /**
      * Used by tpgScheduler.
      *
@@ -87,10 +84,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             if (this.tpg.getApp() == 1) { //SL
                 Transfer_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_tc")) {
-                opTCRefCounter.getAndIncrement(); //TODO: Remove after testing
                 TrendCalculate_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_sc")) {
-                opSCRefCounter.getAndIncrement(); //TODO: Remove after testing
                 SimilarityCalculate_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) {
                 EventSelection_Fun(operation, mark_ID, clean);

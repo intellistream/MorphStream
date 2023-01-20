@@ -49,7 +49,7 @@ public class TRBolt_nocc extends TRBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException {
 
         double bid = in.getBID();
-        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
         if (bid >= windowBoundary) { //Input event is the last event in the current window
             LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);

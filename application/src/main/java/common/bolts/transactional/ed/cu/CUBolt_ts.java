@@ -122,17 +122,17 @@ public class CUBolt_ts extends CUBolt {
 //        cuEventCount.incrementAndGet();
 
         double bid = in.getBID();
-        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
         if (bid >= windowBoundary) {
-            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+//            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
             outWindowEvents.add(in);
         } else {
             execute_ts_normal(in);
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = cuEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -173,7 +173,6 @@ public class CUBolt_ts extends CUBolt {
             }
 
             windowBoundary += tweetWindowSize;
-//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 

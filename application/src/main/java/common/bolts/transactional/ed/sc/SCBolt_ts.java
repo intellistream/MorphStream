@@ -18,7 +18,6 @@ import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
@@ -28,10 +27,11 @@ import static profiler.Metrics.NUM_ITEMS;
 public class SCBolt_ts extends SCBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SCBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
-    //write-compute time pre-measured.
     ArrayDeque<SCEvent> scEvents;
-    private double windowBoundary;
     ArrayDeque<Tuple> outWindowEvents;
+    private double windowBoundary;
+    private double tweetIDFloor;
+    private double recordUpdateTime;
 
     //To be used in Combo
     public SCBolt_ts(int fid, SINKCombo sink) {
@@ -48,8 +48,10 @@ public class SCBolt_ts extends SCBolt {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
         scEvents = new ArrayDeque<>();
-        windowBoundary = tweetWindowSize;
         outWindowEvents = new ArrayDeque<>();
+        windowBoundary = tweetWindowSize;
+        tweetIDFloor = 0;
+        recordUpdateTime = 0;
     }
 
     @Override
@@ -72,14 +74,18 @@ public class SCBolt_ts extends SCBolt {
     }
 
     protected void SIMILARITY_CALCULATE_REQUEST_CONSTRUCT(SCEvent event, TxnContext txnContext) throws DatabaseException {
-
-        scTweetSet.add(Integer.parseInt(event.getTweetID()));
-
         String[] clusterTable = new String[]{"cluster_table"}; //condition source table to iterate
         String[] clusterKey = new String[]{String.valueOf(0)}; //condition source key, set to zero
         Similarity function = new Similarity();
 //        Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
         Condition condition1 = new Condition(event.getCurrWindow(), true); //TODO: Set to always true for testing
+
+        boolean doUpdate = false;
+        if (recordUpdateTime <= tweetIDFloor) {
+            doUpdate = true;
+            recordUpdateTime = (int) event.getBid();
+            LOG.info("Thread " + thread_Id + " do record update: " + (int) event.getBid() + " with tweetIDFloor " + tweetIDFloor);
+        }
 
         transactionManager.BeginTransaction(txnContext);
 
@@ -91,15 +97,13 @@ public class SCBolt_ts extends SCBolt {
                 clusterTable, clusterKey, //condition_source_table, condition_source_key
                 condition1,
                 event.success,
-                "ed_sc"
+                "ed_sc",
+                doUpdate
         );
 
         transactionManager.CommitTransaction(txnContext);
         scEvents.add(event);
-        totalRefCount.getAndIncrement();
     }
-
-    static AtomicInteger totalRefCount = new AtomicInteger(0);
 
     private void SIMILARITY_CALCULATE_REQUEST_CORE() {
 
@@ -109,9 +113,8 @@ public class SCBolt_ts extends SCBolt {
                 LOG.info("Thead " + thread_Id + " reads empty tweet record");
                 throw new NoSuchElementException();
             }
-            event.targetClusterID = ref.getRecord().getValues().get(2).toString(); //TODO: Uncomment after testing
+            event.targetClusterID = ref.getRecord().getValues().get(2).toString();
         }
-//        LOG.info("SCBolt Request counter: " + totalRefCount.get());
 //        LOG.info("TxnManager counter: " + TxnManagerDedicatedAsy.scTMCounter.get());
 //        LOG.info("OPSchedulerContext Push counter: " + OPSchedulerContext.opsContextPushCounter.get());
 //        LOG.info("OP SC Ref counter: " + OPScheduler.opSCRefCounter.get());
@@ -124,23 +127,21 @@ public class SCBolt_ts extends SCBolt {
         }
     }
 
-    public static ConcurrentSkipListSet<Integer> scTweetSet = new ConcurrentSkipListSet<>();
-
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         double bid = in.getBID();
-        LOG.info("Thread " + this.thread_Id + " has event " + bid);
+//        LOG.info("Thread " + this.thread_Id + " has event " + bid);
 
         if (bid >= windowBoundary) {
-            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
+//            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
             outWindowEvents.add(in);
         } else {
             execute_ts_normal(in);
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = scEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -172,15 +173,13 @@ public class SCBolt_ts extends SCBolt {
                         this.context.stop_running();
                     }
 
-//                    LOG.info("SC input tweet set: " + scTweetSet);
-
                 } else { //otherwise, continue with normal-processing
                     execute_ts_normal(outWindowTuple);
                 }
             }
 
+            tweetIDFloor += tweetWindowSize;
             windowBoundary += tweetWindowSize;
-//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 
