@@ -14,6 +14,7 @@ import transaction.impl.TxnManagerNoLock;
 import utils.lib.ConcurrentHashMap;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -62,14 +63,19 @@ public class TCGBolt_nocc extends TCGBolt{
         tweetEventMap.putIfAbsent(event.getTweetID(), event);
 
         if (event.tweetIDList != null) {
+            LOG.info("TweetIDList: " + Arrays.toString(event.tweetIDList));
             for (String tweetID : event.tweetIDList) {
-                if (Integer.parseInt(tweetID) < tweetIDFloor || Integer.parseInt(tweetID) >= windowBoundary) { //Only consider tweets in the current window
-                    continue;
+                try {
+                    if (Integer.parseInt(tweetID) < tweetIDFloor || Integer.parseInt(tweetID) >= windowBoundary) { //Only consider tweets in the current window
+                        continue;
+                    }
+                    if (!Boolean.TRUE.equals(tweetBurstMap.get(tweetID))) { //Do not update when the value is "not-null and true"
+                        tweetBurstMap.put(tweetID, event.isBurst);
+                    }
+                    assert tweetBurstMap.size() <= tweetWindowSize;
+                } catch (Exception e) {
+                    LOG.info("Invalid tweetID detected in list");
                 }
-                if (!Boolean.TRUE.equals(tweetBurstMap.get(tweetID))) { //Do not update when the value is "not-null and true"
-                    tweetBurstMap.put(tweetID, event.isBurst);
-                }
-                assert tweetBurstMap.size() <= tweetWindowSize;
             }
         } else {
             LOG.info("No tweetIDList found for event " + event.getBid());
@@ -89,19 +95,24 @@ public class TCGBolt_nocc extends TCGBolt{
         }
 
         for (int i=tweet_left_bound; i<tweet_right_bound; i++) {
-            BEGIN_POST_TIME_MEASURE(thread_Id);
+            try {
+                BEGIN_POST_TIME_MEASURE(thread_Id);
 
-            String tweetID = String.valueOf(i);
-            TCEvent event = tweetEventMap.get(tweetID);
-            Boolean isBurst = tweetBurstMap.get(tweetID);
+                String tweetID = String.valueOf(i);
+                TCEvent event = tweetEventMap.get(tweetID);
+                Boolean isBurst = tweetBurstMap.get(tweetID);
 
-            tweetEventMap.remove(tweetID);
-            tweetBurstMap.remove(tweetID); //TODO: Improve this to make it faster
+                if (isBurst == null || event == null) {throw new NoSuchElementException();}
 
-            if (isBurst == null || event == null) {throw new NoSuchElementException();}
+                tweetEventMap.remove(tweetID);
+                tweetBurstMap.remove(tweetID); //TODO: Improve this to make it faster
 
-            TC_GATE_REQUEST_POST(event, isBurst);
-            END_POST_TIME_MEASURE(thread_Id);
+                TC_GATE_REQUEST_POST(event, isBurst);
+                END_POST_TIME_MEASURE(thread_Id);
+            } catch (Exception e) {
+                LOG.info("No Such Element");
+            }
+
         }
 
     }

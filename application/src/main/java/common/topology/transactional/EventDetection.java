@@ -166,7 +166,7 @@ public class EventDetection extends TransactionTopology {
                 }
             }
             builder.setSink(EventDetectionConstants.Component.SINK, sink, sinkThreads
-                    , new ShuffleGrouping(EventDetectionConstants.Component.ES)
+                    , new ShuffleGrouping(EventDetectionConstants.Component.TCG)
             );
 
         } catch (InvalidIDException e) {

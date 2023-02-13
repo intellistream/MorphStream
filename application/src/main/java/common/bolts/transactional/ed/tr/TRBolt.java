@@ -77,6 +77,10 @@ public abstract class TRBolt extends TransactionalBolt {
     protected void TWEET_REGISTRANT_REQUEST_POST(TREvent event) throws InterruptedException {
 
         String tweetID = event.getTweetID();
+        if (tweetID == null) {
+            LOG.info("Null tweetID found in event");
+            throw new NoSuchElementException();
+        }
         String[] words = event.getWords();
         double delta = 0.1;
         double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
@@ -106,6 +110,10 @@ public abstract class TRBolt extends TransactionalBolt {
     protected void EMIT_STOP_SIGNAL(TREvent event) throws InterruptedException {
 
         String tweetID = event.getTweetID();
+        if (tweetID == null) {
+            LOG.info("Null tweetID found in event");
+            throw new NoSuchElementException();
+        }
         double delta = 0.1;
         double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
 

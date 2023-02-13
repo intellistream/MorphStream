@@ -77,25 +77,25 @@ public class StreamLedger extends TransactionTopology {
             } else {
                 switch (config.getInt("CCOption", 0)) {
                     case 1: {//LOB
-                        builder.setBolt(Component.SL, new SLBolt_olb(0)//
+                        builder.setBolt(Component.SL, new SLBolt_olb(1)//
                                 , config.getInt(SL_THREADS, 1)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case 2: {//LWM
-                        builder.setBolt(Component.SL, new SLBolt_lwm(0)//
+                        builder.setBolt(Component.SL, new SLBolt_lwm(1)//
                                 , config.getInt(SL_THREADS, 1)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case 3: {//T-Stream
-                        builder.setBolt(Component.SL, new SLBolt_ts(0)//
+                        builder.setBolt(Component.SL, new SLBolt_ts(1)//
                                 , config.getInt(SL_THREADS, 1)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case 4: {//SStore
-                        builder.setBolt(Component.SL, new SLBolt_sstore(0)//
+                        builder.setBolt(Component.SL, new SLBolt_sstore(1)//
                                 , config.getInt(SL_THREADS, 1)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;

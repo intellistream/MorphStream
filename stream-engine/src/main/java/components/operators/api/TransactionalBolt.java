@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import profiler.Metrics;
 import transaction.TxnManager;
+import transaction.context.TxnContext;
 
 import java.util.concurrent.BrokenBarrierException;
 
@@ -140,7 +141,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
             timestamp = 0L;//
         _bid = in.getBID();
         input_event = in.getValue(0);
-//        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid); //TODO: Removed because txn_context[] is not initialized for all ED bolt threads. Improve this.
+        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid); //TODO: Removed because txn_context[] is not initialized for all ED bolt threads. Improve this.
         sum = 0;
     }
 

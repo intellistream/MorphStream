@@ -54,7 +54,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
-    public boolean shared = false;
+    public boolean shared = true; //Set to false for ED
     @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
     public int batch = 1;
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)
@@ -65,10 +65,10 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
-//    public int CCOption = CCOption_LOCK;
+    public int CCOption = CCOption_LOCK;
 //    public int CCOption = CCOption_LWM;
 //    public int CCOption = CCOption_SStore;
-    public int CCOption = CCOption_MorphStream;
+//    public int CCOption = CCOption_MorphStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")

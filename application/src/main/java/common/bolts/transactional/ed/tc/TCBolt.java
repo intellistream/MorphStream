@@ -12,6 +12,7 @@ import storage.datatype.DataBox;
 import transaction.context.TxnContext;
 import utils.AppConfig;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,6 +65,8 @@ public class TCBolt extends TransactionalBolt {
         double newTfIdf = tf * idf;
         double difference = tf * idf - oldTfIdf;
 
+        List<String> emptyList = new ArrayList<>();
+        wordValues.get(2).setStringList(emptyList); //reset tweetIDList to {}
         wordValues.get(4).setDouble(newTfIdf); //update tf-idf
         wordValues.get(6).setLong(0); //reset frequency to zero
         wordValues.get(7).setBool(difference >= 0.5); //set isBurst accordingly //TODO: Check this threshold
@@ -79,8 +82,18 @@ public class TCBolt extends TransactionalBolt {
             LOG.info("Thead " + thread_Id + " reads empty word record");
             throw new NullPointerException();
         }
-        event.tweetIDList = ref.getRecord().getValues().get(2).getStringList().toArray(new String[0]);
-        event.isBurst = ref.getRecord().getValues().get(7).getBool();
+        try {
+            event.tweetIDList = ref.getRecord().getValues().get(2).getStringList().toArray(new String[0]).clone();
+            event.isBurst = ref.getRecord().getValues().get(7).getBool();
+            for (String tweetID : event.tweetIDList) {
+                if (tweetID == null) {
+                    LOG.info("Null value found in array");
+                }
+            }
+        } catch (Exception e) {
+            LOG.info("ArrayIndexOutOfBounds");
+        }
+
     }
 
     //post stream processing phase.. nocc,

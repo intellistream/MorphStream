@@ -20,7 +20,6 @@ import utils.AppConfig;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.clusterTableSize;
 import static common.CONTROL.tweetWindowSize;
@@ -272,8 +271,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        }
     }
 
-    int trCounter = 0;
-    public static ConcurrentSkipListSet<Integer> updatedTweets = new ConcurrentSkipListSet<>(); //remove after testing
     // ED: Tweet Registrant - Asy_ModifyRecord
     protected void TweetRegistrant_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -286,18 +283,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             log.info("TR: Empty tweet record not found");
             throw new NoSuchElementException();
         }
-//        else {
-//            trCounter++;
-////            log.info("TR valid record count: " + trCounter);
-//        }
 
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
 
         // Update tweet's wordList
         if (operation.function instanceof Insert) {
             tempo_record.getValues().get(1).setStringList(Arrays.asList(operation.function.stringArray)); //compute, update wordList
-            updatedTweets.add(Integer.parseInt(tweetRecord.GetPrimaryKey()));
-
         } else
             throw new UnsupportedOperationException();
 
@@ -309,8 +300,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     }
 
-
-    int wuCounter = 0;
     // ED: Word Update - Asy_ModifyRecord
     protected void WordUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -322,13 +311,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         if (wordRecord == null) {
             log.info("WU: Word record not found");
             throw new NoSuchElementException();
-        }
-        else {
-            wuCounter++;
-//            log.info("WU valid record count: " + wuCounter);
-        }
-        if (wuCounter >= 600) {
-            log.info("WU has found all valid records: " + wuCounter);
         }
 
         SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
@@ -373,31 +355,32 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
 
-    int tcCounter = 0;
     // ED: Trend Calculate - Asy_ModifyRecord_Read
     protected void TrendCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
         // apply function
         AppConfig.randomDelay();
 
-        // read, only READ word whose record is updated in the current window
+        // read
         SchemaRecord wordRecord = operation.s_record.content_.readPastValues((long) operation.bid);
 
         if (wordRecord == null) {
             log.info("TC: Word record not found");
             throw new NoSuchElementException();
-        } else {
-            tcCounter++;
-//            log.info("TC valid record count: " + tcCounter);
         }
-        if (tcCounter >= 600) {
-            log.info("TC has found all valid records: " + tcCounter); //remove after testing
-        }
+
+//        final List<String> tweetIDList = wordRecord.getValues().get(2).getStringList();
+//        if (tweetIDList.size() == 0) {
+//            log.info("Word has been calculated: " + wordRecord.getValues().get(1).toString() + " in window " + wordRecord.getValues().get(5).toString());
+//            return;
+//        } else {
+//            log.info("Calculate word: " + wordRecord.getValues().get(1).toString() + " in window " + wordRecord.getValues().get(5).toString());
+//        }
 
         final long oldCountOccurWindow = wordRecord.getValues().get(3).getLong();
         final double oldTfIdf = wordRecord.getValues().get(4).getDouble();
         final long oldFrequency = wordRecord.getValues().get(6).getLong();
-        SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
+        SchemaRecord tempo_record = new SchemaRecord(wordRecord);
 
         // Compute word's tf-idf
         if (operation.function instanceof TFIDF) {
@@ -408,9 +391,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             double newTfIdf = tf * idf;
             double difference = tf * idf - oldTfIdf;
 
-            tempo_record.getValues().get(4).setDouble(newTfIdf); //compute: update tf-idf
-            tempo_record.getValues().get(6).setLong(0); //compute: reset frequency to zero
-            tempo_record.getValues().get(7).setBool(difference >= 0.5); //compute: set isBurst accordingly //TODO: Check this threshold
+//            List<String> emptyList = new ArrayList<>();
+//            tempo_record.getValues().get(2).setStringList(emptyList); //reset tweetIDList to {}
+            tempo_record.getValues().get(4).setDouble(newTfIdf); //update tf-idf
+            tempo_record.getValues().get(6).setLong(0); //reset frequency to zero
+            tempo_record.getValues().get(7).setBool(difference >= 0.5); //set isBurst accordingly //TODO: Check this threshold
 
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
@@ -423,7 +408,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
 
-    int scCounter = 0;
     // ED-SC: Similarity Calculator - Asy_ModifyRecord_Iteration_Read
     protected void SimilarityCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -436,9 +420,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         if (tweetRecord == null) {
             log.info("SC: Condition tweet record not found");
             throw new NoSuchElementException();
-        } else {
-            scCounter++;
-//            log.info("SC valid record count: " + scCounter);
         }
 
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord);
@@ -451,7 +432,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             for (String word : tweetWordList) {tweetMap.put(word, 1);}
 
             if (operation.function instanceof Similarity) { // compute input tweet's cosine similarity with all clusters
-                int clusterCounter = 0;
 
                 for (TableRecord record : operation.condition_records) { // iterate through all clusters in cluster_table
                     // skip if the cluster has no update in the past two windows
@@ -459,8 +439,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                     if (clusterRecord == null) { //skip record if it has not been updated in the past two windows
                         continue;
-                    } else {
-                        clusterCounter++;
                     }
 
                     long clusterSize = clusterRecord.getValues().get(3).getLong();
@@ -481,7 +459,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                         similarities.put(clusterRecord, similarity);
                     }
                 }
-//                log.info("SC has iterated through: " + clusterCounter + " clusters");
+
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -516,8 +494,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     }
 
-
-    public static ConcurrentSkipListSet<String> missingTweets = new ConcurrentSkipListSet<>();
     // ED-CU: Cluster Updater - Asy_ModifyRecord
     protected void ClusterUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -528,13 +504,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         if (tweetRecord != null) {
             final List<String> tweetWordList = tweetRecord.getValues().get(1).getStringList();
-
-            if (tweetWordList.size() == 1) {
-                missingTweets.add(tweetRecord.GetPrimaryKey());
-                log.info("Tweet " + tweetRecord.GetPrimaryKey() + " has empty word list" + " with bid " + operation.bid);
-//                log.info("Missing tweets: " + missingTweets + " with bid " + operation.bid);
-//                log.info("OP TR updated tweet set: " + OPScheduler.updatedTweets);
-            }
+//            if (tweetWordList.size() == 1) {
+//                log.info("Tweet " + tweetRecord.GetPrimaryKey() + " has empty word list" + " with bid " + operation.bid);
+//            }
 
             // read
             SchemaRecord clusterRecord = operation.s_record.content_.readPastValues((long) operation.bid);

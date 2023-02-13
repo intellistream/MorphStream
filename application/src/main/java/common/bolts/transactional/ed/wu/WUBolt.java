@@ -62,6 +62,10 @@ public class WUBolt extends TransactionalBolt {
             final long oldFrequency = wordValues.get(6).getLong();
 
             // Update word's tweetList
+            if (event.getTweetID() == null) {
+                LOG.info("Null tweetID found in event");
+                throw new NoSuchElementException();
+            }
             wordValues.get(2).addItem(event.getTweetID()); //append new tweetID into word's tweetList
 
             // Update word's window info
