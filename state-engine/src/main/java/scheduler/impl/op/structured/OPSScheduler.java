@@ -23,13 +23,13 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
 
     @Override
     public void INITIALIZE(Context context) {
+        needAbortHandling = false;//reset needAbortHandling here
         tpg.firstTimeExploreTPG(context);
         context.waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(Context context) {
-        needAbortHandling = false;
-        tpg.secondTimeExploreTPG(context);
+        tpg.secondTimeExploreTPG(context);//Do not need to reset needAbortHandling here, as lazy approach only handles abort once for one batch.
         context.waitForOtherThreads(context.thisThreadId);
     }
 
