@@ -16,17 +16,33 @@ If you use MorphStream in your paper, please cite our work.
 * **[ICDE]** Shuhao Zhang, Bingsheng He, Daniel Dahlmeier, Amelie Chi Zhou, Thomas Heinze. Revisiting the design of data stream processing systems on multi-core processors, ICDE, 2017 (code: https://github.com/ShuhaoZhangTony/ProfilingStudy)
 * **[SIGMOD]** Shuhao Zhang, Jiong He, Chi Zhou (Amelie), Bingsheng He. BriskStream: Scaling Stream Processing on Multicore Architectures, SIGMOD, 2019 (code: https://github.com/Xtra-Computing/briskstream)
 * **[ICDE]** Shuhao Zhang, Yingjun Wu, Feng Zhang, Bingsheng He. Towards Concurrent Stateful Stream Processing on Multicore Processors, ICDE, 2020
-* **[xxx]** We have an anonymized submission under review. Stay tuned.
+* **[SIGMOD]** Yancan Mao and Jianjun Zhao and Shuhao Zhang and Haikun Liu and Volker Markl. MorphStream: Adaptive Scheduling for Scalable Transactional Stream Processing on Multicores, SIGMOD, 2023
+* We are working on another two follow-up works on MorphStream. Stay tuned.
 ```
-@INPROCEEDINGS{9101749,  
-author={Zhang, Shuhao and Wu, Yingjun and Zhang, Feng and He, Bingsheng},  
-booktitle={2020 IEEE 36th International Conference on Data Engineering (ICDE)},   
-title={Towards Concurrent Stateful Stream Processing on Multicore Processors},   
-year={2020},  
-volume={},  
-number={},  
-pages={1537-1548},  
-doi={10.1109/ICDE48307.2020.00136}
+@inproceedings{9101749,
+	title        = {Towards Concurrent Stateful Stream Processing on Multicore Processors},
+	author       = {Zhang, Shuhao and Wu, Yingjun and Zhang, Feng and He, Bingsheng},
+	year         = 2020,
+	booktitle    = {2020 IEEE 36th International Conference on Data Engineering (ICDE)},
+	volume       = {},
+	number       = {},
+	pages        = {1537--1548},
+	doi          = {10.1109/ICDE48307.2020.00136}
 }
-
+@inproceedings{mao2023morphstream,
+	title        = {MorphStream: Adaptive Scheduling for Scalable Transactional Stream Processing on Multicores},
+	author       = {Yancan Mao and Jianjun Zhao and Shuhao Zhang and Haikun Liu and Volker Markl},
+	year         = 2023,
+	booktitle    = {Proceedings of the 2023 International Conference on Management of Data (SIGMOD)},
+	location     = {Seattle, WA, USA},
+	publisher    = {Association for Computing Machinery},
+	address      = {New York, NY, USA},
+	series       = {SIGMOD '23},
+	abbr         = {SIGMOD},
+	bibtex_show  = {true},
+	selected     = {true},
+	pdf          = {papers/MorphStream.pdf},
+	code         = {https://github.com/intellistream/MorphStream},
+	tag          = {full paper}
+}
 ```
