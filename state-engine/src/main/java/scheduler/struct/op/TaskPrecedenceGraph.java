@@ -98,6 +98,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.put("word_table", new TableOCs(totalThreads,offset));
             operationChains.put("tweet_table", new TableOCs(totalThreads,offset));
             operationChains.put("cluster_table", new TableOCs(totalThreads,offset));
+        } else if (app == 5) {//ED_Sliding
+            operationChains.put("word_table", new TableOCs(totalThreads,offset));
+            operationChains.put("tweet_table", new TableOCs(totalThreads,offset));
+            operationChains.put("cluster_table", new TableOCs(totalThreads,offset));
         }
     }
 
@@ -151,6 +155,16 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 ocs.add(wordOC);
                 ocs.add(tweetOC);
                 ocs.add(clusterOC);
+            } else if (app == 5) {
+                OperationChain wordOC = context.createTask("word_table", _key);
+                OperationChain tweetOC = context.createTask("tweet_table", _key);
+                OperationChain clusterOC = context.createTask("cluster_table", _key);
+                operationChains.get("word_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, wordOC);
+                operationChains.get("tweet_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, tweetOC);
+                operationChains.get("cluster_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, clusterOC);
+                ocs.add(wordOC);
+                ocs.add(tweetOC);
+                ocs.add(clusterOC);
             }
         }
         threadToOCs.put(context.thisThreadId, ocs);
@@ -167,6 +181,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else if (app == 3){
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 4) {
+            operationChains.get("word_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("tweet_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("cluster_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 5) {
             operationChains.get("word_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("tweet_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("cluster_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();

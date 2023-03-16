@@ -15,7 +15,6 @@ import utils.AppConfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
@@ -42,7 +41,7 @@ public class TCBolt extends TransactionalBolt {
         assert event.wordRecordRef.getRecord() != null;
     }
 
-    //Used in: nocc //TODO: Add version control
+    //Used in: nocc
     protected void TREND_CALCULATE_REQUEST_CORE(TCEvent event) {
 
 //        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
@@ -74,7 +73,7 @@ public class TCBolt extends TransactionalBolt {
 //        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
-    //Handling the CORE method as in TCBolt_ts, pass updated record to event
+    //Used on nocc: Handling the CORE method as in TCBolt_ts, pass updated record to event
     protected void CORE_PROCESS() {
         TCEvent event = (TCEvent) input_event;
         SchemaRecordRef ref = event.wordRecordRef;
@@ -105,8 +104,6 @@ public class TCBolt extends TransactionalBolt {
         }
         END_POST_TIME_MEASURE(thread_Id);
     }
-
-    static AtomicInteger threadPostCount = new AtomicInteger(0);
 
     protected void TREND_CALCULATE_REQUEST_POST(TCEvent event) throws InterruptedException {
 

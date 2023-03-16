@@ -132,7 +132,7 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
                     config.getInt("complexity"));
-        } else if (config.getString("common").equals("EventDetection")) {
+        } else if (config.getString("common").equals("EventDetectionSliding")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
                     config.getInt("NUM_ITEMS"),

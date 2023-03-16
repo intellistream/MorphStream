@@ -7,6 +7,7 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.constants.EventDetectionConstants;
+import common.constants.EventDetectionSlidingConstants;
 import common.constants.GrepSumConstants;
 import common.platform.HP_Machine;
 import common.platform.HUAWEI_Machine;
@@ -61,6 +62,7 @@ public class MorphStreamRunner extends Runner {
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP
         driver.addApp("EventDetection", EventDetection.class);//ED
+        driver.addApp("EventDetectionSliding", EventDetectionSliding.class);//ED_Sliding
     }
 
     // Prepared default configuration
@@ -144,6 +146,13 @@ public class MorphStreamRunner extends Runner {
                     int threads = Math.max(1, (int) Math.floor((tthread)));
                     config.put(EventDetectionConstants.Conf.Executor_Threads, threads);
                     config.put(EventDetectionConstants.Conf.Gate_Threads, 1);
+                    break;
+                }
+                case "EventDetectionSliding": {
+                    config.put("app", 5);
+                    int threads = Math.max(1, (int) Math.floor((tthread)));
+                    config.put(EventDetectionSlidingConstants.Conf.Executor_Threads, threads);
+                    config.put(EventDetectionSlidingConstants.Conf.Gate_Threads, 1);
                     break;
                 }
             }
@@ -303,6 +312,17 @@ public class MorphStreamRunner extends Runner {
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
                 } else if (config.getString("common").equals("EventDetection")) { //TODO: Double-confirm the Conf settings
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("Ratio_of_Multiple_State_Access"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else if (config.getString("common").equals("EventDetectionSliding")) { //TODO: Double-confirm the Conf settings
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
                             config.getInt("NUM_ITEMS"),

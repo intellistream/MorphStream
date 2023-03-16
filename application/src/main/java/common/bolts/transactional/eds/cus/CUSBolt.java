@@ -1,8 +1,8 @@
-package common.bolts.transactional.ed.cu;
+package common.bolts.transactional.eds.cus;
 
 import combo.SINKCombo;
-import common.param.ed.cu.CUEvent;
-import common.param.ed.es.ESEvent;
+import common.param.eds.cus.CUSEvent;
+import common.param.eds.ess.ESSEvent;
 import components.operators.api.TransactionalBolt;
 import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
@@ -16,24 +16,24 @@ import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
 
-public class CUBolt extends TransactionalBolt {
+public class CUSBolt extends TransactionalBolt {
     SINKCombo sink;
     static AtomicInteger cuPostCount = new AtomicInteger(0);
     static AtomicInteger cuStopCount = new AtomicInteger(0);
     static ConcurrentSkipListSet<Integer> cuPostTweets = new ConcurrentSkipListSet<>();
     static ConcurrentSkipListSet<Double> cuPostEvents = new ConcurrentSkipListSet<>();
 
-    public CUBolt(Logger log, int fid, SINKCombo sink) {
+    public CUSBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
-        this.configPrefix = "ed_cu";
+        this.configPrefix = "eds_cus";
     }
 
     @Override
     protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
-    protected void CLUSTER_UPDATE_REQUEST_POST(CUEvent event) throws InterruptedException {
+    protected void CLUSTER_UPDATE_REQUEST_POST(CUSEvent event) throws InterruptedException {
 
         double delta = 0.1;
         double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
@@ -52,7 +52,7 @@ public class CUBolt extends TransactionalBolt {
         }
         cuPostEvents.add(outBid);
 
-        ESEvent outEvent = new ESEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), updatedClusterID);
+        ESSEvent outEvent = new ESSEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), updatedClusterID);
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
         Tuple tuple = new Tuple(outEvent.getMyBid(), 0, context, generalMsg);
 

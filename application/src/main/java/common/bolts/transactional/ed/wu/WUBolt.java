@@ -15,7 +15,6 @@ import utils.AppConfig;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
@@ -97,8 +96,6 @@ public class WUBolt extends TransactionalBolt {
         }
         END_POST_TIME_MEASURE(thread_Id);
     }
-
-    static AtomicInteger threadPostCount = new AtomicInteger(0);
 
     protected void WORD_UPDATE_REQUEST_POST(WUEvent event) throws InterruptedException {
 
