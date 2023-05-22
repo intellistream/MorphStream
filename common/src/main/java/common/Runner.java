@@ -23,8 +23,9 @@ public abstract class Runner implements IRunner {
 //    public String application = "GrepSum";
     //public String application = "OnlineBiding";
     //public String application = "TollProcessing";
-    public String application = "EventDetection";
+//    public String application = "EventDetection";
 //    public String application = "EventDetectionSliding";
+    public String application = "IBWJ";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -55,7 +56,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
-    public boolean shared = false; //Set to false for ED
+    public boolean shared = true; //Set to false for ED
     @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
     public int batch = 1;
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)
@@ -299,6 +300,13 @@ public abstract class Runner implements IRunner {
                 break;
             case "EventDetectionSliding":
                 //TODO: Add Conf settings to ED_Sliding
+                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
+                defaultScheduler = "OP_NS_A";
+                phaseNum = shiftRate * phaseType.length;
+                break;
+            case "IBWJ":
+                //TODO: Add Conf settings to IBWJ
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
                 defaultScheduler = "OP_NS_A";

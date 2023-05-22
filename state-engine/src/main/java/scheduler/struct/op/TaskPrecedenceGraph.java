@@ -102,6 +102,8 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.put("word_table", new TableOCs(totalThreads,offset));
             operationChains.put("tweet_table", new TableOCs(totalThreads,offset));
             operationChains.put("cluster_table", new TableOCs(totalThreads,offset));
+        } else if (app == 6) {//IBWJ
+            operationChains.put("MicroTable", new TableOCs(totalThreads,offset)); //TODO: Change this
         }
     }
 
@@ -165,6 +167,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 ocs.add(wordOC);
                 ocs.add(tweetOC);
                 ocs.add(clusterOC);
+            } else if (app == 6) { //TODO: Change this
+                OperationChain gsOC = context.createTask("MicroTable", _key);
+                operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
+                ocs.add(gsOC);
             }
         }
         threadToOCs.put(context.thisThreadId, ocs);
@@ -188,6 +194,8 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.get("word_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("tweet_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("cluster_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 6) { //TODO: Change this
+            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
     }
 
