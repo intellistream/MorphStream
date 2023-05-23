@@ -28,26 +28,28 @@ public class IBWJBolt_nocc extends IBWJBolt_Locks {
     }
 
     @Override
-    protected void write_txn_process(IBWJEvent event, double i, double _bid) throws DatabaseException, InterruptedException {
-        write_request(event, txn_context[(int) (i - _bid)]);//always success
-        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-        WRITE_CORE(event);
-        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
-//        transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);//always success..
-    }
-
-    @Override
-    protected void read_txn_process(IBWJEvent event, double i, double _bid) throws DatabaseException, InterruptedException {
-        read_request(event, txn_context[(int) (i - _bid)]);//always success..
-        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-        READ_CORE(event);
-        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
-//        transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);//always success..
-    }
-
-    @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerNoLock(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), transactionManager.stage);
     }
+
+//    @Override
+//    protected void write_txn_process(IBWJEvent event, double i, double _bid) throws DatabaseException, InterruptedException {
+//        write_request(event, txn_context[(int) (i - _bid)]);//always success
+//        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+//        WRITE_CORE(event);
+//        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
+////        transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);//always success..
+//    }
+//
+//    @Override
+//    protected void read_txn_process(IBWJEvent event, double i, double _bid) throws DatabaseException, InterruptedException {
+//        read_request(event, txn_context[(int) (i - _bid)]);//always success..
+//        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+//        READ_CORE(event);
+//        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
+////        transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);//always success..
+//    }
+//
+
 }

@@ -45,9 +45,9 @@ public class EDInitializer extends TableInitilizer {
     private final DataGeneratorConfig dataConfig;
     private final int partitionOffset;
     private final int NUM_ACCESS;
-    static AtomicInteger tweetInsertCount = new AtomicInteger(0);
-    static AtomicInteger wordInsertCount = new AtomicInteger(0);
-    static AtomicInteger clusterInsertCount = new AtomicInteger(0);
+//    static AtomicInteger tweetInsertCount = new AtomicInteger(0);
+//    static AtomicInteger wordInsertCount = new AtomicInteger(0);
+//    static AtomicInteger clusterInsertCount = new AtomicInteger(0);
 
     public EDInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
@@ -332,7 +332,7 @@ public class EDInitializer extends TableInitilizer {
             pid = get_pid(tweet_partition_interval, key);
             _key = String.valueOf(key);
             insertTweetRecord(_key, new String[]{"Empty"}, "0", pid, spinlock);
-            tweetInsertCount.getAndIncrement();
+//            tweetInsertCount.getAndIncrement();
         }
         if (enable_log) LOG.info("Thread " + thread_id + " inserted tweet record from row : " + tweet_left_bound + " to " + tweet_right_bound);
 
@@ -341,7 +341,7 @@ public class EDInitializer extends TableInitilizer {
             pid = get_pid(word_partition_interval, key);
             _key = String.valueOf(key);
             insertWordRecord(_key, "", emptyArray, 0, 0, 0, 0, false, pid, spinlock);
-            wordInsertCount.getAndIncrement();
+//            wordInsertCount.getAndIncrement();
         }
         if (enable_log) LOG.info("Thread " + thread_id + " inserted word record from row : " + word_left_bound + " to " + word_right_bound);
 
@@ -350,28 +350,28 @@ public class EDInitializer extends TableInitilizer {
             pid = get_pid(cluster_partition_interval, key);
             _key = String.valueOf(key);
             insertClusterRecord(_key, emptyArray, 0, 0, false, pid, spinlock);
-            clusterInsertCount.getAndIncrement();
+//            clusterInsertCount.getAndIncrement();
         }
         if (enable_log) LOG.info("Thread " + thread_id + " inserted cluster record from row : " + cluster_left_bound + " to " + cluster_right_bound);
 
 
-        if (tweetInsertCount.get() == config.getInt("NUM_ITEMS")) {// Check if all tweets have been inserted into table
-            if (verifyRecordInsertion("tweet_table", tweetInsertCount.get())) {
-                LOG.info("All tweet records have been successfully inserted");
-            }
-        }
-
-        if (wordInsertCount.get() == config.getInt("NUM_ITEMS") * tweetWordCount) {// Check if all words have been inserted into table
-            if (verifyRecordInsertion("word_table", wordInsertCount.get())) {
-                LOG.info("All word records have been successfully inserted");
-            }
-        }
-
-        if (clusterInsertCount.get() == clusterTableSize) {// Check if all clusters have been inserted into table
-            if (verifyRecordInsertion("cluster_table", clusterInsertCount.get())) {
-                LOG.info("All cluster records have been successfully inserted");
-            }
-        }
+//        if (tweetInsertCount.get() == config.getInt("NUM_ITEMS")) {// Check if all tweets have been inserted into table
+//            if (verifyRecordInsertion("tweet_table", tweetInsertCount.get())) {
+//                LOG.info("All tweet records have been successfully inserted");
+//            }
+//        }
+//
+//        if (wordInsertCount.get() == config.getInt("NUM_ITEMS") * tweetWordCount) {// Check if all words have been inserted into table
+//            if (verifyRecordInsertion("word_table", wordInsertCount.get())) {
+//                LOG.info("All word records have been successfully inserted");
+//            }
+//        }
+//
+//        if (clusterInsertCount.get() == clusterTableSize) {// Check if all clusters have been inserted into table
+//            if (verifyRecordInsertion("cluster_table", clusterInsertCount.get())) {
+//                LOG.info("All cluster records have been successfully inserted");
+//            }
+//        }
 
     }
 

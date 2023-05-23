@@ -9,11 +9,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
-import transaction.function.SUM;
+import transaction.function.Condition;
+import transaction.function.Insert;
+import transaction.function.TFIDF;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.combo_bid_size;
@@ -24,10 +27,7 @@ import static profiler.Metrics.NUM_ITEMS;
 public class IBWJBolt_ts extends IBWJBolt {
     private static final Logger LOG = LoggerFactory.getLogger(IBWJBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
-    private final double write_useful_time = 556;//write-compute time pre-measured.
-    Collection<IBWJEvent> microEvents;
-    int i = 0;
-    private int writeEvents;
+    Collection<IBWJEvent> joinEvents;
 
     public IBWJBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -50,75 +50,60 @@ public class IBWJBolt_ts extends IBWJBolt {
             IBWJEvent event = (IBWJEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            boolean flag = event.READ_EVENT();
-//            if (flag) {//read
-//                read_construct(event, txnContext);
-//            } else {
-//                write_construct(event, txnContext);
-//            }
-            RANGE_WRITE_CONSRUCT((IBWJEvent) event, txnContext);
+            IBWJ_REQUEST_CONSTRUCT((IBWJEvent) event, txnContext);
         }
 
     }
 
-    private void RANGE_WRITE_CONSRUCT(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
-        SUM sum;
-        if (event.READ_EVENT()) {
-            sum = new SUM(-1);
-        } else
-            sum = new SUM();
+    private void IBWJ_REQUEST_CONSTRUCT(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
 
-        transactionManager.BeginTransaction(txnContext);
-        // multiple operations will be decomposed
-        for (int i = 0; i < event.Txn_Length; i++) {
-            int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
-            String[] condition_table = new String[NUM_ACCESS];
-            String[] condition_source = new String[NUM_ACCESS];
-            for (int j = 0; j < NUM_ACCESS; j++) {
-                int offset = i * NUM_ACCESS + j;
-                condition_source[j] = String.valueOf(event.getKeys()[offset]);
-                condition_table[j] = "MicroTable";
-            }
-            int writeKeyIdx = i * NUM_ACCESS;
-            transactionManager.Asy_ModifyRecord_ReadN(
-                    txnContext,
-                    "MicroTable",
-                    String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
-                    event.getRecord_refs()[writeKeyIdx],//to be fill up.
-                    sum,
-                    condition_table, condition_source,//condition source, condition id.
-                    event.success, "gs");          //asynchronously return.
+        String srcIndexTable = ""; //index to update
+        String tarIndexTable = ""; //index to lookup
+        if (Objects.equals(event.getStreamID(), "r")) {
+            srcIndexTable = "index_r_table";
+            tarIndexTable = "index_s_table";
+        } else if (Objects.equals(event.getStreamID(), "s")) {
+            srcIndexTable = "index_s_table";
+            tarIndexTable = "index_r_table";
         }
+
+        Insert insert = new Insert(event.getAddress());
+//        Condition condition = new Condition(event.getWindowSize(), event.getWindowCount()); //arg1: windowSize, arg2: windowCount
+
+//        LOG.info("Constructing TC request: " + event.getMyBid());
+        transactionManager.BeginTransaction(txnContext);
+
+        transactionManager.Asy_ModifyRecord_Read(txnContext,
+                srcIndexTable, // source_table to write to
+                event.getKey(),  // source_key to write to
+                event.getRecord_ref(), // record to be filled up from READ
+                insert, // overwrite empty index with new index
+                new String[]{tarIndexTable},  new String[]{event.getKey()}, //condition_source_table, condition_source_key
+                null,
+                event.success,
+                "ibwj"
+        );
+
         transactionManager.CommitTransaction(txnContext);
-        microEvents.add(event);
+        joinEvents.add(event);
     }
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
-        microEvents = new ArrayDeque<>();
+        joinEvents = new ArrayDeque<>();
     }
 
-    void READ_REQUEST_CORE() throws InterruptedException {
-//        while (!EventsHolder.isEmpty() && !Thread.interrupted()) {
-//            MicroEvent input_event = EventsHolder.remove();
-//            if (!READ_REQUEST_CORE(input_event))
-//                EventsHolder.offer(input_event);
-//            else {
-//                BEGIN_POST_TIME_MEASURE(thread_Id);
-//                BUYING_REQUEST_POST(input_event);
-//                END_POST_TIME_MEASURE_ACC(thread_Id);
-//            }
-//        }
-        for (IBWJEvent event : microEvents) {
-            READ_CORE(event);
+    void IBWJ_REQUEST_CORE() throws InterruptedException {
+        for (IBWJEvent event : joinEvents) {
+            IBWJ_CORE(event);
         }
     }
 
-    void READ_POST() throws InterruptedException {
-        for (IBWJEvent event : microEvents) {
-            READ_POST(event);
+    void IBWJ_REQUEST_POST() throws InterruptedException {
+        for (IBWJEvent event : joinEvents) {
+            IBWJ_POST(event);
         }
     }
 
@@ -126,7 +111,7 @@ public class IBWJBolt_ts extends IBWJBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         if (in.isMarker()) {
-            int num_events = microEvents.size();
+            int num_events = joinEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
              */
@@ -134,17 +119,16 @@ public class IBWJBolt_ts extends IBWJBolt {
                 MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
                 {
                     transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
-                    i++;
-                    READ_REQUEST_CORE();
+                    IBWJ_REQUEST_CORE();
                 }
                 MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
                 BEGIN_POST_TIME_MEASURE(thread_Id);
                 {
-                    READ_POST();
+                    IBWJ_REQUEST_POST();
                 }
                 END_POST_TIME_MEASURE_ACC(thread_Id);
                 //all tuples in the holder is finished.
-                microEvents.clear();
+                joinEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
         } else {

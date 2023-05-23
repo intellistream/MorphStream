@@ -58,80 +58,80 @@ public class IBWJBolt_sstore extends IBWJBolt_LA {
         context.getGraph().topology.tableinitilizer.loadDB(thread_Id, context.getGraph().topology.spinlock, this.context.getNUMTasks());
     }
 
-    @Override
-    public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
-        if (in.isMarker()) {
-            int num_events = tuples.size();
-            start_evaluate(thread_Id, in.getBID(), num_events);
-            // execute txn_
-            MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
-            for (Tuple tuple : tuples) {
-                PRE_EXECUTE(tuple);
-                //begin transaction processing.
-                LAL_PROCESS(_bid);
-                PostLAL_process(_bid);
-                //end transaction processing.
-                POST_PROCESS(_bid, timestamp, 1);//otherwise deadlock.
-            }
-            MeasureTools.END_TXN_TIME_MEASURE(thread_Id, num_events);
-            tuples.clear();
-            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);//otherwise deadlock.
-        } else {
-            // sort
-            execute_ts_normal(in);
-            tuples.add(in);
-        }
-    }
-
-    public void start_evaluate(int thread_Id, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
-        transactionManager.stage.getControl().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
-        // add bid_array for events
-        if (thread_Id == 0) {
-            int partitionOffset = config.getInt("NUM_ITEMS") / tthread;
-            int[] p_bids = new int[(int) tthread];
-            HashMap<Integer, Integer> pids = new HashMap<>();
-            for (TxnEvent event : GlobalSorter.sortedEvents) {
-                if (event instanceof IBWJEvent) {
-                    parseIBWJEvent(partitionOffset, (IBWJEvent) event, pids);
-                    event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
-                    pids.replaceAll((k, v) -> p_bids[k]++);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-                pids.clear();
-            }
-            GlobalSorter.sortedEvents.clear();
-        }
-        transactionManager.stage.getControl().postStateAccessBarrier(thread_Id);
-    }
-
-    private void parseIBWJEvent(int partitionOffset, IBWJEvent event, HashMap<Integer, Integer> pids) {
-        for (int key : event.getKeys()) {
-            pids.put(key / partitionOffset, 0);
-        }
-    }
-
-    @Override
-    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
-        for (double i = _bid; i < _bid + combo_bid_size; i++) {
-//            System.out.println("thread: "+thread_Id+", event_id: "+_bid);
-            TxnEvent event = (TxnEvent) input_event;
-            GlobalSorter.addEvent(event);
-        }
-    }
-
-    @Override
-    protected void LAL_PROCESS(double _bid) throws DatabaseException {
-        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
-        IBWJEvent event = (IBWJEvent) input_event;
-        int _pid = event.getPid();
-        BEGIN_WAIT_TIME_MEASURE(thread_Id);
-        //ensures that locks are added in the input_event sequence order.
-        LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id);
-        BEGIN_LOCK_TIME_MEASURE(thread_Id);
-        LAL(event, _bid, _bid);
-        END_LOCK_TIME_MEASURE_ACC(thread_Id);
-        LA_UNLOCK_Reentrance(transactionManager, event.partition_indexs, thread_Id);
-        END_WAIT_TIME_MEASURE_ACC(thread_Id);
-    }
+//    @Override
+//    public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+//        if (in.isMarker()) {
+//            int num_events = tuples.size();
+//            start_evaluate(thread_Id, in.getBID(), num_events);
+//            // execute txn_
+//            MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
+//            for (Tuple tuple : tuples) {
+//                PRE_EXECUTE(tuple);
+//                //begin transaction processing.
+//                LAL_PROCESS(_bid);
+//                PostLAL_process(_bid);
+//                //end transaction processing.
+//                POST_PROCESS(_bid, timestamp, 1);//otherwise deadlock.
+//            }
+//            MeasureTools.END_TXN_TIME_MEASURE(thread_Id, num_events);
+//            tuples.clear();
+//            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);//otherwise deadlock.
+//        } else {
+//            // sort
+//            execute_ts_normal(in);
+//            tuples.add(in);
+//        }
+//    }
+//
+//    public void start_evaluate(int thread_Id, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
+//        transactionManager.stage.getControl().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+//        // add bid_array for events
+//        if (thread_Id == 0) {
+//            int partitionOffset = config.getInt("NUM_ITEMS") / tthread;
+//            int[] p_bids = new int[(int) tthread];
+//            HashMap<Integer, Integer> pids = new HashMap<>();
+//            for (TxnEvent event : GlobalSorter.sortedEvents) {
+//                if (event instanceof IBWJEvent) {
+//                    parseIBWJEvent(partitionOffset, (IBWJEvent) event, pids);
+//                    event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
+//                    pids.replaceAll((k, v) -> p_bids[k]++);
+//                } else {
+//                    throw new UnsupportedOperationException();
+//                }
+//                pids.clear();
+//            }
+//            GlobalSorter.sortedEvents.clear();
+//        }
+//        transactionManager.stage.getControl().postStateAccessBarrier(thread_Id);
+//    }
+//
+//    private void parseIBWJEvent(int partitionOffset, IBWJEvent event, HashMap<Integer, Integer> pids) {
+//        for (int key : event.getKeys()) {
+//            pids.put(key / partitionOffset, 0);
+//        }
+//    }
+//
+//    @Override
+//    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException, InterruptedException {
+//        for (double i = _bid; i < _bid + combo_bid_size; i++) {
+////            System.out.println("thread: "+thread_Id+", event_id: "+_bid);
+//            TxnEvent event = (TxnEvent) input_event;
+//            GlobalSorter.addEvent(event);
+//        }
+//    }
+//
+//    @Override
+//    protected void LAL_PROCESS(double _bid) throws DatabaseException {
+//        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
+//        IBWJEvent event = (IBWJEvent) input_event;
+//        int _pid = event.getPid();
+//        BEGIN_WAIT_TIME_MEASURE(thread_Id);
+//        //ensures that locks are added in the input_event sequence order.
+//        LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id);
+//        BEGIN_LOCK_TIME_MEASURE(thread_Id);
+//        LAL(event, _bid, _bid);
+//        END_LOCK_TIME_MEASURE_ACC(thread_Id);
+//        LA_UNLOCK_Reentrance(transactionManager, event.partition_indexs, thread_Id);
+//        END_WAIT_TIME_MEASURE_ACC(thread_Id);
+//    }
 }

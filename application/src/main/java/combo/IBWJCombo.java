@@ -59,15 +59,15 @@ public class IBWJCombo extends SPOUTCombo {
         return pre_key == key;
     }
 
-    private int check_conflict(IBWJEvent pre_event, IBWJEvent event) {
+    private int check_conflict(IBWJEvent pre_event, IBWJEvent event) { //TODO: Check this
         int conf = 0;//in case no conflict at all.
-        for (int key : event.getKeys()) {
-            int[] preEventKeys = pre_event.getKeys();
-            for (int preEventKey : preEventKeys) {
-                if (key_conflict(preEventKey, key))
-                    conf++;
-            }
-        }
+//        for (int key : event.getKeys()) {
+//            int[] preEventKeys = pre_event.getKeys();
+//            for (int preEventKey : preEventKeys) {
+//                if (key_conflict(preEventKey, key))
+//                    conf++;
+//            }
+//        }
         return conf;
     }
 

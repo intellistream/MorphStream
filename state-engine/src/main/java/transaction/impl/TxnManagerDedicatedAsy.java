@@ -368,7 +368,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // TRANSFER_ACT, ED_TC, ED_ES
+    @Override // TRANSFER_ACT, ED_TC, ED_SC, ED_ES
     public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
                                          Function function,
                                          String[] condition_sourceTable, String[] condition_source,

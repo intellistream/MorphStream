@@ -88,6 +88,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 SimilarityCalculate_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) {
                 EventSelection_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 6) {
+                IBWJ_Fun(operation, mark_ID, clean);
             }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
@@ -574,6 +576,41 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             tempo_record.getValues().get(2).setLong(0); //compute, reset cluster.countNewTweet to zero
 
             //Update record's version (in this request, s_record == d_record)
+            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+
+        } else {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
+    protected void IBWJ_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+
+        AppConfig.randomDelay();
+
+        SchemaRecord matchingTuple = operation.condition_records[0].content_.readPreValues((long) operation.bid);
+        final String matchingAddress = matchingTuple.getValues().get(1).getString();
+        if (matchingAddress == null) {
+            log.info("IBWJ: No matching tuple found");
+            return;
+        }
+
+        // read
+        SchemaRecord sourceTuple = operation.s_record.content_.readPastValues((long) operation.bid);
+        if (sourceTuple == null) {
+            log.info("IBWJ: Source tuple not found");
+            throw new NoSuchElementException();
+        }
+        SchemaRecord tempo_record = new SchemaRecord(sourceTuple); //tempo record
+
+        // compute cluster growth rate
+        if (operation.function instanceof Insert) {
+            tempo_record.getValues().get(1).setString(operation.function.item); //update tuple's own index
+            tempo_record.getValues().get(2).setString(matchingAddress); //update tuple's matching index
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
 
             synchronized (operation.success) {

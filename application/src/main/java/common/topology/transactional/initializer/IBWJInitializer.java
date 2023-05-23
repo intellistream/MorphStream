@@ -10,6 +10,7 @@ import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
+import common.param.ed.tr.TREvent;
 import common.param.ibwj.IBWJEvent;
 import db.Database;
 import db.DatabaseException;
@@ -19,10 +20,7 @@ import org.slf4j.LoggerFactory;
 import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.TableRecord;
-import storage.datatype.DataBox;
-import storage.datatype.IntDataBox;
-import storage.datatype.LongDataBox;
-import storage.datatype.StringDataBox;
+import storage.datatype.*;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
 import utils.AppConfig;
@@ -133,55 +131,6 @@ public class IBWJInitializer extends TableInitilizer {
         this.dataRootPath += OsUtils.OS_wrapper(subFolder);
     }
 
-    /**
-     * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
-     * initial account value_list is 0...?
-     */
-    private void insertMicroRecord(String key, long value, int pid, SpinLock[] spinlock_) {
-        try {
-            if (spinlock_ != null)
-                db.InsertRecord("MicroTable", new TableRecord(Record(key, value), pid, spinlock_));
-            else
-                db.InsertRecord("MicroTable", new TableRecord(Record(key, value)));
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private SchemaRecord Record(String key, long value) {
-        List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(key, key.length()));
-        values.add(new LongDataBox(value));
-        return new SchemaRecord(values);
-    }
-
-//    /**
-//     * "INSERT INTO MicroTable (key, value_list) VALUES (?, ?);"
-//     */
-//    private void insertMicroRecord(int key, String value, int pid, SpinLock[] spinlock_) {
-//        List<DataBox> values = new ArrayList<>();
-//        values.add(new IntDataBox(key));
-//        values.add(new StringDataBox(value, value.length()));
-//        SchemaRecord schemaRecord = new SchemaRecord(values);
-//        try {
-//            db.InsertRecord("MicroTable", new TableRecord(schemaRecord, pid, spinlock_));
-//        } catch (DatabaseException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void insertMicroRecord(int key, String value) {
-//        List<DataBox> values = new ArrayList<>();
-//        values.add(new IntDataBox(key));
-//        values.add(new StringDataBox(value, value.length()));
-//        SchemaRecord schemaRecord = new SchemaRecord(values);
-//        try {
-//            db.InsertRecord("MicroTable", new TableRecord(schemaRecord));
-//        } catch (DatabaseException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
     @Override
     public void loadDB(int thread_id, int NUM_TASK) {
         loadDB(thread_id, null, NUM_TASK);
@@ -203,50 +152,11 @@ public class IBWJInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
 //            assert value.length() == VALUE_LEN;
-            insertMicroRecord(_key, startingValue, pid, spinlock);
+            insertIndexRecord(_key, null, null, pid, spinlock); //TODO: Change this
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
-
-//    @Override
-//    public void loadDB(int thread_id, int NUMTasks) {
-//        int partition_interval = getPartition_interval();
-//        int left_bound = thread_id * partition_interval;
-//        int right_bound;
-//        if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
-//            right_bound = NUM_ITEMS;
-//        } else {
-//            right_bound = (thread_id + 1) * partition_interval;
-//        }
-//        for (int key = left_bound; key < right_bound; key++) {
-//            String value = GenerateValue(key);
-//            assert value.length() == VALUE_LEN;
-//            insertMicroRecord(key, value);
-//        }
-//        if (enable_log)
-//            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
-//    }
-//
-//    @Override
-//    public void loadDB(int thread_id, SpinLock[] spinlock_, int NUMTasks) {
-//        int partition_interval = getPartition_interval();
-//        int left_bound = thread_id * partition_interval;
-//        int right_bound;
-//        if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
-//            right_bound = NUM_ITEMS;
-//        } else {
-//            right_bound = (thread_id + 1) * partition_interval;
-//        }
-//        for (int key = left_bound; key < right_bound; key++) {
-//            int pid = get_pid(partition_interval, key);
-//            String value = GenerateValue(key);
-//            assert value.length() == VALUE_LEN;
-//            insertMicroRecord(key, value, pid, spinlock_);
-//        }
-//        if (enable_log)
-//            LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
-//    }
 
     @Override
     public void loadDB(SchedulerContext context, int thread_id, int NUMTasks) {
@@ -286,43 +196,46 @@ public class IBWJInitializer extends TableInitilizer {
         if (file.exists()) {
             if (enable_log) LOG.info("Reading transfer events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-            loadMicroEvents(reader, totalEvents, shufflingActive, p_bids);
+            loadIBWJEvents(reader, totalEvents, shufflingActive, p_bids);
             reader.close();
         }
     }
 
-    private void loadMicroEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
+    private void loadIBWJEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
         String txn = reader.readLine();
         int count = 0;
 //        int p_bids[] = new int[tthread];
         while (txn != null) {
             String[] split = txn.split(",");
             int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
-            // construct bid array
-            int keyLength = split.length - 2;
+            count++;
+
+            // Construct bid array
             HashMap<Integer, Integer> pids = new HashMap<>();
-            long[] keys = new long[keyLength];
-            for (int i = 1; i < keyLength + 1; i++) {
-                keys[i - 1] = Long.parseLong(split[i]);
-                pids.put((int) (keys[i - 1] / partitionOffset), 0);
+            for (int i = 1; i < 5; i++) {
+                pids.put((int) (Long.parseLong(String.valueOf(split[i].hashCode())) / partitionOffset), 0); //TODO: Set pid as 0 for all input words
             }
 
-            // construct event
-            IBWJEvent event = new IBWJEvent(
-                    Integer.parseInt(split[0]), //bid,
+            //Construct String[] words from readLine()
+            String[] words = new String[3]; //TODO: Hard-coded number of words in tweet: 3
+            System.arraycopy(split, 2, words, 0, 3);
+
+            // Construct TR Event
+            TREvent event = new TREvent(
+                    Integer.parseInt(split[0]), //bid
                     npid, //pid
-                    Arrays.toString(p_bids), //bid_array
+                    Arrays.toString(p_bids), //bid_arrary
                     Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
-                    pids.size(), // num_of_partition
-                    Arrays.toString(keys), // key_array
-                    keyLength,
-                    Transaction_Length,
-                    Boolean.parseBoolean(split[keyLength + 1]));
+                    2,//num_of_partition TODO: Hard-coded number of arguments in TR Event
+                    split[1], //tweetID
+                    words //String[] words
+            );
+
             DataHolder.events.add(event);
             if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();
         }
-        if (enable_log) LOG.info("Done reading transfer events...");
+        if (enable_log) LOG.info("Done reading TR events...");
         if (shufflingActive) {
             shuffleEvents(DataHolder.events, totalEvents);
         }
@@ -359,21 +272,21 @@ public class IBWJInitializer extends TableInitilizer {
         BufferedWriter w;
         w = new BufferedWriter(new FileWriter(new File(event_path + OsUtils.OS_wrapper(file_name))));
         for (Object event : db.getEventManager().input_events) {
-            IBWJEvent microEvent = (IBWJEvent) event;
+            TREvent trEvent = (TREvent) event;
             String sb =
-                    microEvent.getBid() +//0 -- bid
+                    trEvent.getBid() +//0 -- bid
                             split_exp +
-                            microEvent.getPid() +//1
+                            trEvent.getPid() +//1
                             split_exp +
-                            Arrays.toString(microEvent.getBid_array()) +//2
+                            Arrays.toString(trEvent.getBid_array()) +//2
                             split_exp +
-                            microEvent.num_p() +//3 num of p
+                            trEvent.num_p() +//3 num of p
                             split_exp +
-                            "MicroEvent" +//4 input_event types.
+                            "TREvent" +//4 input_event types.
                             split_exp +
-                            Arrays.toString(microEvent.getKeys()) +//5 keys
+                            trEvent.getTweetID() +//5 tweet ID
                             split_exp +
-                            microEvent.READ_EVENT()//6
+                            Arrays.toString(trEvent.getWords()) //6 words
                     ;
             w.write(sb
                     + "\n");
@@ -381,34 +294,58 @@ public class IBWJInitializer extends TableInitilizer {
         w.close();
     }
 
+    private void insertIndexRecord(String key, String srcAddr, String matchAddr, int pid, SpinLock[] spinlock_) {
+        try {
+            if (spinlock_ != null)
+                db.InsertRecord("MicroTable", new TableRecord(IndexRecord(key, srcAddr, matchAddr), pid, spinlock_));
+            else
+                db.InsertRecord("MicroTable", new TableRecord(IndexRecord(key, srcAddr, matchAddr)));
+        } catch (DatabaseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private SchemaRecord IndexRecord(String indexKey, String srcAddr, String matchAddr) {
+        List<DataBox> values = new ArrayList<>();
+        values.add(new StringDataBox(indexKey));
+        values.add(new StringDataBox(srcAddr));
+        values.add(new StringDataBox(matchAddr));
+        return new SchemaRecord(values);
+    }
+
     @Override
     public List<String> getTranToDecisionConf() {
         return dataGenerator.getTranToDecisionConf();
     }
 
-    private RecordSchema MicroTableSchema() {
+    private RecordSchema IndexSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
-        dataBoxes.add(new IntDataBox());
         dataBoxes.add(new StringDataBox());
-        fieldNames.add("Key");//PK
-        fieldNames.add("Value");
+        dataBoxes.add(new StringDataBox());
+        dataBoxes.add(new StringDataBox());
+        fieldNames.add("Index_Key"); // 0
+        fieldNames.add("Source_Address"); // 1
+        fieldNames.add("Matching_Address"); // 2
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
     public void creates_Table(Configuration config) {
-        RecordSchema s = MicroTableSchema();
-        db.createTable(s, "MicroTable");
+        RecordSchema indexR = IndexSchema();
+        db.createTable(indexR, "index_r_table");
+        RecordSchema indexS = IndexSchema();
+        db.createTable(indexS, "index_s_table");
+
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
                 StringBuilder stringBuilder = new StringBuilder();
-                for (String decision : getTranToDecisionConf()) {
+                for(String decision:getTranToDecisionConf()){
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
-                config.put("WorkloadConfig", stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                config.put("WorkloadConfig",stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();
