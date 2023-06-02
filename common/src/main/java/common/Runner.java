@@ -34,7 +34,7 @@ public abstract class Runner implements IRunner {
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
 //    public int totalEvents = 1000;
-    public int totalEvents = 200;
+    public int totalEvents = 10000;
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
 //    public int NUM_ITEMS = 1000;
     public int NUM_ITEMS = 10000;
@@ -154,8 +154,8 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    //    public int checkpoint_interval = 2500;//checkpoint per thread.
-    public int checkpoint_interval = 10;//checkpoint per thread.
+    public int checkpoint_interval = 2500;//checkpoint per thread.
+//    public int checkpoint_interval = 10;//checkpoint per thread.
 
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";

@@ -63,31 +63,31 @@ public class IBWJ extends TransactionTopology {
             } else { // normal pipelined execution model.
                 switch (config.getInt("CCOption", 0)) {
                     case CCOption_LOCK: {//no-order
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_nocc(0)//
+                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_nocc(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case CCOption_OrderLOCK: {//LOB
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_olb(0)//
+                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_olb(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case CCOption_LWM: {//LWM
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_lwm(0)//
+                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_lwm(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case CCOption_TStream: {//T-Stream
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_ts(0)//
+                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_ts(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case CCOption_SStore: {//SStore
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_sstore(0)//
+                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_sstore(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;

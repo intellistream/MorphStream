@@ -10,7 +10,6 @@ import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
-import common.param.ed.tr.TREvent;
 import common.param.ibwj.IBWJEvent;
 import db.Database;
 import db.DatabaseException;
@@ -152,7 +151,8 @@ public class IBWJInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
 //            assert value.length() == VALUE_LEN;
-            insertIndexRecord(_key, null, null, pid, spinlock); //TODO: Change this
+            insertIndexRRecord(_key, _key, String.valueOf(-1), pid, spinlock); //TODO: Change this
+            insertIndexSRecord(_key, _key, String.valueOf(-1), pid, spinlock); //TODO: Change this
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -212,30 +212,26 @@ public class IBWJInitializer extends TableInitilizer {
 
             // Construct bid array
             HashMap<Integer, Integer> pids = new HashMap<>();
-            for (int i = 1; i < 5; i++) {
+            for (int i = 1; i < 4; i++) {
                 pids.put((int) (Long.parseLong(String.valueOf(split[i].hashCode())) / partitionOffset), 0); //TODO: Set pid as 0 for all input words
             }
 
-            //Construct String[] words from readLine()
-            String[] words = new String[3]; //TODO: Hard-coded number of words in tweet: 3
-            System.arraycopy(split, 2, words, 0, 3);
-
-            // Construct TR Event
-            TREvent event = new TREvent(
+            IBWJEvent event = new IBWJEvent(
                     Integer.parseInt(split[0]), //bid
                     npid, //pid
                     Arrays.toString(p_bids), //bid_arrary
                     Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
-                    2,//num_of_partition TODO: Hard-coded number of arguments in TR Event
-                    split[1], //tweetID
-                    words //String[] words
+                    3,//num_of_partition TODO: Hard-coded number of arguments in Event
+                    split[1], //key
+                    split[2], //streamID
+                    split[3] //address
             );
 
             DataHolder.events.add(event);
-            if (enable_log) LOG.debug(String.format("%d deposit read...", count));
+            if (enable_log) LOG.debug(String.format("%d ibwj read...", count));
             txn = reader.readLine();
         }
-        if (enable_log) LOG.info("Done reading TR events...");
+        if (enable_log) LOG.info("Done reading IBWJ events...");
         if (shufflingActive) {
             shuffleEvents(DataHolder.events, totalEvents);
         }
@@ -272,21 +268,23 @@ public class IBWJInitializer extends TableInitilizer {
         BufferedWriter w;
         w = new BufferedWriter(new FileWriter(new File(event_path + OsUtils.OS_wrapper(file_name))));
         for (Object event : db.getEventManager().input_events) {
-            TREvent trEvent = (TREvent) event;
+            IBWJEvent ibwjEvent = (IBWJEvent) event;
             String sb =
-                    trEvent.getBid() +//0 -- bid
+                    ibwjEvent.getBid() +//0 -- bid
                             split_exp +
-                            trEvent.getPid() +//1
+                            ibwjEvent.getPid() +//1
                             split_exp +
-                            Arrays.toString(trEvent.getBid_array()) +//2
+                            Arrays.toString(ibwjEvent.getBid_array()) +//2
                             split_exp +
-                            trEvent.num_p() +//3 num of p
+                            ibwjEvent.num_p() +//3 num of p
                             split_exp +
                             "TREvent" +//4 input_event types.
                             split_exp +
-                            trEvent.getTweetID() +//5 tweet ID
+                            ibwjEvent.getKey() +//5 tweet ID
                             split_exp +
-                            Arrays.toString(trEvent.getWords()) //6 words
+                            ibwjEvent.getStreamID() +//6 stream ID
+                            split_exp +
+                            ibwjEvent.getAddress() //7 address
                     ;
             w.write(sb
                     + "\n");
@@ -294,12 +292,23 @@ public class IBWJInitializer extends TableInitilizer {
         w.close();
     }
 
-    private void insertIndexRecord(String key, String srcAddr, String matchAddr, int pid, SpinLock[] spinlock_) {
+    private void insertIndexRRecord(String key, String srcAddr, String matchAddr, int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("MicroTable", new TableRecord(IndexRecord(key, srcAddr, matchAddr), pid, spinlock_));
+                db.InsertRecord("index_r_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr), pid, spinlock_));
             else
-                db.InsertRecord("MicroTable", new TableRecord(IndexRecord(key, srcAddr, matchAddr)));
+                db.InsertRecord("index_r_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr)));
+        } catch (DatabaseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void insertIndexSRecord(String key, String srcAddr, String matchAddr, int pid, SpinLock[] spinlock_) {
+        try {
+            if (spinlock_ != null)
+                db.InsertRecord("index_s_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr), pid, spinlock_));
+            else
+                db.InsertRecord("index_s_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }

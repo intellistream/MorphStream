@@ -19,19 +19,19 @@ public class IBWJEvent extends TxnEvent {
     private final String my_bid_array;
     private final String my_partition_index;
     private final int my_number_of_partitions;
-    private String[] addressTuple;
+    private String[] addressTuple = new String[2];
 
 
     public IBWJEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions,
-                   String streamID, String key, String address) {
+                   String key, String streamID, String address) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.myBid = bid;
         this.myPid = pid;
         this.my_bid_array = bid_array;
         this.my_partition_index = partition_index;
         this.my_number_of_partitions = number_of_partitions;
-        this.streamID = streamID;
         this.key = key;
+        this.streamID = streamID;
         this.address = address;
         this.addressTuple[0] = address;
     }
@@ -77,6 +77,6 @@ public class IBWJEvent extends TxnEvent {
 
 
     public IBWJEvent cloneEvent() {
-        return new IBWJEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, streamID, key, address);
+        return new IBWJEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, key, streamID, address);
     }
 }

@@ -7,23 +7,36 @@ import benchmark.datagenerator.Event;
  */
 public class IBWJEvent extends Event {
     private final int id;
-    private final int[] keys;
-    private final boolean isAbort;
+    private final int key;
+    private final String streamID;
+    private final String address;
 
-    public IBWJEvent(int id, int[] keys, boolean isAbort) {
+    public IBWJEvent(int id, int key, String streamID, String address) {
         this.id = id;
-        this.keys = keys;
-        this.isAbort = isAbort;
+        this.key = key;
+        this.streamID = streamID;
+        this.address = address;
+    }
+
+    public int getKey() {
+        return key;
+    }
+
+    public String getStreamID() {
+        return streamID;
+    }
+
+    public String getAddress() {
+        return address;
     }
 
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder(String.valueOf(id));
-        for (int key : keys) {
-            str.append(",").append(key);
-        }
-        str.append(",").append(isAbort);
-
+        str.append(",").append(key);
+        str.append(",").append(streamID);
+        str.append(",").append(address);
         return str.toString();
     }
+
 }

@@ -15,17 +15,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
 
 public class IBWJTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(IBWJTPGDynamicDataGenerator.class);
-    public FastZipfGenerator[] partitionedKeyZipf;
-    public transient FastZipfGenerator p_generator; // partition generator
     private int NUM_ACCESS; // transaction length, 4 or 8 or longer
     private int State_Access_Skewness; // ratio of state access, following zipf distribution
-    private int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
+    private int Ratio_of_Windowed_Reads; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
     private int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
     private int Transaction_Length;
     private int Ratio_of_Multiple_State_Access;//ratio of multiple state access per transaction
@@ -36,8 +35,12 @@ public class IBWJTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     // independent transactions.
     private boolean isUnique = false;
     private FastZipfGenerator keyZipf;
+
     private int floor_interval;
+    public FastZipfGenerator[] partitionedKeyZipf;
+
     private Random random = new Random(0); // the transaction type decider
+    public transient FastZipfGenerator p_generator; // partition generator
     private HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
@@ -54,40 +57,40 @@ public class IBWJTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         StringBuilder stringBuilder = new StringBuilder();
         //TODO:hard code, function not sure
         double td = Transaction_Length * dynamicDataConfig.getCheckpoint_interval();
-        td = td * ((double) Ratio_of_Overlapped_Keys / 100);
+        td = td *((double) Ratio_of_Overlapped_Keys/100);
         stringBuilder.append(td);
         stringBuilder.append(",");
         double ld = Transaction_Length * dynamicDataConfig.getCheckpoint_interval();
         stringBuilder.append(ld);
         stringBuilder.append(",");
-        double pd = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * ((double) Ratio_of_Overlapped_Keys / 100) * NUM_ACCESS;
+        double pd = Transaction_Length * dynamicDataConfig.getCheckpoint_interval() * ((double) Ratio_of_Overlapped_Keys/100) * NUM_ACCESS;
         stringBuilder.append(pd);
         stringBuilder.append(",");
-        stringBuilder.append((double) State_Access_Skewness / 100);
+        stringBuilder.append((double) State_Access_Skewness/100);
         stringBuilder.append(",");
-        stringBuilder.append((double) Ratio_of_Transaction_Aborts / 10000);
+        stringBuilder.append((double) Ratio_of_Windowed_Reads /10000);
         stringBuilder.append(",");
         if (AppConfig.isCyclic) {
             stringBuilder.append("1,");
         } else {
             stringBuilder.append("0,");
         }
-        if (AppConfig.complexity < 40000) {
+        if (AppConfig.complexity < 40000){
             stringBuilder.append("0,");
         } else {
             stringBuilder.append("1,");
         }
-        stringBuilder.append(eventID + dynamicDataConfig.getShiftRate() * dynamicDataConfig.getCheckpoint_interval() * dynamicDataConfig.getTotalThreads());
+        stringBuilder.append(eventID+dynamicDataConfig.getShiftRate()*dynamicDataConfig.getCheckpoint_interval()*dynamicDataConfig.getTotalThreads());
         this.tranToDecisionConf.add(stringBuilder.toString());
     }
 
     @Override
     public void switchConfiguration(String type) {
         switch (type) {
-            case "default":
+            case "default" :
                 State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
                 NUM_ACCESS = dynamicDataConfig.NUM_ACCESS;
-                Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
+                Ratio_of_Windowed_Reads = dynamicDataConfig.Ratio_of_Transaction_Aborts;
                 Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
                 Transaction_Length = dynamicDataConfig.Transaction_Length;
                 Ratio_of_Multiple_State_Access = dynamicDataConfig.Ratio_of_Multiple_State_Access;
@@ -95,27 +98,29 @@ public class IBWJTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
                 nKeyState = dynamicDataConfig.getnKeyStates();
                 int MAX_LEVEL = 256;
                 for (int i = 0; i < nKeyState; i++) {
-                    idToLevel.put(i, i % MAX_LEVEL);
+                    idToLevel.put(i, i% MAX_LEVEL);
                 }
                 keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
                 configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
                 p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
                 break;
-            case "LD":
+            case "LD" :
                 Transaction_Length = dynamicDataConfig.Transaction_Length;
                 break;
-            case "isCyclic":
-                Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
+            case "isCyclic" :
+                Ratio_of_Windowed_Reads = dynamicDataConfig.Ratio_of_Transaction_Aborts;
                 State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
                 keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
                 configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
                 p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
                 AppConfig.isCyclic = true;
                 break;
-            case "complexity":
+            case "complexity" :
                 AppConfig.complexity = 80000;
                 break;
-            case "unchanging":
+            case "windowSize" :
+                AppConfig.windowSize = 1024;
+            case "unchanging" :
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
@@ -125,9 +130,77 @@ public class IBWJTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
 
     @Override
     protected void generateTuple() {
-        IBWJEvent event;
-        event = randomEvent();
+        IBWJEvent event = randomEvent();
         events.add(event);
+    }
+
+
+    private IBWJEvent randomEvent() {
+        int streamIDInt = ThreadLocalRandom.current().nextInt(0, 2);
+        String streamID = "";
+        if (streamIDInt == 0) {
+            streamID = "r";
+        } else if (streamIDInt == 1) {
+            streamID = "s";
+        }
+        int address = ThreadLocalRandom.current().nextInt(0, 1000000);
+
+        IBWJEvent t = new IBWJEvent(eventID, eventID, streamID, String.valueOf(address));
+
+        eventID++;
+        return t;
+    }
+
+
+    //Copied from GSW, Method used during randomEvent generation
+    public int key_to_partition(int key) {
+        return (int) Math.floor((double) key / floor_interval);
+    }
+
+    //Copied from GSW, Method used during randomEvent generation
+    private int getKey(FastZipfGenerator zipfGenerator, int partitionId, ArrayList<Integer> generatedKeys) {
+        int key;
+        key = zipfGenerator.next();
+        int next = random.nextInt(100);
+        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
+            if (!generatedKeys.isEmpty()) {
+                int counter = 0;
+                key = generatedKeys.get(random.nextInt(generatedKeys.size()));
+                while (key / floor_interval != partitionId) {
+                    key = generatedKeys.get(random.nextInt(generatedKeys.size()));
+                    counter++;
+                    if (counter >= partitionId) {
+                        key = zipfGenerator.next();
+                        break;
+                    }
+                }
+            }
+        }
+        return key;
+    }
+
+    //Copied from GSW, Method used during randomEvent generation
+    private int getKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+        int srcKey;
+        srcKey = zipfGenerator.next();
+        int next = random.nextInt(100);
+        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
+            if (!generatedKeys.isEmpty()) {
+                srcKey = generatedKeys.get(zipfGenerator.next() % generatedKeys.size());
+            }
+        }
+        return srcKey;
+    }
+
+    //Copied from GSW, Method used during randomEvent generation
+    private int getUniqueKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+        int key;
+        key = zipfGenerator.next();
+        while (generatedKeys.contains(key)) {
+            key = zipfGenerator.next();
+        }
+        generatedKeys.add(key);
+        return key;
     }
 
     @Override
@@ -160,131 +233,6 @@ public class IBWJTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         for (int i = 0; i < tthread; i++) {
             partitionedKeyZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), theta, i * floor_interval, 12345678);
         }
-    }
-
-    private IBWJEvent randomEvent() {
-        int[] keys = new int[NUM_ACCESS * Transaction_Length];
-        int writeLevel = -1;
-        if (!isUnique) {
-            if (enable_states_partition) {
-                for (int j = 0; j < Transaction_Length; j++) {
-                    int partitionId = key_to_partition(p_generator.next());
-                    for (int i = 0; i < NUM_ACCESS; i++) {
-                        int offset = j * NUM_ACCESS + i;
-                        if (AppConfig.isCyclic) {
-                            int key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
-                            if (offset % NUM_ACCESS == 0) {
-                                // make sure this one is different with other write key
-                                for (int k = 0; k < j; k++) {
-                                    while (keys[k * NUM_ACCESS] == key) {
-                                        key = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
-                                    }
-                                }
-                            }
-                            keys[offset] = key;
-                        } else {
-                            // TODO: correct it later
-                            keys[offset] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
-                            if (i == 0) {
-                                while (idToLevel.get(keys[offset]) == 0) {
-                                    keys[offset] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
-                                }
-                                writeLevel = idToLevel.get(keys[offset]);
-                            } else {
-                                while (writeLevel <= idToLevel.get(keys[offset])) {
-                                    keys[offset] = getKey(partitionedKeyZipf[partitionId], partitionId, generatedKeys);
-                                }
-                            }
-                        }
-                        partitionId = (partitionId + 1) % dynamicDataConfig.getTotalThreads();
-                    }
-                }
-            } else {
-                for (int i = 0; i < NUM_ACCESS; i++) {
-                    if (AppConfig.isCyclic) {
-                        keys[i] = getKey(keyZipf, generatedKeys);
-                    } else {
-                        keys[i] = getKey(keyZipf, generatedKeys);
-                        if (i == 0) {
-                            while (idToLevel.get(keys[i]) == 0) {
-                                keys[i] = getKey(keyZipf, generatedKeys);
-                            }
-                            writeLevel = idToLevel.get(keys[i]);
-                        }
-                        while (writeLevel <= idToLevel.get(keys[i])) {
-                            keys[i] = getKey(keyZipf, generatedKeys);
-                        }
-                    }
-                }
-            }
-        } else {
-            // TODO: add transaction length logic
-            for (int i = 0; i < NUM_ACCESS; i++) {
-                keys[i] = getUniqueKey(keyZipf, generatedKeys);
-            }
-        }
-        // just for stats record
-        for (int key : keys) {
-            nGeneratedIds.put(key, nGeneratedIds.getOrDefault(key, 0) + 1);
-        }
-
-        IBWJEvent t;
-        if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
-            t = new IBWJEvent(eventID, keys, true);
-        } else {
-            t = new IBWJEvent(eventID, keys, false);
-        }
-        // increase the timestamp i.e. transaction id
-        eventID++;
-        return t;
-    }
-
-
-    public int key_to_partition(int key) {
-        return (int) Math.floor((double) key / floor_interval);
-    }
-
-    private int getKey(FastZipfGenerator zipfGenerator, int partitionId, ArrayList<Integer> generatedKeys) {
-        int key;
-        key = zipfGenerator.next();
-        int next = random.nextInt(100);
-        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
-            if (!generatedKeys.isEmpty()) {
-                int counter = 0;
-                key = generatedKeys.get(random.nextInt(generatedKeys.size()));
-                while (key / floor_interval != partitionId) {
-                    key = generatedKeys.get(random.nextInt(generatedKeys.size()));
-                    counter++;
-                    if (counter >= partitionId) {
-                        key = zipfGenerator.next();
-                        break;
-                    }
-                }
-            }
-        }
-        return key;
-    }
-
-    private int getKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
-        int srcKey;
-        srcKey = zipfGenerator.next();
-        int next = random.nextInt(100);
-        if (next < Ratio_of_Overlapped_Keys) { // randomly select a key from existing keyset.
-            if (!generatedKeys.isEmpty()) {
-                srcKey = generatedKeys.get(zipfGenerator.next() % generatedKeys.size());
-            }
-        }
-        return srcKey;
-    }
-
-    private int getUniqueKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
-        int key;
-        key = zipfGenerator.next();
-        while (generatedKeys.contains(key)) {
-            key = zipfGenerator.next();
-        }
-        generatedKeys.add(key);
-        return key;
     }
 
 
