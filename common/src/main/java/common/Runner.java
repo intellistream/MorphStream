@@ -37,7 +37,7 @@ public abstract class Runner implements IRunner {
     public int totalEvents = 10000;
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
 //    public int NUM_ITEMS = 1000;
-    public int NUM_ITEMS = 10000;
+    public int NUM_ITEMS = 100;
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 5;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -69,8 +69,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
 //    public int CCOption = CCOption_LOCK;
 //    public int CCOption = CCOption_LWM;
-//    public int CCOption = CCOption_SStore;
-    public int CCOption = CCOption_MorphStream;
+    public int CCOption = CCOption_SStore;
+//    public int CCOption = CCOption_MorphStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")

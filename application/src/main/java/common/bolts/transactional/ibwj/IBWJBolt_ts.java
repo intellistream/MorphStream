@@ -76,7 +76,7 @@ public class IBWJBolt_ts extends IBWJBolt {
         transactionManager.Asy_ModifyRecord_Read(txnContext,
                 srcIndexTable, // source_table to write to
                 event.getKey(),  // source_key to write to
-                event.getRecord_ref(), // record to be filled up from READ
+                event.srcIndexRecordRef, // record to be filled up from READ
                 insert, // overwrite empty index with new index
                 new String[]{tarIndexTable},  new String[]{event.getKey()}, //condition_source_table, condition_source_key
                 null,

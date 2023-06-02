@@ -1,8 +1,9 @@
 package common.bolts.transactional.ibwj;
 
 import combo.SINKCombo;
-import common.param.ed.tc.TCEvent;
 import common.param.ibwj.IBWJEvent;
+import common.param.sl.DepositEvent;
+import common.param.sl.TransactionEvent;
 import components.operators.api.TransactionalBolt;
 import content.common.CommonMetaTypes;
 import db.DatabaseException;
@@ -15,10 +16,11 @@ import storage.datatype.DataBox;
 import transaction.context.TxnContext;
 import utils.AppConfig;
 
+import java.util.List;
+
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static content.common.CommonMetaTypes.AccessType.READ_ONLY;
-import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
+import static content.common.CommonMetaTypes.AccessType.*;
 import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
 import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
@@ -35,8 +37,41 @@ public abstract class IBWJBolt extends TransactionalBolt {
     protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
+    protected void IBWJ_LOCK_AHEAD(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
+        transactionManager.lock_ahead(txnContext, "index_r_table", event.getKey(), event.srcIndexRecordRef, READ_WRITE);
+        transactionManager.lock_ahead(txnContext, "index_s_table", event.getKey(), event.tarIndexRecordRef, READ_WRITE);
+    }
+
+    protected void IBWJ_REQUEST_NOLOCK(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
+        transactionManager.SelectKeyRecord_noLock(txnContext, "index_r_table", event.getKey(), event.srcIndexRecordRef, READ_WRITE);
+        transactionManager.SelectKeyRecord_noLock(txnContext, "index_s_table", event.getKey(), event.tarIndexRecordRef, READ_WRITE);
+        assert event.srcIndexRecordRef.getRecord() != null || event.tarIndexRecordRef.getRecord() != null;
+    }
+
+    protected void IBWJ_REQUEST_CORE(IBWJEvent event) {
+        DataBox sourceIndex_addr = event.srcIndexRecordRef.getRecord().getValues().get(1);
+        DataBox sourceIndex_matching_addr = event.srcIndexRecordRef.getRecord().getValues().get(2);
+        DataBox targetIndex_addr = event.tarIndexRecordRef.getRecord().getValues().get(1);
+        final String targetIndexAddress = targetIndex_addr.getString();
+
+        sourceIndex_addr.setString(event.getAddress());
+        sourceIndex_matching_addr.setString(targetIndexAddress);
+    }
+
+    protected void LAL_PROCESS(double _bid) throws InterruptedException, DatabaseException {
+    }
+
+    protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
+        BEGIN_POST_TIME_MEASURE(thread_Id);
+        for (double i = _bid; i < _bid + combo_bid_size; i++) {
+            ((IBWJEvent) input_event).setTimestamp(timestamp);
+            IBWJ_POST((IBWJEvent) input_event);
+        }
+        END_POST_TIME_MEASURE(thread_Id);
+    }
+
     protected boolean IBWJ_CORE(IBWJEvent event) { //TODO: tstream
-        SchemaRecordRef ref = event.getRecord_ref();
+        SchemaRecordRef ref = event.srcIndexRecordRef;
         if (ref.isEmpty()) {
             return false;//not yet processed.
         }
@@ -55,79 +90,4 @@ public abstract class IBWJBolt extends TransactionalBolt {
             }
         }
     }
-
-
-//    protected void READ_LOCK_AHEAD(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
-//        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
-//            transactionManager.lock_ahead(txnContext, "MicroTable",
-//                    String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_ONLY);
-//    }
-//
-//    protected void WRITE_LOCK_AHEAD(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
-//        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
-//            transactionManager.lock_ahead(txnContext, "MicroTable",
-//                    String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_WRITE);
-//    }
-//
-//    private boolean process_request_noLock(IBWJEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
-//        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
-//            boolean rt = transactionManager.SelectKeyRecord_noLock(txnContext, "MicroTable",
-//                    String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
-//            if (rt) {
-//                assert event.getRecord_refs()[i].getRecord() != null;
-//            } else {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
-//    private boolean process_request(IBWJEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
-//        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
-//            boolean rt = transactionManager.SelectKeyRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
-//            if (rt) {
-//                assert event.getRecord_refs()[i].getRecord() != null;
-//            } else {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-
-//    protected boolean read_request_noLock(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
-//        return !process_request_noLock(event, txnContext, READ_ONLY);
-//    }
-//
-//    protected boolean write_request_noLock(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
-//        return !process_request_noLock(event, txnContext, READ_WRITE);
-//    }
-//
-//    protected boolean read_request(IBWJEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
-//        return !process_request(event, txnContext, READ_ONLY);
-//    }
-//
-//    protected boolean write_request(IBWJEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
-//        return !process_request(event, txnContext, READ_WRITE);
-//    }
-
-    //lock_ratio-ahead phase.
-//    protected void LAL_PROCESS(double _bid) throws DatabaseException, InterruptedException {
-//        //ONLY USED BY LAL, LWM, and PAT.
-//    }
-//
-//    //post stream processing phase..
-//    protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
-//        BEGIN_POST_TIME_MEASURE(thread_Id);
-//        for (double i = _bid; i < _bid + combo_bid_size; i++) {
-//            IBWJEvent event = (IBWJEvent) input_event;
-//            (event).setTimestamp(timestamp);
-//            boolean flag = event.READ_EVENT();
-//            if (flag) {//read
-//                READ_POST(event);
-//            } else {
-//                WRITE_POST(event);
-//            }
-//        }
-//        END_POST_TIME_MEASURE(thread_Id);
-//    }
 }

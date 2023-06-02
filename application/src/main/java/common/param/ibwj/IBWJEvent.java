@@ -13,7 +13,8 @@ public class IBWJEvent extends TxnEvent {
     private final String streamID;
     private final String key;
     private final String address;
-    public volatile SchemaRecordRef indexRecordRef = new SchemaRecordRef();
+    public volatile SchemaRecordRef srcIndexRecordRef = new SchemaRecordRef();
+    public volatile SchemaRecordRef tarIndexRecordRef = new SchemaRecordRef();
     private final double myBid;
     private final int myPid;
     private final String my_bid_array;
@@ -46,10 +47,6 @@ public class IBWJEvent extends TxnEvent {
 
     public String getAddress() {
         return address;
-    }
-
-    public SchemaRecordRef getRecord_ref() {
-        return indexRecordRef;
     }
 
     public void setAddressTuple(String matchingTupleAddr) {
