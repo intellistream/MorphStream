@@ -169,6 +169,8 @@ public abstract class Runner implements IRunner {
 
     @Parameter(names = {"--multiple_ratio"}, description = "State access skewness.")
     public Integer Ratio_of_Multiple_State_Access = 100;
+    @Parameter(names = {"--nondeterministic_ratio"}, description = "Ratio_of_Non_Deterministic_State_Access.")
+    public Integer Ratio_of_Non_Deterministic_State_Access = 0;
 
     @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
     public Integer Ratio_of_Overlapped_Keys = 10;
@@ -224,6 +226,7 @@ public abstract class Runner implements IRunner {
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
         config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
+        config.put("Ratio_of_Non_Deterministic_State_Access", Ratio_of_Non_Deterministic_State_Access);
         config.put("Transaction_Length", Transaction_Length);
 
         config.put("numberOfDLevels", numberOfDLevels);
@@ -290,6 +293,13 @@ public abstract class Runner implements IRunner {
                 break;
             case "EventDetection":
                 //TODO: Add Conf settings to ED
+                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
+                defaultScheduler = "OP_NS_A";
+                phaseNum = shiftRate * phaseType.length;
+                break;
+            case "NonGrepSum":
+                //TODO: Add Conf settings to NonGrepSum
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
                 defaultScheduler = "OP_NS_A";

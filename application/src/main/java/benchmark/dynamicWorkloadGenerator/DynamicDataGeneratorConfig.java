@@ -18,6 +18,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     public int Ratio_Of_Buying;
     public boolean enableGroup;
     public int Ratio_of_Multiple_State_Access;
+    public int Ratio_of_Non_Deterministic_State_Access;
     public String skewGroup;
     public int groupNum;
     public int Ratio_of_Transaction_Aborts_Highest;
@@ -46,6 +47,7 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
         Ratio_Of_Deposit = config.getInt("Ratio_Of_Deposit", 0);
         Ratio_Of_Buying = config.getInt("Ratio_Of_Buying", 0);
         Ratio_of_Multiple_State_Access = config.getInt("Ratio_of_Multiple_State_Access", 100);
+        Ratio_of_Non_Deterministic_State_Access = config.getInt("Ratio_of_Non_Deterministic_State_Access", 0);
         phase = 0;
         if (enableGroup) {
             skewGroup = config.getString("skewGroup");

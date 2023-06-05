@@ -207,7 +207,7 @@ public class ExecutionGraph extends RawExecutionGraph {
         //create executionNode and assign unique vertex id to it.
         for (int i = 0; i < operator.getNumTasks() / compressRatio; i++) {
             //creates executor->Operator link
-            ExecutionNode vertex = new ExecutionNode(operator, vertex_id++, p, compressRatio);//Every executionNode obtain its unique vertex id..
+            ExecutionNode vertex = new ExecutionNode(operator, vertex_id ++, p, compressRatio);//Every executionNode obtain its unique vertex id..
             if (i == operator.getNumTasks() - 1) {
                 vertex.setLast_executorOfBolt(true);
             }
