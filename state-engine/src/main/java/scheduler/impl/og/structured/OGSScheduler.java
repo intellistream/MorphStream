@@ -24,16 +24,14 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
 
     @Override
     public void INITIALIZE(Context context) {
-        needAbortHandling = false;
+        needAbortHandling = false;//reset needAbortHandling here
         int threadId = context.thisThreadId;
-//        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.exploreTPGBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
 
     public void REINITIALIZE(Context context) {
-        needAbortHandling = false;
-        tpg.secondTimeExploreTPG(context);
+        tpg.secondTimeExploreTPG(context);//Do not need to reset needAbortHandling here, as lazy approach only handles abort once.
         context.waitForOtherThreads(context.thisThreadId);
     }
 

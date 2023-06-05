@@ -23,15 +23,14 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 
     @Override
     public void INITIALIZE(Context context) {
-        needAbortHandling = false;
+        needAbortHandling = false;//reset needAbortHandling here
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
         context.waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(Context context) {
-        needAbortHandling = false;
-        tpg.secondTimeExploreTPG(context);
+        tpg.secondTimeExploreTPG(context);//Do not need to reset needAbortHandling here, as lazy approach only handles abort once for one batch.
         context.waitForOtherThreads(context.thisThreadId);
     }
 
