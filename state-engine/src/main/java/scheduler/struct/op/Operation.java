@@ -11,6 +11,7 @@ import scheduler.struct.op.MetaTypes.DependencyType;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
+import storage.table.BaseTable;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
@@ -43,6 +44,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     // an operation id to indicate how many operations in front of this operation in the same transaction.
     public int txnOpId = 0;
     public boolean isFailed;
+    public boolean isNonDeterministicOperation = false;
+    public BaseTable[] tables;
     public String name;
     public String[] condition_sourceTable = null;
     public String[] condition_source = null;
@@ -68,6 +71,39 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         this.context = context;
         this.pKey = pKey;
 
+        ld_head_operation = null;
+        ld_descendant_operations = new ArrayDeque<>();
+
+        // finctional dependencies, this should be concurrent because cross thread access
+        fd_concurrent_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
+        fd_concurrent_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
+        fd_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
+        fd_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // temporal dependencies
+        td_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
+        td_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // finctional dependencies
+        ld_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
+        ld_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // finctional dependencies
+        // speculative parents to wait, include the last ready op
+        // speculative parents to wait, include the last ready op
+        ld_spec_children = new ArrayDeque<>(); // speculative children to notify.
+
+        operationMetadata = new OperationMetadata();
+//        operationState = new AtomicReference<>(OperationStateType.BLOCKED);
+        operationState = OperationStateType.BLOCKED;
+    }
+    public <Context extends OPSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables,
+            String pKey, Context context, String table_name, TxnContext txn_context, double bid,
+            CommonMetaTypes.AccessType accessType, String operator_name, TableRecord record,
+            SchemaRecordRef record_ref, Function function, Condition condition,
+            TableRecord[] condition_records, int[] success) {
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, operator_name, record, record, bid);
+        this.context = context;
+        this.pKey = pKey;
+        this.isNonDeterministicOperation = isNonDeterministicOperation;
+        this.tables = tables;
         ld_head_operation = null;
         ld_descendant_operations = new ArrayDeque<>();
 

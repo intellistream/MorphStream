@@ -69,6 +69,18 @@ public class OperationChain implements Comparable<OperationChain> {
             curOperation.initialize();
         }
     }
+    public void updateFDDependencies(){
+        for (PotentialDependencyInfo pChildInfo : potentialChldrenInfo) {
+            if (pChildInfo.op.isNonDeterministicOperation) {
+                if (pChildInfo.potentialChildOC.equals(this))
+                    continue;
+                addDependencyForNondeterministicOperation(pChildInfo.op);
+            } else {
+                addFDParent(pChildInfo.op);
+            }
+        }
+        potentialChldrenInfo.clear();
+    }
 
     public void addOperation(Operation op) {
         operations.add(op);
@@ -78,32 +90,27 @@ public class OperationChain implements Comparable<OperationChain> {
         potentialChldrenInfo.add(new PotentialDependencyInfo(potentialChildren, op));
     }
 
-    public void addFDParent(Operation targetOp, OperationChain parentOC) {
-        Iterator<Operation> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
+    public void addFDParent(Operation targetOp) {
+        Iterator<Operation> iterator = this.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
         while (iterator.hasNext()) {
             Operation parentOp = iterator.next();
             if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
                 targetOp.addParent(parentOp, DependencyType.FD);
                 parentOp.addChild(targetOp, DependencyType.FD);
-                ocParents.put(parentOC, parentOp);
                 break;
             }
         }
     }
-
-    public void checkPotentialFDChildrenOnNewArrival(Operation newOp) {
-        List<PotentialDependencyInfo> processed = new ArrayList<>();
-
-        for (PotentialDependencyInfo pChildInfo : potentialChldrenInfo) {
-            if (newOp.bid < pChildInfo.op.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
-                pChildInfo.potentialChildOC.addFDParent(pChildInfo.op, this);
-                processed.add(pChildInfo);
+    public void addDependencyForNondeterministicOperation(Operation targetOp) {
+        addFDParent(targetOp);
+        for (Operation childOp : this.getOperations()) {
+            if (childOp.bid > targetOp.bid) {
+                childOp.addParent(targetOp, DependencyType.TD);
+                targetOp.addChild(childOp, DependencyType.TD);
+                break;
             }
         }
-        potentialChldrenInfo.removeAll(processed);
-        processed.clear();
     }
-
 
     public MyList<Operation> getOperations() {
         return operations;
@@ -149,33 +156,33 @@ public class OperationChain implements Comparable<OperationChain> {
         dependencyLevel = -1;
     }
 
-    // for layered tpg building
-    public synchronized void updateDependencyLevel() {
-        if (isDependencyLevelCalculated)
-            return;
-        dependencyLevel = 0;
-        for (OperationChain parent : ocParents.keySet()) {
-            if (!parent.hasValidDependencyLevel()) {
-                parent.updateDependencyLevel();
-            }
+//    // for layered tpg building
+//    public synchronized void updateDependencyLevel() {
+//        if (isDependencyLevelCalculated)
+//            return;
+//        dependencyLevel = 0;
+//        for (OperationChain parent : ocParents.keySet()) {
+//            if (!parent.hasValidDependencyLevel()) {
+//                parent.updateDependencyLevel();
+//            }
+//
+//            if (parent.getDependencyLevel() >= dependencyLevel) {
+//                dependencyLevel = parent.getDependencyLevel() + 1;
+//                for (Operation op : operations) {
+//                    op.updateDependencyLevel(dependencyLevel);
+//                }
+//            }
+//        }
+//        isDependencyLevelCalculated = true;
+//    }
 
-            if (parent.getDependencyLevel() >= dependencyLevel) {
-                dependencyLevel = parent.getDependencyLevel() + 1;
-                for (Operation op : operations) {
-                    op.updateDependencyLevel(dependencyLevel);
-                }
-            }
-        }
-        isDependencyLevelCalculated = true;
-    }
-
-    public synchronized boolean hasValidDependencyLevel() {
-        return isDependencyLevelCalculated;
-    }
-
-    public int getDependencyLevel() {
-        return dependencyLevel;
-    }
+//    public synchronized boolean hasValidDependencyLevel() {
+//        return isDependencyLevelCalculated;
+//    }
+//
+//    public int getDependencyLevel() {
+//        return dependencyLevel;
+//    }
 
     public class PotentialDependencyInfo implements Comparable<PotentialDependencyInfo> {
         public OperationChain potentialChildOC;

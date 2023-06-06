@@ -177,6 +177,40 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             }
         }
     }
+    protected void Non_GrepSum_Fun(Operation operation, double previous_mark_ID, boolean clean) {
+        //TODO:Update this function to support non-GrepSum.
+        int keysLength = operation.condition_records.length;
+        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
+
+        long sum = 0;
+
+        // apply function
+        AppConfig.randomDelay();
+
+        for (int i = 0; i < keysLength; i++) {
+            preValues[i] = operation.condition_records[i].content_.readPreValues((long) operation.bid);
+            sum += preValues[i].getValues().get(1).getLong();
+        }
+
+        sum /= keysLength;
+
+        if (operation.function.delta_long != -1) {
+            // read
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues((long) operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+            // apply function
+
+            if (operation.function instanceof SUM) {
+//                tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
+                tempo_record.getValues().get(1).setLong(sum);//compute.
+            } else
+                throw new UnsupportedOperationException();
+            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+        }
+    }
 
     // ED: Tweet Registrant - Asy_ModifyRecord
     protected void TweetRegistrant_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
@@ -527,6 +561,15 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             if (operation.success[0] == success) {
                 operation.isFailed = true;
             }
+        } else if (operation.accessType.equals(NON_READ_WRITE_COND_READN)) {
+            success = operation.success[0];
+            Non_GrepSum_Fun(operation, mark_ID, clean);
+            if (operation.record_ref != null) {
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
+            }
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
         } else if (operation.accessType.equals(READ_WRITE_READ)) {
             assert operation.record_ref != null;
             AppConfig.randomDelay();
@@ -699,22 +742,26 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         Context targetContext = getTargetContext(request.src_key);
         switch (request.accessType) {
             case WRITE_ONLY:
-                set_op = new Operation(request.src_key, null, request.table_name, null, null, null,
+                set_op = new Operation(false, null, request.src_key, null, request.table_name, null, null, null,
                         null, request.txn_context, request.accessType, request.operator_name, null, request.d_record, bid, targetContext);
                 set_op.value = request.value;
                 break;
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
-                set_op = new Operation(request.src_key, request.function, request.table_name, null, request.condition_records, request.condition,
+                set_op = new Operation(false, null, request.src_key, request.function, request.table_name, null, request.condition_records, request.condition,
                         request.success, request.txn_context, request.accessType, request.operator_name, request.d_record, request.d_record, bid, targetContext);
                 break;
             case READ_WRITE_COND_READ:
             case READ_WRITE_COND_READN:
-                set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, request.condition_records, request.condition,
+                set_op = new Operation(false, null, request.src_key, request.function, request.table_name, request.record_ref, request.condition_records, request.condition,
+                        request.success, request.txn_context, request.accessType, request.operator_name, request.d_record, request.d_record, bid, targetContext);
+                break;
+            case NON_READ_WRITE_COND_READN:
+                set_op = new Operation(true, request.tables, request.src_key, request.function, request.table_name, request.record_ref, request.condition_records, request.condition,
                         request.success, request.txn_context, request.accessType, request.operator_name, request.d_record, request.d_record, bid, targetContext);
                 break;
             case READ_WRITE_READ:
-                set_op = new Operation(request.src_key, request.function, request.table_name, request.record_ref, null, request.condition,
+                set_op = new Operation(false, null, request.src_key, request.function, request.table_name, request.record_ref, null, request.condition,
                         request.success, request.txn_context, request.accessType, request.operator_name, request.d_record, request.d_record, bid, targetContext);
                 break;
             default:

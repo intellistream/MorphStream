@@ -58,32 +58,31 @@ public class OPSContext extends OPSchedulerContext {
         return allocatedLayeredOCBucket.get(currentLevel);
     }
 
-    /**
-     * Build buckets with submitted ocs.
-     * Return the local maximal dependency level.
-     *
-     * @param ocs
-     */
-    public void buildBucketPerThread(Collection<OperationChain> ocs) {
-        // TODO: update this logic to the latest logic that we proposed in operation level
-        int localMaxDLevel = 0;
-        int dependencyLevel;
-        for (OperationChain oc : ocs) {
-            if (oc.getOperations().isEmpty()) {
-                continue;
-            }
-            this.totalOsToSchedule += oc.getOperations().size();
-            oc.updateDependencyLevel();
-            dependencyLevel = oc.getDependencyLevel();
-            if (localMaxDLevel < dependencyLevel)
-                localMaxDLevel = dependencyLevel;
-            if (!allocatedLayeredOCBucket.containsKey(dependencyLevel))
-                allocatedLayeredOCBucket.put(dependencyLevel, new ArrayList<>());
-            allocatedLayeredOCBucket.get(dependencyLevel).addAll(oc.getOperations());
-        }
-//        if (enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
-        this.maxLevel = localMaxDLevel;
-    }
+//    /**
+//     * Build buckets with submitted ocs.
+//     * Return the local maximal dependency level.
+//     *
+//     * @param ocs
+//     */
+//    public void buildBucketPerThread(Collection<OperationChain> ocs) {
+//        int localMaxDLevel = 0;
+//        int dependencyLevel;
+//        for (OperationChain oc : ocs) {
+//            if (oc.getOperations().isEmpty()) {
+//                continue;
+//            }
+//            this.totalOsToSchedule += oc.getOperations().size();
+//            oc.updateDependencyLevel();
+//            dependencyLevel = oc.getDependencyLevel();
+//            if (localMaxDLevel < dependencyLevel)
+//                localMaxDLevel = dependencyLevel;
+//            if (!allocatedLayeredOCBucket.containsKey(dependencyLevel))
+//                allocatedLayeredOCBucket.put(dependencyLevel, new ArrayList<>());
+//            allocatedLayeredOCBucket.get(dependencyLevel).addAll(oc.getOperations());
+//        }
+////        if (enable_log) LOG.debug("localMaxDLevel" + localMaxDLevel);
+//        this.maxLevel = localMaxDLevel;
+//    }
 
     /**
      * Build buckets with submitted ocs.

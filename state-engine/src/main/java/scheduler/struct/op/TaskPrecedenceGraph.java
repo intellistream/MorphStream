@@ -1,5 +1,6 @@
 package scheduler.struct.op;
 
+import content.common.CommonMetaTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -199,9 +200,13 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     public void setupOperationTDFD(Operation operation, Request request) {
         // TD
         OperationChain oc = addOperationToChain(operation);
-        // FD
-        if (request.condition_source != null)
-            checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        if (operation.isNonDeterministicOperation) {
+            checkDependencyForNonDeterministicStateAccess(oc, operation);
+        } else {
+            // FD
+            if (request.condition_source != null)
+                checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        }
     }
 
     /**
@@ -221,7 +226,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
                     oc.updateTDDependencies();
-//                    updateTDDependencies(oc);
+                    oc.updateFDDependencies();
                     Operation head = oc.getOperations().first();
                     if (head.isRoot()) {
                         roots.add(head);
@@ -248,10 +253,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
                     oc.updateTDDependencies();
-//                    updateTDDependencies(oc);
-//                    for (Operation op : oc.getOperations()) {
-//                        context.fd += op.fd_parents.size();
-//                    }
+                    oc.updateFDDependencies();
                     Operation head = oc.getOperations().first();
                     context.totalOsToSchedule += oc.getOperations().size();
                     if (head.isRoot()) {
@@ -376,14 +378,18 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     continue;// no need to check data dependency on a key itself.
                 OperationChain OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index]);
                 // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
-                if (OCFromConditionSource.getOperations().isEmpty() || OCFromConditionSource.getOperations().first().bid >= op.bid) {
-                    OCFromConditionSource.addPotentialFDChildren(curOC, op);
-                } else {
-                    // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
-                    curOC.addFDParent(op, OCFromConditionSource); // record dependency
-                }
+                OCFromConditionSource.addPotentialFDChildren(curOC, op);
             }
-            curOC.checkPotentialFDChildrenOnNewArrival(op);
+            //curOC.checkPotentialFDChildrenOnNewArrival(op);
+        }
+    }
+    private void checkDependencyForNonDeterministicStateAccess(OperationChain curOC, Operation op) {
+        //Add Non-deterministic state access operation to all its potential parents
+        for (int i = 0; i < this.threadToOCs.size(); i ++) {
+            Deque<OperationChain> threadOCs = this.threadToOCs.get(i);
+            for (OperationChain OC : threadOCs) {
+                OC.addPotentialFDChildren(curOC, op);
+            }
         }
     }
 

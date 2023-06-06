@@ -6,6 +6,7 @@ import scheduler.struct.AbstractOperation;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
+import storage.table.BaseTable;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
@@ -26,13 +27,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public final Queue<Operation> fd_parents; // the functional dependencies ops to be executed in advance
     protected final Queue<Operation> ld_descendant_operations;
     public boolean isFailed = false; // whether the operation is failed, this is used to detect transaction abort
-
-//    public volatile Operation[] fdParentOps; // parent ops that accessing conditioned records and has smaller
-//    public volatile List<Operation> fd_parents; // parent ops that accessing conditioned records and has smaller
-//    public HashMap<TableRecord, Integer> condition_source_to_index;
-    //required by READ_WRITE.
-//    public String[] condition_sourceTable = null;
-//    public String[] condition_source = null;
+    public boolean isNonDeterministicOperation = false;
+    public BaseTable[] tables;
     private OperationStateType operationState;
     private int txnOpId = 0;
     // logical dependencies are to be stored for the purpose of abort handling
@@ -40,11 +36,13 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private OperationChain oc; // used for dependency resolved notification under greedy smart
 
 
-    public <Context extends OGSchedulerContext> Operation(String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
+    public <Context extends OGSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables, String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
                                                           TxnContext txn_context, CommonMetaTypes.AccessType accessType, String operator_name, TableRecord s_record, TableRecord d_record, double bid, Context context) {
         super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, operator_name, s_record, d_record, bid);
 
         this.pKey = pKey;
+        this.isNonDeterministicOperation = isNonDeterministicOperation;
+        this.tables = tables;
 
         // finctional dependencies, this should be concurrent because cross thread access
         fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance

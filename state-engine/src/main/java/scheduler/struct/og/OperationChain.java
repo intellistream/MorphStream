@@ -58,68 +58,57 @@ public class OperationChain implements Comparable<OperationChain> {
     public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
         potentialChldrenInfo.add(new PotentialChildrenInfo(potentialChildren, op));
     }
+    public void updateFDDependencies() {
+        for (PotentialChildrenInfo pChildInfo : potentialChldrenInfo) {
+            if (pChildInfo.childOp.isNonDeterministicOperation) {
+                addParent(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
+                this.addDependencyForNondeterministicOperation(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
+            } else {
+                addParent(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
+            }
+        }
+        potentialChldrenInfo.clear();
+    }
 
-    public void addParent(Operation targetOp, OperationChain parentOC) {
+    public void addParent(Operation childOp, OperationChain childOC, OperationChain parentOC) {
         Iterator<Operation> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
         while (iterator.hasNext()) {
             Operation parentOp = iterator.next();
-            if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
+            if (parentOp.bid < childOp.bid) { // find the exact operation in parent OC that this target OP depends on.
                 // setup dependencies on op level first.
-                targetOp.addFDParent(parentOp);
-                setupDependency(targetOp, parentOC, parentOp);
+                childOp.addFDParent(parentOp);
+                setupDependency(childOp, childOC, parentOC, parentOp);
+                break;
+            }
+        }
+    }
+    public void addDependencyForNondeterministicOperation(Operation parentOp, OperationChain parentOC, OperationChain childOC) {
+        for (Operation childOp : this.getOperations()) {
+            if (childOp.bid > parentOp.bid) { // find the exact operation in parent OC that this target OP depends on.
+                // setup dependencies on op level first.
+                childOp.addFDParent(parentOp);
+                childOC.setupDependency(childOp, childOC, parentOC, parentOp);
                 break;
             }
         }
     }
 
-    protected void setupDependency(Operation targetOp, OperationChain parentOC, Operation parentOp) {
-//        if (circularDetection(targetOp, parentOC, parentOp)) return;
+    protected void setupDependency(Operation childOp, OperationChain childOC, OperationChain parentOC, Operation parentOp) {
         assert parentOC.getOperations().size() > 0;
-        if (this.ocParents.putIfAbsent(parentOC, parentOp) == null) {
-            this.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
+        if (childOC.ocParents.putIfAbsent(parentOC, parentOp) == null) {
+            childOC.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
         }
         // add child for parent OC
-        parentOC.ocChildren.put(this, targetOp);
-        assert this.ocParents.containsKey(parentOC);
-        assert parentOC.ocChildren.containsKey(this);
-//        assert this.ocParents.size() == this.ocParentsCount.get();
+        parentOC.ocChildren.put(this, childOp);
+        assert childOC.ocParents.containsKey(parentOC);
+        assert parentOC.ocChildren.containsKey(childOC);
     }
-
-//    private boolean circularDetection(Operation targetOp, OperationChain parentOC, Operation parentOp) {
-//        boolean isCircular;
-//        // loop to find the circular
-//        isCircular = isCircular(parentOC);
-//        if (isCircular) { // if circular detected, try to solve circular
-//            // TODO: create a new OC and put all ops after circular OP to the new OC.
-//            OperationChain newOC = tpg.getNewOC(targetOp.table_name, targetOp.d_record.record_.GetPrimaryKey(), targetOp.bid);
-//            List<Operation> opsToMigrate = new ArrayList<>();
-//            for (Operation op : operations) {
-//                if (op.bid >= targetOp.bid) {
-//                    opsToMigrate.add(op);
-//                }
-//            }
-//            opsToMigrate.forEach(operations::remove);
-//            for (Operation op : opsToMigrate) {
-//                newOC.addOperation(op);
-//            }
-//            newOC.potentialChldrenInfo.addAll(this.potentialChldrenInfo); // move the potentialChildrenInfo to future
-//            newOC.setupDependency(targetOp, this, this.getOperations().last());
-//            newOC.setupDependency(targetOp, parentOC, parentOp);
-//            return true;
-//        }
-//        return false;
-//    }
 
     public boolean isCircular(OperationChain parentOC) {
         boolean isCircular = false;
         if (parentOC.ocParents.containsKey(this)) {
             isCircular = true;
         }
-//        else {
-//            scanedOCs.clear();
-//            Collection<OperationChain> selectedOCs = parentOC.ocParents.keySet();
-//            isCircular = scanParentOCs(selectedOCs);
-//        }
         return isCircular;
     }
 
@@ -144,65 +133,6 @@ public class OperationChain implements Comparable<OperationChain> {
                 dfs(childOC, affectedOCs);
             }
         }
-    }
-
-
-//    private void relaxDependencies(OperationChain oc, ArrayDeque<OperationChain> resolvedOC) {
-//        // remove all parents, update children set of its parents
-////        for (OperationChain parent : oc.ocParents.keySet()) {
-////            parent.ocChildren.remove(oc);
-////        }
-////        oc.ocParentsCount.set(0);
-////        oc.ocParents.clear();
-//        for (OperationChain child : oc.ocChildren.keySet()) {
-//            if (!resolvedOC.contains(child)) {
-//                resolvedOC.add(child);
-//                relaxDependencies(child, resolvedOC);
-//            }
-//        }
-//    }
-
-
-//    public boolean scanParentOCs(Collection<OperationChain> selectedOCs) {
-//        for (OperationChain oc : selectedOCs) {
-//            if (!oc.ocParents.isEmpty() && !scanedOCs.contains(oc)) {
-//                scanedOCs.add(oc);
-//                if (oc.ocParents.containsKey(this)) {
-//                    return true;
-//                }
-//                if (scanParentOCs(oc.ocParents.keySet())) {
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-//    }
-
-//    public boolean checkConnectivity(Collection<OperationChain> selectedOCs) {
-//        if (selectedOCs.isEmpty()) {
-//            return true;
-//        }
-//        for (OperationChain oc : selectedOCs) {
-//            if (oc.ocParents.isEmpty()) {
-//                return true;
-//            } else {
-//                return checkConnectivity(oc.ocParents.keySet());
-//            }
-//        }
-//        return false;
-//    }
-
-    public void checkPotentialFDChildrenOnNewArrival(Operation newOp) {
-        List<PotentialChildrenInfo> processed = new ArrayList<>();
-
-        for (PotentialChildrenInfo pChildInfo : potentialChldrenInfo) {
-            if (newOp.bid < pChildInfo.childOp.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
-                pChildInfo.potentialChildOC.addParent(pChildInfo.childOp, this);
-                processed.add(pChildInfo);
-            }
-        }
-        potentialChldrenInfo.removeAll(processed);
-        processed.clear();
     }
 
     public MyList<Operation> getOperations() {

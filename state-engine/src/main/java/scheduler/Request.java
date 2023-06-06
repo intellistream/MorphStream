@@ -3,6 +3,7 @@ package scheduler;
 import content.common.CommonMetaTypes;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
+import storage.table.BaseTable;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
@@ -25,6 +26,7 @@ public class Request {
     public final int column_id;
     public final double[] enqueue_time;
     public long value;
+    public BaseTable[] tables;
 
     public Request() {
         this(null, null, null, null);
@@ -54,7 +56,7 @@ public class Request {
                    CommonMetaTypes.AccessType accessType,
                    String operator_name,
                    String table_name, double[] enqueue_time) {
-        this(txn_context, accessType, operator_name, table_name, null, null, null, null, null, null, null, null, null, null, -1, enqueue_time);
+        this(txn_context, null, accessType, operator_name, table_name, null, null, null, null, null, null, null, null, null, null, -1, enqueue_time);
     }
 
     //TODO: Check this
@@ -64,7 +66,7 @@ public class Request {
                    String table_name, String source_key,
                    TableRecord s_record,
                    double[] enqueue_time) {
-        this(txn_context, accessType, operator_name, table_name, source_key, s_record, null, null, null, null, null, null, null, null, -1, enqueue_time);
+        this(txn_context, null, accessType, operator_name, table_name, source_key, s_record, null, null, null, null, null, null, null, null, -1, enqueue_time);
     }
 
     //no condition, no ref. no column id
@@ -118,7 +120,7 @@ public class Request {
                    Function function,
                    SchemaRecordRef record_ref,
                    String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, Condition condition, int[] success) {
-        this(txn_context, accessType, operator_name, table_name, src_key, s_record, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success, -1, null);
+        this(txn_context, null, accessType, operator_name, table_name, src_key, s_record, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, condition, success, -1, null);
     }
 
     //no column id and condition
@@ -132,7 +134,20 @@ public class Request {
                    Function function,
                    SchemaRecordRef record_ref,
                    String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, int[] success) {
-        this(txn_context, accessType, operator_name, table_name, src_key, s_record, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, null, success, -1, null);
+        this(txn_context, null, accessType, operator_name, table_name, src_key, s_record, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, null, success, -1, null);
+    }
+    public Request(TxnContext txn_context,
+                   BaseTable[] baseTables,
+                   CommonMetaTypes.AccessType accessType,
+                   String operator_name,
+                   String table_name,
+                   String src_key,
+                   TableRecord s_record,
+                   TableRecord d_record,
+                   Function function,
+                   SchemaRecordRef record_ref,
+                   String[] condition_sourceTable, String[] condition_source, TableRecord[] condition_records, int[] success) {
+        this(txn_context, baseTables, accessType, operator_name, table_name, src_key, s_record, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, null, success, -1, null);
     }
 
     //no condition, no ref.
@@ -145,10 +160,11 @@ public class Request {
                    TableRecord d_record,
                    Function function,
                    int column_id) {
-        this(txn_context, accessType, operator_name, table_name, src_key, s_record, d_record, function, null, null, null, null, null, null, column_id, null);
+        this(txn_context, null, accessType, operator_name, table_name, src_key, s_record, d_record, function, null, null, null, null, null, null, column_id, null);
     }
 
     public Request(TxnContext txn_context,
+                   BaseTable[] baseTable,
                    CommonMetaTypes.AccessType accessType,
                    String operator_name,
                    String table_name,
@@ -169,6 +185,7 @@ public class Request {
         this.success = success;
         this.column_id = column_id;
         this.enqueue_time = enqueue_time;
+        this.tables = baseTable;
     }
 
 }
