@@ -623,6 +623,32 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     }
 
+    // LB - Asy_ModifyRecord_Iteration_Read
+    protected void LoadBalancer_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+
+        // apply function
+        AppConfig.randomDelay();
+
+        HashMap<SchemaRecord, Long> counters = new HashMap<>();
+
+        if (operation.condition.boolArg1) { //input packet from a new connection
+            for (TableRecord record : operation.condition_records) { // iterate through all servers
+                SchemaRecord serverRecord = record.content_.readPastValues((long) operation.bid);
+                counters.put(serverRecord, serverRecord.getValues().get(1).getLong());
+            }
+            SchemaRecord minServer = Collections.min(counters.entrySet(), Map.Entry.comparingByValue()).getKey();
+            SchemaRecord tempo_record = new SchemaRecord(minServer);
+            tempo_record.getValues().get(1).incLong(1);
+
+            //TODO: Non-deterministic key? Util this stage, d_record is unknown and set to null during txn construction.
+            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+        }
+        synchronized (operation.success) {
+            operation.success[0]++;
+        }
+
+    }
+
     @Override
     public void AddContext(int threadId, Context context) {
         tpg.threadToContextMap.put(threadId, context);

@@ -47,6 +47,14 @@ public class Condition {
         this.boolArg1 = boolArg1;
     }
 
+    public Condition(Boolean boolArg1) {
+        arg1 = -1;
+        arg2 = -1;
+        arg3 = -1;
+        stringArg1 = "";
+        this.boolArg1 = boolArg1;
+    }
+
     public Condition() {
         arg1 = -1;
         arg2 = -1;
