@@ -82,7 +82,8 @@ public class IBWJTPGDataGenerator extends DataGenerator {
     }
 
     private IBWJEvent randomEvent() {
-        int randomKey = ThreadLocalRandom.current().nextInt(0, 100); //TODO: Key range
+        int keyRange = 100;
+        int randomKey = ThreadLocalRandom.current().nextInt(0, keyRange); //TODO: Key range
         int streamIDInt = ThreadLocalRandom.current().nextInt(0, 2);
         String streamID = "";
         if (streamIDInt == 0) {
@@ -92,7 +93,12 @@ public class IBWJTPGDataGenerator extends DataGenerator {
         }
         int address = ThreadLocalRandom.current().nextInt(0, 1000000);
 
-        IBWJEvent t = new IBWJEvent(eventID, randomKey, streamID, String.valueOf(address));
+        int[] lookupKeys = new int[5];
+        for (int i=0; i<5; i++) {
+            lookupKeys[i] = ThreadLocalRandom.current().nextInt(0, keyRange);
+        }
+
+        IBWJEvent t = new IBWJEvent(eventID, randomKey, streamID, String.valueOf(address), lookupKeys);
 
         eventID++;
         return t;

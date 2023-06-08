@@ -38,6 +38,12 @@ public class LBEvent extends TxnEvent {
     public String getConnID() {
         return connID;
     }
+    public String getSrcAddr() {
+        return srcAddr;
+    }
+    public String getSrcPort() {
+        return srcPort;
+    }
     public double getMyBid() {
         return myBid;
     }

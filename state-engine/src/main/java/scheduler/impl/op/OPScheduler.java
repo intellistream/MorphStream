@@ -90,6 +90,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 EventSelection_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 6) {
                 IBWJ_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 7) {
+                LoadBalancer_Fun(operation, mark_ID, clean);
             }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
@@ -592,8 +594,13 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         AppConfig.randomDelay();
 
-        SchemaRecord matchingTuple = operation.condition_records[0].content_.readPreValues((long) operation.bid);
-        final String matchingAddress = matchingTuple.getValues().get(1).getString();
+        int keysLength = operation.condition_records.length;
+        SchemaRecord[] matchingTuples = new SchemaRecord[keysLength];
+        for (int i = 0; i < keysLength; i++) {
+            matchingTuples[i] = operation.condition_records[i].content_.readPreValues((long) operation.bid);
+        }
+
+        final String matchingAddress = matchingTuples[0].getValues().get(1).getString(); //find one of the matching addresses
         if (matchingAddress == null) {
             log.info("IBWJ: No matching tuple found");
             return;
@@ -607,10 +614,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
         SchemaRecord tempo_record = new SchemaRecord(sourceTuple); //tempo record
 
-        // compute cluster growth rate
         if (operation.function instanceof Insert) {
-            tempo_record.getValues().get(1).setString(operation.function.item); //update tuple's own index
-            tempo_record.getValues().get(2).setString(matchingAddress); //update tuple's matching index
+            tempo_record.getValues().get(1).setString(operation.function.item); //update tuple's own index address
+            tempo_record.getValues().get(2).setString(matchingAddress); //update tuple's matching index address
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
 
             synchronized (operation.success) {

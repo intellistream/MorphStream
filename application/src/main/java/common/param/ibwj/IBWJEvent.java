@@ -10,11 +10,14 @@ import java.util.Arrays;
  * Support Multi workset since 1 SEP 2018.
  */
 public class IBWJEvent extends TxnEvent {
-    private final String streamID;
+
     private final String key;
+    private final String streamID;
     private final String address;
+    private final String[] lookupKeys;
     public volatile SchemaRecordRef srcIndexRecordRef = new SchemaRecordRef();
-    public volatile SchemaRecordRef tarIndexRecordRef = new SchemaRecordRef();
+    public volatile SchemaRecordRef tarIndexRecordRef = new SchemaRecordRef(); //TODO: Remove it. In SStore, replace this with lookupIndexRecords
+    public volatile SchemaRecordRef[] lookupIndexRecords;
     private final double myBid;
     private final int myPid;
     private final String my_bid_array;
@@ -24,7 +27,7 @@ public class IBWJEvent extends TxnEvent {
 
 
     public IBWJEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions,
-                   String key, String streamID, String address) {
+                   String key, String streamID, String address, String[] lookupKeys) {
         super(bid, pid, bid_array, partition_index, number_of_partitions);
         this.myBid = bid;
         this.myPid = pid;
@@ -34,19 +37,22 @@ public class IBWJEvent extends TxnEvent {
         this.key = key;
         this.streamID = streamID;
         this.address = address;
+        this.lookupKeys = lookupKeys;
         this.addressTuple[0] = address;
     }
 
     public String getStreamID() {
         return streamID;
     }
-
     public String getKey() {
         return key;
     }
 
     public String getAddress() {
         return address;
+    }
+    public String[] getLookupKeys() {
+        return lookupKeys;
     }
 
     public void setAddressTuple(String matchingTupleAddr) {
@@ -74,6 +80,6 @@ public class IBWJEvent extends TxnEvent {
 
 
     public IBWJEvent cloneEvent() {
-        return new IBWJEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, key, streamID, address);
+        return new IBWJEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, key, streamID, address, lookupKeys);
     }
 }

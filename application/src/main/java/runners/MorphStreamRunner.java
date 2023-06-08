@@ -61,6 +61,7 @@ public class MorphStreamRunner extends Runner {
         driver.addApp("EventDetection", EventDetection.class);//ED
         driver.addApp("EventDetectionSliding", EventDetectionSliding.class);//ED_Sliding
         driver.addApp("IBWJ", IBWJ.class);//Index Based Window Join
+        driver.addApp("LoadBalancer", LoadBalancer.class);//Load Balancer
     }
 
     // Prepared default configuration
@@ -157,6 +158,13 @@ public class MorphStreamRunner extends Runner {
                     config.put("app", 6);
                     int threads = Math.max(1, (int) Math.floor((tthread)));
                     config.put(IBWJConstants.Conf.Executor_Threads, threads);
+//                    config.put(IBWJConstants.Conf.Gate_Threads, 1);
+                    break;
+                }
+                case "LoadBalancer": {
+                    config.put("app", 7);
+                    int threads = Math.max(1, (int) Math.floor((tthread)));
+                    config.put(LoadBalancerConstants.Conf.Executor_Threads, threads);
 //                    config.put(IBWJConstants.Conf.Gate_Threads, 1);
                     break;
                 }
@@ -339,6 +347,17 @@ public class MorphStreamRunner extends Runner {
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
                 } else if (config.getString("common").equals("IBWJ")) {
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("Ratio_of_Multiple_State_Access"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else if (config.getString("common").equals("LoadBalancer")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
                             config.getInt("NUM_ITEMS"),

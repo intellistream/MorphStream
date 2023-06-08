@@ -57,7 +57,7 @@ public class LBBolt_ts extends LBBolt {
 
     private void LB_REQUEST_CONSTRUCT(LBEvent event, TxnContext txnContext) throws DatabaseException {
 
-        String[] serverTable = new String[]{"connection_counter_table"}; //condition source table to iterate
+        String[] serverTable = new String[]{"server_table"}; //condition source table to iterate
         String[] serverKey = new String[]{String.valueOf(0)}; //condition source key, set to zero
         boolean isNewConn = !conn_server_map.containsKey(event.getConnID());
         event.isNewConn = isNewConn; //TODO: Refine this, avoid this step to reduce overhead.
@@ -66,7 +66,7 @@ public class LBBolt_ts extends LBBolt {
         transactionManager.BeginTransaction(txnContext);
 
         transactionManager.Asy_ModifyRecord_Iteration_Read(txnContext,
-                "connection_counter_table", // source_table
+                "server_table", // source_table
                 null,  // source_key: not determined //TODO: Non-deterministic key???
                 event.serverRecord, // record to read from
                 null,

@@ -57,28 +57,33 @@ public class IBWJBolt_ts extends IBWJBolt {
 
     private void IBWJ_REQUEST_CONSTRUCT(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
 
-        String srcIndexTable = ""; //index to update
-        String tarIndexTable = ""; //index to lookup
+        String updateIndexTable = ""; //index to update
+        String lookupIndexTable = ""; //index to lookup
         if (Objects.equals(event.getStreamID(), "r")) {
-            srcIndexTable = "index_r_table";
-            tarIndexTable = "index_s_table";
+            updateIndexTable = "index_r_table";
+            lookupIndexTable = "index_s_table";
         } else if (Objects.equals(event.getStreamID(), "s")) {
-            srcIndexTable = "index_s_table";
-            tarIndexTable = "index_r_table";
+            updateIndexTable = "index_s_table";
+            lookupIndexTable = "index_r_table";
         }
 
         Insert insert = new Insert(event.getAddress());
-//        Condition condition = new Condition(event.getWindowSize(), event.getWindowCount()); //arg1: windowSize, arg2: windowCount
+        String[] condition_table = new String[5];
+        String[] condition_source = new String[5];
+        for (int offset = 0; offset < 5; offset++) {
+            condition_table[offset] = lookupIndexTable;
+            condition_source[offset] = String.valueOf(event.getLookupKeys()[offset]);
+        }
 
 //        LOG.info("Constructing TC request: " + event.getMyBid());
         transactionManager.BeginTransaction(txnContext);
 
         transactionManager.Asy_ModifyRecord_Read(txnContext,
-                srcIndexTable, // source_table to write to
+                updateIndexTable, // source_table to write to
                 event.getKey(),  // source_key to write to
                 event.srcIndexRecordRef, // record to be filled up from READ
                 insert, // overwrite empty index with new index
-                new String[]{tarIndexTable},  new String[]{event.getKey()}, //condition_source_table, condition_source_key
+                condition_table, condition_source, //condition_source_table, condition_source_key
                 null,
                 event.success,
                 "ibwj"

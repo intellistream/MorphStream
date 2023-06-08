@@ -16,8 +16,8 @@ import topology.TransactionTopology;
 import transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
-import static common.constants.GrepSumConstants.Conf.Executor_Threads;
-import static common.constants.GrepSumConstants.PREFIX;
+import static common.constants.IBWJConstants.Conf.Executor_Threads;
+import static common.constants.IBWJConstants.PREFIX;
 import static content.Content.*;
 import static utils.PartitionHelper.setPartition_interval;
 

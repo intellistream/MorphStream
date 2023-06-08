@@ -10,12 +10,14 @@ public class IBWJEvent extends Event {
     private final int key;
     private final String streamID;
     private final String address;
+    private final int[] lookupKeys;
 
-    public IBWJEvent(int id, int key, String streamID, String address) {
+    public IBWJEvent(int id, int key, String streamID, String address, int[] lookupKeys) {
         this.id = id;
         this.key = key;
         this.streamID = streamID;
         this.address = address;
+        this.lookupKeys = lookupKeys;
     }
 
     public int getKey() {
@@ -36,6 +38,9 @@ public class IBWJEvent extends Event {
         str.append(",").append(key);
         str.append(",").append(streamID);
         str.append(",").append(address);
+        for (int lookupKey : lookupKeys) {
+            str.append(",").append(lookupKey);
+        }
         return str.toString();
     }
 

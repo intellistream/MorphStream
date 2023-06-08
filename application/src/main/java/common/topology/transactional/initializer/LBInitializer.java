@@ -3,14 +3,14 @@ package common.topology.transactional.initializer;
 import benchmark.DataHolder;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
-import benchmark.datagenerator.apps.IBWJ.TPGTxnGenerator.IBWJTPGDataGenerator;
-import benchmark.datagenerator.apps.IBWJ.TPGTxnGenerator.IBWJTPGDataGeneratorConfig;
-import benchmark.datagenerator.apps.IBWJ.TPGTxnGenerator.IBWJTPGDynamicDataGenerator;
+import benchmark.datagenerator.apps.LB.TPGTxnGenerator.LBTPGDataGenerator;
+import benchmark.datagenerator.apps.LB.TPGTxnGenerator.LBTPGDataGeneratorConfig;
+import benchmark.datagenerator.apps.LB.TPGTxnGenerator.LBTPGDynamicDataGenerator;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
-import common.param.ibwj.IBWJEvent;
+import common.param.lb.LBEvent;
 import db.Database;
 import db.DatabaseException;
 import lock.SpinLock;
@@ -20,6 +20,7 @@ import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
+import storage.datatype.LongDataBox;
 import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
@@ -73,13 +74,13 @@ public class LBInitializer extends TableInitilizer {
             DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
-            dataGenerator = new IBWJTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
+            dataGenerator = new LBTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
         } else {
-            IBWJTPGDataGeneratorConfig dataConfig = new IBWJTPGDataGeneratorConfig();
+            LBTPGDataGeneratorConfig dataConfig = new LBTPGDataGeneratorConfig();
             dataConfig.initialize(config);
 
             configurePath(dataConfig);
-            dataGenerator = new IBWJTPGDataGenerator(dataConfig);
+            dataGenerator = new LBTPGDataGenerator(dataConfig);
         }
     }
     /**
@@ -100,17 +101,17 @@ public class LBInitializer extends TableInitilizer {
         try {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
-            if (dataConfig instanceof IBWJTPGDataGeneratorConfig)
+            if (dataConfig instanceof LBTPGDataGeneratorConfig)
                 bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%d_%s",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
                                 dataConfig.getnKeyStates(),
-                                ((IBWJTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
-                                ((IBWJTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
-                                ((IBWJTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
-                                ((IBWJTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
-                                ((IBWJTPGDataGeneratorConfig) dataConfig).Transaction_Length,
-                                ((IBWJTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
+                                ((LBTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
+                                ((LBTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
+                                ((LBTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
+                                ((LBTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
+                                ((LBTPGDataGeneratorConfig) dataConfig).Transaction_Length,
+                                ((LBTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
                                 AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
             else
@@ -152,8 +153,7 @@ public class LBInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
 //            assert value.length() == VALUE_LEN;
-            insertIndexRRecord(_key, _key, String.valueOf(-1), pid, spinlock); //TODO: Change this
-            insertIndexSRecord(_key, _key, String.valueOf(-1), pid, spinlock); //TODO: Change this
+            insertServerRecord(_key, 0, pid, spinlock);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -197,12 +197,12 @@ public class LBInitializer extends TableInitilizer {
         if (file.exists()) {
             if (enable_log) LOG.info("Reading transfer events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-            loadIBWJEvents(reader, totalEvents, shufflingActive, p_bids);
+            loadLBEvents(reader, totalEvents, shufflingActive, p_bids);
             reader.close();
         }
     }
 
-    private void loadIBWJEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
+    private void loadLBEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
         String txn = reader.readLine();
         int count = 0;
 //        int p_bids[] = new int[tthread];
@@ -217,22 +217,22 @@ public class LBInitializer extends TableInitilizer {
                 pids.put((int) (Long.parseLong(String.valueOf(split[i].hashCode())) / partitionOffset), 0); //TODO: Set pid as 0 for all input words
             }
 
-            IBWJEvent event = new IBWJEvent(
+            LBEvent event = new LBEvent(
                     Integer.parseInt(split[0]), //bid
                     npid, //pid
                     Arrays.toString(p_bids), //bid_arrary
                     Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
                     3,//num_of_partition TODO: Hard-coded number of arguments in Event
                     split[1], //key
-                    split[2], //streamID
-                    split[3] //address
+                    split[2], //srcAddr
+                    split[3] //srcPort
             );
 
             DataHolder.events.add(event);
-            if (enable_log) LOG.debug(String.format("%d ibwj read...", count));
+            if (enable_log) LOG.debug(String.format("%d lb read...", count));
             txn = reader.readLine();
         }
-        if (enable_log) LOG.info("Done reading IBWJ events...");
+        if (enable_log) LOG.info("Done reading LB events...");
         if (shufflingActive) {
             shuffleEvents(DataHolder.events, totalEvents);
         }
@@ -269,23 +269,23 @@ public class LBInitializer extends TableInitilizer {
         BufferedWriter w;
         w = new BufferedWriter(new FileWriter(new File(event_path + OsUtils.OS_wrapper(file_name))));
         for (Object event : db.getEventManager().input_events) {
-            IBWJEvent ibwjEvent = (IBWJEvent) event;
+            LBEvent lbEvent = (LBEvent) event;
             String sb =
-                    ibwjEvent.getBid() +//0 -- bid
+                    lbEvent.getBid() +//0 -- bid
                             split_exp +
-                            ibwjEvent.getPid() +//1
+                            lbEvent.getPid() +//1
                             split_exp +
-                            Arrays.toString(ibwjEvent.getBid_array()) +//2
+                            Arrays.toString(lbEvent.getBid_array()) +//2
                             split_exp +
-                            ibwjEvent.num_p() +//3 num of p
+                            lbEvent.num_p() +//3 num of p
                             split_exp +
-                            "TREvent" +//4 input_event types.
+                            "LBEvent" +//4 input_event types.
                             split_exp +
-                            ibwjEvent.getKey() +//5 tweet ID
+                            lbEvent.getConnID() +//5 tweet ID
                             split_exp +
-                            ibwjEvent.getStreamID() +//6 stream ID
+                            lbEvent.getSrcAddr() +//6 source address
                             split_exp +
-                            ibwjEvent.getAddress() //7 address
+                            lbEvent.getSrcPort() //7 source port
                     ;
             w.write(sb
                     + "\n");
@@ -293,33 +293,21 @@ public class LBInitializer extends TableInitilizer {
         w.close();
     }
 
-    private void insertIndexRRecord(String key, String srcAddr, String matchAddr, int pid, SpinLock[] spinlock_) {
+    private void insertServerRecord(String serverID, long counter, int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("index_r_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr), pid, spinlock_));
+                db.InsertRecord("server_table", new TableRecord(ServerRecord(serverID, counter), pid, spinlock_));
             else
-                db.InsertRecord("index_r_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr)));
+                db.InsertRecord("server_table", new TableRecord(ServerRecord(serverID, counter)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
 
-    private void insertIndexSRecord(String key, String srcAddr, String matchAddr, int pid, SpinLock[] spinlock_) {
-        try {
-            if (spinlock_ != null)
-                db.InsertRecord("index_s_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr), pid, spinlock_));
-            else
-                db.InsertRecord("index_s_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr)));
-        } catch (DatabaseException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private SchemaRecord IndexRecord(String indexKey, String srcAddr, String matchAddr) {
+    private SchemaRecord ServerRecord(String serverID, long counter) {
         List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(indexKey));
-        values.add(new StringDataBox(srcAddr));
-        values.add(new StringDataBox(matchAddr));
+        values.add(new StringDataBox(serverID));
+        values.add(new LongDataBox(counter));
         return new SchemaRecord(values);
     }
 
@@ -328,23 +316,19 @@ public class LBInitializer extends TableInitilizer {
         return dataGenerator.getTranToDecisionConf();
     }
 
-    private RecordSchema IndexSchema() {
+    private RecordSchema ServerSchema() {
         List<DataBox> dataBoxes = new ArrayList<>();
         List<String> fieldNames = new ArrayList<>();
         dataBoxes.add(new StringDataBox());
-        dataBoxes.add(new StringDataBox());
-        dataBoxes.add(new StringDataBox());
-        fieldNames.add("Index_Key"); // 0
-        fieldNames.add("Source_Address"); // 1
-        fieldNames.add("Matching_Address"); // 2
+        dataBoxes.add(new LongDataBox());
+        fieldNames.add("Server_ID"); // 0
+        fieldNames.add("Connection_Counter"); // 1
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
     public void creates_Table(Configuration config) {
-        RecordSchema indexR = IndexSchema();
-        db.createTable(indexR, "index_r_table");
-        RecordSchema indexS = IndexSchema();
-        db.createTable(indexS, "index_s_table");
+        RecordSchema server = ServerSchema();
+        db.createTable(server, "server_table");
 
         try {
             prepare_input_events(config.getInt("totalEvents"));

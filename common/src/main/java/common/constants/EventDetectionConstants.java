@@ -1,7 +1,5 @@
 package common.constants;
 
-//TODO: Modify ED Constants. The current constants are copied from GrepSumConstants
-
 public interface EventDetectionConstants {
     String PREFIX = "ed";
 

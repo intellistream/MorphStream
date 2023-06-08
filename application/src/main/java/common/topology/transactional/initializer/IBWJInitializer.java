@@ -68,7 +68,6 @@ public class IBWJInitializer extends TableInitilizer {
 
     protected void createTPGGenerator(Configuration config) {
         if (config.getBoolean("isDynamic")) {
-            //TODO:add the dynamic workload dataGenerator
             DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
@@ -151,8 +150,8 @@ public class IBWJInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
 //            assert value.length() == VALUE_LEN;
-            insertIndexRRecord(_key, _key, String.valueOf(-1), pid, spinlock); //TODO: Change this
-            insertIndexSRecord(_key, _key, String.valueOf(-1), pid, spinlock); //TODO: Change this
+            insertIndexRRecord(_key, String.valueOf(-1), String.valueOf(-1), pid, spinlock);
+            insertIndexSRecord(_key, String.valueOf(-1), String.valueOf(-1), pid, spinlock);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -216,15 +215,20 @@ public class IBWJInitializer extends TableInitilizer {
                 pids.put((int) (Long.parseLong(String.valueOf(split[i].hashCode())) / partitionOffset), 0); //TODO: Set pid as 0 for all input words
             }
 
+            //Construct String[] words from readLine()
+            String[] lookupKeys = new String[5]; //Number of lookup keys: 5
+            System.arraycopy(split, 4, lookupKeys, 0, 5); //TODO: Verify this
+
             IBWJEvent event = new IBWJEvent(
                     Integer.parseInt(split[0]), //bid
                     npid, //pid
                     Arrays.toString(p_bids), //bid_arrary
                     Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
-                    3,//num_of_partition TODO: Hard-coded number of arguments in Event
-                    split[1], //key
+                    4,//num_of_partition
+                    split[1], //key to update address (from own stream)
                     split[2], //streamID
-                    split[3] //address
+                    split[3], //address
+                    lookupKeys //keys to lookup (in opposite stream)
             );
 
             DataHolder.events.add(event);
@@ -278,13 +282,15 @@ public class IBWJInitializer extends TableInitilizer {
                             split_exp +
                             ibwjEvent.num_p() +//3 num of p
                             split_exp +
-                            "TREvent" +//4 input_event types.
+                            "IBWJEvent" +//4 input_event types.
                             split_exp +
                             ibwjEvent.getKey() +//5 tweet ID
                             split_exp +
                             ibwjEvent.getStreamID() +//6 stream ID
                             split_exp +
-                            ibwjEvent.getAddress() //7 address
+                            ibwjEvent.getAddress() + //7 address
+                            split_exp +
+                            Arrays.toString(ibwjEvent.getLookupKeys())//8 lookup keys
                     ;
             w.write(sb
                     + "\n");

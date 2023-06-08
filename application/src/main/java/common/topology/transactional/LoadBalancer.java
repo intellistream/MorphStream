@@ -1,9 +1,9 @@
 package common.topology.transactional;
 
-import common.bolts.transactional.ibwj.*;
+import common.bolts.transactional.lb.*;
 import common.collections.Configuration;
-import common.constants.IBWJConstants.Component;
-import common.topology.transactional.initializer.IBWJInitializer;
+import common.constants.LoadBalancerConstants.Component;
+import common.topology.transactional.initializer.LBInitializer;
 import components.Topology;
 import components.exception.InvalidIDException;
 import components.grouping.ShuffleGrouping;
@@ -16,8 +16,8 @@ import topology.TransactionTopology;
 import transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
-import static common.constants.GrepSumConstants.Conf.Executor_Threads;
-import static common.constants.GrepSumConstants.PREFIX;
+import static common.constants.LoadBalancerConstants.Conf.Executor_Threads;
+import static common.constants.LoadBalancerConstants.PREFIX;
 import static content.Content.*;
 import static utils.PartitionHelper.setPartition_interval;
 
@@ -43,7 +43,7 @@ public class LoadBalancer extends TransactionTopology {
         int tthread = config.getInt("tthread");
         int numberOfStates = config.getInt("NUM_ITEMS");
         setPartition_interval((int) (Math.ceil(numberOfStates / (double) tthread)), tthread);
-        TableInitilizer ini = new IBWJInitializer(db, numberOfStates, theta, tthread, config);
+        TableInitilizer ini = new LBInitializer(db, numberOfStates, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)
@@ -63,31 +63,31 @@ public class LoadBalancer extends TransactionTopology {
             } else { // normal pipelined execution model.
                 switch (config.getInt("CCOption", 0)) {
                     case CCOption_LOCK: {//no-order
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_nocc(1)//
+                        builder.setBolt(Component.EXECUTOR, new LBBolt_nocc(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case CCOption_OrderLOCK: {//LOB
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_olb(1)//
+                        builder.setBolt(Component.EXECUTOR, new LBBolt_olb(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case CCOption_LWM: {//LWM
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_lwm(1)//
+                        builder.setBolt(Component.EXECUTOR, new LBBolt_lwm(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case CCOption_TStream: {//T-Stream
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_ts(1)//
+                        builder.setBolt(Component.EXECUTOR, new LBBolt_ts(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
                     case CCOption_SStore: {//SStore
-                        builder.setBolt(Component.EXECUTOR, new IBWJBolt_sstore(1)//
+                        builder.setBolt(Component.EXECUTOR, new LBBolt_sstore(1)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
