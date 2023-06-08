@@ -9,6 +9,7 @@ import scheduler.signal.op.OnParentUpdatedSignal;
 import scheduler.struct.AbstractOperation;
 import scheduler.struct.op.MetaTypes.DependencyType;
 import scheduler.struct.op.MetaTypes.OperationStateType;
+import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
 import storage.table.BaseTable;
@@ -44,6 +45,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public boolean isFailed;
     public boolean isNonDeterministicOperation = false;
     public BaseTable[] tables;
+    public TableRecord[] deterministicRecords;
     public String name;
     public String[] condition_sourceTable = null;
     public String[] condition_source = null;

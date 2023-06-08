@@ -29,6 +29,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public boolean isFailed = false; // whether the operation is failed, this is used to detect transaction abort
     public boolean isNonDeterministicOperation = false;
     public BaseTable[] tables;
+    public TableRecord[] deterministicRecords;
     private OperationStateType operationState;
     private int txnOpId = 0;
     // logical dependencies are to be stored for the purpose of abort handling
