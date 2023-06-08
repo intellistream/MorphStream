@@ -18,6 +18,7 @@ public class OperationChain implements Comparable<OperationChain> {
     private final String primaryKey;
     private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
     private final MyList<Operation> operations;
+    private final MyList<Operation> operationWithVirtual;//To identify the dependencies
     public boolean isExecuted = false;
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
@@ -28,6 +29,7 @@ public class OperationChain implements Comparable<OperationChain> {
         this.primaryKey = primaryKey;
         this.operations = new MyList<>(tableName, primaryKey);
         this.ocParents = new ConcurrentHashMap<>();
+        this.operationWithVirtual = new MyList<>(tableName, primaryKey);
     }
 
     public String getTableName() {
@@ -89,7 +91,6 @@ public class OperationChain implements Comparable<OperationChain> {
     public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
         potentialChldrenInfo.add(new PotentialDependencyInfo(potentialChildren, op));
     }
-
     public void addFDParent(Operation targetOp) {
         Iterator<Operation> iterator = this.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
         while (iterator.hasNext()) {

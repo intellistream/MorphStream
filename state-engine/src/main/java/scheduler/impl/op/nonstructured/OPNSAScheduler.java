@@ -80,7 +80,6 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
             NOTIFY(remove, context); // this also covers abort handling logic
             MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);
         }
-//        MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
     }
 
     @Override
@@ -125,11 +124,11 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
 
         public void onOPFinalized(Operation operation) {
 //            operation.context.operations.remove(operation);
-            operation.context.scheduledOPs++;
+            operation.context.scheduledOPs ++;
         }
 
         public void onOPRollbacked(Operation operation) {
-            operation.context.scheduledOPs--;
+            operation.context.scheduledOPs --;
         }
     }
 }

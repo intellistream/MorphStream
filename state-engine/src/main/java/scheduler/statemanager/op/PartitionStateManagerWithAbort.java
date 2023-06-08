@@ -63,7 +63,6 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
     }
 
     public void handleStateTransitions() {
-//        inTransition.compareAndSet(false, true);
         OperationSignal signal = opSignalQueue.poll();
         while (signal != null) {
             Operation operation = signal.getTargetOperation();

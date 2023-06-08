@@ -3,15 +3,11 @@ package common.topology.transactional.initializer;
 import benchmark.DataHolder;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
-import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGenerator;
-import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
-import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDynamicDataGenerator;
 import benchmark.datagenerator.apps.NonGS.TPGTxnGenerator.NonGSTPGDynamicDataGenerator;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.param.TxnEvent;
-import common.param.mb.MicroEvent;
 import common.param.mb.NonMicroEvent;
 import db.Database;
 import db.DatabaseException;
@@ -36,15 +32,12 @@ import java.security.MessageDigest;
 import java.util.*;
 
 import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
-import static common.Constants.Event_Path;
-import static profiler.Metrics.NUM_ITEMS;
 import static transaction.State.configure_store;
 
 public class NonGSInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(NonGSInitializer.class);
     private final int numberOfStates;
-    private final int startingValue = 10000;
+    private final int startingValue = 10;
     private final DataGeneratorConfig dataConfig;
     private final int partitionOffset;
     private final int NUM_ACCESS;

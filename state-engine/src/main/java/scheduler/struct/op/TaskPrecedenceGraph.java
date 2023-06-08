@@ -223,10 +223,16 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
 
         if (context instanceof OPSContext) {
             ArrayDeque<Operation> roots = new ArrayDeque<>();
+            //Need to update FD First before TD
+            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
+                    oc.updateFDDependencies();
+                }
+            }
+            context.waitForOtherThreads(context.thisThreadId);
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
                     oc.updateTDDependencies();
-                    oc.updateFDDependencies();
                     Operation head = oc.getOperations().first();
                     if (head.isRoot()) {
                         roots.add(head);
@@ -235,6 +241,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     context.totalOsToSchedule += oc.getOperations().size();
                 }
             }
+            context.waitForOtherThreads(context.thisThreadId);
             ((OPSContext) context).buildBucketPerThread(context.operations, roots);
             context.waitForOtherThreads(context.thisThreadId);
             if (context.thisThreadId == 0) { // gather
@@ -246,14 +253,17 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             }
             context.waitForOtherThreads(context.thisThreadId);
             ((OPSContext) context).maxLevel = maxLevel; // scatter
-
-//            ((OPSContext) context).buildBucketPerThread(threadToOCs.get(context.thisThreadId));
             if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));
         } else if (context instanceof OPNSContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
-                    oc.updateTDDependencies();
                     oc.updateFDDependencies();
+                }
+            }
+            context.waitForOtherThreads(context.thisThreadId);
+            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
+                    oc.updateTDDependencies();
                     Operation head = oc.getOperations().first();
                     context.totalOsToSchedule += oc.getOperations().size();
                     if (head.isRoot()) {
@@ -261,7 +271,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     }
                 }
             }
-//            log.info("id: " + context.thisThreadId + " fd: " + context.fd);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -335,12 +344,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         for (Operation op : oc.getOperations()) {
             op.resetDependencies();
             op.stateTransition(MetaTypes.OperationStateType.BLOCKED);
-//            if (op.isFailed) { // transit state to aborted.
-//                op.stateTransition(MetaTypes.OperationStateType.ABORTED);
-//                for (Operation child : op.getHeader().getDescendants()) {
-//                    child.stateTransition(MetaTypes.OperationStateType.ABORTED);
-//                }
-//            }
         }
     }
 
@@ -377,10 +380,8 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                     continue;// no need to check data dependency on a key itself.
                 OperationChain OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index]);
-                // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
                 OCFromConditionSource.addPotentialFDChildren(curOC, op);
             }
-            //curOC.checkPotentialFDChildrenOnNewArrival(op);
         }
     }
     private void checkDependencyForNonDeterministicStateAccess(OperationChain curOC, Operation op) {

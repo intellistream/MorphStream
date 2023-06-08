@@ -1,7 +1,6 @@
 package common.bolts.transactional.nongs;
 
 import combo.SINKCombo;
-import common.param.mb.MicroEvent;
 import common.param.mb.NonMicroEvent;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -65,7 +64,13 @@ public class NonGSBolt_ts extends NonGSBolt {
             }
             int writeKeyIdx = i * NUM_ACCESS;
             if (event.isNon_Deterministic_StateAccess()) {
-                //TODO: non-deterministic state access.
+                transactionManager.Asy_ModifyRecord_Non_ReadN( txnContext,
+                        "MicroTable",
+                        String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
+                        event.getRecord_refs()[writeKeyIdx],//to be fill up.
+                        sum,
+                        condition_table, condition_source,//condition source, condition id.
+                        event.success, "gs");
             } else {
                 transactionManager.Asy_ModifyRecord_ReadN(
                         txnContext,
