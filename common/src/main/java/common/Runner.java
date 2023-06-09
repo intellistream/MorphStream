@@ -37,7 +37,7 @@ public abstract class Runner implements IRunner {
     public int totalEvents = 10000;
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
 //    public int NUM_ITEMS = 1000;
-    public int NUM_ITEMS = 100;
+    public int NUM_ITEMS = 10000;
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 5;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")

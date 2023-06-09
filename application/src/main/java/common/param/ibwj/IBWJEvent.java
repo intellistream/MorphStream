@@ -16,14 +16,13 @@ public class IBWJEvent extends TxnEvent {
     private final String address;
     private final String[] lookupKeys;
     public volatile SchemaRecordRef srcIndexRecordRef = new SchemaRecordRef();
-    public volatile SchemaRecordRef tarIndexRecordRef = new SchemaRecordRef(); //TODO: Remove it. In SStore, replace this with lookupIndexRecords
-    public volatile SchemaRecordRef[] lookupIndexRecords;
+    private final SchemaRecordRef[] lookupIndexRecords;
     private final double myBid;
     private final int myPid;
     private final String my_bid_array;
     private final String my_partition_index;
     private final int my_number_of_partitions;
-    private String[] addressTuple = new String[2];
+    private final String[] addressTuple = new String[2];
 
 
     public IBWJEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions,
@@ -39,6 +38,10 @@ public class IBWJEvent extends TxnEvent {
         this.address = address;
         this.lookupKeys = lookupKeys;
         this.addressTuple[0] = address;
+        lookupIndexRecords = new SchemaRecordRef[5];
+        for (int i = 0; i < 5; i++) {
+            lookupIndexRecords[i] = new SchemaRecordRef();
+        }
     }
 
     public String getStreamID() {
@@ -53,6 +56,9 @@ public class IBWJEvent extends TxnEvent {
     }
     public String[] getLookupKeys() {
         return lookupKeys;
+    }
+    public SchemaRecordRef[] getLookupIndexRecords() {
+        return lookupIndexRecords;
     }
 
     public void setAddressTuple(String matchingTupleAddr) {

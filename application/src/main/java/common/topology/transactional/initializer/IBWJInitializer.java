@@ -209,11 +209,19 @@ public class IBWJInitializer extends TableInitilizer {
             int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
             count++;
 
-            // Construct bid array
+            int keyLength = split.length - 4; //keyLength = number of keys to lookup
             HashMap<Integer, Integer> pids = new HashMap<>();
-            for (int i = 1; i < 4; i++) {
-                pids.put((int) (Long.parseLong(String.valueOf(split[i].hashCode())) / partitionOffset), 0); //TODO: Set pid as 0 for all input words
+            long[] keys = new long[keyLength];
+            for (int i = 4; i < keyLength+4; i++) {
+                keys[i-4] = Long.parseLong(split[i]);
+                pids.put((int) (keys[i-4] / partitionOffset), 0);
             }
+//
+//            // Construct bid array
+//            HashMap<Integer, Integer> pids = new HashMap<>();
+//            for (int i = 1; i < 4; i++) {
+//                pids.put((int) (Long.parseLong(String.valueOf(split[i].hashCode())) / partitionOffset), 0); //TODO: Set pid as 0 for all input words
+//            }
 
             //Construct String[] words from readLine()
             String[] lookupKeys = new String[5]; //Number of lookup keys: 5
@@ -224,7 +232,7 @@ public class IBWJInitializer extends TableInitilizer {
                     npid, //pid
                     Arrays.toString(p_bids), //bid_arrary
                     Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
-                    4,//num_of_partition
+                    pids.size(),//num_of_partition
                     split[1], //key to update address (from own stream)
                     split[2], //streamID
                     split[3], //address

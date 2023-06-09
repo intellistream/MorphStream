@@ -136,7 +136,7 @@ public class IBWJTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
 
 
     private IBWJEvent randomEvent() {
-        int keyRange = 100;
+        int keyRange = 1000;
         int randomKey = ThreadLocalRandom.current().nextInt(0, keyRange); //TODO: Key range
         int streamIDInt = ThreadLocalRandom.current().nextInt(0, 2);
         String streamID = "";

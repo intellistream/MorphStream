@@ -9,9 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
-import transaction.function.Condition;
 import transaction.function.Insert;
-import transaction.function.TFIDF;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
@@ -50,7 +48,7 @@ public class IBWJBolt_ts extends IBWJBolt {
             IBWJEvent event = (IBWJEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            IBWJ_REQUEST_CONSTRUCT((IBWJEvent) event, txnContext);
+            IBWJ_REQUEST_CONSTRUCT(event, txnContext);
         }
 
     }

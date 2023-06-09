@@ -2,21 +2,16 @@ package common.bolts.transactional.ibwj;
 
 import combo.SINKCombo;
 import common.param.ibwj.IBWJEvent;
-import common.param.sl.DepositEvent;
-import common.param.sl.TransactionEvent;
 import components.operators.api.TransactionalBolt;
-import content.common.CommonMetaTypes;
 import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
-import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
-import utils.AppConfig;
 
-import java.util.List;
+import java.util.Objects;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
@@ -38,20 +33,44 @@ public abstract class IBWJBolt extends TransactionalBolt {
     }
 
     protected void IBWJ_LOCK_AHEAD(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
-        transactionManager.lock_ahead(txnContext, "index_r_table", event.getKey(), event.srcIndexRecordRef, READ_WRITE);
-        transactionManager.lock_ahead(txnContext, "index_s_table", event.getKey(), event.tarIndexRecordRef, READ_WRITE);
+        String updateIndexTable = ""; //index to update
+        String lookupIndexTable = ""; //index to lookup
+        if (Objects.equals(event.getStreamID(), "r")) {
+            updateIndexTable = "index_r_table";
+            lookupIndexTable = "index_s_table";
+        } else if (Objects.equals(event.getStreamID(), "s")) {
+            updateIndexTable = "index_s_table";
+            lookupIndexTable = "index_r_table";
+        }
+        transactionManager.lock_ahead(txnContext, updateIndexTable, event.getKey(), event.srcIndexRecordRef, READ_WRITE); //index to update
+//        transactionManager.lock_ahead(txnContext, "index_s_table", event.getKey(), event.tarIndexRecordRef, READ_WRITE);
+        for (int i = 0; i < 5; ++i)
+            transactionManager.lock_ahead(txnContext, lookupIndexTable,
+                    String.valueOf(event.getLookupKeys()[i]), event.getLookupIndexRecords()[i], READ_ONLY); //indexes to lookup
     }
 
-    protected void IBWJ_REQUEST_NOLOCK(IBWJEvent event, TxnContext txnContext) throws DatabaseException {
-        transactionManager.SelectKeyRecord_noLock(txnContext, "index_r_table", event.getKey(), event.srcIndexRecordRef, READ_WRITE);
-        transactionManager.SelectKeyRecord_noLock(txnContext, "index_s_table", event.getKey(), event.tarIndexRecordRef, READ_WRITE);
-        assert event.srcIndexRecordRef.getRecord() != null || event.tarIndexRecordRef.getRecord() != null;
+    protected void IBWJ_REQUEST_NOLOCK(IBWJEvent event, TxnContext txnContext) throws DatabaseException { //TODO: Follow GS, rewrite this section. Consider remove key.
+        String updateIndexTable = ""; //index to update
+        String lookupIndexTable = ""; //index to lookup
+        if (Objects.equals(event.getStreamID(), "r")) {
+            updateIndexTable = "index_r_table";
+            lookupIndexTable = "index_s_table";
+        } else if (Objects.equals(event.getStreamID(), "s")) {
+            updateIndexTable = "index_s_table";
+            lookupIndexTable = "index_r_table";
+        }
+        transactionManager.SelectKeyRecord_noLock(txnContext, updateIndexTable, event.getKey(), event.srcIndexRecordRef, READ_WRITE);
+//        transactionManager.SelectKeyRecord_noLock(txnContext, "index_s_table", event.getKey(), event.tarIndexRecordRef, READ_WRITE);
+        for (int i = 0; i < 5; ++i)
+            transactionManager.SelectKeyRecord_noLock(txnContext, lookupIndexTable,
+                    String.valueOf(event.getLookupKeys()[i]), event.getLookupIndexRecords()[i], READ_ONLY); //indexes to lookup
+//        assert event.srcIndexRecordRef.getRecord() != null || event.tarIndexRecordRef.getRecord() != null;
     }
 
     protected void IBWJ_REQUEST_CORE(IBWJEvent event) {
         DataBox sourceIndex_addr = event.srcIndexRecordRef.getRecord().getValues().get(1);
         DataBox sourceIndex_matching_addr = event.srcIndexRecordRef.getRecord().getValues().get(2);
-        DataBox targetIndex_addr = event.tarIndexRecordRef.getRecord().getValues().get(1);
+        DataBox targetIndex_addr = event.getLookupIndexRecords()[0].getRecord().getValues().get(1);
         final String targetIndexAddress = targetIndex_addr.getString();
 
         sourceIndex_addr.setString(event.getAddress());
