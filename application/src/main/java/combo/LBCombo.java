@@ -1,10 +1,10 @@
 package combo;
 
 import benchmark.DataHolder;
-import common.bolts.transactional.ibwj.*;
+import common.bolts.transactional.lb.*;
 import common.collections.Configuration;
 import common.param.TxnEvent;
-import common.param.ibwj.IBWJEvent;
+import common.param.lb.LBEvent;
 import components.context.TopologyContext;
 import db.DatabaseException;
 import execution.ExecutionGraph;
@@ -24,7 +24,7 @@ public class LBCombo extends SPOUTCombo {
     int pre_concurrency = 0;
     int[] concerned_length = new int[]{40};
     int cnt = 0;
-    ArrayDeque<IBWJEvent> prevents = new ArrayDeque<>();
+    ArrayDeque<LBEvent> prevents = new ArrayDeque<>();
 
     public LBCombo() {
         super(LOG, 0);
@@ -42,16 +42,6 @@ public class LBCombo extends SPOUTCombo {
                 break;
             index += tthread * combo_bid_size;
         }
-
-//        //Load Deposit Events.
-//        for (int index = taskId; index < DataHolder.depositEvents.size(); ) {
-//            TxnEvent event = DataHolder.depositEvents.get(index).cloneEvent();
-//            mybids[storageIndex] = event.getBid();
-//            myevents[storageIndex++] = event;
-//            if (storageIndex == num_events_per_thread)
-//                break;
-//            index += tthread * combo_bid_size;
-//        }
         assert (storageIndex == num_events_per_thread);
     }
 
@@ -59,7 +49,7 @@ public class LBCombo extends SPOUTCombo {
         return pre_key == key;
     }
 
-    private int check_conflict(IBWJEvent pre_event, IBWJEvent event) { //TODO: Check this
+    private int check_conflict(LBEvent pre_event, LBEvent event) { //TODO: Check this
         int conf = 0;//in case no conflict at all.
 //        for (int key : event.getKeys()) {
 //            int[] preEventKeys = pre_event.getKeys();
@@ -71,9 +61,9 @@ public class LBCombo extends SPOUTCombo {
         return conf;
     }
 
-    private int conflict(IBWJEvent event) {
+    private int conflict(LBEvent event) {
         int conc = 1;//in case no conflict at all.
-        for (IBWJEvent prevent : prevents) {
+        for (LBEvent prevent : prevents) {
             conc -= check_conflict(prevent, event);
         }
         return Math.max(0, conc);
@@ -82,8 +72,8 @@ public class LBCombo extends SPOUTCombo {
     protected void show_stats() {
         while (cnt < 8) {
             for (Object myevent : myevents) {
-                concurrency += conflict((IBWJEvent) myevent);
-                prevents.add((IBWJEvent) myevent);
+                concurrency += conflict((LBEvent) myevent);
+                prevents.add((LBEvent) myevent);
                 if (prevents.size() == concerned_length[cnt]) {
                     if (pre_concurrency == 0)
                         pre_concurrency = concurrency;
@@ -107,23 +97,23 @@ public class LBCombo extends SPOUTCombo {
         sink.prepare(config, context, collector);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_LOCK: {//no-order
-                bolt = new IBWJBolt_nocc(0, sink);
+                bolt = new LBBolt_nocc(0, sink);
                 break;
             }
             case CCOption_OrderLOCK: {//LOB
-                bolt = new IBWJBolt_olb(0, sink);
+                bolt = new LBBolt_olb(0, sink);
                 break;
             }
             case CCOption_LWM: {//LWM
-                bolt = new IBWJBolt_lwm(0, sink);
+                bolt = new LBBolt_lwm(0, sink);
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                bolt = new IBWJBolt_ts(0, sink);
+                bolt = new LBBolt_ts(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore
-                bolt = new IBWJBolt_sstore(0, sink);
+                bolt = new LBBolt_sstore(0, sink);
                 break;
             }
 

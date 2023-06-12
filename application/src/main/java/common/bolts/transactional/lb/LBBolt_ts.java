@@ -10,13 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import transaction.context.TxnContext;
-import transaction.function.Condition;
-import transaction.function.SUM;
 import transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
@@ -28,7 +25,7 @@ public class LBBolt_ts extends LBBolt {
     private static final Logger LOG = LoggerFactory.getLogger(LBBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     Collection<LBEvent> lbEvents;
-    private final HashMap<String, String> conn_server_map = new HashMap<>();
+//    private final HashMap<String, String> conn_server_map = new HashMap<>(); //TODO: Store conn-server mapping
 
     public LBBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -68,7 +65,7 @@ public class LBBolt_ts extends LBBolt {
                 for (int j = 0; j < NUM_ACCESS; j++) {
                     int offset = i * NUM_ACCESS + j;
                     condition_source[j] = String.valueOf(event.getKeys()[offset]);
-                    condition_table[j] = "MicroTable";
+                    condition_table[j] = "server_table";
                 }
                 int writeKeyIdx = i * NUM_ACCESS;
                 transactionManager.Asy_ModifyRecord_ReadN(
@@ -78,11 +75,9 @@ public class LBBolt_ts extends LBBolt {
                         event.getRecord_refs()[writeKeyIdx],//to be fill up.
                         null, //no function
                         condition_table, condition_source,//condition source, condition id.
-                        event.success, "lb");          //asynchronously return.
+                        event.success, "lb");//asynchronously return.
             }
             transactionManager.CommitTransaction(txnContext);
-        } else {
-            //TODO: Perform some action for existing conn?
         }
 
         lbEvents.add(event);
@@ -120,7 +115,7 @@ public class LBBolt_ts extends LBBolt {
 
     void LB_REQUEST_CORE() throws InterruptedException {
         for (LBEvent event : lbEvents) {
-            LB_CORE(event);
+            LB_TS_CORE(event);
         }
     }
 

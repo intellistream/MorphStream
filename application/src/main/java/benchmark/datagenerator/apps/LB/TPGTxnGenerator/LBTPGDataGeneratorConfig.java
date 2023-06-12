@@ -17,6 +17,7 @@ public class LBTPGDataGeneratorConfig extends DataGeneratorConfig {
     public int Ratio_of_Transaction_Aborts;
     public int Transaction_Length;
     public int Ratio_of_Multiple_State_Access;
+    public int Ratio_of_New_Connections;
 
     @Override
     public void initialize(Configuration config) {
@@ -27,5 +28,6 @@ public class LBTPGDataGeneratorConfig extends DataGeneratorConfig {
         Ratio_of_Transaction_Aborts = config.getInt("Ratio_of_Transaction_Aborts", 0);
         Transaction_Length = config.getInt("Transaction_Length", 1);
         Ratio_of_Multiple_State_Access = config.getInt("Ratio_of_Multiple_State_Access", 100);
+        Ratio_of_New_Connections = config.getInt("Ratio_of_New_Connections", 50);
     }
 }

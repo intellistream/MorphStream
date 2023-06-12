@@ -90,9 +90,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 EventSelection_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 6) {
                 IBWJ_Fun(operation, mark_ID, clean);
-            } else if (this.tpg.getApp() == 7) {
-                LoadBalancer_Fun(operation, mark_ID, clean);
             }
+//            else if (this.tpg.getApp() == 7) {
+//                LoadBalancer_Fun(operation, mark_ID, clean); //using read_write_cond_readN instead
+//            }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
                 if (this.tpg.getApp() == 1) {
@@ -154,7 +155,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
             success = operation.success[0];
-            GrepSum_Fun(operation, mark_ID, clean);
+            if (this.tpg.getApp() == 0) {
+                GrepSum_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 7) {
+                LoadBalancer_Fun(operation, mark_ID, clean);
+            }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
@@ -632,26 +637,46 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     // LB - Asy_ModifyRecord_Iteration_Read
     protected void LoadBalancer_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
+        int keysLength = operation.condition_records.length;
+        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
+
         // apply function
         AppConfig.randomDelay();
 
-        HashMap<SchemaRecord, Long> counters = new HashMap<>();
-
-        if (operation.condition.boolArg1) { //input packet from a new connection
-            for (TableRecord record : operation.condition_records) { // iterate through all servers
-                SchemaRecord serverRecord = record.content_.readPastValues((long) operation.bid);
-                counters.put(serverRecord, serverRecord.getValues().get(1).getLong());
-            }
-            SchemaRecord minServer = Collections.min(counters.entrySet(), Map.Entry.comparingByValue()).getKey();
-            SchemaRecord tempo_record = new SchemaRecord(minServer);
-            tempo_record.getValues().get(1).incLong(1);
-
-            //TODO: Non-deterministic key? Util this stage, d_record is unknown and set to null during txn construction.
-            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+        // read server loads
+        for (int i = 0; i < keysLength; i++) {
+            preValues[i] = operation.condition_records[i].content_.readPreValues((long) operation.bid);
         }
+
+        // write to the least loaded server
+        SchemaRecord srcRecord = operation.s_record.content_.readPreValues((long) operation.bid);
+        SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+        tempo_record.getValues().get(1).incLong(1);//compute.
+        operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
         synchronized (operation.success) {
             operation.success[0]++;
         }
+
+//        // apply function
+//        AppConfig.randomDelay();
+//
+//        HashMap<SchemaRecord, Long> counters = new HashMap<>();
+//
+//        if (operation.condition.boolArg1) { //input packet from a new connection
+//            for (TableRecord record : operation.condition_records) { // iterate through all servers
+//                SchemaRecord serverRecord = record.content_.readPastValues((long) operation.bid);
+//                counters.put(serverRecord, serverRecord.getValues().get(1).getLong());
+//            }
+//            SchemaRecord minServer = Collections.min(counters.entrySet(), Map.Entry.comparingByValue()).getKey();
+//            SchemaRecord tempo_record = new SchemaRecord(minServer);
+//            tempo_record.getValues().get(1).incLong(1);
+//
+//            //TODO: Non-deterministic key? Util this stage, d_record is unknown and set to null during txn construction.
+//            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+//        }
+//        synchronized (operation.success) {
+//            operation.success[0]++;
+//        }
 
     }
 

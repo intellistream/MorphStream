@@ -7,41 +7,30 @@ import benchmark.datagenerator.Event;
  */
 public class LBEvent extends Event {
     private final int id;
+    private final int[] keys;
+    private final boolean isNewConn;
     private final int connID;
-    private final String srcAddr;
-    private final String srcPort;
-    private String destAddr;
-    private String desrPort;
 
-    public LBEvent(int id, int connID, String srcAddr, String srcPort, String destAddr, String destPort) {
+    public LBEvent(int id, int[] keys, boolean isNewConn, int connID) {
         this.id = id;
+        this.keys = keys;
+        this.isNewConn = isNewConn;
         this.connID = connID;
-        this.srcAddr = srcAddr;
-        this.srcPort = srcPort;
-        this.destAddr = destAddr;
-        this.desrPort = destPort;
     }
 
     public int getKey() {
         return connID;
     }
 
-    public void setDestAddr(String newDestAddr) {
-        this.destAddr = newDestAddr;
-    }
-
-    public void setDestPort(String newDestPort) {
-        this.desrPort = newDestPort;
-    }
 
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder(String.valueOf(id));
+        for (int key : keys) {
+            str.append(",").append(key);
+        }
+        str.append(",").append(isNewConn);
         str.append(",").append(connID);
-        str.append(",").append(srcAddr);
-        str.append(",").append(srcPort);
-        str.append(",").append(destAddr);
-        str.append(",").append(desrPort);
         return str.toString();
     }
 

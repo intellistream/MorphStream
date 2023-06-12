@@ -32,16 +32,15 @@ public class SINKCombo extends MeasureSink {
     @Override
     public void execute(Tuple input) throws InterruptedException {
         latency_measure(input);
-        cnt++;
-
-        //TODO: Properly define the_end
-//        int the_end = 216;
-        int the_end = 10000;
-        if (cnt >= the_end) {
-            LOG.info("Sink has received outputs: " + cnt);
-            end(global_cnt);
-        }
-
+//        cnt++;
+//
+//        //TODO: Properly define the_end
+////        int the_end = 216;
+//        int the_end = 10000;
+//        if (cnt >= the_end) {
+//            LOG.info("Sink has received outputs: " + cnt);
+//            end(global_cnt);
+//        }
     }
 
     public void display() {

@@ -3,13 +3,16 @@ package common.bolts.transactional.lb;
 import combo.SINKCombo;
 import common.param.lb.LBEvent;
 import components.operators.api.TransactionalBolt;
+import content.common.CommonMetaTypes;
 import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
+import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
+import utils.AppConfig;
 
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
@@ -31,26 +34,44 @@ public abstract class LBBolt extends TransactionalBolt {
     protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
-//    protected void IBWJ_LOCK_AHEAD(LBEvent event, TxnContext txnContext) throws DatabaseException {
-//        transactionManager.lock_ahead(txnContext, "index_r_table", event.getKey(), event.srcIndexRecordRef, READ_WRITE);
-//        transactionManager.lock_ahead(txnContext, "index_s_table", event.getKey(), event.tarIndexRecordRef, READ_WRITE);
-//    }
-//
-//    protected void IBWJ_REQUEST_NOLOCK(LBEvent event, TxnContext txnContext) throws DatabaseException {
-//        transactionManager.SelectKeyRecord_noLock(txnContext, "index_r_table", event.getKey(), event.srcIndexRecordRef, READ_WRITE);
-//        transactionManager.SelectKeyRecord_noLock(txnContext, "index_s_table", event.getKey(), event.tarIndexRecordRef, READ_WRITE);
-//        assert event.srcIndexRecordRef.getRecord() != null || event.tarIndexRecordRef.getRecord() != null;
-//    }
-//
-//    protected void IBWJ_REQUEST_CORE(LBEvent event) {
-//        DataBox sourceIndex_addr = event.srcIndexRecordRef.getRecord().getValues().get(1);
-//        DataBox sourceIndex_matching_addr = event.srcIndexRecordRef.getRecord().getValues().get(2);
-//        DataBox targetIndex_addr = event.tarIndexRecordRef.getRecord().getValues().get(1);
-//        final String targetIndexAddress = targetIndex_addr.getString();
-//
-//        sourceIndex_addr.setString(event.getAddress());
-//        sourceIndex_matching_addr.setString(targetIndexAddress);
-//    }
+    protected void LB_LOCK_AHEAD(LBEvent event, TxnContext txnContext) throws DatabaseException {
+        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
+            transactionManager.lock_ahead(txnContext, "server_table",
+                    String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_WRITE);
+    }
+
+    protected boolean lb_request_noLock(LBEvent event, TxnContext txnContext) throws DatabaseException {
+        return !process_request_noLock(event, txnContext, READ_WRITE);
+    }
+
+    private boolean process_request_noLock(LBEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
+        for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
+            boolean rt = transactionManager.SelectKeyRecord_noLock(txnContext, "server_table",
+                    String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
+            if (rt) {
+                assert event.getRecord_refs()[i].getRecord() != null;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected void LB_LA_CORE(LBEvent event) {
+//        long start = System.nanoTime();
+        DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
+        int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
+        for (int j = 0; j < event.Txn_Length; ++j) {
+            AppConfig.randomDelay();
+            for (int i = 0; i < NUM_ACCESS; ++i) {
+                int offset = j * NUM_ACCESS + i;
+                SchemaRecordRef recordRef = event.getRecord_refs()[offset];
+                SchemaRecord record = recordRef.getRecord();
+                DataBox Value_value = record.getValues().get(1);
+            }
+        }
+        TargetValue_value.incLong(1);
+    }
 
     protected void LAL_PROCESS(double _bid) throws InterruptedException, DatabaseException {
     }
@@ -64,13 +85,13 @@ public abstract class LBBolt extends TransactionalBolt {
         END_POST_TIME_MEASURE(thread_Id);
     }
 
-    protected boolean LB_CORE(LBEvent event) { //TODO: tstream
-//        SchemaRecordRef ref = event.serverRecord;
-//        if (ref.isEmpty()) {
-//            return false;//not yet processed.
-//        }
-//        DataBox dataBox = ref.getRecord().getValues().get(1); //Read address of matching tuple TODO: Verify this
-//        event.serverID = dataBox.getString();
+    protected boolean LB_TS_CORE(LBEvent event) { // tstream
+        SchemaRecordRef ref = event.getRecord_refs()[0];
+        if (ref.isEmpty()) {
+            return false;//not yet processed.
+        }
+        DataBox dataBox = ref.getRecord().getValues().get(0); //Read server ID
+        event.serverID = dataBox.getString();
         return true;
     }
 

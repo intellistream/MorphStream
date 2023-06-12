@@ -113,6 +113,8 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         } else if (app == 6) {//IBWJ
             operationChains.put("index_r_table", new TableOCs<>(totalThreads,offset));
             operationChains.put("index_s_table", new TableOCs<>(totalThreads,offset));
+        } else if (app == 7) {//Load Balancer
+            operationChains.put("server_table", new TableOCs<>(totalThreads,offset));
         }
     }
 
@@ -183,6 +185,10 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 operationChains.get("index_s_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, indexSOC);
                 ocs.add(indexROC);
                 ocs.add(indexSOC);
+            } else if (app == 7) {
+                OperationChain serverOC = context.createTask("server_table", _key, 0);
+                operationChains.get("index_r_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, serverOC);
+                ocs.add(serverOC);
             }
         }
         threadToOCs.put(context.thisThreadId, ocs);
@@ -209,6 +215,8 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         } else if (app == 6) {
             operationChains.get("index_r_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
             operationChains.get("index_s_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 7) {
+            operationChains.get("server_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
     }
 

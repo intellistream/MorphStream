@@ -70,7 +70,6 @@ public class LBInitializer extends TableInitilizer {
 
     protected void createTPGGenerator(Configuration config) {
         if (config.getBoolean("isDynamic")) {
-            //TODO:add the dynamic workload dataGenerator
             DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
@@ -112,6 +111,7 @@ public class LBInitializer extends TableInitilizer {
                                 ((LBTPGDataGeneratorConfig) dataConfig).Ratio_of_Transaction_Aborts,
                                 ((LBTPGDataGeneratorConfig) dataConfig).Transaction_Length,
                                 ((LBTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
+                                ((LBTPGDataGeneratorConfig) dataConfig).Ratio_of_New_Connections,
                                 AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
             else
@@ -189,53 +189,57 @@ public class LBInitializer extends TableInitilizer {
 
     @Override
     protected void Load() throws IOException {
-//        int totalEvents = dataConfig.getTotalEvents();
-//        boolean shufflingActive = dataConfig.getShufflingActive();
-//        String folder = dataConfig.getRootPath();
-//        File file = new File(folder + "events.txt");
-//        int[] p_bids = new int[tthread];
-//        if (file.exists()) {
-//            if (enable_log) LOG.info("Reading transfer events...");
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-//            loadLBEvents(reader, totalEvents, shufflingActive, p_bids);
-//            reader.close();
-//        }
+        int totalEvents = dataConfig.getTotalEvents();
+        boolean shufflingActive = dataConfig.getShufflingActive();
+        String folder = dataConfig.getRootPath();
+        File file = new File(folder + "events.txt");
+        int[] p_bids = new int[tthread];
+        if (file.exists()) {
+            if (enable_log) LOG.info("Reading transfer events...");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            loadLBEvents(reader, totalEvents, shufflingActive, p_bids);
+            reader.close();
+        }
     }
 
     private void loadLBEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
-//        String txn = reader.readLine();
-//        int count = 0;
-////        int p_bids[] = new int[tthread];
-//        while (txn != null) {
-//            String[] split = txn.split(",");
-//            int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
-//            count++;
-//
-//            // Construct bid array
-//            HashMap<Integer, Integer> pids = new HashMap<>();
-//            for (int i = 1; i < 4; i++) {
-//                pids.put((int) (Long.parseLong(String.valueOf(split[i].hashCode())) / partitionOffset), 0); //TODO: Set pid as 0 for all input words
-//            }
-//
-//            LBEvent event = new LBEvent(
-//                    Integer.parseInt(split[0]), //bid
-//                    npid, //pid
-//                    Arrays.toString(p_bids), //bid_arrary
-//                    Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
-//                    3,//num_of_partition TODO: Hard-coded number of arguments in Event
-//                    split[1], //key
-//                    split[2], //srcAddr
-//                    split[3] //srcPort
-//            );
-//
-//            DataHolder.events.add(event);
-//            if (enable_log) LOG.debug(String.format("%d lb read...", count));
-//            txn = reader.readLine();
-//        }
-//        if (enable_log) LOG.info("Done reading LB events...");
-//        if (shufflingActive) {
-//            shuffleEvents(DataHolder.events, totalEvents);
-//        }
+        String txn = reader.readLine();
+        int count = 0;
+//        int p_bids[] = new int[tthread];
+        while (txn != null) {
+            String[] split = txn.split(",");
+            int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
+            // construct bid array
+            int keyLength = split.length - 3;
+            HashMap<Integer, Integer> pids = new HashMap<>();
+            long[] keys = new long[keyLength];
+            for (int i = 1; i < keyLength+1; i++) {
+                keys[i-1] = Long.parseLong(split[i]);
+                pids.put((int) (keys[i-1] / partitionOffset), 0);
+            }
+
+            // construct event
+            LBEvent event = new LBEvent(
+                    Integer.parseInt(split[0]), //bid,
+                    npid, //pid
+                    Arrays.toString(p_bids), //bid_array
+                    Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
+                    pids.size(), // num_of_partition
+                    Arrays.toString(keys), // key_array
+                    keyLength,
+                    Transaction_Length,
+                    Boolean.parseBoolean(split[keyLength+1]),
+                    split[split.length-1]
+            );
+
+            DataHolder.events.add(event);
+            if (enable_log) LOG.debug(String.format("%d lb read...", count));
+            txn = reader.readLine();
+        }
+        if (enable_log) LOG.info("Done reading LB events...");
+        if (shufflingActive) {
+            shuffleEvents(DataHolder.events, totalEvents);
+        }
     }
 
     private void shuffleEvents(ArrayList<TxnEvent> txnEvents, int totalEvents) {
@@ -252,45 +256,45 @@ public class LBInitializer extends TableInitilizer {
 
     @Override
     public void store(String file_name) throws IOException {
-//        double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
-//        this.number_partitions = Math.min(tthread, config.getInt("number_partitions"));
-//        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
-//        String event_path = Event_Path
-//                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
-//                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEvents"))
-//                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
-//                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
-//                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
-//                + OsUtils.OS_wrapper("NUM_ACCESS=" + NUM_ACCESS)
-//                + OsUtils.OS_wrapper("theta=" + theta)
-//                + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
-//        File file = new File(event_path);
-//        file.mkdirs(); // If the directory containing the file and/or its parent(s) does not exist
-//        BufferedWriter w;
-//        w = new BufferedWriter(new FileWriter(new File(event_path + OsUtils.OS_wrapper(file_name))));
-//        for (Object event : db.getEventManager().input_events) {
-//            LBEvent lbEvent = (LBEvent) event;
-//            String sb =
-//                    lbEvent.getBid() +//0 -- bid
-//                            split_exp +
-//                            lbEvent.getPid() +//1
-//                            split_exp +
-//                            Arrays.toString(lbEvent.getBid_array()) +//2
-//                            split_exp +
-//                            lbEvent.num_p() +//3 num of p
-//                            split_exp +
-//                            "LBEvent" +//4 input_event types.
-//                            split_exp +
-//                            lbEvent.getConnID() +//5 tweet ID
-//                            split_exp +
-//                            lbEvent.getSrcAddr() +//6 source address
-//                            split_exp +
-//                            lbEvent.getSrcPort() //7 source port
-//                    ;
-//            w.write(sb
-//                    + "\n");
-//        }
-//        w.close();
+        double ratio_of_multi_partition = config.getDouble("ratio_of_multi_partition", 1);
+        this.number_partitions = Math.min(tthread, config.getInt("number_partitions"));
+        double ratio_of_read = config.getDouble("ratio_of_read", 0.5);
+        String event_path = Event_Path
+                + OsUtils.OS_wrapper("enable_states_partition=" + enable_states_partition)
+                + OsUtils.OS_wrapper("NUM_EVENTS=" + config.getInt("totalEvents"))
+                + OsUtils.OS_wrapper("ratio_of_multi_partition=" + ratio_of_multi_partition)
+                + OsUtils.OS_wrapper("number_partitions=" + number_partitions)
+                + OsUtils.OS_wrapper("ratio_of_read=" + ratio_of_read)
+                + OsUtils.OS_wrapper("NUM_ACCESS=" + NUM_ACCESS)
+                + OsUtils.OS_wrapper("theta=" + theta)
+                + OsUtils.OS_wrapper("NUM_ITEMS=" + NUM_ITEMS);
+        File file = new File(event_path);
+        file.mkdirs(); // If the directory containing the file and/or its parent(s) does not exist
+        BufferedWriter w;
+        w = new BufferedWriter(new FileWriter(new File(event_path + OsUtils.OS_wrapper(file_name))));
+        for (Object event : db.getEventManager().input_events) {
+            LBEvent lbEvent = (LBEvent) event;
+            String sb =
+                    lbEvent.getBid() +//0 -- bid
+                            split_exp +
+                            lbEvent.getPid() +//1
+                            split_exp +
+                            Arrays.toString(lbEvent.getBid_array()) +//2
+                            split_exp +
+                            lbEvent.num_p() +//3 num of p
+                            split_exp +
+                            "LBEvent" +//4 input_event types.
+                            split_exp +
+                            Arrays.toString(lbEvent.getKeys()) +//5 keys
+                            split_exp +
+                            lbEvent.isNewConn() +//6 isNewConn
+                            split_exp +
+                            lbEvent.getConnID() //7 connection ID
+                    ;
+            w.write(sb
+                    + "\n");
+        }
+        w.close();
     }
 
     private void insertServerRecord(String serverID, long counter, int pid, SpinLock[] spinlock_) {

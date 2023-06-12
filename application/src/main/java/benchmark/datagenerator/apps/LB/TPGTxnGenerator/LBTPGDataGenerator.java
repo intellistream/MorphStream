@@ -2,8 +2,6 @@ package benchmark.datagenerator.apps.LB.TPGTxnGenerator;
 
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.Event;
-import benchmark.datagenerator.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
-import benchmark.datagenerator.apps.GS.TPGTxnGenerator.Transaction.GSEvent;
 import benchmark.datagenerator.apps.LB.TPGTxnGenerator.Transaction.LBEvent;
 import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
@@ -16,7 +14,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static common.CONTROL.enable_log;
 import static common.CONTROL.enable_states_partition;
@@ -58,6 +55,7 @@ public class LBTPGDataGenerator extends DataGenerator {
     private final int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
     private final int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
     private final int Ratio_of_Multiple_State_Access;//ratio of multiple state access per transaction
+    private final int Ratio_of_New_Connections;//ratio of new connection requests
     private final int Transaction_Length;
     // control the number of txns overlap with each other.
     private final ArrayList<Integer> generatedKeys = new ArrayList<>();
@@ -82,6 +80,7 @@ public class LBTPGDataGenerator extends DataGenerator {
         Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
         Transaction_Length = dataConfig.Transaction_Length;
         Ratio_of_Multiple_State_Access = dataConfig.Ratio_of_Multiple_State_Access;
+        Ratio_of_New_Connections = dataConfig.Ratio_of_New_Connections;
 
         int nKeyState = dataConfig.getnKeyStates();
 
@@ -113,13 +112,13 @@ public class LBTPGDataGenerator extends DataGenerator {
     }
 
     protected void generateTuple() {
-        GSEvent event;
+        LBEvent event;
         event = randomEvent();
 //        System.out.println(eventID);
         events.add(event);
     }
 
-    private GSEvent randomEvent() {
+    private LBEvent randomEvent() {
         int NUM_ACCESS;
         if (random.nextInt(100) < Ratio_of_Multiple_State_Access) {
             NUM_ACCESS = this.NUM_ACCESS;
@@ -191,11 +190,17 @@ public class LBTPGDataGenerator extends DataGenerator {
             nGeneratedIds.put(key, nGeneratedIds.getOrDefault(key, 0) + 1);
         }
 
-        GSEvent t;
+        boolean isNewConn = false;
+        int newConnInt = random.nextInt(100);
+        if (newConnInt < Ratio_of_New_Connections) {
+            isNewConn = true;
+        }
+
+        LBEvent t;
         if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
-            t = new GSEvent(eventID, keys, true);
+            t = new LBEvent(eventID, keys, isNewConn, eventID);
         } else {
-            t = new GSEvent(eventID, keys, false);
+            t = new LBEvent(eventID, keys, isNewConn, eventID);
         }
         // increase the timestamp i.e. transaction id
         eventID++;
@@ -289,7 +294,6 @@ public class LBTPGDataGenerator extends DataGenerator {
 //        return t;
 //    }
 
-    //Copied from GSW, Method used to store event data into file
     @Override
     public void dumpGeneratedDataToFile() {
 

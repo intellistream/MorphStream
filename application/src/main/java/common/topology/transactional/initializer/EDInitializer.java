@@ -184,7 +184,7 @@ public class EDInitializer extends TableInitilizer {
                     npid, //pid
                     Arrays.toString(p_bids), //bid_arrary
                     Arrays.toString(pids.keySet().toArray(new Integer[0])), // partition_index
-                    2,//num_of_partition TODO: Hard-coded number of arguments in TR Event
+                    pids.size(),//num_of_partition
                     split[1], //tweetID
                     words //String[] words
             );

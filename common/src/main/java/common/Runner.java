@@ -23,9 +23,10 @@ public abstract class Runner implements IRunner {
 //    public String application = "GrepSum";
 //    public String application = "OnlineBiding";
     //public String application = "TollProcessing";
-    public String application = "EventDetection";
+//    public String application = "EventDetection";
 //    public String application = "EventDetectionSliding";
 //    public String application = "IBWJ";
+    public String application = "LoadBalancer";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -33,11 +34,11 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 80;
-//    public int totalEvents = 10000;
+//    public int totalEvents = 80;
+    public int totalEvents = 10000;
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 80;
-//    public int NUM_ITEMS = 10000;
+//    public int NUM_ITEMS = 80;
+    public int NUM_ITEMS = 10000;
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 5;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -56,8 +57,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
-//    public boolean shared = true; //Set to false for ED
-    public boolean shared = false; //Set to false for ED
+    public boolean shared = true; //Set to false for ED
+//    public boolean shared = false; //Set to false for ED
     @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
     public int batch = 1;
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)
@@ -177,6 +178,9 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
     public Integer Ratio_of_Overlapped_Keys = 10;
 
+    @Parameter(names = {"--new_conn_ratio"}, description = "Ratio of new connections in LB.")
+    public Integer Ratio_of_New_Connections = 50;
+
     @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
     public Integer Ratio_of_Transaction_Aborts = 0;
 
@@ -227,6 +231,7 @@ public abstract class Runner implements IRunner {
         config.put("State_Access_Skewness", State_Access_Skewness);
         config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
         config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
+        config.put("Ratio_of_New_Connections", Ratio_of_New_Connections);
         config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
         config.put("Transaction_Length", Transaction_Length);
 
@@ -308,6 +313,13 @@ public abstract class Runner implements IRunner {
                 break;
             case "IBWJ":
                 //TODO: Add Conf settings to IBWJ
+                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
+                defaultScheduler = "OP_NS_A";
+                phaseNum = shiftRate * phaseType.length;
+                break;
+            case "LoadBalancer":
+                //TODO: Add Conf settings to LB
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
                 defaultScheduler = "OP_NS_A";
