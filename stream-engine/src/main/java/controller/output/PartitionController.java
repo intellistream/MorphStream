@@ -685,7 +685,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             final int p = pointer[index];
 //			Tuple tuple = buffers[index];
             if (p == 0) {//first tuple comes.
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				buffers[index] = tuple;
             }
             buffers[index].add(p, package_message(streamId, value));
@@ -697,7 +697,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             final int p = pointer[index];
 //			Tuple tuple = buffers[index];
             if (p == 0) {//first tuple comes.
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				buffers[index] = tuple;
             }
             buffers[index].add(p, package_message(streamId, value));
@@ -709,7 +709,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             final int p = pointer[index];
 //			Tuple tuple = buffers[index];
             if (p == 0) {//first tuple comes.
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				buffers[index] = tuple;
             }
             buffers[index].add(p, package_message(streamId, value));
@@ -721,7 +721,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             final int p = pointer[index];
 //			Tuple tuple = buffers[index];
             if (p == 0) {//first tuple comes.
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				buffers[index] = tuple;
             }
             buffers[index].add(p, package_message(streamId, value));
@@ -733,7 +733,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             final int p = pointer[index];
 //			Tuple tuple = buffers[index];
             if (p == 0) {//first tuple comes.
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				buffers[index] = tuple;
             }
             buffers[index].add(p, package_message(streamId, deviceID, nextDouble, movingAvergeInstant));
@@ -745,7 +745,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             final int p = pointer[index];
 //			Tuple tuple = buffers[index];
             if (p == 0) {//first tuple comes.
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				buffers[index] = tuple;
             }
             buffers[index].add(p, package_message(streamId, key, value));
@@ -756,7 +756,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             final int index = targetId - base;
 //			Tuple tuple = buffers[index];
             if (pointer[index] == 0) {//first tuple comes.
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				buffers[index] = tuple;
             } else {
                 double cbid = buffers[index].getBID();
@@ -764,7 +764,7 @@ public abstract class PartitionController implements IPartitionController, Seria
                     buffers[index].length = pointer[index];
 //				JumboTuple transferTuple = new JumboTuple(buffers[index]);
                     _inorder_offer(buffers[index], cbid, gap, targetId);//enforce emit a partial-complete tuple. It is guaranteed that this tuple will have smaller batch id
-                    buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                    buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
                     pointer[index] = 0;
                 }
             }
@@ -781,13 +781,13 @@ public abstract class PartitionController implements IPartitionController, Seria
         JumboTuple add_inorder(int targetId, String streamId, double bid, LinkedList<Long> gap, TopologyContext context, char[] value) {
             final int index = targetId - base;
             if (pointer[index] == 0) {//first tuple comes.
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
             } else {
                 double cbid = buffers[index].getBID();
                 if (bid != cbid) {//different bid comes.
                     buffers[index].length = pointer[index];
                     _inorder_offer(buffers[index], cbid, gap, targetId);//enforce emit a partial-complete tuple. It is guaranteed that this tuple will have smaller batch id
-                    buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                    buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
                     pointer[index] = 0;
                 }
             }
@@ -806,14 +806,14 @@ public abstract class PartitionController implements IPartitionController, Seria
             final int p = pointer[index];
 //			Tuple tuple = buffers[index];
             if (p == 0) {//first tuple comes.
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				buffers[index] = tuple;
             } else {
                 double cbid = buffers[index].getBID();
                 if (bid != cbid) {//different bid comes.
                     buffers[index].length = pointer[index];
                     _inorder_offer(buffers[index], cbid, gap, targetId);//enforce emit a partial-complete tuple. It is guaranteed that this tuple will have smaller batch id
-                    buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                    buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
                     pointer[index] = 0;
                 }
             }
@@ -824,7 +824,7 @@ public abstract class PartitionController implements IPartitionController, Seria
         JumboTuple add_inorder_single(int targetId, String streamId, double bid, LinkedList<Long> gap, TopologyContext context, StreamValues value) {
             final int index = targetId - base;
 //			Tuple tuple = buffers[index];
-            buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+            buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				buffers[index] = tuple;
             buffers[index].length = 1;
             buffers[index].add(0, package_message(streamId, value));
@@ -843,7 +843,7 @@ public abstract class PartitionController implements IPartitionController, Seria
 //			Tuple tuple = buffers[index];
             if (p == 0) {
                 double bid = BIDGenerator.getInstance().getAndIncrement();
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
                 if (enable_log) LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
             }
             buffers[index].add(p, package_message(streamId, value));
@@ -879,7 +879,7 @@ public abstract class PartitionController implements IPartitionController, Seria
 //			Tuple tuple = buffers[index];
             if (p == 0) {
                 double bid = BIDGenerator.getInstance().getAndIncrement();
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
 //				if (enable_log) LOG.info("A tuple with bid: " + bid + " created @ " + DateTime.now());
             }
             buffers[index].add(p, package_message(streamId, value));
@@ -908,7 +908,7 @@ public abstract class PartitionController implements IPartitionController, Seria
             final int index = targetId - base;
             final int p = pointer[index];
             if (p == 0) {
-                buffers[index] = new JumboTuple(src_Id, bid, batch_size, context);
+                buffers[index] = new JumboTuple(bid, src_Id, batch_size, context);
             }
             buffers[index].add(p, package_marker(streamId, marker));
             buffers[index].length = p + 1;

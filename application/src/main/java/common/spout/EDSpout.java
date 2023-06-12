@@ -9,6 +9,7 @@ import common.param.TxnEvent;
 import components.operators.api.TransactionalSpout;
 import db.DatabaseException;
 import execution.ExecutionGraph;
+import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
@@ -31,6 +32,8 @@ public class EDSpout extends TransactionalSpout {
     public int counter;
     public Tuple tuple;
     public Tuple marker;
+    public JumboTuple jumboTuple;
+    public GeneralMsg[] generalMsgArray;
     public GeneralMsg generalMsg;
     public int tthread;
     public SINKCombo sink = new SINKCombo();
@@ -80,6 +83,7 @@ public class EDSpout extends TransactionalSpout {
             }
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
+            jumboTuple = new JumboTuple(bid, this.taskId, 3, context, generalMsgArray); //TODO: Hard-coded msg size
             this.collector.emit(bid, tuple);
             counter++;
         }

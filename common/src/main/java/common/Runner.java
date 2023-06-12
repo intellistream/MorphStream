@@ -20,12 +20,12 @@ public abstract class Runner implements IRunner {
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
 //    public String application = "StreamLedger";
-//    public String application = "GrepSum";
-    //public String application = "OnlineBiding";
+    public String application = "GrepSum";
+//    public String application = "OnlineBiding";
     //public String application = "TollProcessing";
 //    public String application = "EventDetection";
 //    public String application = "EventDetectionSliding";
-    public String application = "IBWJ";
+//    public String application = "IBWJ";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -69,8 +69,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
 //    public int CCOption = CCOption_LOCK;
 //    public int CCOption = CCOption_LWM;
-//    public int CCOption = CCOption_SStore;
-    public int CCOption = CCOption_MorphStream;
+    public int CCOption = CCOption_SStore;
+//    public int CCOption = CCOption_MorphStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")

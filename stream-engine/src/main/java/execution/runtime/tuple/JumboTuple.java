@@ -34,7 +34,7 @@ public class JumboTuple implements Comparable<JumboTuple> {
         System.arraycopy(clone.msg, 0, msg, 0, length);
     }
 
-    public JumboTuple(int sourceId, double bid, int length, TopologyContext context) {
+    public JumboTuple(double bid, int sourceId, int length, TopologyContext context) {
         this.sourceId = sourceId;
 //		this.targetTasks = targetTasks;
         this.length = length;
@@ -43,7 +43,7 @@ public class JumboTuple implements Comparable<JumboTuple> {
         this.bid = bid;
     }
 
-    public JumboTuple(int sourceId, double bid, int msg_size, TopologyContext context, Message... msg) {
+    public JumboTuple(double bid, int sourceId, int msg_size, TopologyContext context, Message... msg) {
         this.sourceId = sourceId;
 //		this.targetTasks = targetTasks;
         this.context = context;
