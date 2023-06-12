@@ -20,10 +20,10 @@ public abstract class Runner implements IRunner {
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
 //    public String application = "StreamLedger";
-    public String application = "GrepSum";
+//    public String application = "GrepSum";
 //    public String application = "OnlineBiding";
     //public String application = "TollProcessing";
-//    public String application = "EventDetection";
+    public String application = "EventDetection";
 //    public String application = "EventDetectionSliding";
 //    public String application = "IBWJ";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
@@ -33,11 +33,11 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-//    public int totalEvents = 1000;
-    public int totalEvents = 10000;
+    public int totalEvents = 80;
+//    public int totalEvents = 10000;
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-//    public int NUM_ITEMS = 1000;
-    public int NUM_ITEMS = 10000;
+    public int NUM_ITEMS = 80;
+//    public int NUM_ITEMS = 10000;
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 5;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -56,7 +56,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
-    public boolean shared = true; //Set to false for ED
+//    public boolean shared = true; //Set to false for ED
+    public boolean shared = false; //Set to false for ED
     @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
     public int batch = 1;
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)
@@ -69,8 +70,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
 //    public int CCOption = CCOption_LOCK;
 //    public int CCOption = CCOption_LWM;
-    public int CCOption = CCOption_SStore;
-//    public int CCOption = CCOption_MorphStream;
+//    public int CCOption = CCOption_SStore;
+    public int CCOption = CCOption_MorphStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")

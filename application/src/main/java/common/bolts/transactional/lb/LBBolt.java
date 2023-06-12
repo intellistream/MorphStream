@@ -65,12 +65,12 @@ public abstract class LBBolt extends TransactionalBolt {
     }
 
     protected boolean LB_CORE(LBEvent event) { //TODO: tstream
-        SchemaRecordRef ref = event.serverRecord;
-        if (ref.isEmpty()) {
-            return false;//not yet processed.
-        }
-        DataBox dataBox = ref.getRecord().getValues().get(1); //Read address of matching tuple TODO: Verify this
-        event.serverID = dataBox.getString();
+//        SchemaRecordRef ref = event.serverRecord;
+//        if (ref.isEmpty()) {
+//            return false;//not yet processed.
+//        }
+//        DataBox dataBox = ref.getRecord().getValues().get(1); //Read address of matching tuple TODO: Verify this
+//        event.serverID = dataBox.getString();
         return true;
     }
 
