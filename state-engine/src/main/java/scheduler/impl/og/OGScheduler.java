@@ -181,8 +181,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         }
     }
 
-    int trCounter = 0;
-    public static ConcurrentSkipListSet<Integer> updatedTweets = new ConcurrentSkipListSet<>(); //remove after testing
     // ED: Tweet Registrant - Asy_ModifyRecord
     protected void TweetRegistrant_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -195,18 +193,12 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             log.info("TR: Empty tweet record not found");
             throw new NoSuchElementException();
         }
-//        else {
-//            trCounter++;
-////            log.info("TR valid record count: " + trCounter);
-//        }
 
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
 
         // Update tweet's wordList
         if (operation.function instanceof Insert) {
             tempo_record.getValues().get(1).setStringList(Arrays.asList(operation.function.stringArray)); //compute, update wordList
-            updatedTweets.add(Integer.parseInt(tweetRecord.GetPrimaryKey()));
-
         } else
             throw new UnsupportedOperationException();
 
@@ -218,7 +210,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
     }
 
-    int wuCounter = 0;
     // ED: Word Update - Asy_ModifyRecord
     protected void WordUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -230,13 +221,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         if (wordRecord == null) {
             log.info("WU: Word record not found");
             throw new NoSuchElementException();
-        }
-        else {
-            wuCounter++;
-//            log.info("WU valid record count: " + wuCounter);
-        }
-        if (wuCounter >= 600) {
-            log.info("WU has found all valid records: " + wuCounter);
         }
 
         SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
@@ -291,17 +275,17 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         SchemaRecord wordRecord = operation.s_record.content_.readPastValues((long) operation.bid);
 
         if (wordRecord == null) {
-            log.info("Word record not found");
+            log.info("TC: Word record not found");
             throw new NoSuchElementException();
         }
 
-        final List<String> tweetIDList = wordRecord.getValues().get(2).getStringList();
-        if (tweetIDList.size() == 0) {
-            log.info("Word has been calculated: " + wordRecord.getValues().get(1).toString() + " in window " + wordRecord.getValues().get(5).toString());
-            return;
-        } else {
-            log.info("Calculate word: " + wordRecord.getValues().get(1).toString() + " in window " + wordRecord.getValues().get(5).toString());
-        }
+//        final List<String> tweetIDList = wordRecord.getValues().get(2).getStringList();
+//        if (tweetIDList.size() == 0) {
+//            log.info("Word has been calculated: " + wordRecord.getValues().get(1).toString() + " in window " + wordRecord.getValues().get(5).toString());
+//            return;
+//        } else {
+//            log.info("Calculate word: " + wordRecord.getValues().get(1).toString() + " in window " + wordRecord.getValues().get(5).toString());
+//        }
 
         final long oldCountOccurWindow = wordRecord.getValues().get(3).getLong();
         final double oldTfIdf = wordRecord.getValues().get(4).getDouble();
@@ -317,8 +301,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             double newTfIdf = tf * idf;
             double difference = tf * idf - oldTfIdf;
 
-            List<String> emptyList = new ArrayList<>();
-            tempo_record.getValues().get(2).setStringList(emptyList); //reset tweetIDList to {}
+//            List<String> emptyList = new ArrayList<>();
+//            tempo_record.getValues().get(2).setStringList(emptyList); //reset tweetIDList to {}
             tempo_record.getValues().get(4).setDouble(newTfIdf); //update tf-idf
             tempo_record.getValues().get(6).setLong(0); //reset frequency to zero
             tempo_record.getValues().get(7).setBool(difference >= 0.5); //set isBurst accordingly //TODO: Check this threshold
@@ -334,7 +318,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     }
 
 
-    int scCounter = 0;
     // ED-SC: Similarity Calculator - Asy_ModifyRecord_Iteration_Read
     protected void SimilarityCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -347,9 +330,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         if (tweetRecord == null) {
             log.info("SC: Condition tweet record not found");
             throw new NoSuchElementException();
-        } else {
-            scCounter++;
-//            log.info("SC valid record count: " + scCounter);
         }
 
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord);
@@ -362,7 +342,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             for (String word : tweetWordList) {tweetMap.put(word, 1);}
 
             if (operation.function instanceof Similarity) { // compute input tweet's cosine similarity with all clusters
-                int clusterCounter = 0;
 
                 for (TableRecord record : operation.condition_records) { // iterate through all clusters in cluster_table
                     // skip if the cluster has no update in the past two windows
@@ -370,8 +349,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
                     if (clusterRecord == null) { //skip record if it has not been updated in the past two windows
                         continue;
-                    } else {
-                        clusterCounter++;
                     }
 
                     long clusterSize = clusterRecord.getValues().get(3).getLong();
@@ -392,7 +369,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                         similarities.put(clusterRecord, similarity);
                     }
                 }
-//                log.info("SC has iterated through: " + clusterCounter + " clusters");
+
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -427,8 +404,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
     }
 
-
-    public static ConcurrentSkipListSet<String> missingTweets = new ConcurrentSkipListSet<>();
     // ED-CU: Cluster Updater - Asy_ModifyRecord
     protected void ClusterUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
@@ -439,13 +414,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
         if (tweetRecord != null) {
             final List<String> tweetWordList = tweetRecord.getValues().get(1).getStringList();
-
-            if (tweetWordList.size() == 1) {
-                missingTweets.add(tweetRecord.GetPrimaryKey());
-                log.info("Tweet " + tweetRecord.GetPrimaryKey() + " has empty word list" + " with bid " + operation.bid);
-//                log.info("Missing tweets: " + missingTweets + " with bid " + operation.bid);
-//                log.info("OP TR updated tweet set: " + OPScheduler.updatedTweets);
-            }
+//            if (tweetWordList.size() == 1) {
+//                log.info("Tweet " + tweetRecord.GetPrimaryKey() + " has empty word list" + " with bid " + operation.bid);
+//            }
 
             // read
             SchemaRecord clusterRecord = operation.s_record.content_.readPastValues((long) operation.bid);
@@ -525,6 +496,91 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
     }
 
+    protected void IBWJ_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+
+        AppConfig.randomDelay();
+
+        int keysLength = operation.condition_records.length;
+        SchemaRecord[] matchingTuples = new SchemaRecord[keysLength];
+        for (int i = 0; i < keysLength; i++) {
+            matchingTuples[i] = operation.condition_records[i].content_.readPreValues((long) operation.bid);
+        }
+
+        final String matchingAddress = matchingTuples[0].getValues().get(1).getString(); //find one of the matching addresses
+        if (matchingAddress == null) {
+            log.info("IBWJ: No matching tuple found");
+            return;
+        }
+
+        // read
+        SchemaRecord sourceTuple = operation.s_record.content_.readPastValues((long) operation.bid);
+        if (sourceTuple == null) {
+            log.info("IBWJ: Source tuple not found");
+            throw new NoSuchElementException();
+        }
+        SchemaRecord tempo_record = new SchemaRecord(sourceTuple); //tempo record
+
+        if (operation.function instanceof Insert) {
+            tempo_record.getValues().get(1).setString(operation.function.item); //update tuple's own index address
+            tempo_record.getValues().get(2).setString(matchingAddress); //update tuple's matching index address
+            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+
+        } else {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
+    // LB - Asy_ModifyRecord_Iteration_Read
+    protected void LoadBalancer_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+
+        int keysLength = operation.condition_records.length;
+        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
+
+        // apply function
+        AppConfig.randomDelay();
+
+        // read server loads
+        for (int i = 0; i < keysLength; i++) {
+            preValues[i] = operation.condition_records[i].content_.readPreValues((long) operation.bid);
+        }
+
+        // write to the least loaded server
+        SchemaRecord srcRecord = operation.s_record.content_.readPreValues((long) operation.bid);
+        SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+        tempo_record.getValues().get(1).incLong(1);//compute.
+        operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+        synchronized (operation.success) {
+            operation.success[0]++;
+        }
+
+//        // apply function
+//        AppConfig.randomDelay();
+//
+//        HashMap<SchemaRecord, Long> counters = new HashMap<>();
+//
+//        if (operation.condition.boolArg1) { //input packet from a new connection
+//            for (TableRecord record : operation.condition_records) { // iterate through all servers
+//                SchemaRecord serverRecord = record.content_.readPastValues((long) operation.bid);
+//                counters.put(serverRecord, serverRecord.getValues().get(1).getLong());
+//            }
+//            SchemaRecord minServer = Collections.min(counters.entrySet(), Map.Entry.comparingByValue()).getKey();
+//            SchemaRecord tempo_record = new SchemaRecord(minServer);
+//            tempo_record.getValues().get(1).incLong(1);
+//
+//            //TODO: Non-deterministic key? Util this stage, d_record is unknown and set to null during txn construction.
+//            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+//        }
+//        synchronized (operation.success) {
+//            operation.success[0]++;
+//        }
+
+    }
+
 
     /**
      * general operation execution entry method for all schedulers.
@@ -548,10 +604,28 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 SimilarityCalculate_Fun(operation, mark_ID, clean);
             } else if (this.tpg.getApp() == 4 && Objects.equals(operation.operator_name, "ed_es")) {
                 EventSelection_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 6) {
+                IBWJ_Fun(operation, mark_ID, clean);
             }
             // check whether needs to return a read results of the operation
+//            if (operation.record_ref != null) {
+//                operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
+//            }
             if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
+                if (this.tpg.getApp() == 1) {
+                    operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
+                } else if (this.tpg.getApp() == 4) {
+                    SchemaRecord updatedRecord = operation.d_record.content_.readPastValues((long) operation.bid);
+                    if (updatedRecord != null) {
+                        operation.record_ref.setRecord(updatedRecord);
+//                        if (Objects.equals(operation.operator_name, "ed_sc")) {
+//                            log.info("Updating record ref for SC");
+//                        }
+                    } else {
+                        log.info(operation.operator_name + ": D_Record not found"); //TODO: Remove after testing
+                        throw new NullPointerException();
+                    }
+                }
             }
             // operation success check, number of operation succeeded does not increase after execution
             if (operation.success[0] == success) {
@@ -597,7 +671,12 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             }
         } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
             success = operation.success[0];
-            GrepSum_Fun(operation, mark_ID, clean);
+//            GrepSum_Fun(operation, mark_ID, clean);
+            if (this.tpg.getApp() == 0) {
+                GrepSum_Fun(operation, mark_ID, clean);
+            } else if (this.tpg.getApp() == 7) {
+                LoadBalancer_Fun(operation, mark_ID, clean);
+            }
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
             }

@@ -187,7 +187,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 ocs.add(indexSOC);
             } else if (app == 7) {
                 OperationChain serverOC = context.createTask("server_table", _key, 0);
-                operationChains.get("index_r_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, serverOC);
+                operationChains.get("server_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, serverOC);
                 ocs.add(serverOC);
             }
         }
