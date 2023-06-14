@@ -33,7 +33,7 @@ public interface TxnAccess {
         public Access NewAccess() {
             assert (access_count_ < N);
             Access ret = accesses_[access_count_];
-            ++access_count_;
+            ++ access_count_;
             return ret;
         }
 

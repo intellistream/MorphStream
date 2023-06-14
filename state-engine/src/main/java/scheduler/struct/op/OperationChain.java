@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * We still call it OperationChain in TPG but with different representation
- * The operationchain only tries to maintain a data structure for the ease of temporal dependencies construction.
+ * The operationchain only tries to maintain a data structure for the ease of temporal dependencies' construction.
  */
 public class OperationChain implements Comparable<OperationChain> {
     // layered OC related
@@ -71,6 +71,10 @@ public class OperationChain implements Comparable<OperationChain> {
             curOperation.initialize();
         }
     }
+    public void updateDependencies(Operation childOperation, Operation parentOperation, DependencyType dependencyType) {
+        childOperation.addParent(parentOperation, dependencyType);
+        parentOperation.addChild(childOperation, dependencyType);
+    }
     public void updateFDDependencies(){
         for (PotentialDependencyInfo pChildInfo : potentialChldrenInfo) {
             if (pChildInfo.op.isNonDeterministicOperation) {
@@ -86,9 +90,11 @@ public class OperationChain implements Comparable<OperationChain> {
 
     public void addOperation(Operation op) {
         operations.add(op);
+        operationWithVirtual.add(op);
     }
 
     public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
+        operationWithVirtual.add(op);
         potentialChldrenInfo.add(new PotentialDependencyInfo(potentialChildren, op));
     }
     public void addFDParent(Operation targetOp) {

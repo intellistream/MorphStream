@@ -4,6 +4,7 @@ import content.common.CommonMetaTypes.AccessType;
 import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -129,7 +130,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
             return false;
         }
     }
-
+    @Override
     public boolean lock_ahead(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException {
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);
         if (t_record != null) {
@@ -139,6 +140,16 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
             if (enable_log) log.info("No record is found:" + primary_key);
             return false;
         }
+    }
+
+    @Override
+    public boolean lock_all(SpinLock[] spinLocks) throws DatabaseException {
+       throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean unlock_all(SpinLock[] spinLocks) throws DatabaseException {
+        throw new UnsupportedOperationException();
     }
 
     public boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException {
@@ -193,13 +204,14 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
 
     protected abstract boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType access_type) throws InterruptedException;
 
-    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType accessType) {
+    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType access_type) {
         throw new UnsupportedOperationException();
     }
+
 
     public void BeginTransaction(TxnContext txn_context) {
         throw new UnsupportedOperationException();

@@ -4,6 +4,7 @@ import content.common.CommonMetaTypes;
 import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
@@ -103,6 +104,8 @@ public interface ITxnManager {
     boolean lock_ahead(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;
 
     boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;
+    boolean lock_all(SpinLock[] spinLocks) throws DatabaseException;
+    boolean unlock_all(SpinLock[] spinLocks) throws DatabaseException;
 
     void BeginTransaction(TxnContext txnContext);
 
