@@ -64,7 +64,6 @@ function runTStream() {
 # run basic experiment for different algorithms
 function baselineEvaluation() {
   runTStream
-  ResetParameters
 
   scheduler=TStream
   runTStream
