@@ -34,6 +34,14 @@ public abstract class LBBolt extends TransactionalBolt {
     protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
     }
 
+    protected void LB_NOCC_REQUEST(LBEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+        for (int i=0; i<event.TOTAL_NUM_ACCESS; ++i) {
+            boolean rt = transactionManager.SelectKeyRecord(txnContext, "server_table",
+                    String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_WRITE); //TODO: _noLock? or _?
+            assert !rt || event.getRecord_refs()[i].getRecord() != null;
+        }
+    }
+
     protected void LB_LOCK_AHEAD(LBEvent event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "server_table",
@@ -57,7 +65,7 @@ public abstract class LBBolt extends TransactionalBolt {
         return false;
     }
 
-    protected void LB_LA_CORE(LBEvent event) {
+    protected void LB_CORE(LBEvent event) { //Used in LB_nocc & SStore
 //        long start = System.nanoTime();
         DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
         int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;

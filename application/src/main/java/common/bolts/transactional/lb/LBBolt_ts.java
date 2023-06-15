@@ -37,6 +37,13 @@ public class LBBolt_ts extends LBBolt {
 
     }
 
+    @Override
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
+        super.initialize(thread_Id, thisTaskId, graph);
+        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
+        lbEvents = new ArrayDeque<>();
+    }
+
     /**
      * THIS IS ONLY USED BY TSTREAM.
      * IT CONSTRUCTS and POSTPONES TXNS.
@@ -104,13 +111,6 @@ public class LBBolt_ts extends LBBolt {
 //
 //        transactionManager.CommitTransaction(txnContext);
 //        lbEvents.add(event);
-    }
-
-    @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) throws DatabaseException {
-        super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
-        lbEvents = new ArrayDeque<>();
     }
 
     void LB_REQUEST_CORE() throws InterruptedException {

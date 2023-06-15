@@ -85,6 +85,7 @@ function dynamic_runner() { # multi-batch exp
   # Array of different scheduler and ratio of new connections
   schedulerArray=("OP_BFS_A" "OG_BFS_A" "OP_NS_A" "OG_NS_A")
   newConnRatioArray=(10 20 30 40 50 60 70 80)
+#  numThreadArray=()
 
   # LB Experiment on MorphStream with different scheduling decisions & new_conn_ratio
   for scheduler in "${schedulerArray[@]}"; do
