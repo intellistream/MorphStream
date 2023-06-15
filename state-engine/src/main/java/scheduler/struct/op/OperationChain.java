@@ -45,76 +45,82 @@ public class OperationChain implements Comparable<OperationChain> {
      * <p>
      * OC: O1 <- O2 O3. O2
      */
-    public void updateTDDependencies() {
+    public void updateDependencies() {
         Operation prevOperation = null;
         List<Operation> parentOperations = new ArrayList<>();
         for (Operation curOperation : operations) {
             if (prevOperation != null) {
-                parentOperations.add(prevOperation);
-                // if operations are in the same transaction, i.e. have the same bid,
-                // add the temporal dependency parent of the prevOperation i.e. all operations with the same bid have the same temporal dependent parent
-                if (curOperation.bid != prevOperation.bid) {
-                    for (Operation parentOperation : parentOperations) {
-                        curOperation.addParent(parentOperation, DependencyType.TD);
-                        parentOperation.addChild(curOperation, DependencyType.TD);
-                    }
-                    parentOperations.clear();
+                if (curOperation.isNonDeterministicOperation) {
+                    updateNonDependencies(curOperation, parentOperations, prevOperation);
+                    prevOperation = curOperation;
+                } else if (!curOperation.pKey.equals(this.primaryKey)){
+                    updateFDDependencies(curOperation, parentOperations, prevOperation);
                 } else {
-                    Queue<Operation> prevParentOperations = prevOperation.getParents(DependencyType.TD);
-                    for (Operation prevParentOperation : prevParentOperations) {
-                        curOperation.addParent(prevParentOperation, DependencyType.TD);
-                        prevParentOperation.addChild(curOperation, DependencyType.TD);
-                    }
+                    updateTDDependencies(curOperation, parentOperations, prevOperation);
+                    prevOperation = curOperation;
                 }
+            } else {
+              prevOperation = curOperation;
             }
-            prevOperation = curOperation;
-            curOperation.initialize();
+        }
+    }
+    public void initializeDependencies() {
+        for (Operation operation : operations) {
+            operation.initialize();
         }
     }
     public void updateDependencies(Operation childOperation, Operation parentOperation, DependencyType dependencyType) {
         childOperation.addParent(parentOperation, dependencyType);
         parentOperation.addChild(childOperation, dependencyType);
     }
-    public void updateFDDependencies(){
-        for (PotentialDependencyInfo pChildInfo : potentialChldrenInfo) {
-            if (pChildInfo.op.isNonDeterministicOperation) {
-                if (pChildInfo.potentialChildOC.equals(this))
-                    continue;
-                addDependencyForNondeterministicOperation(pChildInfo.op);
-            } else {
-                addFDParent(pChildInfo.op);
+    public void updateTDDependencies(Operation childOperation, List<Operation> parentOperations, Operation prevOperation) {
+        parentOperations.add(prevOperation);
+        // if operations are in the same transaction, i.e. have the same bid,
+        // add the temporal dependency parent of the prevOperation i.e. all operations with the same bid have the same temporal dependent parent
+        if (childOperation.bid != prevOperation.bid) {
+            for (Operation parentOperation : parentOperations) {
+                updateDependencies(childOperation, parentOperation, DependencyType.TD);
+            }
+            parentOperations.clear();
+        } else {
+            Queue<Operation> prevParentOperations = prevOperation.getParents(DependencyType.TD);
+            for (Operation prevParentOperation : prevParentOperations) {
+                updateDependencies(childOperation, prevParentOperation, DependencyType.TD);
             }
         }
-        potentialChldrenInfo.clear();
     }
+    public void updateFDDependencies(Operation childOperation, List<Operation> parentOperations, Operation prevOperation) {
+        parentOperations.add(prevOperation);
+        for (Operation parentOperation : parentOperations) {
+            updateDependencies(childOperation, parentOperation, DependencyType.FD);
+        }
+        parentOperations.clear();
+    }
+    public void updateNonDependencies(Operation childOperation, List<Operation> parentOperations, Operation prevOperation) {
+        parentOperations.add(prevOperation);
+        if (childOperation.bid != prevOperation.bid) {
+            for (Operation parentOperation : parentOperations) {
+                updateDependencies(childOperation, parentOperation, DependencyType.FD);
+            }
+            parentOperations.clear();
+        } else {
+            Queue<Operation> prevParentOperations = prevOperation.getParents(DependencyType.FD);
+            for (Operation prevParentOperation : prevParentOperations) {
+                updateDependencies(childOperation, prevParentOperation, DependencyType.FD);
+            }
+        }
+    }
+
+
+
 
     public void addOperation(Operation op) {
         operations.add(op);
+        operationWithVirtual.add(op);
     }
 
     public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
-        potentialChldrenInfo.add(new PotentialDependencyInfo(potentialChildren, op));
-    }
-    public void addFDParent(Operation targetOp) {
-        Iterator<Operation> iterator = this.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
-        while (iterator.hasNext()) {
-            Operation parentOp = iterator.next();
-            if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
-                targetOp.addParent(parentOp, DependencyType.FD);
-                parentOp.addChild(targetOp, DependencyType.FD);
-                break;
-            }
-        }
-    }
-    public void addDependencyForNondeterministicOperation(Operation targetOp) {
-        addFDParent(targetOp);
-        for (Operation childOp : this.getOperations()) {
-            if (childOp.bid > targetOp.bid) {
-                childOp.addParent(targetOp, DependencyType.TD);
-                targetOp.addChild(childOp, DependencyType.TD);
-                break;
-            }
-        }
+        operationWithVirtual.add(op);
     }
 
     public MyList<Operation> getOperations() {
@@ -153,6 +159,7 @@ public class OperationChain implements Comparable<OperationChain> {
         if (operations.size() != 0) {
 //            operations.first().d_record.content_.clean_map(); //Disabled GC for ED
             operations.clear();
+            operationWithVirtual.clear();
         }
         ocParents.clear();
         isExecuted = false;
