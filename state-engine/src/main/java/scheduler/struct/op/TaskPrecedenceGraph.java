@@ -12,6 +12,7 @@ import utils.lib.ConcurrentHashMap;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Vector;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
@@ -41,6 +42,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private final int NUM_ITEMS;
     private final int app;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
+    private final Vector<Operation> NonOperations = new Vector<>();
     CyclicBarrier barrier;
     private int maxLevel = 0; // just for layered scheduling
 
@@ -81,6 +83,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear(); // only need to clear all operations from all ocs
         }
+        NonOperations.clear();
         if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
     }
 
@@ -225,6 +228,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             ArrayDeque<Operation> roots = new ArrayDeque<>();
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
+                    oc.addNonOperation(this.NonOperations);
                     oc.updateDependencies();
                 }
             }
@@ -349,12 +353,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     }
     private void checkDependencyForNonDeterministicStateAccess(OperationChain curOC, Operation op) {
         //Add Non-deterministic state access operation to all its potential parents
-        for (int i = 0; i < this.threadToOCs.size(); i ++) {
-            Deque<OperationChain> threadOCs = this.threadToOCs.get(i);
-            for (OperationChain OC : threadOCs) {
-                OC.addPotentialFDChildren(curOC, op);
-            }
-        }
+        NonOperations.add(op);
     }
 
     public int getApp() {

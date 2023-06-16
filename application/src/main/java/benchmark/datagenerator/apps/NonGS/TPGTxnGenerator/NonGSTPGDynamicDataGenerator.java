@@ -196,7 +196,7 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         } else {
             isAbort = false;
         }
-        if (random.nextInt(100) < Ratio_of_Non_Deterministic_State_Access) {
+        if (random.nextInt(1000) < Ratio_of_Non_Deterministic_State_Access) {
             isNonDeterministic = true;
         } else {
             isNonDeterministic = false;

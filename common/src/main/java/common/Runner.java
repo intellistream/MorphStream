@@ -169,7 +169,7 @@ public abstract class Runner implements IRunner {
 
     @Parameter(names = {"--multiple_ratio"}, description = "State access skewness.")
     public Integer Ratio_of_Multiple_State_Access = 100;
-    @Parameter(names = {"--nondeterministic_ratio"}, description = "Ratio_of_Non_Deterministic_State_Access.")
+    @Parameter(names = {"--nondeterministic_ratio"}, description = "Ratio_of_Non_Deterministic_State_Access.(10 -> 0.1%)")
     public Integer Ratio_of_Non_Deterministic_State_Access = 0;
 
     @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")

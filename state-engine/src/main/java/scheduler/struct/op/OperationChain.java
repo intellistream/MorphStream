@@ -23,7 +23,6 @@ public class OperationChain implements Comparable<OperationChain> {
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
 
-
     public OperationChain(String tableName, String primaryKey) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
@@ -48,7 +47,7 @@ public class OperationChain implements Comparable<OperationChain> {
     public void updateDependencies() {
         Operation prevOperation = null;
         List<Operation> parentOperations = new ArrayList<>();
-        for (Operation curOperation : operations) {
+        for (Operation curOperation : operationWithVirtual) {
             if (prevOperation != null) {
                 if (curOperation.isNonDeterministicOperation) {
                     updateNonDependencies(curOperation, parentOperations, prevOperation);
@@ -60,7 +59,8 @@ public class OperationChain implements Comparable<OperationChain> {
                     prevOperation = curOperation;
                 }
             } else {
-              prevOperation = curOperation;
+              if (curOperation.pKey.equals(this.primaryKey) || curOperation.isNonDeterministicOperation)
+                  prevOperation = curOperation;
             }
         }
     }
@@ -111,9 +111,6 @@ public class OperationChain implements Comparable<OperationChain> {
         }
     }
 
-
-
-
     public void addOperation(Operation op) {
         operations.add(op);
         operationWithVirtual.add(op);
@@ -121,6 +118,9 @@ public class OperationChain implements Comparable<OperationChain> {
 
     public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
         operationWithVirtual.add(op);
+    }
+    public void addNonOperation(Vector<Operation> ops) {
+        operationWithVirtual.addAll(ops);
     }
 
     public MyList<Operation> getOperations() {
