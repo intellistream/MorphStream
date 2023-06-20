@@ -86,9 +86,11 @@ public class LBBolt_sstore extends LBBolt_LA {
             HashMap<Integer, Integer> pids = new HashMap<>();
             for (TxnEvent event : GlobalSorter.sortedEvents) {
                 if (event instanceof LBEvent) {
-                    parseLBEvent(partitionOffset, (LBEvent) event, pids);
-                    event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
-                    pids.replaceAll((k, v) -> p_bids[k]++);
+                    if (((LBEvent) event).isNewConn()) {
+                        parseLBEvent(partitionOffset, (LBEvent) event, pids);
+                        event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
+                        pids.replaceAll((k, v) -> p_bids[k]++);
+                    }
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -121,14 +123,8 @@ public class LBBolt_sstore extends LBBolt_LA {
         int _pid = event.getPid();
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         //ensures that locks are added in the input_event sequence order.
-        double[] newConnBIDArray = new double[event.getBid_array().length];
-        for (int i=0; i<event.getBid_array().length; i++) {
-            newConnBIDArray[i] = event.getNewConnBID();
-        }
-        //TODO: Replaced original bid_array with [newConnBIDs], refine this.
-//        LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id); //Must acquire global partition lock
         if (event.isNewConn()) {
-            LA_LOCK_Reentrance(transactionManager, newConnBIDArray, event.partition_indexs, _bid, thread_Id); //Must acquire global partition lock
+            LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id); //Must acquire global partition lock
             BEGIN_LOCK_TIME_MEASURE(thread_Id);
             LAL(event, _bid, _bid); //Lock record.content.spinlock
             END_LOCK_TIME_MEASURE_ACC(thread_Id);

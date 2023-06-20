@@ -70,7 +70,6 @@ public class LBTPGDataGenerator extends DataGenerator {
     private int floor_interval;
     private ArrayList<Event> events;
     private int eventID = 0;
-    private int newConnID = 0;
 
     public LBTPGDataGenerator(LBTPGDataGeneratorConfig dataConfig) {
         super(dataConfig);
@@ -181,7 +180,6 @@ public class LBTPGDataGenerator extends DataGenerator {
                 }
             }
         } else {
-            // TODO: add transaction length logic
             for (int i = 0; i < NUM_ACCESS; i++) {
                 keys[i] = getUniqueKey(keyZipf, generatedKeys);
             }
@@ -193,15 +191,12 @@ public class LBTPGDataGenerator extends DataGenerator {
 
         boolean isNewConn = false;
         int newConnInt = random.nextInt(100);
-        int newConnEventID = -1;
         if (newConnInt < Ratio_of_New_Connections) {
             isNewConn = true;
-            newConnEventID = newConnID;
-            newConnID++;
         }
 
         LBEvent t;
-        t = new LBEvent(eventID, keys, isNewConn, eventID, newConnEventID);
+        t = new LBEvent(eventID, keys, isNewConn, eventID);
         // increase the timestamp i.e. transaction id
         eventID++;
         return t;
@@ -253,46 +248,6 @@ public class LBTPGDataGenerator extends DataGenerator {
         generatedKeys.add(key);
         return key;
     }
-
-
-//    public LBTPGDataGenerator(LBTPGDataGeneratorConfig dataConfig) {
-//        super(dataConfig);
-//
-//        Transaction_Length = dataConfig.Transaction_Length;
-//
-//        int nKeyState = dataConfig.getnKeyStates();
-//
-//        // allocate levels for each key, to prevent circular.
-////        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
-//        int MAX_LEVEL = 256;
-//        for (int i = 0; i < nKeyState; i++) {
-//            idToLevel.put(i, i% MAX_LEVEL);
-//        }
-//
-//        events = new ArrayList<>(nTuples); //total number of input events
-//    }
-//
-//    public static void main(String[] args) {
-//        FastZipfGenerator fastZipfGenerator = new FastZipfGenerator(10, 1, 0);
-//        fastZipfGenerator.show_sample();
-//    }
-//
-//    @Override
-//    protected void generateTuple() {
-//        LBEvent event = randomEvent();
-////        System.out.println(eventID);
-//        events.add(event);
-//    }
-//
-//    private LBEvent randomEvent() {
-//        int randomKey = ThreadLocalRandom.current().nextInt(0, 100); //TODO: Change this
-//        String defaultStr = "default";
-//
-//        LBEvent t = new LBEvent(eventID, randomKey, defaultStr, defaultStr, defaultStr, defaultStr);
-//
-//        eventID++;
-//        return t;
-//    }
 
     @Override
     public void dumpGeneratedDataToFile() {

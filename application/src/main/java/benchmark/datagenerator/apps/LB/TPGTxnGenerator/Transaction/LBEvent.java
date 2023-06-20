@@ -10,14 +10,12 @@ public class LBEvent extends Event {
     private final int[] keys;
     private final boolean isNewConn;
     private final int connID;
-    private final int newConnID;
 
-    public LBEvent(int id, int[] keys, boolean isNewConn, int connID, int newConnID) {
+    public LBEvent(int id, int[] keys, boolean isNewConn, int connID) {
         this.id = id;
         this.keys = keys;
         this.isNewConn = isNewConn;
         this.connID = connID;
-        this.newConnID = newConnID;
     }
 
     public int getKey() {
@@ -33,7 +31,6 @@ public class LBEvent extends Event {
         }
         str.append(",").append(isNewConn);
         str.append(",").append(connID);
-        str.append(",").append(newConnID);
         return str.toString();
     }
 

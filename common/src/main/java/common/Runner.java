@@ -178,7 +178,7 @@ public abstract class Runner implements IRunner {
     public Integer Ratio_of_Overlapped_Keys = 10;
 
     @Parameter(names = {"--newConnRatio"}, description = "Ratio of new connections in LB.")
-    public Integer Ratio_of_New_Connections = 20;
+    public Integer Ratio_of_New_Connections = 90;
 
     @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
     public Integer Ratio_of_Transaction_Aborts = 0;

@@ -210,7 +210,7 @@ public class LBInitializer extends TableInitilizer {
             String[] split = txn.split(",");
             int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
             // construct bid array
-            int keyLength = split.length - 4;
+            int keyLength = split.length - 3;
             HashMap<Integer, Integer> pids = new HashMap<>();
             long[] keys = new long[keyLength];
             for (int i = 1; i < keyLength+1; i++) {
@@ -229,8 +229,7 @@ public class LBInitializer extends TableInitilizer {
                     keyLength,
                     Transaction_Length,
                     Boolean.parseBoolean(split[keyLength+1]),
-                    split[split.length-2],
-                    Integer.parseInt(split[split.length-1])
+                    split[split.length-1]
             );
 
             DataHolder.events.add(event);
