@@ -640,9 +640,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         int keysLength = operation.condition_records.length;
         SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
 
-        // apply function
-        AppConfig.randomDelay();
-
         // read server loads
         for (int i = 0; i < keysLength; i++) {
             preValues[i] = operation.condition_records[i].content_.readPreValues((long) operation.bid);
@@ -656,27 +653,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         synchronized (operation.success) {
             operation.success[0]++;
         }
-
-//        // apply function
-//        AppConfig.randomDelay();
-//
-//        HashMap<SchemaRecord, Long> counters = new HashMap<>();
-//
-//        if (operation.condition.boolArg1) { //input packet from a new connection
-//            for (TableRecord record : operation.condition_records) { // iterate through all servers
-//                SchemaRecord serverRecord = record.content_.readPastValues((long) operation.bid);
-//                counters.put(serverRecord, serverRecord.getValues().get(1).getLong());
-//            }
-//            SchemaRecord minServer = Collections.min(counters.entrySet(), Map.Entry.comparingByValue()).getKey();
-//            SchemaRecord tempo_record = new SchemaRecord(minServer);
-//            tempo_record.getValues().get(1).incLong(1);
-//
-//            //TODO: Non-deterministic key? Util this stage, d_record is unknown and set to null during txn construction.
-//            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-//        }
-//        synchronized (operation.success) {
-//            operation.success[0]++;
-//        }
 
     }
 

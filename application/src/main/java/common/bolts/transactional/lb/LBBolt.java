@@ -68,17 +68,15 @@ public abstract class LBBolt extends TransactionalBolt {
     protected void LB_CORE(LBEvent event) { //Used in LB_nocc & SStore
 //        long start = System.nanoTime();
         DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
-        int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
-        for (int j = 0; j < event.Txn_Length; ++j) {
-            AppConfig.randomDelay();
-            for (int i = 0; i < NUM_ACCESS; ++i) {
-                int offset = j * NUM_ACCESS + i;
-                SchemaRecordRef recordRef = event.getRecord_refs()[offset];
-                SchemaRecord record = recordRef.getRecord();
-                DataBox Value_value = record.getValues().get(1);
-            }
+        int NUM_ACCESS = event.TOTAL_NUM_ACCESS;
+        AppConfig.randomDelay();
+        for (int i = 0; i < NUM_ACCESS; ++i) {
+            SchemaRecordRef recordRef = event.getRecord_refs()[i];
+            SchemaRecord record = recordRef.getRecord();
+            DataBox Value_value = record.getValues().get(1);
         }
         TargetValue_value.incLong(1);
+        event.serverID = event.getRecord_refs()[0].getRecord().getValues().get(0).getString();
     }
 
     protected void LAL_PROCESS(double _bid) throws InterruptedException, DatabaseException {

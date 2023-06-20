@@ -64,66 +64,35 @@ public class LBBolt_ts extends LBBolt {
 
         if (event.isNewConn()) {
             transactionManager.BeginTransaction(txnContext);
-            // multiple operations will be decomposed
-            for (int i = 0; i < event.Txn_Length; i++) {
-                int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
-                String[] condition_table = new String[NUM_ACCESS];
-                String[] condition_source = new String[NUM_ACCESS];
-                for (int j = 0; j < NUM_ACCESS; j++) {
-                    int offset = i * NUM_ACCESS + j;
-                    condition_source[j] = String.valueOf(event.getKeys()[offset]);
-                    condition_table[j] = "server_table";
-                }
-                int writeKeyIdx = i * NUM_ACCESS;
-                transactionManager.Asy_ModifyRecord_ReadN(
-                        txnContext,
-                        "server_table",
-                        String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
-                        event.getRecord_refs()[writeKeyIdx],//to be fill up.
-                        null, //no function
-                        condition_table, condition_source,//condition source, condition id.
-                        event.success, "lb");//asynchronously return.
+            int NUM_ACCESS = event.TOTAL_NUM_ACCESS;
+            String[] condition_table = new String[NUM_ACCESS];
+            String[] condition_source = new String[NUM_ACCESS];
+            for (int j = 0; j < NUM_ACCESS; j++) {
+                condition_source[j] = String.valueOf(event.getKeys()[j]);
+                condition_table[j] = "server_table";
             }
+            transactionManager.Asy_ModifyRecord_ReadN(
+                    txnContext,
+                    "server_table",
+                    String.valueOf(event.getKeys()[0]), // src key to write ahead
+                    event.getRecord_refs()[0],//to be fill up.
+                    null, //no function
+                    condition_table, condition_source,//condition source, condition id.
+                    event.success, "lb");//asynchronously return.
             transactionManager.CommitTransaction(txnContext);
         }
 
         lbEvents.add(event);
-
-//        String[] serverTable = new String[]{"server_table"}; //condition source table to iterate
-//        String[] serverKey = new String[]{String.valueOf(0)}; //condition source key, set to zero
-//        boolean isNewConn = !conn_server_map.containsKey(event.getConnID());
-//        event.isNewConn = isNewConn; //TODO: Refine this, avoid this step to reduce overhead.
-//        Condition condition = new Condition(isNewConn);
-//
-//        transactionManager.BeginTransaction(txnContext);
-//
-//        transactionManager.Asy_ModifyRecord_Iteration_Read(txnContext,
-//                "server_table", // source_table
-//                null,  // source_key: not determined //TODO: Non-deterministic key???
-//                event.serverRecord, // record to read from
-//                null,
-//                serverTable, serverKey, //condition_source_table, condition_source_key
-//                condition,
-//                event.success,
-//                "lb",
-//                true //doUpdate=true: always read all table records
-//        );
-//
-//        transactionManager.CommitTransaction(txnContext);
-//        lbEvents.add(event);
     }
 
-    void LB_REQUEST_CORE() throws InterruptedException {
+    void LB_REQUEST_CORE() {
         for (LBEvent event : lbEvents) {
             LB_TS_CORE(event);
         }
     }
 
-    void LB_REQUEST_POST() throws InterruptedException { //TODO: Emit packet downstream, simulate this
+    void LB_REQUEST_POST() throws InterruptedException {
         for (LBEvent event : lbEvents) {
-//            if (event.isNewConn) {
-//                conn_server_map.put(event.getConnID(), event.serverID); //TODO: Put this back
-//            }
             if (!enable_app_combo) {
                 collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
             } else {

@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 
 import static common.CONTROL.*;
+import static common.IRunner.CCOption_LOCK;
 import static common.IRunner.CCOption_SStore;
 
 public class MeasureSink extends BaseSink {
@@ -74,6 +75,8 @@ public class MeasureSink extends BaseSink {
         String scheduler = config.getString("scheduler");
         if (config.getInt("CCOption") == CCOption_SStore) {
             scheduler = "PAT";
+        } else if (config.getInt("CCOption") == CCOption_LOCK) {
+            scheduler = "NOCC";
         }
 
         // TODO: to be refactored

@@ -195,7 +195,7 @@ public class LBInitializer extends TableInitilizer {
         File file = new File(folder + "events.txt");
         int[] p_bids = new int[tthread];
         if (file.exists()) {
-            if (enable_log) LOG.info("Reading transfer events...");
+            if (enable_log) LOG.info("Reading lb events...");
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
             loadLBEvents(reader, totalEvents, shufflingActive, p_bids);
             reader.close();

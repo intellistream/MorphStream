@@ -20,11 +20,13 @@ public abstract class LBBolt_LA extends LBBolt {
         //txn process phase.
         for (double i = _bid; i < _bid + _combo_bid_size; i++) {
             LBEvent event = (LBEvent) input_event;
-            lb_request_noLock(event, txn_context[(int) (i - _bid)]);
-            BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-            LB_CORE(event);
-            END_ACCESS_TIME_MEASURE_ACC(thread_Id);
-            transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);
+            if (event.isNewConn()) {
+                lb_request_noLock(event, txn_context[(int) (i - _bid)]); //Pass table record to event.record
+                BEGIN_ACCESS_TIME_MEASURE(thread_Id);
+                LB_CORE(event); //Perform core processing logic
+                END_ACCESS_TIME_MEASURE_ACC(thread_Id);
+                transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]); //Release record.content.spinlock (locked during LAL)
+            }
         }
     }
 
