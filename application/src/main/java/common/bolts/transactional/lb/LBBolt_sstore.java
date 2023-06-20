@@ -121,13 +121,19 @@ public class LBBolt_sstore extends LBBolt_LA {
         int _pid = event.getPid();
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         //ensures that locks are added in the input_event sequence order.
-        LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id); //Must acquire global partition lock
+        double[] newConnBIDArray = new double[event.getBid_array().length];
+        for (int i=0; i<event.getBid_array().length; i++) {
+            newConnBIDArray[i] = event.getNewConnBID();
+        }
+        //TODO: Replaced original bid_array with [newConnBIDs], refine this.
+//        LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id); //Must acquire global partition lock
         if (event.isNewConn()) {
+            LA_LOCK_Reentrance(transactionManager, newConnBIDArray, event.partition_indexs, _bid, thread_Id); //Must acquire global partition lock
             BEGIN_LOCK_TIME_MEASURE(thread_Id);
             LAL(event, _bid, _bid); //Lock record.content.spinlock
             END_LOCK_TIME_MEASURE_ACC(thread_Id);
+            LA_UNLOCK_Reentrance(transactionManager, event.partition_indexs, thread_Id); //Must increment global partition lock
         }
-        LA_UNLOCK_Reentrance(transactionManager, event.partition_indexs, thread_Id); //Must increment global partition lock
         END_WAIT_TIME_MEASURE_ACC(thread_Id);
     }
 }

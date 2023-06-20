@@ -70,6 +70,7 @@ public class LBTPGDataGenerator extends DataGenerator {
     private int floor_interval;
     private ArrayList<Event> events;
     private int eventID = 0;
+    private int newConnID = 0;
 
     public LBTPGDataGenerator(LBTPGDataGeneratorConfig dataConfig) {
         super(dataConfig);
@@ -192,16 +193,15 @@ public class LBTPGDataGenerator extends DataGenerator {
 
         boolean isNewConn = false;
         int newConnInt = random.nextInt(100);
+        int newConnEventID = -1;
         if (newConnInt < Ratio_of_New_Connections) {
             isNewConn = true;
+            newConnEventID = newConnID;
+            newConnID++;
         }
 
         LBEvent t;
-        if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
-            t = new LBEvent(eventID, keys, isNewConn, eventID);
-        } else {
-            t = new LBEvent(eventID, keys, isNewConn, eventID);
-        }
+        t = new LBEvent(eventID, keys, isNewConn, eventID, newConnEventID);
         // increase the timestamp i.e. transaction id
         eventID++;
         return t;

@@ -44,6 +44,7 @@ public class LBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
     private ArrayList<Event> events;
     private int eventID = 0;
+    private int newConnID = 0;
     private HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
     public LBTPGDynamicDataGenerator(DynamicDataGeneratorConfig dynamicDataConfig) {
@@ -234,16 +235,15 @@ public class LBTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
 
         boolean isNewConn = false;
         int newConnInt = random.nextInt(100);
+        int newConnEventID = -1;
         if (newConnInt < Ratio_of_New_Connections) {
             isNewConn = true;
+            newConnEventID = newConnID;
+            newConnID++;
         }
 
         LBEvent t;
-        if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
-            t = new LBEvent(eventID, keys, isNewConn, eventID);
-        } else {
-            t = new LBEvent(eventID, keys, isNewConn, eventID);
-        }
+        t = new LBEvent(eventID, keys, isNewConn, eventID, newConnEventID);
         // increase the timestamp i.e. transaction id
         eventID++;
         return t;
