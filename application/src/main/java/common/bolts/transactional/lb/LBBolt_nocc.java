@@ -47,8 +47,10 @@ public class LBBolt_nocc extends LBBolt {
     }
 
     private void lb_txn_process(LBEvent input_event, double i, double _bid) throws DatabaseException, InterruptedException {
-        LB_NOCC_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success contains index time and other overhead.
-        LB_CORE(input_event);//time to access shared states.
+        if (input_event.isNewConn()) {
+            LB_NOCC_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success contains index time and other overhead.
+            LB_CORE(input_event);//time to access shared states.
+        }
     }
 
 }

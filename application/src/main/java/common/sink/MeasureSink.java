@@ -70,7 +70,7 @@ public class MeasureSink extends BaseSink {
                 + OsUtils.osWrapperPostFix("%s")
                 + OsUtils.osWrapperPostFix("threads = %d")
                 + OsUtils.osWrapperPostFix("totalEvents = %d")
-                + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d.latency");
+                + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d_%d_%d.latency");
 
         String scheduler = config.getString("scheduler");
         if (config.getInt("CCOption") == CCOption_SStore) {
@@ -90,7 +90,9 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Ratio_of_Transaction_Aborts"),
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
-                    config.getInt("complexity"));
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
         } else if (config.getString("common").equals("GrepSum")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -101,7 +103,9 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Ratio_of_Transaction_Aborts"),
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
-                    config.getInt("complexity"));
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
         } else if (config.getString("common").equals("OnlineBiding")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -112,7 +116,9 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Ratio_of_Transaction_Aborts"),
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
-                    config.getInt("complexity"));
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
         } else if (config.getString("common").equals("TollProcessing")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -123,7 +129,9 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Ratio_of_Transaction_Aborts"),
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
-                    config.getInt("complexity"));
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
         } else if (config.getString("common").equals("EventDetection")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -134,7 +142,9 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Ratio_of_Transaction_Aborts"),
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
-                    config.getInt("complexity"));
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
         } else if (config.getString("common").equals("EventDetectionSliding")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -145,7 +155,9 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Ratio_of_Transaction_Aborts"),
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
-                    config.getInt("complexity"));
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
         } else if (config.getString("common").equals("IBWJ")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -156,7 +168,9 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Ratio_of_Transaction_Aborts"),
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
-                    config.getInt("complexity"));
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
         } else if (config.getString("common").equals("LoadBalancer")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -167,7 +181,9 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Ratio_of_Transaction_Aborts"),
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
-                    config.getInt("complexity"));
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
         } else {
             throw new UnsupportedOperationException();
         }

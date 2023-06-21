@@ -273,10 +273,12 @@ public class MorphStreamRunner extends Runner {
                         + OsUtils.osWrapperPostFix("%s")
                         + OsUtils.osWrapperPostFix("threads = %d")
                         + OsUtils.osWrapperPostFix("totalEvents = %d")
-                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d");
+                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d_%d_%d");
 
                 if (config.getInt("CCOption") == CCOption_SStore) {
                     scheduler = "PAT";
+                } else if (config.getInt("CCOption") == CCOption_LOCK) {
+                    scheduler = "NOCC";
                 }
 
                 String statsFolderPath;
@@ -290,7 +292,9 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Ratio_of_Transaction_Aborts"),
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
-                            config.getInt("complexity"));
+                            config.getInt("complexity"),
+                            config.getInt("Ratio_of_New_Connections"),
+                            config.getInt("checkpoint"));
                 } else if (config.getString("common").equals("GrepSum")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
@@ -301,7 +305,9 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Ratio_of_Transaction_Aborts"),
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
-                            config.getInt("complexity"));
+                            config.getInt("complexity"),
+                            config.getInt("Ratio_of_New_Connections"),
+                            config.getInt("checkpoint"));
                 } else if (config.getString("common").equals("OnlineBiding")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
@@ -312,7 +318,9 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Ratio_of_Transaction_Aborts"),
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
-                            config.getInt("complexity"));
+                            config.getInt("complexity"),
+                            config.getInt("Ratio_of_New_Connections"),
+                            config.getInt("checkpoint"));
                 } else if (config.getString("common").equals("TollProcessing")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
@@ -323,7 +331,9 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Ratio_of_Transaction_Aborts"),
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
-                            config.getInt("complexity"));
+                            config.getInt("complexity"),
+                            config.getInt("Ratio_of_New_Connections"),
+                            config.getInt("checkpoint"));
                 } else if (config.getString("common").equals("EventDetection")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
@@ -334,7 +344,9 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Ratio_of_Transaction_Aborts"),
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
-                            config.getInt("complexity"));
+                            config.getInt("complexity"),
+                            config.getInt("Ratio_of_New_Connections"),
+                            config.getInt("checkpoint"));
                 } else if (config.getString("common").equals("EventDetectionSliding")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
@@ -345,7 +357,9 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Ratio_of_Transaction_Aborts"),
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
-                            config.getInt("complexity"));
+                            config.getInt("complexity"),
+                            config.getInt("Ratio_of_New_Connections"),
+                            config.getInt("checkpoint"));
                 } else if (config.getString("common").equals("IBWJ")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
@@ -356,7 +370,9 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Ratio_of_Transaction_Aborts"),
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
-                            config.getInt("complexity"));
+                            config.getInt("complexity"),
+                            config.getInt("Ratio_of_New_Connections"),
+                            config.getInt("checkpoint"));
                 } else if (config.getString("common").equals("LoadBalancer")) {
                     statsFolderPath = String.format(statsFolderPattern,
                             config.getString("common"), scheduler, tthread, totalEvents,
@@ -367,7 +383,9 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Ratio_of_Transaction_Aborts"),
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
-                            config.getInt("complexity"));
+                            config.getInt("complexity"),
+                            config.getInt("Ratio_of_New_Connections"),
+                            config.getInt("checkpoint"));
                 } else
                     throw new UnsupportedOperationException();
                 File file = new File(statsFolderPath);

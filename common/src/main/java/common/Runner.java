@@ -69,8 +69,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
-//    public int CCOption = CCOption_LOCK;
-    public int CCOption = CCOption_SStore;
+    public int CCOption = CCOption_LOCK;
+//    public int CCOption = CCOption_SStore;
 //    public int CCOption = CCOption_MorphStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
@@ -178,7 +178,7 @@ public abstract class Runner implements IRunner {
     public Integer Ratio_of_Overlapped_Keys = 10;
 
     @Parameter(names = {"--newConnRatio"}, description = "Ratio of new connections in LB.")
-    public Integer Ratio_of_New_Connections = 90;
+    public Integer Ratio_of_New_Connections = 80;
 
     @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
     public Integer Ratio_of_Transaction_Aborts = 0;
