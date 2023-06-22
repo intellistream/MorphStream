@@ -7,6 +7,7 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.constants.GrepSumConstants;
+import common.constants.SHJConstants;
 import common.platform.HP_Machine;
 import common.platform.HUAWEI_Machine;
 import common.platform.Platform;
@@ -60,6 +61,7 @@ public class MorphStreamRunner extends Runner {
         driver.addApp("StreamLedger", StreamLedger.class);//SL
         driver.addApp("OnlineBiding", OnlineBiding.class);//OB
         driver.addApp("TollProcessing", TollProcessing.class);//TP
+        driver.addApp("SHJ", SHJ.class);//G
     }
 
     // Prepared default configuration
@@ -142,6 +144,12 @@ public class MorphStreamRunner extends Runner {
                     config.put("app", 2);
                     int threads = Math.max(1, (int) Math.floor((tthread)));
                     config.put(Executor_Threads, threads);
+                    break;
+                }
+                case "SHJ": {
+                    config.put("app", 5);
+                    int threads = Math.max(1, (int) Math.floor((tthread)));
+                    config.put(SHJConstants.Conf.Executor_Threads, threads);
                     break;
                 }
             }
@@ -311,7 +319,18 @@ public class MorphStreamRunner extends Runner {
                             config.getInt("Transaction_Length"),
                             AppConfig.isCyclic,
                             config.getInt("complexity"));
-                }  else
+                } else if (config.getString("common").equals("SHJ")) {
+                    statsFolderPath = String.format(statsFolderPattern,
+                            config.getString("common"), scheduler, tthread, totalEvents,
+                            config.getInt("NUM_ITEMS"),
+                            config.getInt("Ratio_of_Multiple_State_Access"),
+                            config.getInt("State_Access_Skewness"),
+                            config.getInt("Ratio_of_Overlapped_Keys"),
+                            config.getInt("Ratio_of_Transaction_Aborts"),
+                            config.getInt("Transaction_Length"),
+                            AppConfig.isCyclic,
+                            config.getInt("complexity"));
+                } else
                     throw new UnsupportedOperationException();
                 File file = new File(statsFolderPath);
                 log.info("Dumping stats to...");

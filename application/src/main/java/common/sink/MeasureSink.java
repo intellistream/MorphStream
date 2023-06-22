@@ -130,7 +130,7 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
                     config.getInt("complexity"));
-        }  else if (config.getString("common").equals("WindowedGrepSum")) {
+        } else if (config.getString("common").equals("WindowedGrepSum")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
                     config.getInt("NUM_ITEMS"),
@@ -141,7 +141,18 @@ public class MeasureSink extends BaseSink {
                     config.getInt("Transaction_Length"),
                     AppConfig.isCyclic,
                     config.getInt("complexity"));
-        }  else {
+        } else if (config.getString("common").equals("SHJ")) {
+            directory = String.format(statsFolderPattern,
+                    config.getString("common"), scheduler, tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("NUM_ACCESS"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Overlapped_Keys"),
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    config.getInt("Transaction_Length"),
+                    AppConfig.isCyclic,
+                    config.getInt("complexity"));
+        } else {
             throw new UnsupportedOperationException();
         }
         File file = new File(directory);

@@ -104,6 +104,9 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
             operationChains.put("goods",new TableOCs<>(totalThreads,offset));
         } else if (app == 4) {//OB
             operationChains.put("MicroTable", new TableOCs<>(totalThreads,offset));
+        } else if (app == 5) {//IBWJ
+            operationChains.put("index_r_table", new TableOCs(totalThreads,offset));
+            operationChains.put("index_s_table", new TableOCs(totalThreads,offset));
         } else
             throw new UnsupportedOperationException();
     }

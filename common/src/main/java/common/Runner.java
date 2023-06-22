@@ -20,6 +20,7 @@ public abstract class Runner implements IRunner {
      */
     @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
     public String application = "StreamLedger";
+    //public String application = "SHJ";
     //public String application = "GrepSum";
     //public String application = "WindowedGrepSum";
     //public String application = "OnlineBiding";
@@ -293,6 +294,12 @@ public abstract class Runner implements IRunner {
                 defaultScheduler = "OG_BFS_A";
                 break;
             case "WindowedGrepSum" :
+                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
+                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
+                defaultScheduler = "OP_NS_A";
+                phaseNum = shiftRate * phaseType.length;
+                break;
+            case "SHJ" :
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
                 defaultScheduler = "OP_NS_A";

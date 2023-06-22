@@ -18,16 +18,14 @@ import storage.TableRecord;
 import storage.datatype.DataBox;
 import storage.datatype.DoubleDataBox;
 import storage.datatype.IntDataBox;
-import transaction.function.AVG;
-import transaction.function.DEC;
-import transaction.function.INC;
-import transaction.function.SUM;
+import transaction.function.*;
 import utils.AppConfig;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static content.common.CommonMetaTypes.AccessType.*;
 
@@ -86,7 +84,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         int success;
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             success = operation.success[0];
-            Transfer_Fun(operation, mark_ID, clean);
+            if (this.tpg.getApp() == 5) {
+                SHJ_Fun(operation, mark_ID, clean);
+            } else {
+                Transfer_Fun(operation, mark_ID, clean);
+            }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
@@ -176,6 +178,50 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         }
 
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
+    }
+
+    protected void SHJ_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+
+        AppConfig.randomDelay();
+
+        // 1. TODO: Match: given a key, search windowed state R_key from R table, search windowed state S_key from S table.
+        int keysLength = operation.condition_records.length;
+        SchemaRecord[] rWindowedState = new SchemaRecord[keysLength];
+        for (int i = 0; i < keysLength; i++) {
+            rWindowedState[i] = operation.condition_records[i].content_.readPreValues((long) operation.bid);
+        }
+
+        final String rKey = rWindowedState[0].getValues().get(1).getString();
+        if (rKey == null) {
+            log.info("IBWJ: No matching tuple found");
+            return;
+        }
+
+        SchemaRecord sWindowedState = operation.s_record.content_.readPreValues((long) operation.bid);
+        if (sWindowedState == null) {
+            log.info("IBWJ: Source tuple not found");
+            throw new NoSuchElementException();
+        }
+
+        final String sKey = sWindowedState.getValues().get(1).getString();
+
+        // 2. TODO: Aggregation: given the matched results, apply aggregation function for stock exchange turnover rate.
+        SchemaRecord matchedResults = new SchemaRecord(sWindowedState); //tempo record
+        if (operation.function instanceof Join) {
+            matchedResults.getValues().get(1).setString(rKey, rKey.length()); //update tuple's own index address
+            matchedResults.getValues().get(2).setString(sKey, sKey.length()); //update tuple's matching index address
+
+            // 3. TODO: insert new tuple into S/R table.
+            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, matchedResults);//it may reduce NUMA-traffic.
+
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+
+        } else {
+            throw new UnsupportedOperationException();
+        }
+        // 4: We do not need to delete old state from multi-versioned storage
     }
 
     // DD: Transfer event processing

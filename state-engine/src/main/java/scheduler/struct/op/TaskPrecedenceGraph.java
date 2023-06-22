@@ -96,6 +96,9 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.put("goods",new TableOCs(totalThreads,offset));
         } else if (app == 4) {//OB
             operationChains.put("MicroTable", new TableOCs(totalThreads,offset));
+        } else if (app == 5) {//IBWJ
+            operationChains.put("index_r_table", new TableOCs(totalThreads,offset));
+            operationChains.put("index_s_table", new TableOCs(totalThreads,offset));
         } else
             throw new UnsupportedOperationException();
     }
@@ -144,6 +147,13 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 OperationChain gsOC = context.createTask("MicroTable", _key);
                 operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);
+            } else if (app == 5) {
+                OperationChain indexROC = context.createTask("index_r_table", _key);
+                OperationChain indexSOC = context.createTask("index_r_table", _key);
+                operationChains.get("index_r_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, indexROC);
+                operationChains.get("index_s_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, indexSOC);
+                ocs.add(indexROC);
+                ocs.add(indexSOC);
             } else
                 throw new UnsupportedOperationException();
         }
@@ -162,6 +172,9 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 4){
             operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        } else if (app == 5) {
+            operationChains.get("index_r_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+            operationChains.get("index_s_table").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else
             throw new UnsupportedOperationException();
     }
