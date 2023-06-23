@@ -48,12 +48,12 @@ public class SHJBolt_ts extends SHJBolt {
             SHJEvent event = (SHJEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            IBWJ_REQUEST_CONSTRUCT(event, txnContext);
+            SHJ_REQUEST_CONSTRUCT(event, txnContext);
         }
 
     }
 
-    private void IBWJ_REQUEST_CONSTRUCT(SHJEvent event, TxnContext txnContext) throws DatabaseException {
+    private void SHJ_REQUEST_CONSTRUCT(SHJEvent event, TxnContext txnContext) throws DatabaseException {
 
         String updateIndexTable = ""; //index to update
         String lookupIndexTable = ""; //index to lookup
@@ -65,7 +65,7 @@ public class SHJBolt_ts extends SHJBolt {
             lookupIndexTable = "index_r_table";
         }
 
-        Join join = new Join();
+        Join join = new Join(Long.parseLong(event.getAmount()));
         String[] condition_table = new String[event.getLookupKeys().length];
         String[] condition_source = new String[event.getLookupKeys().length];
         for (int offset = 0; offset < event.getLookupKeys().length; offset++) {
@@ -97,13 +97,13 @@ public class SHJBolt_ts extends SHJBolt {
         joinEvents = new ArrayDeque<>();
     }
 
-    void IBWJ_REQUEST_CORE() throws InterruptedException {
+    void SHJ_REQUEST_CORE() throws InterruptedException {
         for (SHJEvent event : joinEvents) {
             SHJ_CORE(event);
         }
     }
 
-    void IBWJ_REQUEST_POST() throws InterruptedException {
+    void SHJ_REQUEST_POST() throws InterruptedException {
         for (SHJEvent event : joinEvents) {
             SHJ_POST(event);
         }
@@ -121,12 +121,12 @@ public class SHJBolt_ts extends SHJBolt {
                 MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
                 {
                     transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
-                    IBWJ_REQUEST_CORE();
+                    SHJ_REQUEST_CORE();
                 }
                 MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
                 BEGIN_POST_TIME_MEASURE(thread_Id);
                 {
-                    IBWJ_REQUEST_POST();
+                    SHJ_REQUEST_POST();
                 }
                 END_POST_TIME_MEASURE_ACC(thread_Id);
                 //all tuples in the holder is finished.

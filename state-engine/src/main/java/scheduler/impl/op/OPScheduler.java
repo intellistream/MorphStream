@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import static content.common.CommonMetaTypes.AccessType.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 public abstract class OPScheduler<Context extends OPSchedulerContext, Task> implements IScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OPScheduler.class);
@@ -180,39 +182,39 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
     }
 
-    protected void SHJ_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
+    protected void SHJ_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
 
-        AppConfig.randomDelay();
+//        AppConfig.randomDelay();
 
-        // 1. TODO: Match: given a key, search windowed state R_key from R table, search windowed state S_key from S table.
+        // 1. Match: given a key, search windowed state R_key from R table, search windowed state S_key from S table.
         int keysLength = operation.condition_records.length;
-        SchemaRecord[] rWindowedState = new SchemaRecord[keysLength];
+        List<Long> rKeys = new ArrayList<>();
         for (int i = 0; i < keysLength; i++) {
-            rWindowedState[i] = operation.condition_records[i].content_.readPreValues((long) operation.bid);
+            List<SchemaRecord> rSchemaRecordRange = operation.condition_records[i].content_.readPreValuesRange(operation.bid, AppConfig.windowSize);
+            rKeys = rSchemaRecordRange.stream().map(schemaRecord -> schemaRecord.getValues().get(1).getLong()).collect(toList());
         }
 
-        final String rKey = rWindowedState[0].getValues().get(1).getString();
-        if (rKey == null) {
-            log.info("IBWJ: No matching tuple found");
-            return;
-        }
 
         SchemaRecord sWindowedState = operation.s_record.content_.readPreValues((long) operation.bid);
-        if (sWindowedState == null) {
-            log.info("IBWJ: Source tuple not found");
-            throw new NoSuchElementException();
-        }
 
-        final String sKey = sWindowedState.getValues().get(1).getString();
+        List<SchemaRecord> sSchemaRecordRange = operation.s_record.content_.readPreValuesRange(operation.bid, AppConfig.windowSize);
+        List<Long> sKeys = sSchemaRecordRange.stream().map(schemaRecord -> schemaRecord.getValues().get(1).getLong()).collect(toList());
 
-        // 2. TODO: Aggregation: given the matched results, apply aggregation function for stock exchange turnover rate.
-        SchemaRecord matchedResults = new SchemaRecord(sWindowedState); //tempo record
+        // 2. Aggregation: given the matched results, apply aggregation function for stock exchange turnover rate.
+        SchemaRecord tempo_record = new SchemaRecord(sWindowedState); //tempo record
         if (operation.function instanceof Join) {
-            matchedResults.getValues().get(1).setString(rKey, rKey.length()); //update tuple's own index address
-            matchedResults.getValues().get(2).setString(sKey, sKey.length()); //update tuple's matching index address
+            long rSum = rKeys.stream().mapToLong(rKey -> rKey).sum();
+            long sSum = sKeys.stream().mapToLong(sKey -> sKey).sum();
 
-            // 3. TODO: insert new tuple into S/R table.
-            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, matchedResults);//it may reduce NUMA-traffic.
+            double turnoverRate = rSum < sSum ?
+                        rSum / (double) sSum :
+                        sSum / (double) rSum;
+
+            System.out.println("++++++ Stock id: " + operation.pKey + " Turnover rate: " + turnoverRate);
+
+            tempo_record.getValues().get(1).setLong(operation.function.delta_long);
+            // 3. insert new tuple into S/R table.
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
 
             synchronized (operation.success) {
                 operation.success[0]++;

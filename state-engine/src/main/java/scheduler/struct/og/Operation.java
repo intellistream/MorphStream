@@ -21,8 +21,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 public class Operation extends AbstractOperation implements Comparable<Operation>  {
 
-    //required by READ_WRITE_and Condition.
-    public final String pKey;
     public final OGSchedulerContext context;
     protected final Queue<Operation> ld_descendant_operations;
     //required by READ_WRITE.
@@ -45,9 +43,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     public <Context extends OGSchedulerContext> Operation(String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
                                                           TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid, Context context, WindowDescriptor windowDescriptor) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, s_record, d_record, bid, windowDescriptor);
-
-        this.pKey = pKey;
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, s_record, d_record, bid, windowDescriptor, pKey);
 
         // finctional dependencies, this should be concurrent because cross thread access
         fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance

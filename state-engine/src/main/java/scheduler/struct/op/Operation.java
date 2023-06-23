@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Operation extends AbstractOperation implements Comparable<Operation> {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
     public final OPSchedulerContext context;
-    public final String pKey;
 
     private final Deque<Operation> fd_concurrent_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
     private final Deque<Operation> fd_concurrent_parents; // the functional dependencies ops to be executed after this op.
@@ -77,9 +76,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success, WindowDescriptor windowContext) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid, windowContext);
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid, windowContext, pKey);
         this.context = context;
-        this.pKey = pKey;
 
         ld_head_operation = null;
         ld_descendant_operations = new ArrayDeque<>();

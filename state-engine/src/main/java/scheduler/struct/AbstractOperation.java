@@ -24,6 +24,8 @@ public abstract class AbstractOperation {
     public final CommonMetaTypes.AccessType accessType;
     public final TableRecord d_record;
     public final long bid;
+    //required by READ_WRITE_and Condition.
+    public final String pKey;
     public volatile TableRecordRef records_ref;//for cross-record dependency.
     public volatile SchemaRecordRef record_ref;//required by read-only: the placeholder of the reading d_record.
     public List<DataBox> value_list;//required by write-only: the value_list to be used to update the d_record.
@@ -38,7 +40,7 @@ public abstract class AbstractOperation {
     public WindowDescriptor windowContext;
 
     public AbstractOperation(Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
-                             TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid, WindowDescriptor windowContext) {
+                             TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid, WindowDescriptor windowContext, String pKey) {
         this.function = function;
         this.table_name = table_name;
         this.record_ref = record_ref;//this holds events' record_ref.
@@ -51,5 +53,6 @@ public abstract class AbstractOperation {
         this.d_record = d_record;
         this.bid = bid;
         this.windowContext = windowContext;
+        this.pKey = pKey;
     }
 }

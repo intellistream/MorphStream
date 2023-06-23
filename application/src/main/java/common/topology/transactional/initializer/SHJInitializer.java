@@ -20,6 +20,7 @@ import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.TableRecord;
 import storage.datatype.DataBox;
+import storage.datatype.LongDataBox;
 import storage.datatype.StringDataBox;
 import storage.table.RecordSchema;
 import transaction.TableInitilizer;
@@ -40,7 +41,8 @@ import static transaction.State.configure_store;
 public class SHJInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(SHJInitializer.class);
     private final int numberOfStates;
-    private final int startingValue = 10000;
+    private final int rStartingValue = 0; // cj
+    private final int sStartingValue = 1; // sb
     private final DataGeneratorConfig dataConfig;
     private final int partitionOffset;
     private final int NUM_ACCESS;
@@ -153,8 +155,8 @@ public class SHJInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
 //            assert value.length() == VALUE_LEN;
-            insertIndexRRecord(_key, String.valueOf(-1), String.valueOf(-1), pid, spinlock);
-            insertIndexSRecord(_key, String.valueOf(-1), String.valueOf(-1), pid, spinlock);
+            insertIndexRRecord(_key, rStartingValue, pid, spinlock);
+            insertIndexSRecord(_key, sStartingValue, pid, spinlock);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -309,35 +311,43 @@ public class SHJInitializer extends TableInitilizer {
         w.close();
     }
 
-    private void insertIndexRRecord(String key, String srcAddr, String matchAddr, int pid, SpinLock[] spinlock_) {
+    private void insertIndexRRecord(String key, long amount, int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("index_r_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr), pid, spinlock_));
+                db.InsertRecord("index_r_table", new TableRecord(Record(key, amount), pid, spinlock_));
             else
-                db.InsertRecord("index_r_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr)));
+                db.InsertRecord("index_r_table", new TableRecord(Record(key, amount)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
 
-    private void insertIndexSRecord(String key, String srcAddr, String matchAddr, int pid, SpinLock[] spinlock_) {
+    private void insertIndexSRecord(String key, long amount, int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("index_s_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr), pid, spinlock_));
+                db.InsertRecord("index_s_table", new TableRecord(Record(key, amount), pid, spinlock_));
             else
-                db.InsertRecord("index_s_table", new TableRecord(IndexRecord(key, srcAddr, matchAddr)));
+                db.InsertRecord("index_s_table", new TableRecord(Record(key, amount)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
 
-    private SchemaRecord IndexRecord(String indexKey, String srcAddr, String matchAddr) {
+//    private SchemaRecord IndexRecord(String indexKey, String srcAddr, String matchAddr) {
+//        List<DataBox> values = new ArrayList<>();
+//        values.add(new StringDataBox(indexKey));
+//        values.add(new StringDataBox(srcAddr));
+//        values.add(new StringDataBox(matchAddr));
+//        return new SchemaRecord(values);
+//    }
+
+    private SchemaRecord Record(String key, long value) {
         List<DataBox> values = new ArrayList<>();
-        values.add(new StringDataBox(indexKey));
-        values.add(new StringDataBox(srcAddr));
-        values.add(new StringDataBox(matchAddr));
+        values.add(new StringDataBox(key, key.length()));
+        values.add(new LongDataBox(value));
         return new SchemaRecord(values);
     }
+
 
     @Override
     public List<String> getTranToDecisionConf() {
