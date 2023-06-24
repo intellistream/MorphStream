@@ -12,6 +12,7 @@ import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Tuple2;
 import utils.AppConfig;
 import utils.SINK_CONTROL;
 
@@ -29,6 +30,7 @@ public class MeasureSink extends BaseSink {
     private static final long serialVersionUID = 6249684803036342603L;
     protected static String directory;
     protected final ArrayDeque<Long> latency_map = new ArrayDeque();
+    protected final ArrayDeque<Tuple2<Long, Long>> event_time_map = new ArrayDeque();
     public int checkpoint_interval;
     protected stable_sink_helper helper;
     protected int ccOption;
@@ -191,7 +193,9 @@ public class MeasureSink extends BaseSink {
 //                    start = end;
 //                }
 //            }
+
             latency_map.add(System.nanoTime() - input.getLong(1));
+            event_time_map.add(new Tuple2<>(System.nanoTime(), input.getLong(1)));
         }
     }
 
@@ -217,6 +221,9 @@ public class MeasureSink extends BaseSink {
     protected void measure_end(double results) {
         if (enable_log) LOG.info(Thread.currentThread().getName() + " obtains lock");
         if (enable_latency_measurement) {
+            for (Tuple2<Long, Long> tuple : event_time_map) {
+                System.out.println("++++++ Completed: " + tuple._1 + " Generated: " + tuple._2);
+            }
             StringBuilder sb = new StringBuilder();
             for (Long entry : latency_map) {
                 latency.addValue((entry / 1E6));
