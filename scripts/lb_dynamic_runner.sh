@@ -3,15 +3,17 @@
 function ResetParameters() {
   local inputScheduler=$1
   local inputNewConnRatio=$2
+  local numItems=$3
+  local checkpointInterval=$4
 
   app="LoadBalancer"
-  checkpointInterval=10240
+  checkpointInterval=$checkpointInterval
   tthread=24
   scheduler=$inputScheduler
   defaultScheduler=$inputScheduler
   CCOption=3 #TSTREAM
-  complexity=10000
-  NUM_ITEMS=245760
+  complexity=0
+  NUM_ITEMS=$numItems
   deposit_ratio=95
   key_skewness=0
 
@@ -23,11 +25,11 @@ function ResetParameters() {
   newConnRatio=$inputNewConnRatio
   rootFilePath="/Users/zhonghao/data"
   shiftRate=1
-  totalEvents=`expr $checkpointInterval \* $tthread \* 13 \* $shiftRate`
+  totalEvents=`expr $checkpointInterval \* $tthread \* $shiftRate`
 }
 
 function runTStream() {
-  echo "java -Xms300g -Xmx300g -jar -d64 /Users/zhonghao/Documents/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms300g -Xmx300g -jar -d64 /application/target/application-0.0.2-jar-with-dependencies.jar \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --tthread $tthread \
@@ -46,7 +48,7 @@ function runTStream() {
           --workloadType $workloadType \
           --schedulerPool $schedulerPool \
           --newConnRatio $newConnRatio"
-  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 /Users/zhonghao/Documents/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 /application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
@@ -75,30 +77,50 @@ function baselineEvaluation() {
 }
 
 # run basic experiment for SStore
-function patEvluation() {
+function patEvaluation() {
   isDynamic=0
   CCOption=4 #SSTORE
+  runTStream
+}
+
+# run basic experiment for SStore
+function noccEvaluation() {
+  isDynamic=0
+  CCOption=0 #NOCC
   runTStream
 }
 
 function dynamic_runner() { # multi-batch exp
   # Array of different scheduler and ratio of new connections
   schedulerArray=("OP_BFS_A" "OG_BFS_A" "OP_NS_A" "OG_NS_A")
-  newConnRatioArray=(10 20 30 40 50 60 70 80)
-#  numThreadArray=()
+  newConnRatioArray=(5 10 20 40 60)
+  numItemsArray=(7200 14400 72000)
+  tthread=24
 
   # LB Experiment on MorphStream with different scheduling decisions & new_conn_ratio
   for scheduler in "${schedulerArray[@]}"; do
     for newConnRatio in "${newConnRatioArray[@]}"; do
-      ResetParameters "$scheduler" "$newConnRatio"
-      baselineEvaluation
+      for numItems in "${numItemsArray[@]}"; do
+        ResetParameters "$scheduler" "$newConnRatio" "$numItems" "300"
+        baselineEvaluation
+      done
     done
   done
 
   # LB Experiment on SStore with different new_conn_ratio
   for newConnRatio in "${newConnRatioArray[@]}"; do
-    ResetParameters "" "$newConnRatio" # only change new_conn_ratio
-    patEvluation
+    for numItems in "${numItemsArray[@]}"; do
+      ResetParameters "" "$newConnRatio" "$numItems" "$(expr $numItems / $tthread)"
+      patEvaluation
+    done
+  done
+
+  # LB Experiment on NOCC with different new_conn_ratio
+  for newConnRatio in "${newConnRatioArray[@]}"; do
+    for numItems in "${numItemsArray[@]}"; do
+      ResetParameters "" "$newConnRatio" "$numItems" "$(expr $numItems / $tthread)"
+      noccEvaluation
+    done
   done
 }
 
