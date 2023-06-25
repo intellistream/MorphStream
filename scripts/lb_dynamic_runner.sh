@@ -25,7 +25,7 @@ function ResetParameters() {
   newConnRatio=$inputNewConnRatio
   rootFilePath="/Users/zhonghao/data"
   shiftRate=1
-  totalEvents=`expr $checkpointInterval \* $tthread \* $shiftRate`
+  totalEvents=$numItems
 }
 
 function runTStream() {
