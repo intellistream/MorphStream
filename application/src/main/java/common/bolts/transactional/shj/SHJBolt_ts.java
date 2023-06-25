@@ -50,7 +50,6 @@ public class SHJBolt_ts extends SHJBolt {
                 (event).setTimestamp(timestamp);
             SHJ_REQUEST_CONSTRUCT(event, txnContext);
         }
-
     }
 
     private void SHJ_REQUEST_CONSTRUCT(SHJEvent event, TxnContext txnContext) throws DatabaseException {

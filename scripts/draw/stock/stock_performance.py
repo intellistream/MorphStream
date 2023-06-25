@@ -59,10 +59,10 @@ def DrawFigure(xvalues, yvalues, legend_labels, x_label, y_label, filename, allo
     y_values = yvalues
     lines = [None] * (len(FIGURE_LABEL))
     for i in range(len(y_values)):
-        lines[i], = figure.plot(x_values[i][:100], y_values[i][:100], color=LINE_COLORS[i], \
+        lines[i], = figure.plot(x_values[i], y_values[i], color=LINE_COLORS[i], \
                                 linewidth=LINE_WIDTH, marker=MARKERS[i], \
                                 markersize=MARKER_SIZE, label=FIGURE_LABEL[i],
-                                markeredgewidth=1, markeredgecolor='k', markevery=2)
+                                markeredgewidth=1, markeredgecolor='k', markevery=15)
     # sometimes you may not want to draw legends.
     if allow_legend == True:
         plt.legend(lines,
@@ -79,6 +79,7 @@ def DrawFigure(xvalues, yvalues, legend_labels, x_label, y_label, filename, allo
 
     plt.xlabel(x_label, fontproperties=LABEL_FP)
     plt.ylabel(y_label, fontproperties=LABEL_FP)
+    # plt.xlim(right=1000)
 
     plt.savefig(FIGURE_FOLDER + "/" + filename + ".pdf", bbox_inches='tight')
 
@@ -87,33 +88,63 @@ def ReadFile():
     interval = 1000000
     truth_list = []
     actual_list = []
+    event_id_list = []
     truth_cdf = {}
     actual_cdf = {}
     x = [[], []]
     y = [[], []]
+
+    source_file = "/home/myc/workspace/MorphStream-Stock/application/src/main/java/benchmark/datagenerator/apps/SHJ/dataset/stock_dataset_v2.csv"
+    fp = open(source_file)
+    event_ts_offset = {}
+    events = fp.readlines()
+    for event in events:
+        textArr = event.split(",")
+        event_ts_offset[int(textArr[0])] = int(textArr[1])
+
     file = "/home/myc/workspace/MorphStream-Stock/test"
     fp = open(file)
     lines = fp.readlines()
+    fp.close()
     for line in lines:
         if "++++++ Completed:" in line:
             textArr = line.split(" ")
             actual_list.append(int(textArr[2]))
             truth_list.append(int(textArr[4]))
+            event_id_list.append(int(textArr[6]))
+
 
     start_ts = truth_list[0]
-    for ts in truth_list:
-        index = int((ts - start_ts) / interval)
-        if index not in truth_cdf:
-            truth_cdf[index] = 0
-        truth_cdf[index] += 1
 
-    # start_ts = actual_list[0]
-    for ts in actual_list:
-        index = int((ts - start_ts) / interval)
-        if index not in actual_cdf:
-            actual_cdf[index] = 0
-        actual_cdf[index] += 1
+    for i in range(0, len(truth_list)):
+        event_offset = event_ts_offset[event_id_list[i]]
+        print(event_offset)
+        truth_index = int((truth_list[i] - start_ts) / interval) + event_offset
+        actual_index = int((actual_list[i] - start_ts) / interval) + event_offset
+        # truth_index = int((truth_list[i] - start_ts) / interval) + event_offset
+        # actual_index = int((actual_list[i] - start_ts) / interval) + event_ts_offset[39996]
+        # truth_index = int((truth_list[i] - start_ts) / interval)
+        # actual_index = int((actual_list[i] - start_ts) / interval)
+        if truth_index not in truth_cdf:
+            truth_cdf[truth_index] = 0
+        truth_cdf[truth_index] += 1
+        if actual_index not in actual_cdf:
+            actual_cdf[actual_index] = 0
+        actual_cdf[actual_index] += 1
 
+    # start_ts = truth_list[0]
+    # for ts in truth_list:
+    #     index = int((ts - start_ts) / interval)
+    #     if index not in truth_cdf:
+    #         truth_cdf[index] = 0
+    #     truth_cdf[index] += 1
+    #
+    # # start_ts = actual_list[0]
+    # for ts in actual_list:
+    #     index = int((ts - start_ts) / interval)
+    #     if index not in actual_cdf:
+    #         actual_cdf[index] = 0
+    #     actual_cdf[index] += 1
 
     x[0] = list(truth_cdf.keys())
     x[1] = list(actual_cdf.keys())
@@ -128,15 +159,12 @@ def ReadFile():
         sum += actual_cdf[key]
         y[1].append(sum)
 
-    print(x)
-    print(y)
-
     return x, y
     # return y
 
 if __name__ == '__main__':
-    legend_labels = ["Event-Generated", "Results-Output"]
+    legend_labels = ["Expected-Output", "Actual-Output"]
     legend = True
     x_axis, y_axis = ReadFile()
-    DrawFigure(x_axis, y_axis, legend_labels, "Time (ms)", "Number of Turnover Rate", "stock_performance",
+    DrawFigure(x_axis, y_axis, legend_labels, "Time (ms)", "Accumulated Matched Results", "stock_performance",
                legend)
