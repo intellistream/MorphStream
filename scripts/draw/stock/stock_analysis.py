@@ -86,7 +86,7 @@ def DrawFigure(xvalues, yvalues, legend_labels, x_label, y_label, filename, allo
 def ReadFile():
     x = [[], [], []]
     y = [[], [], []]
-    file = "/home/myc/workspace/MorphStream/test"
+    file = "/home/myc/workspace/MorphStream-Stock/test"
     fp = open(file)
     lines = fp.readlines()
     for line in lines:
@@ -95,13 +95,13 @@ def ReadFile():
             stock_id = int(textArr[3])
             if stock_id == 1:
                 turnover_rate = float(textArr[6])
-                y[0].append(turnover_rate)
+                y[0].append(turnover_rate * 100)
             if stock_id == 2:
                 turnover_rate = float(textArr[6])
-                y[1].append(turnover_rate)
+                y[1].append(turnover_rate * 100)
             if stock_id == 3:
                 turnover_rate = float(textArr[6])
-                y[2].append(turnover_rate)
+                y[2].append(turnover_rate * 100)
 
     max_length = 0
     for sub_y in y:
@@ -121,5 +121,5 @@ if __name__ == '__main__':
     legend_labels = ["Stock_1", "Stock_2", "Stock_3"]
     legend = True
     x_axis, y_axis = ReadFile()
-    DrawFigure(x_axis, y_axis, legend_labels, "Per Stock Analysis", "Turnover Rate (%)", "stock_analysis",
+    DrawFigure(x_axis, y_axis, legend_labels, "Per Event Analysis", "Turnover Rate (%)", "stock_analysis",
                legend)

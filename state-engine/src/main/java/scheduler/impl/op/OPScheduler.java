@@ -190,14 +190,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         int keysLength = operation.condition_records.length;
         List<Long> rKeys = new ArrayList<>();
         for (int i = 0; i < keysLength; i++) {
-            List<SchemaRecord> rSchemaRecordRange = operation.condition_records[i].content_.readPreValuesRange(operation.bid, AppConfig.windowSize);
+            List<SchemaRecord> rSchemaRecordRange = operation.condition_records[i].content_.readPreValuesRange(operation.bid, 10240000);
             rKeys = rSchemaRecordRange.stream().map(schemaRecord -> schemaRecord.getValues().get(1).getLong()).collect(toList());
         }
 
 
         SchemaRecord sWindowedState = operation.s_record.content_.readPreValues((long) operation.bid);
 
-        List<SchemaRecord> sSchemaRecordRange = operation.s_record.content_.readPreValuesRange(operation.bid, AppConfig.windowSize);
+        List<SchemaRecord> sSchemaRecordRange = operation.s_record.content_.readPreValuesRange(operation.bid, 10240000);
         List<Long> sKeys = sSchemaRecordRange.stream().map(schemaRecord -> schemaRecord.getValues().get(1).getLong()).collect(toList());
 
         // 2. Aggregation: given the matched results, apply aggregation function for stock exchange turnover rate.

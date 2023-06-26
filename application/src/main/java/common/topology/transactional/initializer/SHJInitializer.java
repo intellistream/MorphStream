@@ -5,6 +5,7 @@ import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.SHJ.TPGTxnGenerator.SHJTPGDynamicDataGenerator;
 import benchmark.datagenerator.apps.SHJ.TPGTxnGenerator.SHJTPGDataGenerator;
+import benchmark.datagenerator.apps.SHJ.TPGTxnGenerator.StockDataGenerator;
 import benchmark.datagenerator.apps.SHJ.TPGTxnGenerator.SHJTPGDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
@@ -80,8 +81,12 @@ public class SHJInitializer extends TableInitilizer {
             dataConfig.initialize(config);
 
             configurePath(dataConfig);
-            //                dataGenerator = new StockDataGenerator(dataConfig);
-            dataGenerator = new SHJTPGDataGenerator(dataConfig);
+            try {
+                dataGenerator = new StockDataGenerator(dataConfig);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+//            dataGenerator = new SHJTPGDataGenerator(dataConfig);
         }
     }
     /**

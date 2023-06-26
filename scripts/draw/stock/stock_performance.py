@@ -18,7 +18,7 @@ LABEL_FP = FontProperties(style='normal', size=LABEL_FONT_SIZE)
 LEGEND_FP = FontProperties(style='normal', size=LEGEND_FONT_SIZE)
 TICK_FP = FontProperties(style='normal', size=TICK_FONT_SIZE)
 
-MARKERS = (['o', 's', 'v', "^", "h", "v", ">", "x", "d", "<", "|", "", "|", "_"])
+MARKERS = (["x", 'o', 's', "^", "h", "v", ">", "<", "d", "|", "", "|", "_"])
 # you may want to change the color map for different figures
 COLOR_MAP = ('#B03A2E', '#2874A6', '#239B56', '#7D3C98', '#F1C40F', '#F5CBA7', '#82E0AA', '#AEB6BF', '#AA4499')
 # you may want to change the patterns for different figures
@@ -26,7 +26,7 @@ PATTERNS = (["\\", "///", "o", "||", "\\\\", "\\\\", "//////", "//////", ".", "\
 LABEL_WEIGHT = 'bold'
 LINE_COLORS = COLOR_MAP
 LINE_WIDTH = 3.0
-MARKER_SIZE = 10.0
+MARKER_SIZE = 20.0
 MARKER_FREQUENCY = 1000
 
 matplotlib.rcParams['ps.useafm'] = True
@@ -62,7 +62,7 @@ def DrawFigure(xvalues, yvalues, legend_labels, x_label, y_label, filename, allo
         lines[i], = figure.plot(x_values[i], y_values[i], color=LINE_COLORS[i], \
                                 linewidth=LINE_WIDTH, marker=MARKERS[i], \
                                 markersize=MARKER_SIZE, label=FIGURE_LABEL[i],
-                                markeredgewidth=1, markeredgecolor='k', markevery=15)
+                                markeredgewidth=1, markeredgecolor='k', markevery=int(len(x_values[i])/15),  mfc='none')
     # sometimes you may not want to draw legends.
     if allow_legend == True:
         plt.legend(lines,
