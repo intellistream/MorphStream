@@ -11,7 +11,7 @@ public interface CONTROL {
 //    boolean isCyclic = true;
 
     //common.combo optimization
-    boolean enable_app_combo = true;//compose all operators into one. //Set to false for ED
+    boolean enable_app_combo = false;//compose all operators into one. //Set to false for ED
 
     int combo_bid_size = 1;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
     int sink_combo_bid_size = 200;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
@@ -36,11 +36,13 @@ public interface CONTROL {
     int NUM_OF_SOCKETS = 1;//configure this for NUMA placement please.
     boolean enable_speculative = false;//work in future!
 
-    //ED Window
-    int wordWindowSize = 120;
-    int tweetWindowSize = 40;
-    int clusterTableSize = 100;
+    //ED Settings
     int tweetWordCount = 3;//Default number of words in each tweet
+
+    int tweetWindowSize = 40; //equals to ED batch size
+    int wordWindowSize = tweetWindowSize * tweetWordCount; //equals to ED batch size * num_words_per_tweet
+    int clusterTableSize = 100; //Maximum number of events to be detected TODO: Adjust this
+
 
     //Fetch input tuple with matching index
     boolean fetchWithIndex = false;

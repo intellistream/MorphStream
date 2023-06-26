@@ -23,10 +23,10 @@ public abstract class Runner implements IRunner {
 //    public String application = "GrepSum";
 //    public String application = "OnlineBiding";
     //public String application = "TollProcessing";
-//    public String application = "EventDetection";
+    public String application = "EventDetection";
 //    public String application = "EventDetectionSliding";
 //    public String application = "IBWJ";
-    public String application = "LoadBalancer";
+//    public String application = "LoadBalancer";
     @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
     public String topologyName;
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
@@ -34,11 +34,9 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
     public int POST_COMPUTE = 0;// 1, 10, 100
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-//    public int totalEvents = 80;
-    public int totalEvents = 100000;
+    public int totalEvents = 400;
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-//    public int NUM_ITEMS = 80;
-    public int NUM_ITEMS = 100000;
+    public int NUM_ITEMS = 400;
     @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
     public int NUM_ACCESS = 5;//
     @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
@@ -57,8 +55,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
     public boolean linked = false;
     @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
-    public boolean shared = true; //Set to false for ED
-//    public boolean shared = false; //Set to false for ED
+    public boolean shared = false; //Set to false for ED
     @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
     public int batch = 1;
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)
@@ -70,17 +67,17 @@ public abstract class Runner implements IRunner {
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
 //    public int CCOption = CCOption_LOCK;
-    public int CCOption = CCOption_SStore;
-//    public int CCOption = CCOption_MorphStream;
+//    public int CCOption = CCOption_SStore;
+    public int CCOption = CCOption_MorphStream;
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-//    public String scheduler = "OP_BFS_A";
+    public String scheduler = "OP_BFS_A";
 //        public String scheduler = "OG_BFS_A";
     //    public String scheduler = "OG_DFS";
     //    public String scheduler = "OG_DFS_A";
     //    public String scheduler = "OG_NS";
-        public String scheduler = "OG_NS_A";
+//        public String scheduler = "OG_NS_A";
     //    public String scheduler = "OP_NS";
 //        public String scheduler = "OP_NS_A";
     //    public String scheduler = "OP_BFS";
@@ -155,8 +152,7 @@ public abstract class Runner implements IRunner {
      * generator parameters
      */
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 25000;//checkpoint per thread.
-//    public int checkpoint_interval = 10;//checkpoint per thread.
+    public int checkpoint_interval = 50;//checkpoint per thread.
 
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";

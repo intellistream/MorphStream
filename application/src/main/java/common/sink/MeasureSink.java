@@ -33,7 +33,7 @@ public class MeasureSink extends BaseSink {
     public int totalEvents;
     protected stable_sink_helper helper;
     protected int ccOption;
-    int cnt = 0;
+    protected int cnt = 0;
     long start;
 
     public MeasureSink() {

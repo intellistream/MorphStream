@@ -13,8 +13,7 @@ import transaction.context.TxnContext;
 
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_latency_measurement;
+import static common.CONTROL.*;
 
 public abstract class TransactionalBolt extends MapBolt implements Checkpointable {
     protected static final Logger LOG = LoggerFactory.getLogger(TransactionalBolt.class);
@@ -141,7 +140,9 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
             timestamp = 0L;//
         _bid = in.getBID();
         input_event = in.getValue(0);
-        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid); //TODO: Removed because txn_context[] is not initialized for all ED bolt threads. Improve this.
+        if (enable_app_combo) { //for non-combo apps, TxnContext is initialized within each bolt, not here
+            txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
+        }
         sum = 0;
     }
 

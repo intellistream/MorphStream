@@ -4,10 +4,10 @@ function ResetParameters() {
   local inputScheduler=$1
   local inputNewConnRatio=$2
   local numItems=$3
-  local checkpointInterval=$4
+  local interval=$4
 
   app="LoadBalancer"
-  checkpointInterval=$checkpointInterval
+  checkpointInterval=$interval
   tthread=24
   scheduler=$inputScheduler
   defaultScheduler=$inputScheduler
@@ -106,11 +106,12 @@ function dynamic_runner() { # multi-batch exp
       done
     done
   done
+#  `expr $checkpointInterval \* $tthread \* 13 \* $shiftRate`
 
   # LB Experiment on SStore with different new_conn_ratio
   for newConnRatio in "${newConnRatioArray[@]}"; do
     for numItems in "${numItemsArray[@]}"; do
-      ResetParameters "" "$newConnRatio" "$numItems" "$(expr $numItems / $tthread)"
+      ResetParameters "OP_BFS_A" "$newConnRatio" "$numItems" "$((numItems / tthread))"
       patEvaluation
     done
   done
@@ -118,7 +119,7 @@ function dynamic_runner() { # multi-batch exp
   # LB Experiment on NOCC with different new_conn_ratio
   for newConnRatio in "${newConnRatioArray[@]}"; do
     for numItems in "${numItemsArray[@]}"; do
-      ResetParameters "" "$newConnRatio" "$numItems" "$(expr $numItems / $tthread)"
+      ResetParameters "OP_BFS_A" "$newConnRatio" "$numItems" "$((numItems / tthread))"
       noccEvaluation
     done
   done
