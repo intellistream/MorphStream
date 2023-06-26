@@ -11,7 +11,7 @@ public interface CONTROL {
 //    boolean isCyclic = true;
 
     //common.combo optimization
-    boolean enable_app_combo = false;//compose all operators into one. //Set to false for ED
+    boolean enable_app_combo = true;//compose all operators into one. //Set to false for ED
 
     int combo_bid_size = 1;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
     int sink_combo_bid_size = 200;//reduce conflict. NOT applicable to LAL, LWM and PAT (must set to one).
