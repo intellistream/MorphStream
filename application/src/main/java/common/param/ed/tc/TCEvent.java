@@ -20,6 +20,7 @@ public class TCEvent extends TxnEvent {
     private final String my_bid_array;
     private final String my_partition_index;
     private final int my_number_of_partitions;
+    public String word;
 
     public TCEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions,
                    String wordID, String tweetID) {

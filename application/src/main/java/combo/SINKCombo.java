@@ -13,13 +13,13 @@ public class SINKCombo extends MeasureSink {
 //    int cnt = 0;
     boolean start_measure = false;
     int global_cnt;
-    int window_cnt = totalEvents / tweetWindowSize;
-    int the_end = window_cnt * clusterTableSize; //each window outputs $clusterTableSize number of events
+    int the_end; //each window outputs $clusterTableSize number of events
 
     public void start() {
         if (!start_measure) {//only once.
             helper.StartMeasurement();
             start_measure = true;
+            the_end = totalEvents;
         }
     }
 
@@ -29,13 +29,13 @@ public class SINKCombo extends MeasureSink {
     }
 
     @Override
-    public void execute(Tuple input) throws InterruptedException {
+    public void execute(Tuple input) throws InterruptedException { //receives ESEvent
         latency_measure(input);
 //        cnt++;
-//        if ((!enable_app_combo) && cnt >= the_end) { //TODO: Only perform this for ED, refine it.
-//            LOG.info("Sink has received outputs: " + cnt);
-//            end(global_cnt);
-//        }
+        if ((!enable_app_combo) && cnt >= totalEvents) { //TODO: Only perform this for ED, refine it.
+            LOG.info("Sink has received outputs: " + cnt);
+            end(global_cnt);
+        }
     }
 
     public void display() {

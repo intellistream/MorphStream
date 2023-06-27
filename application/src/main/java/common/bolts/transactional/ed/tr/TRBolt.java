@@ -45,8 +45,7 @@ public abstract class TRBolt extends TransactionalBolt {
     //Used in: nocc
     protected void TWEET_REGISTRANT_REQUEST_CORE(TREvent event) throws InterruptedException {
 //        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-        AppConfig.randomDelay();
-
+//        AppConfig.randomDelay();
         List<DataBox> tweetValues = event.tweetRecordRef.getRecord().getValues();
         if (tweetValues == null) {
             LOG.info("Tweet record not found");

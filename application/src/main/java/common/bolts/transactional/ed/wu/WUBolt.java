@@ -44,10 +44,8 @@ public class WUBolt extends TransactionalBolt {
 
     //Used in: nocc //TODO: Add version control
     protected void WORD_UPDATE_REQUEST_CORE(WUEvent event) {
-
 //        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-        AppConfig.randomDelay();
-
+//        AppConfig.randomDelay();
         List<DataBox> wordValues = event.wordRecordRef.getRecord().getValues();
         if (wordValues == null) {
             LOG.info("Word record not found");
@@ -107,6 +105,7 @@ public class WUBolt extends TransactionalBolt {
             String wordID = event.getWordID();
 
             TCEvent outEvent = new TCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), wordID, tweetID);
+            outEvent.word = event.getWord(); //for testing
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
 

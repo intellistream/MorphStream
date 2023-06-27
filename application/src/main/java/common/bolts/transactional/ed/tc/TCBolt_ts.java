@@ -103,7 +103,7 @@ public class TCBolt_ts extends TCBolt{
         for (TCEvent event : tcEvents) {
             SchemaRecordRef ref = event.wordRecordRef;
             if (ref.isEmpty()) {
-                LOG.info("Thead " + thread_Id + " reads empty word record");
+                LOG.info("Thead " + thread_Id + " reads empty word record: " + event.word);
                 throw new NullPointerException();
             }
             event.tweetIDList = ref.getRecord().getValues().get(2).getStringList().toArray(new String[0]);
@@ -169,7 +169,7 @@ public class TCBolt_ts extends TCBolt{
             }
 
             windowBoundary += tweetWindowSize;
-//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 

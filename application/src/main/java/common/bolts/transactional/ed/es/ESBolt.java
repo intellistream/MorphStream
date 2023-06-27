@@ -34,8 +34,6 @@ public class ESBolt extends TransactionalBolt {
     }
 
     protected void EVENT_SELECT_REQUEST_POST(ESEvent event) throws InterruptedException {
-        boolean isEvent = event.isEvent;
-        String[] wordList = event.wordList;
         double outBid = Math.round(event.getMyBid() * 10.0) / 10.0;
         LOG.info("Posting event: " + outBid);
 

@@ -96,9 +96,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //            }
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
-                if (this.tpg.getApp() == 1) {
+                if (this.tpg.getApp() == 1) { //SL
                     operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
-                } else if (this.tpg.getApp() == 4) {
+                } else if (this.tpg.getApp() == 4) { //ED
                     SchemaRecord updatedRecord = operation.d_record.content_.readPastValues((long) operation.bid);
                     if (updatedRecord != null) {
                         operation.record_ref.setRecord(updatedRecord);
@@ -284,7 +284,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     protected void TweetRegistrant_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
         // apply function
-        AppConfig.randomDelay();
+//        AppConfig.randomDelay();
 
         // read
         SchemaRecord tweetRecord = operation.s_record.content_.readPastValues((long) operation.bid);
@@ -313,7 +313,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     protected void WordUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
         // apply function
-        AppConfig.randomDelay();
+//        AppConfig.randomDelay();
 
         // read
         SchemaRecord wordRecord = operation.s_record.content_.readPastValues((long) operation.bid);
@@ -368,7 +368,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     protected void TrendCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
         // apply function
-        AppConfig.randomDelay();
+//        AppConfig.randomDelay();
 
         // read
         SchemaRecord wordRecord = operation.s_record.content_.readPastValues((long) operation.bid);
@@ -404,7 +404,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //            tempo_record.getValues().get(2).setStringList(emptyList); //reset tweetIDList to {}
             tempo_record.getValues().get(4).setDouble(newTfIdf); //update tf-idf
             tempo_record.getValues().get(6).setLong(0); //reset frequency to zero
-            tempo_record.getValues().get(7).setBool(difference >= 0.5); //set isBurst accordingly //TODO: Check this threshold
+            tempo_record.getValues().get(7).setBool(difference >= 0.1); //set isBurst accordingly //TODO: Check this threshold
 
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
@@ -530,7 +530,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
             // Merge input tweet into cluster
             for (String word : tweetWordList) {
-                if (!clusterWordList.contains(word)) {clusterWordList.add(word);}
+                if (!clusterWordList.contains(word)) {clusterWordList.add(word);} //TODO: Replace with map
             }
 
             tempo_record.getValues().get(1).setStringList(clusterWordList); //compute: merge wordList

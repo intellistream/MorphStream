@@ -11,6 +11,7 @@ import execution.runtime.tuple.impl.Tuple;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Tuple3;
 import utils.AppConfig;
 import utils.SINK_CONTROL;
 
@@ -27,7 +28,9 @@ public class MeasureSink extends BaseSink {
     private static final DescriptiveStatistics latency = new DescriptiveStatistics();
     private static final long serialVersionUID = 6249684803036342603L;
     protected static String directory;
+    protected static String eventDirectory;
     protected final ArrayDeque<Long> latency_map = new ArrayDeque();
+    protected final ArrayDeque<String[]> event_detection_map = new ArrayDeque();
     public int checkpoint_interval;
     public int tthread;
     public int totalEvents;
@@ -71,6 +74,14 @@ public class MeasureSink extends BaseSink {
                 + OsUtils.osWrapperPostFix("threads = %d")
                 + OsUtils.osWrapperPostFix("totalEvents = %d")
                 + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d_%d_%d.latency");
+
+        String eventStatsFolderPattern = OsUtils.osWrapperPostFix(config.getString("rootFilePath"))
+                + OsUtils.osWrapperPostFix("stats")
+                + OsUtils.osWrapperPostFix("%s")
+                + OsUtils.osWrapperPostFix("%s")
+                + OsUtils.osWrapperPostFix("threads = %d")
+                + OsUtils.osWrapperPostFix("totalEvents = %d")
+                + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d_%d_%d.events");
 
         String scheduler = config.getString("scheduler");
         if (config.getInt("CCOption") == CCOption_SStore) {
@@ -145,6 +156,18 @@ public class MeasureSink extends BaseSink {
                     config.getInt("complexity"),
                     config.getInt("Ratio_of_New_Connections"),
                     config.getInt("checkpoint"));
+            eventDirectory = String.format(eventStatsFolderPattern,
+                    config.getString("common"), scheduler, tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("NUM_ACCESS"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Overlapped_Keys"),
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    config.getInt("Transaction_Length"),
+                    AppConfig.isCyclic,
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
         } else if (config.getString("common").equals("EventDetectionSliding")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
@@ -198,6 +221,16 @@ public class MeasureSink extends BaseSink {
             e.printStackTrace();
         }
 
+        File eventFile = new File(eventDirectory);
+        eventFile.mkdirs();
+        if (eventFile.exists())
+            eventFile.delete();
+        try {
+            eventFile.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         SINK_CONTROL.getInstance().config();
         tthread = this.config.getInt("tthread");
         totalEvents = config.getInt("totalEvents");
@@ -228,6 +261,8 @@ public class MeasureSink extends BaseSink {
 //                }
 //            }
             latency_map.add(System.nanoTime() - input.getLong(1));
+//            event_time_map.add(new Tuple3<>(System.nanoTime(), input.getLong(1), input.getBID()));
+            event_detection_map.add(new String[]{String.valueOf(System.nanoTime()), String.valueOf(input.getBID()), "keyword"});
         }
     }
 
@@ -267,6 +302,11 @@ public class MeasureSink extends BaseSink {
                 for (double lat : latency.getValues()) {
                     w.write(lat + "\n");
                 }
+                FileWriter eventF = new FileWriter(eventDirectory);
+                Writer eventW = new BufferedWriter(eventF);
+                for (String[] line : event_detection_map) {
+                    eventW.write(line[0] + "," + line[1] + "," + line[2] + "\n");
+                }
                 sb.append("=======Details=======");
                 sb.append("\n" + latency.toString() + "\n");
                 sb.append("===99th===" + "\n");
@@ -287,6 +327,8 @@ public class MeasureSink extends BaseSink {
                         , 99, latency.getPercentile(99)));
                 w.close();
                 f.close();
+                eventW.close();
+                eventF.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
