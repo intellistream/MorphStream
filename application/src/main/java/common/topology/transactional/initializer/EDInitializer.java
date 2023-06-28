@@ -169,6 +169,28 @@ public class EDInitializer extends TableInitilizer {
         }
     }
 
+    private void initializeWordToIndexMap() {
+        String filePath = "/Users/zhonghao/Downloads/EDExperiments/word_map_short.txt"; //TODO: Modify the path
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(":");
+                if (parts.length == 2) {
+                    String word = parts[0].trim();
+                    String index = parts[1].trim();
+                    AppConfig.wordToIndexMap.put(word, index);
+                } else {
+                    System.out.println("Invalid mapping");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (enable_log) LOG.debug(String.format("Finish loading word index map: " + AppConfig.wordToIndexMap.size()));
+    }
+
     private void loadTREvents(BufferedReader reader, int totalEvents, boolean shufflingActive, int[] p_bids) throws IOException {
         String txn = reader.readLine();
         int count = 0;
@@ -198,10 +220,11 @@ public class EDInitializer extends TableInitilizer {
             );
 
             DataHolder.events.add(event);
-            if (enable_log) LOG.debug(String.format("%d deposit read...", count));
+            if (enable_log) LOG.debug(String.format("%d ED read...", count));
             txn = reader.readLine();
         }
         if (enable_log) LOG.info("Done reading TR events...");
+        initializeWordToIndexMap();
         if (shufflingActive) {
             shuffleEvents(DataHolder.events, totalEvents);
         }
@@ -546,40 +569,4 @@ public class EDInitializer extends TableInitilizer {
         }
     }
 
-
-
-    //TODO: Place pre-processing methods outside of system
-    //Pre-processing: Read tweet csv file and convert to normalized String tokens
-    public List<String> readTweetTokens(String PATH, String delim) {
-        List<String> tokens = new ArrayList<>();
-        List<String> stopWords = Arrays.asList("I", "a", "the"); // TODO: Use a better way to eliminate stopwords
-        String newLine = "";
-        StringTokenizer tokenizer;
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(Objects.requireNonNull(Application.class.getResourceAsStream(
-                        "/" + PATH))))) {
-            while ((newLine = br.readLine()) != null) {
-                tokenizer = new StringTokenizer(newLine, delim);
-                while (tokenizer.hasMoreElements()) {
-                    if (!stopWords.contains(tokenizer.nextToken())) {
-                        tokens.add(normalizeWord(tokenizer.nextToken()));
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return tokens;
-    }
-
-    // Normalize word with repeating characters to only two consecutive characters
-    // Remove all invalid characters but alphabet letters and numbers
-    // Remove all extra spaces (is this necessary?)
-    public String normalizeWord(String word) {
-        word = word.replaceAll("[^a-zA-Z0-9]+","");
-        String regex = "([a-z])\\1{2,}";
-        word = word.replaceAll(regex, "$1$1");
-        word = word.trim().replaceAll(" +", " ");
-        return word;
-    }
 }

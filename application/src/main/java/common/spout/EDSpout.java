@@ -38,8 +38,6 @@ public class EDSpout extends TransactionalSpout {
     public int tthread;
     public SINKCombo sink = new SINKCombo();
     protected int totalEventsPerBatch = 0;
-
-
     int start_measure;
 
     public EDSpout() {
@@ -115,6 +113,7 @@ public class EDSpout extends TransactionalSpout {
 
         tthread = config.getInt("tthread");
         totalEventsPerBatch = config.getInt("totalEvents") + tthread; //Add stopping signals
+//        totalEventsPerBatch = config.getInt("totalEvents"); //TODO: Removed tthread number of stop signals. We no longer need this.
 
         if (enable_log) LOG.info("total events... " + totalEventsPerBatch);
         if (enable_log) LOG.info("checkpoint_interval = " + checkpoint_interval);

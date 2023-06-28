@@ -31,7 +31,7 @@ public class TweetDataGenerator extends DataGenerator {
         super(dataConfig);
         events = new ArrayList<>(nTuples);
         reader = new BufferedReader(new InputStreamReader(
-                new FileInputStream("/Users/zhonghao/Downloads/EDExperiments/dataset_short.csv")));
+                new FileInputStream("/Users/zhonghao/Downloads/EDExperiments/dataset_short_seq.csv")));
     }
 
     public static void main(String[] args) {
@@ -42,17 +42,20 @@ public class TweetDataGenerator extends DataGenerator {
 
     @Override
     protected void generateTuple() {
-        String txn = null;
+        String txn;
         try {
             txn = reader.readLine();
-
             if (txn != null) {
                 String[] split = txn.split(",");
                 if (split.length == 3) {
                     String[] words = split[2].split(" ");
                     EDTREvent event = new EDTREvent(Integer.parseInt(split[1]), Integer.parseInt(split[1]), words);
                     events.add(event);
+                } else {
+                    LOG.info("Invalid event line");
                 }
+            } else {
+                LOG.info("No more events, adding stopping signals...");
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

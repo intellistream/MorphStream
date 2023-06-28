@@ -3,6 +3,7 @@ package utils;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.Random;
 
 /**
@@ -13,6 +14,7 @@ public class AppConfig {
     public static int complexity;
     public static boolean isCyclic = true;
     public static int windowSize = 1024; // default window size is 1024
+    public static HashMap<String, String> wordToIndexMap = new HashMap<>();
 
 //    public static long randomDelay() {
 //        int delay = random.nextInt(complexity);

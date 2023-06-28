@@ -66,6 +66,9 @@ public class TRBolt_ts extends TRBolt{
         for (double i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TREvent event = (TREvent) input_event;
+            if (event == null) {
+                LOG.info("Null event detected");
+            }
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             if (event != null) {

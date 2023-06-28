@@ -8,6 +8,7 @@ import db.DatabaseException;
 import execution.runtime.tuple.impl.Tuple;
 import execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
+import scala.App;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
 import utils.AppConfig;
@@ -15,6 +16,8 @@ import utils.AppConfig;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
@@ -25,6 +28,8 @@ import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 public abstract class TRBolt extends TransactionalBolt {
 
     SINKCombo sink;
+    ConcurrentHashMap<String, String> wordHashMap = new ConcurrentHashMap<>();
+    CopyOnWriteArrayList<String> conflictWords = new CopyOnWriteArrayList<>();
 
     public TRBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
@@ -78,23 +83,27 @@ public abstract class TRBolt extends TransactionalBolt {
         double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
 
         for (String word : words) {
+//            String wordID = String.valueOf(Math.abs(word.hashCode()) % 29989 % 50000);
+            String wordID = AppConfig.wordToIndexMap.get(word);
+            if (wordID != null) {
+                WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(),
+                        word, wordID, tweetID);
+                Tuple tuple = new Tuple(outBid, 0, context, new GeneralMsg<>(DEFAULT_STREAM_ID, outEvent, event.getTimestamp()));
 
-            String wordID = String.valueOf(Math.abs(word.hashCode()) % 10007 % 30000);
-            WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(),
-                    word, wordID, tweetID);
-            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
-            Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
+                LOG.info("Thread " + thread_Id + " posting event: " + event.getBid());
 
-//            LOG.info("Thread " + thread_Id + " posting event: " + event.getBid());
-
-            if (!enable_app_combo) {
-                collector.emit(outBid, tuple);
+                if (!enable_app_combo) {
+                    collector.emit(outBid, tuple);
 //                LOG.info("Threads " + thread_Id + " posted event count: " + threadPostCount.incrementAndGet());
-            } else {
-                if (enable_latency_measurement) {
-                    sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
+                } else {
+                    if (enable_latency_measurement) {
+                        sink.execute(new Tuple(outBid, this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.getTweetID(), event.getTimestamp())));
+                    }
                 }
+            } else {
+                LOG.info("No matching index found for word: " + word);
             }
+
         }
     }
 

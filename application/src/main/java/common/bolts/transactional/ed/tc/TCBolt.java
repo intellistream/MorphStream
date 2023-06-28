@@ -112,9 +112,7 @@ public class TCBolt extends TransactionalBolt {
         if (!enable_app_combo) {
 //            LOG.info("Thread " + thread_Id + " posting event: " + outBid);
 
-            GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, event.getTimestamp());
-            Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
-
+            Tuple tuple = new Tuple(outBid, 0, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event, event.getTimestamp()));
             collector.emit(outBid, tuple); //emit to TCG
 //            LOG.info("Threads " + thread_Id + " posted event count: " + threadPostCount.incrementAndGet());
 

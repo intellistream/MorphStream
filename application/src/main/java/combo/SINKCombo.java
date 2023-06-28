@@ -14,6 +14,7 @@ public class SINKCombo extends MeasureSink {
     boolean start_measure = false;
     int global_cnt;
     int the_end; //each window outputs $clusterTableSize number of events
+    int stop_event_count = 0;
 
     public void start() {
         if (!start_measure) {//only once.
@@ -32,9 +33,12 @@ public class SINKCombo extends MeasureSink {
     public void execute(Tuple input) throws InterruptedException { //receives ESEvent
         latency_measure(input);
 //        cnt++;
-        if ((!enable_app_combo) && cnt >= totalEvents) { //TODO: Only perform this for ED, refine it.
-            LOG.info("Sink has received outputs: " + cnt);
-            end(global_cnt);
+        if ((!enable_app_combo) && input.getBID() >= totalEvents-1) { //TODO: Only perform this for ED, refine it.
+            stop_event_count++;
+            if (stop_event_count == tthread) {
+                LOG.info("Sink has received outputs: " + cnt);
+                end(global_cnt);
+            }
         }
     }
 

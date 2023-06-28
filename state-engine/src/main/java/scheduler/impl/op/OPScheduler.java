@@ -102,6 +102,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     SchemaRecord updatedRecord = operation.d_record.content_.readPastValues((long) operation.bid);
                     if (updatedRecord != null) {
                         operation.record_ref.setRecord(updatedRecord);
+                        if (operation.record_ref.isEmpty()) { //for testing
+                            System.out.println("Record ref error");
+                        }
 //                        if (Objects.equals(operation.operator_name, "ed_sc")) {
 //                            log.info("Updating record ref for SC");
 //                        }

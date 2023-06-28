@@ -37,7 +37,7 @@ public interface CONTROL {
     boolean enable_speculative = false;//work in future!
 
     //ED Settings
-    int tweetWordCount = 3;//Default number of words in each tweet
+    int tweetWordCount = 5;//Default number of words in each tweet
 
     int tweetWindowSize = 500; //equals to ED batch size
     int wordWindowSize = tweetWindowSize * tweetWordCount; //equals to ED batch size * num_words_per_tweet

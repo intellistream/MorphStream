@@ -4,6 +4,7 @@ import common.Constants;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.datatype.util.LRTopologyControl;
+import common.param.ed.tc.TCEvent;
 import common.sink.helper.stable_sink_helper;
 import components.operators.api.BaseSink;
 import execution.ExecutionGraph;
@@ -262,7 +263,8 @@ public class MeasureSink extends BaseSink {
 //            }
             latency_map.add(System.nanoTime() - input.getLong(1));
 //            event_time_map.add(new Tuple3<>(System.nanoTime(), input.getLong(1), input.getBID()));
-            event_detection_map.add(new String[]{String.valueOf(System.nanoTime()), String.valueOf(input.getBID()), "keyword"});
+            TCEvent tcEvent = (TCEvent) input.getValue(0);
+            event_detection_map.add(new String[]{String.valueOf(System.nanoTime()), String.valueOf(input.getBID()), tcEvent.word, String.valueOf(tcEvent.isBurst)});
         }
     }
 
@@ -305,7 +307,7 @@ public class MeasureSink extends BaseSink {
                 FileWriter eventF = new FileWriter(eventDirectory);
                 Writer eventW = new BufferedWriter(eventF);
                 for (String[] line : event_detection_map) {
-                    eventW.write(line[0] + "," + line[1] + "," + line[2] + "\n");
+                    eventW.write(line[0] + "," + line[1] + "," + line[2] + "," + line[3] + "\n");
                 }
                 sb.append("=======Details=======");
                 sb.append("\n" + latency.toString() + "\n");
