@@ -109,6 +109,7 @@ public class TCBolt_ts extends TCBolt{
             }
             event.tweetIDList = ref.getRecord().getValues().get(2).getStringList().toArray(new String[0]);
             event.isBurst = ref.getRecord().getValues().get(7).getBool();
+            event.tfIdf = ref.getRecord().getValues().get(4).getDouble();
         }
     }
 
@@ -132,7 +133,7 @@ public class TCBolt_ts extends TCBolt{
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-//            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
+            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.

@@ -147,7 +147,7 @@ public class TRBolt_ts extends TRBolt{
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
 
             windowBoundary += tweetWindowSize;
-            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
             // Upon receiving stopping signal, pass it to downstream
             if (bid >= total_events) {

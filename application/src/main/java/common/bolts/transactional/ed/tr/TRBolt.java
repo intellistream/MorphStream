@@ -90,7 +90,7 @@ public abstract class TRBolt extends TransactionalBolt {
                         word, wordID, tweetID);
                 Tuple tuple = new Tuple(outBid, 0, context, new GeneralMsg<>(DEFAULT_STREAM_ID, outEvent, event.getTimestamp()));
 
-                LOG.info("Thread " + thread_Id + " posting event: " + event.getBid());
+//                LOG.info("Thread " + thread_Id + " posting event: " + event.getBid());
 
                 if (!enable_app_combo) {
                     collector.emit(outBid, tuple);

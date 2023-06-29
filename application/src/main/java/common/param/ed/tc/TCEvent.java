@@ -22,6 +22,7 @@ public class TCEvent extends TxnEvent {
     private final String my_partition_index;
     private final int my_number_of_partitions;
     public String word;
+    public double tfIdf;
 
     public TCEvent(double bid, int pid, String bid_array, String partition_index, int number_of_partitions,
                    String wordID, String tweetID) {
@@ -38,7 +39,7 @@ public class TCEvent extends TxnEvent {
     }
 
     private int computeCurrWindow(double bid) {
-        return (int) bid / tweetWindowSize;
+        return (int) bid / tweetWindowSize + 1;
     }
 
     public double getMyBid() {

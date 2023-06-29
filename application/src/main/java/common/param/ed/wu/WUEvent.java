@@ -33,7 +33,7 @@ public class WUEvent extends TxnEvent {
     }
 
     private int computeCurrWindow(double bid) {
-        return (int) bid / tweetWindowSize;
+        return (int) bid / tweetWindowSize + 1;
     }
 
     public double getMyBid() {

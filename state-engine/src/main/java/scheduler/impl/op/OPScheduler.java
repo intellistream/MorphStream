@@ -21,8 +21,7 @@ import utils.AppConfig;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import static common.CONTROL.clusterTableSize;
-import static common.CONTROL.tweetWindowSize;
+import static common.CONTROL.*;
 import static content.common.CommonMetaTypes.AccessType.*;
 
 public abstract class OPScheduler<Context extends OPSchedulerContext, Task> implements IScheduler<Context> {
@@ -283,19 +282,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        }
     }
 
+
     // ED: Tweet Registrant - Asy_ModifyRecord
     protected void TweetRegistrant_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
-
-        // apply function
 //        AppConfig.randomDelay();
-
         // read
         SchemaRecord tweetRecord = operation.s_record.content_.readPastValues((long) operation.bid);
         if (tweetRecord == null) {
             log.info("TR: Empty tweet record not found");
             throw new NoSuchElementException();
         }
-
         SchemaRecord tempo_record = new SchemaRecord(tweetRecord); //tempo record
 
         // Update tweet's wordList
@@ -309,123 +305,97 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         synchronized (operation.success) {
             operation.success[0]++;
         }
-
     }
+
 
     // ED: Word Update - Asy_ModifyRecord
     protected void WordUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
-
-        // apply function
 //        AppConfig.randomDelay();
-
         // read
         SchemaRecord wordRecord = operation.s_record.content_.readPastValues((long) operation.bid);
         if (wordRecord == null) {
             log.info("WU: Word record not found");
             throw new NoSuchElementException();
         }
-
         SchemaRecord tempo_record = new SchemaRecord(wordRecord); //tempo record
         final long oldCountOccurWindow = wordRecord.getValues().get(3).getLong();
 
-        if (oldCountOccurWindow != 0) { // word record is not empty
+        if (oldCountOccurWindow != 0) { // word has appeared before
             final int oldLastOccurWindow = wordRecord.getValues().get(5).getInt();
             final long oldFrequency = wordRecord.getValues().get(6).getLong();
 
             // Update word's tweetList
             if (operation.function instanceof Append) {
                 tempo_record.getValues().get(2).addItem(operation.function.item); //append new tweetID into word's tweetList
-            } else
-                throw new UnsupportedOperationException();
+            } else throw new UnsupportedOperationException();
 
             // Update word's window info
             if (oldLastOccurWindow < operation.condition.arg1) { //oldLastOccurWindow less than currentWindow
-//                log.info("WU updates word window info from " + oldLastOccurWindow + " to " + (int) operation.condition.arg1);
                 tempo_record.getValues().get(3).incLong(oldCountOccurWindow, 1); //countOccurWindow += 1
                 tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //update lastOccurWindow to currentWindow
             }
-            // Update word's inner-window frequency
-            tempo_record.getValues().get(6).incLong(oldFrequency, 1); //frequency += 1
-//            log.info("WU updates " + operation.condition.stringArg1 + " frequency by 1 from " + oldFrequency);
+            tempo_record.getValues().get(6).incLong(oldFrequency, 1); //inner-window frequency += 1
 
-        } else { // word record is empty
+        } else { // word has not appeared before
             String[] tweetList = {operation.function.item};
             tempo_record.getValues().get(1).setString(operation.condition.stringArg1); //wordValue
             tempo_record.getValues().get(2).setStringList(Arrays.asList(tweetList)); //tweetList
             tempo_record.getValues().get(3).setLong(1); //countOccurWindow
             tempo_record.getValues().get(5).setInt((int) operation.condition.arg1); //lastOccurWindow
             tempo_record.getValues().get(6).setLong(1); //frequency
-//            log.info("WU initiate new word " + operation.condition.stringArg1);
         }
 
-        //Update record's version (in this request, s_record == d_record)
         operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
         synchronized (operation.success) {
             operation.success[0]++;
         }
-
     }
 
 
     // ED: Trend Calculate - Asy_ModifyRecord_Read
     protected void TrendCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
-
-        // apply function
 //        AppConfig.randomDelay();
-
         // read
         SchemaRecord wordRecord = operation.s_record.content_.readPastValues((long) operation.bid);
-
         if (wordRecord == null) {
             log.info("TC: Word record not found");
             throw new NoSuchElementException();
         }
-
-//        final List<String> tweetIDList = wordRecord.getValues().get(2).getStringList();
-//        if (tweetIDList.size() == 0) {
-//            log.info("Word has been calculated: " + wordRecord.getValues().get(1).toString() + " in window " + wordRecord.getValues().get(5).toString());
-//            return;
-//        } else {
-//            log.info("Calculate word: " + wordRecord.getValues().get(1).toString() + " in window " + wordRecord.getValues().get(5).toString());
-//        }
-
-        final long oldCountOccurWindow = wordRecord.getValues().get(3).getLong();
+        final long countOccurWindow = wordRecord.getValues().get(3).getLong();
         final double oldTfIdf = wordRecord.getValues().get(4).getDouble();
-        final long oldFrequency = wordRecord.getValues().get(6).getLong();
-        SchemaRecord tempo_record = new SchemaRecord(wordRecord);
+        final long frequency = wordRecord.getValues().get(6).getLong();
 
         // Compute word's tf-idf
         if (operation.function instanceof TFIDF) {
-            int windowSize = (int) operation.condition.arg1;
-            int windowCount = (int) operation.condition.arg2;
-            double tf = (double) oldFrequency / windowSize;
-            double idf = -1 * (Math.log((double) oldCountOccurWindow / windowCount));
-            double newTfIdf = tf * idf;
-            double difference = tf * idf - oldTfIdf;
+            if (frequency > 0) { //frequency=0 means the word has already been computed in the window
+                SchemaRecord tempo_record = new SchemaRecord(wordRecord);
+                int windowSize = (int) operation.condition.arg1;  //(avg) number of words in window
+                int windowCount = (int) operation.condition.arg2; //number of windows so far
+                double tf = (double) frequency / windowSize;
+                double idf = -1 * (Math.log((double) countOccurWindow / windowCount));
+                double newTfIdf = Math.abs(tf * idf);
+                if (newTfIdf >= tfIdfThreshold) { //TODO: Change how to determine keywords: TFIDF or difference???
+//                    log.info("High TFIDF detected");
+                }
+                double difference = newTfIdf - oldTfIdf;
 
-//            List<String> emptyList = new ArrayList<>();
-//            tempo_record.getValues().get(2).setStringList(emptyList); //reset tweetIDList to {}
-            tempo_record.getValues().get(4).setDouble(newTfIdf); //update tf-idf
-            tempo_record.getValues().get(6).setLong(0); //reset frequency to zero
-            tempo_record.getValues().get(7).setBool(difference >= 0.1); //set isBurst accordingly //TODO: Check this threshold
+                tempo_record.getValues().get(4).setDouble(newTfIdf); //update tf-idf
+                tempo_record.getValues().get(6).setLong(0); //reset inner-window frequency to zero
+                tempo_record.getValues().get(7).setBool(difference >= diffTfIdfThreshold); //set isBurst accordingly //TODO: Check this threshold
+//                tempo_record.getValues().get(7).setBool(newTfIdf >= tfIdfThreshold);
 
-            //Update record's version (in this request, s_record == d_record)
-            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            }
             synchronized (operation.success) {
                 operation.success[0]++;
             }
-
         } else throw new UnsupportedOperationException();
-
     }
 
 
     // ED-SC: Similarity Calculator - Asy_ModifyRecord_Iteration_Read
     protected void SimilarityCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
-
-        // apply function
-        AppConfig.randomDelay();
-
+//        AppConfig.randomDelay();
         // read
         SchemaRecord tweetRecord = operation.s_record.content_.readPastValues((long) operation.bid);
 
