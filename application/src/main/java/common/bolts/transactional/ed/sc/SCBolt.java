@@ -70,9 +70,6 @@ public class SCBolt extends TransactionalBolt {
         END_POST_TIME_MEASURE(thread_Id);
     }
 
-    //TODO: Create a shared array that stores a copy of all cluster records to be iterated.
-    // This cluster record array should be updated upon the arrival of the first event in each new window.
-    // In this way, the cluster records only need to be read once from table.
 
     protected void SIMILARITY_CALCULATE_REQUEST_POST(SCEvent event) throws InterruptedException {
 
@@ -81,9 +78,9 @@ public class SCBolt extends TransactionalBolt {
         String tweetID = event.getTweetID();
         String targetClusterID = event.targetClusterID;
 
-        if (outBid >= total_events) { //Label stopping signals
+        if (outBid >= total_events) { //Label stopping signals, for testing
             targetClusterID = "Stop";
-            if (scStopCount.incrementAndGet() == 16) {
+            if (scStopCount.incrementAndGet() == 16) { //TODO: Remove hardcode: tthread^2
                 LOG.info("All stop signals are detected, posted tweets: " + scPostTweets);
                 LOG.info("All stop signals are detected, posted events: " + scPostEvents);
             }

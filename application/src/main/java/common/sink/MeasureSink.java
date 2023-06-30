@@ -4,6 +4,7 @@ import common.Constants;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.datatype.util.LRTopologyControl;
+import common.param.ed.es.ESEvent;
 import common.param.ed.tc.TCEvent;
 import common.sink.helper.stable_sink_helper;
 import components.operators.api.BaseSink;
@@ -18,7 +19,9 @@ import utils.SINK_CONTROL;
 
 import java.io.*;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
 
 import static common.CONTROL.*;
 import static common.IRunner.CCOption_LOCK;
@@ -29,8 +32,11 @@ public class MeasureSink extends BaseSink {
     private static final DescriptiveStatistics latency = new DescriptiveStatistics();
     private static final long serialVersionUID = 6249684803036342603L;
     protected static String directory;
+    protected static String outputTypeForED = "";
+    protected static String keywordsDirectory;
     protected static String eventDirectory;
     protected final ArrayDeque<Long> latency_map = new ArrayDeque();
+    protected final ArrayDeque<String[]> keywords_map = new ArrayDeque();
     protected final ArrayDeque<String[]> event_detection_map = new ArrayDeque();
     public int checkpoint_interval;
     public int tthread;
@@ -75,6 +81,14 @@ public class MeasureSink extends BaseSink {
                 + OsUtils.osWrapperPostFix("threads = %d")
                 + OsUtils.osWrapperPostFix("totalEvents = %d")
                 + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d_%d_%d.latency");
+
+        String keywordStatsFolderPattern = OsUtils.osWrapperPostFix(config.getString("rootFilePath"))
+                + OsUtils.osWrapperPostFix("stats")
+                + OsUtils.osWrapperPostFix("%s")
+                + OsUtils.osWrapperPostFix("%s")
+                + OsUtils.osWrapperPostFix("threads = %d")
+                + OsUtils.osWrapperPostFix("totalEvents = %d")
+                + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d_%d_%d.keywords");
 
         String eventStatsFolderPattern = OsUtils.osWrapperPostFix(config.getString("rootFilePath"))
                 + OsUtils.osWrapperPostFix("stats")
@@ -157,6 +171,18 @@ public class MeasureSink extends BaseSink {
                     config.getInt("complexity"),
                     config.getInt("Ratio_of_New_Connections"),
                     config.getInt("checkpoint"));
+            keywordsDirectory = String.format(keywordStatsFolderPattern,
+                    config.getString("common"), scheduler, tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("NUM_ACCESS"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Overlapped_Keys"),
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    config.getInt("Transaction_Length"),
+                    AppConfig.isCyclic,
+                    config.getInt("complexity"),
+                    config.getInt("Ratio_of_New_Connections"),
+                    config.getInt("checkpoint"));
             eventDirectory = String.format(eventStatsFolderPattern,
                     config.getString("common"), scheduler, tthread, totalEvents,
                     config.getInt("NUM_ITEMS"),
@@ -211,9 +237,10 @@ public class MeasureSink extends BaseSink {
         } else {
             throw new UnsupportedOperationException();
         }
+
+        // Latency output file
         File file = new File(directory);
         file.mkdirs();
-
         if (file.exists())
             file.delete();
         try {
@@ -222,6 +249,18 @@ public class MeasureSink extends BaseSink {
             e.printStackTrace();
         }
 
+        // ED keywords output file
+        File keywordFile = new File(keywordsDirectory);
+        keywordFile.mkdirs();
+        if (keywordFile.exists())
+            keywordFile.delete();
+        try {
+            keywordFile.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // ED events output file
         File eventFile = new File(eventDirectory);
         eventFile.mkdirs();
         if (eventFile.exists())
@@ -262,10 +301,18 @@ public class MeasureSink extends BaseSink {
 //                }
 //            }
             latency_map.add(System.nanoTime() - input.getLong(1));
-//            event_time_map.add(new Tuple3<>(System.nanoTime(), input.getLong(1), input.getBID()));
-            TCEvent tcEvent = (TCEvent) input.getValue(0);
-            event_detection_map.add(new String[]{String.valueOf(System.nanoTime()), String.valueOf(input.getBID()),
-                    tcEvent.word, String.valueOf(tcEvent.isBurst), String.valueOf(tcEvent.tfIdf)});
+            if (input.getValue(0) instanceof TCEvent) {
+                outputTypeForED = "keyword";
+                TCEvent tcEvent = (TCEvent) input.getValue(0);
+                keywords_map.add(new String[]{String.valueOf(System.nanoTime()), String.valueOf(input.getBID()),
+                        tcEvent.word, String.valueOf(tcEvent.isBurst), String.valueOf(tcEvent.tfIdf)});
+            } else if (input.getValue(0) instanceof ESEvent) {
+                outputTypeForED = "event";
+                ESEvent esEvent = (ESEvent) input.getValue(0);
+                keywords_map.add(new String[]{String.valueOf(System.nanoTime()), String.valueOf(input.getBID()),
+                        Arrays.toString(esEvent.wordSet), String.valueOf(esEvent.isEvent), String.valueOf(esEvent.growthRate)});
+            }
+
         }
     }
 
@@ -305,11 +352,22 @@ public class MeasureSink extends BaseSink {
                 for (double lat : latency.getValues()) {
                     w.write(lat + "\n");
                 }
+
+                FileWriter keywordF = new FileWriter(keywordsDirectory);
+                Writer keywordW = new BufferedWriter(keywordF);
                 FileWriter eventF = new FileWriter(eventDirectory);
                 Writer eventW = new BufferedWriter(eventF);
-                for (String[] line : event_detection_map) {
-                    eventW.write(line[0] + "," + line[1] + "," + line[2] + "," + line[3] + "," + line[4] + "\n");
+
+                if (Objects.equals(outputTypeForED, "keyword")) {
+                    for (String[] line : keywords_map) {
+                        keywordW.write(line[0] + "," + line[1] + "," + line[2] + "," + line[3] + "," + line[4] + "\n");
+                    }
+                } else if (Objects.equals(outputTypeForED, "event")) {
+                    for (String[] line : event_detection_map) {
+                        eventW.write(line[0] + "," + line[1] + "," + line[2] + "," + line[3] + "," + line[4] + "\n");
+                    }
                 }
+
                 sb.append("=======Details=======");
                 sb.append("\n" + latency.toString() + "\n");
                 sb.append("===99th===" + "\n");
@@ -330,8 +388,12 @@ public class MeasureSink extends BaseSink {
                         , 99, latency.getPercentile(99)));
                 w.close();
                 f.close();
+
+                keywordW.close();
+                keywordF.close();
                 eventW.close();
                 eventF.close();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }

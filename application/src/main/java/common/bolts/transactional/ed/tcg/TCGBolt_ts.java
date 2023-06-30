@@ -120,7 +120,6 @@ public class TCGBolt_ts extends TCGBolt {
             if (isBurst == null || event == null) {
                 throw new NoSuchElementException();
             }
-
             TC_GATE_REQUEST_POST(event, isBurst);
         }
 
@@ -131,11 +130,9 @@ public class TCGBolt_ts extends TCGBolt {
 
         double bid = in.getBID();
 //        LOG.info("Thread " + this.thread_Id + " has event " + bid);
-
         if (bid >= windowBoundary) {
 //            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
             outWindowEvents.add(in);
-
         } else {
             execute_ts_normal(in);
         }

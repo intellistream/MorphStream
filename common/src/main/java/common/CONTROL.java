@@ -37,14 +37,17 @@ public interface CONTROL {
     boolean enable_speculative = false;//work in future!
 
     //ED Settings
-    int tweetWordCount = 7;//Default number of words in each tweet
+    int tweetWordCount = 7;//Avg number of words in each tweet
 
-    int tweetWindowSize = 400; //equals to ED batch size
-    int wordWindowSize = tweetWindowSize * tweetWordCount; //equals to ED batch size * num_words_per_tweet
-    int clusterTableSize = 100; //Maximum number of events to be detected TODO: Adjust this
+    int tweetWindowSize = 400; //equals to ED batch size (tthread * windowPerThread) TODO: remove hardcode
+    int wordWindowSize = tweetWindowSize * tweetWordCount; //Avg num of words in a batch
+    int clusterTableSize = 500; //Maximum number of events to be detected TODO: Adjust this
     double tfIdfThreshold = 0.01; //How to determine burst keyword: based on the current TFIDF
     double diffTfIdfThreshold = 0.0002; //How to determine burst keyword: based on the change in TFIDF
+    double clusterSimiThreshold = 0.01; //Similarity between tweet and cluster
+    double growthRateThreshold = 0.001; //Cluster growth rate
 
+    int windowGap = 2; //TODO: Adjust this
 
     //Fetch input tuple with matching index
     boolean fetchWithIndex = false;

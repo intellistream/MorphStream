@@ -9,7 +9,8 @@ public class ESEvent extends TxnEvent {
     private final String clusterID;
     public SchemaRecordRef cluster_record = new SchemaRecordRef();
     public boolean isEvent;
-    public String[] wordList;
+    public double growthRate;
+    public String[] wordSet;
     private final double myBid;
     private final int myPid;
     private final String my_bid_array;

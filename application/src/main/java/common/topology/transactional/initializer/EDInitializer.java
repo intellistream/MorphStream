@@ -380,7 +380,7 @@ public class EDInitializer extends TableInitilizer {
         for (int key = cluster_left_bound; key < cluster_right_bound; key++) {//Initialize cluster table
             pid = get_pid(cluster_partition_interval, key);
             _key = String.valueOf(key);
-            insertClusterRecord(_key, emptyArray, 0, 0, false, pid, spinlock);
+            insertClusterRecord(_key, emptyArray, 0, 0, false, 0, pid, spinlock);
             clusterInsertCount.getAndIncrement();
         }
         if (enable_log) LOG.info("Thread " + thread_id + " inserted cluster record from row : " + cluster_left_bound + " to " + cluster_right_bound);
@@ -444,13 +444,13 @@ public class EDInitializer extends TableInitilizer {
         }
     }
 
-    private void insertClusterRecord(String clusterID, String[] wordList, int countNewTweet, int clusterSize, boolean isEvent,
+    private void insertClusterRecord(String clusterID, String[] wordList, int countNewTweet, int clusterSize, boolean isEvent, double growthRate,
                                      int pid, SpinLock[] spinlock_) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("cluster_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent), pid, spinlock_));
+                db.InsertRecord("cluster_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent, growthRate), pid, spinlock_));
             else
-                db.InsertRecord("cluster_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent)));
+                db.InsertRecord("cluster_table", new TableRecord(ClusterRecord(clusterID, wordList, countNewTweet, clusterSize, isEvent, growthRate)));
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -521,21 +521,24 @@ public class EDInitializer extends TableInitilizer {
         dataBoxes.add(new LongDataBox());
         dataBoxes.add(new LongDataBox());
         dataBoxes.add(new BoolDataBox());
+        dataBoxes.add(new DoubleDataBox());
         fieldNames.add("Cluster_ID"); // 0
         fieldNames.add("Word_List"); // 1
         fieldNames.add("Count_New_Tweet"); // 2
         fieldNames.add("Cluster_Size"); // 3
         fieldNames.add("Is_Event"); // 4
+        fieldNames.add("Growth_Rate"); // 5
         return new RecordSchema(fieldNames, dataBoxes);
     }
 
-    private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int countNewTweet, int clusterSize, boolean isEvent) {
+    private SchemaRecord ClusterRecord(String clusterID, String[] wordList, int countNewTweet, int clusterSize, boolean isEvent, double growthRate) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(clusterID, clusterID.length())); // 0
         values.add(new ListStringDataBox(wordList)); // 1
         values.add(new LongDataBox(countNewTweet)); // 2
         values.add(new LongDataBox(clusterSize)); // 3
         values.add(new BoolDataBox(isEvent)); // 4
+        values.add(new DoubleDataBox(growthRate)); // 5
         return new SchemaRecord(values);
     }
 

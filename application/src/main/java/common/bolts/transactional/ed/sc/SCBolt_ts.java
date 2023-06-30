@@ -77,32 +77,33 @@ public class SCBolt_ts extends SCBolt {
         String[] clusterTable = new String[]{"cluster_table"}; //condition source table to iterate
         String[] clusterKey = new String[]{String.valueOf(0)}; //condition source key, set to zero
         Similarity function = new Similarity();
-//        Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst()); //arg1: currentWindow, boolArg1: isBurst
-        Condition condition1 = new Condition(event.getCurrWindow(), true); //TODO: Set to always true for testing
+        Condition condition1 = new Condition(event.getCurrWindow(), event.isBurst());
 
-        boolean doUpdate = false;
-        if (recordUpdateTime <= tweetIDFloor) {
-            doUpdate = true;
-            recordUpdateTime = (int) event.getBid();
-            LOG.info("Thread " + thread_Id + " do record update: " + (int) event.getBid() + " with tweetIDFloor " + tweetIDFloor);
+        if (event.isBurst()) { //Only create txn for burst tweets
+            //Update thread's own cluster records in the current window, no sharing.
+            boolean doUpdate = false;
+            if (recordUpdateTime <= tweetIDFloor) {
+                doUpdate = true;
+                recordUpdateTime = (int) event.getBid();
+                LOG.info("Thread " + thread_Id + " do record update: " + (int) event.getBid() + " with tweetIDFloor " + tweetIDFloor);
+            }
+
+            transactionManager.BeginTransaction(txnContext);
+            transactionManager.Asy_ModifyRecord_Iteration_Read(txnContext,
+                    "tweet_table", // source_table
+                    event.getTweetID(),  // source_key
+                    event.tweetRecord, // record to read from
+                    function, // determine the most similar cluster
+                    clusterTable, clusterKey, //condition_source_table, condition_source_key
+                    condition1,
+                    event.success,
+                    "ed_sc",
+                    doUpdate
+            );
+            transactionManager.CommitTransaction(txnContext);
+            scEvents.add(event);
         }
 
-        transactionManager.BeginTransaction(txnContext);
-
-        transactionManager.Asy_ModifyRecord_Iteration_Read(txnContext,
-                "tweet_table", // source_table
-                event.getTweetID(),  // source_key
-                event.tweetRecord, // record to read from
-                function, // determine the most similar cluster
-                clusterTable, clusterKey, //condition_source_table, condition_source_key
-                condition1,
-                event.success,
-                "ed_sc",
-                doUpdate
-        );
-
-        transactionManager.CommitTransaction(txnContext);
-        scEvents.add(event);
     }
 
     private void SIMILARITY_CALCULATE_REQUEST_CORE() {
@@ -132,7 +133,6 @@ public class SCBolt_ts extends SCBolt {
 
         double bid = in.getBID();
 //        LOG.info("Thread " + this.thread_Id + " has event " + bid);
-
         if (bid >= windowBoundary) {
 //            LOG.info("Thread " + this.thread_Id + " detects out-window event: " + in.getBID());
             outWindowEvents.add(in);

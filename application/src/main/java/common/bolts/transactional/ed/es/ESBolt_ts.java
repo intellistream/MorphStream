@@ -100,8 +100,9 @@ public class ESBolt_ts extends ESBolt{
             if (ref.isEmpty()) {
                 continue; //not yet processed.
             }
-            event.wordList = ref.getRecord().getValues().get(1).getStringList().toArray(new String[0]);
+            event.wordSet = ref.getRecord().getValues().get(1).getStringList().toArray(new String[0]);
             event.isEvent = ref.getRecord().getValues().get(4).getBool();
+            event.growthRate = ref.getRecord().getValues().get(5).getDouble();
         }
     }
 
