@@ -40,7 +40,7 @@ public class CUBolt extends TransactionalBolt {
         String updatedClusterID = event.getClusterID();
 
         if (outBid >= total_events) { //Label stopping signals
-            if (cuStopCount.incrementAndGet() == 16) {
+            if (cuStopCount.incrementAndGet() == tthread*tthread) {
                 LOG.info("All stop signals are detected, posted tweets: " + cuPostTweets);
                 LOG.info("All stop signals are detected, posted events: " + cuPostEvents);
             }

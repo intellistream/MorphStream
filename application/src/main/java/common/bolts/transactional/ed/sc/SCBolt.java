@@ -80,7 +80,7 @@ public class SCBolt extends TransactionalBolt {
 
         if (outBid >= total_events) { //Label stopping signals, for testing
             targetClusterID = "Stop";
-            if (scStopCount.incrementAndGet() == 16) { //TODO: Remove hardcode: tthread^2
+            if (scStopCount.incrementAndGet() == tthread*tthread) {
                 LOG.info("All stop signals are detected, posted tweets: " + scPostTweets);
                 LOG.info("All stop signals are detected, posted events: " + scPostEvents);
             }

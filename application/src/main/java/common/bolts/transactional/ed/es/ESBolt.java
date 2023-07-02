@@ -35,10 +35,10 @@ public class ESBolt extends TransactionalBolt {
 
     protected void EVENT_SELECT_REQUEST_POST(ESEvent event) throws InterruptedException {
         double outBid = Math.round(event.getMyBid() * 10.0) / 10.0;
-        LOG.info("Posting event: " + outBid);
+//        LOG.info("Posting event: " + outBid);
 
         if (outBid >= total_events) { //Label stopping signals
-            if (esStopCount.incrementAndGet() == 16) {
+            if (esStopCount.incrementAndGet() == tthread*tthread) {
                 LOG.info("All stop signals are detected, posted clusters: " + esPostClusters);
                 LOG.info("All stop signals are detected, posted events: " + esPostEvents);
             }

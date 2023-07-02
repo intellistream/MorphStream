@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import static common.CONTROL.enable_log;
+import static common.CONTROL.useShortDataset;
 
 /**
  * Read from Stock Dataset, construct events accordingly.
@@ -30,8 +31,14 @@ public class TweetDataGenerator extends DataGenerator {
     public TweetDataGenerator(EDTPGDataGeneratorConfig dataConfig) throws FileNotFoundException {
         super(dataConfig);
         events = new ArrayList<>(nTuples);
-        reader = new BufferedReader(new InputStreamReader(
-                new FileInputStream("/Users/zhonghao/Downloads/EDExperiments/dataset_short_seq.csv")));
+        if (useShortDataset) {
+            reader = new BufferedReader(new InputStreamReader(
+                    new FileInputStream("/Users/zhonghao/Downloads/EDExperiments/dataset_short.csv")));
+        } else {
+            reader = new BufferedReader(new InputStreamReader(
+                    new FileInputStream("/Users/zhonghao/Downloads/EDExperiments/dataset_long.csv")));
+        }
+
     }
 
     public static void main(String[] args) {

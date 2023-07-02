@@ -374,15 +374,18 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 double tf = (double) frequency / windowSize;
                 double idf = -1 * (Math.log((double) countOccurWindow / windowCount));
                 double newTfIdf = Math.abs(tf * idf);
-//                if (newTfIdf >= tfIdfThreshold) { //TODO: Change how to determine keywords: TFIDF or difference???
+//                if (newTfIdf >= tfIdfThreshold) {
 ////                    log.info("High TFIDF detected");
 //                }
                 double difference = newTfIdf - oldTfIdf;
 
                 tempo_record.getValues().get(4).setDouble(newTfIdf); //update tf-idf
                 tempo_record.getValues().get(6).setLong(0); //reset inner-window frequency to zero
-                tempo_record.getValues().get(7).setBool(difference >= diffTfIdfThreshold); //set isBurst accordingly //TODO: Check this threshold
-//                tempo_record.getValues().get(7).setBool(newTfIdf >= tfIdfThreshold);
+                if (isBurstByDifference) {
+                    tempo_record.getValues().get(7).setBool(difference >= diffTfIdfThreshold); //set isBurst accordingly
+                } else {
+                    tempo_record.getValues().get(7).setBool(newTfIdf >= tfIdfThreshold);
+                }
 
                 operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             }
@@ -479,6 +482,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     }
 
+
     // ED-CU: Cluster Updater - Asy_ModifyRecord
     protected void ClusterUpdate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 //        AppConfig.randomDelay();
@@ -511,7 +515,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-//            log.info("Merged tweet " + tweetRecord.GetPrimaryKey() + tweetWordList + " into cluster record: " + clusterRecord.GetPrimaryKey());
+            log.info("Merged tweet " + tweetRecord.GetPrimaryKey() + " " + tweetWordList + " into cluster: " + clusterRecord.GetPrimaryKey() + " " + clusterWordList);
 
             synchronized (operation.success) {
                 operation.success[0]++;
@@ -552,12 +556,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             double growthRate = (double) countNewTweet / clusterSize;
             growthRates.add(growthRate);
             tempo_record.getValues().get(5).setDouble(growthRate);
-            tempo_record.getValues().get(4).setBool(growthRate > growthRateThreshold); //compute, update cluster.isEvent
+            if (isEventByGrowthRate) {
+                tempo_record.getValues().get(4).setBool(growthRate > growthRateThreshold); //compute, update cluster.isEvent
+            } else {
+                tempo_record.getValues().get(4).setBool(countNewTweet > countNewTweetThreshold);
+            }
             tempo_record.getValues().get(2).setLong(0); //compute, reset cluster.countNewTweet to zero
 
-            //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-
             synchronized (operation.success) {
                 operation.success[0]++;
             }

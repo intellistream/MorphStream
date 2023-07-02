@@ -170,7 +170,12 @@ public class EDInitializer extends TableInitilizer {
     }
 
     private void initializeWordToIndexMap() {
-        String filePath = "/Users/zhonghao/Downloads/EDExperiments/word_map_short.txt"; //TODO: Modify the path
+        String filePath;
+        if (useShortDataset) {
+            filePath = "/Users/zhonghao/Downloads/EDExperiments/word_map_short.txt";
+        } else {
+            filePath = "/Users/zhonghao/Downloads/EDExperiments/word_map_long.txt";
+        }
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
@@ -180,8 +185,6 @@ public class EDInitializer extends TableInitilizer {
                     String word = parts[0].trim();
                     String index = parts[1].trim();
                     AppConfig.wordToIndexMap.put(word, index);
-                } else {
-                    System.out.println("Invalid mapping");
                 }
             }
         } catch (IOException e) {

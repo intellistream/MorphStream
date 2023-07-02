@@ -36,18 +36,27 @@ public interface CONTROL {
     int NUM_OF_SOCKETS = 1;//configure this for NUMA placement please.
     boolean enable_speculative = false;//work in future!
 
+
+
     //ED Settings
-    int tweetWordCount = 7;//Avg number of words in each tweet
+    int tweetWordCount = 8;//Avg number of words in each tweet
 
     int tweetWindowSize = 400; //equals to ED batch size (tthread * windowPerThread) TODO: remove hardcode
     int wordWindowSize = tweetWindowSize * tweetWordCount; //Avg num of words in a batch
-    int clusterTableSize = 500; //Maximum number of events to be detected TODO: Adjust this
+    int clusterTableSize = 1000; //Maximum number of events to be detected TODO: Adjust this
+    boolean useShortDataset = true; //Use short dataset (4K events) or full dataset (50K events)
+
     double tfIdfThreshold = 0.01; //How to determine burst keyword: based on the current TFIDF
     double diffTfIdfThreshold = 0.0002; //How to determine burst keyword: based on the change in TFIDF
-    double clusterSimiThreshold = 0.01; //Similarity between tweet and cluster
+    boolean isBurstByDifference = true; //Determine isBurst keyword based on (true - difference in TFIDF; false - TFIDF itself)
+    double clusterSimiThreshold = 0.5; //Similarity between tweet and cluster
     double growthRateThreshold = 0.001; //Cluster growth rate
-
+    double countNewTweetThreshold = 10; //New tweet merged into cluster in a window
+    boolean isEventByGrowthRate = false; //Determine isEvent based on (true - growthRate; false - countNewTweet)
     int windowGap = 2; //TODO: Adjust this
+
+
+
 
     //Fetch input tuple with matching index
     boolean fetchWithIndex = false;
