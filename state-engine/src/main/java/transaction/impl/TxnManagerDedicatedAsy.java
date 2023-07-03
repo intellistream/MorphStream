@@ -5,6 +5,7 @@ import content.common.CommonMetaTypes.AccessType;
 import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.Request;
@@ -467,6 +468,16 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     public boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+    @Override
+    public boolean lock_all(SpinLock[] spinLocks) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean unlock_all(SpinLock[] spinLocks) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
 
     public int getGroupId(int thisTaskId){
         int groupId = thisTaskId / dalta;

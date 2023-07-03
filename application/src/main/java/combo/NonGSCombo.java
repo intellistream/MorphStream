@@ -1,6 +1,7 @@
 package combo;
 
 import benchmark.DataHolder;
+import common.bolts.transactional.nongs.NonGSBolt_sstore;
 import common.bolts.transactional.nongs.NonGSBolt_ts;
 import common.collections.Configuration;
 import common.param.TxnEvent;
@@ -11,7 +12,6 @@ import execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayDeque;
 
 import static common.CONTROL.*;
@@ -55,6 +55,10 @@ public class NonGSCombo extends SPOUTCombo{
         switch (config.getInt("CCOption", 0)) {
             case CCOption_TStream: {//T-Stream
                 bolt = new NonGSBolt_ts(0, sink);
+                break;
+            }
+            case CCOption_SStore: {//S-Store
+                bolt = new NonGSBolt_sstore(0, sink);
                 break;
             }
             default:
