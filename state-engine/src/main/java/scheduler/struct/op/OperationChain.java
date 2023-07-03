@@ -95,11 +95,9 @@ public class OperationChain implements Comparable<OperationChain> {
 
     public void addOperation(Operation op) {
         operations.add(op);
-        operationWithVirtual.add(op);
     }
 
     public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
-        operationWithVirtual.add(op);
         potentialChldrenInfo.add(new PotentialDependencyInfo(potentialChildren, op));
     }
 
