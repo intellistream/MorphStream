@@ -20,9 +20,9 @@ import static common.Constants.DEFAULT_STREAM_ID;
 public abstract class TCGBolt extends TransactionalBolt {
 
     SINKCombo sink;
-    static ConcurrentSkipListSet<Integer> tweetIDSet = new ConcurrentSkipListSet<>();
-    public static ConcurrentSkipListSet<Double> tcgPostEvents = new ConcurrentSkipListSet<>();
-    public static AtomicInteger tcgStopEvents = new AtomicInteger(0);
+//    static ConcurrentSkipListSet<Integer> tweetIDSet = new ConcurrentSkipListSet<>();
+//    public static ConcurrentSkipListSet<Double> tcgPostEvents = new ConcurrentSkipListSet<>();
+//    public static AtomicInteger tcgStopEvents = new AtomicInteger(0);
 
     public TCGBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
@@ -39,18 +39,18 @@ public abstract class TCGBolt extends TransactionalBolt {
         double delta = 0.1;
         double outBid = Math.round((event.getMyBid() + delta) * 10.0) / 10.0;
 
-        if (!(outBid >= total_events)) {
-            tweetIDSet.add(Integer.parseInt(event.getTweetID()));
-            tcgPostEvents.add(outBid);
-        }
-        else {
+//        if (!(outBid >= total_events)) {
+//            tweetIDSet.add(Integer.parseInt(event.getTweetID()));
+//            tcgPostEvents.add(outBid);
+//        }
+//        else {
 //            LOG.info("Thread " + thread_Id + " posting stop event: " + outBid);
-            if (tcgStopEvents.incrementAndGet() == 16) {
-                LOG.info("TCG post tweets: " + tweetIDSet);
-                LOG.info("TCG post events: " + tcgPostEvents);
-                LOG.info("TCG stop events: " + tcgStopEvents);
-            }
-        }
+//            if (tcgStopEvents.incrementAndGet() == tthread*tthread) {
+//                LOG.info("TCG post tweets: " + tweetIDSet);
+//                LOG.info("TCG post events: " + tcgPostEvents);
+//                LOG.info("TCG stop events: " + tcgStopEvents);
+//            }
+//        }
 //        LOG.info("Thread " + thread_Id + " posting event: " + outBid);
 
         SCEvent outEvent = new SCEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(),

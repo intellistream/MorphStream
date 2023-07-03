@@ -431,21 +431,26 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                 long clusterSize = clusterRecord.getValues().get(3).getLong();
                 if (clusterSize != 0) { // cluster is not empty
-                    List<String> clusterWordList = new ArrayList<>(clusterRecord.getValues().get(1).getStringList()); //TODO: Created new list to avoid sync error
-                    String[] clusterWordArray = clusterWordList.toArray(new String[0]);
+                    try {
+                        List<String> clusterWordList = new ArrayList<>(clusterRecord.getValues().get(1).getStringList());
+                        String[] clusterWordArray = clusterWordList.toArray(new String[0]);
 
-                    // compute cosine similarity
-                    HashMap<String, Integer> clusterMap = new HashMap<>();
-                    for (String word : clusterWordArray) {clusterMap.put(word, 1);}
-                    Set<String> both = Sets.newHashSet(clusterMap.keySet());
-                    both.retainAll(tweetMap.keySet());
-                    double scalar = 0, norm1 = 0, norm2 = 0;
-                    for (String k : both) scalar += clusterMap.getOrDefault(k, 0) * tweetMap.getOrDefault(k, 0);
-                    for (String k : clusterMap.keySet()) norm1 += clusterMap.get(k) * clusterMap.get(k);
-                    for (String k : tweetMap.keySet()) norm2 += tweetMap.get(k) * tweetMap.get(k);
-                    double similarity = scalar / Math.sqrt(norm1 * norm2);
+                        // compute cosine similarity
+                        HashMap<String, Integer> clusterMap = new HashMap<>();
+                        for (String word : clusterWordArray) {clusterMap.put(word, 1);}
+                        Set<String> both = Sets.newHashSet(clusterMap.keySet());
+                        both.retainAll(tweetMap.keySet());
+                        double scalar = 0, norm1 = 0, norm2 = 0;
+                        for (String k : both) scalar += clusterMap.getOrDefault(k, 0) * tweetMap.getOrDefault(k, 0);
+                        for (String k : clusterMap.keySet()) norm1 += clusterMap.get(k) * clusterMap.get(k);
+                        for (String k : tweetMap.keySet()) norm2 += tweetMap.get(k) * tweetMap.get(k);
+                        double similarity = scalar / Math.sqrt(norm1 * norm2);
 
-                    similarities.put(clusterRecord, similarity);
+                        similarities.put(clusterRecord, similarity);
+                    } catch (Exception e) {
+                        log.info("Sync error when reading cluster records");
+                    }
+
                 }
             }
 
@@ -510,7 +515,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            log.info("Merged tweet " + tweetRecord.GetPrimaryKey() + " " + tweetWordList + " into cluster: " + clusterRecord.GetPrimaryKey() + " " + clusterWordList);
+//            log.info("Merged tweet " + tweetRecord.GetPrimaryKey() + " " + tweetWordList + " into cluster: " + clusterRecord.GetPrimaryKey() + " " + clusterWordList);
 
             synchronized (operation.success) {
                 operation.success[0]++;

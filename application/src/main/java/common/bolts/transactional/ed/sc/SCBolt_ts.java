@@ -85,7 +85,7 @@ public class SCBolt_ts extends SCBolt {
             if (recordUpdateTime <= tweetIDFloor) {
                 doUpdate = true;
                 recordUpdateTime = (int) event.getBid();
-                LOG.info("Thread " + thread_Id + " do record update: " + (int) event.getBid() + " with tweetIDFloor " + tweetIDFloor);
+//                LOG.info("Thread " + thread_Id + " do record update: " + (int) event.getBid() + " with tweetIDFloor " + tweetIDFloor);
             }
 
             transactionManager.BeginTransaction(txnContext);

@@ -18,10 +18,10 @@ import static common.Constants.DEFAULT_STREAM_ID;
 public class ESBolt extends TransactionalBolt {
     SINKCombo sink;
 
-    static AtomicInteger esPostCount = new AtomicInteger(0);
+//    static AtomicInteger esPostCount = new AtomicInteger(0);
     static AtomicInteger esStopCount = new AtomicInteger(0);
-    static ConcurrentSkipListSet<Integer> esPostClusters = new ConcurrentSkipListSet<>();
-    static ConcurrentSkipListSet<Double> esPostEvents = new ConcurrentSkipListSet<>();
+//    static ConcurrentSkipListSet<Integer> esPostClusters = new ConcurrentSkipListSet<>();
+//    static ConcurrentSkipListSet<Double> esPostEvents = new ConcurrentSkipListSet<>();
 
     public ESBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
@@ -39,16 +39,17 @@ public class ESBolt extends TransactionalBolt {
 
         if (outBid >= total_events) { //Label stopping signals
             if (esStopCount.incrementAndGet() == tthread*tthread) {
-                LOG.info("All stop signals are detected, posted clusters: " + esPostClusters);
-                LOG.info("All stop signals are detected, posted events: " + esPostEvents);
+                LOG.info("All stop signals are detected");
+//                LOG.info("All stop signals are detected, posted clusters: " + esPostClusters);
+//                LOG.info("All stop signals are detected, posted events: " + esPostEvents);
             }
 //            LOG.info("Thread " + thread_Id + " is posting stop signal " + outBid);
         }
-        else {
-            esPostCount.incrementAndGet();
-            esPostClusters.add(Integer.parseInt(event.getClusterID()));
-        }
-        esPostEvents.add(outBid);
+//        else {
+//            esPostCount.incrementAndGet();
+//            esPostClusters.add(Integer.parseInt(event.getClusterID()));
+//        }
+//        esPostEvents.add(outBid);
 
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, event.getTimestamp());
         Tuple tuple = new Tuple(outBid, 0, context, generalMsg);

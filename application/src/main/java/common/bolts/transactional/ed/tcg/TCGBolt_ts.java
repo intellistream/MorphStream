@@ -114,15 +114,16 @@ public class TCGBolt_ts extends TCGBolt {
             TCEvent event = tweetEventMap.get(tweetID);
             Boolean isBurst = tweetBurstMap.get(tweetID);
 
-            tweetEventMap.remove(tweetID);
-            tweetBurstMap.remove(tweetID); //TODO: Improve this to make it faster
+//            tweetEventMap.remove(tweetID);
+//            tweetBurstMap.remove(tweetID); //TODO: Improve this to make it faster
 
-            if (isBurst == null || event == null) {
+            if (isBurst != null && event != null) {
+                TC_GATE_REQUEST_POST(event, isBurst);
+            } else {
                 LOG.info("TCG error detected");
 //                throw new NoSuchElementException();
-            } else {
-                TC_GATE_REQUEST_POST(event, isBurst);
             }
+
         }
 
     }

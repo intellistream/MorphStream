@@ -108,9 +108,7 @@ public class WUBolt extends TransactionalBolt {
             outEvent.word = event.getWord(); //for testing
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
-
 //            LOG.info("Thread " + thread_Id + " posting event: " + event.getBid());
-
             collector.emit(outBid, tuple);//tuple should be the input of next bolt's execute() method
 //            LOG.info("Threads " + thread_Id + " posted event count: " + threadPostCount.incrementAndGet());
 

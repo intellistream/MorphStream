@@ -89,9 +89,7 @@ public abstract class TRBolt extends TransactionalBolt {
                 WUEvent outEvent = new WUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(),
                         word, wordID, tweetID);
                 Tuple tuple = new Tuple(outBid, 0, context, new GeneralMsg<>(DEFAULT_STREAM_ID, outEvent, event.getTimestamp()));
-
 //                LOG.info("Thread " + thread_Id + " posting event: " + event.getBid());
-
                 if (!enable_app_combo) {
                     collector.emit(outBid, tuple);
 //                LOG.info("Threads " + thread_Id + " posted event count: " + threadPostCount.incrementAndGet());
@@ -124,7 +122,6 @@ public abstract class TRBolt extends TransactionalBolt {
                     "Stop", "Stop", tweetID);
             GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
             Tuple tuple = new Tuple(outBid, 0, context, generalMsg);
-
 //            LOG.info("Thread " + thread_Id + " sending stop signal: " + outBid);
 
             if (!enable_app_combo) {

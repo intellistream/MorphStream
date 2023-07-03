@@ -22,10 +22,10 @@ import static profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public class SCBolt extends TransactionalBolt {
     SINKCombo sink;
-    static AtomicInteger scPostCount = new AtomicInteger(0);
+//    static AtomicInteger scPostCount = new AtomicInteger(0);
     static AtomicInteger scStopCount = new AtomicInteger(0);
-    static ConcurrentSkipListSet<Integer> scPostTweets = new ConcurrentSkipListSet<>();
-    static ConcurrentSkipListSet<Double> scPostEvents = new ConcurrentSkipListSet<>();
+//    static ConcurrentSkipListSet<Integer> scPostTweets = new ConcurrentSkipListSet<>();
+//    static ConcurrentSkipListSet<Double> scPostEvents = new ConcurrentSkipListSet<>();
 
 
     public SCBolt(Logger log, int fid, SINKCombo sink) {
@@ -46,19 +46,13 @@ public class SCBolt extends TransactionalBolt {
 
     //Used in: nocc //TODO: Add version control
     protected void SIMILARITY_CALCULATE_REQUEST_CORE(SCEvent event) {
-
 //        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         AppConfig.randomDelay();
-
-
-
 //        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
     //Handling the CORE method as in TCBolt_ts, pass updated record to event
-    protected void CORE_PROCESS() {
-
-    }
+    protected void CORE_PROCESS() {}
 
     //post stream processing phase.. nocc,
     protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
@@ -81,16 +75,16 @@ public class SCBolt extends TransactionalBolt {
         if (outBid >= total_events) { //Label stopping signals, for testing
             targetClusterID = "Stop";
             if (scStopCount.incrementAndGet() == tthread*tthread) {
-                LOG.info("All stop signals are detected, posted tweets: " + scPostTweets);
-                LOG.info("All stop signals are detected, posted events: " + scPostEvents);
+//                LOG.info("All stop signals are detected, posted tweets: " + scPostTweets);
+//                LOG.info("All stop signals are detected, posted events: " + scPostEvents);
             }
 //            LOG.info("Thread " + thread_Id + " is posting stop signal " + outBid);
         }
-        else {
-            scPostCount.incrementAndGet();
-            scPostTweets.add(Integer.parseInt(tweetID));
-        }
-        scPostEvents.add(outBid);
+//        else {
+//            scPostCount.incrementAndGet();
+//            scPostTweets.add(Integer.parseInt(tweetID));
+//        }
+//        scPostEvents.add(outBid);
 
         if (targetClusterID == null) { //SC fail to find the most similar cluster
             throw new NullPointerException();
@@ -99,7 +93,6 @@ public class SCBolt extends TransactionalBolt {
         CUEvent outEvent = new CUEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), tweetID, targetClusterID);
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
         Tuple tuple = new Tuple(outEvent.getMyBid(), 0, context, generalMsg);
-
 //        LOG.info("Thread " + thread_Id + " is posting event: " + outBid);
 
         if (!enable_app_combo) {

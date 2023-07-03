@@ -18,7 +18,7 @@ import static common.Constants.DEFAULT_STREAM_ID;
 
 public class CUBolt extends TransactionalBolt {
     SINKCombo sink;
-    static AtomicInteger cuPostCount = new AtomicInteger(0);
+//    static AtomicInteger cuPostCount = new AtomicInteger(0);
     static AtomicInteger cuStopCount = new AtomicInteger(0);
     static ConcurrentSkipListSet<Integer> cuPostTweets = new ConcurrentSkipListSet<>();
     static ConcurrentSkipListSet<Double> cuPostEvents = new ConcurrentSkipListSet<>();
@@ -41,21 +41,21 @@ public class CUBolt extends TransactionalBolt {
 
         if (outBid >= total_events) { //Label stopping signals
             if (cuStopCount.incrementAndGet() == tthread*tthread) {
-                LOG.info("All stop signals are detected, posted tweets: " + cuPostTweets);
-                LOG.info("All stop signals are detected, posted events: " + cuPostEvents);
+                LOG.info("All stop signals are detected");
+//                LOG.info("All stop signals are detected, posted tweets: " + cuPostTweets);
+//                LOG.info("All stop signals are detected, posted events: " + cuPostEvents);
             }
 //            LOG.info("Thread " + thread_Id + " is posting stop signal " + outBid);
         }
-        else {
-            cuPostCount.incrementAndGet();
-            cuPostTweets.add(Integer.parseInt(event.getTweetID()));
-        }
-        cuPostEvents.add(outBid);
+//        else {
+//            cuPostCount.incrementAndGet();
+//            cuPostTweets.add(Integer.parseInt(event.getTweetID()));
+//        }
+//        cuPostEvents.add(outBid);
 
         ESEvent outEvent = new ESEvent(outBid, event.getMyPid(), event.getMyBidArray(), event.getMyPartitionIndex(), event.getMyNumberOfPartitions(), updatedClusterID);
         GeneralMsg generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, outEvent, event.getTimestamp());
         Tuple tuple = new Tuple(outEvent.getMyBid(), 0, context, generalMsg);
-
 //        LOG.info("Posting event: " + outBid);
 
         if (!enable_app_combo) {
