@@ -200,11 +200,10 @@ public class OGBFSAScheduler extends AbstractOGBFSScheduler<OGSAContext> {
     protected void ResumeExecution(OGSAContext context) {
         context.rollbackLevel = -1;
         context.isRollbacked = false;
-//        if (context.thisThreadId == 0) { // TODO: what should we do to optimize this part?
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling.compareAndSet(true, false)) {
             failedOperations.clear();
         }
-//        }
         if (enable_log) LOG.debug("+++++++ rollback completed...");
     }
 
