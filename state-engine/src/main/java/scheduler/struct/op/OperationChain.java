@@ -53,20 +53,21 @@ public class OperationChain implements Comparable<OperationChain> {
     public void updateDependencies() {
         Operation prevOperation = null;
         List<Operation> parentOperations = new ArrayList<>();
+        List<Operation> nonDeterministicOperations = new ArrayList<>();
         for (Operation curOperation : operationWithVirtual) {
             if (prevOperation != null) {
                 if (curOperation.isNonDeterministicOperation) {
                     updateNonDependencies(curOperation, parentOperations, prevOperation);
-                    prevOperation = curOperation;
+                    nonDeterministicOperations.add(curOperation);
                 } else if (!curOperation.pKey.equals(this.primaryKey)){
                     updateFDDependencies(curOperation, parentOperations, prevOperation);
                 } else {
-                    updateTDDependencies(curOperation, parentOperations, prevOperation);
-                    if (curOperation.pKey.equals(this.primaryKey) || curOperation.isNonDeterministicOperation)
-                        prevOperation = curOperation;
+                    updateTDDependencies(curOperation, parentOperations, prevOperation, nonDeterministicOperations);
+                    prevOperation = curOperation;
                 }
             } else {
-                prevOperation = curOperation;
+                if (curOperation.pKey.equals(this.primaryKey) || curOperation.isNonDeterministicOperation)
+                    prevOperation = curOperation;
             }
         }
     }
@@ -79,16 +80,24 @@ public class OperationChain implements Comparable<OperationChain> {
         childOperation.addParent(parentOperation, dependencyType);
         parentOperation.addChild(childOperation, dependencyType);
     }
-    public void updateTDDependencies(Operation childOperation, List<Operation> parentOperations, Operation prevOperation) {
-        parentOperations.add(prevOperation);
+    public void updateTDDependencies(Operation childOperation, List<Operation> parentOperations, Operation prevOperation, List<Operation> nonDeterministicOperations) {
         // if operations are in the same transaction, i.e. have the same bid,
         // add the temporal dependency parent of the prevOperation i.e. all operations with the same bid have the same temporal dependent parent
         if (childOperation.bid != prevOperation.bid) {
-            for (Operation parentOperation : parentOperations) {
-                updateDependencies(childOperation, parentOperation, DependencyType.TD);
+            if (nonDeterministicOperations.size() > 0) {
+                for (Operation nonDeterministicOperation : nonDeterministicOperations) {
+                    updateDependencies(childOperation, nonDeterministicOperation, DependencyType.TD);
+                }
+                nonDeterministicOperations.clear();
+            } else {
+                parentOperations.add(prevOperation);
+                for (Operation parentOperation : parentOperations) {
+                    updateDependencies(childOperation, parentOperation, DependencyType.TD);
+                }
+                parentOperations.clear();
             }
-            parentOperations.clear();
         } else {
+            parentOperations.add(prevOperation);
             Queue<Operation> prevParentOperations = prevOperation.getParents(DependencyType.TD);
             for (Operation prevParentOperation : prevParentOperations) {
                 updateDependencies(childOperation, prevParentOperation, DependencyType.TD);
@@ -103,17 +112,13 @@ public class OperationChain implements Comparable<OperationChain> {
         parentOperations.clear();
     }
     public void updateNonDependencies(Operation childOperation, List<Operation> parentOperations, Operation prevOperation) {
-        parentOperations.add(prevOperation);
-        if (childOperation.bid != prevOperation.bid) {
-            for (Operation parentOperation : parentOperations) {
-                updateDependencies(childOperation, parentOperation, DependencyType.FD);
-            }
-            parentOperations.clear();
-        } else {
-            Queue<Operation> prevParentOperations = prevOperation.getParents(DependencyType.FD);
-            for (Operation prevParentOperation : prevParentOperations) {
-                updateDependencies(childOperation, prevParentOperation, DependencyType.FD);
-
+        if (prevOperation != null) {
+            parentOperations.add(prevOperation);
+            if (childOperation.bid != prevOperation.bid) {
+                for (Operation parentOperation : parentOperations) {
+                    updateDependencies(childOperation, parentOperation, DependencyType.FD);
+                }
+                parentOperations.clear();
             }
         }
     }
