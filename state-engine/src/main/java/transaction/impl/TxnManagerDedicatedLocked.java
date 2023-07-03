@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import scheduler.context.og.OGSchedulerContext;
-import stage.Stage;
 import storage.*;
 import storage.datatype.DataBox;
 import transaction.TxnManager;
@@ -40,8 +39,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     private long local_epoch_;
     private long local_ts_;
 
-    public TxnManagerDedicatedLocked(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
-        super(stage);
+    public TxnManagerDedicatedLocked(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
         this.storageManager_ = storageManager;
         this.thisComponentId = thisComponentId;
         thread_id_ = thisTaskId;
@@ -84,7 +82,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
         return commit_ts;
     }
 
-    public void start_evaluate(int taskId, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
+    public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
 
@@ -101,20 +99,6 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
-
-    @Override //Add by zhonghao
-    public void InsertNewRecord(String table_name, String key, SchemaRecord record) throws DatabaseException {
-//        AccessType type = AccessType.INSERT_ONLY;
-        if (storageManager_.getTable(table_name).SelectKeyRecord(key) == null) { //Only insert if no existing record matching with input primary_key
-            TableRecord tableRecord = new TableRecord(record);
-            storageManager_.InsertRecord(table_name, tableRecord);
-        }
-    }
-
-    @Override
-    public boolean Asy_ModifyRecord_Iteration(TxnContext txn_context, String srcTable, String key, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success, String operator_name) throws DatabaseException {
-        return false;
-    }
 
     public boolean SelectKeyRecord(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
@@ -209,62 +193,67 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
 
     // Those should not be used by dedicated locked txn manager.
     @Override
-    public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, double[] enqueue_time, String operator_name) throws DatabaseException {
+    public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ReadRecords(TxnContext txn_context, String srcTable, String key, TableRecordRef record_ref, double[] enqueue_time, String operator_name) throws DatabaseException {
+    public boolean Asy_ReadRecords(TxnContext txn_context, String srcTable, String key, TableRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String key, List<DataBox> value, double[] enqueue_time, String operator_name) throws DatabaseException {
+    public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String key, List<DataBox> value, double[] enqueue_time) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_WriteRecord(TxnContext txn_context, String table, String id, long value, int column_id, String operator_name) throws DatabaseException {
+    public boolean Asy_WriteRecord(TxnContext txn_context, String table, String id, long value, int column_id) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function, int column_id, String operator_name) throws DatabaseException {
+    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function, int column_id) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, String operator_name) throws DatabaseException {
+    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String operator_name) throws DatabaseException {
+    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, Condition condition, int[] success, String operator_name) throws DatabaseException {
+    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, Condition condition, int[] success) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, Condition condition, int[] success, String operator_name) throws DatabaseException {
+    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, Condition condition, int[] success) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success, String operator_name) throws DatabaseException {
+    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success, String operator_name) throws DatabaseException {
+    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, Condition condition, int[] success) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ModifyRecord_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, int[] success, String operator_name) throws DatabaseException {
+    public boolean Asy_ModifyRecord_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean Asy_WindowReadRecords(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 

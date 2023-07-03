@@ -43,7 +43,7 @@ public abstract class helper {
     int checkPoint;
     boolean need_warm_up;
     boolean print_pid;
-    private double previous_bid = 0;
+    private long previous_bid = 0;
     private int local_index_e;
 
     public helper(int runtime, double predict, int size, String metric_path, int thisTaskId) {
@@ -84,7 +84,7 @@ public abstract class helper {
         return ((double) (cnt) * 1E6 / time_elapsed);//count/ns * 1E6 --> EVENTS/ms
     }
 
-    double Measurement(String sourceComponent, double bid) {
+    double Measurement(String sourceComponent, long bid) {
         local_index_e++;
 //        current_bid = Math.max(current_bid, bid);
         end = System.nanoTime();
@@ -239,7 +239,7 @@ public abstract class helper {
         }
     }
 
-    public abstract double execute(double bid);
+    public abstract double execute(long bid);
 
     public double execute() {
         return execute(0);

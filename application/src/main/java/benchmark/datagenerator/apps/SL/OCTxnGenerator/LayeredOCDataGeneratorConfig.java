@@ -19,6 +19,7 @@ public class LayeredOCDataGeneratorConfig extends DataGeneratorConfig {
     private float[] dependenciesDistributionForLevels;
 
 
+
     @Override
     public void initialize(Configuration config) {
         super.initialize(config);

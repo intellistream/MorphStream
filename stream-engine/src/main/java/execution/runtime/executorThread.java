@@ -152,24 +152,9 @@ public abstract class executorThread extends Thread {
         end_emit = System.nanoTime();
     }
 
-    void routing_with_index(int index) throws InterruptedException, DatabaseException, BrokenBarrierException {
-//        int s = 0;
-        if (start) {
-            cnt = 0;
-            start_emit = System.nanoTime();
-            start = false;
-        }
-        while (running) {
-            _execute_with_index(index);
-        }
-        end_emit = System.nanoTime();
-    }
-
     protected abstract void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException;
 
     protected abstract void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException;
-
-    protected abstract void _execute_with_index(int index) throws InterruptedException, DatabaseException, BrokenBarrierException;
 
     public int getExecutorID() {
         return executor.getExecutorID();

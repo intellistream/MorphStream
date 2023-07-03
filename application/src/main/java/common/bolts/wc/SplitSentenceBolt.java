@@ -4,7 +4,7 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.constants.WordCountConstants.Field;
-import components.operators.base.SplitBolt;
+import components.operators.base.splitBolt;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Fields;
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 
 //import static Brisk.utils.Utils.printAddresses;
-public class SplitSentenceBolt extends SplitBolt {
+public class SplitSentenceBolt extends splitBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SplitSentenceBolt.class);
     private static final long serialVersionUID = 8089145995668583749L;
     String regex = "[\\s,]+";

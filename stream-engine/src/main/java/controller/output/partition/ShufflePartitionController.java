@@ -76,7 +76,7 @@ public class ShufflePartitionController extends PartitionController {
      * @return
      */
     @Override
-    public int emit(Meta meta, String streamId, double bid, Object... output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, Object... output) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -86,7 +86,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, Object output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, Object output) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -96,7 +96,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int force_emit(Meta meta, String streamId, double bid, Object... output) throws InterruptedException {
+    public int force_emit(Meta meta, String streamId, long bid, Object... output) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -116,7 +116,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int force_emit(Meta meta, String streamId, double bid, char[] output) throws InterruptedException {
+    public int force_emit(Meta meta, String streamId, long bid, char[] output) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -126,7 +126,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int force_emit(Meta meta, String streamId, double bid, StreamValues output) throws InterruptedException {
+    public int force_emit(Meta meta, String streamId, long bid, StreamValues output) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -136,7 +136,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, StreamValues output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, StreamValues output) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -146,7 +146,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -156,7 +156,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, char[] output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, char[] output) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -166,7 +166,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, char[] key, long value) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, char[] key, long value) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -186,7 +186,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, char[] key, long value, double bid, long TimeStamp) throws InterruptedException {
+    public int emit(Meta meta, String streamId, char[] key, long value, long bid, long TimeStamp) throws InterruptedException {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -206,7 +206,7 @@ public class ShufflePartitionController extends PartitionController {
      * @return
      */
     @Override
-    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, Object... tuple) {
+    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, Object... tuple) {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -216,7 +216,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, char[] tuple) {
+    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, char[] tuple) {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -226,7 +226,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, StreamValues tuple) {
+    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }
@@ -236,7 +236,7 @@ public class ShufflePartitionController extends PartitionController {
     }
 
     @Override
-    public int emit_inorder_single(Meta meta, String streamId, double bid, LinkedList<Long> gap, StreamValues tuple) {
+    public int emit_inorder_single(Meta meta, String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) {
         if (meta.index == extendedTargetId.size()) {
             meta.index = 0;
         }

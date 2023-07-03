@@ -33,7 +33,7 @@ public class TransactionEvent extends TxnEvent {
     /**
      * Creates a new TransactionEvent for the given accounts and book entries.
      */
-    public TransactionEvent(double bid, int partition_id, String bid_array, String partition_index,
+    public TransactionEvent(int bid, int partition_id, String bid_array, String partition_index,
                             int num_of_partition,
                             String sourceAccountId,
                             String sourceBookEntryId,
@@ -96,7 +96,7 @@ public class TransactionEvent extends TxnEvent {
     }
 
     public TransactionEvent cloneEvent() {
-        return new TransactionEvent(bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, sourceAccountId, sourceBookEntryId, targetAccountId, targetBookEntryId, accountTransfer, bookEntryTransfer);
+        return new TransactionEvent((int) bid, pid, Arrays.toString(bid_array), Arrays.toString(partition_indexs), number_of_partitions, sourceAccountId, sourceBookEntryId, targetAccountId, targetBookEntryId, accountTransfer, bookEntryTransfer);
     }
 
     // ------------------------------------------------------------------------

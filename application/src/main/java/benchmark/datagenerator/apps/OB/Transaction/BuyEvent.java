@@ -10,7 +10,6 @@ public class BuyEvent extends Event {
     private final int id;
     private final int key;
     private final boolean isAbort;
-
     public BuyEvent(int id, int key, boolean isAbort) {
         this.id = id;
         this.key = key;

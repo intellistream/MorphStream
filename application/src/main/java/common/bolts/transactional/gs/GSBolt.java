@@ -31,7 +31,7 @@ public abstract class GSBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
 
     protected boolean READ_CORE(MicroEvent event) {
@@ -67,7 +67,7 @@ public abstract class GSBolt extends TransactionalBolt {
                 collector.emit(event.getBid(), sum, event.getTimestamp());//the tuple is finished finally.
             } else {
                 if (enable_latency_measurement) {
-                    sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, sum, event.getTimestamp())));//(double bid, int sourceId, TopologyContext context, Message message)
+                    sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, sum, event.getTimestamp())));//(long bid, int sourceId, TopologyContext context, Message message)
                 }
             }
         }
@@ -79,7 +79,7 @@ public abstract class GSBolt extends TransactionalBolt {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {
             if (enable_latency_measurement) {
-                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));//(double bid, int sourceId, TopologyContext context, Message message)
+                sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, true, event.getTimestamp())));//(long bid, int sourceId, TopologyContext context, Message message)
             }
         }
     }
@@ -158,17 +158,17 @@ public abstract class GSBolt extends TransactionalBolt {
     }
 
     //lock_ratio-ahead phase.
-    protected void LAL_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+    protected void LAL_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         //ONLY USED BY LAL, LWM, and PAT.
     }
 
     //post stream processing phase..
-    protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
+    protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
-        for (double i = _bid; i < _bid + combo_bid_size; i++) {
+        for (long i = _bid; i < _bid + combo_bid_size; i++) {
             MicroEvent event = (MicroEvent) input_event;
             (event).setTimestamp(timestamp);
-            boolean flag = event.READ_EVENT();
+            boolean flag = event.ABORT_EVENT();
             if (flag) {//read
                 READ_POST(event);
             } else {

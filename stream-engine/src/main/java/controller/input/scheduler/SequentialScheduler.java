@@ -58,17 +58,6 @@ public class SequentialScheduler extends InputStreamController {
         if (current == size) {
             current = 0;
         }
-//        if (LQ.size() == 1) {
-//            System.out.println("LQ size is greater than 1.");
-//        }
         return fetchFromqueue(LQ.get(current++));
-    }
-
-    @Override
-    public Object fetchResultsIndex(int index) {
-        if (current == size) {
-            current = 0;
-        }
-        return fetchFromQueue(LQ.get(current++), index);
     }
 }

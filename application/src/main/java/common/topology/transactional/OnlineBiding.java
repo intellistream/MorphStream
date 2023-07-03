@@ -21,6 +21,7 @@ import transaction.TableInitilizer;
 import static common.CONTROL.enable_app_combo;
 import static common.constants.OnlineBidingSystemConstants.Conf.OB_THREADS;
 import static common.constants.OnlineBidingSystemConstants.PREFIX;
+import static profiler.Metrics.NUM_ITEMS;
 import static utils.PartitionHelper.setPartition_interval;
 
 /**
@@ -39,7 +40,7 @@ public class OnlineBiding extends TransactionTopology {
         int tthread = config.getInt("tthread");
         int numberOfStates = config.getInt("NUM_ITEMS");
         setPartition_interval((int) (Math.ceil(numberOfStates / (double) tthread)), tthread);
-        TableInitilizer ini = new OBInitializer(db, numberOfStates, theta, tthread, config);
+        TableInitilizer ini = new OBInitializer(db,numberOfStates, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)

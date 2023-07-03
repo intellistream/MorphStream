@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.context.op.OPSContext;
 import scheduler.struct.op.Operation;
+import utils.SOURCE_CONTROL;
 
 public class OPBFSScheduler<Context extends OPSContext> extends OPSScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OPBFSScheduler.class);
@@ -26,7 +27,7 @@ public class OPBFSScheduler<Context extends OPSContext> extends OPSScheduler<Con
     public void EXPLORE(Context context) {
         Operation next = Next(context);
         while (next == null && !context.finished()) {
-            context.waitForOtherThreads(context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             ProcessedToNextLevel(context);
             next = Next(context);
         }

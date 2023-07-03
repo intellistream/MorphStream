@@ -42,8 +42,15 @@ public class TopologySubmitter {
             Metrics.NUM_ITEMS = conf.getInt("NUM_ITEMS");
             Metrics.H2_SIZE = Metrics.NUM_ITEMS / conf.getInt("tthread");
         }
+
+
+        // Validity check of the config
+        assert conf.getInt("totalEvents") / (conf.getInt("checkpoint") * conf.getInt("tthread")) >= 1
+                && conf.getInt("totalEvents") % (conf.getInt("checkpoint") * conf.getInt("tthread")) == 0;
+
         // initialize AppConfig
         AppConfig.complexity = conf.getInt("complexity", 100000);
+        AppConfig.windowSize = conf.getInt("windowSize", 1024);
         AppConfig.isCyclic = conf.getBoolean("isCyclic", true);
         //launch
         OM = new OptimizationManager(g, conf);//support different kinds of optimization module.

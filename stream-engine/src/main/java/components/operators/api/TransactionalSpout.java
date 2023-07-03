@@ -1,5 +1,6 @@
 package components.operators.api;
 
+import common.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +16,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
     public transient BufferedWriter writer;
     public int taskId;
     public int ccOption;
-    public double bid = 0;//local bid.
+    public long bid = 0;//local bid.
     public int empty = 0;//execute without emit.
 
     protected TransactionalSpout(Logger log, int fid) {

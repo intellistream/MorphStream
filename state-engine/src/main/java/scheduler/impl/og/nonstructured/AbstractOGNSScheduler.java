@@ -44,8 +44,7 @@ public abstract class AbstractOGNSScheduler<Context extends AbstractOGNSContext>
 
     /**
      * Used by OGNSScheduler.
-     *
-     * @param context
+     *  @param context
      * @param operationChain
      * @param mark_ID
      * @return

@@ -7,6 +7,7 @@ import scheduler.context.op.OPSContext;
 import scheduler.impl.op.OPScheduler;
 import scheduler.struct.op.MetaTypes;
 import scheduler.struct.op.Operation;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 
@@ -23,18 +24,18 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
 
     @Override
     public void INITIALIZE(Context context) {
-        needAbortHandling = false;//reset needAbortHandling here
         tpg.firstTimeExploreTPG(context);
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(Context context) {
-        tpg.secondTimeExploreTPG(context);//Do not need to reset needAbortHandling here, as lazy approach only handles abort once for one batch.
-        context.waitForOtherThreads(context.thisThreadId);
+        needAbortHandling = false;
+        tpg.secondTimeExploreTPG(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     @Override
-    public void start_evaluation(Context context, double mark_ID, int num_events) {
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
 
         INITIALIZE(context);
@@ -43,7 +44,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
             EXPLORE(context);
             PROCESS(context, mark_ID);
         } while (!FINISHED(context));
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");
@@ -79,7 +80,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
         Operation next = Next(context);
         if (next == null && !context.finished()) { //current level is all processed at the current thread.
             while (next == null) {
-                context.waitForOtherThreads(context.thisThreadId);
+                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
                 ProcessedToNextLevel(context);
                 next = Next(context);
             }
@@ -98,7 +99,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
     }
 
     @Override
-    public void PROCESS(Context context, double mark_ID) {
+    public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;

@@ -8,6 +8,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static scheduler.struct.OperationChainCommon.cleanUp;
+
 /**
  * We still call it OperationChain in TPG but with different representation
  * The OperationChain only tries to maintain a data structure for the ease of temporal dependencies construction.
@@ -15,12 +17,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class OperationChain implements Comparable<OperationChain> {
     public final String tableName;
     public final String primaryKey;
-    public final double bid;
+    public final long bid;
+    protected final MyList<Operation> operations;
     public final AtomicInteger ocParentsCount;
     // OperationChain -> ChildOp that depend on the parent OC in cur OC
     public final ConcurrentHashMap<OperationChain, Operation> ocParents;
     public final ConcurrentHashMap<OperationChain, Operation> ocChildren;
-    protected final MyList<Operation> operations;
     private final ConcurrentLinkedQueue<PotentialChildrenInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
     public boolean isExecuted = false;
 
@@ -36,7 +38,7 @@ public class OperationChain implements Comparable<OperationChain> {
 
 //    private final HashSet<OperationChain> scanedOCs = new HashSet<>();
 
-    public OperationChain(String tableName, String primaryKey, double bid) {
+    public OperationChain(String tableName, String primaryKey, long bid) {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
         this.bid = bid;
@@ -257,10 +259,27 @@ public class OperationChain implements Comparable<OperationChain> {
         ocParentsCount.set(ocParents.size());
     }
 
+    public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {
+        public OperationChain potentialChildOC;
+        public Operation childOp;
+
+        public PotentialChildrenInfo(OperationChain oc, Operation op) {
+            this.potentialChildOC = oc;
+            this.childOp = op;
+        }
+
+        @Override
+        public int compareTo(PotentialChildrenInfo o) {
+            return Long.compare(this.childOp.bid, o.childOp.bid);
+        }
+    }
+
     public void clear() {
         potentialChldrenInfo.clear();
         if (operations.size() != 0) {
-//            operations.first().d_record.content_.clean_map(); //Disabled GC for ED
+            if (cleanUp) {
+                operations.first().d_record.content_.clean_map();
+            }
             operations.clear();
         }
         ocParents.clear();
@@ -316,20 +335,5 @@ public class OperationChain implements Comparable<OperationChain> {
             }
         }
         isDependencyLevelCalculated = true;
-    }
-
-    public class PotentialChildrenInfo implements Comparable<PotentialChildrenInfo> {
-        public OperationChain potentialChildOC;
-        public Operation childOp;
-
-        public PotentialChildrenInfo(OperationChain oc, Operation op) {
-            this.potentialChildOC = oc;
-            this.childOp = op;
-        }
-
-        @Override
-        public int compareTo(PotentialChildrenInfo o) {
-            return Double.compare(this.childOp.bid, o.childOp.bid);
-        }
     }
 }

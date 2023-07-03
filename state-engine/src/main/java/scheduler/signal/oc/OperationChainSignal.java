@@ -1,6 +1,7 @@
 package scheduler.signal.oc;
 
 import scheduler.signal.NotificationSignal;
+import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 
 public abstract class OperationChainSignal implements NotificationSignal {

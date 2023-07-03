@@ -6,6 +6,7 @@ import scheduler.context.og.OGSAContext;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -158,7 +159,7 @@ public class OGDFSAScheduler extends AbstractOGDFSScheduler<OGSAContext> {
      * @return
      */
     private boolean _MarkOperationsToAbort(OGSAContext context, Operation operation) {
-        double bid = operation.bid;
+        long bid = operation.bid;
         boolean markAny = false;
         //identify bids to be aborted.
         for (Operation failedOp : failedOperations) {
@@ -174,7 +175,7 @@ public class OGDFSAScheduler extends AbstractOGDFSScheduler<OGSAContext> {
         context.rollbackLevel = -1;
         context.isRollbacked = false;
 
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         needAbortHandling.compareAndSet(true, false);
         failedOperations.clear();
         LOG.debug("resume: " + context.thisThreadId);

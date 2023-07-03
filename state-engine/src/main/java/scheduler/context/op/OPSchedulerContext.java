@@ -5,13 +5,11 @@ import scheduler.context.SchedulerContext;
 import scheduler.statemanager.op.OperationStateListener;
 import scheduler.struct.op.Operation;
 import scheduler.struct.op.OperationChain;
-import stage.Stage;
 
 import java.util.ArrayDeque;
 
 public abstract class OPSchedulerContext implements SchedulerContext {
     public final ArrayDeque<Operation> batchedOperations;
-    private final Stage stage;
     public int thisThreadId;
     public ArrayDeque<Request> requests;
     public int scheduledOPs;//current number of operations processed per thread.
@@ -19,9 +17,8 @@ public abstract class OPSchedulerContext implements SchedulerContext {
     public ArrayDeque<Operation> operations = new ArrayDeque<>();
     public int fd = 0;
 
-    protected OPSchedulerContext(int thisThreadId, Stage stage) {
+    protected OPSchedulerContext(int thisThreadId) {
         this.thisThreadId = thisThreadId;
-        this.stage = stage;
         requests = new ArrayDeque<>();
         batchedOperations = new ArrayDeque<>();
     }
@@ -54,9 +51,5 @@ public abstract class OPSchedulerContext implements SchedulerContext {
 
     public OperationStateListener getListener() {
         throw new UnsupportedOperationException();
-    }
-
-    public void waitForOtherThreads(int thisThreadId) {
-        stage.getControl().waitForOtherThreads(thisThreadId);
     }
 }

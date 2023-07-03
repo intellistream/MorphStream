@@ -2,7 +2,6 @@ package scheduler.context.og;
 
 import scheduler.statemanager.og.OperationChainStateListener;
 import scheduler.struct.og.OperationChain;
-import stage.Stage;
 
 import java.util.ArrayDeque;
 
@@ -14,8 +13,8 @@ public abstract class AbstractOGNSContext extends OGSchedulerContext {
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
-    public AbstractOGNSContext(int thisThreadId, Stage stage) {
-        super(thisThreadId, stage);
+    public AbstractOGNSContext(int thisThreadId) {
+        super(thisThreadId);
         IsolatedOC = new ArrayDeque<>();
         OCwithChildren = new ArrayDeque<>();
     }
@@ -41,7 +40,7 @@ public abstract class AbstractOGNSContext extends OGSchedulerContext {
     }
 
     @Override
-    public OperationChain createTask(String tableName, String pKey, double bid) {
+    public OperationChain createTask(String tableName, String pKey, long bid) {
         OperationChain oc = new OperationChain(tableName, pKey, bid);
         oc.setContext(this);
 //        operationChains.add(oc);

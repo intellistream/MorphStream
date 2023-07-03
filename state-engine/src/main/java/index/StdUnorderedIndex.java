@@ -19,9 +19,4 @@ public class StdUnorderedIndex extends BaseUnorderedIndex {
     public Iterator<TableRecord> iterator() {
         return null;
     }
-
-    @Override
-    public Iterator<String> primaryKeyIterator() {
-        return null;
-    }
 }

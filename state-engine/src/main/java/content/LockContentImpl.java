@@ -1,6 +1,5 @@
 package content;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import content.common.CommonMetaTypes;
 import lock.OrderLock;
 import lock.RWLock;
@@ -9,6 +8,9 @@ import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import transaction.context.TxnContext;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * #elif defined(LOCK) || defined(OCC) || defined(SILO) || defined(ST)
  * LockContentImpl content_;
@@ -16,7 +18,7 @@ import transaction.context.TxnContext;
 public class LockContentImpl extends LockContent {
     public final static String LOCK_CONTENT = "LOCK_CONTENT";
     private static final Logger LOG = LoggerFactory.getLogger(LockContentImpl.class);
-    AtomicDouble timestamp_ = new AtomicDouble(0);
+    AtomicLong timestamp_ = new AtomicLong(0);
     RWLock lock_ = new RWLock();
 
     //used by non-blocking lock_ratio.
@@ -55,27 +57,12 @@ public class LockContentImpl extends LockContent {
     }
 
     @Override
-    public SchemaRecord readCurrValues(long ts) {
-        return null;
-    }
-
-    @Override
-    public SchemaRecord readPastValues(long ts) {
-        return null;
-    }
-
-    @Override
-    public SchemaRecord readPastValues(long ts, long min_ts) {
-        return null;
-    }
-
-    @Override
     public SchemaRecord readPreValues(long ts, long min_ts) {
         return null;
     }
 
     @Override
-    public SchemaRecord readPreRangeValues(long startTs, int range) {
+    public List<SchemaRecord> readPreValuesRange(long ts, long range) {
         return null;
     }
 
@@ -98,12 +85,12 @@ public class LockContentImpl extends LockContent {
     }
 
     @Override
-    public void SetTimestamp(double timestamp) {
+    public void SetTimestamp(long timestamp) {
         timestamp_.set(timestamp);
     }
 
     @Override
-    public double GetTimestamp() {
+    public long GetTimestamp() {
         return timestamp_.get();
     }
 

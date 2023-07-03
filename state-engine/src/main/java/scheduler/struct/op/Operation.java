@@ -27,46 +27,57 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Operation extends AbstractOperation implements Comparable<Operation> {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
     public final OPSchedulerContext context;
-    public final String pKey;
-    public final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance
+
     private final Deque<Operation> fd_concurrent_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
     private final Deque<Operation> fd_concurrent_parents; // the functional dependencies ops to be executed after this op.
+
     private final Deque<Operation> ld_descendant_operations;
     private final Deque<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
     private final Deque<Operation> td_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_spec_children; // speculative children to notify.
+    private final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance
     private final Deque<Operation> td_parents; // the functional dependencies ops to be executed in advance
     private final Deque<Operation> ld_parents; // the functional dependencies ops to be executed in advance
     private final OperationMetadata operationMetadata;
+    private OperationStateType operationState;
     // operation id under a transaction.
     // an operation id to indicate how many operations in front of this operation in the same transaction.
     public int txnOpId = 0;
     public boolean isFailed;
     public String name;
-    public String[] condition_sourceTable = null;
-    public String[] condition_source = null;
-    private OperationStateType operationState;
+
     // operation group the operation belongs to, it can be used for communication of operation groups.
     private AbstractOperation ld_head_operation;
+
     private boolean isDependencyLevelCalculated = false; // we only do this once before executing all OCs.
     private int dependencyLevel = -1;
 
+    public String[] condition_sourceTable = null;
+    public String[] condition_source = null;
+
     /****************************Defined by MYC*************************************/
 
-    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, double bid,
-                                                          CommonMetaTypes.AccessType accessType, String operator_name, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
-        this(pKey, context, table_name, txn_context, bid, accessType, operator_name, d_record, null, function, condition, condition_records, success);
+    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+                                                  CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
+        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success, null);
     }
 
     public <Context extends OPSchedulerContext> Operation(
-            String pKey, Context context, String table_name, TxnContext txn_context, double bid,
-            CommonMetaTypes.AccessType accessType, String operator_name, TableRecord record,
+            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+            CommonMetaTypes.AccessType accessType, TableRecord record,
             SchemaRecordRef record_ref, Function function, Condition condition,
             TableRecord[] condition_records, int[] success) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, operator_name, record, record, bid);
+        this(pKey, context, table_name, txn_context, bid, accessType, record, record_ref, function, condition, condition_records, success, null);
+    }
+
+    public <Context extends OPSchedulerContext> Operation(
+            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+            CommonMetaTypes.AccessType accessType, TableRecord record,
+            SchemaRecordRef record_ref, Function function, Condition condition,
+            TableRecord[] condition_records, int[] success, WindowDescriptor windowContext) {
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid, windowContext, pKey);
         this.context = context;
-        this.pKey = pKey;
 
         ld_head_operation = null;
         ld_descendant_operations = new ArrayDeque<>();
@@ -110,7 +121,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
             }
             return this.d_record.getID() - operation.d_record.getID();
         } else
-            return Double.compare(this.bid, operation.bid);
+            return Long.compare(this.bid, operation.bid);
     }
 
     @Override
@@ -118,12 +129,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         return bid + "|" + txnOpId + "|" + String.format("%-15s", this.getOperationState());
     }
 
-    public int getTxnOpId() {
-        return txnOpId;
-    }
-
     public void setTxnOpId(int op_id) {
         this.txnOpId = op_id;
+    }
+
+    public int getTxnOpId() {
+        return txnOpId;
     }
 
     public boolean isRoot() {
@@ -368,6 +379,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //        }
 //        isDependencyLevelCalculated = true;
 //    }
+
     public void layeredNotifyChildren() {
         for (Operation child : getChildren(DependencyType.TD)) {
             ((OPSContext) child.context).layerBuildHelperQueue
@@ -454,4 +466,5 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //            ld_countdown = 0; // countdown when executed
         }
     }
+
 }

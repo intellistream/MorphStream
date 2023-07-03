@@ -13,7 +13,7 @@ public interface TxnAccess {
         public TableRecord access_record_;
         public SchemaRecord local_record_;
         public String table_id_;
-        public double timestamp_;
+        public long timestamp_;
     }
 
     class AccessList {

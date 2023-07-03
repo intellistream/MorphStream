@@ -1,6 +1,7 @@
 package scheduler.impl.og.nonstructured;
 
 import scheduler.context.og.OGNSContext;
+import utils.SOURCE_CONTROL;
 
 public class TStreamScheduler extends OGNSScheduler {
 
@@ -17,12 +18,12 @@ public class TStreamScheduler extends OGNSScheduler {
 //        tpg.constructTPG(context);
         tpg.Explore(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     @Override
     public void REINITIALIZE(OGNSContext context) {
         tpg.ReExplore(context);
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 }

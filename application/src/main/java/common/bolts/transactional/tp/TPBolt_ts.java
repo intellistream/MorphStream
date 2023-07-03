@@ -50,8 +50,8 @@ public class TPBolt_ts extends TPBolt {
      * THIS IS ONLY USED BY TSTREAM.
      * IT CONSTRUCTS and POSTPONES TXNS.
      */
-    protected void PRE_TXN_PROCESS(double _bid, long timestamp) throws DatabaseException {
-        for (double i = _bid; i < _bid + combo_bid_size; i++) {
+    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException {
+        for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             LREvent event = (LREvent) input_event;
             (event).setTimestamp(timestamp);
@@ -67,14 +67,12 @@ public class TPBolt_ts extends TPBolt {
                 , String.valueOf(event.getPOSReport().getSegment())
                 , event.speed_value//holder to be filled up.
                 , new AVG(event.getPOSReport().getSpeed())
-                , "tp"
         );          //asynchronously return.
         transactionManager.Asy_ModifyRecord_Read(txnContext
                 , "segment_cnt"
                 , String.valueOf(event.getPOSReport().getSegment())
                 , event.count_value//holder to be filled up.
                 , new CNT(event.getPOSReport().getVid())
-                , "tp"
         );          //asynchronously return.
         LREvents.add(event);
     }
@@ -83,7 +81,7 @@ public class TPBolt_ts extends TPBolt {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
-                NUM_SEGMENTS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"), this.context.getStageMap().get(this.fid));
+                NUM_SEGMENTS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
     }
 
     @Override

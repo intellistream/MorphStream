@@ -18,8 +18,7 @@ import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
 import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
-import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
-import static profiler.MeasureTools.END_POST_TIME_MEASURE;
+import static profiler.MeasureTools.*;
 
 public abstract class SLBolt extends TransactionalBolt {
     SINKCombo sink;
@@ -31,7 +30,7 @@ public abstract class SLBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
 
     protected void DEPOSITE_REQUEST_NOLOCK(DepositEvent event, TxnContext txnContext) throws DatabaseException {
@@ -126,9 +125,9 @@ public abstract class SLBolt extends TransactionalBolt {
     }
 
     //post stream processing phase..
-    protected void POST_PROCESS(double _bid, long timestamp, int combo_bid_size) throws InterruptedException {
+    protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
-        for (double i = _bid; i < _bid + combo_bid_size; i++) {
+        for (long i = _bid; i < _bid + combo_bid_size; i++) {
             if (input_event instanceof DepositEvent) {
                 ((DepositEvent) input_event).setTimestamp(timestamp);
                 DEPOSITE_REQUEST_POST((DepositEvent) input_event);
@@ -160,6 +159,6 @@ public abstract class SLBolt extends TransactionalBolt {
         }
     }
 
-    protected void LAL_PROCESS(double _bid) throws InterruptedException, DatabaseException {
+    protected void LAL_PROCESS(long _bid) throws InterruptedException, DatabaseException {
     }
 }

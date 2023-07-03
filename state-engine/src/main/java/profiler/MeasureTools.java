@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
@@ -230,7 +232,6 @@ public class MeasureTools {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_CONSTRUCT(thread_id);
     }
-
     public static void BEGIN_SCHEDULER_SWITCH_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted())
             COMPUTE_SWITCH_START(thread_id);
@@ -405,10 +406,10 @@ public class MeasureTools {
                 f = new FileWriter(new File(file.getPath() + ".txt"));
                 Writer w = new BufferedWriter(f);
                 w.write("UsedMemory\n");
-                for (int i = 0; i < usedMemory.getValues().length; i++) {
+                for (int i = 0; i < usedMemory.getValues().length; i ++){
                     String output = String.format("%f\t" +
                                     "%-10.4f\t"
-                            , (float) i, usedMemory.getValues()[i]);
+                            , (float) i ,usedMemory.getValues()[i]);
                     w.write(output + "\n");
                 }
                 w.close();
@@ -428,14 +429,13 @@ public class MeasureTools {
             e.printStackTrace();
         }
     }
-
     private static void WriteThroughputReportRuntime(File file, int tthread, int phase, int shiftRate) {
         try {
             double[] tr = new double[Metrics.Runtime.ThroughputPerPhase.get(0).size()];
             //every punctuation
             for (int i = 0; i < tr.length; i++) {
                 tr[i] = 0;
-                for (int j = 0; j < tthread; j++) {
+                for (int j = 0; j < tthread; j++){
                     tr[i] = tr[i] + Metrics.Runtime.ThroughputPerPhase.get(j).get(i) * 1E6;//
                 }
             }
@@ -451,10 +451,10 @@ public class MeasureTools {
             StringBuilder stringBuilder = new StringBuilder();
             BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), APPEND);
             fileWriter.write("phase_id\t throughput\n");
-            for (int i = 0; i < tr_p.length; i++) {
+            for (int i = 0; i < tr_p.length; i++){
                 String output = String.format("%d\t" +
                                 "%-10.4f\t"
-                        , i, tr_p[i]
+                        , i,tr_p[i]
                 );
                 stringBuilder.append(output);
                 fileWriter.write(output + "\n");

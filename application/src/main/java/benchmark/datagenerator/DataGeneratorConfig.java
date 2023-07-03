@@ -1,6 +1,7 @@
 package benchmark.datagenerator;
 
 import common.collections.Configuration;
+import common.collections.OsUtils;
 
 public abstract class DataGeneratorConfig {
     private Integer totalEvents;
@@ -13,8 +14,13 @@ public abstract class DataGeneratorConfig {
 
     public void initialize(Configuration config) {
         this.setTotalEvents(config.getInt("totalEvents"));
-        this.setTotalThreads(config.getInt("tthread"));
+        if (config.getBoolean("multicoreEvaluation")) {
+            this.setTotalThreads(config.getInt("maxThreads"));
+        } else {
+            this.setTotalThreads(config.getInt("tthread"));
+        }
         this.setScheduler(config.getString("scheduler"));
+//        this.setRootPath(config.getString("rootFilePath") + OsUtils.OS_wrapper("inputs"));
         this.setRootPath(config.getString("rootFilePath"));
         this.setnKeyStates(config.getInt("NUM_ITEMS"));
         this.setIdsPath(this.getRootPath());

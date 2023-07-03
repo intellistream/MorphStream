@@ -12,12 +12,12 @@ public abstract class ToContent implements Content {
     }
 
     @Override
-    public void SetTimestamp(double timestamp) {
+    public void SetTimestamp(long timestamp) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public double GetTimestamp() {
+    public long GetTimestamp() {
         throw new UnsupportedOperationException();
     }
 
@@ -57,7 +57,7 @@ public abstract class ToContent implements Content {
     }
 
     @Override
-    public double GetLWM() {
+    public long GetLWM() {
         throw new UnsupportedOperationException();
     }
 

@@ -10,6 +10,9 @@ import transaction.impl.ordered.TxnManagerLWM;
 
 import java.util.Map;
 
+/**
+ * Combine Read-Write for TStream.
+ */
 public class TPBolt_lwm extends TPBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(TPBolt_lwm.class);
     private static final long serialVersionUID = -5968750340131744744L;
@@ -25,7 +28,7 @@ public class TPBolt_lwm extends TPBolt_LA {
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-
+//        prepareEvents();
         loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID()
                 , context.getGraph());
     }
@@ -34,6 +37,6 @@ public class TPBolt_lwm extends TPBolt_LA {
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerLWM(db.getStorageManager(),
-                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
+                this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
     }
 }

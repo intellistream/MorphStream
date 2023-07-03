@@ -1,18 +1,20 @@
 package content;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import content.common.CommonMetaTypes;
 import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class SStoreContentImpl extends SStoreContent {
     public final static String SSTORE_CONTENT = "SSTORE_CONTENT";
     private static final Logger LOG = LoggerFactory.getLogger(SStoreContentImpl.class);
     public final int pid;
     final SpinLock spinlock_;//Each partition has a spin lock.
-    AtomicDouble timestamp_ = new AtomicDouble(0);
+    AtomicLong timestamp_ = new AtomicLong(0);
 
     public SStoreContentImpl(SpinLock[] spinlock_, int pid) {
         this.pid = pid;
@@ -20,12 +22,12 @@ public class SStoreContentImpl extends SStoreContent {
     }
 
     @Override
-    public void SetTimestamp(double timestamp) {
+    public void SetTimestamp(long timestamp) {
         timestamp_.set(timestamp);
     }
 
     @Override
-    public double GetTimestamp() {
+    public long GetTimestamp() {
         return timestamp_.get();
     }
 
@@ -40,27 +42,12 @@ public class SStoreContentImpl extends SStoreContent {
     }
 
     @Override
-    public SchemaRecord readCurrValues(long ts) {
-        return null;
-    }
-
-    @Override
-    public SchemaRecord readPastValues(long ts) {
-        return null;
-    }
-
-    @Override
-    public SchemaRecord readPastValues(long ts, long min_ts) {
-        return null;
-    }
-
-    @Override
     public SchemaRecord readPreValues(long ts, long min_ts) {
         return null;
     }
 
     @Override
-    public SchemaRecord readPreRangeValues(long startTs, int range) {
+    public List<SchemaRecord> readPreValuesRange(long ts, long range) {
         return null;
     }
 

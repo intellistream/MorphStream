@@ -47,7 +47,7 @@ public abstract class TPBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
 
     protected void TXN_REQUEST_NOLOCK(LREvent event, TxnContext txnContext) throws DatabaseException {
@@ -108,9 +108,9 @@ public abstract class TPBolt extends TransactionalBolt {
     }
 
     @Override
-    protected void POST_PROCESS(double bid, long timestamp, int combo_bid_size) throws InterruptedException {
+    protected void POST_PROCESS(long bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
-        for (double i = _bid; i < _bid + combo_bid_size; i++) {
+        for (long i = _bid; i < _bid + combo_bid_size; i++) {
             LREvent event = (LREvent) input_event;
             ((LREvent) input_event).setTimestamp(timestamp);
             REQUEST_POST(event);

@@ -8,6 +8,7 @@ import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
 import transaction.impl.ordered.MyList;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 
@@ -24,15 +25,17 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
 
     @Override
     public void INITIALIZE(Context context) {
-        needAbortHandling = false;//reset needAbortHandling here
+        needAbortHandling = false;
         int threadId = context.thisThreadId;
+//        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
-        context.exploreTPGBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
+        SOURCE_CONTROL.getInstance().exploreTPGBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
 
     public void REINITIALIZE(Context context) {
-        tpg.secondTimeExploreTPG(context);//Do not need to reset needAbortHandling here, as lazy approach only handles abort once.
-        context.waitForOtherThreads(context.thisThreadId);
+        needAbortHandling = false;
+        tpg.secondTimeExploreTPG(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     protected void ProcessedToNextLevel(Context context) {
@@ -67,14 +70,14 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
 //    }
 
     @Override
-    public void start_evaluation(Context context, double mark_ID, int num_events) {
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
         INITIALIZE(context);
 
         do {
             EXPLORE(context);
             PROCESS(context, mark_ID);
         } while (!FINISHED(context));
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");

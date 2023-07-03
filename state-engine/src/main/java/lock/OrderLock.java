@@ -1,11 +1,11 @@
 package lock;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static common.CONTROL.enable_log;
 
@@ -18,7 +18,7 @@ public class OrderLock implements Serializable {
     private static final OrderLock ourInstance = new OrderLock();
     //	SpinLock spinlock_ = new SpinLock();
 //	volatile int fid = 0;
-    AtomicDouble counter = new AtomicDouble(0);// it is already volatiled.
+    AtomicLong counter = new AtomicLong(0);// it is already volatiled.
     SpinLock check_lock = new SpinLock();
     boolean wasSignalled = false;//to fight with missing signals.
     //	private transient HashMap<Integer, HashMap<Integer, Boolean>> executors_ready;//<FID, ExecutorID, true/false>
@@ -34,7 +34,7 @@ public class OrderLock implements Serializable {
     //	public int getFID() {
 //		return fid;
 //	}
-    public double getBID() {
+    public long getBID() {
         return counter.get();
     }
 
@@ -45,7 +45,7 @@ public class OrderLock implements Serializable {
 //		counter.getAndIncrement();
 ////		fid = 0;
 //	}
-    public void setBID(double bid) {
+    public void setBID(long bid) {
         this.counter.set(bid);
     }
 
@@ -69,13 +69,13 @@ public class OrderLock implements Serializable {
      */
     public boolean try_fill_gap(Long g) {
         if (getBID() == g) {
-            counter.addAndGet(1);//allow next batch to proceed.
+            counter.incrementAndGet();//allow next batch to proceed.
             return true;
         }
         return false;
     }
 
-    public boolean blocking_wait(final double bid) throws InterruptedException {
+    public boolean blocking_wait(final long bid) throws InterruptedException {
 
         /* busy waiting.
         while (!this.counter.compareAndSet(counter, counter)) {
@@ -131,7 +131,7 @@ public class OrderLock implements Serializable {
             this.counter.notifyAll();
         }
 */
-        double value = counter.addAndGet(1);//allow next batch to proceed.
+        long value = counter.incrementAndGet();//allow next batch to proceed.
         if (enable_log)
             if (enable_log) LOG.info("ADVANCE BID to:" + value + " Thread:" + Thread.currentThread().getName());
 //		//if (enable_log) LOG.DEBUG(Thread.currentThread().getName() + " advance counter to: " + counter+ " @ "+ DateTime.now());

@@ -57,7 +57,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, Object... output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, Object... output) throws InterruptedException {
         for (int target : targetTasks) {
             offer(meta.src_id, target, streamId, bid, output);
         }
@@ -65,7 +65,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, Object output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, Object output) throws InterruptedException {
         for (int target : targetTasks) {
             offer(meta.src_id, target, streamId, bid, output);
         }
@@ -73,7 +73,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int force_emit(Meta meta, String streamId, double bid, Object... output) throws InterruptedException {
+    public int force_emit(Meta meta, String streamId, long bid, Object... output) throws InterruptedException {
         for (int target : targetTasks) {
             force_offer(meta.src_id, target, streamId, bid, output);
         }
@@ -89,17 +89,17 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int force_emit(Meta meta, String streamId, double bid, char[] output) {
+    public int force_emit(Meta meta, String streamId, long bid, char[] output) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int force_emit(Meta meta, String streamId, double bid, StreamValues output) {
+    public int force_emit(Meta meta, String streamId, long bid, StreamValues output) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, StreamValues output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, StreamValues output) throws InterruptedException {
         for (int target : targetTasks) {
             offer(meta.src_id, target, streamId, bid, output);
         }
@@ -107,7 +107,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
         for (int target : targetTasks) {
             offer(meta.src_id, target, streamId, bid, deviceID, nextDouble, movingAvergeInstant);
         }
@@ -115,7 +115,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, char[] output) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, char[] output) throws InterruptedException {
         for (int target : targetTasks) {
             offer(meta.src_id, target, streamId, bid, output);
         }
@@ -123,7 +123,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, double bid, char[] key, long value) throws InterruptedException {
+    public int emit(Meta meta, String streamId, long bid, char[] key, long value) throws InterruptedException {
         for (int target : targetTasks) {
             offer(meta.src_id, target, streamId, bid, key, value);
         }
@@ -139,7 +139,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit(Meta meta, String streamId, char[] key, long value, double bid, long TimeStamp) throws InterruptedException {
+    public int emit(Meta meta, String streamId, char[] key, long value, long bid, long TimeStamp) throws InterruptedException {
         for (int target : targetTasks) {
             offer(meta.src_id, target, streamId, key, value, bid, TimeStamp);
         }
@@ -147,7 +147,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, Object... output) {
+    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, Object... output) {
         for (int target : targetTasks) {
             offer_inorder(meta.src_id, target, streamId, bid, gap, output);
         }
@@ -155,7 +155,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, char[] output) {
+    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, char[] output) {
         for (int target : targetTasks) {
             offer_inorder(meta.src_id, target, streamId, bid, gap, output);
         }
@@ -163,7 +163,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit_inorder(Meta meta, String streamId, double bid, LinkedList<Long> gap, StreamValues tuple) {
+    public int emit_inorder(Meta meta, String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) {
         for (int target : targetTasks) {
             offer_inorder(meta.src_id, target, streamId, bid, gap, tuple);
         }
@@ -171,7 +171,7 @@ public class AllPartitionController extends PartitionController {
     }
 
     @Override
-    public int emit_inorder_single(Meta meta, String streamId, double bid, LinkedList<Long> gap, StreamValues tuple) {
+    public int emit_inorder_single(Meta meta, String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) {
         for (int target : targetTasks) {
             offer_inorder_single(meta.src_id, target, streamId, bid, gap, tuple);
         }

@@ -5,7 +5,7 @@ import common.collections.Configuration;
 import common.constants.BaseConstants.BaseConf;
 import components.formatter.BasicFormatter;
 import components.formatter.Formatter;
-import components.operators.base.UnionBolt;
+import components.operators.base.unionBolt;
 import execution.ExecutionGraph;
 import execution.runtime.tuple.impl.Fields;
 import org.slf4j.Logger;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 import static common.CONTROL.enable_log;
 
-public abstract class BaseSink extends UnionBolt {
+public abstract class BaseSink extends unionBolt {
     protected static final int max_num_msg = (int) 1E5;
     protected static final int skip_msg = 0;
     protected static final long[] latency_map = new long[max_num_msg];

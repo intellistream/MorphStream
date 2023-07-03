@@ -88,7 +88,7 @@ public class MultiStreamOutputContoller extends OutputController {
      * @return
      */
     @Override
-    public void emitOnStream(MetaGroup MetaGroup, String streamId, double bid, Object... output) throws InterruptedException {
+    public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, Object... output) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -97,7 +97,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void emitOnStream(MetaGroup MetaGroup, String streamId, double bid, Object output) throws InterruptedException {
+    public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, Object output) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -106,7 +106,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void force_emitOnStream(MetaGroup MetaGroup, String streamId, double bid, StreamValues data) throws InterruptedException {
+    public void force_emitOnStream(MetaGroup MetaGroup, String streamId, long bid, StreamValues data) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -115,7 +115,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void force_emitOnStream(MetaGroup MetaGroup, String streamId, double bid, Object... data) throws InterruptedException {
+    public void force_emitOnStream(MetaGroup MetaGroup, String streamId, long bid, Object... data) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -133,7 +133,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void emitOnStream(MetaGroup MetaGroup, String streamId, double bid, StreamValues data) throws InterruptedException {
+    public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, StreamValues data) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -142,7 +142,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void emitOnStream(MetaGroup MetaGroup, String streamId, double bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
+    public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, int deviceID, double nextDouble, double movingAvergeInstant) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -169,7 +169,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void emitOnStream(MetaGroup MetaGroup, String streamId, char[] data, double bid, long timestamp) throws InterruptedException {
+    public void emitOnStream(MetaGroup MetaGroup, String streamId, char[] data, long bid, long timestamp) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -177,7 +177,7 @@ public class MultiStreamOutputContoller extends OutputController {
         }
     }
 
-    public void emitOnStream(MetaGroup MetaGroup, String streamId, double bid, char[] output) throws InterruptedException {
+    public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, char[] output) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -185,7 +185,7 @@ public class MultiStreamOutputContoller extends OutputController {
         }
     }
 
-    public void emitOnStream(MetaGroup MetaGroup, String streamId, double bid, char[] key, long value) throws InterruptedException {
+    public void emitOnStream(MetaGroup MetaGroup, String streamId, long bid, char[] key, long value) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -204,7 +204,7 @@ public class MultiStreamOutputContoller extends OutputController {
      * @return
      */
     @Override
-    public void emitOnStream_inorder(MetaGroup MetaGroup, String streamId, double bid, LinkedList<Long> gap, Object... output) throws InterruptedException {
+    public void emitOnStream_inorder(MetaGroup MetaGroup, String streamId, long bid, LinkedList<Long> gap, Object... output) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -213,7 +213,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void emitOnStream_inorder(MetaGroup MetaGroup, String streamId, double bid, LinkedList<Long> gap, char[] output) throws InterruptedException {
+    public void emitOnStream_inorder(MetaGroup MetaGroup, String streamId, long bid, LinkedList<Long> gap, char[] output) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -222,7 +222,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void emitOnStream_inorder(MetaGroup MetaGroup, String streamId, double bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
+    public void emitOnStream_inorder(MetaGroup MetaGroup, String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -231,7 +231,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void emitOnStream_inorder_single(MetaGroup MetaGroup, String streamId, double bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
+    public void emitOnStream_inorder_single(MetaGroup MetaGroup, String streamId, long bid, LinkedList<Long> gap, StreamValues tuple) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -240,7 +240,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void emitOnStream_inorder_push(MetaGroup MetaGroup, String streamId, double bid, LinkedList<Long> gap) {
+    public void emitOnStream_inorder_push(MetaGroup MetaGroup, String streamId, long bid, LinkedList<Long> gap) {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -311,7 +311,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void emitOnStream(MetaGroup MetaGroup, String streamId, char[] key, long value, double bid, long TimeStamp) throws InterruptedException {
+    public void emitOnStream(MetaGroup MetaGroup, String streamId, char[] key, long value, long bid, long TimeStamp) throws InterruptedException {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -329,7 +329,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void create_marker_boardcast(MetaGroup meta, long timestamp, double bid, int myiteration) {
+    public void create_marker_boardcast(MetaGroup meta, long timestamp, long bid, int myiteration) {
         //non-blocking boardcast.
 //		Runnable r = () -> {
 //			for (PartitionController p :
@@ -348,7 +348,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void create_marker_single(MetaGroup meta, long timestamp, String streamId, double bid, int myiteration) {
+    public void create_marker_single(MetaGroup meta, long timestamp, String streamId, long bid, int myiteration) {
         PartitionController[] it = collections.get(streamId);
         for (int i = 0; i < it.length; i++) {
             PartitionController p = it[i];
@@ -357,7 +357,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void create_marker_boardcast(MetaGroup meta, long timestamp, String streamId, double bid, int myiteration) {
+    public void create_marker_boardcast(MetaGroup meta, long timestamp, String streamId, long bid, int myiteration) {
 //        non-blocking boardcast.
 //		Runnable r = () -> {
 //			for (PartitionController p :
@@ -378,7 +378,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void marker_boardcast(MetaGroup MetaGroup, double bid, Marker marker) {
+    public void marker_boardcast(MetaGroup MetaGroup, long bid, Marker marker) {
 //		//non-blocking boardcast.
 //		Runnable r = () -> {
 //			for (PartitionController p :
@@ -397,7 +397,7 @@ public class MultiStreamOutputContoller extends OutputController {
     }
 
     @Override
-    public void marker_boardcast(MetaGroup MetaGroup, String streamId, double bid, Marker marker) {
+    public void marker_boardcast(MetaGroup MetaGroup, String streamId, long bid, Marker marker) {
 //		//non-blocking boardcast.
 //		Runnable r = () -> {
 //			for (PartitionController p :

@@ -19,8 +19,17 @@ public interface CommonMetaTypes {
     }
 
     enum AccessType {
-        READ_ONLY, READS_ONLY, READ_WRITE, READ_WRITE_READ, READ_WRITE_COND, READ_WRITE_COND_READ, WRITE_ONLY, INSERT_ONLY, DELETE_ONLY,
+        READ_ONLY,
+        READS_ONLY,
+        READ_WRITE,
+        READ_WRITE_READ,
+        READ_WRITE_COND,
+        READ_WRITE_COND_READ,
+        WRITE_ONLY,
+        INSERT_ONLY,
+        DELETE_ONLY,
         GET, SET,
-        READ_WRITE_COND_READN
+        READ_WRITE_COND_READN,
+        WINDOWED_READ_ONLY
     }
 }

@@ -6,6 +6,7 @@ import profiler.MeasureTools;
 import scheduler.context.op.OPSAContext;
 import scheduler.struct.op.MetaTypes;
 import scheduler.struct.op.Operation;
+import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -39,24 +40,24 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     public void EXPLORE(Context context) {
         Operation next = Next(context);
         while (next == null && !context.finished()) {
-            context.waitForOtherThreads(context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             //all threads come to the current level.
             if (needAbortHandling.get()) {
                 if (enable_log) LOG.debug("check abort: " + context.thisThreadId + " | " + needAbortHandling.get());
                 abortHandling(context);
             }
             ProcessedToNextLevel(context);
-            context.waitForOtherThreads(context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             next = Next(context);
         }
         if (context.finished()) {
-            context.waitForOtherThreads(context.thisThreadId);
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             if (needAbortHandling.get()) {
                 if (enable_log)
                     LOG.debug("aborted after all ocs explored: " + context.thisThreadId + " | " + needAbortHandling.get());
                 abortHandling(context);
                 ProcessedToNextLevel(context);
-                context.waitForOtherThreads(context.thisThreadId);
+                SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
                 next = Next(context);
             }
         }
@@ -65,7 +66,7 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     }
 
     @Override
-    public void PROCESS(Context context, double mark_ID) {
+    public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
@@ -111,13 +112,14 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     protected void abortHandling(Context context) {
         MarkOperationsToAbort(context);
 
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         IdentifyRollbackLevel(context);
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         SetRollbackLevel(context);
 
         RollbackToCorrectLayerForRedo(context);
         ResumeExecution(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     //TODO: mark operations of aborted transaction to be aborted.
@@ -125,7 +127,7 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
         boolean markAny = false;
         ArrayList<Operation> operations;
         int curLevel;
-        for (Map.Entry<Integer, ArrayList<Operation>> operationsEntry : context.allocatedLayeredOCBucket.entrySet()) {
+        for (Map.Entry<Integer, ArrayList<Operation>> operationsEntry: context.allocatedLayeredOCBucket.entrySet()) {
             operations = operationsEntry.getValue();
             curLevel = operationsEntry.getKey();
             for (Operation operation : operations) {
@@ -150,7 +152,7 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
      * @return
      */
     private boolean _MarkOperationsToAbort(Context context, Operation operation) {
-        double bid = operation.bid;
+        long bid = operation.bid;
         boolean markAny = false;
         //identify bids to be aborted.
         for (Operation failedOp : failedOperations) {
@@ -179,11 +181,11 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     protected void ResumeExecution(Context context) {
         context.rollbackLevel = -1;
         context.isRollbacked = false;
-
-        context.waitForOtherThreads(context.thisThreadId);
+//        if (context.thisThreadId == 0) { // TODO: what should we do to optimize this part?
         if (needAbortHandling.compareAndSet(true, false)) {
             failedOperations.clear();
         }
+//        }
     }
 
     protected void RollbackToCorrectLayerForRedo(Context context) {

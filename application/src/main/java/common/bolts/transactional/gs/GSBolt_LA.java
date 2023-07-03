@@ -13,8 +13,8 @@ public abstract class GSBolt_LA extends GSBolt {
         super(log, fid, sink);
     }
 
-    protected void LAL(MicroEvent event, double i, double _bid) throws DatabaseException {
-        boolean flag = event.READ_EVENT();
+    protected void LAL(MicroEvent event, long i, long _bid) throws DatabaseException {
+        boolean flag = event.ABORT_EVENT();
         if (flag) {//read
             READ_LOCK_AHEAD(event, txn_context[(int) (i - _bid)]);
         } else {
@@ -24,7 +24,7 @@ public abstract class GSBolt_LA extends GSBolt {
 
     //lock_ratio-ahead phase.
     @Override
-    protected void LAL_PROCESS(double _bid) throws DatabaseException, InterruptedException {
+    protected void LAL_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         //ensures that locks are added in the input_event sequence order.
         transactionManager.getOrderLock().blocking_wait(_bid);
@@ -37,11 +37,11 @@ public abstract class GSBolt_LA extends GSBolt {
         END_WAIT_TIME_MEASURE(thread_Id);
     }
 
-    protected void PostLAL_process(double _bid) throws DatabaseException, InterruptedException {
+    protected void PostLAL_process(long _bid) throws DatabaseException, InterruptedException {
         //txn process phase.
-        for (double i = _bid; i < _bid + _combo_bid_size; i++) {
+        for (long i = _bid; i < _bid + _combo_bid_size; i++) {
             MicroEvent event = (MicroEvent) input_event;
-            boolean flag = event.READ_EVENT();
+            boolean flag = event.ABORT_EVENT();
             if (flag) {//read
                 read_request_noLock(event, txn_context[(int) (i - _bid)]);
                 BEGIN_ACCESS_TIME_MEASURE(thread_Id);

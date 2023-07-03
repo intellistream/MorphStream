@@ -3,7 +3,6 @@ package scheduler.context.og;
 import scheduler.impl.og.nonstructured.OGNSAScheduler;
 import scheduler.statemanager.og.OperationChainStateListener;
 import scheduler.statemanager.og.PartitionStateManagerWithAbort;
-import stage.Stage;
 
 public class OGNSAContext extends AbstractOGNSContext {
 
@@ -11,8 +10,8 @@ public class OGNSAContext extends AbstractOGNSContext {
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
-    public OGNSAContext(int thisThreadId, int totalThreads, Stage stage) {
-        super(thisThreadId, stage);
+    public OGNSAContext(int thisThreadId, int totalThreads) {
+        super(thisThreadId);
         partitionStateManager = new PartitionStateManagerWithAbort();
     }
 

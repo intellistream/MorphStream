@@ -92,7 +92,7 @@ public class Platform implements Serializable {
                     node_5,
                     node_6,
                     node_7};
-        } else if (machine == 3) {
+        } else if (machine == 3){
 //            //a simple single-socket 48-core machine.
 //            int cores = 48;
 //            Integer[] no_0 = new Integer[cores];

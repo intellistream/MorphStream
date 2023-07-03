@@ -54,11 +54,11 @@ public abstract class LWMContent implements Content {
     }
 
     @Override
-    public void SetTimestamp(double timestamp) {
+    public void SetTimestamp(long timestamp) {
     }
 
     @Override
-    public double GetTimestamp() {
+    public long GetTimestamp() {
         return 0;
     }
 

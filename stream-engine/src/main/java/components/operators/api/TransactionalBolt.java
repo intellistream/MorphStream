@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
 import profiler.Metrics;
 import transaction.TxnManager;
+import transaction.context.TxnContext;
+import utils.SOURCE_CONTROL;
 
 import java.util.concurrent.BrokenBarrierException;
 
@@ -26,7 +28,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     protected int COMPUTE_COMPLEXITY;
     protected int POST_COMPUTE_COMPLEXITY;
     protected long timestamp;
-    protected double _bid;
+    protected long _bid;
     protected Object input_event;
     int sum = 0;
 
@@ -35,7 +37,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         this.fid = fid;
     }
 
-    public static void LA_LOCK(int _pid, int num_P, TxnManager txnManager, double _bid, int tthread) {
+    public static void LA_LOCK(int _pid, int num_P, TxnManager txnManager, long _bid, int tthread) {
         for (int k = 0; k < num_P; k++) {
             txnManager.getOrderLock(_pid).blocking_wait(_bid, _bid);
             _pid++;
@@ -44,18 +46,21 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         }
     }
 
-    public static void LA_LOCK(int _pid, int num_P, TxnManager txnManager, double[] bid_array, double _bid, int tthread) {
+    public static void LA_LOCK(int _pid, int num_P, TxnManager txnManager, long[] bid_array, long _bid, int tthread) {
         for (int k = 0; k < num_P; k++) {
             txnManager.getOrderLock(_pid).blocking_wait(bid_array[_pid], _bid);
+//            LOG.info(_pid + " : " + bid_array[_pid]);
             _pid++;
             if (_pid == tthread)
                 _pid = 0;
         }
     }
 
-    public static void LA_LOCK_Reentrance(TxnManager txnManager, double[] bid_array, int[] partition_indexs, double _bid, int thread_Id) {
+    public static void LA_LOCK_Reentrance(TxnManager txnManager, long[] bid_array, int[] partition_indexs, long _bid, int thread_Id) {
         for (int _pid : partition_indexs) {
+//            LOG.info(thread_Id + " try lock: " + _pid);
             txnManager.getOrderLock(_pid).blocking_wait(bid_array[_pid], _bid);
+//            LOG.info(thread_Id + " get lock: " + _pid);
         }
     }
 
@@ -81,10 +86,12 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     public static void LA_UNLOCK_Reentrance(TxnManager txnManager, int[] partition_indexs, int thread_Id) {
         for (int _pid : partition_indexs) {
             txnManager.getOrderLock(_pid).advance();
+//            LOG.info(thread_Id + " release lock: " + _pid);
+
         }
     }
 
-    protected abstract void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException;
+    protected abstract void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException;
 
     protected void nocc_execute(Tuple in) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);//start measure prepare and total.
@@ -132,26 +139,28 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
             timestamp = 0L;//
         _bid = in.getBID();
         input_event = in.getValue(0);
+        txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
         sum = 0;
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
+        //pre stream processing phase..
         MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
         MeasureTools.END_PREPARE_TIME_MEASURE_ACC(thread_Id);
         PRE_TXN_PROCESS(_bid, timestamp);
     }
 
-    protected void PRE_TXN_PROCESS(double bid, long timestamp) throws DatabaseException, InterruptedException {
+    protected void PRE_TXN_PROCESS(long bid, long timestamp) throws DatabaseException, InterruptedException {
     }//only used by TSTREAM.
 
-    protected void PostLAL_process(double bid) throws DatabaseException, InterruptedException {
+    protected void PostLAL_process(long bid) throws DatabaseException, InterruptedException {
     }
 
-    protected void LAL_PROCESS(double bid) throws DatabaseException, InterruptedException {
+    protected void LAL_PROCESS(long bid) throws DatabaseException, InterruptedException {
     }
 
-    protected void POST_PROCESS(double bid, long timestamp, int i) throws InterruptedException {
+    protected void POST_PROCESS(long bid, long timestamp, int i) throws InterruptedException {
     }
 
     @Override
@@ -162,5 +171,10 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
         COMPUTE_COMPLEXITY = Metrics.COMPUTE_COMPLEXITY;
         POST_COMPUTE_COMPLEXITY = Metrics.POST_COMPUTE_COMPLEXITY;
         //LOG.DEBUG("NUM_ACCESSES: " + NUM_ACCESSES + " theta:" + theta);
+        if (config.getBoolean("isGroup")) {
+            SOURCE_CONTROL.getInstance().config(tthread,config.getInt("groupNum"));
+        } else {
+            SOURCE_CONTROL.getInstance().config(tthread,1);
+        }
     }
 }

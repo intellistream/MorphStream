@@ -23,7 +23,7 @@ public class GSBolt_Locks extends GSBolt {
         super(LOG, fid, sink);
     }
 
-    protected void write_txn_process(MicroEvent event, double i, double _bid) throws DatabaseException, InterruptedException {
+    protected void write_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
         boolean success = write_request(event, txn_context[(int) (i - _bid)]);
         if (success) {
@@ -43,7 +43,7 @@ public class GSBolt_Locks extends GSBolt {
         }
     }
 
-    protected void read_txn_process(MicroEvent event, double i, double _bid) throws DatabaseException, InterruptedException {
+    protected void read_txn_process(MicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         boolean success = read_request(event, txn_context[(int) (i - _bid)]);
         if (success) {
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
@@ -63,10 +63,10 @@ public class GSBolt_Locks extends GSBolt {
     }
 
     @Override
-    protected void TXN_PROCESS(double _bid) throws DatabaseException, InterruptedException {
-        for (double i = _bid; i < _bid + combo_bid_size; i++) {
+    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
+        for (long i = _bid; i < _bid + combo_bid_size; i++) {
             MicroEvent event = (MicroEvent) input_event;
-            boolean flag = event.READ_EVENT();
+            boolean flag = event.ABORT_EVENT();
             if (flag) {
                 read_txn_process(event, i, _bid);
             } else {
@@ -78,7 +78,7 @@ public class GSBolt_Locks extends GSBolt {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        transactionManager = new TxnManagerLock(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks(), this.context.getStageMap().get(this.fid));
+        transactionManager = new TxnManagerLock(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, this.context.getThisComponent().getNumTasks());
     }
 
     @Override

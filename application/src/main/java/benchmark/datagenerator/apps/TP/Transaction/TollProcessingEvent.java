@@ -1,6 +1,7 @@
 package benchmark.datagenerator.apps.TP.Transaction;
 
 import benchmark.datagenerator.Event;
+import common.datatype.PositionReport;
 
 /**
  * Toll Processing data
@@ -10,13 +11,11 @@ public class TollProcessingEvent extends Event {
     private final int id;
     private final int segmentId;
     private final boolean isAbort;
-
     public TollProcessingEvent(int id, int segmentId, boolean isAbort) {
         this.id = id;
         this.segmentId = segmentId;
         this.isAbort = isAbort;
     }
-
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder(String.valueOf(id));

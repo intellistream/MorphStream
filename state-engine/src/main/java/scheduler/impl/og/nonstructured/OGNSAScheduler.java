@@ -5,6 +5,7 @@ import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
 import transaction.impl.ordered.MyList;
+import utils.SOURCE_CONTROL;
 
 public class OGNSAScheduler extends AbstractOGNSScheduler<OGNSAContext> {
 
@@ -19,7 +20,7 @@ public class OGNSAScheduler extends AbstractOGNSScheduler<OGNSAContext> {
 //        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     /**
@@ -43,8 +44,7 @@ public class OGNSAScheduler extends AbstractOGNSScheduler<OGNSAContext> {
 
     /**
      * Used by OGNSScheduler.
-     *
-     * @param context
+     *  @param context
      * @param operationChain
      * @param mark_ID
      * @return

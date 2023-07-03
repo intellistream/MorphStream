@@ -4,12 +4,8 @@ package scheduler.context.op;
 import scheduler.signal.op.OnParentUpdatedSignal;
 import scheduler.struct.op.Operation;
 import scheduler.struct.op.OperationChain;
-import stage.Stage;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class OPSContext extends OPSchedulerContext {
@@ -21,8 +17,8 @@ public class OPSContext extends OPSchedulerContext {
     public Operation ready_op;//ready operation per thread.
     public ConcurrentLinkedQueue<OnParentUpdatedSignal> layerBuildHelperQueue = new ConcurrentLinkedQueue<>();
 
-    public OPSContext(int thisThreadId, Stage stage) {
-        super(thisThreadId, stage);
+    public OPSContext(int thisThreadId) {
+        super(thisThreadId);
         this.totalThreads = totalThreads;
         this.allocatedLayeredOCBucket = new HashMap<>();
     }

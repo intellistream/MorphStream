@@ -7,6 +7,7 @@ import scheduler.context.op.OPNSContext;
 import scheduler.impl.op.OPScheduler;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import scheduler.struct.op.Operation;
+import utils.SOURCE_CONTROL;
 
 import static common.CONTROL.enable_log;
 
@@ -23,19 +24,20 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 
     @Override
     public void INITIALIZE(Context context) {
-        needAbortHandling = false;//reset needAbortHandling here
+        needAbortHandling = false;
         tpg.firstTimeExploreTPG(context);
         context.partitionStateManager.initialize(executableTaskListener);
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(Context context) {
-        tpg.secondTimeExploreTPG(context);//Do not need to reset needAbortHandling here, as lazy approach only handles abort once for one batch.
-        context.waitForOtherThreads(context.thisThreadId);
+        needAbortHandling = false;
+        tpg.secondTimeExploreTPG(context);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     @Override
-    public void start_evaluation(Context context, double mark_ID, int num_events) {
+    public void start_evaluation(Context context, long mark_ID, int num_events) {
         int threadId = context.thisThreadId;
 
         INITIALIZE(context);
@@ -50,7 +52,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 //            MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(threadId);
 //            MeasureTools.END_SCHEDULE_EXPLORE_TIME_MEASURE(threadId);
         } while (!FINISHED(context));
-        context.waitForOtherThreads(context.thisThreadId);
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");
@@ -97,7 +99,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     }
 
     @Override
-    public void PROCESS(Context context, double mark_ID) {
+    public void PROCESS(Context context, long mark_ID) {
         int cnt = 0;
         int batch_size = 100;//TODO;
         int threadId = context.thisThreadId;
@@ -139,7 +141,7 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     }
 
 
-    //    /**
+//    /**
 //     * Try to get task from local queue.
 //     *
 //     * @param context

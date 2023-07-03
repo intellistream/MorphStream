@@ -5,8 +5,10 @@ import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public abstract class TStreamContent implements Content {
@@ -26,12 +28,12 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public void SetTimestamp(double timestamp) {
+    public void SetTimestamp(long timestamp) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public double GetTimestamp() {
+    public long GetTimestamp() {
         throw new UnsupportedOperationException();
     }
 
@@ -86,7 +88,7 @@ public abstract class TStreamContent implements Content {
     }
 
     @Override
-    public double GetLWM() {
+    public long GetLWM() {
         throw new UnsupportedOperationException();
     }
 
@@ -101,57 +103,12 @@ public abstract class TStreamContent implements Content {
         Map.Entry<Long, SchemaRecord> entry = versions.lowerEntry(ts);//always get the original (previous) version.
         if (entry != null) {
             record_at_ts = entry.getValue();
-        } else
+        } else {
             record_at_ts = versions.get(ts);//not modified in last round
+        }
         if (record_at_ts == null || record_at_ts.getValues() == null)
             System.out.println("Read a null value??");
         return record_at_ts;
-    }
-
-    /**
-     * @param ts
-     * @return the version strictly matching ts.
-     */
-    @Override
-    public SchemaRecord readCurrValues(long ts) {
-        SchemaRecord record_at_ts = versions.get(ts);
-        if (record_at_ts == null || record_at_ts.getValues() == null)
-            System.out.println("TStreamContent: No record matching the current ts");
-        return record_at_ts;
-    }
-
-    /**
-     * @param ts
-     * @return the latest version equal or less than ts
-     */
-    @Override
-    public SchemaRecord readPastValues(long ts) {
-        SchemaRecord record_at_ts = versions.floorEntry(ts).getValue();
-        if (record_at_ts == null || record_at_ts.getValues() == null)
-            System.out.println("TStreamContent: No record under the current ts");
-        return record_at_ts;
-    }
-
-    /**
-     * @param ts
-     * @return the latest version equal or less than ts, return null if the latest key is less than min_ts
-     */
-    @Override
-    public SchemaRecord readPastValues(long ts, long min_ts) {
-        Map.Entry<Long, SchemaRecord> entry = versions.floorEntry(ts);
-        if (entry.getKey() < min_ts) {
-            return null;
-        }
-        SchemaRecord record_at_ts = entry.getValue();
-        if (record_at_ts == null || record_at_ts.getValues() == null)
-            System.out.println("TStreamContent: No record under the current ts");
-        return record_at_ts;
-    }
-
-    @Override
-    public SchemaRecord readPreRangeValues(long startTs, int range) {
-        SchemaRecord record_in_range = null;
-        return record_in_range;
     }
 
     /**
@@ -174,6 +131,25 @@ public abstract class TStreamContent implements Content {
         }
         return record_at_ts;
     }
+
+    @Override
+    public List<SchemaRecord> readPreValuesRange(long ts, long range) {
+
+        long start = ts - range < 0 ? 0 : ts - range;
+
+        ConcurrentNavigableMap<Long, SchemaRecord> schemaRange = versions.tailMap(start);
+
+        //not modified in last round
+//        if (schemaRange.size() == 0)
+//            System.out.println("Empty window");
+//        else
+//            System.out.println(schemaRange.size());
+
+//        assert schemaRange.size() != 0;
+
+        return new ArrayList<>(schemaRange.values());
+    }
+
 
     @Override
     public void updateMultiValues(long ts, long previous_mark_ID, boolean clean, SchemaRecord record) {
@@ -233,3 +209,4 @@ public abstract class TStreamContent implements Content {
         throw new UnsupportedOperationException();
     }
 }
+

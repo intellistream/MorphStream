@@ -53,8 +53,7 @@ public class SLInitializer extends TableInitilizer {
         this.numberOfStates = numberOfStates;
         configure_store(theta, tthread, this.numberOfStates);
         this.partitionOffset = this.numberOfStates / tthread;
-
-        this.dataRootPath = config.getString("rootFilePath");
+        this.dataRootPath = config.getString("rootFilePath") + OsUtils.OS_wrapper("inputs");
         String generatorType = config.getString("generator");
         switch (generatorType) {
             case "OCGenerator":
@@ -116,7 +115,7 @@ public class SLInitializer extends TableInitilizer {
                                 AppConfig.isCyclic,
                                 config.getString("workloadType"))
                         .getBytes(StandardCharsets.UTF_8));
-            else if (dataConfig instanceof DynamicDataGeneratorConfig)
+            else if(dataConfig instanceof DynamicDataGeneratorConfig)
                 bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%s_%s",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
@@ -430,14 +429,14 @@ public class SLInitializer extends TableInitilizer {
         db.createTable(b, "bookEntries");
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
                 StringBuilder stringBuilder = new StringBuilder();
-                for (String decision : getTranToDecisionConf()) {
+                for(String decision:getTranToDecisionConf()){
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
-                config.put("WorkloadConfig", stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length()-1);
+                config.put("WorkloadConfig",stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();

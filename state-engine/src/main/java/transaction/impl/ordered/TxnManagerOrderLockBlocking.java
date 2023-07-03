@@ -6,7 +6,6 @@ import db.DatabaseException;
 import lock.OrderLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import stage.Stage;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
 import storage.StorageManager;
@@ -28,8 +27,8 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     private static final Logger LOG = LoggerFactory.getLogger(TxnManagerOrderLockBlocking.class);
     public final OrderLock orderLock;
 
-    public TxnManagerOrderLockBlocking(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, Stage stage) {
-        super(storageManager, thisComponentId, thisTaskId, thread_count, stage);
+    public TxnManagerOrderLockBlocking(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count) {
+        super(storageManager, thisComponentId, thisTaskId, thread_count);
         this.orderLock = OrderLock.getInstance();
     }
 
@@ -175,7 +174,7 @@ public class TxnManagerOrderLockBlocking extends TxnManagerDedicatedLocked {
     @Override
     public boolean CommitTransaction(TxnContext txn_context) {
 //		long curr_epoch = Epoch.GetEpoch();
-        double commit_ts = txn_context.getBID();//This makes the execution appears to execute at one atomic time unit. //GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
+        long commit_ts = txn_context.getBID();//This makes the execution appears to execute at one atomic time unit. //GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp.GetMonotoneTimestamp());
         for (int i = 0; i < access_list_.access_count_; ++i) {
             Access access_ptr = access_list_.GetAccess(i);
             Content content_ref = access_ptr.access_record_.content_;

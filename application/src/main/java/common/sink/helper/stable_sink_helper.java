@@ -22,12 +22,12 @@ public class stable_sink_helper extends helper {
         need_warm_up = true;
     }
 
-    public double execute(double bid) {
+    public double execute(long bid) {
 //        this.size = size;
         return execute("default", bid);
     }
 
-    public double execute(String sourceComponent, double bid) {
+    public double execute(String sourceComponent, long bid) {
 //        if (need_warm_up) {
 //            if (start) {
 //                warm_start = System.nanoTime();

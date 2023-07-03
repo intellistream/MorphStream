@@ -1,7 +1,6 @@
 package scheduler.context.og;
 
 import scheduler.struct.og.OperationChain;
-import stage.Stage;
 
 import java.util.*;
 
@@ -16,8 +15,8 @@ public class OGSContext extends OGSchedulerContext {
 
     //TODO: Make it flexible to accept other applications.
     //The table name is hard-coded.
-    public OGSContext(int thisThreadId, int totalThreads, Stage stage) {
-        super(thisThreadId, stage);
+    public OGSContext(int thisThreadId, int totalThreads) {
+        super(thisThreadId);
         this.totalThreads = totalThreads;
         this.allocatedLayeredOCBucket = new HashMap<>();
         requests = new ArrayDeque<>();
@@ -40,7 +39,7 @@ public class OGSContext extends OGSchedulerContext {
     }
 
     @Override
-    public OperationChain createTask(String tableName, String pKey, double bid) {
+    public OperationChain createTask(String tableName, String pKey, long bid) {
         OperationChain oc = new OperationChain(tableName, pKey, bid);
 //        operationChains.add(oc);
         return oc;

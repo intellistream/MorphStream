@@ -2,12 +2,12 @@ package execution.runtime.tuple.impl;
 
 public class Marker extends Message {
     private static final long serialVersionUID = 7346698183205439095L;
-    public final double msgId;//this records the ancestor message id of this message.
+    public final long msgId;//this records the ancestor message id of this message.
     public final long timeStampNano;//
     private final int myiteration;
     private long acknowledge_time;
 
-    public Marker(String streamId, long timeStamp, double msgId, int myiteration) {
+    public Marker(String streamId, long timeStamp, long msgId, int myiteration) {
         super(streamId, 0);
         this.timeStampNano = timeStamp;
         this.msgId = msgId;
