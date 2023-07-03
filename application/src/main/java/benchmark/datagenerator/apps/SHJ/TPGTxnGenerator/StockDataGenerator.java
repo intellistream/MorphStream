@@ -30,8 +30,11 @@ public class StockDataGenerator extends DataGenerator {
     public StockDataGenerator(SHJTPGDataGeneratorConfig dataConfig) throws FileNotFoundException {
         super(dataConfig);
         events = new ArrayList<>(nTuples);
+        // TODO: hardcoded stock dataset load path
+//        reader = new BufferedReader(new InputStreamReader(
+//                new FileInputStream("/home/myc/workspace/MorphStream/application/src/main/java/benchmark/datagenerator/apps/SHJ/dataset/stock_dataset.csv")));
         reader = new BufferedReader(new InputStreamReader(
-                new FileInputStream("/home/myc/workspace/MorphStream/application/src/main/java/benchmark/datagenerator/apps/IBWJ/dataset/stock_dataset.csv")));
+                getClass().getClassLoader().getResourceAsStream("stock_dataset.csv")));
     }
 
     public static void main(String[] args) {
@@ -99,6 +102,7 @@ public class StockDataGenerator extends DataGenerator {
             fileWriter.write(String.format("Total number of threads  : %d\n", dataConfig.getTotalThreads()));
             fileWriter.write(String.format("Total Events      : %d\n", dataConfig.getTotalEvents()));
             fileWriter.close();
+            reader.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

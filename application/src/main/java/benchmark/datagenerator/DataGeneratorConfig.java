@@ -20,7 +20,8 @@ public abstract class DataGeneratorConfig {
             this.setTotalThreads(config.getInt("tthread"));
         }
         this.setScheduler(config.getString("scheduler"));
-        this.setRootPath(config.getString("rootFilePath") + OsUtils.OS_wrapper("inputs"));
+//        this.setRootPath(config.getString("rootFilePath") + OsUtils.OS_wrapper("inputs"));
+        this.setRootPath(config.getString("rootFilePath"));
         this.setnKeyStates(config.getInt("NUM_ITEMS"));
         this.setIdsPath(this.getRootPath());
         this.setShufflingActive(false);

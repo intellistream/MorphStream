@@ -66,6 +66,7 @@ public class GSWBolt_ts extends GSWBolt {
 
         // multiple operations will be decomposed
 //        for (int i = 0; i < event.Txn_Length; i++) {
+        int i = 0;
         int NUM_ACCESS = event.TOTAL_NUM_ACCESS; // todo: hard coded to only write one key
         String[] condition_table = new String[NUM_ACCESS];
         String[] condition_source = new String[NUM_ACCESS];
@@ -135,7 +136,7 @@ public class GSWBolt_ts extends GSWBolt {
             READ_POST(event);
         }
     }
-    int i=0;
+//    int i=0;
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
@@ -148,7 +149,7 @@ public class GSWBolt_ts extends GSWBolt {
                 MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
                 {
                     transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
-                    i++;
+//                    i++;
                     READ_REQUEST_CORE();
                 }
                 MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
