@@ -3,7 +3,7 @@ package content.common;
 public interface CommonMetaTypes {
     int kEventsNum = 2;
     int kMaxProcedureNum = 10;
-    int kMaxThreadNum = 50;
+    int kMaxThreadNum = 100;
     int kMaxAccessNum = 1024;
     int kBatchTsNum = 16;
     int kLogBufferSize = 8388608 * 2;

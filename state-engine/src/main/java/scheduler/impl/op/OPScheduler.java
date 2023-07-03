@@ -431,11 +431,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
                 long clusterSize = clusterRecord.getValues().get(3).getLong();
                 if (clusterSize != 0) { // cluster is not empty
-                    String[] clusterWordList = clusterRecord.getValues().get(1).getStringList().toArray(new String[0]);
+                    List<String> clusterWordList = new ArrayList<>(clusterRecord.getValues().get(1).getStringList()); //TODO: Created new list to avoid sync error
+                    String[] clusterWordArray = clusterWordList.toArray(new String[0]);
 
                     // compute cosine similarity
                     HashMap<String, Integer> clusterMap = new HashMap<>();
-                    for (String word : clusterWordList) {clusterMap.put(word, 1);}
+                    for (String word : clusterWordArray) {clusterMap.put(word, 1);}
                     Set<String> both = Sets.newHashSet(clusterMap.keySet());
                     both.retainAll(tweetMap.keySet());
                     double scalar = 0, norm1 = 0, norm2 = 0;
@@ -461,7 +462,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             simiArray.add(maxSimilarity); //for testing
 
             if (maxSimilarity >= clusterSimiThreshold) { // Compare max similarity with threshold
-                log.info("Similar cluster found");
+//                log.info("Similar cluster found");
                 tempo_record.getValues().get(2).setString(String.valueOf(maxCluster.getValues().get(0))); //update tweet.clusterID
                 initNewCluster = false;
             }
@@ -489,18 +490,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         SchemaRecord tweetRecord = operation.condition_records[0].content_.readPastValues((long) operation.bid);
         if (tweetRecord != null) {
             final List<String> tweetWordList = tweetRecord.getValues().get(1).getStringList();
-            if (tweetWordList.size() == 1) {
-                log.info("Tweet " + tweetRecord.GetPrimaryKey() + " has empty word list" + " with bid " + operation.bid);
-            }
 
-            // read
             SchemaRecord clusterRecord = operation.s_record.content_.readPastValues((long) operation.bid);
-
             if (clusterRecord == null) {
                 log.info("CU: Cluster record not found");
                 throw new NoSuchElementException();
             }
-
             List<String> clusterWordList = clusterRecord.getValues().get(1).getStringList();
             SchemaRecord tempo_record = new SchemaRecord(clusterRecord); //tempo record
 
@@ -555,10 +550,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         if (operation.function instanceof Division) {
             double growthRate = (double) countNewTweet / clusterSize;
             growthRates.add(growthRate);
-            tempo_record.getValues().get(5).setDouble(growthRate);
             if (isEventByGrowthRate) {
+                tempo_record.getValues().get(5).setDouble(growthRate); //update growthRate
                 tempo_record.getValues().get(4).setBool(growthRate > growthRateThreshold); //compute, update cluster.isEvent
             } else {
+                tempo_record.getValues().get(5).setDouble(countNewTweet); //update growthRate as numNewTweets
                 tempo_record.getValues().get(4).setBool(countNewTweet > countNewTweetThreshold);
             }
             tempo_record.getValues().get(2).setLong(0); //compute, reset cluster.countNewTweet to zero
