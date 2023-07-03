@@ -222,9 +222,10 @@ public class MeasureSink extends BaseSink {
     protected void measure_end(double results) {
         if (enable_log) LOG.info(Thread.currentThread().getName() + " obtains lock");
         if (enable_latency_measurement) {
-            for (Tuple3<Long, Long, Long> tuple : event_time_map) {
-                System.out.println("++++++ Completed: " + tuple._1() + " Generated: " + tuple._2() + " Event: " + tuple._3());
-            }
+            // TODO: hard coded evaluation metrics for stock shj
+//            for (Tuple3<Long, Long, Long> tuple : event_time_map) {
+//                System.out.println("++++++ Completed: " + tuple._1() + " Generated: " + tuple._2() + " Event: " + tuple._3());
+//            }
             StringBuilder sb = new StringBuilder();
             for (Long entry : latency_map) {
                 latency.addValue((entry / 1E6));

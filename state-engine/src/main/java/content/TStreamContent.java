@@ -135,8 +135,6 @@ public abstract class TStreamContent implements Content {
     @Override
     public List<SchemaRecord> readPreValuesRange(long ts, long range) {
 
-        System.out.println(ts);
-
         long start = ts - range < 0 ? 0 : ts - range;
 
         ConcurrentNavigableMap<Long, SchemaRecord> schemaRange = versions.tailMap(start);

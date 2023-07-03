@@ -210,7 +210,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                         rSum / (double) sSum :
                         sSum / (double) rSum;
 
-            System.out.println("++++++ Stock id: " + operation.pKey + " Turnover rate: " + turnoverRate);
+            log.info("++++++ Stock id: " + operation.pKey + " Turnover rate: " + turnoverRate);
 
             tempo_record.getValues().get(1).setLong(operation.function.delta_long);
             // 3. insert new tuple into S/R table.
