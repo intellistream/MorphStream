@@ -55,6 +55,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public String[] condition_source = null;
     public boolean isNonDeterministicOperation = false;
     public BaseTable[] tables;
+    public TableRecord[] deterministicRecords;
 
     /****************************Defined by MYC*************************************/
 

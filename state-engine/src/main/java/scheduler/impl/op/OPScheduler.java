@@ -80,7 +80,13 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        log.trace("++++++execute: " + operation);
         // if the operation is in state aborted or committable or committed, we can bypass the execution
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED) || operation.isFailed) {
-            //otherwise, skip (those +already been tagged as aborted).
+            if (operation.isNonDeterministicOperation && operation.deterministicRecords != null) {
+                for (TableRecord tableRecord : operation.deterministicRecords) {
+                    tableRecord.content_.DeleteLWM((long) operation.bid);
+                }
+            } else {
+                operation.d_record.content_.DeleteLWM((long) operation.bid);
+            }
             return;
         }
         int success;
@@ -292,8 +298,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         AppConfig.randomDelay();
 
         for (int i = 0; i < keysLength; i++) {
-//            long start = System.nanoTime();
-//            while (System.nanoTime() - start < 10000) {}
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
         }
@@ -337,14 +341,24 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         sum /= keysLength;
 
         if (operation.function.delta_long != -1) {
-            // read
+            // Get Deterministic Key
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+            long srcValue = srcRecord.getValues().get(1).getLong();
+            // Read the corresponding value
+            SchemaRecord deterministicSchemaRecord = ((Operation) operation).tables[0].SelectKeyRecord(String.valueOf(srcValue)).content_.readPreValues((long) operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(deterministicSchemaRecord);//tempo record
             if (operation.function instanceof SUM) {
                 tempo_record.getValues().get(1).setLong(sum);//compute.
             } else
                 throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            // Get Deterministic Key
+            SchemaRecord disRecord = operation.d_record.content_.readPreValues((long) operation.bid);
+            long disValue = srcRecord.getValues().get(1).getLong();
+            // Read the corresponding value
+            TableRecord disDeterministicRecord = ((Operation) operation).tables[0].SelectKeyRecord(String.valueOf(disValue));
+            disDeterministicRecord.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            ((Operation) operation).deterministicRecords = new TableRecord[1];
+            ((Operation) operation).deterministicRecords[0] = disDeterministicRecord;
             synchronized (operation.success) {
                 operation.success[0]++;
             }

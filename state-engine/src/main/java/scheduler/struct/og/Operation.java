@@ -42,6 +42,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private OperationChain oc; // used for dependency resolved notification under greedy smart
     public boolean isNonDeterministicOperation = false;
     public BaseTable[] tables;
+    public TableRecord[] deterministicRecords;
 
     public <Context extends OGSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables, String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
                                                           TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid, Context context, WindowDescriptor windowDescriptor) {

@@ -184,34 +184,42 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         }
     }
     protected void Non_GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        //TODO:Update this function to support non-GrepSum.
         int keysLength = operation.condition_records.length;
         SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
 
         long sum = 0;
-
         // apply function
         AppConfig.randomDelay();
 
         for (int i = 0; i < keysLength; i++) {
+            //Get Deterministic Key
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
-            sum += preValues[i].getValues().get(1).getLong();
+            long value = preValues[i].getValues().get(1).getLong();
+            //Read the corresponding value
+            preValues[i] = operation.tables[i].SelectKeyRecord(String.valueOf(value)).content_.readPreValues(operation.bid);
         }
 
         sum /= keysLength;
 
         if (operation.function.delta_long != -1) {
-            // read
+            // Get Deterministic Key
             SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-            // apply function
-
+            long srcValue = srcRecord.getValues().get(1).getLong();
+            // Read the corresponding value
+            SchemaRecord deterministicSchemaRecord = operation.tables[0].SelectKeyRecord(String.valueOf(srcValue)).content_.readPreValues((long) operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(deterministicSchemaRecord);//tempo record
             if (operation.function instanceof SUM) {
-//                tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
                 tempo_record.getValues().get(1).setLong(sum);//compute.
             } else
                 throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            // Get Deterministic Key
+            SchemaRecord disRecord = operation.d_record.content_.readPreValues((long) operation.bid);
+            long disValue = srcRecord.getValues().get(1).getLong();
+            // Read the corresponding value
+            TableRecord disDeterministicRecord = operation.tables[0].SelectKeyRecord(String.valueOf(disValue));
+            disDeterministicRecord.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            operation.deterministicRecords = new TableRecord[1];
+            operation.deterministicRecords[0] = disDeterministicRecord;
             synchronized (operation.success) {
                 operation.success[0]++;
             }
@@ -258,7 +266,15 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
      */
     public void execute(Operation operation, long mark_ID, boolean clean) {
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
-            return; // return if the operation is already aborted
+            //otherwise, skip (those +already been tagged as aborted).
+            if (operation.isNonDeterministicOperation && operation.deterministicRecords != null) {
+                for (TableRecord tableRecord : operation.deterministicRecords) {
+                    tableRecord.content_.DeleteLWM((long) operation.bid);
+                }
+            } else {
+                operation.d_record.content_.DeleteLWM((long) operation.bid);
+            }
+            return;
         }
         int success;
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
