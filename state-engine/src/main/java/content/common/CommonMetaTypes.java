@@ -30,6 +30,7 @@ public interface CommonMetaTypes {
         DELETE_ONLY,
         GET, SET,
         READ_WRITE_COND_READN,
-        WINDOWED_READ_ONLY
+        WINDOWED_READ_ONLY,
+        NON_READ_WRITE_COND_READN
     }
 }

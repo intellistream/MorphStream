@@ -142,6 +142,17 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             if (operation.success[0] == success) {
                 operation.isFailed = true;
             }
+        } else if (operation.accessType.equals(NON_READ_WRITE_COND_READN)) {
+            success = operation.success[0];
+            Non_GrepSum_Fun(operation, mark_ID, clean);
+            // check whether needs to return a read results of the operation
+            if (operation.record_ref != null) {
+                operation.record_ref.setRecord(operation.d_record.content_.readPreValues((long) operation.bid));//read the resulting tuple.
+            }
+            // operation success check, number of operation succeeded does not increase after execution
+            if (operation.success[0] == success) {
+                operation.isFailed = true;
+            }
         } else if (operation.accessType.equals(WRITE_ONLY)) {
             //OB-Alert
             AppConfig.randomDelay();
@@ -306,6 +317,36 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //            log.info("++++++ operation failed: " + operation);
 //        }
     }
+    protected void Non_GrepSum_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+        //TODO:Update this function to support non-GrepSum.
+        int keysLength = operation.condition_records.length;
+        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
+
+        long sum = 0;
+
+        AppConfig.randomDelay();
+
+        for (int i = 0; i < keysLength; i++) {
+            preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
+            sum += preValues[i].getValues().get(1).getLong();
+        }
+
+        sum /= keysLength;
+
+        if (operation.function.delta_long != -1) {
+            // read
+            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+            if (operation.function instanceof SUM) {
+                tempo_record.getValues().get(1).setLong(sum);//compute.
+            } else
+                throw new UnsupportedOperationException();
+            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+            synchronized (operation.success) {
+                operation.success[0]++;
+            }
+        }
+    }
 
     protected void Windowed_GrepSum_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
         int keysLength = operation.condition_records.length;
@@ -398,6 +439,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
+                    break;
+                case NON_READ_WRITE_COND_READN:
+                    set_op = new Operation(true, request.tables, request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
                     break;
                 case READ_WRITE_READ:
