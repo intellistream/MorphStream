@@ -84,7 +84,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         operationChains = new ConcurrentHashMap<>();
     }
     public void initTPG(int offset) {
-        if (app == 0) {//GS
+        if (app == 0 || app == 6) {//GS
             operationChains.put("MicroTable", new TableOCs(totalThreads,offset));
         } else if (app == 1) {//SL
             operationChains.put("accounts", new TableOCs(totalThreads,offset));
@@ -121,7 +121,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         String _key;
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
-            if (app == 0) {
+            if (app == 0 || app == 6) {
                 OperationChain gsOC = context.createTask("MicroTable", _key);
                 operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);
@@ -160,7 +160,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         threadToOCs.put(context.thisThreadId, ocs);
     }
     private void resetOCs(Context context) {
-        if (app == 0) {
+        if (app == 0 || app == 6) {
             operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 1) {
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
