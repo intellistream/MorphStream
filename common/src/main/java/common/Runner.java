@@ -180,7 +180,7 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--window_size"}, description = "Window Size for the window operations.")
     public Integer windowSize = 1024;
     @Parameter(names = {"--nondeterministic_ratio"}, description = "Ratio_of_Non_Deterministic_State_Access.")
-    public Integer Ratio_of_Non_Deterministic_State_Access = 0;
+    public Integer Ratio_of_Non_Deterministic_State_Access = 5;
 
     @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
     public Integer Transaction_Length = 1;

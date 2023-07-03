@@ -19,6 +19,7 @@ public class OperationChain implements Comparable<OperationChain> {
     public final String primaryKey;
     public final long bid;
     protected final MyList<Operation> operations;
+    protected final MyList<Operation> allOperations;//To identify the dependencies
     public final AtomicInteger ocParentsCount;
     // OperationChain -> ChildOp that depend on the parent OC in cur OC
     public final ConcurrentHashMap<OperationChain, Operation> ocParents;
@@ -43,6 +44,7 @@ public class OperationChain implements Comparable<OperationChain> {
         this.primaryKey = primaryKey;
         this.bid = bid;
         this.operations = new MyList<>(tableName, primaryKey);
+        this.allOperations = new MyList<>(tableName, primaryKey);
         this.ocParentsCount = new AtomicInteger(0);
         this.ocParents = new ConcurrentHashMap<>();
         this.ocChildren = new ConcurrentHashMap<>();
@@ -64,7 +66,7 @@ public class OperationChain implements Comparable<OperationChain> {
         for (PotentialChildrenInfo pChildInfo : potentialChldrenInfo) {
             if (pChildInfo.childOp.isNonDeterministicOperation) {
                 addParent(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
-                this.addDependencyForNondeterministicOperation(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
+                addDependencyForNondeterministicOperation(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
             } else {
                 addParent(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
             }
@@ -85,11 +87,11 @@ public class OperationChain implements Comparable<OperationChain> {
         }
     }
     public void addDependencyForNondeterministicOperation(Operation parentOp, OperationChain parentOC, OperationChain childOC) {
-        for (Operation childOp : this.getOperations()) {
+        for (Operation childOp : childOC.getOperations()) {
             if (childOp.bid > parentOp.bid) { // find the exact operation in parent OC that this target OP depends on.
                 // setup dependencies on op level first.
                 childOp.addFDParent(parentOp);
-                childOC.setupDependency(childOp, childOC, parentOC, parentOp);
+                setupDependency(childOp, childOC, parentOC, parentOp);
                 break;
             }
         }
@@ -101,7 +103,7 @@ public class OperationChain implements Comparable<OperationChain> {
             childOC.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc,
         }
         // add child for parent OC
-        parentOC.ocChildren.put(this, childOp);
+        parentOC.ocChildren.put(childOC, childOp);
         assert childOC.ocParents.containsKey(parentOC);
         assert parentOC.ocChildren.containsKey(childOC);
     }

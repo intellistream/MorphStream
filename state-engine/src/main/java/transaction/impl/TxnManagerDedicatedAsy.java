@@ -400,7 +400,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
     @Override // TRANSFER_ACT
     public boolean Asy_ModifyRecord_Non_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
-                                              Function function, String[] condition_sourceTable, String[] condition_source, int[] success, String operator_name) throws DatabaseException {
+                                              Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
 
         AccessType accessType = AccessType.NON_READ_WRITE_COND_READN;
         TableRecord[] condition_records = new TableRecord[condition_source.length];

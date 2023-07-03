@@ -20,6 +20,7 @@ public class OperationChain implements Comparable<OperationChain> {
     private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
 
     private final MyList<Operation> operations;
+    private final MyList<Operation> operationWithVirtual;//To identify the dependencies
     public boolean isExecuted = false;
 
     // layered OC related
@@ -32,6 +33,7 @@ public class OperationChain implements Comparable<OperationChain> {
         this.tableName = tableName;
         this.primaryKey = primaryKey;
         this.operations = new MyList<>(tableName, primaryKey);
+        this.operationWithVirtual = new MyList<>(tableName, primaryKey);
         this.ocParents = new ConcurrentHashMap<>();
     }
 

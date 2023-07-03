@@ -40,7 +40,7 @@ import static transaction.State.configure_store;
 public class NonGSInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(NonGSInitializer.class);
     private final int numberOfStates;
-    private final int startingValue = 10000;
+    private final int startingValue = 10;
     private final DataGeneratorConfig dataConfig;
     private final int partitionOffset;
     private final int NUM_ACCESS;

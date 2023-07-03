@@ -318,7 +318,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        }
     }
     protected void Non_GrepSum_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
-        //TODO:Update this function to support non-GrepSum.
         int keysLength = operation.condition_records.length;
         SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
 
@@ -327,7 +326,11 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         AppConfig.randomDelay();
 
         for (int i = 0; i < keysLength; i++) {
+            //Get Deterministic Key
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
+            long value = preValues[i].getValues().get(1).getLong();
+            //Read the corresponding value
+            preValues[i] = ((Operation) operation).tables[i].SelectKeyRecord(String.valueOf(value)).content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
         }
 
