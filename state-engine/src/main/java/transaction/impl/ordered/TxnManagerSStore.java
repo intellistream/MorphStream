@@ -5,6 +5,7 @@ import content.common.CommonMetaTypes;
 import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
@@ -75,7 +76,23 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
     }
 
     @Override
-    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) {
+    public boolean lock_all(SpinLock[] spinLocks) throws DatabaseException {
+        for (SpinLock spinLock : spinLocks) {
+            spinLock.lock();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean unlock_all(SpinLock[] spinLocks) throws DatabaseException {
+        for (SpinLock spinLock : spinLocks) {
+            spinLock.unlock();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         record_ref.setRecord(t_record.record_);//Note that, locking scheme allows directly modifying on original table d_record.
         if (accessType == READ_ONLY) {
             Access access = access_list_.NewAccess();
@@ -105,7 +122,19 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
             access.table_id_ = table_name;
             access.timestamp_ = t_record.content_.GetTimestamp();
             return true;
-        } else {
+        } else if (accessType == NON_READ_WRITE_COND_READN ) {
+            Access access = access_list_.NewAccess();
+            access.access_type_ = NON_READ_WRITE_COND_READN;
+            access.access_record_ = t_record;
+            access.table_id_ = table_name;
+            access.timestamp_ = t_record.content_.GetTimestamp();
+            SchemaRecord srcRecord = t_record.record_;
+            long srcValue = srcRecord.getValues().get(1).getLong();
+            // Read the corresponding value
+            TableRecord deterministicSchemaRecord = this.storageManager_.getTable(table_name).SelectKeyRecord(String.valueOf(srcValue));
+            record_ref.setRecord(deterministicSchemaRecord.record_);
+            return true;}
+        else {
             assert (false);
             return false;
         }
@@ -124,7 +153,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
             for (int i = 0; i < access_list_.access_count_; ++i) {
                 Access access_ptr = access_list_.GetAccess(i);
                 Content content_ref = access_ptr.access_record_.content_;
-                if (access_ptr.access_type_ == READ_WRITE) {
+                if (access_ptr.access_type_ == READ_WRITE || access_ptr.access_type_ == NON_READ_WRITE_COND_READN) {
                     int p = key_to_partition(access_ptr.access_record_.record_.GetPrimaryKey());
                     commit_ts = partition_bid[p];
                     assert (commit_ts >= access_ptr.timestamp_);
@@ -146,7 +175,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
             for (int i = 0; i < access_list_.access_count_; ++i) {
                 Access access_ptr = access_list_.GetAccess(i);
                 Content content_ref = access_ptr.access_record_.content_;
-                if (access_ptr.access_type_ == READ_WRITE) {
+                if (access_ptr.access_type_ == READ_WRITE || access_ptr.access_type_ == NON_READ_WRITE_COND_READN) {
                     assert (commit_ts >= access_ptr.timestamp_);
                     content_ref.SetTimestamp(commit_ts);
                 } else if (access_ptr.access_type_ == INSERT_ONLY) {

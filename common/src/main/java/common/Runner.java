@@ -179,6 +179,8 @@ public abstract class Runner implements IRunner {
 
     @Parameter(names = {"--window_size"}, description = "Window Size for the window operations.")
     public Integer windowSize = 1024;
+    @Parameter(names = {"--nondeterministic_ratio"}, description = "Ratio_of_Non_Deterministic_State_Access.(10 -> 0.01%)")
+    public Integer Ratio_of_Non_Deterministic_State_Access = 0;
 
     @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
     public Integer Transaction_Length = 1;
@@ -242,6 +244,7 @@ public abstract class Runner implements IRunner {
         config.put("Period_of_Window_Reads", Period_of_Window_Reads);
         config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
         config.put("Transaction_Length", Transaction_Length);
+        config.put("Ratio_of_Non_Deterministic_State_Access", Ratio_of_Non_Deterministic_State_Access);
 
         config.put("numberOfDLevels", numberOfDLevels);
         if (isCyclic == 1) {
@@ -316,6 +319,11 @@ public abstract class Runner implements IRunner {
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
                 defaultScheduler = "OP_NS_A";
+                phaseNum = shiftRate * phaseType.length;
+                break;
+            case "NonGrepSum":
+                //TODO: Add Conf settings to NonGrepSum
+                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 phaseNum = shiftRate * phaseType.length;
                 break;
             default:

@@ -190,7 +190,12 @@ public abstract class TStreamContent implements Content {
 
     @Override
     public void DeleteLWM(long ts) {
-        throw new UnsupportedOperationException();
+        if (ts == versions.firstKey()) {
+            this.versions.remove(ts);
+            this.versions.put(0L, new SchemaRecord(record));
+        } else {
+            this.versions.remove(ts);
+        }
     }
 
     //used in SStore

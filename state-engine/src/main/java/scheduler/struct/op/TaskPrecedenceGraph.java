@@ -41,6 +41,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     CyclicBarrier barrier;
     public final ConcurrentHashMap<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
+    private final ConcurrentHashMap<String, Vector<Operation>> NonOperations = new ConcurrentHashMap<>();
     public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
     private int maxLevel = 0; // just for layered scheduling
 
@@ -65,6 +66,9 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear(); // only need to clear all operations from all ocs
         }
+        for (Vector<Operation> ops : this.NonOperations.values()){
+            ops.clear();
+        }
         if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
     }
 
@@ -84,21 +88,30 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         operationChains = new ConcurrentHashMap<>();
     }
     public void initTPG(int offset) {
-        if (app == 0) {//GS
+        if (app == 0 || app == 6) {//GS
             operationChains.put("MicroTable", new TableOCs(totalThreads,offset));
+            NonOperations.put("MicroTable", new Vector<>());
         } else if (app == 1) {//SL
             operationChains.put("accounts", new TableOCs(totalThreads,offset));
             operationChains.put("bookEntries", new TableOCs(totalThreads,offset));
+            NonOperations.put("accounts", new Vector<>());
+            NonOperations.put("bookEntries", new Vector<>());
         } else if (app == 2){//TP
             operationChains.put("segment_speed",new TableOCs(totalThreads,offset));
             operationChains.put("segment_cnt",new TableOCs(totalThreads,offset));
+            NonOperations.put("segment_speed", new Vector<>());
+            NonOperations.put("segment_cnt", new Vector<>());
         } else if (app == 3) {//OB
             operationChains.put("goods",new TableOCs(totalThreads,offset));
+            NonOperations.put("goods", new Vector<>());
         } else if (app == 4) {//OB
             operationChains.put("MicroTable", new TableOCs(totalThreads,offset));
+            NonOperations.put("MicroTable", new Vector<>());
         } else if (app == 5) {//IBWJ
             operationChains.put("index_r_table", new TableOCs(totalThreads,offset));
             operationChains.put("index_s_table", new TableOCs(totalThreads,offset));
+            NonOperations.put("index_r_table", new Vector<>());
+            NonOperations.put("index_s_table", new Vector<>());
         } else
             throw new UnsupportedOperationException();
     }
@@ -121,7 +134,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         String _key;
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
-            if (app == 0) {
+            if (app == 0 || app == 6) {
                 OperationChain gsOC = context.createTask("MicroTable", _key);
                 operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);
@@ -149,7 +162,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 ocs.add(gsOC);
             } else if (app == 5) {
                 OperationChain indexROC = context.createTask("index_r_table", _key);
-                OperationChain indexSOC = context.createTask("index_r_table", _key);
+                OperationChain indexSOC = context.createTask("index_s_table", _key);
                 operationChains.get("index_r_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, indexROC);
                 operationChains.get("index_s_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, indexSOC);
                 ocs.add(indexROC);
@@ -160,7 +173,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         threadToOCs.put(context.thisThreadId, ocs);
     }
     private void resetOCs(Context context) {
-        if (app == 0) {
+        if (app == 0 || app == 6) {
             operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 1) {
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
@@ -197,9 +210,13 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     public void setupOperationTDFD(Operation operation, Request request) {
         // TD
         OperationChain oc = addOperationToChain(operation);
-        // FD
-        if (request.condition_source != null)
-            checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        if (operation.isNonDeterministicOperation) {
+            checkDependencyForNonDeterministicStateAccess(operation);
+        } else {
+            // FD
+            if (request.condition_source != null)
+                checkFD(oc, operation, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+        }
     }
 
     /**
@@ -218,8 +235,14 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             ArrayDeque<Operation> roots = new ArrayDeque<>();
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
-                    oc.updateTDDependencies();
-//                    updateTDDependencies(oc);
+                    oc.addNonOperation(this.NonOperations.get(oc.getTableName()));
+                    oc.updateDependencies();
+                }
+            }
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
+                    oc.initializeDependencies();
                     Operation head = oc.getOperations().first();
                     if (head.isRoot()) {
                         roots.add(head);
@@ -228,6 +251,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     context.totalOsToSchedule += oc.getOperations().size();
                 }
             }
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             ((OPSContext) context).buildBucketPerThread(context.operations, roots);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             if (context.thisThreadId == 0) { // gather
@@ -239,17 +263,18 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             }
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
             ((OPSContext) context).maxLevel = maxLevel; // scatter
-
-//            ((OPSContext) context).buildBucketPerThread(threadToOCs.get(context.thisThreadId));
             if (enable_log) log.info("MaxLevel:" + (((OPSContext) context).maxLevel));
         } else if (context instanceof OPNSContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
-                    oc.updateTDDependencies();
-//                    updateTDDependencies(oc);
-//                    for (Operation op : oc.getOperations()) {
-//                        context.fd += op.fd_parents.size();
-//                    }
+                    oc.addNonOperation(this.NonOperations.get(oc.getTableName()));
+                    oc.updateDependencies();
+                }
+            }
+            SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+            for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
+                if (!oc.getOperations().isEmpty()) {
+                    oc.initializeDependencies();
                     Operation head = oc.getOperations().first();
                     context.totalOsToSchedule += oc.getOperations().size();
                     if (head.isRoot()) {
@@ -257,50 +282,12 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     }
                 }
             }
-//            log.info("id: " + context.thisThreadId + " fd: " + context.fd);
         } else {
             throw new UnsupportedOperationException();
         }
 
         MeasureTools.END_FIRST_EXPLORE_TIME_MEASURE(context.thisThreadId);
     }
-
-    /**
-     * Update TD of each operation in the operation chain
-     * <p>
-     * OC: O1 <- O2 O3. O2
-     */
-//    public void updateTDDependencies(OperationChain oc) {
-//        Operation prevOperation = null;
-//        List<Operation> parentOperations = new ArrayList<>();
-//        for (Operation curOperation : oc.getOperations()) {
-//            if (prevOperation != null) {
-//                parentOperations.add(prevOperation);
-//                // if operations are in the same transaction, i.e. have the same bid,
-//                // add the temporal dependency parent of the prevOperation i.e. all operations with the same bid have the same temporal dependent parent
-//                if (curOperation.bid != prevOperation.bid) {
-//                    for (Operation parentOperation : parentOperations) {
-//                        curOperation.addParent(parentOperation, MetaTypes.DependencyType.TD);
-//                        parentOperation.addChild(curOperation, MetaTypes.DependencyType.TD);
-//                    }
-//                    parentOperations.clear();
-//                } else {
-//                    Queue<Operation> prevParentOperations = prevOperation.getParents(MetaTypes.DependencyType.TD);
-//                    for (Operation prevParentOperation : prevParentOperations) {
-//                        curOperation.addParent(prevParentOperation, MetaTypes.DependencyType.TD);
-//                        prevParentOperation.addChild(curOperation, MetaTypes.DependencyType.TD);
-//                    }
-//                }
-//            }
-//            prevOperation = curOperation;
-//
-//            // check FD
-////            if (curOperation.condition_source != null)
-////                checkFD(oc, curOperation, curOperation.table_name, curOperation.d_record.record_.GetPrimaryKey(),
-////                        curOperation.condition_sourceTable, curOperation.condition_source);
-//            curOperation.initialize();
-//        }
-//    }
 
     public void secondTimeExploreTPG(Context context) {
         context.redo();
@@ -332,12 +319,6 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         for (Operation op : oc.getOperations()) {
             op.resetDependencies();
             op.stateTransition(MetaTypes.OperationStateType.BLOCKED);
-//            if (op.isFailed) { // transit state to aborted.
-//                op.stateTransition(MetaTypes.OperationStateType.ABORTED);
-//                for (Operation child : op.getHeader().getDescendants()) {
-//                    child.stateTransition(MetaTypes.OperationStateType.ABORTED);
-//                }
-//            }
         }
     }
 
@@ -374,16 +355,13 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                     continue;// no need to check data dependency on a key itself.
                 OperationChain OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index]);
-                // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
-                if (OCFromConditionSource.getOperations().isEmpty() || OCFromConditionSource.getOperations().first().bid >= op.bid) {
-                    OCFromConditionSource.addPotentialFDChildren(curOC, op);
-                } else {
-                    // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
-                    curOC.addFDParent(op, OCFromConditionSource); // record dependency
-                }
+                OCFromConditionSource.addPotentialFDChildren(op);
             }
-            curOC.checkPotentialFDChildrenOnNewArrival(op);
         }
+    }
+    private void checkDependencyForNonDeterministicStateAccess(Operation op) {
+        //Add Non-deterministic state access operation to all its potential parents
+        NonOperations.get(op.table_name).add(op);
     }
 
     public int getApp() {

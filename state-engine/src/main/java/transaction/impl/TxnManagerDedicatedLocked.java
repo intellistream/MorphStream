@@ -4,6 +4,7 @@ import content.common.CommonMetaTypes.AccessType;
 import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -177,7 +178,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
 
     protected abstract boolean SelectRecordCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType access_type) throws InterruptedException;
 
-    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType accessType) {
+    public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
@@ -256,6 +257,21 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     public boolean Asy_WindowReadRecords(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+    @Override
+    public boolean Asy_ModifyRecord_Non_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+    @Override
+    public boolean lock_all(SpinLock[] spinLocks) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean unlock_all(SpinLock[] spinLocks) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
+
 
     @Override
     public OGSchedulerContext getSchedulerContext() {

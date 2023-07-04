@@ -5,6 +5,7 @@ import content.common.CommonMetaTypes.AccessType;
 import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.Request;
@@ -17,6 +18,7 @@ import scheduler.context.op.OPSAContext;
 import scheduler.impl.IScheduler;
 import storage.*;
 import storage.datatype.DataBox;
+import storage.table.BaseTable;
 import transaction.TxnManager;
 import transaction.context.TxnAccess;
 import transaction.context.TxnContext;
@@ -397,6 +399,36 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return false;
         }
     }
+    @Override // TRANSFER_ACT
+    public boolean Asy_ModifyRecord_Non_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
+                                              Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
+
+        AccessType accessType = AccessType.NON_READ_WRITE_COND_READN;
+        TableRecord[] condition_records = new TableRecord[condition_source.length];
+        BaseTable[] tables = new BaseTable[condition_source.length];
+        for (int i = 0; i < condition_source.length; i++) {
+            condition_records[i] = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
+            tables[i] = storageManager_.getTable(condition_sourceTable[i]);
+            if (condition_records[i] == null) {
+                if (enable_log) log.info("No record is found for condition source:" + condition_source[i]);
+                return false;
+            }
+        }
+        TableRecord s_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
+        if (s_record != null) {
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, tables, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txn_context, tables, accessType, srcTable,
+                        key, s_record, s_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+            }
+        } else {
+            // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
+            if (enable_log) log.info("No record is found:" + key);
+            return false;
+        }
+    }
 
     public void BeginTransaction(TxnContext txn_context) {
         if (enableGroup) {
@@ -436,6 +468,16 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     public boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
+    @Override
+    public boolean lock_all(SpinLock[] spinLocks) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean unlock_all(SpinLock[] spinLocks) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
 
     public int getGroupId(int thisTaskId){
         int groupId = thisTaskId / dalta;

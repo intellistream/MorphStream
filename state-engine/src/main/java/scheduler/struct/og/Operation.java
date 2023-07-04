@@ -7,6 +7,7 @@ import scheduler.struct.op.MetaTypes.OperationStateType;
 import scheduler.struct.op.WindowDescriptor;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
+import storage.table.BaseTable;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
@@ -39,9 +40,11 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     // logical dependencies are to be stored for the purpose of abort handling
     private Operation ld_head_operation = null; // the logical dependencies ops to be executed after this op.
     private OperationChain oc; // used for dependency resolved notification under greedy smart
+    public boolean isNonDeterministicOperation = false;
+    public BaseTable[] tables;
+    public TableRecord[] deterministicRecords;
 
-
-    public <Context extends OGSchedulerContext> Operation(String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
+    public <Context extends OGSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables, String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
                                                           TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord s_record, TableRecord d_record, long bid, Context context, WindowDescriptor windowDescriptor) {
         super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, s_record, d_record, bid, windowDescriptor, pKey);
 
@@ -51,6 +54,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         operationState = OperationStateType.BLOCKED;
         this.context = context;
         ld_descendant_operations = new ArrayDeque<>();
+        this.isNonDeterministicOperation = isNonDeterministicOperation;
+        this.tables = tables;
     }
 
     @Override

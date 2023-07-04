@@ -92,7 +92,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         operationChains = new ConcurrentHashMap<>();
     }
     public void initTPG(int offset) {
-        if (app == 0) {//GS
+        if (app == 0 || app == 6) {//GS
             operationChains.put("MicroTable", new TableOCs<>(totalThreads,offset));
         } else if (app == 1) {//SL
             operationChains.put("accounts", new TableOCs<>(totalThreads,offset));
@@ -128,7 +128,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         resetOCs(context);
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
-            if (app == 0) {
+            if (app == 0 || app == 6) {
                 OperationChain gsOC = context.createTask("MicroTable", _key, 0);
                 operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
                 ocs.add(gsOC);
@@ -161,7 +161,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     }
 
     private void resetOCs(Context context) {
-        if (app == 0) {
+        if (app == 0 || app == 6) {
             operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         } else if (app == 1) {
             operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
@@ -188,9 +188,13 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     public void setupOperationTDFD(Operation operation, Request request, Context targetContext) {
         // TD
         OperationChain oc = addOperationToChain(operation, targetContext.thisThreadId);
-        // FD
-        if (request.condition_source != null)
-            checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), request.condition_sourceTable, request.condition_source);
+        if (operation.isNonDeterministicOperation) {
+            checkDependencyForNonDeterministicStateAccess(oc, operation);
+        } else {
+            // FD
+            if (request.condition_source != null)
+                checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), request.condition_sourceTable, request.condition_source);
+        }
     }
 
 
@@ -209,6 +213,10 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     }
 
     private void submit(Context context, Collection<OperationChain> ocs) {
+        for (OperationChain oc : ocs) {
+            oc.updateFDDependencies();
+        }
+        SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         HashSet<OperationChain> scannedOCs = new HashSet<>();
         HashSet<OperationChain> circularOCs = new HashSet<>();
         HashSet<OperationChain> resolvedOC = new HashSet<>();
@@ -522,16 +530,17 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
                 if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                     continue;// no need to check data dependency on a key itself.
                 OperationChain OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index]);
-                // dependency.getOperations().first().bid >= bid -- Check if checking only first ops bid is enough.
-                MyList<Operation> conditionedOps = OCFromConditionSource.getOperations();
-                if (OCFromConditionSource.getOperations().isEmpty() || conditionedOps.first().bid >= op.bid) {
-                    OCFromConditionSource.addPotentialFDChildren(curOC, op);
-                } else {
-                    // All ops in transaction event involves writing to the states, therefore, we ignore edge case for read ops.
-                    curOC.addParent(op, OCFromConditionSource); // record dependency
-                }
+                OCFromConditionSource.addPotentialFDChildren(curOC, op);
             }
-            curOC.checkPotentialFDChildrenOnNewArrival(op);
+        }
+    }
+    private void checkDependencyForNonDeterministicStateAccess(OperationChain curOC, Operation op) {
+        //Add Non-deterministic state access operation to all its potential parents
+        for (int i = 0; i < this.threadToOCs.size(); i ++) {
+            Deque<OperationChain> ocs = this.threadToOCs.get(i);
+            for (OperationChain oc : ocs) {
+                oc.addPotentialFDChildren(curOC, op);
+            }
         }
     }
 

@@ -19,6 +19,7 @@ public class OperationChain implements Comparable<OperationChain> {
     public final String primaryKey;
     public final long bid;
     protected final MyList<Operation> operations;
+    protected final MyList<Operation> allOperations;//To identify the dependencies
     public final AtomicInteger ocParentsCount;
     // OperationChain -> ChildOp that depend on the parent OC in cur OC
     public final ConcurrentHashMap<OperationChain, Operation> ocParents;
@@ -43,6 +44,7 @@ public class OperationChain implements Comparable<OperationChain> {
         this.primaryKey = primaryKey;
         this.bid = bid;
         this.operations = new MyList<>(tableName, primaryKey);
+        this.allOperations = new MyList<>(tableName, primaryKey);
         this.ocParentsCount = new AtomicInteger(0);
         this.ocParents = new ConcurrentHashMap<>();
         this.ocChildren = new ConcurrentHashMap<>();
@@ -60,31 +62,50 @@ public class OperationChain implements Comparable<OperationChain> {
     public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
         potentialChldrenInfo.add(new PotentialChildrenInfo(potentialChildren, op));
     }
+    public void updateFDDependencies() {
+        for (PotentialChildrenInfo pChildInfo : potentialChldrenInfo) {
+            if (pChildInfo.childOp.isNonDeterministicOperation) {
+                addParent(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
+                addDependencyForNondeterministicOperation(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
+            } else {
+                addParent(pChildInfo.childOp, pChildInfo.potentialChildOC, this);
+            }
+        }
+        potentialChldrenInfo.clear();
+    }
 
-    public void addParent(Operation targetOp, OperationChain parentOC) {
+    public void addParent(Operation childOp, OperationChain childOC, OperationChain parentOC) {
         Iterator<Operation> iterator = parentOC.getOperations().descendingIterator(); // we want to get op with largest bid which is smaller than targetOp bid
         while (iterator.hasNext()) {
             Operation parentOp = iterator.next();
-            if (parentOp.bid < targetOp.bid) { // find the exact operation in parent OC that this target OP depends on.
+            if (parentOp.bid < childOp.bid) { // find the exact operation in parent OC that this target OP depends on.
                 // setup dependencies on op level first.
-                targetOp.addFDParent(parentOp);
-                setupDependency(targetOp, parentOC, parentOp);
+                childOp.addFDParent(parentOp);
+                setupDependency(childOp, childOC, parentOC, parentOp);
+                break;
+            }
+        }
+    }
+    public void addDependencyForNondeterministicOperation(Operation parentOp, OperationChain parentOC, OperationChain childOC) {
+        for (Operation childOp : childOC.getOperations()) {
+            if (childOp.bid > parentOp.bid) { // find the exact operation in parent OC that this target OP depends on.
+                // setup dependencies on op level first.
+                childOp.addFDParent(parentOp);
+                setupDependency(childOp, childOC, parentOC, parentOp);
                 break;
             }
         }
     }
 
-    protected void setupDependency(Operation targetOp, OperationChain parentOC, Operation parentOp) {
-//        if (circularDetection(targetOp, parentOC, parentOp)) return;
+    protected void setupDependency(Operation childOp, OperationChain childOC, OperationChain parentOC, Operation parentOp) {
         assert parentOC.getOperations().size() > 0;
-        if (this.ocParents.putIfAbsent(parentOC, parentOp) == null) {
-            this.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc, eliminate those redundant here.
+        if (childOC.ocParents.putIfAbsent(parentOC, parentOp) == null) {
+            childOC.ocParentsCount.incrementAndGet(); // there might have mulitple operations dependent on the same oc,
         }
         // add child for parent OC
-        parentOC.ocChildren.put(this, targetOp);
-        assert this.ocParents.containsKey(parentOC);
-        assert parentOC.ocChildren.containsKey(this);
-//        assert this.ocParents.size() == this.ocParentsCount.get();
+        parentOC.ocChildren.put(childOC, childOp);
+        assert childOC.ocParents.containsKey(parentOC);
+        assert parentOC.ocChildren.containsKey(childOC);
     }
 
 //    private boolean circularDetection(Operation targetOp, OperationChain parentOC, Operation parentOp) {
@@ -193,19 +214,6 @@ public class OperationChain implements Comparable<OperationChain> {
 //        }
 //        return false;
 //    }
-
-    public void checkPotentialFDChildrenOnNewArrival(Operation newOp) {
-        List<PotentialChildrenInfo> processed = new ArrayList<>();
-
-        for (PotentialChildrenInfo pChildInfo : potentialChldrenInfo) {
-            if (newOp.bid < pChildInfo.childOp.bid) { // if bid is < dependents bid, therefore, it depends upon this operation
-                pChildInfo.potentialChildOC.addParent(pChildInfo.childOp, this);
-                processed.add(pChildInfo);
-            }
-        }
-        potentialChldrenInfo.removeAll(processed);
-        processed.clear();
-    }
 
     public MyList<Operation> getOperations() {
         return operations;

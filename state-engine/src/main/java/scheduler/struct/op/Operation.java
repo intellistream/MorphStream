@@ -11,6 +11,7 @@ import scheduler.struct.op.MetaTypes.DependencyType;
 import scheduler.struct.op.MetaTypes.OperationStateType;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
+import storage.table.BaseTable;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
@@ -28,15 +29,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private static final Logger LOG = LoggerFactory.getLogger(AbstractOperation.class);
     public final OPSchedulerContext context;
 
-    private final Deque<Operation> fd_concurrent_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
-    private final Deque<Operation> fd_concurrent_parents; // the functional dependencies ops to be executed after this op.
-
     private final Deque<Operation> ld_descendant_operations;
     private final Deque<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
     private final Deque<Operation> td_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_spec_children; // speculative children to notify.
-    private final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance
+    public final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance.
     private final Deque<Operation> td_parents; // the functional dependencies ops to be executed in advance
     private final Deque<Operation> ld_parents; // the functional dependencies ops to be executed in advance
     private final OperationMetadata operationMetadata;
@@ -55,6 +53,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     public String[] condition_sourceTable = null;
     public String[] condition_source = null;
+    public boolean isNonDeterministicOperation = false;
+    public BaseTable[] tables;
+    public TableRecord[] deterministicRecords;
 
     /****************************Defined by MYC*************************************/
 
@@ -82,14 +83,42 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         ld_head_operation = null;
         ld_descendant_operations = new ArrayDeque<>();
 
-        // finctional dependencies, this should be concurrent because cross thread access
-        fd_concurrent_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
-        fd_concurrent_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
-        fd_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
-        fd_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // finctional dependencies, this should be concurrent because cross thread access.
+        fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
+        fd_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
         // temporal dependencies
-        td_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
-        td_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        td_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
+        td_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // finctional dependencies
+        ld_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
+        ld_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // finctional dependencies
+        // speculative parents to wait, include the last ready op
+        // speculative parents to wait, include the last ready op
+        ld_spec_children = new ArrayDeque<>(); // speculative children to notify.
+
+        operationMetadata = new OperationMetadata();
+//        operationState = new AtomicReference<>(OperationStateType.BLOCKED);
+        operationState = OperationStateType.BLOCKED;
+    }
+    public <Context extends OPSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables,
+                                                          String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+                                                          CommonMetaTypes.AccessType accessType, TableRecord record,
+                                                          SchemaRecordRef record_ref, Function function, Condition condition,
+                                                          TableRecord[] condition_records, int[] success) {
+        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid, null, pKey);
+        this.context = context;
+        this.isNonDeterministicOperation = isNonDeterministicOperation;
+        this.tables = tables;
+        ld_head_operation = null;
+        ld_descendant_operations = new ArrayDeque<>();
+
+        // finctional dependencies, this should be concurrent because cross thread access
+        fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
+        fd_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // temporal dependencies
+        td_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
+        td_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
         // finctional dependencies
         ld_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
         ld_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
@@ -147,8 +176,6 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     }
 
     public void initialize() {
-        fd_parents.addAll(fd_concurrent_parents);
-        fd_children.addAll(fd_concurrent_children);
         operationMetadata.fd_countdown.set(fd_parents.size());
         operationMetadata.td_countdown.set(td_parents.size());
         operationMetadata.ld_countdown.set(ld_parents.size());
@@ -156,7 +183,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     public void addParent(Operation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
-            this.fd_concurrent_parents.add(operation);
+            this.fd_parents.add(operation);
 //            this.operationMetadata.fd_countdown++;
         } else if (type.equals(DependencyType.LD)) {
             this.ld_parents.add(operation);
@@ -171,7 +198,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     public void addChild(Operation operation, DependencyType type) {
         if (type.equals(DependencyType.FD)) {
-            this.fd_concurrent_children.add(operation);
+            this.fd_children.add(operation);
         } else if (type.equals(DependencyType.LD)) {
             this.ld_children.add(operation);
         } else if (type.equals(DependencyType.SP_LD)) {

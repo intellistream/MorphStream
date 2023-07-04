@@ -4,6 +4,7 @@ import content.common.CommonMetaTypes;
 import db.DatabaseException;
 import lock.OrderLock;
 import lock.PartitionedOrderLock;
+import lock.SpinLock;
 import scheduler.context.SchedulerContext;
 import storage.SchemaRecord;
 import storage.SchemaRecordRef;
@@ -91,7 +92,7 @@ public interface ITxnManager {
 
     // add window support
     boolean Asy_WindowReadRecords(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException;
-
+    boolean Asy_ModifyRecord_Non_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException;
 
     //used by speculative T-Stream.
 //    boolean Specu_ReadRecord(TxnContext txn_context, String microTable, String key, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) throws DatabaseException;
@@ -104,7 +105,8 @@ public interface ITxnManager {
     boolean lock_ahead(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;
 
     boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String key, SchemaRecordRef record_ref, CommonMetaTypes.AccessType accessType) throws DatabaseException;
-
+    boolean lock_all(SpinLock[] spinLocks) throws DatabaseException;
+    boolean unlock_all(SpinLock[] spinLocks) throws DatabaseException;
     void BeginTransaction(TxnContext txnContext);
 
     boolean CommitTransaction(TxnContext txn_context);
