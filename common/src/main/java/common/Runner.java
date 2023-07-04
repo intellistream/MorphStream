@@ -325,7 +325,6 @@ public abstract class Runner implements IRunner {
                 //TODO: Add Conf settings to NonGrepSum
                 bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
                 schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
-                defaultScheduler = "OP_NS_A";
                 phaseNum = shiftRate * phaseType.length;
                 break;
             default:

@@ -256,6 +256,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else if (context instanceof OPNSContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
+                    oc.addNonOperation(this.NonOperations);
                     oc.updateDependencies();
                 }
             }
