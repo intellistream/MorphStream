@@ -94,16 +94,24 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else if (app == 1) {//SL
             operationChains.put("accounts", new TableOCs(totalThreads,offset));
             operationChains.put("bookEntries", new TableOCs(totalThreads,offset));
+            NonOperations.put("accounts", new Vector<>());
+            NonOperations.put("bookEntries", new Vector<>());
         } else if (app == 2){//TP
             operationChains.put("segment_speed",new TableOCs(totalThreads,offset));
             operationChains.put("segment_cnt",new TableOCs(totalThreads,offset));
+            NonOperations.put("segment_speed", new Vector<>());
+            NonOperations.put("segment_cnt", new Vector<>());
         } else if (app == 3) {//OB
             operationChains.put("goods",new TableOCs(totalThreads,offset));
+            NonOperations.put("goods", new Vector<>());
         } else if (app == 4) {//OB
             operationChains.put("MicroTable", new TableOCs(totalThreads,offset));
+            NonOperations.put("MicroTable", new Vector<>());
         } else if (app == 5) {//IBWJ
             operationChains.put("index_r_table", new TableOCs(totalThreads,offset));
             operationChains.put("index_s_table", new TableOCs(totalThreads,offset));
+            NonOperations.put("index_r_table", new Vector<>());
+            NonOperations.put("index_s_table", new Vector<>());
         } else
             throw new UnsupportedOperationException();
     }
