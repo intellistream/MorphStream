@@ -2,13 +2,13 @@
 
 function ResetParameters() {
   app="NonGrepSum"
-  checkpointInterval=10240
+  checkpointInterval=40960
   tthread=24
   scheduler="OP_BFS"
   defaultScheduler="OP_BFS"
   CCOption=3 #TSTREAM
   complexity=10000
-  NUM_ITEMS=491520
+  NUM_ITEMS=122880
   nondeterministic_ratio=95
   key_skewness=0
 
@@ -63,6 +63,8 @@ function runTStream() {
 
 # run basic experiment for different algorithms
 function baselineEvaluation() {
+  CCOption=3
+  scheduler=OP_BFS
   runTStream
 
   scheduler=TStream
