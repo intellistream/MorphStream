@@ -16,9 +16,6 @@ import static scheduler.struct.OperationChainCommon.cleanUp;
 public class OperationChain implements Comparable<OperationChain> {
     private final String tableName;
     private final String primaryKey;
-
-    private final ConcurrentLinkedQueue<PotentialDependencyInfo> potentialChldrenInfo = new ConcurrentLinkedQueue<>();
-
     private final MyList<Operation> operations;
     private final MyList<Operation> operationWithVirtual;//To identify the dependencies
     public boolean isExecuted = false;
@@ -122,8 +119,7 @@ public class OperationChain implements Comparable<OperationChain> {
         operationWithVirtual.add(op);
     }
 
-    public void addPotentialFDChildren(OperationChain potentialChildren, Operation op) {
-        potentialChldrenInfo.add(new PotentialDependencyInfo(potentialChildren, op));
+    public void addPotentialFDChildren(Operation op) {
         operationWithVirtual.add(op);
     }
     public void addNonOperation(Vector<Operation> ops) {
@@ -162,28 +158,15 @@ public class OperationChain implements Comparable<OperationChain> {
             return -1;
     }
 
-    public class PotentialDependencyInfo implements Comparable<PotentialDependencyInfo> {
-        public OperationChain potentialChildOC;
-        public Operation op;
-
-        public PotentialDependencyInfo(OperationChain oc, Operation op) {
-            this.potentialChildOC = oc;
-            this.op = op;
-        }
-
-        @Override
-        public int compareTo(PotentialDependencyInfo o) {
-            return Long.compare(this.op.bid, o.op.bid);
-        }
-    }
 
     public void clear() {
-        potentialChldrenInfo.clear();
         if (operations.size() != 0) {
             if (cleanUp) {
                 operations.first().d_record.content_.clean_map();
             }
             operations.clear();
+        }
+        if (operationWithVirtual.size() != 0) {
             operationWithVirtual.clear();
         }
         ocParents.clear();

@@ -41,7 +41,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     CyclicBarrier barrier;
     public final ConcurrentHashMap<Integer, Context> threadToContextMap;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
-    private final Vector<Operation> NonOperations = new Vector<>();
+    private final ConcurrentHashMap<String, Vector<Operation>> NonOperations = new ConcurrentHashMap<>();
     public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
     private int maxLevel = 0; // just for layered scheduling
 
@@ -66,7 +66,9 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear(); // only need to clear all operations from all ocs
         }
-        NonOperations.clear();
+        for (Vector<Operation> ops : this.NonOperations.values()){
+            ops.clear();
+        }
         if (context.thisThreadId == 0) log.info("===Clear current data for the next batch===");
     }
 
@@ -88,6 +90,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     public void initTPG(int offset) {
         if (app == 0 || app == 6) {//GS
             operationChains.put("MicroTable", new TableOCs(totalThreads,offset));
+            NonOperations.put("MicroTable", new Vector<>());
         } else if (app == 1) {//SL
             operationChains.put("accounts", new TableOCs(totalThreads,offset));
             operationChains.put("bookEntries", new TableOCs(totalThreads,offset));
@@ -151,7 +154,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 ocs.add(gsOC);
             } else if (app == 5) {
                 OperationChain indexROC = context.createTask("index_r_table", _key);
-                OperationChain indexSOC = context.createTask("index_r_table", _key);
+                OperationChain indexSOC = context.createTask("index_s_table", _key);
                 operationChains.get("index_r_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, indexROC);
                 operationChains.get("index_s_table").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, indexSOC);
                 ocs.add(indexROC);
@@ -200,7 +203,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         // TD
         OperationChain oc = addOperationToChain(operation);
         if (operation.isNonDeterministicOperation) {
-            checkDependencyForNonDeterministicStateAccess(oc, operation);
+            checkDependencyForNonDeterministicStateAccess(operation);
         } else {
             // FD
             if (request.condition_source != null)
@@ -224,7 +227,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
             ArrayDeque<Operation> roots = new ArrayDeque<>();
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
-                    oc.addNonOperation(this.NonOperations);
+                    oc.addNonOperation(this.NonOperations.get(oc.getTableName()));
                     oc.updateDependencies();
                 }
             }
@@ -256,7 +259,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
         } else if (context instanceof OPNSContext) {
             for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
                 if (!oc.getOperations().isEmpty()) {
-                    oc.addNonOperation(this.NonOperations);
+                    oc.addNonOperation(this.NonOperations.get(oc.getTableName()));
                     oc.updateDependencies();
                 }
             }
@@ -344,13 +347,13 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                 if (table_name.equals(condition_sourceTable[index]) && key.equals(condition_source[index]))
                     continue;// no need to check data dependency on a key itself.
                 OperationChain OCFromConditionSource = getOC(condition_sourceTable[index], condition_source[index]);
-                OCFromConditionSource.addPotentialFDChildren(curOC, op);
+                OCFromConditionSource.addPotentialFDChildren(op);
             }
         }
     }
-    private void checkDependencyForNonDeterministicStateAccess(OperationChain curOC, Operation op) {
+    private void checkDependencyForNonDeterministicStateAccess(Operation op) {
         //Add Non-deterministic state access operation to all its potential parents
-        NonOperations.add(op);
+        NonOperations.get(op.table_name).add(op);
     }
 
     public int getApp() {
