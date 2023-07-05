@@ -1,0 +1,19 @@
+import { NgModule } from '@angular/core';
+import { Routes, RouterModule } from '@angular/router';
+import {OverviewComponent} from "./pages/overview/overview.component";
+import {FinishedApplicationsComponent} from "./pages/applications/finished-applications/finished-applications.component";
+import {PocessingApplicationsComponent} from "./pages/applications/pocessing-applications/pocessing-applications.component";
+
+const routes: Routes = [
+  // Home
+  { path: '', pathMatch: 'full', redirectTo: '/overview' },
+  { path: 'overview', component: OverviewComponent },
+  { path: 'applications/finished-applications', component: FinishedApplicationsComponent},
+  { path: 'applications/processing-applications', component: PocessingApplicationsComponent}
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }

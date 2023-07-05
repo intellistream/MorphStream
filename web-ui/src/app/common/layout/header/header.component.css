@@ -1,0 +1,17 @@
+#logo {
+  height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+#logo-img {
+  height: 60%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+#logo-text {
+  margin-left: 10px;
+  font-size:36px;
+  color: black;
+}
