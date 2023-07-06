@@ -92,4 +92,8 @@ public abstract class LockContent implements Content {
     @Override
     public void UnlockPartitions() {
     }
+    @Override
+    public SchemaRecord ReadAccess(long snapshotId, boolean clean) {
+        return null;
+    }
 }

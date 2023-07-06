@@ -6,6 +6,7 @@ import storage.TableRecord;
 import storage.datatype.DataBox;
 import storage.table.stats.TableStats;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -46,7 +47,9 @@ public abstract class BaseTable implements ITable {
      * @throws DatabaseException if the values passed in to this method do not
      *                           correspond to the schema of this table
      */
+    public abstract boolean InsertRecord(TableRecord record, int partition_id) throws DatabaseException;
     public abstract boolean InsertRecord(TableRecord record) throws DatabaseException;
+    public abstract HashMap<String, TableRecord> getTableIndexByPartitionId(int partitionId);
 
     /**
      * Delete all records in the table.

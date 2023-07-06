@@ -2,7 +2,7 @@ package durability.ftmanager;
 
 import common.collections.Configuration;
 import durability.struct.Result.persistResult;
-import durability.utils.FaultToleranceConstants;
+import utils.FaultToleranceConstants;
 
 import java.io.IOException;
 

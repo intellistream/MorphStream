@@ -1,6 +1,5 @@
-package durability.snapshot;
+package durability.snapshot.SnapshotResult;
 
-import durability.snapshot.SnapshotResult.SnapshotResult;
 import utils.lib.ConcurrentHashMap;
 
 import java.io.Serializable;
@@ -15,3 +14,5 @@ public class SnapshotCommitInformation implements Serializable {
         this.inputStorePath = inputStorePath;
     }
 }
+
+

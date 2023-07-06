@@ -213,5 +213,12 @@ public abstract class TStreamContent implements Content {
     public void UnlockPartitions() {
         throw new UnsupportedOperationException();
     }
+    public SchemaRecord readValues(long snapshotId, boolean clean) {
+        SchemaRecord schemaRecord = versions.lowerEntry(snapshotId).getValue();
+        if (clean) {
+            //TODO: clean old version
+        }
+        return schemaRecord;
+    }
 }
 

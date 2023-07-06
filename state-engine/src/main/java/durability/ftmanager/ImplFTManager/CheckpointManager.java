@@ -7,13 +7,12 @@ import common.io.LocalFS.LocalDataOutputStream;
 import common.tools.Serialize;
 import durability.ftmanager.FTManager;
 import durability.recovery.RecoveryHelperProvider;
-import durability.snapshot.SnapshotCommitInformation;
+import durability.snapshot.SnapshotResult.SnapshotCommitInformation;
 import durability.snapshot.SnapshotResult.SnapshotResult;
 import durability.struct.Result.persistResult;
-import durability.utils.FaultToleranceConstants.FaultToleranceStatus;
+import utils.FaultToleranceConstants.FaultToleranceStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
 
 import java.io.DataOutputStream;
 import java.io.File;

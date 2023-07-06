@@ -118,4 +118,9 @@ public abstract class LWMContent implements Content {
     @Override
     public void clean_map() {
     }
+
+    @Override
+    public SchemaRecord ReadAccess(long snapshotId, boolean clean) {
+        return null;
+    }
 }

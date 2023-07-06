@@ -52,6 +52,8 @@ public interface Content {
 
     //	LWMContentImpl.XLockQueue GetXLockQueue();
     SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType);
+    //Used to checkpoint the schema record
+    SchemaRecord ReadAccess(long snapshotId, boolean clean);
 
     SchemaRecord readPreValues(long ts);
 

@@ -121,4 +121,8 @@ public abstract class SStoreContent implements Content {
     public boolean AcquireWriteLock() {
         throw new UnsupportedOperationException();
     }
+    @Override
+    public SchemaRecord ReadAccess(long snapshotId, boolean clean) {
+        return null;
+    }
 }

@@ -1,5 +1,6 @@
 package storage.table;
 
+import db.DatabaseException;
 import index.BaseUnorderedIndex;
 import index.HashTableIndex;
 import index.StdUnorderedIndex;
@@ -8,6 +9,7 @@ import storage.TableRecord;
 import storage.TableRecords;
 import storage.datatype.DataBox;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -15,7 +17,7 @@ public class ShareTable extends BaseTable {
     //    private final BaseOrderedIndex[] secondary_indexes_;
     private final BaseUnorderedIndex primary_index_;
 
-    public ShareTable(RecordSchema schema, String tableName, boolean is_thread_safe) {
+    public ShareTable(RecordSchema schema, String tableName, boolean is_thread_safe,  int partition_num, int num_items) {
         super(schema, tableName);
         if (is_thread_safe) {
 //#if defined(CUCKOO_INDEX)
@@ -23,13 +25,13 @@ public class ShareTable extends BaseTable {
 //#else
 //			primary_index_ = new StdUnorderedIndexMT();
 //#endif
-            primary_index_ = new HashTableIndex();//here, we decide which index to use.
+            primary_index_ = new HashTableIndex(partition_num, num_items);//here, we decide which index to use.
 //            secondary_indexes_ = new BaseOrderedIndex[secondary_count_];
 //            for (int i = 0; i < secondary_count_; ++i) {
 //                secondary_indexes_[i] = new StdOrderedIndexMT();
 //            }
         } else {
-            primary_index_ = new StdUnorderedIndex();
+            primary_index_ = new StdUnorderedIndex(partition_num, num_items);
 //            secondary_indexes_ = new BaseOrderedIndex[secondary_count_];
 //            for (int i = 0; i < secondary_count_; ++i) {
 //                secondary_indexes_[i] = new StdOrderedIndex();
@@ -48,6 +50,8 @@ public class ShareTable extends BaseTable {
         System.exit(-1);
     }
 
+
+
     ///////////////////INSERT//////////////////
     @Override
     public boolean InsertRecord(TableRecord record) {
@@ -64,6 +68,24 @@ public class ShareTable extends BaseTable {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public boolean InsertRecord(TableRecord record, int partition_id) throws DatabaseException {
+        SchemaRecord record_ptr = record.record_;
+        assert record.record_ != null;
+        if (primary_index_.InsertRecord(record_ptr.GetPrimaryKey(), record, partition_id)) {
+            int records = numRecords.getAndIncrement();
+            record.setID(new RowID(records));
+            //TODO: build secondary index here
+            return true;
+        } else {
+            return false;
+        }
+    }
+    @Override
+    public HashMap<String, TableRecord> getTableIndexByPartitionId(int partitionId) {
+        return this.primary_index_.getTableIndexByPartitionId(partitionId);
     }
 
     @Override

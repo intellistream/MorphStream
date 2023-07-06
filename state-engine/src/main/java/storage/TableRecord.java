@@ -66,4 +66,10 @@ public class TableRecord implements Comparable<TableRecord> {
     public void setID(RowID ID) {
         this.record_.setID(ID);
     }
+    public String toSerializableString(long snapshotId) {
+        StringBuilder stringBuilder = new StringBuilder();
+        SchemaRecord snapshotRecord = this.content_.ReadAccess(snapshotId, false);
+        stringBuilder.append(snapshotRecord.toString());
+        return stringBuilder.toString();
+    }
 }

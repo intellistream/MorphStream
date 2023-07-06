@@ -118,4 +118,8 @@ public abstract class ToContent implements Content {
     @Override
     public void UnlockPartitions() {
     }
+    @Override
+    public SchemaRecord ReadAccess(long snapshotId, boolean clean) {
+        return null;
+    }
 }

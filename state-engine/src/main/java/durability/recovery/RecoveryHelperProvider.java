@@ -4,7 +4,7 @@ import common.collections.OsUtils;
 import common.io.LocalFS.LocalDataInputStream;
 import common.tools.Deserialize;
 import durability.logging.LoggingResult.LoggingCommitInformation;
-import durability.snapshot.SnapshotCommitInformation;
+import durability.snapshot.SnapshotResult.SnapshotCommitInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
