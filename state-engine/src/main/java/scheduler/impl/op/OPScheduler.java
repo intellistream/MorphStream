@@ -478,7 +478,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             String newClusterKey = String.valueOf(newClusterHashcode);
             tempo_record.getValues().get(2).setString(newClusterKey); //update tweet.clusterID
             newClusterCount++;
-            log.info("New cluster counter: " + newClusterCount);
+//            log.info("New cluster counter: " + newClusterCount);
         }
 
         operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.

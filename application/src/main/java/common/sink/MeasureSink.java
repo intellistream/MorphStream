@@ -313,7 +313,7 @@ public class MeasureSink extends BaseSink {
                 if (esEvent.wordSet != null) {
                     String wordString = String.join(" ", esEvent.wordSet);
                     event_detection_map.add(new String[]{String.valueOf(System.nanoTime()), String.valueOf(input.getBID()),
-                            wordString, String.valueOf(esEvent.isEvent), String.valueOf(esEvent.growthRate)});
+                            wordString, String.valueOf(esEvent.getClusterID()), String.valueOf(esEvent.growthRate)});
                 }
             }
         }

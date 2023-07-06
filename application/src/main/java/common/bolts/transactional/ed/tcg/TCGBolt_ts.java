@@ -119,10 +119,11 @@ public class TCGBolt_ts extends TCGBolt {
 
             if (isBurst != null && event != null) {
                 TC_GATE_REQUEST_POST(event, isBurst);
-            } else {
-                LOG.info("TCG error detected");
-//                throw new NoSuchElementException();
             }
+//            else {
+//                LOG.info("TCG error detected");
+//                throw new NoSuchElementException();
+//            }
 
         }
 

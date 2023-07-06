@@ -43,14 +43,15 @@ public interface CONTROL {
 
     int tweetWindowSize = 400; //equals to ED batch size (tthread * windowPerThread) TODO: remove hardcode
     int wordWindowSize = tweetWindowSize * tweetWordCount; //Avg num of words in a batch
-    int clusterTableSize = 1000; //Maximum number of events to be detected TODO: Adjust this
-    boolean useShortDataset = true; //Use short dataset (4K events) or full dataset (50K events)
+    int clusterTableSize = 10000; //Maximum number of events to be detected
+    boolean useShortDataset = false; //Use short dataset (4K events) or full dataset (50K events)
 
     double tfIdfThreshold = 0.01; //How to determine burst keyword: based on the current TFIDF
-    double diffTfIdfThreshold = 0.0002; //How to determine burst keyword: based on the change in TFIDF
+    double diffTfIdfThreshold = 0.001; //TODO: How to determine burst keyword: based on the change in TFIDF
     boolean isBurstByDifference = true; //Determine isBurst keyword based on (true - difference in TFIDF; false - TFIDF itself)
 
-    double clusterSimiThreshold = 0.1; //Similarity between tweet and cluster
+    double clusterSimiThreshold = 0.05; //TODO: Similarity between tweet and cluster
+//    boolean useWordFreqInCluster = false; //False: cluster is stored as Set(words); True: cluster is stored as Map<Word, Frequency>
 
     double growthRateThreshold = 0.001; //Cluster growth rate
     double countNewTweetThreshold = 10; //New tweet merged into cluster in a window

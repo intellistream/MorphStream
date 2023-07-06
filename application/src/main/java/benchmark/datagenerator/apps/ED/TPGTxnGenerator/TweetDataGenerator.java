@@ -33,10 +33,10 @@ public class TweetDataGenerator extends DataGenerator {
         events = new ArrayList<>(nTuples);
         if (useShortDataset) {
             reader = new BufferedReader(new InputStreamReader(
-                    new FileInputStream("/Users/zhonghao/Downloads/EDExperiments/dataset_short.csv")));
+                    new FileInputStream("/Users/zhonghao/Documents/MorphStream/application/src/main/java/benchmark/datagenerator/apps/ED/dataset/dataset_short.csv")));
         } else {
             reader = new BufferedReader(new InputStreamReader(
-                    new FileInputStream("/Users/zhonghao/Downloads/EDExperiments/dataset_long.csv")));
+                    new FileInputStream("/Users/zhonghao/Documents/MorphStream/application/src/main/java/benchmark/datagenerator/apps/ED/dataset/dataset.csv")));
         }
 
     }
