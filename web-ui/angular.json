@@ -30,7 +30,7 @@
               }
             ],
             "styles": [
-              "src/theme.less"
+              "src/theme/theme.less"
             ],
             "scripts": []
           },
@@ -92,7 +92,7 @@
               "src/assets"
             ],
             "styles": [
-              "src/theme.less"
+              "src/theme/theme.less"
             ],
             "scripts": []
           }
