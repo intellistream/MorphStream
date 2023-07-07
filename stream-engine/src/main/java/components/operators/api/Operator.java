@@ -5,6 +5,7 @@ import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import components.context.TopologyContext;
 import db.Database;
+import durability.ftmanager.FTManager;
 import execution.ExecutionGraph;
 import execution.ExecutionNode;
 import execution.runtime.collector.OutputCollector;
@@ -44,7 +45,8 @@ public abstract class Operator implements IOperator {
     public boolean scalable = true;
     public TopologyContext context;
     public transient Database db;//this is only used if the bolt is transactional bolt. DB is shared by all operators.
-    //    public transient TxnContext txn_context;
+    public transient FTManager ftManager;//this is only used if the bolt is fault tolerance bolt. FTManager is shared by all operators.
+    public transient FTManager loggingManager;//this is only used if the bolt is fault tolerance bolt. LoggingManager is shared by all operators.
     public transient TxnContext[] txn_context = new TxnContext[combo_bid_size];
     public int fid = -1;//if fid is -1 it means it does not participate
     public OrderLock lock;//used for lock_ratio-based ordering constraint.

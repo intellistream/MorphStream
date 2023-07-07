@@ -187,7 +187,7 @@ public class MorphStreamRunner extends Runner {
 
     private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
         if (enable_memory_measurement) {
-            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(),0,  500);
+            timer.scheduleAtFixedRate(new Metrics.RuntimeHardware(conf.getString("rootFilePath")),0,  10);
         }
         TopologySubmitter submitter = new TopologySubmitter();
         try {
@@ -364,7 +364,7 @@ public class MorphStreamRunner extends Runner {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread, rt, config.getInt("phaseNum"), config.getInt("shiftRate"));
+                METRICS_REPORT(config.getInt("CCOption", 0), config.getInt("FTOption", 0), tthread, rt, config.getInt("phaseNum"), config.getInt("shiftRate"), config.getInt("snapshotInterval"));
             }
         }//end of profile.
     }

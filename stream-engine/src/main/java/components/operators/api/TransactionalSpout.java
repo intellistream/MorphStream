@@ -1,15 +1,29 @@
 package components.operators.api;
 
-import common.tools.FastZipfGenerator;
+import durability.inputStore.InputDurabilityHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.FaultToleranceConstants;
 
 import java.io.BufferedWriter;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 public abstract class TransactionalSpout extends AbstractSpout implements Checkpointable {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalSpout.class);
     public double target_Hz;
-    public int checkpoint_interval;
+    public int snapshot_interval;
+    public int punctuation_interval;
+    public boolean arrivalControl;
+    public long systemStartTime;
+    public long remainTime = 0;
+    public String inputStoreRootPath;
+    public String inputStoreCurrentPath;
+    public FaultToleranceConstants.CompressionType compressionType;
+    public int ftOption;
+    public boolean isRecovery = false;
+    public InputDurabilityHelper inputDurabilityHelper;
+    public Queue<Object> recoveryInput = new ArrayDeque<>();
     public volatile int control = 0;//control how many elements in each epoch.
     public int _combo_bid_size = 1;
     public int counter = 0;
@@ -38,7 +52,7 @@ public abstract class TransactionalSpout extends AbstractSpout implements Checkp
      * @param counter
      */
     @Override
-    public boolean checkpoint(int counter) {
-        return (counter % checkpoint_interval == 0);
+    public boolean model_switch(int counter) {
+        return (counter % punctuation_interval == 0);
     }
 }

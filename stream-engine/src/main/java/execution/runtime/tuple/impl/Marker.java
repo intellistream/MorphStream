@@ -6,12 +6,22 @@ public class Marker extends Message {
     public final long timeStampNano;//
     private final int myiteration;
     private long acknowledge_time;
+    private String message;
+    private long snapshotId;
 
     public Marker(String streamId, long timeStamp, long msgId, int myiteration) {
         super(streamId, 0);
         this.timeStampNano = timeStamp;
         this.msgId = msgId;
         this.myiteration = myiteration;
+    }
+    public Marker(String streamId, long timeStamp, long msgId, int myiteration, String message, long snapshotId) {
+        super(streamId, 0);
+        this.timeStampNano = timeStamp;
+        this.msgId = msgId;
+        this.myiteration = myiteration;
+        this.message = message;
+        this.snapshotId = snapshotId;
     }
 
     public long getAcknowledge_time() {
@@ -44,5 +54,12 @@ public class Marker extends Message {
     @Override
     public Marker getMarker() {
         return this;
+    }
+    public String getMessage() {
+        return message;
+    }
+
+    public long getSnapshotId() {
+        return snapshotId;
     }
 }

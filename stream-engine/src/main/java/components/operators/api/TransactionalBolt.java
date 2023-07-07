@@ -128,7 +128,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     }
 
     @Override
-    public boolean checkpoint(int counter) {
+    public boolean model_switch(int counter) {
         return false;
     }
 
