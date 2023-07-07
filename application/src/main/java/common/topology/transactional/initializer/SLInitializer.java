@@ -237,7 +237,7 @@ public class SLInitializer extends TableInitilizer {
             if (spinlock_ != null)
                 db.InsertRecord("accounts", new TableRecord(AccountRecord(key, value), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("accounts", new TableRecord(AccountRecord(key, value)), partition_id);
+                db.InsertRecord("accounts", new TableRecord(AccountRecord(key, value), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -252,7 +252,7 @@ public class SLInitializer extends TableInitilizer {
             if (spinlock_ != null)
                 db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value)), partition_id);
+                db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }

@@ -86,4 +86,9 @@ public interface Content {
     void LockPartitions();
 
     void UnlockPartitions();
+    int[] getWriteLVs();//Used by LVStreamContent
+    int[] getReadLVs();//Used by LVStreamContent
+    int[] getLVs();//Used by LVStreamContent
+    void updateWriteLv(int lsn, int partition);
+    void updateReadLv(int lsn, int partition);
 }

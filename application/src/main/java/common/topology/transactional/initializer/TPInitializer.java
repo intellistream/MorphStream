@@ -171,7 +171,7 @@ public class TPInitializer extends TableInitilizer {
         values.add(new HashSetDataBox());
         SchemaRecord schemaRecord = new SchemaRecord(values);
         try {
-            db.InsertRecord("segment_cnt", new TableRecord(schemaRecord), partition_id);
+            db.InsertRecord("segment_cnt", new TableRecord(schemaRecord, this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -183,7 +183,7 @@ public class TPInitializer extends TableInitilizer {
         values.add(new DoubleDataBox(value));
         SchemaRecord schemaRecord = new SchemaRecord(values);
         try {
-            db.InsertRecord("segment_speed", new TableRecord(schemaRecord), partition_id);
+            db.InsertRecord("segment_speed", new TableRecord(schemaRecord, this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }

@@ -321,7 +321,7 @@ public class SHJInitializer extends TableInitilizer {
             if (spinlock_ != null)
                 db.InsertRecord("index_r_table", new TableRecord(Record(key, amount), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("index_r_table", new TableRecord(Record(key, amount)), partition_id);
+                db.InsertRecord("index_r_table", new TableRecord(Record(key, amount), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -332,7 +332,7 @@ public class SHJInitializer extends TableInitilizer {
             if (spinlock_ != null)
                 db.InsertRecord("index_s_table", new TableRecord(Record(key, amount), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("index_s_table", new TableRecord(Record(key, amount)), partition_id);
+                db.InsertRecord("index_s_table", new TableRecord(Record(key, amount), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }

@@ -114,7 +114,7 @@ public class NonGSInitializer extends TableInitilizer {
             if (spinlock_ != null)
                 db.InsertRecord("MicroTable", new TableRecord(Record(key, value), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("MicroTable", new TableRecord(Record(key, value)), partition_id);
+                db.InsertRecord("MicroTable", new TableRecord(Record(key, value), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }

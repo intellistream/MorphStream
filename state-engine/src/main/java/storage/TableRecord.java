@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.table.RowID;
 
+import static content.LVTStreamContent.LVTSTREAM_CONTENT;
 import static content.LWMContentImpl.LWM_CONTENT;
 import static content.LockContentImpl.LOCK_CONTENT;
 import static content.TStreamContentImpl.T_STREAMCONTENT;
@@ -18,7 +19,7 @@ public class TableRecord implements Comparable<TableRecord> {
     public Content content_;
     public SchemaRecord record_;//this record may be changed by multiple threads.
 
-    public TableRecord(SchemaRecord record) {
+    public TableRecord(SchemaRecord record, int tthread) {
         switch (content_type) {
             case LOCK_CONTENT:
                 content_ = new LockContentImpl();
@@ -35,6 +36,12 @@ public class TableRecord implements Comparable<TableRecord> {
                 content_ = new TStreamContentImpl();
                 content_.updateValues(0, 0, false, record);//mvcc, value_list @ts=0
                 content_.updateMultiValues(0, 0, false, record);//mvcc, value_list @ts=0
+                break;
+            case LVTSTREAM_CONTENT:
+                content_ = new LVTStreamContentImpl();
+                content_.updateValues(0, 0, false, record);//mvcc, value_list @ts=0
+                content_.updateMultiValues(0, 0, false, record);//mvcc, value_list @ts=0
+                ((LVTStreamContentImpl) content_).setLVs(tthread);
                 break;
             default:
                 throw new UnsupportedOperationException();

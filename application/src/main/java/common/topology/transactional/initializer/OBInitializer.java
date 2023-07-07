@@ -155,7 +155,7 @@ public class OBInitializer extends TableInitilizer {
         values.add(new LongDataBox(value));//by default 100 qty of each good.
         SchemaRecord schemaRecord = new SchemaRecord(values);
         try {
-            db.InsertRecord("goods", new TableRecord(schemaRecord), partition_id);
+            db.InsertRecord("goods", new TableRecord(schemaRecord,this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
