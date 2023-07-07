@@ -5,8 +5,10 @@ import storage.SchemaRecord;
 import storage.datatype.DataBox;
 import transaction.context.TxnContext;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 /*
  * This class is used to store the content of a table for a specific version, which supports to implement the LSN Vector protocol.
@@ -75,6 +77,23 @@ public abstract class LVTStreamContent implements Content {
         if (record_at_ts == null || record_at_ts.getValues() == null)
             System.out.println("Read a null value??");
         return record_at_ts;
+    }
+    @Override
+    public List<SchemaRecord> readPreValuesRange(long ts, long range) {
+
+        long start = ts - range < 0 ? 0 : ts - range;
+
+        ConcurrentNavigableMap<Long, SchemaRecord> schemaRange = versions.tailMap(start);
+
+        //not modified in last round
+//        if (schemaRange.size() == 0)
+//            System.out.println("Empty window");
+//        else
+//            System.out.println(schemaRange.size());
+
+//        assert schemaRange.size() != 0;
+
+        return new ArrayList<>(schemaRange.values());
     }
 
     /**

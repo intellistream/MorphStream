@@ -5,6 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storage.SchemaRecord;
 import transaction.context.TxnContext;
+
+import java.util.List;
+
 /*
  * This class is used to store the content of a table for a specific version, which supports to implement the LSN Vector protocol.
  * Tuple.readLV() and Tuple.writeLV() are used to record the LSN Vector for read and write operation.
@@ -27,6 +30,7 @@ public class LVTStreamContentImpl extends LVTStreamContent{
     public SchemaRecord ReadAccess(long snapshotId, boolean clean) {
         return readValues(snapshotId, clean);
     }
+
 
     @Override
     public void WriteAccess(long commit_timestamp, long mark_ID, boolean clean, SchemaRecord local_record_) {
