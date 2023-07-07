@@ -1,6 +1,9 @@
 package scheduler.impl.op;
 
 
+import durability.logging.LoggingStrategy.ImplLoggingManager.CommandLoggingManager;
+import durability.logging.LoggingStrategy.ImplLoggingManager.DependencyLoggingManager;
+import durability.logging.LoggingStrategy.ImplLoggingManager.LSNVectorLoggingManager;
 import durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import durability.logging.LoggingStrategy.LoggingManager;
 import org.slf4j.Logger;
@@ -32,8 +35,8 @@ import java.util.NoSuchElementException;
 import static content.common.CommonMetaTypes.AccessType.*;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static utils.FaultToleranceConstants.LOGOption_no;
-import static utils.FaultToleranceConstants.LOGOption_path;
+import static utils.FaultToleranceConstants.*;
+import static utils.FaultToleranceConstants.LOGOption_command;
 
 public abstract class OPScheduler<Context extends OPSchedulerContext, Task> implements IScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OPScheduler.class);
@@ -517,6 +520,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         if (loggingManager instanceof PathLoggingManager) {
             isLogging = LOGOption_path;
             this.tpg.threadToPathRecord = ((PathLoggingManager) loggingManager).threadToPathRecord;
+        } else if (loggingManager instanceof LSNVectorLoggingManager) {
+            isLogging = LOGOption_lv;
+        } else if (loggingManager instanceof DependencyLoggingManager){
+            isLogging = LOGOption_dependency;
+        } else if (loggingManager instanceof CommandLoggingManager) {
+            isLogging = LOGOption_command;
         } else {
             isLogging = LOGOption_no;
         }

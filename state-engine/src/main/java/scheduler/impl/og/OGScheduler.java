@@ -1,6 +1,9 @@
 package scheduler.impl.og;
 
 
+import durability.logging.LoggingStrategy.ImplLoggingManager.CommandLoggingManager;
+import durability.logging.LoggingStrategy.ImplLoggingManager.DependencyLoggingManager;
+import durability.logging.LoggingStrategy.ImplLoggingManager.LSNVectorLoggingManager;
 import durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import durability.logging.LoggingStrategy.LoggingManager;
 import org.slf4j.Logger;
@@ -586,6 +589,12 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         if (loggingManager instanceof PathLoggingManager) {
             isLogging = LOGOption_path;
             this.tpg.threadToPathRecord = ((PathLoggingManager) loggingManager).threadToPathRecord;
+        } else if (loggingManager instanceof LSNVectorLoggingManager) {
+            isLogging = LOGOption_lv;
+        } else if (loggingManager instanceof DependencyLoggingManager){
+            isLogging = LOGOption_dependency;
+        } else if (loggingManager instanceof CommandLoggingManager) {
+            isLogging = LOGOption_command;
         } else {
             isLogging = LOGOption_no;
         }
