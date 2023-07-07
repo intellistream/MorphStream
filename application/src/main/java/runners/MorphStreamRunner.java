@@ -216,10 +216,14 @@ public class MorphStreamRunner extends Runner {
         if (sinkThread.running) {
             if (enable_log) log.info("The application fails to stop normally, exist...");
             return -1;
-        } else {
+        }
+        else {
             if (enable_app_combo) {
                 return SINK_CONTROL.getInstance().throughput;
-            } else {
+            } else if (measureInputThroughput) {
+                return SINK_CONTROL.getInstance().throughput; //TODO: Throughput collection. Hardcoded for ED
+            }
+            else {
                 TopologyComponent sink = submitter.getOM().g.getSink().operator;
                 double sum = 0;
                 int cnt = 0;

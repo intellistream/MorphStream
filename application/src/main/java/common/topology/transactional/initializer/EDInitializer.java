@@ -172,9 +172,9 @@ public class EDInitializer extends TableInitilizer {
     private void initializeWordToIndexMap() {
         String filePath;
         if (useShortDataset) {
-            filePath = "/Users/zhonghao/Documents/MorphStream/application/src/main/java/benchmark/datagenerator/apps/ED/dataset/word_map_short.txt";
+            filePath = "application/src/main/java/benchmark/datagenerator/apps/ED/dataset/word_map_short.txt";
         } else {
-            filePath = "/Users/zhonghao/Documents/MorphStream/application/src/main/java/benchmark/datagenerator/apps/ED/dataset/wordmap.txt";
+            filePath = "application/src/main/java/benchmark/datagenerator/apps/ED/dataset/wordmap.txt";
         }
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {

@@ -40,25 +40,21 @@ public interface CONTROL {
 
     //ED Settings
     int tweetWordCount = 8;//Avg number of words in each tweet
-
     int tweetWindowSize = 400; //equals to ED batch size (tthread * windowPerThread) TODO: remove hardcode
     int wordWindowSize = tweetWindowSize * tweetWordCount; //Avg num of words in a batch
     int clusterTableSize = 10000; //Maximum number of events to be detected
     boolean useShortDataset = false; //Use short dataset (4K events) or full dataset (50K events)
-
     double tfIdfThreshold = 0.01; //How to determine burst keyword: based on the current TFIDF
     double diffTfIdfThreshold = 0.001; //TODO: How to determine burst keyword: based on the change in TFIDF
     boolean isBurstByDifference = true; //Determine isBurst keyword based on (true - difference in TFIDF; false - TFIDF itself)
-
     double clusterSimiThreshold = 0.05; //TODO: Similarity between tweet and cluster
-//    boolean useWordFreqInCluster = false; //False: cluster is stored as Set(words); True: cluster is stored as Map<Word, Frequency>
-
     double growthRateThreshold = 0.001; //Cluster growth rate
     double countNewTweetThreshold = 10; //New tweet merged into cluster in a window
     boolean isEventByGrowthRate = false; //Determine isEvent based on (true - growthRate; false - countNewTweet)
     int windowGap = 2; //TODO: Adjust this
-
-
+    boolean measureInputThroughput = true;
+    //Hardcode for ED: its input & output do not have one-to-one mapping
+    //hence, we measure its throughput as (total_events / total_time), like combo apps
 
 
     //Fetch input tuple with matching index

@@ -133,7 +133,7 @@ public class TCBolt_ts extends TCBolt{
         }
 
         if (outWindowEvents.size() == tthread) { //no more current-window-events in all receive_queues
-            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " has reached punctuation: " + windowBoundary);
             int num_events = tcEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
@@ -171,7 +171,7 @@ public class TCBolt_ts extends TCBolt{
             }
 
             windowBoundary += tweetWindowSize;
-            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
+//            LOG.info("Thread " + this.thread_Id + " increment window boundary to: " + windowBoundary);
 
         }
 

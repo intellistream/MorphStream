@@ -72,8 +72,8 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
     public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
-    public String scheduler = "OP_BFS_A";
-//        public String scheduler = "OG_BFS_A";
+//    public String scheduler = "OP_BFS_A";
+        public String scheduler = "OG_BFS_A";
     //    public String scheduler = "OG_DFS";
     //    public String scheduler = "OG_DFS_A";
     //    public String scheduler = "OG_NS";

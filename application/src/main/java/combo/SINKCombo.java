@@ -12,15 +12,12 @@ public class SINKCombo extends MeasureSink {
     private static final long serialVersionUID = 5481794109405775823L;
 //    int cnt = 0;
     boolean start_measure = false;
-    int global_cnt;
-    int the_end; //each window outputs $clusterTableSize number of events
     int stop_event_count = 0;
 
     public void start() {
         if (!start_measure) {//only once.
             helper.StartMeasurement();
             start_measure = true;
-            the_end = totalEvents;
         }
     }
 
@@ -33,11 +30,11 @@ public class SINKCombo extends MeasureSink {
     public void execute(Tuple input) throws InterruptedException { //receives ESEvent
         latency_measure(input);
 //        cnt++;
-        if ((!enable_app_combo) && input.getBID() >= totalEvents-1) { //TODO: Only perform this for ED, refine it.
+        if ((!enable_app_combo) && input.getBID() >= totalEvents-1) { //TODO: Only perform this for Non_Combo, refine it.
             stop_event_count++;
             if (stop_event_count == tthread) {
                 LOG.info("Sink has received outputs: " + cnt);
-                end(global_cnt);
+                end(totalEvents);
             }
         }
     }

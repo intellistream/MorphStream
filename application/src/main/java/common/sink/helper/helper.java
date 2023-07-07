@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.enable_log;
+import static common.CONTROL.measureInputThroughput;
 
 /**
  * Created by I309939 on 7/24/2016.
@@ -40,6 +41,7 @@ public abstract class helper {
     AtomicInteger atomic_index_e;
     //    long local_index_e;
     long start, end;
+    static long start_copy;
     int checkPoint;
     boolean need_warm_up;
     boolean print_pid;
@@ -74,13 +76,19 @@ public abstract class helper {
             sink_pid();
             print_pid = false;
             start = System.nanoTime();//actual processing started.
+            start_copy = start;
             local_index_e = 0;
         }
     }
 
     public double EndMeasurement(long cnt) {
         end = System.nanoTime();
-        long time_elapsed = end - start;
+        long time_elapsed;
+        if (measureInputThroughput) {
+            time_elapsed = end - start_copy; //TODO: Hardcoded for ED: throughput collection
+        } else {
+            time_elapsed = end - start;
+        }
         return ((double) (cnt) * 1E6 / time_elapsed);//count/ns * 1E6 --> EVENTS/ms
     }
 

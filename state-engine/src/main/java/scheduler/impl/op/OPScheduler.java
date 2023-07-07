@@ -395,9 +395,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         } else throw new UnsupportedOperationException();
     }
 
-    int newClusterCount=0;
-    ArrayDeque<Double> simiArray = new ArrayDeque<>();
-
+//    int newClusterCount=0;
+//    ArrayDeque<Double> simiArray = new ArrayDeque<>();
     // ED-SC: Similarity Calculator - Asy_ModifyRecord_Iteration_Read
     protected void SimilarityCalculate_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 //        AppConfig.randomDelay();
@@ -464,7 +463,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             // determine the most similar cluster
             SchemaRecord maxCluster = Collections.max(similarities.entrySet(), Map.Entry.comparingByValue()).getKey();
             double maxSimilarity = similarities.get(maxCluster);
-            simiArray.add(maxSimilarity); //for testing
+//            simiArray.add(maxSimilarity); //for testing
 
             if (maxSimilarity >= clusterSimiThreshold) { // Compare max similarity with threshold
 //                log.info("Similar cluster found");
@@ -477,7 +476,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             int newClusterHashcode = Math.abs(Arrays.toString(tweetWordList).hashCode()) % 10007 % clusterTableSize; //TODO: Hashing clusterID to a fixed range
             String newClusterKey = String.valueOf(newClusterHashcode);
             tempo_record.getValues().get(2).setString(newClusterKey); //update tweet.clusterID
-            newClusterCount++;
+//            newClusterCount++;
 //            log.info("New cluster counter: " + newClusterCount);
         }
 
@@ -503,7 +502,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
             List<String> clusterWordList = clusterRecord.getValues().get(1).getStringList();
             SchemaRecord tempo_record = new SchemaRecord(clusterRecord); //tempo record
-
             // Merge input tweet into cluster
             for (String word : tweetWordList) {
                 if (!clusterWordList.contains(word)) {clusterWordList.add(word);} //TODO: Replace set with map
@@ -516,7 +514,6 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             //Update record's version (in this request, s_record == d_record)
             operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
 //            log.info("Merged tweet " + tweetRecord.GetPrimaryKey() + " " + tweetWordList + " into cluster: " + clusterRecord.GetPrimaryKey() + " " + clusterWordList);
-
             synchronized (operation.success) {
                 operation.success[0]++;
             }
@@ -529,51 +526,46 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
 
-    int esCounter = 0;
-    ArrayDeque<Double> growthRates = new ArrayDeque<>();
     // ED-ES: Asy_ModifyRecord_Read
     protected void EventSelection_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 //        AppConfig.randomDelay();
-
         // read
         SchemaRecord clusterRecord = operation.s_record.content_.readPastValues((long) operation.bid);
-
         if (clusterRecord == null) {
             log.info("SC: Condition cluster record not found");
             throw new NoSuchElementException();
-        } else {
-            esCounter++;
-//            log.info("SC valid record count: " + esCounter);
         }
-
         // cluster exits in clusterTable
         long countNewTweet = clusterRecord.getValues().get(2).getLong();
         long clusterSize = clusterRecord.getValues().get(3).getLong();
-        SchemaRecord tempo_record = new SchemaRecord(clusterRecord); //tempo record
+        try {
+            SchemaRecord tempo_record = new SchemaRecord(clusterRecord); //tempo record
 
-        // compute cluster growth rate
-        if (operation.function instanceof Division) {
-            double growthRate = (double) countNewTweet / clusterSize;
-            growthRates.add(growthRate);
-            if (isEventByGrowthRate) {
-                tempo_record.getValues().get(5).setDouble(growthRate); //update growthRate
-                tempo_record.getValues().get(4).setBool(growthRate > growthRateThreshold); //compute, update cluster.isEvent
+            // compute cluster growth rate
+            if (operation.function instanceof Division) {
+                double growthRate = (double) countNewTweet / clusterSize;
+                if (isEventByGrowthRate) {
+                    tempo_record.getValues().get(5).setDouble(growthRate); //update growthRate
+                    tempo_record.getValues().get(4).setBool(growthRate > growthRateThreshold); //compute, update cluster.isEvent
+                } else {
+                    tempo_record.getValues().get(5).setDouble(countNewTweet); //update growthRate as numNewTweets
+                    tempo_record.getValues().get(4).setBool(countNewTweet > countNewTweetThreshold);
+                }
+                tempo_record.getValues().get(2).setLong(0); //compute, reset cluster.countNewTweet to zero
+
+                operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+                synchronized (operation.success) {
+                    operation.success[0]++;
+                }
+
             } else {
-                tempo_record.getValues().get(5).setDouble(countNewTweet); //update growthRate as numNewTweets
-                tempo_record.getValues().get(4).setBool(countNewTweet > countNewTweetThreshold);
+                throw new UnsupportedOperationException();
             }
-            tempo_record.getValues().get(2).setLong(0); //compute, reset cluster.countNewTweet to zero
-
-            operation.d_record.content_.updateMultiValues((long) operation.bid, (long) previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
-
-        } else {
-            throw new UnsupportedOperationException();
+        } catch (Exception e) {
+            log.info("Concurrent write to cluster, probably due to small cluster table size");
         }
-
     }
+
 
     protected void IBWJ_Fun(AbstractOperation operation, double previous_mark_ID, boolean clean) {
 
