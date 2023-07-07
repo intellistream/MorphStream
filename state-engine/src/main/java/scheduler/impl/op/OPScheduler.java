@@ -1,6 +1,8 @@
 package scheduler.impl.op;
 
 
+import durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
+import durability.logging.LoggingStrategy.LoggingManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -30,11 +32,15 @@ import java.util.NoSuchElementException;
 import static content.common.CommonMetaTypes.AccessType.*;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static utils.FaultToleranceConstants.LOGOption_no;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 public abstract class OPScheduler<Context extends OPSchedulerContext, Task> implements IScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OPScheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
+    public LoggingManager loggingManager; // Used by fault tolerance
+    public int isLogging;// Used by fault tolerance
     public OPScheduler(int totalThreads, int NUM_ITEMS, int app) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
@@ -504,6 +510,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         } while (!FINISHED(context));
         RESET(context);//
 //        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+    }
+    @Override
+    public void setLoggingManager(LoggingManager loggingManager) {
+        this.loggingManager = loggingManager;
+        if (loggingManager instanceof PathLoggingManager) {
+            isLogging = LOGOption_path;
+            this.tpg.threadToPathRecord = ((PathLoggingManager) loggingManager).threadToPathRecord;
+        } else {
+            isLogging = LOGOption_no;
+        }
     }
 
 }

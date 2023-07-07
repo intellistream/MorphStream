@@ -101,6 +101,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
 
     public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
+    @Override
     public boolean SelectKeyRecord(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);//index look up.
@@ -115,6 +116,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
         }
     }
 
+    @Override
     public boolean lock_ahead(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException {
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);
         if (t_record != null) {
@@ -125,7 +127,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
             return false;
         }
     }
-
+    @Override
     public boolean SelectKeyRecord_noLock(TxnContext txn_context, String table_name, String primary_key, SchemaRecordRef record_, AccessType access_type) throws DatabaseException {
         MeasureTools.BEGIN_INDEX_TIME_MEASURE(txn_context.thread_Id);
         TableRecord t_record = storageManager_.getTable(table_name).SelectKeyRecord(primary_key);
@@ -181,15 +183,15 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     public boolean SelectKeyRecord_noLockCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType accessType) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
-
     protected boolean lock_aheadCC(TxnContext txn_context, String table_name, TableRecord t_record, SchemaRecordRef record_ref, AccessType access_type) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void BeginTransaction(TxnContext txn_context) {
         throw new UnsupportedOperationException();
     }
-
+    @Override
     public abstract boolean CommitTransaction(TxnContext txn_context);
 
     // Those should not be used by dedicated locked txn manager.

@@ -1,5 +1,6 @@
 package transaction;
 
+import durability.logging.LoggingStrategy.LoggingManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scheduler.collector.Collector;
@@ -17,6 +18,7 @@ import scheduler.impl.op.structured.OPBFSAScheduler;
 import scheduler.impl.op.structured.OPBFSScheduler;
 import scheduler.impl.op.structured.OPDFSAScheduler;
 import scheduler.impl.op.structured.OPDFSScheduler;
+import scheduler.impl.recovery.RScheduler;
 
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +31,7 @@ import static common.CONTROL.enable_log;
 public abstract class TxnManager implements ITxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManager.class);
     protected static IScheduler scheduler; // TODO: this is a bad encapsulation, try to make it non static
+    protected static IScheduler recoveryScheduler;
 
 
     /**
@@ -46,6 +49,7 @@ public abstract class TxnManager implements ITxnManager {
     protected static HashMap<Integer, String> schedulerTypeByGroup;
     public static boolean enableGroup = false;
     public static int groupNum;
+    public static LoggingManager loggingManager;
 
     public static void CreateSchedulerByGroup(String schedulerType, int threadCount,int numberOfStates, int app){
         schedulerByGroup = new HashMap<>();
@@ -55,6 +59,9 @@ public abstract class TxnManager implements ITxnManager {
             TxnManager.schedulerByGroup.put(i,CreateSchedulerByType(scheduler[i], threadCount / scheduler.length, numberOfStates / scheduler.length, app));
             TxnManager.schedulerTypeByGroup.put(i, scheduler[i]);
             TxnManager.schedulerByGroup.get(i).initTPG(i * (threadCount / scheduler.length));
+            if (loggingManager != null) {
+                TxnManager.schedulerByGroup.get(i).setLoggingManager(loggingManager);
+            }
         }
         enableGroup = true;
         groupNum = scheduler.length;
@@ -141,6 +148,9 @@ public abstract class TxnManager implements ITxnManager {
         for (int i = 0; i < scheduler.length; i++) {
             TxnManager.schedulerPool.put(scheduler[i], CreateSchedulerByType(scheduler[i], threadCount, numberOfStates, app));
             TxnManager.schedulerPool.get(scheduler[i]).initTPG(0);
+            if (loggingManager != null) {
+                TxnManager.schedulerPool.get(scheduler[i]).setLoggingManager(loggingManager);
+            }
         }
         for (int i = 0; i < threadCount; i++) {
             TxnManager.currentSchedulerType.put(i, defaultScheduler);
@@ -189,6 +199,20 @@ public abstract class TxnManager implements ITxnManager {
                 return new TStreamScheduler(threadCount, numberOfStates, app);
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
+        }
+    }
+    public static void initRecoveryScheduler(int FTOption, int threadCount, int numberOfStates, int app) {
+        switch (FTOption) {
+            case 3:
+                recoveryScheduler = new RScheduler(threadCount, numberOfStates, app);
+                recoveryScheduler.initTPG(0);
+                if (loggingManager != null) {
+                    recoveryScheduler.setLoggingManager(loggingManager);
+                }
+                scheduler = recoveryScheduler;
+                break;
+            default:
+                break;
         }
     }
 }

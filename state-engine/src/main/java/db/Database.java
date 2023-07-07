@@ -1,6 +1,7 @@
 package db;
 
 import durability.ftmanager.FTManager;
+import durability.logging.LoggingStrategy.LoggingManager;
 import durability.recovery.RedoLogResult;
 import durability.snapshot.SnapshotResult.SnapshotResult;
 import storage.EventManager;
@@ -15,9 +16,11 @@ public abstract class Database {
     public int numTransactions = 0;//current number of activate transactions
     StorageManager storageManager;
     EventManager eventManager;
+    LoggingManager loggingManager;
     public EventManager getEventManager() {
         return eventManager;
     }
+    public LoggingManager getLoggingManager() { return loggingManager;}
 //	public transient TxnParam param;
 
     /**

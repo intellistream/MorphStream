@@ -1,5 +1,6 @@
 package scheduler.struct.op;
 
+import durability.logging.LoggingEntry.PathRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -43,6 +44,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
     private final ConcurrentHashMap<String, Vector<Operation>> NonOperations = new ConcurrentHashMap<>();
     public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
+    public ConcurrentHashMap<Integer, PathRecord> threadToPathRecord;// Used path logging
     private int maxLevel = 0; // just for layered scheduling
 
 

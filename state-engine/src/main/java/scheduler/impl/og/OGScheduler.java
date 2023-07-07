@@ -1,6 +1,8 @@
 package scheduler.impl.og;
 
 
+import durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
+import durability.logging.LoggingStrategy.LoggingManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -31,13 +33,16 @@ import java.util.HashSet;
 import java.util.List;
 
 import static content.common.CommonMetaTypes.AccessType.*;
+import static utils.FaultToleranceConstants.*;
+import static utils.FaultToleranceConstants.LOGOption_no;
 
 public abstract class OGScheduler<Context extends OGSchedulerContext>
         implements IScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OGScheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
-
+    public LoggingManager loggingManager; // Used by fault tolerance
+    public int isLogging;// Used by fault tolerance
     protected OGScheduler(int totalThreads, int NUM_ITEMS, int app) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
@@ -575,5 +580,14 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         }
         return false;
     }
-
+    @Override
+    public void setLoggingManager(LoggingManager loggingManager) {
+        this.loggingManager = loggingManager;
+        if (loggingManager instanceof PathLoggingManager) {
+            isLogging = LOGOption_path;
+            this.tpg.threadToPathRecord = ((PathLoggingManager) loggingManager).threadToPathRecord;
+        } else {
+            isLogging = LOGOption_no;
+        }
+    }
 }

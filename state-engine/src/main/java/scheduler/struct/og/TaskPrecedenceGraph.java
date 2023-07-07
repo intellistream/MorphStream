@@ -1,5 +1,6 @@
 package scheduler.struct.og;
 
+import durability.logging.LoggingEntry.PathRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -41,6 +42,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
     public final ConcurrentHashMap<Integer, Context> threadToContextMap;
+    public ConcurrentHashMap<Integer, PathRecord> threadToPathRecord;// Used path logging
     public final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final int NUM_ITEMS;
