@@ -18,22 +18,16 @@ public class HistoryViews {
         groupToDependencyView.get(groupId).addDependencies(table, from, to, bid, v);
     }
     public boolean inspectAbortView(long groupId, int threadId, long bid) {
-        MeasureTools.BEGIN_RECOVERY_ABORT_PUSH_DOWN_MEASURE(threadId);
         if (!abortViews.containsKey(groupId)) {
-            MeasureTools.END_RECOVERY_ABORT_PUSH_DOWN_MEASURE(threadId);
             return false;
         }
         boolean isAbort = abortViews.get(groupId).inspectView(threadId, bid);
-        MeasureTools.END_RECOVERY_ABORT_PUSH_DOWN_MEASURE(threadId);
         return isAbort;
     }
     public int inspectAbortNumber(long groupId, int threadId) {
-        MeasureTools.BEGIN_RECOVERY_ABORT_PUSH_DOWN_MEASURE(threadId);
         if (!abortViews.containsKey(groupId)) {
-            MeasureTools.END_RECOVERY_ABORT_PUSH_DOWN_MEASURE(threadId);
             return 0;
         }
-        MeasureTools.END_RECOVERY_ABORT_PUSH_DOWN_MEASURE(threadId);
         return abortViews.get(groupId).threadToAbortList.get(threadId).size();
     }
     public Object inspectDependencyView(long groupId, String table, String from, String to, long bid) {
