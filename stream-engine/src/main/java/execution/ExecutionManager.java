@@ -5,6 +5,8 @@ import components.context.TopologyContext;
 import components.exception.UnhandledCaseException;
 import controller.affinity.AffinityController;
 import db.Database;
+import durability.ftmanager.FTManager;
+import durability.ftmanager.ImplFTManager.*;
 import execution.runtime.boltThread;
 import execution.runtime.executorThread;
 import execution.runtime.spoutThread;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import transaction.TxnManager;
 import utils.AppConfig;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,12 +35,60 @@ public class ExecutionManager {
     public final AffinityController AC;
     private final OptimizationManager optimizationManager;
     private final ExecutionGraph g;
+    private final FTManager ftManager;
+    private final FTManager loggingManager;
 
     public ExecutionManager(ExecutionGraph g, Configuration conf, OptimizationManager optimizationManager) {
         this.g = g;
         AC = new AffinityController(conf);
         this.optimizationManager = optimizationManager;
-
+        try{
+            switch (conf.getInt("FTOption")) {
+                case 1:
+                    this.ftManager = new CheckpointManager();
+                    this.loggingManager = null;
+                    this.ftManager.initialize(conf);
+                    break;
+                case 3:
+                    this.ftManager = new CheckpointManager();
+                    this.loggingManager = new PathManager();
+                    this.ftManager.initialize(conf);
+                    this.loggingManager.initialize(conf);
+                    break;
+                case 4:
+                    this.ftManager = new CheckpointManager();
+                    this.loggingManager = new LSNVectorManager();
+                    this.ftManager.initialize(conf);
+                    this.loggingManager.initialize(conf);
+                    break;
+                case 5:
+                    this.ftManager = new CheckpointManager();
+                    this.loggingManager = new DependencyManager();
+                    this.ftManager.initialize(conf);
+                    this.loggingManager.initialize(conf);
+                    break;
+                case 6:
+                    this.ftManager = new CheckpointManager();
+                    this.loggingManager = new CommandManager();
+                    this.ftManager.initialize(conf);
+                    this.loggingManager.initialize(conf);
+                    break;
+                default:
+                    this.ftManager = null;
+                    this.loggingManager = null;
+                    break;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void loadFTManger() {
+        if (this.ftManager != null) {
+            this.ftManager.start();
+        }
+        if (this.loggingManager != null) {
+            this.loggingManager.start();
+        }
     }
 
 
@@ -78,6 +129,9 @@ public class ExecutionManager {
                     TxnManager.CreateSchedulerByGroup(conf.getString("SchedulersForGroup"), totalThread, numberOfStates, app);
                 } else {
                     TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates, app);
+                }
+                if (conf.getBoolean("isRecovery")) {
+                    TxnManager.initRecoveryScheduler(conf.getInt("FTOption"),totalThread, numberOfStates, app);
                 }
             }
         }
@@ -174,9 +228,20 @@ public class ExecutionManager {
     public void exist() {
         if (enable_log) LOG.info("Execution stops.");
         this.getSinkThread().getContext().Sequential_stopAll();
+        this.closeFTM();
     }
 
     public executorThread getSinkThread() {
         return ThreadMap.get(g.getSinkThread());
+    }
+    public void closeFTM() {
+        if (this.ftManager != null) {
+            this.ftManager.running = false;
+            ftManager.interrupt();
+        }
+        if (this.loggingManager != null) {
+            this.loggingManager.running = false;
+            loggingManager.interrupt();
+        }
     }
 }
