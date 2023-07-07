@@ -36,6 +36,7 @@ public abstract class AbstractOperation {
     public volatile TableRecord[] condition_records;
     public Condition condition;
     public final int[] success;
+    public boolean isCommit = true;//It means that this operation has been added to LoggingManager.
 
     public WindowDescriptor windowContext;
 
@@ -54,5 +55,6 @@ public abstract class AbstractOperation {
         this.bid = bid;
         this.windowContext = windowContext;
         this.pKey = pKey;
+        this.isCommit = false;
     }
 }
