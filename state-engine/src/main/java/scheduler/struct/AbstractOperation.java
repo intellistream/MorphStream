@@ -1,6 +1,11 @@
 package scheduler.struct;
 
 import content.common.CommonMetaTypes;
+import durability.logging.LoggingEntry.LogRecord;
+import durability.struct.Logging.DependencyLog;
+import durability.struct.Logging.LVCLog;
+import durability.struct.Logging.LoggingEntry;
+import durability.struct.Logging.NativeCommandLog;
 import scheduler.struct.op.WindowDescriptor;
 import storage.SchemaRecordRef;
 import storage.TableRecord;
@@ -11,6 +16,9 @@ import transaction.function.Condition;
 import transaction.function.Function;
 
 import java.util.List;
+
+import static content.common.ContentCommon.loggingRecord_type;
+import static utils.FaultToleranceConstants.*;
 
 /**
  * TODO: clean ``state" and ``reference".
@@ -37,7 +45,8 @@ public abstract class AbstractOperation {
     public Condition condition;
     public final int[] success;
     public boolean isCommit = true;//It means that this operation has been added to LoggingManager.
-
+    //required by Write-ahead-logging, Dependency logging, LV logging.
+    public LoggingEntry logRecord;
     public WindowDescriptor windowContext;
 
     public AbstractOperation(Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, Condition condition, int[] success,
@@ -55,6 +64,46 @@ public abstract class AbstractOperation {
         this.bid = bid;
         this.windowContext = windowContext;
         this.pKey = pKey;
-        this.isCommit = false;
+        if (loggingRecord_type == LOGOption_path) {
+            isCommit = false;
+        } else if (loggingRecord_type == LOGOption_dependency) {
+            String[] conditions;
+            if (condition_records != null) {
+                conditions = new String[condition_records.length];
+                for (int i = 0; i < condition_records.length; i++) {
+                    conditions[i] = condition_records[i].record_.GetPrimaryKey();
+                }
+            } else {
+                conditions = new String[0];
+            }
+            this.logRecord = new DependencyLog(bid, table_name, d_record.record_.GetPrimaryKey(), function.getClass().getName(), conditions, function.toString());
+            this.isCommit = false;
+        } else if (loggingRecord_type == LOGOption_wal) {
+            this.logRecord = new LogRecord(table_name, bid, d_record.record_.GetPrimaryKey());
+        } else if (loggingRecord_type == LOGOption_lv) {
+            String[] conditions;
+            if (condition_records != null) {
+                conditions = new String[condition_records.length];
+                for (int i = 0; i < condition_records.length; i++) {
+                    conditions[i] = condition_records[i].record_.GetPrimaryKey();
+                }
+            } else {
+                conditions = new String[0];
+            }
+            this.logRecord = new LVCLog(bid, table_name, d_record.record_.GetPrimaryKey(), function.getClass().getName(), conditions, function.toString());
+            this.isCommit = false;
+        } else if (loggingRecord_type == LOGOption_command) {
+            String[] conditions;
+            if (condition_records != null) {
+                conditions = new String[condition_records.length];
+                for (int i = 0; i < condition_records.length; i++) {
+                    conditions[i] = condition_records[i].record_.GetPrimaryKey();
+                }
+            } else {
+                conditions = new String[0];
+            }
+            this.logRecord = new NativeCommandLog(bid, table_name, d_record.record_.GetPrimaryKey(), function.getClass().getName(), conditions, function.toString());
+            this.isCommit = false;
+        }
     }
 }

@@ -1,11 +1,15 @@
 package scheduler.impl.og;
 
 
+import durability.logging.LoggingEntry.LogRecord;
 import durability.logging.LoggingStrategy.ImplLoggingManager.CommandLoggingManager;
 import durability.logging.LoggingStrategy.ImplLoggingManager.DependencyLoggingManager;
 import durability.logging.LoggingStrategy.ImplLoggingManager.LSNVectorLoggingManager;
 import durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import durability.logging.LoggingStrategy.LoggingManager;
+import durability.struct.Logging.DependencyLog;
+import durability.struct.Logging.LVCLog;
+import durability.struct.Logging.NativeCommandLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -598,5 +602,43 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         } else {
             isLogging = LOGOption_no;
         }
+        tpg.isLogging = isLogging;
+    }
+    private void commitLog(Operation operation) {
+        if (operation.isCommit) {
+            return;
+        }
+        if (isLogging == LOGOption_path) {
+            return;
+        }
+        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+        if (isLogging == LOGOption_wal) {
+            ((LogRecord) operation.logRecord).addUpdate(operation.d_record.content_.readPreValues(operation.bid));
+            this.loggingManager.addLogRecord(operation.logRecord);
+        } else if (isLogging == LOGOption_dependency) {
+            ((DependencyLog) operation.logRecord).setId(operation.bid + "." + operation.getTxnOpId());
+            for (Operation op : operation.fd_parents) {
+                ((DependencyLog) operation.logRecord).addInEdge(op.bid + "." + op.getTxnOpId());
+            }
+            for (Operation op : operation.fd_children) {
+                ((DependencyLog) operation.logRecord).addOutEdge(op.bid + "." + op.getTxnOpId());
+            }
+            Operation ldParent = operation.getOC().getOperations().lower(operation);
+            if (ldParent != null)
+                ((DependencyLog) operation.logRecord).addInEdge(ldParent.bid + "." + ldParent.getTxnOpId());
+            Operation ldChild = operation.getOC().getOperations().higher(operation);
+            if (ldChild != null)
+                ((DependencyLog) operation.logRecord).addOutEdge(ldChild.bid + "." + ldChild.getTxnOpId());
+            this.loggingManager.addLogRecord(operation.logRecord);
+        } else if (isLogging == LOGOption_lv) {
+            ((LVCLog) operation.logRecord).setAccessType(operation.accessType);
+            ((LVCLog) operation.logRecord).setThreadId(operation.context.thisThreadId);
+            this.loggingManager.addLogRecord(operation.logRecord);
+        } else if (isLogging == LOGOption_command) {
+            ((NativeCommandLog) operation.logRecord).setId(operation.bid + "." + operation.getTxnOpId());
+            this.loggingManager.addLogRecord(operation.logRecord);
+        }
+        operation.isCommit = true;
+        MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
     }
 }

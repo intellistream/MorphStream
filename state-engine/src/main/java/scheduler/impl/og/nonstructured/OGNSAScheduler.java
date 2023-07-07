@@ -1,11 +1,14 @@
 package scheduler.impl.og.nonstructured;
 
+import durability.struct.FaultToleranceRelax;
 import scheduler.context.og.OGNSAContext;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
 import transaction.impl.ordered.MyList;
 import utils.SOURCE_CONTROL;
+
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 public class OGNSAScheduler extends AbstractOGNSScheduler<OGNSAContext> {
 
@@ -17,8 +20,10 @@ public class OGNSAScheduler extends AbstractOGNSScheduler<OGNSAContext> {
 
     @Override
     public void INITIALIZE(OGNSAContext context) {
-//        tpg.constructTPG(context);
         tpg.firstTimeExploreTPG(context);
+        if (tpg.isLogging == LOGOption_path && FaultToleranceRelax.isSelectiveLogging) {
+            this.loggingManager.selectiveLoggingPartition(context.thisThreadId);
+        }
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
@@ -34,7 +39,11 @@ public class OGNSAScheduler extends AbstractOGNSScheduler<OGNSAContext> {
      */
     @Override
     public void EXPLORE(OGNSAContext context) {
-        context.partitionStateManager.handleStateTransitions();
+        if (isLogging == LOGOption_path) {
+            context.partitionStateManager.handleStateTransitionsWithAbortTracking(this.tpg.threadToPathRecord.get(context.thisThreadId));
+        } else {
+            context.partitionStateManager.handleStateTransitions();
+        }
     }
 
     @Override

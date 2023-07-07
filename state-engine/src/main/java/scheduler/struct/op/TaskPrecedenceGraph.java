@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
+import static utils.FaultToleranceConstants.LOGOption_no;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 /**
  * TPG  -> Partition -> Key:OperationChain -> Operation-Operation-Operation...
@@ -46,25 +48,10 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
     public ConcurrentHashMap<Integer, PathRecord> threadToPathRecord;// Used path logging
     private int maxLevel = 0; // just for layered scheduling
+    public int isLogging = LOGOption_no;
 
 
     public void reset(Context context) {
-//        if (app == 0) {
-//            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//        } else if (app == 1) {
-//            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//        } else if (app == 2) {
-//            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//        } else if (app == 3) {
-//            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//        }
-//        threadToOCs.get(context.thisThreadId).clear();
-//        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
-//            oc.clear();
-//        }
-//        this.setOCs(context); // TODO: the short cut should be reset, but will take some time.
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear(); // only need to clear all operations from all ocs
         }
@@ -251,6 +238,11 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     }
                     context.operations.addAll(oc.getOperations());
                     context.totalOsToSchedule += oc.getOperations().size();
+                    if (this.isLogging == LOGOption_path) {
+                        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                        this.threadToPathRecord.get(context.thisThreadId).addNode(oc.getTableName(), oc.getPrimaryKey(), oc.getOperations().size());
+                        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                    }
                 }
             }
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
@@ -281,6 +273,11 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
                     context.totalOsToSchedule += oc.getOperations().size();
                     if (head.isRoot()) {
                         head.context.getListener().onRootStart(head);
+                    }
+                    if (this.isLogging == LOGOption_path) {
+                        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                        this.threadToPathRecord.get(context.thisThreadId).addNode(oc.getTableName(), oc.getPrimaryKey(), oc.getOperations().size());
+                        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
                     }
                 }
             }

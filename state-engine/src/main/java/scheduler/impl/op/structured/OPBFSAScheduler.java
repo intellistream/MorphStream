@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static common.CONTROL.enable_log;
 import static java.lang.Integer.min;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler<Context> {
     private static final Logger LOG = LoggerFactory.getLogger(OPBFSAScheduler.class);
@@ -157,6 +158,11 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
         for (Operation failedOp : failedOperations) {
             if (bid == failedOp.bid) {
                 operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
+                if (this.isLogging == LOGOption_path && operation.txnOpId == 0) {
+                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                    this.tpg.threadToPathRecord.get(context.thisThreadId).addAbortBid(operation.bid);
+                    MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                }
                 markAny = true;
             }
         }

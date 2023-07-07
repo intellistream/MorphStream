@@ -1,14 +1,18 @@
 package scheduler.impl.og.nonstructured;
 
+import durability.struct.FaultToleranceRelax;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import scheduler.context.og.OGNSContext;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
+import utils.FaultToleranceConstants;
 import utils.SOURCE_CONTROL;
 
 import static common.CONTROL.enable_log;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
     private static final Logger log = LoggerFactory.getLogger(OGNSScheduler.class);
@@ -25,6 +29,9 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
     public void INITIALIZE(OGNSContext context) {
         needAbortHandling = false;
         tpg.firstTimeExploreTPG(context);
+        if (tpg.isLogging == LOGOption_path && FaultToleranceRelax.isSelectiveLogging) {
+            this.loggingManager.selectiveLoggingPartition(context.thisThreadId);
+        }
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
@@ -75,6 +82,11 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
     protected void checkTransactionAbort(Operation operation, OperationChain operationChain) {
         // in coarse-grained algorithms, we will not handle transaction abort gracefully, just update the state of the operation
         operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
+        if (isLogging == FaultToleranceConstants.LOGOption_path && operation.getTxnOpId() == 0) {
+            MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+            this.tpg.threadToPathRecord.get(operationChain.context.thisThreadId).addAbortBid(operation.bid);
+            MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+        }
         // save the abort information and redo the batch.
         needAbortHandling = true;
     }
