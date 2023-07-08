@@ -6,7 +6,7 @@ function ResetParameters() {
   local numItems=$3
   local interval=$4
 
-  app="LoadBalancer"
+  app="EventDetection"
   checkpointInterval=$interval
   tthread=4
   scheduler=$inputScheduler
