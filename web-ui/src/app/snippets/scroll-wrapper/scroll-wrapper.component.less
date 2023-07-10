@@ -1,0 +1,51 @@
+.scroll-container {
+  white-space: nowrap;
+  overflow-x: auto;
+  background: var(--background-primary);
+}
+
+.scroll-container::-webkit-scrollbar{
+  display: none;
+}
+
+.scroll-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  background-color: rgba(128, 128, 128, 0.5);
+  border: none;
+  cursor: pointer;
+  width: 40px;
+  height: 60px;
+}
+
+.scroll-button:hover {
+  background-color: rgba(128, 128, 128, 0.8);
+}
+
+.scroll-wrapper {
+  position: relative;
+}
+
+.left-button {
+  left: 0;
+  margin-right: 10px;
+}
+
+.right-button {
+  right: 0;
+  margin-left: 10px;
+}
+
+//#addNewAppBtn {
+//  width: 480px;
+//  height: 270px;
+//  border-radius: 14px;
+//  border: 2px solid #FFFFFF;
+//  background-color: var(--background-primary);
+//  padding: 20px;
+//  display: inline-block;
+//  white-space: normal;
+//  margin-right: 20px;
+//}

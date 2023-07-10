@@ -1,18 +1,16 @@
-
-  <nz-content>
-    <div class="container">
-      <div nz-row class="title">
-        <span><b>Running Applications</b></span>
-      </div>
-      <div nz-row class="separator"></div>
-      <app-application-card [isRunning]="true"></app-application-card>
+<nz-content>
+  <div class="container">
+    <div nz-row class="title">
+      <span><b>Running Applications</b></span>
     </div>
-    <div class="container">
-      <div nz-row class="title">
-        <span><b>Completed Applications</b></span>
-      </div>
-      <div nz-row class="separator"></div>
-      <app-application-card [isRunning]="false"></app-application-card>
+    <div nz-row class="separator"></div>
+    <app-scroll-wrapper [applications] ="runningApplications"></app-scroll-wrapper>
+  </div>
+  <div class="container">
+    <div nz-row class="title">
+      <span><b>Completed Applications</b></span>
     </div>
-  </nz-content>
-
+    <div nz-row class="separator"></div>
+    <app-scroll-wrapper [applications]="completedApplications"></app-scroll-wrapper>
+  </div>
+</nz-content>

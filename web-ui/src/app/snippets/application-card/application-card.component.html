@@ -1,14 +1,14 @@
 <div id="app-box">
   <div nz-row id="app-title" nzJustify="space-around" nzAlign="middle">
     <nz-col nzSpan="16">
-      <b><span>Online Social Media Event Detection</span></b>
+      <b><span>{{ application.name }}</span></b>
     </nz-col>
     <nz-col nzSpan="8">
-      <div *ngIf="isRunning" class="running-icon">
+      <div *ngIf="application.isRunning" class="running-icon">
         <b><span>Running </span></b>
         <span nz-icon [nzType]="'sync'" [nzSpin]="true"></span>
       </div>
-      <div *ngIf="!isRunning" class="completed-icon">
+      <div *ngIf="!application.isRunning" class="completed-icon">
         <b><span>Complete </span></b>
         <span nz-icon nzType="issues-close" nzTheme="outline"></span>
       </div>
@@ -24,7 +24,7 @@
           </div>
         </nz-col>
         <nz-col nzSpan="6" class="info-number">
-          <span>8</span>
+          <span>{{ application.numOfThreads }}</span>
         </nz-col>
       </nz-row>
     </nz-col>
@@ -37,7 +37,7 @@
         </nz-col>
         <nz-col nzSpan="16">
             <span>
-              Intel(R) Xeon(R) Silver 4310 CPU @2.10GHz
+              {{ application.cpu }}
             </span>
         </nz-col>
       </nz-row>
@@ -49,7 +49,7 @@
         </nz-col>
         <nz-col nzSpan="16">
             <span>
-              32GB
+              {{ application.ram }}
             </span>
         </nz-col>
       </nz-row>
@@ -59,13 +59,24 @@
   <nz-row nzJustify="space-around" nzAlign="middle">
     <nz-col nzSpan="8" class="info-title">
       <div>
-        <b><span>Start Time</span><br/>
-          <span>Duration</span></b>
+        <b><span>Start Time</span></b>
       </div>
     </nz-col>
     <nz-col nzSpan="16">
       <span>
-        2023-Mar-10 09:15:27 00:08:17
+        {{ application.startTime }}
+      </span>
+    </nz-col>
+  </nz-row>
+  <nz-row nzJustify="space-around" nzAlign="middle">
+    <nz-col nzSpan="8" class="info-title">
+      <div>
+        <b><span>Duration</span></b>
+      </div>
+    </nz-col>
+    <nz-col nzSpan="16">
+      <span>
+        {{ application.duration }}
       </span>
     </nz-col>
   </nz-row>

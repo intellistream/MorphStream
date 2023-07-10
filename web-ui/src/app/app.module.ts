@@ -20,6 +20,7 @@ import {PocessingApplicationsComponent} from "./pages/applications/pocessing-app
 import {FinishedApplicationsComponent} from "./pages/applications/finished-applications/finished-applications.component";
 import {ApplicationCardComponent} from "./snippets/application-card/application-card.component";
 import {NzGridModule} from "ng-zorro-antd/grid";
+import {ScrollWrapperComponent} from "./snippets/scroll-wrapper/scroll-wrapper.component";
 
 registerLocaleData(en);
 
@@ -31,7 +32,8 @@ registerLocaleData(en);
     FooterComponent,
     PocessingApplicationsComponent,
     FinishedApplicationsComponent,
-    ApplicationCardComponent
+    ApplicationCardComponent,
+    ScrollWrapperComponent
   ],
   imports: [
     BrowserModule,
