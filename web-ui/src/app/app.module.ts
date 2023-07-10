@@ -18,6 +18,8 @@ import {HeaderComponent} from "./common/layout/header/header.component";
 import {FooterComponent} from "./common/layout/footer/footer.component";
 import {PocessingApplicationsComponent} from "./pages/applications/pocessing-applications/pocessing-applications.component";
 import {FinishedApplicationsComponent} from "./pages/applications/finished-applications/finished-applications.component";
+import {ApplicationCardComponent} from "./snippets/application-card/application-card.component";
+import {NzGridModule} from "ng-zorro-antd/grid";
 
 registerLocaleData(en);
 
@@ -28,7 +30,8 @@ registerLocaleData(en);
     HeaderComponent,
     FooterComponent,
     PocessingApplicationsComponent,
-    FinishedApplicationsComponent
+    FinishedApplicationsComponent,
+    ApplicationCardComponent
   ],
   imports: [
     BrowserModule,
@@ -39,7 +42,8 @@ registerLocaleData(en);
     IconsProviderModule,
     NzLayoutModule,
     NzMenuModule,
-    NgOptimizedImage
+    NgOptimizedImage,
+    NzGridModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }

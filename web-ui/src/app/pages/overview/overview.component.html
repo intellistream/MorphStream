@@ -1,2 +1,18 @@
-<nz-layout>
-</nz-layout>
+
+  <nz-content>
+    <div class="container">
+      <div nz-row class="title">
+        <span><b>Running Applications</b></span>
+      </div>
+      <div nz-row class="separator"></div>
+      <app-application-card [isRunning]="true"></app-application-card>
+    </div>
+    <div class="container">
+      <div nz-row class="title">
+        <span><b>Completed Applications</b></span>
+      </div>
+      <div nz-row class="separator"></div>
+      <app-application-card [isRunning]="false"></app-application-card>
+    </div>
+  </nz-content>
+
