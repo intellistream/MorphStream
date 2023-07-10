@@ -13,14 +13,18 @@ import { AppRoutingModule } from './app-routing.module';
 import { IconsProviderModule } from './icons-provider.module';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
-import {OverviewComponent} from "./pages/overview/overview.component";
-import {HeaderComponent} from "./common/layout/header/header.component";
-import {FooterComponent} from "./common/layout/footer/footer.component";
-import {PocessingApplicationsComponent} from "./pages/applications/pocessing-applications/pocessing-applications.component";
-import {FinishedApplicationsComponent} from "./pages/applications/finished-applications/finished-applications.component";
-import {ApplicationCardComponent} from "./snippets/application-card/application-card.component";
-import {NzGridModule} from "ng-zorro-antd/grid";
-import {ScrollWrapperComponent} from "./snippets/scroll-wrapper/scroll-wrapper.component";
+import { OverviewComponent } from "./pages/overview/overview.component";
+import { HeaderComponent } from "./common/layout/header/header.component";
+import { FooterComponent } from "./common/layout/footer/footer.component";
+import { ProcessingApplicationsComponent } from "./pages/applications/processing-applications/processing-applications.component";
+import { FinishedApplicationsComponent } from "./pages/applications/finished-applications/finished-applications.component";
+import { ApplicationCardComponent } from "./snippets/application-card/application-card.component";
+import { NzGridModule } from "ng-zorro-antd/grid";
+import { ScrollWrapperComponent } from "./snippets/scroll-wrapper/scroll-wrapper.component";
+import { NzButtonModule } from "ng-zorro-antd/button";
+import { ApplicationInformationComponent } from "./pages/application-information/application-information.component";
+import { ProcessingApplicationListElementComponent } from "./pages/applications/processing-applications/processing-application-list-element/processing-application-list-element.component";
+import { FinishedApplicationListElementComponent } from "./pages/applications/finished-applications/finished-application-list-element/finished-application-list-element.component";
 
 registerLocaleData(en);
 
@@ -30,10 +34,13 @@ registerLocaleData(en);
     OverviewComponent,
     HeaderComponent,
     FooterComponent,
-    PocessingApplicationsComponent,
+    ProcessingApplicationsComponent,
     FinishedApplicationsComponent,
     ApplicationCardComponent,
-    ScrollWrapperComponent
+    ScrollWrapperComponent,
+    ApplicationInformationComponent,
+    ProcessingApplicationListElementComponent,
+    FinishedApplicationListElementComponent
   ],
   imports: [
     BrowserModule,
@@ -45,7 +52,8 @@ registerLocaleData(en);
     NzLayoutModule,
     NzMenuModule,
     NgOptimizedImage,
-    NzGridModule
+    NzGridModule,
+    NzButtonModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
