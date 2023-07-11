@@ -72,7 +72,6 @@ public class EDInitializer extends TableInitilizer {
         } else {
             EDTPGDataGeneratorConfig dataConfig = new EDTPGDataGeneratorConfig();
             dataConfig.initialize(config);
-
             configurePath(dataConfig);
             try {
                 dataGenerator = new TweetDataGenerator(dataConfig);

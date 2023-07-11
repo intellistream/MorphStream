@@ -18,7 +18,7 @@ function ResetParameters() {
   key_skewness=0
 
   isCyclic=0
-  isDynamic=1
+  isDynamic=0
   workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
   schedulerPool="OG_DFS_A,OG_NS_A,OP_NS_A,OP_NS"
   newConnRatio=$inputNewConnRatio
@@ -70,15 +70,18 @@ function runTStream() {
 
 # run basic experiment for MorphStream
 function baselineEvaluation() {
-  isDynamic=1
+  isDynamic=0
   CCOption=3 #MorphStream
   runTStream
 }
 
 function dynamic_runner() { # multi-batch exp
-  # ED Experiment on MorphStream with dynamic scheduling strategies
-  ResetParameters "OP_BFS_A" "10" "32000" "100"
-  baselineEvaluation
+  # ED Experiment on MorphStream with various scheduling strategies
+  schedulerArray=("OP_BFS_A" "OG_BFS_A" "OP_NS_A" "OG_NS_A")
+  for scheduler in "${schedulerArray[@]}"; do
+    ResetParameters "$scheduler" "10" "32000" "100"
+    baselineEvaluation
+  done
 }
 
 
