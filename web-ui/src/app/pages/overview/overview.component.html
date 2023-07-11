@@ -1,17 +1,23 @@
-<nz-content>
-  <div class="container">
+<div id="main-container">
+  <nz-content>
     <div nz-row class="title">
-      <span><b>Running Applications</b></span>
-      <span id="btn-add-new-application" nz-icon nzType="plus-square" nzTheme="outline"></span>
+      <nz-col nzSpan="24">
+        <span id="title-text"><b>Overview</b></span>
+        <div nz-row class="separator"></div>
+      </nz-col>
     </div>
-    <div nz-row class="separator"></div>
-    <app-scroll-wrapper [applications] ="runningApplications"></app-scroll-wrapper>
-  </div>
-  <div class="container">
-    <div nz-row class="title">
-      <span><b>Completed Applications</b></span>
+    <div class="container">
+      <div nz-row class="sub-title">
+        <span><b>Running Applications</b></span>
+        <span id="btn-add-new-application" nz-icon nzType="plus-square" nzTheme="outline"></span>
+      </div>
+      <app-scroll-wrapper [applications] ="runningApplications"></app-scroll-wrapper>
     </div>
-    <div nz-row class="separator"></div>
-    <app-scroll-wrapper [applications]="completedApplications"></app-scroll-wrapper>
-  </div>
-</nz-content>
+    <div class="container">
+      <div nz-row class="sub-title">
+        <span><b>Completed Applications</b></span>
+      </div>
+      <app-scroll-wrapper [applications]="completedApplications"></app-scroll-wrapper>
+    </div>
+  </nz-content>
+</div>

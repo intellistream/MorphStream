@@ -1,5 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {Application} from "../../model/application";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-application-card',
@@ -17,5 +18,12 @@ export class ApplicationCardComponent {
     startTime: "2023-Mar-10 09:15:27",
     duration: "00:08:17",
     isRunning: true
+  }
+
+  constructor(private router: Router) {
+  }
+
+  navigateToAppDetails() {
+    this.router.navigate(['overview/application-details']);
   }
 }

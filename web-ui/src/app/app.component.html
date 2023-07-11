@@ -1,23 +1,24 @@
 <nz-layout>
-  <app-header></app-header>
+  <app-header id="header"></app-header>
   <nz-layout>
-    <nz-sider nzCollapsible nzWidth="15%">
-      <ul nz-menu nzMode="inline">
-        <li nz-menu-item routerLink="/overview" nzSelected>
-          <span nz-icon nzType="project" nzTheme="outline"></span>
-          <span>Overview</span>
-        </li>
-        <li nz-submenu nzTitle="Applications" nzIcon="database">
-          <ul>
-            <li nz-menu-item routerLink="/applications/processing-applications">
-              <span>Processing applications</span>
-            </li>
-            <li nz-menu-item routerLink="/applications/finished-applications">Finished applications</li>
-          </ul>
-        </li>
-      </ul>
-    </nz-sider>
+    <app-header id="head-placeholder"></app-header>
     <nz-layout>
+      <nz-sider nzCollapsible nzWidth="15%">
+        <ul nz-menu nzMode="inline">
+          <li nz-menu-item routerLink="/overview" nzSelected>
+            <span nz-icon nzType="project" nzTheme="outline"></span>
+            <span>Overview</span>
+          </li>
+          <li nz-submenu nzTitle="Applications" nzIcon="database">
+            <ul>
+              <li nz-menu-item routerLink="/applications/processing-applications">
+                <span>Processing applications</span>
+              </li>
+              <li nz-menu-item routerLink="/applications/finished-applications">Finished applications</li>
+            </ul>
+          </li>
+        </ul>
+      </nz-sider>
       <nz-content id="content">
         <router-outlet></router-outlet>
       </nz-content>

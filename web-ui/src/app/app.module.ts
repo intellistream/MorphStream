@@ -25,6 +25,8 @@ import { NzButtonModule } from "ng-zorro-antd/button";
 import { ApplicationInformationComponent } from "./pages/application-information/application-information.component";
 import { ProcessingApplicationListElementComponent } from "./pages/applications/processing-applications/processing-application-list-element/processing-application-list-element.component";
 import { FinishedApplicationListElementComponent } from "./pages/applications/finished-applications/finished-application-list-element/finished-application-list-element.component";
+import {NzBreadCrumbModule} from "ng-zorro-antd/breadcrumb";
+import {NzProgressModule} from "ng-zorro-antd/progress";
 
 registerLocaleData(en);
 
@@ -53,7 +55,9 @@ registerLocaleData(en);
     NzMenuModule,
     NgOptimizedImage,
     NzGridModule,
-    NzButtonModule
+    NzButtonModule,
+    NzBreadCrumbModule,
+    NzProgressModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }

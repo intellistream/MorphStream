@@ -1,17 +1,15 @@
 <div id="app-box">
-  <div nz-row id="app-title" nzJustify="space-around" nzAlign="middle">
-    <nz-col nzSpan="16">
-      <b><span>{{ application.name }}</span></b>
+  <div nz-row id="app-title" nzJustify="space-between" nzAlign="top">
+    <nz-col nzSpan="16" (click)="navigateToAppDetails()" class="app-title-text">
+      <span><b>{{ application.name }}</b></span>
     </nz-col>
-    <nz-col nzSpan="8">
-      <div *ngIf="application.isRunning" class="running-icon">
-        <b><span>Running </span></b>
-        <span nz-icon [nzType]="'sync'" [nzSpin]="true"></span>
-      </div>
-      <div *ngIf="!application.isRunning" class="completed-icon">
-        <b><span>Complete </span></b>
-        <span nz-icon nzType="issues-close" nzTheme="outline"></span>
-      </div>
+    <nz-col nzSpan="6" *ngIf="application.isRunning" class="running-icon">
+      <span><b>Running </b></span>
+      <span nz-icon [nzType]="'sync'" [nzSpin]="true"></span>
+    </nz-col>
+    <nz-col nzSpan="7" *ngIf="!application.isRunning" class="completed-icon">
+      <span><b>Complete </b></span>
+      <span nz-icon nzType="issues-close" nzTheme="outline"></span>
     </nz-col>
   </div>
   <nz-row>
