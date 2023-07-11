@@ -197,7 +197,6 @@ public abstract class Runner implements IRunner {
     /**
      * Evaluation parameters
      */
-    //multicoreEvaluation
     @Parameter(names = {"--multicoreEvaluation"}, description = "Evaluation the multicoreScalability. Default to be false.")
     public Integer multicoreEvaluation = 0;
     @Parameter(names = {"--maxThreads"}, description = "Evaluation the multicoreScalability. The max number of threads.")
@@ -206,6 +205,36 @@ public abstract class Runner implements IRunner {
     @Parameter(names = {"--cleanUp"}, description = "Whether to clean temporal objects. Default to be false.")
     public Integer cleanUp = 0;
 
+    /* Fault Tolerance */
+    @Parameter(names = {"--FTOption"}, description = "Fault tolerance mechanisms: 0 for noFT, 1 for checkpoint, 2 for wal, ")
+    public Integer FTOption = 0;
+    @Parameter(names = {"--compressionAlg"}, description = "compression Alg: ")
+    public String  compressionAlg = "None";
+    @Parameter(names = {"--snapshotInterval"}, description = "Snapshot interval ")
+    public Integer snapshotInterval = 0;
+    @Parameter(names = {"--arrivalRate"}, description = "Arrival rate of event, 200k/s ")
+    public Integer arrivalRate = 200;
+    @Parameter(names = {"--arrivalControl"}, description = "Arrival control of event ")
+    public Integer arrivalControl = 0;
+    @Parameter(names = {"--isRecovery"}, description = "Whether to recover or not")
+    public Integer isRecovery = 0;
+    @Parameter(names = {"--isFailure"}, description = "Whether to emulate system failure ")
+    public Integer isFailure = 0;
+    @Parameter(names = {"--failureTime"}, description = "When to emulate system failure (in ms)")
+    public Integer failureTime = 3000;
+    @Parameter(names = {"--measureInterval"}, description = "Interval to compute throughput, default to be 100ms")
+    public Double measureInterval = 100.0;
+    //Fault tolerance relax
+    @Parameter(names = {"--isHistoryView"}, description = "Whether to dependency inspection or not")
+    public Integer isHistoryView = 1;
+    @Parameter(names = {"--isAbortPushDown"}, description = "Whether to abort push down or not")
+    public Integer isAbortPushDown = 1;
+    @Parameter(names = {"--isTaskPlacing"}, description = "Whether to task placing or not")
+    public Integer isTaskPlacing = 1;
+    @Parameter(names = {"--isSelectiveLogging"}, description = "Whether to selective logging or not")
+    public Integer isSelectiveLogging = 0;
+    @Parameter(names = {"--maxItr"}, description = "Max itr for graph partition alg: ")
+    public int  maxItr = 10;
 
     public Runner() {
         CFG_PATH = "/config/%s.properties";
@@ -375,6 +404,51 @@ public abstract class Runner implements IRunner {
             config.put("cleanUp",false);
         }else {
             config.put("cleanUp",true);
+        }
+        /* Fault Tolerance */
+        config.put("FTOption", FTOption);
+        config.put("parallelNum", tthread);
+        config.put("compressionAlg", compressionAlg);
+        config.put("snapshotInterval", snapshotInterval);
+        config.put("arrivalRate", arrivalRate);
+        config.put("failureTime", failureTime);
+        config.put("measureInterval", measureInterval);
+        config.put("maxItr",maxItr);
+        if (arrivalControl == 0) {
+            config.put("arrivalControl", false);
+        } else {
+            config.put("arrivalControl", true);
+        }
+        if (isRecovery == 0) {
+            config.put("isRecovery", false);
+        } else {
+            config.put("isRecovery", true);
+        }
+        if (isFailure == 0) {
+            config.put("isFailure", false);
+        } else {
+            config.put("isFailure", true);
+        }
+        /* Fault Tolerance Relax */
+        if (isHistoryView == 0) {
+            config.put("isHistoryView", false);
+        } else {
+            config.put("isHistoryView", true);
+        }
+        if (isAbortPushDown == 0) {
+            config.put("isAbortPushDown", false);
+        } else {
+            config.put("isAbortPushDown", true);
+        }
+        if (isTaskPlacing == 0) {
+            config.put("isTaskPlacing", false);
+        } else {
+            config.put("isTaskPlacing", true);
+        }
+        if (isSelectiveLogging == 0) {
+            config.put("isSelectiveLogging", false);
+        } else {
+            config.put("isSelectiveLogging", true);
         }
 
         System.setProperty("my.log", metric_path);
