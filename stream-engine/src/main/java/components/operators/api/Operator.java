@@ -228,6 +228,8 @@ public abstract class Operator implements IOperator {
         } else {
             LogManager.getLogger(LOG.getName()).setLevel(Level.INFO);
         }
+        ftManager = getContext().getFtManager();
+        loggingManager = getContext().getLoggingManager();
         db = getContext().getDb();
         initialize(thread_Id, thisTaskId, graph);
     }

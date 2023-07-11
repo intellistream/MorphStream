@@ -101,6 +101,7 @@ public class ExecutionManager {
     public void distributeTasks(Configuration conf,
                                 CountDownLatch latch, Database db) throws UnhandledCaseException {
         g.build_inputScheduler();
+        this.loadFTManger();
         //TODO: support multi-stages later.
         if (enable_shared_state) {
             HashMap<Integer, List<Integer>> stage_map = new HashMap<>();//Stages --> Executors.
@@ -117,6 +118,7 @@ public class ExecutionManager {
                 int numberOfStates = conf.getInt("NUM_ITEMS");
                 String schedulerType = conf.getString("scheduler");
                 int app = conf.getInt("app");
+                TxnManager.loggingManager = db.getLoggingManager();
                 if (conf.getBoolean("isDynamic")) {
                     String schedulers=conf.getString("schedulersPool");
                     TxnManager.initSchedulerPool(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates, app);
@@ -140,12 +142,12 @@ public class ExecutionManager {
         for (ExecutionNode e : g.getExecutionNodeArrayList()) {
             switch (e.operator.type) {
                 case spoutType:
-                    thread = launchSpout_SingleCore(e, new TopologyContext(g, db, e, ThreadMap)
+                    thread = launchSpout_SingleCore(e, new TopologyContext(g, db,ftManager,loggingManager, e, ThreadMap)
                             , conf, 0, latch); //TODO: schedule to numa node wisely.
                     break;
                 case boltType:
                 case sinkType:
-                    thread = launchBolt_SingleCore(e, new TopologyContext(g, db, e, ThreadMap)
+                    thread = launchBolt_SingleCore(e, new TopologyContext(g, db, ftManager,loggingManager, e, ThreadMap)
                             , conf, 0, latch); //TODO: schedule to numa node wisely.
                     break;
                 case virtualType:

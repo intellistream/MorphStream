@@ -92,7 +92,8 @@ public class CheckpointManager extends FTManager {
 
     @Override
     public persistResult spoutAskRecovery(int taskId, long snapshotOffset) {
-        return latestSnapshotCommitInformation.snapshotResults.get(taskId);
+        return null;
+//        return latestSnapshotCommitInformation.snapshotResults.get(taskId);
     }
 
     @Override

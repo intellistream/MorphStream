@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import utils.SOURCE_CONTROL;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -92,6 +93,8 @@ public abstract class SPOUTCombo extends TransactionalSpout {
             }
         } catch (DatabaseException | BrokenBarrierException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

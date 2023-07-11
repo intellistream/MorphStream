@@ -118,7 +118,7 @@ public class FTSLCombo extends FTSPOUTCombo{
                 break;
             }
             case CCOption_TStream: {//T-Stream
-                bolt = new SLBolt_ts(0, sink);
+                bolt = new SLBolt_ts_ft(0, sink);
                 break;
             }
             case CCOption_SStore: {//SStore

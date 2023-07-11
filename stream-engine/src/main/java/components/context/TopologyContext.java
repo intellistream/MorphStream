@@ -4,6 +4,7 @@ import components.TopologyComponent;
 import components.grouping.Grouping;
 import controller.input.InputStreamController;
 import db.Database;
+import durability.ftmanager.FTManager;
 import execution.ExecutionGraph;
 import execution.ExecutionNode;
 import execution.runtime.executorThread;
@@ -24,6 +25,8 @@ public class TopologyContext {
 
     private static ExecutionGraph graph;
     private static Database db;
+    private static FTManager ftManager;
+    private static FTManager loggingManager;
     private static HashMap<Integer, executorThread> threadMap;
     private final int _taskId;
 
@@ -31,16 +34,25 @@ public class TopologyContext {
      * Instead of Store Brisk.topology, we Store Brisk.execution graph directly!
      * This is a global access memory structure,
      */
-    public TopologyContext(ExecutionGraph g, Database db, ExecutionNode executor, HashMap<Integer, executorThread> threadMap) {
+    public TopologyContext(ExecutionGraph g, Database db, FTManager ftManager, FTManager loggingManager, ExecutionNode executor, HashMap<Integer, executorThread> threadMap) {
 
         TopologyContext.graph = g;
         TopologyContext.db = db;
         TopologyContext.threadMap = threadMap;
+        TopologyContext.ftManager = ftManager;
+        TopologyContext.loggingManager = loggingManager;
         this._taskId = executor.getExecutorID();
     }
 
     public Database getDb() {
         return db;
+    }
+    public FTManager getFtManager() {
+        return ftManager;
+    }
+
+    public FTManager getLoggingManager() {
+        return loggingManager;
     }
 
     public HashMap<String, Map<TopologyComponent, Grouping>> getThisSources() {

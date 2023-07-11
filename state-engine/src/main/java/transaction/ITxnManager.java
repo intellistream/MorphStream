@@ -127,7 +127,8 @@ public interface ITxnManager {
         OP_BFS_A,
         OP_DFS,
         OP_DFS_A,
-        TStream // original tstream
+        TStream, // original TStream
+        Recovery
         }
 
 }

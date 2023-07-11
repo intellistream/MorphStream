@@ -9,6 +9,7 @@ import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -20,9 +21,9 @@ public abstract class BoltExecutor implements IExecutor {
         this.op = op;
     }
 
-    public abstract void execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException;
+    public abstract void execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException;
 
-    public abstract void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException;
+    public abstract void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException;
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
