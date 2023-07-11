@@ -112,6 +112,7 @@ public interface ITxnManager {
     boolean CommitTransaction(TxnContext txn_context);
 
     SchedulerContext getSchedulerContext();
+    void switch_scheduler(int thread_Id, long mark_ID);
 
     enum SCHEDULER_TYPE {
         OG_BFS,
@@ -128,4 +129,5 @@ public interface ITxnManager {
         OP_DFS_A,
         TStream // original tstream
         }
+
 }

@@ -5,6 +5,7 @@ import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -24,7 +25,7 @@ public abstract class AbstractBolt extends Operator {
         super(log, input_selectivity, output_selectivity, 1, 1, w);
     }
 
-    public abstract void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException;
+    public abstract void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException;
 
     public void execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         int bound = in.length;

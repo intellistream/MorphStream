@@ -279,4 +279,9 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     public OGSchedulerContext getSchedulerContext() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void switch_scheduler(int thread_Id, long mark_ID) {
+        throw new UnsupportedOperationException();
+    }
 }
