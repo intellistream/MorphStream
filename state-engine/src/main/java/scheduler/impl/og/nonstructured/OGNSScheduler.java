@@ -11,6 +11,8 @@ import scheduler.struct.op.MetaTypes;
 import utils.FaultToleranceConstants;
 import utils.SOURCE_CONTROL;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static common.CONTROL.enable_log;
 import static utils.FaultToleranceConstants.LOGOption_path;
 
@@ -19,7 +21,7 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
 
     public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
-    public boolean needAbortHandling = false;
+    public AtomicBoolean needAbortHandling = new AtomicBoolean(false);
 
     public OGNSScheduler(int totalThreads, int NUM_ITEMS, int app) {
         super(totalThreads, NUM_ITEMS, app);
@@ -27,7 +29,7 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
 
     @Override
     public void INITIALIZE(OGNSContext context) {
-        needAbortHandling = false;
+        needAbortHandling.compareAndSet(true, false);
         tpg.firstTimeExploreTPG(context);
         if (tpg.isLogging == LOGOption_path && FaultToleranceRelax.isSelectiveLogging) {
             this.loggingManager.selectiveLoggingPartition(context.thisThreadId);
@@ -37,9 +39,9 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
     }
 
     public void REINITIALIZE(OGNSContext context) {
-        needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
+        needAbortHandling.compareAndSet(true, false);
     }
 
     @Override
@@ -50,7 +52,7 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
             PROCESS(context, mark_ID);
         } while (!FINISHED(context));
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
-        if (needAbortHandling) {
+        if (needAbortHandling.get()) {
             if (enable_log) {
                 log.info("need abort handling, rollback and redo");
             }
@@ -88,7 +90,7 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
             MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
         }
         // save the abort information and redo the batch.
-        needAbortHandling = true;
+        needAbortHandling.compareAndSet(false, true);
     }
 
 

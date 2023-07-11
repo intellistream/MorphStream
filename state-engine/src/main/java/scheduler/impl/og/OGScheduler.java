@@ -397,6 +397,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         } else {
             throw new UnsupportedOperationException();
         }
+        commitLog(operation);
     }
 
     @Override

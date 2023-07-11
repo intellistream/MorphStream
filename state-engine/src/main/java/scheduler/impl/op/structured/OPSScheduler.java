@@ -26,6 +26,7 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
 
     @Override
     public void INITIALIZE(Context context) {
+        needAbortHandling = false;
         tpg.firstTimeExploreTPG(context);
         if (tpg.isLogging == LOGOption_path && FaultToleranceRelax.isSelectiveLogging) {
             this.loggingManager.selectiveLoggingPartition(context.thisThreadId);
