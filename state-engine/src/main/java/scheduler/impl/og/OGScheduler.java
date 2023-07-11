@@ -8,6 +8,7 @@ import durability.logging.LoggingStrategy.ImplLoggingManager.LSNVectorLoggingMan
 import durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import durability.logging.LoggingStrategy.LoggingManager;
 import durability.struct.Logging.DependencyLog;
+import durability.struct.Logging.HistoryLog;
 import durability.struct.Logging.LVCLog;
 import durability.struct.Logging.NativeCommandLog;
 import org.slf4j.Logger;
@@ -135,13 +136,15 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 operation.success[0]++;
             }
         }
-//        else {
-//            if (enable_log) log.debug("++++++ operation failed: "
-//                    + sourceAccountBalance + "-" + operation.condition.arg1
-//                    + " : " + sourceAccountBalance + "-" + operation.condition.arg2
-////                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
-//                    + " condition: " + operation.condition);
-//        }
+        if (!operation.isFailed) {
+            if (isLogging == LOGOption_path && !operation.pKey.equals(preValues.GetPrimaryKey()) && !operation.isCommit) {
+                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+                int id = getTaskId(operation.pKey, delta);
+                this.loggingManager.addLogRecord(new HistoryLog(id, operation.table_name, operation.pKey, preValues.GetPrimaryKey(), operation.bid, sourceAccountBalance));
+                operation.isCommit = true;
+                MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+            }
+        }
     }
 
     /**
@@ -286,6 +289,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             } else {
                 operation.d_record.content_.DeleteLWM((long) operation.bid);
             }
+            commitLog(operation);
             return;
         }
         int success;

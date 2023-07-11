@@ -8,6 +8,7 @@ import durability.logging.LoggingStrategy.ImplLoggingManager.LSNVectorLoggingMan
 import durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import durability.logging.LoggingStrategy.LoggingManager;
 import durability.struct.Logging.DependencyLog;
+import durability.struct.Logging.HistoryLog;
 import durability.struct.Logging.LVCLog;
 import durability.struct.Logging.NativeCommandLog;
 import org.slf4j.Logger;
@@ -258,7 +259,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     // DD: Transfer event processing
-    protected void Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
 
@@ -280,6 +281,15 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             synchronized (operation.success) {
                 operation.success[0]++;
+            }
+            if (!operation.isFailed) {
+                if (isLogging == LOGOption_path && !operation.pKey.equals(preValues.GetPrimaryKey()) && !operation.isCommit) {
+                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+                    int id = getTaskId(operation.pKey, delta);
+                    this.loggingManager.addLogRecord(new HistoryLog(id, operation.table_name, operation.pKey, preValues.GetPrimaryKey(), operation.bid, sourceAccountBalance));
+                    operation.isCommit = true;
+                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+                }
             }
         }
     }
