@@ -211,7 +211,7 @@ public class MeasureSink extends BaseSink {
                     config.getBoolean("isTaskPlacing"),
                     config.getBoolean("isSelectiveLogging"),
                     config.getInt("checkpoint"));
-        } else if (config.getString("common").equals("TollProcessing")){
+        } else if (config.getString("common").equals("TollProcessing")) {
             directory = String.format(statsFolderPattern,
                     config.getString("common"), scheduler,
                     config.getInt("FTOption"),
@@ -230,7 +230,40 @@ public class MeasureSink extends BaseSink {
                     config.getBoolean("isTaskPlacing"),
                     config.getBoolean("isSelectiveLogging"),
                     config.getInt("checkpoint"));
-        } else {
+        } else if (config.getString("common").equals("WindowedGrepSum")) {
+                directory = String.format(statsFolderPattern,
+                        config.getString("common"), scheduler, tthread, totalEvents,
+                        config.getInt("NUM_ITEMS"),
+                        config.getInt("Ratio_of_Multiple_State_Access"),
+                        config.getInt("State_Access_Skewness"),
+                        config.getInt("Period_of_Window_Reads"),
+                        config.getInt("windowSize"),
+                        config.getInt("Transaction_Length"),
+                        AppConfig.isCyclic,
+                        config.getInt("complexity"));
+            } else if (config.getString("common").equals("SHJ")) {
+                directory = String.format(statsFolderPattern,
+                        config.getString("common"), scheduler, tthread, totalEvents,
+                        config.getInt("NUM_ITEMS"),
+                        config.getInt("Ratio_of_Multiple_State_Access"),
+                        config.getInt("State_Access_Skewness"),
+                        config.getInt("Ratio_of_Overlapped_Keys"),
+                        config.getInt("Ratio_of_Transaction_Aborts"),
+                        config.getInt("Transaction_Length"),
+                        AppConfig.isCyclic,
+                        config.getInt("complexity"));
+            } else if (config.getString("common").equals("NonGrepSum")) {
+                directory = String.format(statsFolderPattern,
+                        config.getString("common"), scheduler, tthread, totalEvents,
+                        config.getInt("NUM_ITEMS"),
+                        config.getInt("NUM_ACCESS"),
+                        config.getInt("State_Access_Skewness"),
+                        config.getInt("Ratio_of_Non_Deterministic_State_Access"),
+                        config.getInt("Ratio_of_Transaction_Aborts"),
+                        config.getInt("Transaction_Length"),
+                        AppConfig.isCyclic,
+                        config.getInt("complexity"));
+            } else {
             throw new UnsupportedOperationException();
         }
         File file = new File(directory + fileName + ".runtime");
