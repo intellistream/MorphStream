@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {Application} from "../../model/application";
 import {Router} from "@angular/router";
 
@@ -19,6 +19,9 @@ export class ApplicationCardComponent {
     duration: "00:08:17",
     isRunning: true
   }
+
+  @Input() cardWidth: string = "480px";
+  @Input()  cardHeight: string = "270px";
 
   constructor(private router: Router) {
   }

@@ -1,4 +1,4 @@
-<div id="app-box">
+<div id="app-box" [style.width]="cardWidth" [style.height]="cardHeight">
   <div nz-row id="app-title" nzJustify="space-between" nzAlign="top">
     <nz-col nzSpan="16" (click)="navigateToAppDetails()" class="app-title-text">
       <span><b>{{ application.name }}</b></span>
