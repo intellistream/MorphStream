@@ -28,7 +28,7 @@ function ResetParameters() {
 }
 
 function runTStream() {
-  echo "java -Xms300g -Xmx300g -jar -d64 /application/target/application-0.0.2-jar-with-dependencies.jar \
+  echo "java -Xms300g -Xmx300g -jar -d64 /home/shuhao/IdeaProjects/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
           --app $app \
           --NUM_ITEMS $NUM_ITEMS \
           --tthread $tthread \
@@ -47,7 +47,7 @@ function runTStream() {
           --workloadType $workloadType \
           --schedulerPool $schedulerPool \
           --newConnRatio $newConnRatio"
-  java -Xms300g -Xmx300g -Xss100M -XX:+PrintGCDetails -Xmn150g -XX:+UseG1GC -jar -d64 /application/target/application-0.0.2-jar-with-dependencies.jar \
+  java -Xms25g -Xmx25g -Xss100M -XX:+PrintGCDetails -Xmn10g -XX:+UseG1GC -jar -d64 /home/shuhao/IdeaProjects/MorphStream/application/target/application-0.0.2-jar-with-dependencies.jar \
     --app $app \
     --NUM_ITEMS $NUM_ITEMS \
     --tthread $tthread \
