@@ -1,5 +1,6 @@
 package scheduler.impl;
 
+import durability.logging.LoggingStrategy.LoggingManager;
 import scheduler.Request;
 
 public interface IScheduler<Context> {
@@ -24,4 +25,5 @@ public interface IScheduler<Context> {
     void start_evaluation(Context context, long mark_ID, int num_events);
 
     void initTPG(int offset);
+    void setLoggingManager(LoggingManager loggingManager);
 }

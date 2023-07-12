@@ -11,6 +11,9 @@ public class SINKCombo extends MeasureSink {
     int cnt = 0;
     boolean start_measure = false;
     int global_cnt;
+    public long lastTask = -1;
+    public long startRecovery = -1;
+    public boolean stopRecovery = false;
 
     public void start() {
         if (!start_measure) {//only once.

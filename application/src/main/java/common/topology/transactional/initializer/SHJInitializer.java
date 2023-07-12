@@ -81,12 +81,8 @@ public class SHJInitializer extends TableInitilizer {
             dataConfig.initialize(config);
 
             configurePath(dataConfig);
-            try {
-                dataGenerator = new StockDataGenerator(dataConfig);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-//            dataGenerator = new SHJTPGDataGenerator(dataConfig);
+            dataGenerator = new SHJTPGDataGenerator(dataConfig);
+            //            dataGenerator = new SHJTPGDataGenerator(dataConfig);
         }
     }
     /**
@@ -159,9 +155,8 @@ public class SHJInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
-//            assert value.length() == VALUE_LEN;
-            insertIndexRRecord(_key, rStartingValue, pid, spinlock);
-            insertIndexSRecord(_key, sStartingValue, pid, spinlock);
+            insertIndexRRecord(_key, rStartingValue, pid, spinlock, thread_id);
+            insertIndexSRecord(_key, sStartingValue, pid, spinlock, thread_id);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -316,23 +311,23 @@ public class SHJInitializer extends TableInitilizer {
         w.close();
     }
 
-    private void insertIndexRRecord(String key, long amount, int pid, SpinLock[] spinlock_) {
+    private void insertIndexRRecord(String key, long amount, int pid, SpinLock[] spinlock_, int partition_id) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("index_r_table", new TableRecord(Record(key, amount), pid, spinlock_));
+                db.InsertRecord("index_r_table", new TableRecord(Record(key, amount), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("index_r_table", new TableRecord(Record(key, amount)));
+                db.InsertRecord("index_r_table", new TableRecord(Record(key, amount), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
 
-    private void insertIndexSRecord(String key, long amount, int pid, SpinLock[] spinlock_) {
+    private void insertIndexSRecord(String key, long amount, int pid, SpinLock[] spinlock_, int partition_id) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("index_s_table", new TableRecord(Record(key, amount), pid, spinlock_));
+                db.InsertRecord("index_s_table", new TableRecord(Record(key, amount), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("index_s_table", new TableRecord(Record(key, amount)));
+                db.InsertRecord("index_s_table", new TableRecord(Record(key, amount), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -373,9 +368,9 @@ public class SHJInitializer extends TableInitilizer {
 
     public void creates_Table(Configuration config) {
         RecordSchema indexR = IndexSchema();
-        db.createTable(indexR, "index_r_table");
+        db.createTable(indexR, "index_r_table", config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         RecordSchema indexS = IndexSchema();
-        db.createTable(indexS, "index_s_table");
+        db.createTable(indexS, "index_s_table", config.getInt("tthread"), config.getInt("NUM_ITEMS"));
 
         try {
             prepare_input_events(config.getInt("totalEvents"));

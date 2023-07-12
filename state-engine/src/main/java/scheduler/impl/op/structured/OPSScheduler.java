@@ -1,5 +1,6 @@
 package scheduler.impl.op.structured;
 
+import durability.struct.FaultToleranceRelax;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -12,6 +13,7 @@ import utils.SOURCE_CONTROL;
 import java.util.ArrayList;
 
 import static common.CONTROL.enable_log;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Context, Operation> {
     private static final Logger log = LoggerFactory.getLogger(OPSScheduler.class);
@@ -24,7 +26,11 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
 
     @Override
     public void INITIALIZE(Context context) {
+        needAbortHandling = false;
         tpg.firstTimeExploreTPG(context);
+        if (tpg.isLogging == LOGOption_path && FaultToleranceRelax.isSelectiveLogging) {
+            this.loggingManager.selectiveLoggingPartition(context.thisThreadId);
+        }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
@@ -129,6 +135,11 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
             MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
             if (remove.isFailed && !remove.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
                 needAbortHandling = true;
+                if (isLogging == LOGOption_path && remove.txnOpId == 0) {
+                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(threadId);
+                    this.tpg.threadToPathRecord.get(context.thisThreadId).addAbortBid(remove.bid);
+                    MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(threadId);
+                }
             }
             NOTIFY(remove, context);
             MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);

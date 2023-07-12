@@ -118,4 +118,32 @@ public abstract class ToContent implements Content {
     @Override
     public void UnlockPartitions() {
     }
+    @Override
+    public SchemaRecord ReadAccess(long snapshotId, boolean clean) {
+        return null;
+    }
+    @Override
+    public int[] getReadLVs() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int[] getWriteLVs() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int[] getLVs() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateReadLv(int lsn, int partition) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateWriteLv(int lsn, int partition) {
+        throw new UnsupportedOperationException();
+    }
 }

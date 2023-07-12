@@ -137,12 +137,12 @@ public class GSInitializer extends TableInitilizer {
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
      * initial account value_list is 0...?
      */
-    private void insertMicroRecord(String key, long value, int pid, SpinLock[] spinlock_) {
+    private void insertMicroRecord(String key, long value, int pid, SpinLock[] spinlock_, int partition_id) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("MicroTable", new TableRecord(Record(key, value), pid, spinlock_));
+                db.InsertRecord("MicroTable", new TableRecord(Record(key, value), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("MicroTable", new TableRecord(Record(key, value)));
+                db.InsertRecord("MicroTable", new TableRecord(Record(key, value), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -203,7 +203,7 @@ public class GSInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
 //            assert value.length() == VALUE_LEN;
-            insertMicroRecord(_key, startingValue , pid, spinlock);
+            insertMicroRecord(_key, startingValue , pid, spinlock,thread_id);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -398,7 +398,7 @@ public class GSInitializer extends TableInitilizer {
 
     public void creates_Table(Configuration config) {
         RecordSchema s = MicroTableSchema();
-        db.createTable(s, "MicroTable");
+        db.createTable(s, "MicroTable",config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         try {
             prepare_input_events(config.getInt("totalEvents"));
             if (getTranToDecisionConf() != null && getTranToDecisionConf().size() !=0){

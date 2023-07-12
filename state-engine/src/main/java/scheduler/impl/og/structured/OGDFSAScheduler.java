@@ -2,6 +2,7 @@ package scheduler.impl.og.structured;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import scheduler.context.og.OGSAContext;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static common.CONTROL.enable_log;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 /**
  * The scheduler based on TPG, this is to be invoked when the queue is empty of each thread, it works as follows:
@@ -165,6 +167,11 @@ public class OGDFSAScheduler extends AbstractOGDFSScheduler<OGSAContext> {
         for (Operation failedOp : failedOperations) {
             if (bid == failedOp.bid) {
                 operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
+                if (this.isLogging == LOGOption_path && operation.getTxnOpId() == 0) {
+                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                    this.tpg.threadToPathRecord.get(context.thisThreadId).addAbortBid(operation.bid);
+                    MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                }
                 markAny = true;
             }
         }

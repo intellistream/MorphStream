@@ -160,6 +160,6 @@ public class TPCombo extends SPOUTCombo {
         bolt.prepare(config, context, collector);
         bolt.loadDB(config, context, collector);
         loadEvent(config.getString("rootFilePath"), config, context, collector);
-        sink.checkpoint_interval = checkpoint_interval;
+        sink.punctuation_interval = punctuation_interval;
     }
 }

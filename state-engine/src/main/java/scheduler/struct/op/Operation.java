@@ -30,12 +30,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public final OPSchedulerContext context;
 
     private final Deque<Operation> ld_descendant_operations;
-    private final Deque<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
-    private final Deque<Operation> td_children; // the functional dependencies ops to be executed after this op.
+    public final Deque<Operation> fd_children; // NOTE: this is concurrently constructed, so need to use concurrent structure
+    public final Deque<Operation> td_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_children; // the functional dependencies ops to be executed after this op.
     private final Deque<Operation> ld_spec_children; // speculative children to notify.
     public final Deque<Operation> fd_parents; // the functional dependencies ops to be executed in advance.
-    private final Deque<Operation> td_parents; // the functional dependencies ops to be executed in advance
+    public final Deque<Operation> td_parents; // the functional dependencies ops to be executed in advance
     private final Deque<Operation> ld_parents; // the functional dependencies ops to be executed in advance
     private final OperationMetadata operationMetadata;
     private OperationStateType operationState;

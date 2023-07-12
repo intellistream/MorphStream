@@ -213,5 +213,36 @@ public abstract class TStreamContent implements Content {
     public void UnlockPartitions() {
         throw new UnsupportedOperationException();
     }
+    public SchemaRecord readValues(long snapshotId, boolean clean) {
+        SchemaRecord schemaRecord = versions.lowerEntry(snapshotId).getValue();
+        if (clean) {
+            //TODO: clean old version
+        }
+        return schemaRecord;
+    }
+    @Override
+    public int[] getReadLVs() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int[] getWriteLVs() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int[] getLVs() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateReadLv(int lsn, int partition) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateWriteLv(int lsn, int partition) {
+        throw new UnsupportedOperationException();
+    }
 }
 

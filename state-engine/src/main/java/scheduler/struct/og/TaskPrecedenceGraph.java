@@ -1,5 +1,6 @@
 package scheduler.struct.og;
 
+import durability.logging.LoggingEntry.PathRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -19,6 +20,8 @@ import java.util.*;
 import java.util.concurrent.CyclicBarrier;
 
 import static common.CONTROL.enable_log;
+import static utils.FaultToleranceConstants.LOGOption_no;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 /**
  * TPG  -> Partition -> Key:OperationChain -> Operation-Operation-Operation...
@@ -41,6 +44,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     // all parameters in this class should be thread safe.
     private static final Logger LOG = LoggerFactory.getLogger(TaskPrecedenceGraph.class);
     public final ConcurrentHashMap<Integer, Context> threadToContextMap;
+    public ConcurrentHashMap<Integer, PathRecord> threadToPathRecord;// Used path logging
     public final int totalThreads;
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final int NUM_ITEMS;
@@ -49,25 +53,9 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     CyclicBarrier barrier;
     private int maxLevel = 0; // just for layered scheduling
     private final int app;
+    public int isLogging = LOGOption_no;
 
     public void reset(Context context) {
-//        //reset holder.
-//        if (app == 0) {
-//            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//        } else if (app == 1) {
-//            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//        } else if (app == 2 ) {
-//            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//        } else if (app == 3) {
-//            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-//        }
-//        threadToOCs.get(context.thisThreadId).clear();
-//        for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
-//            oc.clear();
-//        }
-//        this.setOCs(context);
         for (OperationChain oc : threadToOCs.get(context.thisThreadId)) {
             oc.clear(); // only need to clear all operations from all ocs
         }
@@ -215,6 +203,11 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     private void submit(Context context, Collection<OperationChain> ocs) {
         for (OperationChain oc : ocs) {
             oc.updateFDDependencies();
+            if (this.isLogging == LOGOption_path && !oc.getOperations().isEmpty()) {
+                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                this.threadToPathRecord.get(context.thisThreadId).addNode(oc.getTableName(), oc.primaryKey, oc.getOperations().size());
+                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+            }
         }
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         HashSet<OperationChain> scannedOCs = new HashSet<>();
@@ -233,10 +226,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         if (AppConfig.isCyclic) { // if the constructed OCs are not cyclic, skip this.
             circularDetect(context, ocs, scannedOCs, circularOCs, resolvedOC);
         }
-//        for (OperationChain oc : ocs) {
-//            context.fd += oc.ocParentsCount.get();
-//        }
-//        LOG.info("id: " + context.thisThreadId + " fd: " + context.fd);
+
         if (context instanceof OGSContext) {
             ((OGSContext) context).buildBucketPerThread(ocs, resolvedOC);
             SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);

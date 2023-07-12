@@ -36,7 +36,7 @@ public class TxnManagerLWM extends TxnManagerDedicatedLocked {
             throws DatabaseException, InterruptedException {
 //		BEGIN_PHASE_MEASURE(thread_id_, INSERT_PHASE);
         record.is_visible_ = false;
-        TableRecord tb_record = new TableRecord(record);
+        TableRecord tb_record = new TableRecord(record, (int) this.thread_count_);
         if (storageManager_.getTable(table_name).InsertRecord(tb_record)) {//maybe we can also skip this for testing purpose.
             orderLock.blocking_wait(txn_context.getBID());
             while (!tb_record.content_.TryWriteLock() && !Thread.currentThread().isInterrupted()) {//order guaranteed...

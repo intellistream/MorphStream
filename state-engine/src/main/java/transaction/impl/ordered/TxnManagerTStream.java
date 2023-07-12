@@ -27,7 +27,7 @@ public class TxnManagerTStream extends TxnManagerDedicatedAsy {
     @Override
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException {
         record.is_visible_ = false;
-        TableRecord tb_record = new TableRecord(record);
+        TableRecord tb_record = new TableRecord(record, this.thread_count_);
         if (storageManager_.getTable(table_name).InsertRecord(tb_record)) {//maybe we can also skip this for testing purpose.
             if (!tb_record.content_.TryWriteLock()) {
                 return false;

@@ -9,6 +9,7 @@ import execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -86,6 +87,8 @@ public class spoutThread extends executorThread {
             routing();
         } catch (InterruptedException | DatabaseException | BrokenBarrierException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             this.executor.display();
             if (end_emit == 0) {

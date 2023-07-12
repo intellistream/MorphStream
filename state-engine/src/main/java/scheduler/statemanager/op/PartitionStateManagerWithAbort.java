@@ -1,5 +1,6 @@
 package scheduler.statemanager.op;
 
+import durability.logging.LoggingEntry.PathRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -229,5 +230,39 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
 
     public void initialize(OPNSAScheduler.ExecutableTaskListener executableTaskListener) {
         this.executableTaskListener = executableTaskListener;
+    }
+
+    /**
+     * Tracking abort bid for non-structure eager approach
+     * @param pathRecord
+     */
+    public void handleStateTransitionsWithAbortTracking(PathRecord pathRecord) {
+        OperationSignal signal = opSignalQueue.poll();
+        while (signal != null) {
+            Operation operation = signal.getTargetOperation();
+            if (signal instanceof OnProcessedSignal) {
+                onProcessedTransition(operation, (OnProcessedSignal) signal);
+            } else if (signal instanceof OnParentUpdatedSignal) {
+                onParentExecutedTransition(operation, (OnParentUpdatedSignal) signal);
+            } else if (signal instanceof OnHeaderStartAbortHandlingSignal) {
+                MeasureTools.BEGIN_SCHEDULE_ABORT_TIME_MEASURE(operation.context.thisThreadId);
+                onHeaderStartAbortHandlingTransition(operation);
+                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+                pathRecord.addAbortBid(operation.bid);
+                MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+                MeasureTools.END_SCHEDULE_ABORT_TIME_MEASURE(operation.context.thisThreadId);
+            } else if (signal instanceof OnNeedAbortHandlingSignal) {
+                MeasureTools.BEGIN_SCHEDULE_ABORT_TIME_MEASURE(operation.context.thisThreadId);
+                onAbortHandlingTransition(operation, (OnNeedAbortHandlingSignal) signal);
+                MeasureTools.END_SCHEDULE_ABORT_TIME_MEASURE(operation.context.thisThreadId);
+            } else if (signal instanceof OnRollbackAndRedoSignal) {
+                MeasureTools.BEGIN_SCHEDULE_ABORT_TIME_MEASURE(operation.context.thisThreadId);
+                onRollbackAndRedoTransition(operation, (OnRollbackAndRedoSignal) signal);
+                MeasureTools.END_SCHEDULE_ABORT_TIME_MEASURE(operation.context.thisThreadId);
+            }else if (signal instanceof OnRootSignal) {
+                onRootTransition(operation);
+            }
+            signal = opSignalQueue.poll();
+        }
     }
 }

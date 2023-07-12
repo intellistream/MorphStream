@@ -1,5 +1,7 @@
 package scheduler.statemanager.og;
 
+import durability.logging.LoggingEntry.PathRecord;
+import profiler.MeasureTools;
 import scheduler.context.og.OGNSAContext;
 import scheduler.impl.og.nonstructured.OGNSAScheduler;
 import scheduler.signal.oc.*;
@@ -72,6 +74,35 @@ public class PartitionStateManagerWithAbort implements Runnable, OperationChainS
                 ocRollbackAndRedoTransition(operationChain);
             } else if (ocSignal instanceof OnHeaderStartAbortHandlingSignal) {
                 ocHeaderStartAbortHandlingTransition(operationChain, ((OnHeaderStartAbortHandlingSignal) ocSignal).getOperation());
+            }
+            ocSignal = ocSignalQueue.poll();
+        }
+    }
+    public void handleStateTransitionsWithAbortTracking(PathRecord pathRecord) {
+        OperationChainSignal ocSignal = ocSignalQueue.poll();
+        while (ocSignal != null) {
+            OperationChain operationChain = ocSignal.getTargetOperationChain();
+            if (ocSignal instanceof OnRootSignal) {
+                ocRootStartTransition(operationChain);
+            } else if (ocSignal instanceof OnExecutedSignal) {
+                ocExecutedTransition(operationChain);
+            } else if (ocSignal instanceof OnParentExecutedSignal) {
+                ocParentExecutedTransition(operationChain);
+            } else if (ocSignal instanceof OnNeedAbortHandlingSignal) {
+                MeasureTools.BEGIN_SCHEDULE_ABORT_TIME_MEASURE(operationChain.context.thisThreadId);
+                ocAbortHandlingTransition(operationChain, ((OnNeedAbortHandlingSignal) ocSignal).getOperation());
+                MeasureTools.END_SCHEDULE_ABORT_TIME_MEASURE(operationChain.context.thisThreadId);
+            } else if (ocSignal instanceof OnRollbackAndRedoSignal) {
+                MeasureTools.BEGIN_SCHEDULE_ABORT_TIME_MEASURE(operationChain.context.thisThreadId);
+                ocRollbackAndRedoTransition(operationChain);
+                MeasureTools.END_SCHEDULE_ABORT_TIME_MEASURE(operationChain.context.thisThreadId);
+            } else if (ocSignal instanceof OnHeaderStartAbortHandlingSignal) {
+                MeasureTools.BEGIN_SCHEDULE_ABORT_TIME_MEASURE(operationChain.context.thisThreadId);
+                ocHeaderStartAbortHandlingTransition(operationChain, ((OnHeaderStartAbortHandlingSignal) ocSignal).getOperation());
+                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operationChain.context.thisThreadId);
+                pathRecord.addAbortBid(((OnHeaderStartAbortHandlingSignal) ocSignal).getOperation().bid);
+                MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operationChain.context.thisThreadId);
+                MeasureTools.END_SCHEDULE_ABORT_TIME_MEASURE(operationChain.context.thisThreadId);
             }
             ocSignal = ocSignalQueue.poll();
         }

@@ -118,4 +118,33 @@ public abstract class LWMContent implements Content {
     @Override
     public void clean_map() {
     }
+    @Override
+    public int[] getReadLVs() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int[] getWriteLVs() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int[] getLVs() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateReadLv(int lsn, int partition) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateWriteLv(int lsn, int partition) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SchemaRecord ReadAccess(long snapshotId, boolean clean) {
+        return null;
+    }
 }

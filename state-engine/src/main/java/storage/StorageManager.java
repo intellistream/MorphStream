@@ -1,6 +1,12 @@
 package storage;
 
+import common.collections.Configuration;
+import common.collections.OsUtils;
 import db.DatabaseException;
+import durability.ftmanager.FTManager;
+import durability.snapshot.SnapshotOptions;
+import durability.snapshot.SnapshotResult.SnapshotResult;
+import durability.snapshot.SnapshotStrategy.ImplSnapshotStrategy.InMemorySnapshotStrategy;
 import storage.datatype.DataBox;
 import storage.table.BaseTable;
 import storage.table.RecordSchema;
@@ -12,13 +18,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 public class StorageManager {
+    private final InMemorySnapshotStrategy snapshotStrategy;
     public Map<String, BaseTable> tables;
     int table_count;
 
-    public StorageManager() {
+    public StorageManager(Configuration configuration) {
         tables = new ConcurrentHashMap<>();
+        snapshotStrategy = new InMemorySnapshotStrategy(tables,
+                new SnapshotOptions(configuration.getInt("parallelNum"), "None"),
+                configuration.getString("rootFilePath") + OsUtils.OS_wrapper("snapshot"));
     }
 
     public BaseTable getTable(String tableName) throws DatabaseException {
@@ -28,9 +39,9 @@ public class StorageManager {
         return tables.get(tableName);
     }
 
-    public void InsertRecord(String tableName, TableRecord record) throws DatabaseException {
+    public void InsertRecord(String tableName, TableRecord record, int partition_id) throws DatabaseException {
         BaseTable tab = getTable(tableName);
-        tab.InsertRecord(record);
+        tab.InsertRecord(record, partition_id);
     }
 
     /**
@@ -40,11 +51,11 @@ public class StorageManager {
      * @param tableName the name of the table
      * @throws DatabaseException
      */
-    public synchronized void createTable(RecordSchema s, String tableName) throws DatabaseException {
+    public synchronized void createTable(RecordSchema s, String tableName, int partition_num, int num_items) throws DatabaseException {
         if (tables.containsKey(tableName)) {
             throw new DatabaseException("Table name already exists");
         }
-        tables.put(tableName, new ShareTable(s, tableName, true));//here we decide which table to use.
+        tables.put(tableName, new ShareTable(s, tableName, true, partition_num, num_items));//here we decide which table to use.
         table_count++;
     }
 
@@ -58,7 +69,7 @@ public class StorageManager {
      * @param indexColumns the list of unique columnNames on the maintain an index on
      * @throws DatabaseException
      */
-    public synchronized void createTableWithIndices(RecordSchema s, String tableName, List<String> indexColumns) throws DatabaseException {
+    public synchronized void createTableWithIndices(RecordSchema s, String tableName, List<String> indexColumns,int partition_num, int num_items) throws DatabaseException {
         if (tables.containsKey(tableName)) {
             throw new DatabaseException("SimpleTable name already exists");
         }
@@ -76,7 +87,7 @@ public class StorageManager {
             seenColNames.add(col);
             schemaColIndex.add(schemaColNames.indexOf(col));
         }
-        tables.put(tableName, new ShareTable(s, tableName, true));
+        tables.put(tableName, new ShareTable(s, tableName, true, partition_num, num_items));
         for (int i : schemaColIndex) {
             String colName = schemaColNames.get(i);
             DataBox colType = schemaColType.get(i);
@@ -118,5 +129,11 @@ public class StorageManager {
             t.close();
         }
         tables.clear();
+    }
+    public void asyncSnapshot(long snapshotId, int partitionId, FTManager ftManager) throws IOException {
+        this.snapshotStrategy.asyncSnapshot(snapshotId, partitionId, ftManager);
+    }
+    public void syncReloadDatabase(SnapshotResult snapshotResult) throws IOException, ExecutionException, InterruptedException {
+        this.snapshotStrategy.syncRecoveryFromSnapshot(snapshotResult);
     }
 }

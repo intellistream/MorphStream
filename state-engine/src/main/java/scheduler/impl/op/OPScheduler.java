@@ -1,6 +1,16 @@
 package scheduler.impl.op;
 
 
+import durability.logging.LoggingEntry.LogRecord;
+import durability.logging.LoggingStrategy.ImplLoggingManager.CommandLoggingManager;
+import durability.logging.LoggingStrategy.ImplLoggingManager.DependencyLoggingManager;
+import durability.logging.LoggingStrategy.ImplLoggingManager.LSNVectorLoggingManager;
+import durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
+import durability.logging.LoggingStrategy.LoggingManager;
+import durability.struct.Logging.DependencyLog;
+import durability.struct.Logging.HistoryLog;
+import durability.struct.Logging.LVCLog;
+import durability.struct.Logging.NativeCommandLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -30,11 +40,15 @@ import java.util.NoSuchElementException;
 import static content.common.CommonMetaTypes.AccessType.*;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static utils.FaultToleranceConstants.*;
+import static utils.FaultToleranceConstants.LOGOption_command;
 
 public abstract class OPScheduler<Context extends OPSchedulerContext, Task> implements IScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OPScheduler.class);
     public final int delta;//range of each partition. depends on the number of op in the stage.
     public final TaskPrecedenceGraph<Context> tpg; // TPG to be maintained in this global instance.
+    public LoggingManager loggingManager; // Used by fault tolerance
+    public int isLogging;// Used by fault tolerance
     public OPScheduler(int totalThreads, int NUM_ITEMS, int app) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
         this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
@@ -82,11 +96,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED) || operation.isFailed) {
             if (operation.isNonDeterministicOperation && operation.deterministicRecords != null) {
                 for (TableRecord tableRecord : operation.deterministicRecords) {
-                    tableRecord.content_.DeleteLWM((long) operation.bid);
+                    tableRecord.content_.DeleteLWM(operation.bid);
                 }
             } else {
-                operation.d_record.content_.DeleteLWM((long) operation.bid);
+                operation.d_record.content_.DeleteLWM(operation.bid);
             }
+            commitLog(operation);
             return;
         }
         int success;
@@ -195,7 +210,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         } else {
             throw new UnsupportedOperationException();
         }
-
+        commitLog(operation);
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
     }
 
@@ -244,7 +259,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     // DD: Transfer event processing
-    protected void Transfer_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
 
@@ -267,14 +282,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             synchronized (operation.success) {
                 operation.success[0]++;
             }
+            if (!operation.isFailed) {
+                if (isLogging == LOGOption_path && !operation.pKey.equals(preValues.GetPrimaryKey()) && !operation.isCommit) {
+                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+                    int id = getTaskId(operation.pKey, delta);
+                    this.loggingManager.addLogRecord(new HistoryLog(id, operation.table_name, operation.pKey, preValues.GetPrimaryKey(), operation.bid, sourceAccountBalance));
+                    operation.isCommit = true;
+                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+                }
+            }
         }
-//        else {
-//            log.info("++++++ operation failed: "
-//                    + sourceAccountBalance + "-" + operation.condition.arg1
-//                    + " : " + sourceAccountBalance + "-" + operation.condition.arg2
-////                    + " : " + sourceAssetValue + "-" + operation.condition.arg3
-//                    + " condition: " + operation.condition);
-//        }
     }
 
     protected void Depo_Fun(AbstractOperation operation, long mark_ID, boolean clean) {
@@ -504,6 +521,59 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         } while (!FINISHED(context));
         RESET(context);//
 //        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
+    }
+    @Override
+    public void setLoggingManager(LoggingManager loggingManager) {
+        this.loggingManager = loggingManager;
+        if (loggingManager instanceof PathLoggingManager) {
+            isLogging = LOGOption_path;
+            this.tpg.threadToPathRecord = ((PathLoggingManager) loggingManager).threadToPathRecord;
+        } else if (loggingManager instanceof LSNVectorLoggingManager) {
+            isLogging = LOGOption_lv;
+        } else if (loggingManager instanceof DependencyLoggingManager){
+            isLogging = LOGOption_dependency;
+        } else if (loggingManager instanceof CommandLoggingManager) {
+            isLogging = LOGOption_command;
+        } else {
+            isLogging = LOGOption_no;
+        }
+        tpg.isLogging = isLogging;
+    }
+    private void commitLog(Operation operation) {
+        if (operation.isCommit)
+            return;
+        if (isLogging == LOGOption_path) {
+            return;
+        }
+        MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+        if (isLogging == LOGOption_wal) {
+            ((LogRecord) operation.logRecord).addUpdate(operation.d_record.content_.readPreValues(operation.bid));
+            this.loggingManager.addLogRecord(operation.logRecord);
+        } else if (isLogging == LOGOption_dependency) {
+            ((DependencyLog) operation.logRecord).setId(operation.bid + "." + operation.txnOpId);
+            for (Operation op : operation.fd_parents) {
+                ((DependencyLog) operation.logRecord).addInEdge(op.bid + "." + op.txnOpId);
+            }
+            for (Operation op : operation.td_parents) {
+                ((DependencyLog) operation.logRecord).addInEdge(op.bid + "." + op.txnOpId);
+            }
+            for (Operation op : operation.fd_children) {
+                ((DependencyLog) operation.logRecord).addOutEdge(op.bid + "." + op.txnOpId);
+            }
+            for (Operation op : operation.td_children) {
+                ((DependencyLog) operation.logRecord).addOutEdge(op.bid + "." + op.txnOpId);
+            }
+            this.loggingManager.addLogRecord(operation.logRecord);
+        } else if (isLogging == LOGOption_lv) {
+            ((LVCLog) operation.logRecord).setAccessType(operation.accessType);
+            ((LVCLog) operation.logRecord).setThreadId(operation.context.thisThreadId);
+            this.loggingManager.addLogRecord(operation.logRecord);
+        } else if (isLogging == LOGOption_command) {
+            ((NativeCommandLog) operation.logRecord).setId(operation.bid + "." + operation.txnOpId);
+            this.loggingManager.addLogRecord(operation.logRecord);
+        }
+        operation.isCommit = true;
+        MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
     }
 
 }

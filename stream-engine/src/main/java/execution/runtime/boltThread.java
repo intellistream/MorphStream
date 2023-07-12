@@ -13,6 +13,7 @@ import optimization.OptimizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -86,7 +87,7 @@ public class boltThread extends executorThread {
      * @throws InterruptedException
      * @throws DatabaseException
      */
-    protected void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException {
+    protected void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
         Object tuple = fetchResult();
         if (tuple instanceof Tuple) {
             if (tuple != null) {
@@ -105,7 +106,7 @@ public class boltThread extends executorThread {
         }
     }
 
-    protected void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException {
+    protected void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
         _execute_noControl();
     }
 
@@ -131,6 +132,8 @@ public class boltThread extends executorThread {
         } catch (InterruptedException | BrokenBarrierException ignored) {
         } catch (DatabaseException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             this.executor.display();
             if (end_emit == 0) {

@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static common.CONTROL.enable_log;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler<Context> {
     private static final Logger LOG = LoggerFactory.getLogger(OPDFSAScheduler.class);
@@ -150,6 +151,11 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
             if (bid == failedOp.bid) {
                 operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
                 notifyChildren(operation, MetaTypes.OperationStateType.ABORTED);
+                if (this.isLogging == LOGOption_path && operation.txnOpId == 0) {
+                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                    this.tpg.threadToPathRecord.get(context.thisThreadId).addAbortBid(operation.bid);
+                    MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(context.thisThreadId);
+                }
                 markAny = true;
             }
         }

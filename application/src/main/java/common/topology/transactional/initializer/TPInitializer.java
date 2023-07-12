@@ -105,8 +105,8 @@ public class TPInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             int pid = get_pid(partition_interval, key);
             String _key = String.valueOf(key);
-            insertSpeedRecord(_key, 0, pid, spinlock);
-            insertCntRecord(_key, 0, pid, spinlock);
+            insertSpeedRecord(_key, 0, pid, spinlock, thread_id);
+            insertCntRecord(_key, 0, pid, spinlock, thread_id);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -134,56 +134,56 @@ public class TPInitializer extends TableInitilizer {
         }
         for (int key = left_bound; key < right_bound; key++) {
             String _key = String.valueOf(key);
-            insertSpeedRecord(_key, 0);
-            insertCntRecord(_key);
+            insertSpeedRecord(_key, 0, thread_id);
+            insertCntRecord(_key, thread_id);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
 
-    private void insertCntRecord(String key, int value, int pid, SpinLock[] spinlock) {
+    private void insertCntRecord(String key, int value, int pid, SpinLock[] spinlock, int partition_id) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
         values.add(new HashSetDataBox());
         SchemaRecord schemaRecord = new SchemaRecord(values);
         try {
-            db.InsertRecord("segment_cnt", new TableRecord(schemaRecord, pid, spinlock));
+            db.InsertRecord("segment_cnt", new TableRecord(schemaRecord, pid, spinlock), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
 
-    private void insertSpeedRecord(String key, int value, int pid, SpinLock[] spinlock) {
+    private void insertSpeedRecord(String key, int value, int pid, SpinLock[] spinlock, int partition_id) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
         values.add(new DoubleDataBox(value));
         SchemaRecord schemaRecord = new SchemaRecord(values);
         try {
-            db.InsertRecord("segment_speed", new TableRecord(schemaRecord, pid, spinlock));
+            db.InsertRecord("segment_speed", new TableRecord(schemaRecord, pid, spinlock), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
 
-    private void insertCntRecord(String key) {
+    private void insertCntRecord(String key, int partition_id) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
         values.add(new HashSetDataBox());
         SchemaRecord schemaRecord = new SchemaRecord(values);
         try {
-            db.InsertRecord("segment_cnt", new TableRecord(schemaRecord));
+            db.InsertRecord("segment_cnt", new TableRecord(schemaRecord, this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
 
-    private void insertSpeedRecord(String key, int value) {
+    private void insertSpeedRecord(String key, int value, int partition_id) {
         List<DataBox> values = new ArrayList<>();
         values.add(new StringDataBox(key, key.length()));
         values.add(new DoubleDataBox(value));
         SchemaRecord schemaRecord = new SchemaRecord(values);
         try {
-            db.InsertRecord("segment_speed", new TableRecord(schemaRecord));
+            db.InsertRecord("segment_speed", new TableRecord(schemaRecord, this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -304,9 +304,9 @@ public class TPInitializer extends TableInitilizer {
 
     public void creates_Table(Configuration config) {
         RecordSchema s = SpeedScheme();
-        db.createTable(s, "segment_speed");
+        db.createTable(s, "segment_speed",config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         RecordSchema b = CntScheme();
-        db.createTable(b, "segment_cnt");
+        db.createTable(b, "segment_cnt",config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         try {
             prepare_input_events(config.getInt("totalEvents"));
             if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
