@@ -1,5 +1,4 @@
 import {AfterViewInit, Component, ElementRef, ViewChild} from '@angular/core';
-import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-application-information',
@@ -13,21 +12,14 @@ export class ApplicationInformationComponent implements AfterViewInit {
   @ViewChild('progressBarCol', { static: false }) progressBarCol!: ElementRef;
   progressBarWidth = 0; // the width of the progressbar
 
-  @ViewChild('cardRef', { static: false }) cardRef!: ElementRef;
-  appCardWidth = "";
-
-  constructor(private router: Router) {
+  constructor() {
   }
 
   ngAfterViewInit() {
     this.setProgressBarWidth();
-    this.setCardWidth();
   }
 
   setProgressBarWidth() {
     this.progressBarWidth = this.progressBarCol.nativeElement.offsetWidth;
-  }
-  setCardWidth() {
-    this.appCardWidth = this.cardRef.nativeElement.offsetWidth +"px";
   }
 }

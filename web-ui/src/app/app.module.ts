@@ -27,6 +27,8 @@ import { ProcessingApplicationListElementComponent } from "./pages/applications/
 import { FinishedApplicationListElementComponent } from "./pages/applications/finished-applications/finished-application-list-element/finished-application-list-element.component";
 import {NzBreadCrumbModule} from "ng-zorro-antd/breadcrumb";
 import {NzProgressModule} from "ng-zorro-antd/progress";
+import {ApplicationBoardComponent} from "./snippets/application-board/application-board.component";
+import {InfoScrollWrapperComponent} from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
 
 registerLocaleData(en);
 
@@ -42,7 +44,9 @@ registerLocaleData(en);
     ScrollWrapperComponent,
     ApplicationInformationComponent,
     ProcessingApplicationListElementComponent,
-    FinishedApplicationListElementComponent
+    FinishedApplicationListElementComponent,
+    ApplicationBoardComponent,
+    InfoScrollWrapperComponent
   ],
   imports: [
     BrowserModule,

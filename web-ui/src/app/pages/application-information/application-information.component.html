@@ -38,10 +38,10 @@
       </nz-col>
     </div>
     <div nz-row nzJustify="space-between" nzAlign="top">
-      <nz-col nzSpan="8" #cardRef>
+      <nz-col nzSpan="8">
         <nz-row>
           <nz-col nzSpan="24" id="app-card-col">
-            <app-application-card cardWidth="{{ appCardWidth }}"></app-application-card>
+            <app-application-card cardWidth="100%" style="width: 100%; display: block"></app-application-card>
           </nz-col>
         </nz-row>
         <div nz-row id="progress-bar-section" nzJustify="space-around" nzAlign="middle">
@@ -85,9 +85,7 @@
       </nz-col>
       <!--    Information Showcase    -->
       <nz-col nzSpan="15">
-        <div class="container">
-
-        </div>
+          <app-application-board style="width: 100%; display: block"></app-application-board>
       </nz-col>
     </div>
   </nz-content>

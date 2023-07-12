@@ -1,0 +1,24 @@
+<div class="info-scroll-wrapper">
+  <button class="scroll-button left-button" (click)="scrollLeft()" #leftButton>&lt;</button>
+  <nz-row #OperatorsContainer class="scroll-container">
+    <nz-col nzSpan="24">
+      <nz-row>
+        <div class="operator-container">
+          <span><b>Operators</b></span>
+        </div>
+      </nz-row>
+      <nz-row class="separator"></nz-row>
+      <nz-row>
+        <div class="info-container">
+          <nz-row>
+          <span>Throughput (tuple/s)</span>
+          </nz-row>
+          <nz-row>
+          <span>Latency (ms)</span>
+          </nz-row>
+        </div>
+      </nz-row>
+    </nz-col>
+  </nz-row>
+  <button class="scroll-button right-button" (click)="scrollRight()" #rightButton>&gt;</button>
+</div>
