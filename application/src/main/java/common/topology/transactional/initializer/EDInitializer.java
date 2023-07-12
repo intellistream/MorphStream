@@ -169,17 +169,17 @@ public class EDInitializer extends TableInitilizer {
     }
 
     private void initializeWordToIndexMap() {
-        String rootFilePath = System.getProperty("user.dir");
-        int rootFileIndex = rootFilePath.indexOf("MorphStream");
-        String cleanRootFilePath = (rootFileIndex != -1) ? rootFilePath.substring(0, rootFileIndex + "MorphStream".length()) : rootFilePath;
-        String filePath;
+//        String rootFilePath = System.getProperty("user.dir");
+//        int rootFileIndex = rootFilePath.indexOf("MorphStream");
+//        String cleanRootFilePath = (rootFileIndex != -1) ? rootFilePath.substring(0, rootFileIndex + "MorphStream".length()) : rootFilePath;
+        String fileName;
         if (useShortDataset) {
-            filePath = cleanRootFilePath + "/application/src/main/java/benchmark/datagenerator/apps/ED/dataset/word_map_short.txt";
+            fileName = "word_map_short.txt";
         } else {
-            filePath = cleanRootFilePath + "/application/src/main/java/benchmark/datagenerator/apps/ED/dataset/wordmap.txt";
+            fileName = "wordmap.txt";
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(fileName)))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(":");
