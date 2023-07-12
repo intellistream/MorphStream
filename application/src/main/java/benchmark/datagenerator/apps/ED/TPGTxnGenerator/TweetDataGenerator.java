@@ -30,13 +30,16 @@ public class TweetDataGenerator extends DataGenerator {
 
     public TweetDataGenerator(EDTPGDataGeneratorConfig dataConfig) throws FileNotFoundException {
         super(dataConfig);
+        String rootFilePath = System.getProperty("user.dir");
+        int rootFileIndex = rootFilePath.indexOf("MorphStream");
+        String cleanRootFilePath = (rootFileIndex != -1) ? rootFilePath.substring(0, rootFileIndex + "MorphStream".length()) : rootFilePath;
         events = new ArrayList<>(nTuples);
         if (useShortDataset) {
             reader = new BufferedReader(new InputStreamReader(
-                    new FileInputStream("application/src/main/java/benchmark/datagenerator/apps/ED/dataset/dataset_short.csv")));
+                    new FileInputStream(cleanRootFilePath + "/application/src/main/java/benchmark/datagenerator/apps/ED/dataset/dataset_short.csv")));
         } else {
             reader = new BufferedReader(new InputStreamReader(
-                    new FileInputStream("application/src/main/java/benchmark/datagenerator/apps/ED/dataset/dataset.csv")));
+                    new FileInputStream(cleanRootFilePath + "/application/src/main/java/benchmark/datagenerator/apps/ED/dataset/dataset.csv")));
         }
     }
 

@@ -22,7 +22,7 @@ function ResetParameters() {
   workloadType="default,unchanging,unchanging,unchanging,Up_skew,Up_skew,Up_skew,Up_PD,Up_PD,Up_PD,Up_abort,Up_abort,Up_abort"
   schedulerPool="OG_DFS_A,OG_NS_A,OP_NS_A,OP_NS"
   newConnRatio=$inputNewConnRatio
-  rootFilePath="/Users/zhonghao/data"
+  rootFilePath="/home/shuhao/data"
   shiftRate=1
   totalEvents=$numItems
 }
