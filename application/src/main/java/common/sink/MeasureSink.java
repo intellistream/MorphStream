@@ -232,7 +232,9 @@ public class MeasureSink extends BaseSink {
                     config.getInt("checkpoint"));
         } else if (config.getString("common").equals("WindowedGrepSum")) {
                 directory = String.format(statsFolderPattern,
-                        config.getString("common"), scheduler, tthread, totalEvents,
+                        config.getString("common"), scheduler,
+                        config.getInt("FTOption"),
+                        tthread, totalEvents,
                         config.getInt("NUM_ITEMS"),
                         config.getInt("Ratio_of_Multiple_State_Access"),
                         config.getInt("State_Access_Skewness"),
@@ -240,10 +242,18 @@ public class MeasureSink extends BaseSink {
                         config.getInt("windowSize"),
                         config.getInt("Transaction_Length"),
                         AppConfig.isCyclic,
-                        config.getInt("complexity"));
+                        config.getString("compressionAlg"),
+                        config.getInt("complexity"),
+                        config.getBoolean("isHistoryView"),
+                        config.getBoolean("isAbortPushDown"),
+                        config.getBoolean("isTaskPlacing"),
+                        config.getBoolean("isSelectiveLogging"),
+                        config.getInt("checkpoint"));
             } else if (config.getString("common").equals("SHJ")) {
                 directory = String.format(statsFolderPattern,
-                        config.getString("common"), scheduler, tthread, totalEvents,
+                        config.getString("common"), scheduler,
+                        config.getInt("FTOption"),
+                        tthread, totalEvents,
                         config.getInt("NUM_ITEMS"),
                         config.getInt("Ratio_of_Multiple_State_Access"),
                         config.getInt("State_Access_Skewness"),
@@ -251,10 +261,18 @@ public class MeasureSink extends BaseSink {
                         config.getInt("Ratio_of_Transaction_Aborts"),
                         config.getInt("Transaction_Length"),
                         AppConfig.isCyclic,
-                        config.getInt("complexity"));
+                        config.getString("compressionAlg"),
+                        config.getInt("complexity"),
+                        config.getBoolean("isHistoryView"),
+                        config.getBoolean("isAbortPushDown"),
+                        config.getBoolean("isTaskPlacing"),
+                        config.getBoolean("isSelectiveLogging"),
+                        config.getInt("checkpoint"));
             } else if (config.getString("common").equals("NonGrepSum")) {
                 directory = String.format(statsFolderPattern,
-                        config.getString("common"), scheduler, tthread, totalEvents,
+                        config.getString("common"), scheduler,
+                        config.getInt("FTOption"),
+                        tthread, totalEvents,
                         config.getInt("NUM_ITEMS"),
                         config.getInt("NUM_ACCESS"),
                         config.getInt("State_Access_Skewness"),
@@ -262,7 +280,13 @@ public class MeasureSink extends BaseSink {
                         config.getInt("Ratio_of_Transaction_Aborts"),
                         config.getInt("Transaction_Length"),
                         AppConfig.isCyclic,
-                        config.getInt("complexity"));
+                        config.getString("compressionAlg"),
+                        config.getInt("complexity"),
+                        config.getBoolean("isHistoryView"),
+                        config.getBoolean("isAbortPushDown"),
+                        config.getBoolean("isTaskPlacing"),
+                        config.getBoolean("isSelectiveLogging"),
+                        config.getInt("checkpoint"));
             } else {
             throw new UnsupportedOperationException();
         }
