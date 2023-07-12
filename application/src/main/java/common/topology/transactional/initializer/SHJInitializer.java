@@ -81,12 +81,8 @@ public class SHJInitializer extends TableInitilizer {
             dataConfig.initialize(config);
 
             configurePath(dataConfig);
-            try {
-                dataGenerator = new StockDataGenerator(dataConfig);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-//            dataGenerator = new SHJTPGDataGenerator(dataConfig);
+            dataGenerator = new SHJTPGDataGenerator(dataConfig);
+            //            dataGenerator = new SHJTPGDataGenerator(dataConfig);
         }
     }
     /**
@@ -159,7 +155,6 @@ public class SHJInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
-//            assert value.length() == VALUE_LEN;
             insertIndexRRecord(_key, rStartingValue, pid, spinlock, thread_id);
             insertIndexSRecord(_key, sStartingValue, pid, spinlock, thread_id);
         }
