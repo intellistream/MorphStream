@@ -29,6 +29,7 @@ import {NzBreadCrumbModule} from "ng-zorro-antd/breadcrumb";
 import {NzProgressModule} from "ng-zorro-antd/progress";
 import {ApplicationBoardComponent} from "./snippets/application-board/application-board.component";
 import {InfoScrollWrapperComponent} from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
+import {OperatorInformationComponent} from "./snippets/operator-information/operator-information.component";
 
 registerLocaleData(en);
 
@@ -46,7 +47,8 @@ registerLocaleData(en);
     ProcessingApplicationListElementComponent,
     FinishedApplicationListElementComponent,
     ApplicationBoardComponent,
-    InfoScrollWrapperComponent
+    InfoScrollWrapperComponent,
+    OperatorInformationComponent
   ],
   imports: [
     BrowserModule,

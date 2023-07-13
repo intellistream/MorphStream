@@ -1,24 +1,45 @@
 <div class="info-scroll-wrapper">
   <button class="scroll-button left-button" (click)="scrollLeft()" #leftButton>&lt;</button>
-  <nz-row #OperatorsContainer class="scroll-container">
-    <nz-col nzSpan="24">
-      <nz-row>
-        <div class="operator-container">
-          <span><b>Operators</b></span>
-        </div>
-      </nz-row>
-      <nz-row class="separator"></nz-row>
-      <nz-row>
-        <div class="info-container">
-          <nz-row>
-          <span>Throughput (tuple/s)</span>
-          </nz-row>
-          <nz-row>
-          <span>Latency (ms)</span>
-          </nz-row>
-        </div>
-      </nz-row>
-    </nz-col>
-  </nz-row>
+  <div #OperatorsContainer class="scroll-container">
+    <div class="operator-container">
+      <div class="scroll-item-title">
+        <nz-row>
+          <div nz-col nzSpan="4">
+            <span><b>Operators</b></span>
+          </div>
+        </nz-row>
+      </div>
+      <div class="scroll-item" *ngFor="let operator of operators">
+        <span class="arrow" *ngIf="operator.name !='Spout'">&#8594;</span>
+        <span class="scroll-item-text"><b>{{ operator.name }}</b></span>
+      </div>
+    </div>
+    <div>
+      <div class="scroll-item-sub-title">
+        <span>Throughput (tuple/s)</span>
+      </div>
+      <div class="scroll-item" *ngFor="let operator of operators">
+        <span class="scroll-item-sub-text">{{ operator.throughput!=-1?operator.throughput:"N.A." }}</span>
+      </div>
+    </div>
+    <div>
+      <div class="scroll-item-sub-title">
+        <span>latency (ms)</span>
+      </div>
+      <div class="scroll-item" *ngFor="let operator of operators">
+        <span class="scroll-item-sub-text">{{ operator.latency!=-1?operator.latency:"N.A." }}</span>
+      </div>
+    </div>
+  </div>
   <button class="scroll-button right-button" (click)="scrollRight()" #rightButton>&gt;</button>
 </div>
+
+
+<!--<div class="info-container">-->
+<!--  <nz-row>-->
+<!--    <span>Throughput (tuple/s)</span>-->
+<!--  </nz-row>-->
+<!--  <nz-row>-->
+<!--    <span>Latency (ms)</span>-->
+<!--  </nz-row>-->
+<!--</div>-->
