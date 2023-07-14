@@ -4,7 +4,84 @@
       <span><b>Processing Applications</b></span>
     </div>
     <div nz-row class="separator"></div>
-    <app-processing-application-list-element></app-processing-application-list-element>
-    <app-processing-application-list-element></app-processing-application-list-element>
+    <div class="application-card" *ngFor="let application of runningApplications" (click)="navigateToAppDetails()">
+      <nz-row nzJustify="space-between">
+        <nz-col nzSpan="12">
+          <span><b>{{ application.name }}</b></span>
+        </nz-col>
+        <nz-col nzSpan="4" id="control-bar">
+          <div nz-row nzJustify="space-between" nzAlign="middle">
+<!--            <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">-->
+<!--              <span nz-icon nzType="home" nzTheme="outline"></span>-->
+<!--            </button>-->
+            <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+              <span nz-icon nzType="redo" nzTheme="outline"></span>
+            </button>
+            <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+              <span nz-icon nzType="pause-circle" nzTheme="outline"></span>
+            </button>
+            <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+              <span nz-icon nzType="stop" style="color: var(--accent-color-warning)"></span>
+            </button>
+            <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+              <span nz-icon nzType="plus-circle" nzTheme="outline" style="color: var(--accent-color-success)"></span>
+            </button>
+            <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+              <span nz-icon nzType="download" nzTheme="outline"></span>
+            </button>
+          </div>
+        </nz-col>
+      </nz-row>
+      <nz-row class="info-row">
+        <nz-col nzSpan="8">
+          <nz-row>
+            <nz-col nzSpan="10" class="info-title">
+              <span><b>Working Threads</b></span>
+            </nz-col>
+            <nz-col class="info-content">
+              <span>{{ application.numOfThreads }}</span>
+            </nz-col>
+          </nz-row>
+        </nz-col>
+        <nz-col nzSpan="8">
+          <nz-row>
+            <nz-col nzSpan="8" class="info-title">
+              <span><b>Start Time</b></span>
+            </nz-col>
+            <nz-col nzSpan="16" class="info-content">
+              <span>{{ application.startTime }}</span>
+            </nz-col>
+          </nz-row>
+        </nz-col>
+      </nz-row>
+      <nz-row class="info-row">
+        <nz-col nzSpan="8">
+          <nz-row>
+            <nz-col nzSpan="3" class="info-title">
+              <span><b>CPU</b></span>
+            </nz-col>
+            <nz-col nzSpan="13" class="info-content">
+              <span>{{ application.cpu }}</span>
+            </nz-col>
+            <nz-col nzSpan="4" class="info-title">
+              <span><b>RAM</b></span>
+            </nz-col>
+            <nz-col nzSpan="4" class="info-content">
+              <span>{{ application.ram }}</span>
+            </nz-col>
+          </nz-row>
+        </nz-col>
+        <nz-col nzSpan="8">
+          <nz-row style="height: 100%">
+            <nz-col nzSpan="8" class="info-title">
+              <span><b>Duration</b></span>
+            </nz-col>
+            <nz-col nzSpan="16" class="info-content">
+              <span>{{ application.duration }}</span>
+            </nz-col>
+          </nz-row>
+        </nz-col>
+      </nz-row>
+    </div>
   </nz-content>
 </div>

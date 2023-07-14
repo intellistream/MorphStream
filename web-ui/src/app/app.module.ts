@@ -23,13 +23,12 @@ import { NzGridModule } from "ng-zorro-antd/grid";
 import { ScrollWrapperComponent } from "./snippets/scroll-wrapper/scroll-wrapper.component";
 import { NzButtonModule } from "ng-zorro-antd/button";
 import { ApplicationInformationComponent } from "./pages/application-information/application-information.component";
-import { ProcessingApplicationListElementComponent } from "./pages/applications/processing-applications/processing-application-list-element/processing-application-list-element.component";
-import { FinishedApplicationListElementComponent } from "./pages/applications/finished-applications/finished-application-list-element/finished-application-list-element.component";
 import {NzBreadCrumbModule} from "ng-zorro-antd/breadcrumb";
 import {NzProgressModule} from "ng-zorro-antd/progress";
 import {ApplicationBoardComponent} from "./snippets/application-board/application-board.component";
 import {InfoScrollWrapperComponent} from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
 import {OperatorInformationComponent} from "./snippets/operator-information/operator-information.component";
+import {NzCardModule} from "ng-zorro-antd/card";
 
 registerLocaleData(en);
 
@@ -44,27 +43,26 @@ registerLocaleData(en);
     ApplicationCardComponent,
     ScrollWrapperComponent,
     ApplicationInformationComponent,
-    ProcessingApplicationListElementComponent,
-    FinishedApplicationListElementComponent,
     ApplicationBoardComponent,
     InfoScrollWrapperComponent,
     OperatorInformationComponent
   ],
-  imports: [
-    BrowserModule,
-    FormsModule,
-    HttpClientModule,
-    BrowserAnimationsModule,
-    AppRoutingModule,
-    IconsProviderModule,
-    NzLayoutModule,
-    NzMenuModule,
-    NgOptimizedImage,
-    NzGridModule,
-    NzButtonModule,
-    NzBreadCrumbModule,
-    NzProgressModule
-  ],
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule,
+        BrowserAnimationsModule,
+        AppRoutingModule,
+        IconsProviderModule,
+        NzLayoutModule,
+        NzMenuModule,
+        NgOptimizedImage,
+        NzGridModule,
+        NzButtonModule,
+        NzBreadCrumbModule,
+        NzProgressModule,
+        NzCardModule
+    ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
   ],

@@ -15,3 +15,36 @@
   margin: 10px 1.6% 0;
   padding: 16px 20px 30px;
 }
+
+.application-card {
+  width: 100%;
+  background: var(--background-tertiary);
+  min-height: 80px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-top: 6px solid var(--background-menu);
+  font-size: var(--title-tertiary);
+  padding: 16px 30px;
+  text-align: left;
+}
+
+.application-card:hover {
+  transition: box-shadow 0.3s;
+  transform: translateY(-10px);
+  box-shadow: 0 26px 40px -24px rgb(1,1,1);
+}
+
+.info-title {
+  display: flex;
+  align-items: center;
+  color: var(--border-accent-b);
+}
+
+.info-content {
+  display: flex;
+  align-items: center;
+}
+
+.info-row {
+  margin-top: 6px;
+}
