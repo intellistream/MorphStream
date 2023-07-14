@@ -1,2 +1,57 @@
 <nz-row id="app-board" style="width: 100%">
+  <nz-col nzSpan="24">
+<!--    <nz-row class="board-title" nzJustify="space-between" nzAlign="top">-->
+<!--      <nz-col nzSpan="24">-->
+<!--        <span><b>Scheduling Strategies</b></span>-->
+<!--      </nz-col>-->
+<!--    </nz-row>-->
+    <nz-row nzJustify="space-around" nzAlign="top">
+      <nz-col nzSpan="11" class="info-block">
+        <nz-row style="width: 100%">
+          <nz-col nzSpan="24">
+            <span class="sub-title">Scheduling Strategies</span>
+            <div class="separator"></div>
+            <nz-row style="width: 100%" nzJustify="center" class="content-container">
+              <nz-col nzSpan="20">
+                <span class="content">{{ operator.explorationStrategy }}</span>
+              </nz-col>
+            </nz-row>
+            <nz-row style="width: 100%" nzJustify="center" class="content-container">
+              <nz-col nzSpan="20">
+                <span class="content">{{ operator.schedulingGranularity }}</span>
+              </nz-col>
+            </nz-row>
+            <nz-row style="width: 100%" nzJustify="center" class="content-container">
+              <nz-col nzSpan="20">
+                <span class="content">{{ operator.abortHandling }}</span>
+              </nz-col>
+            </nz-row>
+          </nz-col>
+        </nz-row>
+      </nz-col>
+      <nz-col nzSpan="11" class="info-block">
+        <nz-row style="width: 100%">
+          <nz-col nzSpan="24">
+            <span class="sub-title">TPG Properties</span>
+            <div class="separator"></div>
+            <nz-row style="width: 100%" nzJustify="center" class="content-container">
+              <nz-col nzSpan="20">
+                <span class="content">Number of TDs: {{ operator.numOfTD != -1? operator.numOfTD: "N.A" }}</span>
+              </nz-col>
+            </nz-row>
+            <nz-row style="width: 100%" nzJustify="center" class="content-container">
+              <nz-col nzSpan="20">
+                <span class="content">Number of LDs: {{ operator.numOfLD != -1? operator.numOfLD: "N.A" }}</span>
+              </nz-col>
+            </nz-row>
+            <nz-row style="width: 100%" nzJustify="center" class="content-container">
+              <nz-col nzSpan="20">
+                <span class="content">Number of PDs: {{ operator.numOfPD != -1? operator.numOfPD: "N.A" }}</span>
+              </nz-col>
+            </nz-row>
+          </nz-col>
+        </nz-row>
+      </nz-col>
+    </nz-row>
+  </nz-col>
 </nz-row>

@@ -7,4 +7,7 @@ export interface Operator {
   explorationStrategy: string;
   schedulingGranularity: string;
   abortHandling: string;
+  numOfTD: number;
+  numOfLD: number;
+  numOfPD: number;
 }

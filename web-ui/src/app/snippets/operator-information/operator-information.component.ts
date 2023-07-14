@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import {Component, Input} from '@angular/core';
+import {Operator} from "../../model/operator";
 
 @Component({
   selector: 'app-operator-information',
@@ -6,5 +7,17 @@ import { Component } from '@angular/core';
   styleUrls: ['./operator-information.component.less']
 })
 export class OperatorInformationComponent {
-
+  @Input() operator: Operator = {
+    id: 2,
+    name: "Tweet Registrant",
+    numOfInstances: 4,
+    throughput: 27.8, // tuples/s
+    latency: 345.4,  // ms
+    explorationStrategy: "Structured Exploration",
+    schedulingGranularity: "Fine-Grained Unit",
+    abortHandling: "Eager Abort",
+    numOfTD: 632,
+    numOfLD: 450,
+    numOfPD: 120
+  }
 }

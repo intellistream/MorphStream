@@ -1,5 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {Application} from "../../model/application";
+import {Operator} from "../../model/operator";
 
 @Component({
   selector: 'app-application-board',
@@ -25,7 +26,10 @@ export class ApplicationBoardComponent {
         latency: -1,  // ms
         explorationStrategy: "NA",
         schedulingGranularity: "NA",
-        abortHandling: "NA"
+        abortHandling: "NA",
+        numOfTD: -1,
+        numOfLD: -1,
+        numOfPD: -1
       },
       {
         id: 2,
@@ -35,7 +39,10 @@ export class ApplicationBoardComponent {
         latency: 345.4,  // ms
         explorationStrategy: "Structured Exploration",
         schedulingGranularity: "Fine-Grained Unit",
-        abortHandling: "Eager Abort"
+        abortHandling: "Eager Abort",
+        numOfTD: 120,
+        numOfLD: 560,
+        numOfPD: 80
       },
       {
         id: 3,
@@ -45,7 +52,10 @@ export class ApplicationBoardComponent {
         latency: 438.8,  // ms
         explorationStrategy: "Non-Structured Exploration",
         schedulingGranularity: "Fine-Grained Unit",
-        abortHandling: "Eager Abort"
+        abortHandling: "Eager Abort",
+        numOfTD: 588,
+        numOfLD: 790,
+        numOfPD: 422
       },
       {
         id: 4,
@@ -55,11 +65,17 @@ export class ApplicationBoardComponent {
         latency: 266.3,  // ms
         explorationStrategy: "Structured Exploration",
         schedulingGranularity: "Fine-Grained Unit",
-        abortHandling: "Lazy Abort"
+        abortHandling: "Lazy Abort",
+        numOfTD: 632,
+        numOfLD: 450,
+        numOfPD: 120
       }
     ]
   }
 
-  // @Input() boardWidth: string = "780px";
-  // @Input()  boardHeight: string = "270px";
+  selectedOperator: Operator = this.application.operators[0];
+
+  onSelectedOperatorChange(operator: Operator) {
+    this.selectedOperator = operator;
+  }
 }
