@@ -1,6 +1,6 @@
-<div id="app-box" [style.width]="cardWidth" [style.height]="cardHeight">
+<div id="app-box" [style.width]="cardWidth" [style.height]="cardHeight" (click)="navigateToAppDetails()">
   <div nz-row id="app-title" nzJustify="space-between" nzAlign="top">
-    <nz-col nzSpan="16" (click)="navigateToAppDetails()" class="app-title-text">
+    <nz-col nzSpan="16">
       <span><b>{{ application.name }}</b></span>
     </nz-col>
     <nz-col nzSpan="6" *ngIf="application.isRunning" class="running-icon">
