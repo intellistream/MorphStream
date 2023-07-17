@@ -29,6 +29,8 @@ import {ApplicationBoardComponent} from "./snippets/application-board/applicatio
 import {InfoScrollWrapperComponent} from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
 import {OperatorInformationComponent} from "./snippets/operator-information/operator-information.component";
 import {NzCardModule} from "ng-zorro-antd/card";
+import {TpgGraphComponent} from "./pages/application-information/tpg-graph/tpg-graph.component";
+import {NzModalModule} from "ng-zorro-antd/modal";
 
 registerLocaleData(en);
 
@@ -45,24 +47,26 @@ registerLocaleData(en);
     ApplicationInformationComponent,
     ApplicationBoardComponent,
     InfoScrollWrapperComponent,
-    OperatorInformationComponent
+    OperatorInformationComponent,
+    TpgGraphComponent
   ],
-    imports: [
-        BrowserModule,
-        FormsModule,
-        HttpClientModule,
-        BrowserAnimationsModule,
-        AppRoutingModule,
-        IconsProviderModule,
-        NzLayoutModule,
-        NzMenuModule,
-        NgOptimizedImage,
-        NzGridModule,
-        NzButtonModule,
-        NzBreadCrumbModule,
-        NzProgressModule,
-        NzCardModule
-    ],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    HttpClientModule,
+    BrowserAnimationsModule,
+    AppRoutingModule,
+    IconsProviderModule,
+    NzLayoutModule,
+    NzMenuModule,
+    NgOptimizedImage,
+    NzGridModule,
+    NzButtonModule,
+    NzBreadCrumbModule,
+    NzProgressModule,
+    NzCardModule,
+    NzModalModule
+  ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
   ],

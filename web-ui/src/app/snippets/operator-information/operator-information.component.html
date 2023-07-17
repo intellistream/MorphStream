@@ -5,6 +5,9 @@
 <!--        <span><b>Scheduling Strategies</b></span>-->
 <!--      </nz-col>-->
 <!--    </nz-row>-->
+    <nz-row>
+      <span id="check-graph-btn" (click)="onTpgClick()"><i>Check the TPG graph of {{operator.name}} >>></i></span>
+    </nz-row>
     <nz-row nzJustify="space-around" nzAlign="top">
       <nz-col nzSpan="11" class="info-block">
         <nz-row style="width: 100%">
@@ -32,7 +35,9 @@
       <nz-col nzSpan="11" class="info-block">
         <nz-row style="width: 100%">
           <nz-col nzSpan="24">
-            <span class="sub-title">TPG Properties</span>
+            <nz-row>
+              <span class="sub-title">TPG Properties</span>
+            </nz-row>
             <div class="separator"></div>
             <nz-row style="width: 100%" nzJustify="center" class="content-container">
               <nz-col nzSpan="20">
