@@ -44,7 +44,7 @@ import static intellistream.morphstream.configuration.CONTROL.enable_log;
 public abstract class TxnManagerDedicatedAsy extends TxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManagerDedicatedAsy.class);
 
-    protected final StorageManager storageManager_;
+
     protected final String thisComponentId;
     public HashMap<String, SchedulerContext> contexts;
     public SchedulerContext context;
@@ -126,7 +126,17 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     public void switchContext(String schedulerType) {
         context = contexts.get(schedulerType);
     }
-
+    /**
+     * Switch scheduler every punctuation
+     * When the workload changes and the scheduler is no longer applicable
+     */
+    public void SwitchScheduler(String schedulerType, int threadId, long markId) {
+        currentSchedulerType.put(threadId, schedulerType);
+        if (threadId == 0) {
+            scheduler = schedulerPool.get(schedulerType);
+            log.info("Current Scheduler is " + schedulerType + " markId: " + markId);
+        }
+    }
     @Override
     public void switch_scheduler(int thread_Id, long mark_ID) {
         if (scheduler instanceof RScheduler) {

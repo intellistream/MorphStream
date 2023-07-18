@@ -28,7 +28,6 @@ import static intellistream.morphstream.configuration.CONTROL.enable_log;
  */
 public abstract class TxnManagerDedicatedLocked extends TxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManagerDedicatedLocked.class);
-    protected final StorageManager storageManager_;
     protected final String thisComponentId;
     private final long thread_id_;
     protected TxnAccess.AccessList access_list_ = new TxnAccess.AccessList(CommonMetaTypes.kMaxAccessNum);

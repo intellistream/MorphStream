@@ -119,16 +119,16 @@ public class ExecutionManager {
                 TxnManager.loggingManager = db.getLoggingManager();
                 if (conf.getBoolean("isDynamic")) {
                     String schedulers = conf.getString("schedulersPool");
-                    TxnManager.initSchedulerPool(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates, app);
+                    TxnManager.initSchedulerPoolForDynamicWorkload(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates, app);
                     //Configure the bottom line for triggering scheduler switching in Collector(include the isRuntime and when to switch)
                     TxnManager.setBottomLine(conf.getString("bottomLine"));
                     if (!conf.getBoolean("isRuntime")) {
                         TxnManager.setWorkloadConfig(conf.getString("WorkloadConfig"));
                     }
                 } else if (conf.getBoolean("isGroup")) {
-                    TxnManager.CreateSchedulerByGroup(conf.getString("SchedulersForGroup"), totalThread, numberOfStates, app);
+                    TxnManager.initSchedulersByGroupForMultipleWorkload(conf.getString("SchedulersForGroup"), totalThread, numberOfStates, app);
                 } else {
-                    TxnManager.CreateScheduler(schedulerType, totalThread, numberOfStates, app);
+                    TxnManager.initScheduleForStaticWorkload(schedulerType, totalThread, numberOfStates, app);
                 }
                 if (conf.getBoolean("isRecovery")) {
                     TxnManager.initRecoveryScheduler(conf.getInt("FTOption"), totalThread, numberOfStates, app);

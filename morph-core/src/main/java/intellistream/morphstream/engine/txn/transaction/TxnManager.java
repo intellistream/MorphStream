@@ -17,6 +17,7 @@ import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPBFSSc
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSAScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.op.structured.OPDFSScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.recovery.RScheduler;
+import intellistream.morphstream.engine.txn.storage.StorageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +29,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class TxnManager implements ITxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManager.class);
-    public static boolean enableGroup = false;
-    public static int groupNum;
     public static LoggingManager loggingManager;
+    protected StorageManager storageManager_;
+    public static boolean enableGroup = false;
+    protected static boolean enableDynamic = false;
     protected static IScheduler scheduler; // TODO: this is a bad encapsulation, try to make it non static
     protected static IScheduler recoveryScheduler;
     /**
      * For dynamic workload
      */
     protected static HashMap<String, IScheduler> schedulerPool; // TODO: this is a bad encapsulation
-    protected static boolean enableDynamic = false;
     protected static Collector collector = new Collector();
     protected static ConcurrentHashMap<Integer, String> currentSchedulerType = new ConcurrentHashMap<>();
     /**
@@ -45,8 +46,16 @@ public abstract class TxnManager implements ITxnManager {
      */
     protected static HashMap<Integer, IScheduler> schedulerByGroup;
     protected static HashMap<Integer, String> schedulerTypeByGroup;
+    public static int groupNum;
 
-    public static void CreateSchedulerByGroup(String schedulerType, int threadCount, int numberOfStates, int app) {
+    public static void initScheduleForStaticWorkload(String schedulerType, int threadCount, int numberOfStates, int app) {
+        scheduler = CreateSchedulerByType(schedulerType, threadCount, numberOfStates, app);
+        scheduler.initTPG(0);
+        if (loggingManager != null) {
+            scheduler.setLoggingManager(loggingManager);
+        }
+    }
+    public static void initSchedulersByGroupForMultipleWorkload(String schedulerType, int threadCount, int numberOfStates, int app) {
         schedulerByGroup = new HashMap<>();
         schedulerTypeByGroup = new HashMap<>();
         String[] scheduler = schedulerType.split(",");
@@ -61,72 +70,10 @@ public abstract class TxnManager implements ITxnManager {
         enableGroup = true;
         groupNum = scheduler.length;
     }
-
-    public static void CreateScheduler(String schedulerType, int threadCount, int numberOfStates, int app) {
-        switch (schedulerType) {
-            case "OG_BFS": // Group of operation + Structured BFS exploration strategy + coarse-grained
-                scheduler = new OGBFSScheduler(threadCount, numberOfStates, app);
-                break;
-            case "OG_BFS_A": // Group of operation + Structured BFS exploration strategy + fine-grained
-                scheduler = new OGBFSAScheduler(threadCount, numberOfStates, app);
-                break;
-            case "OG_DFS": // Group of operation + Structured DFS exploration strategy + coarse-grained
-                scheduler = new OGDFSScheduler(threadCount, numberOfStates, app);
-                break;
-            case "OG_DFS_A": // Group of operation + Structured DFS exploration strategy + fine-grained
-                scheduler = new OGDFSAScheduler(threadCount, numberOfStates, app);
-                break;
-            case "OG_NS": // Group of operation + Non-structured exploration strategy + coarse-grained
-                scheduler = new OGNSScheduler(threadCount, numberOfStates, app);
-                break;
-            case "OG_NS_A": // Group of operation + Non-structured exploration strategy + fine-grained
-                scheduler = new OGNSAScheduler(threadCount, numberOfStates, app);
-                break;
-            case "OP_NS": // Single operation + Non-structured exploration strategy + coarse-grained
-                scheduler = new OPNSScheduler<>(threadCount, numberOfStates, app);
-                break;
-            case "OP_NS_A": // Single operation + Non-structured exploration strategy + fine-grained
-                scheduler = new OPNSAScheduler<>(threadCount, numberOfStates, app);
-                break;
-            case "OP_BFS": // Single operation + Structured BFS exploration strategy + coarse-grained
-                scheduler = new OPBFSScheduler<>(threadCount, numberOfStates, app);
-                break;
-            case "OP_BFS_A": // Single operation + Structured BFS exploration strategy + fine-grained
-                scheduler = new OPBFSAScheduler<>(threadCount, numberOfStates, app);
-                break;
-            case "OP_DFS": // Single operation + Structured DFS exploration strategy + coarse-grained
-                scheduler = new OPDFSScheduler<>(threadCount, numberOfStates, app);
-                break;
-            case "OP_DFS_A": // Single operation + Structured DFS exploration strategy + fine-grained
-                scheduler = new OPDFSAScheduler<>(threadCount, numberOfStates, app);
-                break;
-            case "TStream": // original TStream also uses Non-structured exploration strategy
-                scheduler = new TStreamScheduler(threadCount, numberOfStates, app);
-                break;
-            default:
-                throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
-        }
-        scheduler.initTPG(0);
-    }
-
-    /**
-     * Configure the bottom line for triggering scheduler switching in Collector
-     */
-    public static void setBottomLine(String bottomLine) {
-        collector.setBottomLine(bottomLine);
-    }
-
-    /**
-     * Configure the bottom line for triggering scheduler switching in Collector
-     */
-    public static void setWorkloadConfig(String config) {
-        collector.setWorkloadConfig(config);
-    }
-
     /**
      * Configure the scheduler pool
      */
-    public static void initSchedulerPool(String defaultScheduler, String schedulerPool, int threadCount, int numberOfStates, int app) {
+    public static void initSchedulerPoolForDynamicWorkload(String defaultScheduler, String schedulerPool, int threadCount, int numberOfStates, int app) {
         TxnManager.schedulerPool = new HashMap<>();
         String[] scheduler = schedulerPool.split(",");
         for (int i = 0; i < scheduler.length; i++) {
@@ -143,6 +90,16 @@ public abstract class TxnManager implements ITxnManager {
         TxnManager.scheduler = TxnManager.schedulerPool.get(defaultScheduler);
         log.info("Current Scheduler is " + defaultScheduler + " markId: " + 0);
         enableDynamic = true;
+    }
+    public static void initRecoveryScheduler(int FTOption, int threadCount, int numberOfStates, int app) {
+        if (FTOption == 3) {
+            recoveryScheduler = new RScheduler(threadCount, numberOfStates, app);
+            recoveryScheduler.initTPG(0);
+            if (loggingManager != null) {
+                recoveryScheduler.setLoggingManager(loggingManager);
+            }
+            scheduler = recoveryScheduler;
+        }
     }
 
     /**
@@ -187,26 +144,17 @@ public abstract class TxnManager implements ITxnManager {
         }
     }
 
-    public static void initRecoveryScheduler(int FTOption, int threadCount, int numberOfStates, int app) {
-        if (FTOption == 3) {
-            recoveryScheduler = new RScheduler(threadCount, numberOfStates, app);
-            recoveryScheduler.initTPG(0);
-            if (loggingManager != null) {
-                recoveryScheduler.setLoggingManager(loggingManager);
-            }
-            scheduler = recoveryScheduler;
-        }
+    /**
+     * Configure the bottom line for triggering scheduler switching in Collector
+     */
+    public static void setBottomLine(String bottomLine) {
+        collector.setBottomLine(bottomLine);
     }
 
     /**
-     * Switch scheduler every punctuation
-     * When the workload changes and the scheduler is no longer applicable
+     * Configure the bottom line for triggering scheduler switching in Collector
      */
-    public void SwitchScheduler(String schedulerType, int threadId, long markId) {
-        currentSchedulerType.put(threadId, schedulerType);
-        if (threadId == 0) {
-            scheduler = schedulerPool.get(schedulerType);
-            log.info("Current Scheduler is " + schedulerType + " markId: " + markId);
-        }
+    public static void setWorkloadConfig(String config) {
+        collector.setWorkloadConfig(config);
     }
 }
