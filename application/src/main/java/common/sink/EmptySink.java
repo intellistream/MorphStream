@@ -1,8 +1,8 @@
 package common.sink;
 
-import components.operators.api.BaseSink;
-import execution.runtime.tuple.JumboTuple;
-import execution.runtime.tuple.impl.Tuple;
+import engine.stream.components.operators.api.BaseSink;
+import engine.stream.execution.runtime.tuple.JumboTuple;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

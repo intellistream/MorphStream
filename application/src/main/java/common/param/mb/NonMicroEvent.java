@@ -1,17 +1,9 @@
 package common.param.mb;
 
-import common.param.TxnEvent;
-import org.apache.commons.lang.StringUtils;
-import storage.SchemaRecordRef;
-import storage.datatype.DataBox;
-import storage.datatype.IntDataBox;
-import storage.datatype.StringDataBox;
+import engine.txn.TxnEvent;
+import engine.txn.storage.SchemaRecordRef;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-
-import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
 
 public class NonMicroEvent extends TxnEvent {
     private final SchemaRecordRef[] record_refs;//this is essentially the place-holder..

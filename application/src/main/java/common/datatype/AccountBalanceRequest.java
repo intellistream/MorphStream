@@ -19,7 +19,7 @@
 package common.datatype;
 
 import common.datatype.util.LRTopologyControl;
-import execution.runtime.tuple.impl.Fields;
+import engine.stream.execution.runtime.tuple.impl.Fields;
 
 /**
  * A {@link AccountBalanceRequest} from the LRB data generator.<br />

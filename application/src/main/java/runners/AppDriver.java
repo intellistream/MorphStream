@@ -1,10 +1,10 @@
 package runners;
 
 import common.collections.Configuration;
-import components.Topology;
+import engine.stream.components.Topology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import topology.AbstractTopology;
+import engine.stream.topology.AbstractTopology;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

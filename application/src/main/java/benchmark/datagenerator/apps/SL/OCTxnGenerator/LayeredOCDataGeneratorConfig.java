@@ -2,7 +2,7 @@ package benchmark.datagenerator.apps.SL.OCTxnGenerator;
 
 import benchmark.datagenerator.DataGeneratorConfig;
 import common.collections.Configuration;
-import common.tools.ZipfGenerator;
+import util.tools.ZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -3,9 +3,9 @@ package common.spout;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.helper.parser.Parser;
-import common.util.datatypes.StreamValues;
-import components.operators.api.AbstractSpout;
-import execution.ExecutionGraph;
+import util.datatypes.StreamValues;
+import engine.stream.components.operators.api.AbstractSpout;
+import engine.stream.execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

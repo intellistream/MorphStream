@@ -1,12 +1,12 @@
 package common.bolts.transactional.ob;
 
 import combo.SINKCombo;
-import components.context.TopologyContext;
-import execution.ExecutionGraph;
-import execution.runtime.collector.OutputCollector;
+import engine.stream.components.context.TopologyContext;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.impl.ordered.TxnManagerOrderLockBlocking;
+import engine.txn.transaction.impl.ordered.TxnManagerOrderLockBlocking;
 
 import java.util.Map;
 

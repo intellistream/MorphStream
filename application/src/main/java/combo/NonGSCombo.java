@@ -4,18 +4,18 @@ import benchmark.DataHolder;
 import common.bolts.transactional.nongs.NonGSBolt_sstore;
 import common.bolts.transactional.nongs.NonGSBolt_ts;
 import common.collections.Configuration;
-import common.param.TxnEvent;
+import engine.txn.TxnEvent;
 import common.param.mb.MicroEvent;
-import components.context.TopologyContext;
-import execution.ExecutionGraph;
-import execution.runtime.collector.OutputCollector;
+import engine.stream.components.context.TopologyContext;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 
 import static common.CONTROL.*;
-import static content.Content.*;
+import static engine.txn.content.Content.*;
 
 public class NonGSCombo extends SPOUTCombo{
     private static final Logger LOG = LoggerFactory.getLogger(NonGSCombo.class);

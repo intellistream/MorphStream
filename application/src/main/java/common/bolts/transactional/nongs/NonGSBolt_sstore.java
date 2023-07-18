@@ -2,26 +2,26 @@ package common.bolts.transactional.nongs;
 
 import combo.SINKCombo;
 import common.bolts.transactional.sl.GlobalSorter;
-import common.param.TxnEvent;
+import engine.txn.TxnEvent;
 import common.param.mb.NonMicroEvent;
-import components.context.TopologyContext;
-import content.common.CommonMetaTypes;
-import db.DatabaseException;
-import execution.ExecutionGraph;
-import execution.runtime.collector.OutputCollector;
-import execution.runtime.tuple.impl.Tuple;
-import execution.runtime.tuple.impl.msgs.GeneralMsg;
-import lock.SpinLock;
+import engine.stream.components.context.TopologyContext;
+import engine.txn.content.common.CommonMetaTypes;
+import engine.txn.db.DatabaseException;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.collector.OutputCollector;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
+import engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
+import engine.txn.lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
-import storage.SchemaRecord;
-import storage.SchemaRecordRef;
-import storage.datatype.DataBox;
-import transaction.context.TxnContext;
-import transaction.impl.ordered.TxnManagerSStore;
-import utils.AppConfig;
-import utils.SOURCE_CONTROL;
+import engine.txn.profiler.MeasureTools;
+import engine.txn.storage.SchemaRecord;
+import engine.txn.storage.SchemaRecordRef;
+import engine.txn.storage.datatype.DataBox;
+import engine.txn.transaction.context.TxnContext;
+import engine.txn.transaction.impl.ordered.TxnManagerSStore;
+import util.AppConfig;
+import engine.txn.utils.SOURCE_CONTROL;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -31,10 +31,10 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static content.common.CommonMetaTypes.AccessType.NON_READ_WRITE_COND_READN;
-import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
-import static profiler.MeasureTools.*;
-import static profiler.MeasureTools.END_WAIT_TIME_MEASURE_ACC;
+import static engine.txn.content.common.CommonMetaTypes.AccessType.NON_READ_WRITE_COND_READN;
+import static engine.txn.content.common.CommonMetaTypes.AccessType.READ_WRITE;
+import static engine.txn.profiler.MeasureTools.*;
+import static engine.txn.profiler.MeasureTools.END_WAIT_TIME_MEASURE_ACC;
 
 public class NonGSBolt_sstore extends NonGSBolt{
     private static final Logger LOG = LoggerFactory.getLogger(NonGSBolt_sstore.class);

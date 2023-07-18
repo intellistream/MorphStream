@@ -1,6 +1,6 @@
 package common.param.ob;
 
-import content.common.TxnParam;
+import engine.txn.content.common.TxnParam;
 
 public class OBParam extends TxnParam {
     int[] itemID;

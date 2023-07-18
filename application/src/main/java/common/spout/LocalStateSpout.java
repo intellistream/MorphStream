@@ -3,9 +3,9 @@ package common.spout;
 import common.constants.BaseConstants.BaseConf;
 import common.constants.GrepSumConstants;
 import common.helper.DataSource;
-import components.operators.api.AbstractSpout;
-import execution.ExecutionGraph;
-import execution.runtime.tuple.impl.Fields;
+import engine.stream.components.operators.api.AbstractSpout;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.tuple.impl.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -18,7 +18,7 @@
  */
 package common.datatype.util;
 
-import execution.runtime.tuple.impl.Fields;
+import engine.stream.execution.runtime.tuple.impl.Fields;
 
 /**
  * {@link SegmentIdentifier} represent an express way, segment, and direction.

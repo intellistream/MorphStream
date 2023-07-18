@@ -1,10 +1,10 @@
 package common.bolts.transactional.gs;
 
 import combo.SINKCombo;
-import execution.ExecutionGraph;
+import engine.stream.execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.impl.ordered.TxnManagerOrderLockBlocking;
+import engine.txn.transaction.impl.ordered.TxnManagerOrderLockBlocking;
 
 public class GSBolt_olb extends GSBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_olb.class);

@@ -3,10 +3,10 @@ import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.GS.TPGTxnGenerator.Transaction.GSEvent;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicWorkloadGenerator;
-import common.tools.FastZipfGenerator;
+import util.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.AppConfig;
+import util.AppConfig;
 
 import java.io.File;
 import java.io.FileWriter;

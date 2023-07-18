@@ -4,7 +4,7 @@ import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.TP.Transaction.TollProcessingEvent;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicWorkloadGenerator;
-import common.tools.FastZipfGenerator;
+import util.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

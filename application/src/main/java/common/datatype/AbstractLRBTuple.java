@@ -19,7 +19,7 @@
 package common.datatype;
 
 import common.collections.Time;
-import common.util.datatypes.StreamValues;
+import util.datatypes.StreamValues;
 
 /**
  * Base class for all LRB tuples.<br />

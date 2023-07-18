@@ -6,13 +6,13 @@ import common.io.ByteIO.SyncFileAppender;
 import common.io.Encoding.decoder.*;
 import common.io.Encoding.encoder.*;
 import common.io.Utils.Binary;
-import common.param.TxnEvent;
+import engine.txn.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import durability.inputStore.InputDurabilityHelper;
-import durability.struct.FaultToleranceRelax;
-import profiler.MeasureTools;
-import utils.FaultToleranceConstants;
+import engine.txn.durability.inputStore.InputDurabilityHelper;
+import engine.txn.durability.struct.FaultToleranceRelax;
+import engine.txn.profiler.MeasureTools;
+import util.FaultToleranceConstants;
 
 import java.io.*;
 import java.nio.ByteBuffer;

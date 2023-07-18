@@ -2,15 +2,15 @@ package common.bolts.transactional.gs;
 
 import combo.SINKCombo;
 import common.param.mb.MicroEvent;
-import db.DatabaseException;
-import execution.ExecutionGraph;
-import execution.runtime.tuple.impl.Tuple;
+import engine.txn.db.DatabaseException;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.impl.TxnManagerLock;
+import engine.txn.transaction.impl.TxnManagerLock;
 
 import static common.CONTROL.combo_bid_size;
-import static profiler.MeasureTools.*;
+import static engine.txn.profiler.MeasureTools.*;
 
 /**
  * Combine Read-Write for nocc.

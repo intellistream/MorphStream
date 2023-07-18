@@ -1,7 +1,7 @@
 package common.param.shj;
 
-import common.param.TxnEvent;
-import storage.SchemaRecordRef;
+import engine.txn.TxnEvent;
+import engine.txn.storage.SchemaRecordRef;
 
 import java.util.Arrays;
 

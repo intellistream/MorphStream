@@ -1,18 +1,18 @@
 package common.param.gsw;
 
-import common.param.TxnEvent;
+import engine.txn.TxnEvent;
 import org.apache.commons.lang.StringUtils;
-import storage.SchemaRecordRef;
-import storage.datatype.DataBox;
-import storage.datatype.IntDataBox;
-import storage.datatype.StringDataBox;
+import engine.txn.storage.SchemaRecordRef;
+import engine.txn.storage.datatype.DataBox;
+import engine.txn.storage.datatype.IntDataBox;
+import engine.txn.storage.datatype.StringDataBox;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
-import static profiler.Metrics.NUM_ACCESSES;
+import static engine.txn.profiler.Metrics.NUM_ACCESSES;
 
 /**
  * Support Multi workset since 1 SEP 2018.

@@ -7,23 +7,23 @@ import benchmark.datagenerator.apps.NonGS.TPGTxnGenerator.NonGSTPGDynamicDataGen
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.param.TxnEvent;
+import engine.txn.TxnEvent;
 import common.param.mb.NonMicroEvent;
-import db.Database;
-import db.DatabaseException;
-import lock.SpinLock;
+import engine.txn.db.Database;
+import engine.txn.db.DatabaseException;
+import engine.txn.lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scheduler.context.SchedulerContext;
-import storage.SchemaRecord;
-import storage.TableRecord;
-import storage.datatype.DataBox;
-import storage.datatype.IntDataBox;
-import storage.datatype.LongDataBox;
-import storage.datatype.StringDataBox;
-import storage.table.RecordSchema;
-import transaction.TableInitilizer;
-import utils.AppConfig;
+import engine.txn.scheduler.context.SchedulerContext;
+import engine.txn.storage.SchemaRecord;
+import engine.txn.storage.TableRecord;
+import engine.txn.storage.datatype.DataBox;
+import engine.txn.storage.datatype.IntDataBox;
+import engine.txn.storage.datatype.LongDataBox;
+import engine.txn.storage.datatype.StringDataBox;
+import engine.txn.storage.table.RecordSchema;
+import engine.txn.transaction.TableInitilizer;
+import util.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -32,10 +32,7 @@ import java.security.MessageDigest;
 import java.util.*;
 
 import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
-import static common.Constants.Event_Path;
-import static profiler.Metrics.NUM_ITEMS;
-import static transaction.State.configure_store;
+import static engine.txn.transaction.State.configure_store;
 
 public class NonGSInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(NonGSInitializer.class);

@@ -21,7 +21,8 @@ package common.datatype.internal;
 import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import execution.runtime.tuple.impl.Fields;
+import engine.stream.execution.runtime.tuple.impl.Fields;
+import util.datatypes.StreamValues;
 
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
@@ -41,7 +42,7 @@ import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
  *
  * @author mjsax
  */
-public final class CountTuple extends common.util.datatypes.StreamValues implements ISegmentIdentifier {
+public final class CountTuple extends StreamValues implements ISegmentIdentifier {
     public static final int TIME_IDX = 5;
     // attribute indexes
     /**

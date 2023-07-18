@@ -3,22 +3,22 @@ package common.bolts.transactional.sl;
 import combo.SINKCombo;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import components.operators.api.TransactionalBolt;
-import db.DatabaseException;
-import execution.runtime.tuple.impl.Tuple;
-import execution.runtime.tuple.impl.msgs.GeneralMsg;
+import engine.stream.components.operators.api.TransactionalBolt;
+import engine.txn.db.DatabaseException;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
+import engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
-import storage.datatype.DataBox;
-import transaction.context.TxnContext;
-import utils.AppConfig;
+import engine.txn.storage.datatype.DataBox;
+import engine.txn.transaction.context.TxnContext;
+import util.AppConfig;
 
 import java.util.List;
 
 import static common.CONTROL.enable_app_combo;
 import static common.CONTROL.enable_latency_measurement;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
-import static profiler.MeasureTools.*;
+import static engine.txn.content.common.CommonMetaTypes.AccessType.READ_WRITE;
+import static engine.txn.profiler.MeasureTools.*;
 
 public abstract class SLBolt extends TransactionalBolt {
     SINKCombo sink;

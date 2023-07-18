@@ -3,12 +3,12 @@ package combo;
 import benchmark.DataHolder;
 import common.bolts.transactional.sl.*;
 import common.collections.Configuration;
-import common.param.TxnEvent;
+import engine.txn.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import components.context.TopologyContext;
-import execution.ExecutionGraph;
-import execution.runtime.collector.OutputCollector;
+import engine.stream.components.context.TopologyContext;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.collector.OutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,7 @@ import java.util.ArrayDeque;
 
 import static common.CONTROL.combo_bid_size;
 import static common.CONTROL.enable_shared_state;
-import static content.Content.*;
+import static engine.txn.content.Content.*;
 
 public class SLCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(SLCombo.class);

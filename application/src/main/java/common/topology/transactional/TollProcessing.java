@@ -7,26 +7,25 @@ import common.constants.LinearRoadConstants.Field;
 import common.datatype.util.LRTopologyControl;
 import common.datatype.util.SegmentIdentifier;
 import common.topology.transactional.initializer.TPInitializer;
-import components.Topology;
-import components.exception.InvalidIDException;
-import components.grouping.FieldsGrouping;
-import components.grouping.ShuffleGrouping;
-import controller.input.scheduler.SequentialScheduler;
-import execution.runtime.tuple.impl.Fields;
-import lock.PartitionedOrderLock;
-import lock.SpinLock;
+import engine.stream.components.Topology;
+import engine.stream.components.exception.InvalidIDException;
+import engine.stream.components.grouping.FieldsGrouping;
+import engine.stream.components.grouping.ShuffleGrouping;
+import engine.stream.controller.input.scheduler.SequentialScheduler;
+import engine.stream.execution.runtime.tuple.impl.Fields;
+import engine.txn.lock.PartitionedOrderLock;
+import engine.txn.lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import topology.TransactionTopology;
-import transaction.TableInitilizer;
+import engine.stream.topology.TransactionTopology;
+import engine.txn.transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
 import static common.constants.LinearRoadConstants.Conf.Executor_Threads;
 import static common.constants.TPConstants.Component.EXECUTOR;
-import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
 import static common.constants.TPConstants.PREFIX;
-import static content.Content.*;
-import static utils.PartitionHelper.setPartition_interval;
+import static engine.txn.content.Content.*;
+import static util.PartitionHelper.setPartition_interval;
 
 public class TollProcessing extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(TollProcessing.class);

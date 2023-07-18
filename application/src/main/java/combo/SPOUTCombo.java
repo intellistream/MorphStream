@@ -3,17 +3,17 @@ package combo;
 import common.CONTROL;
 import common.collections.Configuration;
 import common.collections.OsUtils;
-import components.context.TopologyContext;
-import components.operators.api.TransactionalBolt;
-import components.operators.api.TransactionalSpout;
-import db.DatabaseException;
-import execution.ExecutionGraph;
-import execution.runtime.collector.OutputCollector;
-import execution.runtime.tuple.impl.Marker;
-import execution.runtime.tuple.impl.Tuple;
-import execution.runtime.tuple.impl.msgs.GeneralMsg;
+import engine.stream.components.context.TopologyContext;
+import engine.stream.components.operators.api.TransactionalBolt;
+import engine.stream.components.operators.api.TransactionalSpout;
+import engine.txn.db.DatabaseException;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.collector.OutputCollector;
+import engine.stream.execution.runtime.tuple.impl.Marker;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
+import engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
-import utils.SOURCE_CONTROL;
+import engine.txn.utils.SOURCE_CONTROL;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,8 +22,8 @@ import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.enable_log;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static content.Content.CCOption_SStore;
-import static content.Content.CCOption_TStream;
+import static engine.txn.content.Content.CCOption_SStore;
+import static engine.txn.content.Content.CCOption_TStream;
 
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public abstract class SPOUTCombo extends TransactionalSpout {

@@ -19,7 +19,7 @@
 package common.datatype;
 
 import common.datatype.util.LRTopologyControl;
-import execution.runtime.tuple.impl.Fields;
+import engine.stream.execution.runtime.tuple.impl.Fields;
 
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;

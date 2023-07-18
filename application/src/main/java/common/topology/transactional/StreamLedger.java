@@ -7,23 +7,23 @@ import common.bolts.transactional.sl.SLBolt_ts;
 import common.collections.Configuration;
 import common.constants.StreamLedgerConstants.Component;
 import common.topology.transactional.initializer.SLInitializer;
-import components.Topology;
-import components.exception.InvalidIDException;
-import components.grouping.ShuffleGrouping;
-import controller.input.scheduler.SequentialScheduler;
-import lock.PartitionedOrderLock;
-import lock.SpinLock;
+import engine.stream.components.Topology;
+import engine.stream.components.exception.InvalidIDException;
+import engine.stream.components.grouping.ShuffleGrouping;
+import engine.stream.controller.input.scheduler.SequentialScheduler;
+import engine.txn.lock.PartitionedOrderLock;
+import engine.txn.lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import topology.TransactionTopology;
-import transaction.TableInitilizer;
+import engine.stream.topology.TransactionTopology;
+import engine.txn.transaction.TableInitilizer;
 
 import java.util.Random;
 
 import static common.CONTROL.enable_app_combo;
 import static common.constants.StreamLedgerConstants.Conf.SL_THREADS;
 import static common.constants.StreamLedgerConstants.PREFIX;
-import static utils.PartitionHelper.setPartition_interval;
+import static util.PartitionHelper.setPartition_interval;
 
 /**
  * Short term as SL.

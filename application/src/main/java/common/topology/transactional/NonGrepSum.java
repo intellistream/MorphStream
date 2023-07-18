@@ -4,23 +4,23 @@ import common.bolts.transactional.gs.*;
 import common.collections.Configuration;
 import common.constants.GrepSumConstants;
 import common.topology.transactional.initializer.NonGSInitializer;
-import components.Topology;
-import components.exception.InvalidIDException;
-import components.grouping.ShuffleGrouping;
-import controller.input.scheduler.SequentialScheduler;
-import lock.PartitionedOrderLock;
-import lock.SpinLock;
+import engine.stream.components.Topology;
+import engine.stream.components.exception.InvalidIDException;
+import engine.stream.components.grouping.ShuffleGrouping;
+import engine.stream.controller.input.scheduler.SequentialScheduler;
+import engine.txn.lock.PartitionedOrderLock;
+import engine.txn.lock.SpinLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import topology.TransactionTopology;
-import transaction.TableInitilizer;
+import engine.stream.topology.TransactionTopology;
+import engine.txn.transaction.TableInitilizer;
 
 import static common.CONTROL.enable_app_combo;
 import static common.constants.NonGrepSumConstants.Conf.Executor_Threads;
 import static common.constants.NonGrepSumConstants.PREFIX;
 import static common.constants.NonGrepSumConstants.Component;
-import static content.Content.*;
-import static utils.PartitionHelper.setPartition_interval;
+import static engine.txn.content.Content.*;
+import static util.PartitionHelper.setPartition_interval;
 
 public class NonGrepSum extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(NonGrepSum.class);

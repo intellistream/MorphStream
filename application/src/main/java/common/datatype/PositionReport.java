@@ -22,7 +22,7 @@ import common.datatype.util.Constants;
 import common.datatype.util.IPositionIdentifier;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import execution.runtime.tuple.impl.Fields;
+import engine.stream.execution.runtime.tuple.impl.Fields;
 
 /**
  * A {@link PositionReport} from the LRB data generator.<br />

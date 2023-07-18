@@ -21,7 +21,8 @@ package common.datatype.internal;
 import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import execution.runtime.tuple.impl.Fields;
+import engine.stream.execution.runtime.tuple.impl.Fields;
+import util.datatypes.StreamValues;
 
 /**
  * {@link AccidentTuple} represents an intermediate result tuple; and reports and accident that occurred in a specific
@@ -37,7 +38,7 @@ import execution.runtime.tuple.impl.Fields;
  *
  * @author mjsax
  */
-public final class AccidentTuple extends common.util.datatypes.StreamValues implements ISegmentIdentifier {
+public final class AccidentTuple extends StreamValues implements ISegmentIdentifier {
     // attribute indexes
     /**
      * The index of the TIME attribute.

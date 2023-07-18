@@ -5,11 +5,11 @@ import common.bolts.transactional.tp.*;
 import common.collections.Configuration;
 import common.datatype.AbstractLRBTuple;
 import common.datatype.PositionReport;
-import common.param.TxnEvent;
+import engine.txn.TxnEvent;
 import common.param.lr.LREvent;
-import components.context.TopologyContext;
-import execution.ExecutionGraph;
-import execution.runtime.collector.OutputCollector;
+import engine.stream.components.context.TopologyContext;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.collector.OutputCollector;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static common.CONTROL.*;
-import static content.Content.*;
+import static engine.txn.content.Content.*;
 
 public class TPCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(TPCombo.class);

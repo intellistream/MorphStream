@@ -1,6 +1,6 @@
 package benchmark;
 
-import common.param.TxnEvent;
+import engine.txn.TxnEvent;
 
 import java.util.ArrayList;
 

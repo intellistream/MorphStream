@@ -4,11 +4,11 @@ import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.constants.BaseConstants;
 import common.constants.WordCountConstants.Field;
-import components.operators.base.splitBolt;
-import execution.ExecutionGraph;
-import execution.runtime.tuple.JumboTuple;
-import execution.runtime.tuple.impl.Fields;
-import execution.runtime.tuple.impl.Tuple;
+import engine.stream.components.operators.base.splitBolt;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.tuple.JumboTuple;
+import engine.stream.execution.runtime.tuple.impl.Fields;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

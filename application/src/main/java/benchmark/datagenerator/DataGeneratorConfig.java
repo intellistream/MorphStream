@@ -1,7 +1,6 @@
 package benchmark.datagenerator;
 
 import common.collections.Configuration;
-import common.collections.OsUtils;
 
 public abstract class DataGeneratorConfig {
     private Integer totalEvents;

@@ -1,7 +1,7 @@
 package common.sink;
 
 import common.bolts.transactional.ob.BidingResult;
-import execution.runtime.tuple.impl.Tuple;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -21,8 +21,8 @@ package common.datatype.internal;
 import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import common.util.datatypes.StreamValues;
-import execution.runtime.tuple.impl.Fields;
+import util.datatypes.StreamValues;
+import engine.stream.execution.runtime.tuple.impl.Fields;
 
 /**
  * {@link AvgSpeedTuple} represents an intermediate result tuple; the average speed of all vehicle in a segment within a

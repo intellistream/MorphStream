@@ -2,24 +2,24 @@ package common.bolts.transactional.gsw;
 
 import combo.SINKCombo;
 import common.param.gsw.WindowedMicroEvent;
-import components.operators.api.TransactionalBolt;
-import content.common.CommonMetaTypes;
-import db.DatabaseException;
-import execution.runtime.tuple.impl.Tuple;
-import execution.runtime.tuple.impl.msgs.GeneralMsg;
+import engine.stream.components.operators.api.TransactionalBolt;
+import engine.txn.content.common.CommonMetaTypes;
+import engine.txn.db.DatabaseException;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
+import engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
-import storage.SchemaRecord;
-import storage.SchemaRecordRef;
-import storage.datatype.DataBox;
-import transaction.context.TxnContext;
-import utils.AppConfig;
+import engine.txn.storage.SchemaRecord;
+import engine.txn.storage.SchemaRecordRef;
+import engine.txn.storage.datatype.DataBox;
+import engine.txn.transaction.context.TxnContext;
+import util.AppConfig;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;
-import static content.common.CommonMetaTypes.AccessType.READ_ONLY;
-import static content.common.CommonMetaTypes.AccessType.READ_WRITE;
-import static profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
-import static profiler.MeasureTools.END_POST_TIME_MEASURE;
+import static engine.txn.content.common.CommonMetaTypes.AccessType.READ_ONLY;
+import static engine.txn.content.common.CommonMetaTypes.AccessType.READ_WRITE;
+import static engine.txn.profiler.MeasureTools.BEGIN_POST_TIME_MEASURE;
+import static engine.txn.profiler.MeasureTools.END_POST_TIME_MEASURE;
 
 public abstract class GSWBolt extends TransactionalBolt {
     public SINKCombo sink;

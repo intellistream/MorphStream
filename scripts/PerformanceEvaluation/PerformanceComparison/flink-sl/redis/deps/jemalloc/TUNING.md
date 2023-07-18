@@ -60,7 +60,7 @@ Runtime options can be set via
 * [percpu_arena](http://jemalloc.net/jemalloc.3.html#opt.percpu_arena)
 
     Enable dynamic thread to arena association based on running CPU.  This has
-    the potential to improve locality, e.g. when thread to CPU affinity is
+    the potential to improve locality, e.g. when thread to CPU engine is
     present.
     
     Suggested: try `percpu_arena:percpu` or `percpu_arena:phycpu` if

@@ -2,13 +2,13 @@ package common.bolts.transactional.nongs;
 
 import combo.SINKCombo;
 import common.param.mb.NonMicroEvent;
-import components.operators.api.TransactionalBolt;
-import db.DatabaseException;
-import execution.runtime.tuple.impl.Tuple;
-import execution.runtime.tuple.impl.msgs.GeneralMsg;
+import engine.stream.components.operators.api.TransactionalBolt;
+import engine.txn.db.DatabaseException;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
+import engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import org.slf4j.Logger;
-import storage.SchemaRecordRef;
-import storage.datatype.DataBox;
+import engine.txn.storage.SchemaRecordRef;
+import engine.txn.storage.datatype.DataBox;
 
 import static common.CONTROL.*;
 import static common.Constants.DEFAULT_STREAM_ID;

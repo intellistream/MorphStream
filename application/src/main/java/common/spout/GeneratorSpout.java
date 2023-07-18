@@ -1,7 +1,7 @@
 package common.spout;
 
-import components.operators.api.AbstractSpout;
-import execution.ExecutionGraph;
+import engine.stream.components.operators.api.AbstractSpout;
+import engine.stream.execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

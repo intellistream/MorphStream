@@ -1,8 +1,8 @@
 package common.param.lr;
 
 import common.datatype.PositionReport;
-import common.param.TxnEvent;
-import storage.SchemaRecordRef;
+import engine.txn.TxnEvent;
+import engine.txn.storage.SchemaRecordRef;
 
 /**
  * Currently only consider position events.

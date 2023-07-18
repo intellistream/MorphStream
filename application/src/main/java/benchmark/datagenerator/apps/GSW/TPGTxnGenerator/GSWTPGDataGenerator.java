@@ -3,10 +3,10 @@ package benchmark.datagenerator.apps.GSW.TPGTxnGenerator;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.Transaction.GSWEvent;
-import common.tools.FastZipfGenerator;
+import util.tools.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.AppConfig;
+import util.AppConfig;
 
 import java.io.File;
 import java.io.FileWriter;

@@ -1,6 +1,6 @@
 package common.param;
 
-import content.common.TxnParam;
+import engine.txn.content.common.TxnParam;
 
 public class MicroParam extends TxnParam {
     int[] keys;

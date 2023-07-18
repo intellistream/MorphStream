@@ -7,15 +7,15 @@ import common.collections.Configuration;
 import common.constants.WordCountConstants;
 import common.constants.WordCountConstants.Component;
 import common.constants.WordCountConstants.Field;
-import components.Topology;
-import components.exception.InvalidIDException;
-import components.grouping.FieldsGrouping;
-import components.grouping.ShuffleGrouping;
-import controller.input.scheduler.SequentialScheduler;
-import execution.runtime.tuple.impl.Fields;
+import engine.stream.components.Topology;
+import engine.stream.components.exception.InvalidIDException;
+import engine.stream.components.grouping.FieldsGrouping;
+import engine.stream.components.grouping.ShuffleGrouping;
+import engine.stream.controller.input.scheduler.SequentialScheduler;
+import engine.stream.execution.runtime.tuple.impl.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import topology.BasicTopology;
+import engine.stream.topology.BasicTopology;
 
 import static common.constants.WordCountConstants.PREFIX;
 

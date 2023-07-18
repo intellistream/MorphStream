@@ -18,7 +18,7 @@
  */
 package common.datatype.util;
 
-import execution.runtime.tuple.impl.Tuple;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
 
 import java.io.Serializable;
 

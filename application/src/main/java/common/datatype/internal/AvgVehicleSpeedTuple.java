@@ -21,7 +21,8 @@ package common.datatype.internal;
 import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import execution.runtime.tuple.impl.Fields;
+import engine.stream.execution.runtime.tuple.impl.Fields;
+import util.datatypes.StreamValues;
 
 import static common.constants.BaseConstants.BaseField.MSG_ID;
 import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
@@ -42,7 +43,7 @@ import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
  *
  * @author mjsax
  */
-public final class AvgVehicleSpeedTuple extends common.util.datatypes.StreamValues implements ISegmentIdentifier {
+public final class AvgVehicleSpeedTuple extends StreamValues implements ISegmentIdentifier {
     /**
      * The index of the TIME attribute.
      */

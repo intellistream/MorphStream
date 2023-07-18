@@ -1,27 +1,26 @@
 package common.sink;
 
-import com.yammer.metrics.core.Metric;
 import common.Constants;
 import common.collections.Configuration;
 import common.collections.OsUtils;
 import common.datatype.util.LRTopologyControl;
 import common.sink.helper.stable_sink_helper;
-import components.operators.api.BaseSink;
-import execution.ExecutionGraph;
-import execution.runtime.tuple.impl.Tuple;
+import engine.stream.components.operators.api.BaseSink;
+import engine.stream.execution.ExecutionGraph;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import profiler.MeasureTools;
-import utils.AppConfig;
-import utils.SINK_CONTROL;
+import engine.txn.profiler.MeasureTools;
+import util.AppConfig;
+import engine.txn.utils.SINK_CONTROL;
 
 import java.io.*;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 
 import static common.CONTROL.*;
-import static common.IRunner.CCOption_SStore;
+import static engine.IRunner.CCOption_SStore;
 
 public class MeasureSink extends BaseSink {
     private static final Logger LOG = LoggerFactory.getLogger(MeasureSink.class);

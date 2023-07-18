@@ -8,11 +8,8 @@
     <packaging>pom</packaging>
     <version>0.1</version>
     <modules>
-        <module>common</module>
-        <module>state-engine</module>
-        <module>stream-engine</module>
+        <module>morph-core</module>
         <module>application</module>
-        <module>affinity</module>
     </modules>
 
     <build>

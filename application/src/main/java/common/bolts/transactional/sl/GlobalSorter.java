@@ -1,6 +1,6 @@
 package common.bolts.transactional.sl;
 
-import common.param.TxnEvent;
+import engine.txn.TxnEvent;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 

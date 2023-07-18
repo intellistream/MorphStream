@@ -3,10 +3,10 @@ package common.bolts.comm;
 import common.collections.Configuration;
 import common.helper.parser.Parser;
 import common.parser.StringParser;
-import components.operators.base.MapBolt;
-import execution.runtime.tuple.JumboTuple;
-import execution.runtime.tuple.impl.Fields;
-import execution.runtime.tuple.impl.Tuple;
+import engine.stream.components.operators.base.MapBolt;
+import engine.stream.execution.runtime.tuple.JumboTuple;
+import engine.stream.execution.runtime.tuple.impl.Fields;
+import engine.stream.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,10 +1,10 @@
 package common.param.sl;
 
 import common.bolts.transactional.sl.TransactionResult;
-import common.param.TxnEvent;
-import storage.SchemaRecordRef;
-import storage.TableRecordRef;
-import storage.datatype.DataBox;
+import engine.txn.TxnEvent;
+import engine.txn.storage.SchemaRecordRef;
+import engine.txn.storage.TableRecordRef;
+import engine.txn.storage.datatype.DataBox;
 
 import java.util.Arrays;
 import java.util.List;

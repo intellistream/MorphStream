@@ -1,10 +1,10 @@
 package common.bolts.transactional.gsw;
 
 import combo.SINKCombo;
-import execution.ExecutionGraph;
+import engine.stream.execution.ExecutionGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import transaction.impl.ordered.TxnManagerLWM;
+import engine.txn.transaction.impl.ordered.TxnManagerLWM;
 
 public class GSWBolt_lwm extends GSWBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(GSWBolt_lwm.class);
