@@ -1,0 +1,36 @@
+<nz-row id="app-board" style="width: 100%">
+  <nz-col nzSpan="24">
+    <nz-row class="board-title" nzJustify="space-between" nzAlign="top">
+      <nz-col nzSpan="24">
+        <span><b>Performance Statistics</b></span>
+      </nz-col>
+    </nz-row>
+    <nz-tabset>
+      <nz-tab nzTitle="Overall Performance">
+        <nz-row nzJustify="space-around">
+          <nz-col nzSpan="11">
+            <div id="throughputLatencyContainer">
+            </div>
+          </nz-col>
+          <nz-col nzSpan="11">
+            <div id="timeChartContainer">
+            </div>
+          </nz-col>
+        </nz-row>
+      </nz-tab>
+      <nz-tab nzTitle="Statistics">
+        <nz-descriptions nzBordered>
+          <nz-descriptions-item nzSpan="3" nzTitle="Total Number of Events">2500</nz-descriptions-item>
+          <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">220.1</nz-descriptions-item>
+          <nz-descriptions-item nzSpan="1" nzTitle="Event Maximal Processing Time (ms)">325.2</nz-descriptions-item>
+          <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">253.3</nz-descriptions-item>
+          <nz-descriptions-item nzSpan="1" nzTitle="Average Latency (ms)">1803</nz-descriptions-item>
+          <nz-descriptions-item nzSpan="1" nzTitle="Overall Throughput (tuple/s)">3276</nz-descriptions-item>
+          <nz-descriptions-item nzSpan="1" nzTitle="Number of Core Used">8</nz-descriptions-item>
+          <nz-descriptions-item nzSpan="3" nzTitle="Output Path">user/output/</nz-descriptions-item>
+        </nz-descriptions>
+      </nz-tab>
+      <nz-tab nzTitle="Output Files"></nz-tab>
+    </nz-tabset>
+  </nz-col>
+</nz-row>

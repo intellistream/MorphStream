@@ -4,7 +4,7 @@
       <nz-col nzSpan="18">
         <span><b>DAG Visualization</b></span>
       </nz-col>
-      <nz-col nzSpan="5">
+      <nz-col nzSpan="5" *ngIf="application.isRunning">
         <nz-row>
           <nz-col nzSpan="18" class="info-title">
             <span><b>Number of Operators </b></span>
@@ -20,7 +20,7 @@
     <nz-row>
       <app-info-scroll-wrapper [operators]="application.operators" style="width: 100%;" (selectedOperatorChange)="onSelectedOperatorChange($event)"></app-info-scroll-wrapper>
     </nz-row>
-    <div class="separator"></div>
-    <app-operator-information style="width: 100%; display: block" [operator]="selectedOperator" [isRunning]="application.isRunning"></app-operator-information>
+    <div class="separator" *ngIf="application.isRunning"></div>
+    <app-operator-information style="width: 100%; display: block" [operator]="selectedOperator" *ngIf="application.isRunning"></app-operator-information>
   </nz-col>
 </nz-row>

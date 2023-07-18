@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "@antv/g6": "^4.8.19"
+    "@antv/g6": "^4.8.19",
+    "@types/highcharts": "^7.0.0",
+    "highcharts": "^11.1.0"
   }
 }

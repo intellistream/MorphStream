@@ -1,5 +1,5 @@
 <nz-row id="app-board" style="width: 100%">
-  <nz-col nzSpan="24" *ngIf="isRunning">
+  <nz-col nzSpan="24">
     <nz-row>
       <span id="check-graph-btn" (click)="onTpgClick()"><i>Check the TPG graph of {{operator.name}} >>></i></span>
     </nz-row>
@@ -53,8 +53,5 @@
         </nz-row>
       </nz-col>
     </nz-row>
-  </nz-col>
-  <nz-col nzSpan="24" *ngIf="!isRunning">
-    <span>HAHA</span>
   </nz-col>
 </nz-row>

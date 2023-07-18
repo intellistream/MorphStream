@@ -23,14 +23,17 @@ import { NzGridModule } from "ng-zorro-antd/grid";
 import { ScrollWrapperComponent } from "./snippets/scroll-wrapper/scroll-wrapper.component";
 import { NzButtonModule } from "ng-zorro-antd/button";
 import { ApplicationInformationComponent } from "./pages/application-information/application-information.component";
-import {NzBreadCrumbModule} from "ng-zorro-antd/breadcrumb";
-import {NzProgressModule} from "ng-zorro-antd/progress";
-import {ApplicationBoardComponent} from "./snippets/application-board/application-board.component";
-import {InfoScrollWrapperComponent} from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
-import {OperatorInformationComponent} from "./snippets/operator-information/operator-information.component";
-import {NzCardModule} from "ng-zorro-antd/card";
-import {TpgGraphComponent} from "./pages/application-information/tpg-graph/tpg-graph.component";
-import {NzModalModule} from "ng-zorro-antd/modal";
+import { NzBreadCrumbModule } from "ng-zorro-antd/breadcrumb";
+import { NzProgressModule } from "ng-zorro-antd/progress";
+import { ApplicationBoardComponent } from "./snippets/application-board/application-board.component";
+import { InfoScrollWrapperComponent } from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
+import { OperatorInformationComponent } from "./snippets/operator-information/operator-information.component";
+import { NzCardModule } from "ng-zorro-antd/card";
+import { TpgGraphComponent } from "./pages/application-information/tpg-graph/tpg-graph.component";
+import { NzModalModule } from "ng-zorro-antd/modal";
+import { FinishedStatisticsBoardComponent } from "./snippets/finished-statistics-board/finished-statistics-board.component";
+import {NzTabsModule} from "ng-zorro-antd/tabs";
+import {NzDescriptionsModule} from "ng-zorro-antd/descriptions";
 
 registerLocaleData(en);
 
@@ -48,7 +51,8 @@ registerLocaleData(en);
     ApplicationBoardComponent,
     InfoScrollWrapperComponent,
     OperatorInformationComponent,
-    TpgGraphComponent
+    TpgGraphComponent,
+    FinishedStatisticsBoardComponent
   ],
   imports: [
     BrowserModule,
@@ -65,7 +69,9 @@ registerLocaleData(en);
     NzBreadCrumbModule,
     NzProgressModule,
     NzCardModule,
-    NzModalModule
+    NzModalModule,
+    NzTabsModule,
+    NzDescriptionsModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
