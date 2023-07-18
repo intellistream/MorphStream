@@ -9,7 +9,8 @@
     <version>0.1</version>
     <modules>
         <module>morph-core</module>
-        <module>application</module>
+        <module>morph-examples</module>
+        <module>morph-clients</module>
     </modules>
 
     <build>
@@ -29,7 +30,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <tstream.version>0.0.2</tstream.version>
+        <morphstream.version>0.0.2</morphstream.version>
         <kafka.version>0.8.2.1</kafka.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.1</scala.version>

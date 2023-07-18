@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>application</artifactId>
+    <artifactId>morph-examples</artifactId>
     <version>0.0.2</version>
     <build>
         <plugins>
@@ -67,17 +67,7 @@
         <dependency>
             <groupId>intellistream</groupId>
             <artifactId>morph-core</artifactId>
-            <version>${tstream.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>intellistream</groupId>
-            <artifactId>state-engine</artifactId>
-            <version>${tstream.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>intellistream</groupId>
-            <artifactId>stream-engine</artifactId>
-            <version>${tstream.version}</version>
+            <version>${morphstream.version}</version>
         </dependency>
     </dependencies>
 
