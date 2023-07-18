@@ -58,7 +58,7 @@ term association of connections with threads. This may potentially improve
 overall performance as well.
 
 Sync IO for TLS is currently implemented in a hackish way, i.e. making the
-socket blocking and configuring socket-level timeout.  This means the timeout
+socket blocking and configuring socket-level timeout. This means the timeout
 value may not be so accurate, and there would be a lot of syscall overhead.
 However I believe that getting rid of syncio completely in favor of pure async
 work is probably a better move than trying to fix that. For replication it would

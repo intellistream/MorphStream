@@ -1,7 +1,7 @@
 package benchmark.datagenerator.apps.SHJ.TPGTxnGenerator;
 
 import benchmark.datagenerator.DataGeneratorConfig;
-import common.collections.Configuration;
+import intellistream.morphstream.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

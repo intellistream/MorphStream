@@ -1,11 +1,11 @@
 package common.sink;
 
 import common.bolts.transactional.sl.TransactionResult;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static common.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 public class CTSink extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(CTSink.class);

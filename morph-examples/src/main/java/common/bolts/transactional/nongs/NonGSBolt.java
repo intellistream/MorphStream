@@ -2,24 +2,26 @@ package common.bolts.transactional.nongs;
 
 import combo.SINKCombo;
 import common.param.mb.NonMicroEvent;
-import engine.stream.components.operators.api.TransactionalBolt;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
-import engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
+import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
+import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
 import org.slf4j.Logger;
-import engine.txn.storage.SchemaRecordRef;
-import engine.txn.storage.datatype.DataBox;
 
-import static common.CONTROL.*;
-import static common.Constants.DEFAULT_STREAM_ID;
+import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
 
 public abstract class NonGSBolt extends TransactionalBolt {
     public SINKCombo sink;
+
     public NonGSBolt(Logger log, int fid, SINKCombo sink) {
         super(log, fid);
         this.sink = sink;
         this.configPrefix = "non_gs";
     }
+
     protected boolean READ_CORE(NonMicroEvent event) {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             SchemaRecordRef ref = event.getRecord_refs()[i];
@@ -32,6 +34,7 @@ public abstract class NonGSBolt extends TransactionalBolt {
         }
         return true;
     }
+
     protected void READ_POST(NonMicroEvent event) throws InterruptedException {
         int sum = 0;
         if (POST_COMPUTE_COMPLEXITY != 0) {
@@ -57,6 +60,7 @@ public abstract class NonGSBolt extends TransactionalBolt {
         }
         sum = 0;
     }
+
     @Override
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }

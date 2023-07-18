@@ -9,7 +9,8 @@ assignees: ''
 
 **Crash report**
 
-Paste the complete crash log between the quotes below. Please include a few lines from the log preceding the crash report to provide some context.
+Paste the complete crash log between the quotes below. Please include a few lines from the log preceding the crash
+report to provide some context.
 
 ```
 ```

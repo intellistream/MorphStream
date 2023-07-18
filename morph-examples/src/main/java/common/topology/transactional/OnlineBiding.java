@@ -4,24 +4,24 @@ import common.bolts.transactional.ob.OBBolt_lwm;
 import common.bolts.transactional.ob.OBBolt_olb;
 import common.bolts.transactional.ob.OBBolt_sstore;
 import common.bolts.transactional.ob.OBBolt_ts;
-import common.collections.Configuration;
-import common.constants.OnlineBidingSystemConstants.Component;
 import common.topology.transactional.initializer.OBInitializer;
-import engine.stream.components.Topology;
-import engine.stream.components.exception.InvalidIDException;
-import engine.stream.components.grouping.ShuffleGrouping;
-import engine.stream.controller.input.scheduler.SequentialScheduler;
-import engine.txn.lock.PartitionedOrderLock;
-import engine.txn.lock.SpinLock;
+import intellistream.morphstream.common.constants.OnlineBidingSystemConstants.Component;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.Topology;
+import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
+import intellistream.morphstream.engine.stream.components.grouping.ShuffleGrouping;
+import intellistream.morphstream.engine.stream.controller.input.scheduler.SequentialScheduler;
+import intellistream.morphstream.engine.stream.topology.TransactionTopology;
+import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
+import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.transaction.TableInitilizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.stream.topology.TransactionTopology;
-import engine.txn.transaction.TableInitilizer;
 
-import static common.CONTROL.enable_app_combo;
-import static common.constants.OnlineBidingSystemConstants.Conf.OB_THREADS;
-import static common.constants.OnlineBidingSystemConstants.PREFIX;
-import static util.PartitionHelper.setPartition_interval;
+import static intellistream.morphstream.common.constants.OnlineBidingSystemConstants.Conf.OB_THREADS;
+import static intellistream.morphstream.common.constants.OnlineBidingSystemConstants.PREFIX;
+import static intellistream.morphstream.configuration.CONTROL.enable_app_combo;
+import static intellistream.morphstream.util.PartitionHelper.setPartition_interval;
 
 /**
  * Short term as OB.
@@ -39,7 +39,7 @@ public class OnlineBiding extends TransactionTopology {
         int tthread = config.getInt("tthread");
         int numberOfStates = config.getInt("NUM_ITEMS");
         setPartition_interval((int) (Math.ceil(numberOfStates / (double) tthread)), tthread);
-        TableInitilizer ini = new OBInitializer(db,numberOfStates, theta, tthread, config);
+        TableInitilizer ini = new OBInitializer(db, numberOfStates, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)

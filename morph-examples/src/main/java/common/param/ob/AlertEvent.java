@@ -1,12 +1,12 @@
 package common.param.ob;
 
-import engine.txn.TxnEvent;
-import engine.txn.storage.SchemaRecordRef;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 
 import java.util.Arrays;
 import java.util.SplittableRandom;
 
-import static common.constants.OnlineBidingSystemConstants.Constant.MAX_Price;
+import static intellistream.morphstream.common.constants.OnlineBidingSystemConstants.Constant.MAX_Price;
 
 public class AlertEvent extends TxnEvent {
     private final int num_access;
@@ -22,8 +22,8 @@ public class AlertEvent extends TxnEvent {
     public AlertEvent(
             int num_access, int[] itemId,
             SplittableRandom rnd,
-            int partition_id, String bid_array, long bid, int number_of_partitions,String partition_index) {
-        super(bid, partition_id, bid_array,partition_index, number_of_partitions);
+            int partition_id, String bid_array, long bid, int number_of_partitions, String partition_index) {
+        super(bid, partition_id, bid_array, partition_index, number_of_partitions);
         this.num_access = num_access;
         record_refs = new SchemaRecordRef[num_access];
         for (int i = 0; i < num_access; i++) {
@@ -98,6 +98,6 @@ public class AlertEvent extends TxnEvent {
 
     @Override
     public AlertEvent cloneEvent() {
-        return new AlertEvent((int) bid,Arrays.toString(bid_array),pid,number_of_partitions,num_access,Arrays.toString(itemId),Arrays.toString(ask_price));
+        return new AlertEvent((int) bid, Arrays.toString(bid_array), pid, number_of_partitions, num_access, Arrays.toString(itemId), Arrays.toString(ask_price));
     }
 }

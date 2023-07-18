@@ -18,14 +18,14 @@
  */
 package common.datatype.internal;
 
-import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import engine.stream.execution.runtime.tuple.impl.Fields;
-import util.datatypes.StreamValues;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.util.Time;
+import intellistream.morphstream.util.datatypes.StreamValues;
 
-import static common.constants.BaseConstants.BaseField.MSG_ID;
-import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
+import static intellistream.morphstream.common.constants.BaseConstants.BaseField.MSG_ID;
+import static intellistream.morphstream.common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
 
 /**
  * {@link CountTuple} represents an intermediate result tuple; the number of vehicles in a segment within a 'minute
@@ -156,7 +156,7 @@ public final class CountTuple extends StreamValues implements ISegmentIdentifier
      *
      * @return the 'minute number' of this tuple
      */
-    public final Short getMinuteNumber() {
+    public Short getMinuteNumber() {
         return (Short) super.get(MINUTE_IDX);
     }
 
@@ -166,7 +166,7 @@ public final class CountTuple extends StreamValues implements ISegmentIdentifier
      * @return the VID of this tuple
      */
     @Override
-    public final Integer getXWay() {
+    public Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
 
@@ -176,7 +176,7 @@ public final class CountTuple extends StreamValues implements ISegmentIdentifier
      * @return the VID of this tuple
      */
     @Override
-    public final int getSegment() {
+    public int getSegment() {
         return (Integer) super.get(SEG_IDX);
     }
 
@@ -186,7 +186,7 @@ public final class CountTuple extends StreamValues implements ISegmentIdentifier
      * @return the VID of this tuple
      */
     @Override
-    public final Short getDirection() {
+    public Short getDirection() {
         return (Short) super.get(DIR_IDX);
     }
 
@@ -195,7 +195,7 @@ public final class CountTuple extends StreamValues implements ISegmentIdentifier
      *
      * @return the count of this tuple
      */
-    public final Integer getCount() {
+    public Integer getCount() {
         return (Integer) super.get(CNT_IDX);
     }
 
@@ -205,7 +205,7 @@ public final class CountTuple extends StreamValues implements ISegmentIdentifier
      * @return {@code true} if this tuple does not report a count value_list but only carries the next 'minute number' --
      * {@code false} otherwise
      */
-    public final boolean isProgressTuple() {
+    public boolean isProgressTuple() {
         return super.get(XWAY_IDX) == null;
     }
 

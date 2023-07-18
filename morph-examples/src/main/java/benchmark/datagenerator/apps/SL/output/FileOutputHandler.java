@@ -1,8 +1,8 @@
 package benchmark.datagenerator.apps.SL.output;
 
-import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
 import benchmark.datagenerator.Event;
-import common.collections.OsUtils;
+import benchmark.datagenerator.apps.SL.OCTxnGenerator.SLDataOperationChain;
+import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static common.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 public class FileOutputHandler implements IOutputHandler {
     protected static final Logger log = LoggerFactory.getLogger(FileOutputHandler.class);
@@ -77,7 +77,7 @@ public class FileOutputHandler implements IOutputHandler {
         FileWriter fileWriter = null;
         try {
             File file = new File(mRootPath + mDependencyEdgesFileName);
-            System.out.println(String.format("Edges path is %s", mRootPath + mDependencyEdgesFileName));
+            System.out.printf("Edges path is %s%n", mRootPath + mDependencyEdgesFileName);
             if (!file.exists())
                 file.createNewFile();
 
@@ -113,7 +113,7 @@ public class FileOutputHandler implements IOutputHandler {
     public void sinkDependenciesVertices(HashMap<Integer, ArrayList<SLDataOperationChain>> allAccountOperationChains, HashMap<Integer, ArrayList<SLDataOperationChain>> allAssetsOperationChains) {
         try {
             File file = new File(mRootPath + mDependencyVerticesFileName);
-            System.out.println(String.format("Vertices path is %s", mRootPath + mDependencyVerticesFileName));
+            System.out.printf("Vertices path is %s%n", mRootPath + mDependencyVerticesFileName);
             if (!file.exists())
                 file.createNewFile();
 
@@ -159,7 +159,7 @@ public class FileOutputHandler implements IOutputHandler {
     public void sinkDependenciesVerticesIdsRange(int accountsRange, int assetsRange) {
         try {
             File file = new File(mRootPath + "vertices_ids_range.txt");
-            System.out.println(String.format("Vertices ids range path is %s", mRootPath + "vertices_ids_range.txt"));
+            System.out.printf("Vertices ids range path is %s%n", mRootPath + "vertices_ids_range.txt");
             if (!file.exists())
                 file.createNewFile();
 

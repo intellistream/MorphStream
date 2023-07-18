@@ -3,21 +3,22 @@ package combo;
 import benchmark.DataHolder;
 import common.bolts.transactional.nongs.NonGSBolt_sstore;
 import common.bolts.transactional.nongs.NonGSBolt_ts;
-import common.collections.Configuration;
-import engine.txn.TxnEvent;
 import common.param.mb.MicroEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.txn.TxnEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 
-import static common.CONTROL.*;
-import static engine.txn.content.Content.*;
+import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.configuration.Constants.CCOption_MorphStream;
+import static intellistream.morphstream.configuration.Constants.CCOption_SStore;
 
-public class NonGSCombo extends SPOUTCombo{
+public class NonGSCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(NonGSCombo.class);
     private static final long serialVersionUID = -2156693261209711017L;
     int concurrency = 0;
@@ -31,7 +32,7 @@ public class NonGSCombo extends SPOUTCombo{
     }
 
     @Override
-    public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector){
+    public void loadEvent(String file_name, Configuration config, TopologyContext context, OutputCollector collector) {
         int storageIndex = 0;
         //Load NonMicro Events.
         for (int index = taskId; index < DataHolder.events.size(); ) {
@@ -53,7 +54,7 @@ public class NonGSCombo extends SPOUTCombo{
         sink.configPrefix = this.getConfigPrefix();
         sink.prepare(config, context, collector);
         switch (config.getInt("CCOption", 0)) {
-            case CCOption_TStream: {//T-Stream
+            case CCOption_MorphStream: {//T-Stream
                 bolt = new NonGSBolt_ts(0, sink);
                 break;
             }

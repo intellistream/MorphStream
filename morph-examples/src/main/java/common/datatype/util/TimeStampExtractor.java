@@ -18,7 +18,7 @@
  */
 package common.datatype.util;
 
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 
 import java.io.Serializable;
 

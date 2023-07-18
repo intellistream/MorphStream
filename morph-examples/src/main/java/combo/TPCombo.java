@@ -2,14 +2,14 @@ package combo;
 
 import benchmark.DataHolder;
 import common.bolts.transactional.tp.*;
-import common.collections.Configuration;
 import common.datatype.AbstractLRBTuple;
 import common.datatype.PositionReport;
-import engine.txn.TxnEvent;
 import common.param.lr.LREvent;
-import engine.stream.components.context.TopologyContext;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.txn.TxnEvent;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +18,8 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 
-import static common.CONTROL.*;
-import static engine.txn.content.Content.*;
+import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
+import static intellistream.morphstream.configuration.Constants.*;
 
 public class TPCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(TPCombo.class);
@@ -146,7 +146,7 @@ public class TPCombo extends SPOUTCombo {
                 _combo_bid_size = 1;
                 break;
             }
-            case CCOption_TStream: {//T-Stream
+            case CCOption_MorphStream: {//T-Stream
                 bolt = new TPBolt_ts_s(0, sink);
                 break;
             }

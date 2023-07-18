@@ -1,25 +1,25 @@
 package common.topology.transactional;
 
 import common.bolts.transactional.gs.*;
-import common.collections.Configuration;
-import common.constants.GrepSumConstants.Component;
 import common.topology.transactional.initializer.GSInitializer;
-import engine.stream.components.Topology;
-import engine.stream.components.exception.InvalidIDException;
-import engine.stream.components.grouping.ShuffleGrouping;
-import engine.stream.controller.input.scheduler.SequentialScheduler;
-import engine.txn.lock.PartitionedOrderLock;
-import engine.txn.lock.SpinLock;
+import intellistream.morphstream.common.constants.GrepSumConstants.Component;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.Topology;
+import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
+import intellistream.morphstream.engine.stream.components.grouping.ShuffleGrouping;
+import intellistream.morphstream.engine.stream.controller.input.scheduler.SequentialScheduler;
+import intellistream.morphstream.engine.stream.topology.TransactionTopology;
+import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
+import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.transaction.TableInitilizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.stream.topology.TransactionTopology;
-import engine.txn.transaction.TableInitilizer;
 
-import static common.CONTROL.enable_app_combo;
-import static common.constants.GrepSumConstants.Conf.Executor_Threads;
-import static common.constants.GrepSumConstants.PREFIX;
-import static engine.txn.content.Content.*;
-import static util.PartitionHelper.setPartition_interval;
+import static intellistream.morphstream.common.constants.GrepSumConstants.Conf.Executor_Threads;
+import static intellistream.morphstream.common.constants.GrepSumConstants.PREFIX;
+import static intellistream.morphstream.configuration.CONTROL.enable_app_combo;
+import static intellistream.morphstream.configuration.Constants.*;
+import static intellistream.morphstream.util.PartitionHelper.setPartition_interval;
 
 public class GrepSum extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(GrepSum.class);
@@ -80,7 +80,7 @@ public class GrepSum extends TransactionTopology {
                                 , new ShuffleGrouping(Component.SPOUT));
                         break;
                     }
-                    case CCOption_TStream: {//T-Stream
+                    case CCOption_MorphStream: {//MorphStream
                         builder.setBolt(Component.EXECUTOR, new GSBolt_ts(0)//
                                 , config.getInt(Executor_Threads, 2)
                                 , new ShuffleGrouping(Component.SPOUT));

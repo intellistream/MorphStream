@@ -2,21 +2,21 @@ package combo;
 
 import benchmark.DataHolder;
 import common.bolts.transactional.ob.*;
-import common.collections.Configuration;
-import engine.txn.TxnEvent;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.txn.TxnEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 
-import static common.CONTROL.*;
-import static engine.txn.content.Content.*;
+import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
+import static intellistream.morphstream.configuration.Constants.*;
 
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public class OBCombo extends SPOUTCombo {
@@ -131,7 +131,7 @@ public class OBCombo extends SPOUTCombo {
                 _combo_bid_size = 1;
                 break;
             }
-            case CCOption_TStream: {//T-Stream
+            case CCOption_MorphStream: {//T-Stream
                 bolt = new OBBolt_ts_s(0, sink);
                 break;
             }

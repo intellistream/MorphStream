@@ -18,14 +18,14 @@
  */
 package common.datatype.internal;
 
-import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import engine.stream.execution.runtime.tuple.impl.Fields;
-import util.datatypes.StreamValues;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.util.Time;
+import intellistream.morphstream.util.datatypes.StreamValues;
 
-import static common.constants.BaseConstants.BaseField.MSG_ID;
-import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
+import static intellistream.morphstream.common.constants.BaseConstants.BaseField.MSG_ID;
+import static intellistream.morphstream.common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
 
 /**
  * {@link AvgVehicleSpeedTuple} represents an intermediate result tuple; the average speed of an vehicle in a segment
@@ -142,7 +142,7 @@ public final class AvgVehicleSpeedTuple extends StreamValues implements ISegment
      *
      * @return the VID of this tuple
      */
-    public final Integer getVid() {
+    public Integer getVid() {
         return (Integer) super.get(VID_IDX);
     }
 
@@ -151,7 +151,7 @@ public final class AvgVehicleSpeedTuple extends StreamValues implements ISegment
      *
      * @return the 'minute number' of this tuple
      */
-    public final Short getMinute() {
+    public Short getMinute() {
         return (Short) super.get(MINUTE_IDX);
     }
 
@@ -161,7 +161,7 @@ public final class AvgVehicleSpeedTuple extends StreamValues implements ISegment
      * @return the VID of this tuple
      */
     @Override
-    public final Integer getXWay() {
+    public Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
 
@@ -171,7 +171,7 @@ public final class AvgVehicleSpeedTuple extends StreamValues implements ISegment
      * @return the VID of this tuple
      */
     @Override
-    public final int getSegment() {
+    public int getSegment() {
         return (Integer) super.get(SEG_IDX);
     }
 
@@ -181,7 +181,7 @@ public final class AvgVehicleSpeedTuple extends StreamValues implements ISegment
      * @return the VID of this tuple
      */
     @Override
-    public final Short getDirection() {
+    public Short getDirection() {
         return (Short) super.get(DIR_IDX);
     }
 //
@@ -198,11 +198,11 @@ public final class AvgVehicleSpeedTuple extends StreamValues implements ISegment
      *
      * @return the average speed of this tuple
      */
-    public final Double getAvgSpeed() {
+    public Double getAvgSpeed() {
         return (Double) super.get(AVGS_IDX);
     }
 
-    public final short getTime() {
+    public short getTime() {
         return (short) super.get(TIME_IDX);
     }
 }

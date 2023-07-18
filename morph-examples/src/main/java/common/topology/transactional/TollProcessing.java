@@ -1,31 +1,31 @@
 package common.topology.transactional;
 
 import common.bolts.transactional.tp.*;
-import common.collections.Configuration;
-import common.constants.LinearRoadConstants;
-import common.constants.LinearRoadConstants.Field;
 import common.datatype.util.LRTopologyControl;
 import common.datatype.util.SegmentIdentifier;
 import common.topology.transactional.initializer.TPInitializer;
-import engine.stream.components.Topology;
-import engine.stream.components.exception.InvalidIDException;
-import engine.stream.components.grouping.FieldsGrouping;
-import engine.stream.components.grouping.ShuffleGrouping;
-import engine.stream.controller.input.scheduler.SequentialScheduler;
-import engine.stream.execution.runtime.tuple.impl.Fields;
-import engine.txn.lock.PartitionedOrderLock;
-import engine.txn.lock.SpinLock;
+import intellistream.morphstream.common.constants.LinearRoadConstants;
+import intellistream.morphstream.common.constants.LinearRoadConstants.Field;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.Topology;
+import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
+import intellistream.morphstream.engine.stream.components.grouping.FieldsGrouping;
+import intellistream.morphstream.engine.stream.components.grouping.ShuffleGrouping;
+import intellistream.morphstream.engine.stream.controller.input.scheduler.SequentialScheduler;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.engine.stream.topology.TransactionTopology;
+import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
+import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.transaction.TableInitilizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.stream.topology.TransactionTopology;
-import engine.txn.transaction.TableInitilizer;
 
-import static common.CONTROL.enable_app_combo;
-import static common.constants.LinearRoadConstants.Conf.Executor_Threads;
-import static common.constants.TPConstants.Component.EXECUTOR;
-import static common.constants.TPConstants.PREFIX;
-import static engine.txn.content.Content.*;
-import static util.PartitionHelper.setPartition_interval;
+import static intellistream.morphstream.common.constants.LinearRoadConstants.Conf.Executor_Threads;
+import static intellistream.morphstream.common.constants.TPConstants.Component.EXECUTOR;
+import static intellistream.morphstream.common.constants.TPConstants.PREFIX;
+import static intellistream.morphstream.configuration.CONTROL.enable_app_combo;
+import static intellistream.morphstream.configuration.Constants.*;
+import static intellistream.morphstream.util.PartitionHelper.setPartition_interval;
 
 public class TollProcessing extends TransactionTopology {
     private static final Logger LOG = LoggerFactory.getLogger(TollProcessing.class);
@@ -46,7 +46,7 @@ public class TollProcessing extends TransactionTopology {
         int tthread = config.getInt("tthread");
         int numberOfStates = config.getInt("NUM_ITEMS");
         setPartition_interval((int) (Math.ceil(numberOfStates / (double) tthread)), tthread);
-        TableInitilizer ini = new TPInitializer(db,numberOfStates, theta, tthread, config);
+        TableInitilizer ini = new TPInitializer(db, numberOfStates, theta, tthread, config);
         ini.creates_Table(config);
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)
@@ -92,7 +92,7 @@ public class TollProcessing extends TransactionTopology {
                         );
                         break;
                     }
-                    case CCOption_TStream: {//T-Stream
+                    case CCOption_MorphStream: {//MorphStream
                         builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_ts(0)//
                                 , config.getInt(Executor_Threads, 2),
                                 new FieldsGrouping(

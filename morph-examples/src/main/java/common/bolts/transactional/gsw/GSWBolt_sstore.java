@@ -2,19 +2,19 @@ package common.bolts.transactional.gsw;
 
 import combo.SINKCombo;
 import common.bolts.transactional.sl.GlobalSorter;
-import engine.txn.TxnEvent;
 import common.param.gsw.WindowedMicroEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerSStore;
+import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.profiler.MeasureTools;
-import engine.txn.transaction.context.TxnContext;
-import engine.txn.transaction.impl.ordered.TxnManagerSStore;
-import engine.txn.utils.SOURCE_CONTROL;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -22,8 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
-import static engine.txn.profiler.MeasureTools.*;
+import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.*;
 
 /**
  * Different from OLB, each executor in SStore has an associated partition id.

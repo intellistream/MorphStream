@@ -1,11 +1,11 @@
 package common.sink;
 
 import common.sink.helper.stable_sink_helper;
-import util.datatypes.StreamValues;
-import engine.stream.components.operators.api.BaseSink;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.tuple.JumboTuple;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.components.operators.api.BaseSink;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.JumboTuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.util.datatypes.StreamValues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

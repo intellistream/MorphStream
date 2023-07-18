@@ -1,7 +1,7 @@
 package benchmark.dynamicWorkloadGenerator;
 
 import benchmark.datagenerator.DataGeneratorConfig;
-import common.collections.Configuration;
+import intellistream.morphstream.configuration.Configuration;
 
 /**
  * Generate dynamic workload configuration
@@ -9,15 +9,6 @@ import common.collections.Configuration;
  * Created by curry on 16/3/22.
  */
 public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
-    /* The type of the dynamic workload */
-    private String[] phaseType;
-    /* Application, the configuration maybe different for the same type of workload */
-    private String app;
-    /* Control the rate of the workload*/
-    private int shiftRate;
-    /* The workload is in which phase */
-    private int phase;
-    private int checkpoint_interval;
     public int State_Access_Skewness;
     public int NUM_ACCESS;
     public int Ratio_of_Overlapped_Keys;
@@ -31,10 +22,19 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     public String skewGroup;
     public int groupNum;
     public int Ratio_of_Transaction_Aborts_Highest;
+    /* The type of the dynamic workload */
+    private String[] phaseType;
+    /* Application, the configuration maybe different for the same type of workload */
+    private String app_name;
+    /* Control the rate of the workload*/
+    private int shiftRate;
+    /* The workload is in which phase */
+    private int phase;
+    private int checkpoint_interval;
 
     public void initialize(Configuration config) {
         super.initialize(config);
-        this.app = config.getString("application");
+        this.app_name = config.getString("app_name");
         this.shiftRate = config.getInt("shiftRate");
         this.phaseType = config.getString("workloadType").split(",");
         this.checkpoint_interval = config.getInt("checkpoint");
@@ -45,8 +45,8 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
         Ratio_of_Transaction_Aborts = config.getInt("Ratio_of_Transaction_Aborts", 0);
         Transaction_Length = config.getInt("Transaction_Length", 1);
         Ratio_Of_Deposit = config.getInt("Ratio_Of_Deposit", 0);
-        Ratio_Of_Buying = config.getInt("Ratio_Of_Buying",0);
-        Ratio_of_Multiple_State_Access = config.getInt("Ratio_of_Multiple_State_Access",100);
+        Ratio_Of_Buying = config.getInt("Ratio_Of_Buying", 0);
+        Ratio_of_Multiple_State_Access = config.getInt("Ratio_of_Multiple_State_Access", 100);
         Ratio_of_Non_Deterministic_State_Access = config.getInt("Ratio_of_Non_Deterministic_State_Access", 0);
         phase = 0;
         if (enableGroup) {
@@ -63,21 +63,23 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     public int getShiftRate() {
         return shiftRate;
     }
+
     /**
      * Generate the configuration based on type and application
+     *
      * @return
      */
     public String nextDataGeneratorConfig() {
         String phaseType;
-        if (phase < this.phaseType.length){
+        if (phase < this.phaseType.length) {
             phaseType = this.phaseType[phase];
-            phase ++;
+            phase++;
         } else {
             return null;
         }
-        switch (phaseType){
-            case "default" :
-            case "unchanging" :
+        switch (phaseType) {
+            case "default":
+            case "unchanging":
                 return phaseType;
             case "Up_skew":
                 if (this.State_Access_Skewness + 20 <= 100) {
@@ -94,12 +96,12 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
                     return "unchanging";
                 }
             case "Up_PD":
-                if (this.app.equals("StreamLedger")) {
+                if (this.app_name.equals("StreamLedger")) {
                     if (this.Ratio_Of_Deposit - 20 >= 0) {
                         if (this.Ratio_Of_Deposit > 45) {
                             this.Ratio_Of_Deposit = 45;
                         } else {
-                            this.Ratio_Of_Deposit = this.Ratio_Of_Deposit - 20 ;
+                            this.Ratio_Of_Deposit = this.Ratio_Of_Deposit - 20;
                         }
                         return "PD";
                     } else {
@@ -107,9 +109,9 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
                     }
                 }
             case "Down_PD":
-                if (this.app.equals("StreamLedger")) {
+                if (this.app_name.equals("StreamLedger")) {
                     if (this.Ratio_Of_Deposit + 30 <= 100) {
-                        this.Ratio_Of_Deposit = this.Ratio_Of_Deposit + 30 ;
+                        this.Ratio_Of_Deposit = this.Ratio_Of_Deposit + 30;
                         return "PD";
                     } else {
                         return "unchanging";
@@ -135,36 +137,37 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     }
 
     public String getApp() {
-        return app;
+        return app_name;
     }
 
     //User defined
     private String setConfigurationForSL() {
-        switch (phase){
+        switch (phase) {
             case 0:
-                phase ++;
+                phase++;
                 return "default";
             case 1:
             case 4:
-                phase ++;
+                phase++;
                 return "unchanging";
             case 2:
             case 3:
-                phase ++;
+                phase++;
                 this.State_Access_Skewness = this.State_Access_Skewness + 30;
                 return "skew";
             case 5:
             case 6:
             case 7:
-                phase ++;
-                this.Ratio_Of_Deposit = this.Ratio_Of_Deposit + 20 ;
-                return "PD" ;
+                phase++;
+                this.Ratio_Of_Deposit = this.Ratio_Of_Deposit + 20;
+                return "PD";
             default:
                 return null;
         }
     }
+
     private String setConfigurationForOB() {
-        switch (phase){
+        switch (phase) {
             case 0:
                 phase++;
                 return "default";
@@ -180,8 +183,9 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
                 return null;
         }
     }
+
     private String setConfigurationForGS() {
-        switch (phase){
+        switch (phase) {
             case 0:
                 phase++;
                 return "default";
@@ -201,9 +205,10 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
                 return null;
         }
     }
-    private String setConfigurationForTP(){
-        if (phase==0){
-            phase ++;
+
+    private String setConfigurationForTP() {
+        if (phase == 0) {
+            phase++;
             return "default";
         } else {
             return null;

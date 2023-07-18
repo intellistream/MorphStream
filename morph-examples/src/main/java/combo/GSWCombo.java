@@ -2,19 +2,19 @@ package combo;
 
 import benchmark.DataHolder;
 import common.bolts.transactional.gsw.*;
-import common.collections.Configuration;
-import engine.txn.TxnEvent;
 import common.param.mb.MicroEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.txn.TxnEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 
-import static common.CONTROL.*;
-import static engine.txn.content.Content.*;
+import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.configuration.Constants.*;
 
 public class GSWCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(GSWCombo.class);
@@ -117,7 +117,7 @@ public class GSWCombo extends SPOUTCombo {
                 bolt = new GSWBolt_lwm(0, sink);
                 break;
             }
-            case CCOption_TStream: {//T-Stream
+            case CCOption_MorphStream: {//T-Stream
                 bolt = new GSWBolt_ts(0, sink);
                 break;
             }

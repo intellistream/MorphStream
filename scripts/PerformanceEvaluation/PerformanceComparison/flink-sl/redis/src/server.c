@@ -63,7 +63,7 @@
 #include <sys/mman.h>
 #endif
 
-/* Our shared "common" objects */
+/* Our shared "app" objects */
 
 struct sharedObjectsStruct shared;
 

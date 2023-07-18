@@ -4,10 +4,10 @@ import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.NonGS.TPGTxnGenerator.Transaction.NonGSEvent;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
 import benchmark.dynamicWorkloadGenerator.DynamicWorkloadGenerator;
-import util.tools.FastZipfGenerator;
+import intellistream.morphstream.util.AppConfig;
+import intellistream.morphstream.util.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.AppConfig;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -16,11 +16,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_states_partition;
 
 public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(NonGSTPGDynamicDataGenerator.class);
+    // control the number of txns overlap with each other.
+    private final ArrayList<Integer> generatedKeys = new ArrayList<>();
+    // independent transactions.
+    private final boolean isUnique = false;
+    private final Random random = new Random(0); // the transaction type decider
+    private final HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
+    private final ArrayList<Event> events;
+    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
     public FastZipfGenerator[] partitionedKeyZipf;
     public transient FastZipfGenerator p_generator; // partition generator
     private int NUM_ACCESS; // transaction length, 4 or 8 or longer
@@ -29,20 +37,12 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
     private int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
     private int Ratio_of_Multiple_State_Access;//ratio of multiple state access per transaction
     private int Ratio_of_Non_Deterministic_State_Access;//ratio of non-deterministic state access
-
     private int Transaction_Length;
     private int nKeyState;
-    // control the number of txns overlap with each other.
-    private ArrayList<Integer> generatedKeys = new ArrayList<>();
-    // independent transactions.
-    private boolean isUnique = false;
     private FastZipfGenerator keyZipf;
     private int floor_interval;
-    private Random random = new Random(0); // the transaction type decider
-    private HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
-    private ArrayList<Event> events;
     private int eventID = 0;
-    private HashMap<Integer, Integer> idToLevel = new HashMap<>();
+
     public NonGSTPGDynamicDataGenerator(DynamicDataGeneratorConfig dynamicDataGeneratorConfig) {
         super(dynamicDataGeneratorConfig);
         events = new ArrayList<>(nTuples);
@@ -55,27 +55,25 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
 
     @Override
     public void switchConfiguration(String type) {
-        switch (type) {
-            case "default":
-                State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
-                NUM_ACCESS = dynamicDataConfig.NUM_ACCESS;
-                Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
-                Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
-                Transaction_Length = dynamicDataConfig.Transaction_Length;
-                Ratio_of_Multiple_State_Access = dynamicDataConfig.Ratio_of_Multiple_State_Access;
-                Ratio_of_Non_Deterministic_State_Access = dynamicDataConfig.Ratio_of_Non_Deterministic_State_Access;
+        if (type.equals("default")) {
+            State_Access_Skewness = dynamicDataConfig.State_Access_Skewness;
+            NUM_ACCESS = dynamicDataConfig.NUM_ACCESS;
+            Ratio_of_Transaction_Aborts = dynamicDataConfig.Ratio_of_Transaction_Aborts;
+            Ratio_of_Overlapped_Keys = dynamicDataConfig.Ratio_of_Overlapped_Keys;
+            Transaction_Length = dynamicDataConfig.Transaction_Length;
+            Ratio_of_Multiple_State_Access = dynamicDataConfig.Ratio_of_Multiple_State_Access;
+            Ratio_of_Non_Deterministic_State_Access = dynamicDataConfig.Ratio_of_Non_Deterministic_State_Access;
 
-                nKeyState = dynamicDataConfig.getnKeyStates();
-                int MAX_LEVEL = 256;
-                for (int i = 0; i < nKeyState; i++) {
-                    idToLevel.put(i, i % MAX_LEVEL);
-                }
-                keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
-                configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
-                p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid configuration type: " + type);
+            nKeyState = dynamicDataConfig.getnKeyStates();
+            int MAX_LEVEL = 256;
+            for (int i = 0; i < nKeyState; i++) {
+                idToLevel.put(i, i % MAX_LEVEL);
+            }
+            keyZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
+            configure_store(1, (double) State_Access_Skewness / 100, dynamicDataConfig.getTotalThreads(), nKeyState);
+            p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
+        } else {
+            throw new IllegalArgumentException("Invalid configuration type: " + type);
         }
     }
 
@@ -109,6 +107,7 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             e.printStackTrace();
         }
     }
+
     private void configure_store(double scale_factor, double theta, int tthread, int numItems) {
         floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / NUM_THREADS;
         partitionedKeyZipf = new FastZipfGenerator[tthread];
@@ -116,6 +115,7 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
             partitionedKeyZipf[i] = new FastZipfGenerator((int) (floor_interval * scale_factor), theta, i * floor_interval, 12345678);
         }
     }
+
     private NonGSEvent randomEvent() {
         int NUM_ACCESS;
         if (random.nextInt(100) < Ratio_of_Multiple_State_Access) {
@@ -191,20 +191,13 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         NonGSEvent t;
         boolean isAbort;
         boolean isNonDeterministic;
-        if (random.nextInt(10000) < Ratio_of_Transaction_Aborts) {
-            isAbort = true;
-        } else {
-            isAbort = false;
-        }
-        if (random.nextInt(10000) < Ratio_of_Non_Deterministic_State_Access) {
-            isNonDeterministic = true;
-        } else {
-            isNonDeterministic = false;
-        }
+        isAbort = random.nextInt(10000) < Ratio_of_Transaction_Aborts;
+        isNonDeterministic = random.nextInt(10000) < Ratio_of_Non_Deterministic_State_Access;
         t = new NonGSEvent(eventID, keys, isAbort, isNonDeterministic);
         eventID++;
         return t;
     }
+
     private int getKey(FastZipfGenerator zipfGenerator, int partitionId, ArrayList<Integer> generatedKeys) {
         int key;
         key = zipfGenerator.next();
@@ -247,6 +240,7 @@ public class NonGSTPGDynamicDataGenerator extends DynamicWorkloadGenerator {
         generatedKeys.add(key);
         return key;
     }
+
     private int key_to_partition(int key) {
         return (int) Math.floor((double) key / floor_interval);
     }

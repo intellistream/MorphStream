@@ -1,7 +1,7 @@
 package common.param.mb;
 
-import engine.txn.TxnEvent;
-import engine.txn.storage.SchemaRecordRef;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 
 import java.util.Arrays;
 
@@ -14,6 +14,7 @@ public class NonMicroEvent extends TxnEvent {
     public int TOTAL_NUM_ACCESS;
     public int Txn_Length;
     public int[] result; // TODO: NUM_ACCESSES will be never used.
+
     public NonMicroEvent(long bid, int pid, String bid_array, String partition_index, int num_of_partition, String key_array, int TOTAL_NUM_ACCESS, int Transaction_Length, boolean isAbort, boolean isNon_Deterministic_StateAccess) {
         super(bid, pid, bid_array, partition_index, num_of_partition);
         this.TOTAL_NUM_ACCESS = TOTAL_NUM_ACCESS;
@@ -35,9 +36,11 @@ public class NonMicroEvent extends TxnEvent {
     public boolean isAbort() {
         return isAbort;
     }
+
     public boolean isNon_Deterministic_StateAccess() {
         return isNon_Deterministic_StateAccess;
     }
+
     public int[] getKeys() {
         return keys;
     }

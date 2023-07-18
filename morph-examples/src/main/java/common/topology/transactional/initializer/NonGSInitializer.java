@@ -5,25 +5,25 @@ import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.NonGS.TPGTxnGenerator.NonGSTPGDynamicDataGenerator;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
-import common.collections.Configuration;
-import common.collections.OsUtils;
-import engine.txn.TxnEvent;
 import common.param.mb.NonMicroEvent;
-import engine.txn.db.Database;
-import engine.txn.db.DatabaseException;
-import engine.txn.lock.SpinLock;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.Database;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
+import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.IntDataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.LongDataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.StringDataBox;
+import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.txn.transaction.TableInitilizer;
+import intellistream.morphstream.util.AppConfig;
+import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.scheduler.context.SchedulerContext;
-import engine.txn.storage.SchemaRecord;
-import engine.txn.storage.TableRecord;
-import engine.txn.storage.datatype.DataBox;
-import engine.txn.storage.datatype.IntDataBox;
-import engine.txn.storage.datatype.LongDataBox;
-import engine.txn.storage.datatype.StringDataBox;
-import engine.txn.storage.table.RecordSchema;
-import engine.txn.transaction.TableInitilizer;
-import util.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -31,8 +31,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 
-import static common.CONTROL.enable_log;
-import static engine.txn.transaction.State.configure_store;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.engine.txn.transaction.State.configure_store;
 
 public class NonGSInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(NonGSInitializer.class);
@@ -48,6 +48,7 @@ public class NonGSInitializer extends TableInitilizer {
     int i = 0;
     private String dataRootPath;
     private DataGenerator dataGenerator;
+
     public NonGSInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
@@ -60,6 +61,7 @@ public class NonGSInitializer extends TableInitilizer {
         createTPGGenerator(config);
         dataConfig = dataGenerator.getDataConfig();
     }
+
     protected void createTPGGenerator(Configuration config) {
         if (config.getBoolean("isDynamic")) {
             //TODO:add the dynamic workload dataGenerator
@@ -69,6 +71,7 @@ public class NonGSInitializer extends TableInitilizer {
             dataGenerator = new NonGSTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
         }
     }
+
     private void configurePath(DataGeneratorConfig dataConfig) {
         MessageDigest digest;
         String subFolder = null;
@@ -106,6 +109,7 @@ public class NonGSInitializer extends TableInitilizer {
         dataConfig.setIdsPath(dataConfig.getIdsPath() + OsUtils.OS_wrapper(subFolder));
         this.dataRootPath += OsUtils.OS_wrapper(subFolder);
     }
+
     private void insertMicroRecord(String key, long value, int pid, SpinLock[] spinlock_, int partition_id) {
         try {
             if (spinlock_ != null)
@@ -123,6 +127,7 @@ public class NonGSInitializer extends TableInitilizer {
         values.add(new LongDataBox(value));
         return new SchemaRecord(values);
     }
+
     @Override
     public void loadDB(int thread_id, int NUM_TASK) {
         loadDB(thread_id, null, NUM_TASK);
@@ -149,6 +154,7 @@ public class NonGSInitializer extends TableInitilizer {
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
     }
+
     @Override
     public void loadDB(SchedulerContext context, int thread_id, int NUMTasks) {
         throw new UnsupportedOperationException();
@@ -158,6 +164,7 @@ public class NonGSInitializer extends TableInitilizer {
     public void loadDB(SchedulerContext context, int thread_id, SpinLock[] spinlock, int NUMTasks) {
         throw new UnsupportedOperationException();
     }
+
     @Override
     public boolean Generate() {
         String folder = dataRootPath;
@@ -175,6 +182,7 @@ public class NonGSInitializer extends TableInitilizer {
         dataGenerator.clearDataStructures();
         return true;
     }
+
     @Override
     protected void Load() throws IOException {
         int totalEvents = dataConfig.getTotalEvents();

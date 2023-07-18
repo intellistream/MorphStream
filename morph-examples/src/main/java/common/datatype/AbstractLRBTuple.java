@@ -18,8 +18,8 @@
  */
 package common.datatype;
 
-import common.collections.Time;
-import util.datatypes.StreamValues;
+import intellistream.morphstream.util.Time;
+import intellistream.morphstream.util.datatypes.StreamValues;
 
 /**
  * Base class for all LRB tuples.<br />

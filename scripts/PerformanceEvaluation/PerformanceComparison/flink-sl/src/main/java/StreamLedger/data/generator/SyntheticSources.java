@@ -36,6 +36,11 @@ public final class SyntheticSources {
     public final DataStream<DepositEvent> deposits;
     public final DataStream<TransactionEvent> transactions;
 
+    SyntheticSources(DataStream<DepositEvent> deposits, DataStream<TransactionEvent> transactions) {
+        this.deposits = deposits;
+        this.transactions = transactions;
+    }
+
     /**
      * Creates and adds two synthetic sources for {@link DepositEvent} and {@link TransactionEvent}.
      *
@@ -63,8 +68,7 @@ public final class SyntheticSources {
 
                         if (depositOrTransaction.isLeft()) {
                             out.collect(depositOrTransaction.left());
-                        }
-                        else {
+                        } else {
                             context.output(transactionsSideOutput, depositOrTransaction.right());
                         }
                     }
@@ -73,11 +77,6 @@ public final class SyntheticSources {
         final DataStream<TransactionEvent> transactions = deposits.getSideOutput(transactionsSideOutput);
 
         return new SyntheticSources(deposits, transactions);
-    }
-
-    SyntheticSources(DataStream<DepositEvent> deposits, DataStream<TransactionEvent> transactions) {
-        this.deposits = deposits;
-        this.transactions = transactions;
     }
 }
 

@@ -1,6 +1,6 @@
 package common.param.ob;
 
-import engine.txn.content.common.TxnParam;
+import intellistream.morphstream.engine.txn.content.common.TxnParam;
 
 public class OBParam extends TxnParam {
     int[] itemID;

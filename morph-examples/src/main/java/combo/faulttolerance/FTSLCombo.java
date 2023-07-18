@@ -2,24 +2,24 @@ package combo.faulttolerance;
 
 import benchmark.DataHolder;
 import common.bolts.transactional.sl.*;
-import common.collections.Configuration;
 import common.faulttolerance.inputReload.SLInputDurabilityHelper;
-import engine.txn.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.txn.TxnEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 
-import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_shared_state;
-import static engine.txn.content.Content.*;
+import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
+import static intellistream.morphstream.configuration.CONTROL.enable_shared_state;
+import static intellistream.morphstream.configuration.Constants.*;
 
-public class FTSLCombo extends FTSPOUTCombo{
+public class FTSLCombo extends FTSPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(FTSLCombo.class);
     int concurrency = 0;
     int pre_concurrency = 0;
@@ -86,7 +86,7 @@ public class FTSLCombo extends FTSPOUTCombo{
             TxnEvent event = DataHolder.events.get(index).cloneEvent();
             //TxnEvent event = DataHolder.events.get(index);
             mybids[storageIndex] = event.getBid();
-            myevents[storageIndex ++] = event;
+            myevents[storageIndex++] = event;
             if (storageIndex == num_events_per_thread)
                 break;
             index += tthread * combo_bid_size;
@@ -117,7 +117,7 @@ public class FTSLCombo extends FTSPOUTCombo{
                 _combo_bid_size = 1;
                 break;
             }
-            case CCOption_TStream: {//T-Stream
+            case CCOption_MorphStream: {//T-Stream
                 bolt = new SLBolt_ts_ft(0, sink);
                 break;
             }

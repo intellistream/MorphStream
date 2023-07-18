@@ -3,28 +3,28 @@ package common.topology.transactional.initializer;
 import benchmark.DataHolder;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
-import benchmark.datagenerator.apps.SHJ.TPGTxnGenerator.SHJTPGDynamicDataGenerator;
 import benchmark.datagenerator.apps.SHJ.TPGTxnGenerator.SHJTPGDataGenerator;
 import benchmark.datagenerator.apps.SHJ.TPGTxnGenerator.SHJTPGDataGeneratorConfig;
+import benchmark.datagenerator.apps.SHJ.TPGTxnGenerator.SHJTPGDynamicDataGenerator;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
-import common.collections.Configuration;
-import common.collections.OsUtils;
-import engine.txn.TxnEvent;
 import common.param.shj.SHJEvent;
-import engine.txn.db.Database;
-import engine.txn.db.DatabaseException;
-import engine.txn.lock.SpinLock;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.Database;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
+import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.LongDataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.StringDataBox;
+import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.txn.transaction.TableInitilizer;
+import intellistream.morphstream.util.AppConfig;
+import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.scheduler.context.SchedulerContext;
-import engine.txn.storage.SchemaRecord;
-import engine.txn.storage.TableRecord;
-import engine.txn.storage.datatype.DataBox;
-import engine.txn.storage.datatype.LongDataBox;
-import engine.txn.storage.datatype.StringDataBox;
-import engine.txn.storage.table.RecordSchema;
-import engine.txn.transaction.TableInitilizer;
-import util.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -32,11 +32,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 
-import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
-import static common.Constants.Event_Path;
-import static engine.txn.profiler.Metrics.NUM_ITEMS;
-import static engine.txn.transaction.State.configure_store;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_states_partition;
+import static intellistream.morphstream.configuration.Constants.Event_Path;
+import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
+import static intellistream.morphstream.engine.txn.transaction.State.configure_store;
 
 public class SHJInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(SHJInitializer.class);
@@ -217,8 +217,8 @@ public class SHJInitializer extends TableInitilizer {
             HashMap<Integer, Integer> pids = new HashMap<>();
             long[] keys = new long[keyLength];
             for (int i = 4; i < keyLength + 4; i++) {
-                keys[i-4] = Long.parseLong(split[i]);
-                pids.put((int) (keys[i-4] / partitionOffset), 0);
+                keys[i - 4] = Long.parseLong(split[i]);
+                pids.put((int) (keys[i - 4] / partitionOffset), 0);
             }
 
 //            // Construct bid array
@@ -373,14 +373,14 @@ public class SHJInitializer extends TableInitilizer {
 
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
                 StringBuilder stringBuilder = new StringBuilder();
-                for(String decision:getTranToDecisionConf()){
+                for (String decision : getTranToDecisionConf()) {
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
-                config.put("WorkloadConfig",stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                config.put("WorkloadConfig", stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();

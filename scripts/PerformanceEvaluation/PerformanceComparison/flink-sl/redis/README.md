@@ -1,17 +1,24 @@
-This README is just a fast *quick start* document. You can find more detailed documentation at [redis.io](https://redis.io).
+This README is just a fast *quick start* document. You can find more detailed documentation
+at [redis.io](https://redis.io).
 
 What is Redis?
 --------------
 
-Redis is often referred to as a *data structures* server. What this means is that Redis provides access to mutable data structures via a set of commands, which are sent using a *server-client* model with TCP sockets and a simple protocol. So different processes can query and modify the same data structures in a shared way.
+Redis is often referred to as a *data structures* server. What this means is that Redis provides access to mutable data
+structures via a set of commands, which are sent using a *server-client* model with TCP sockets and a simple protocol.
+So different processes can query and modify the same data structures in a shared way.
 
 Data structures implemented into Redis have a few special properties:
 
-* Redis cares to store them on disk, even if they are always served and modified into the server memory. This means that Redis is fast, but that it is also non-volatile.
-* The implementation of data structures emphasizes memory efficiency, so data structures inside Redis will likely use less memory compared to the same data structure modelled using a high-level programming language.
-* Redis offers a number of features that are natural to find in a database, like replication, tunable levels of durability, clustering, and high availability.
+* Redis cares to store them on disk, even if they are always served and modified into the server memory. This means that
+  Redis is fast, but that it is also non-volatile.
+* The implementation of data structures emphasizes memory efficiency, so data structures inside Redis will likely use
+  less memory compared to the same data structure modelled using a high-level programming language.
+* Redis offers a number of features that are natural to find in a database, like replication, tunable levels of
+  durability, clustering, and high availability.
 
-Another good example is to think of Redis as a more complex version of memcached, where the operations are not just SETs and GETs, but operations that work with complex data types like Lists, Sets, ordered data structures, and so forth.
+Another good example is to think of Redis as a more complex version of memcached, where the operations are not just SETs
+and GETs, but operations that work with complex data types like Lists, Sets, ordered data structures, and so forth.
 
 If you want to know more, this is a list of selected starting points:
 
@@ -40,7 +47,7 @@ libssl-dev on Debian/Ubuntu) and run:
 
     % make BUILD_TLS=yes
 
-To build with systemd support, you'll need systemd development libraries (such 
+To build with systemd support, you'll need systemd development libraries (such
 as libsystemd-dev on Debian/Ubuntu or systemd-devel on CentOS) and run:
 
     % make USE_SYSTEMD=yes
@@ -62,7 +69,6 @@ installed):
 
     % ./utils/gen-test-certs.sh
     % ./runtest --tls
-
 
 Fixing build problems with dependencies or cached build options
 ---------
@@ -119,9 +125,9 @@ Monotonic clock
 ---------------
 
 By default, Redis will build using the POSIX clock_gettime function as the
-monotonic clock source.  On most modern systems, the internal processor clock
-can be used to improve performance.  Cautions can be found here: 
-    http://oliveryang.net/2015/09/pitfalls-of-TSC-usage/
+monotonic clock source. On most modern systems, the internal processor clock
+can be used to improve performance. Cautions can be found here:
+http://oliveryang.net/2015/09/pitfalls-of-TSC-usage/
 
 To build with support for the processor's internal instruction clock, use:
 
@@ -227,6 +233,7 @@ Please see the [CONTRIBUTING][2] file in this source distribution for more
 information, including details on our process for security bugs/vulnerabilities.
 
 [1]: https://github.com/redis/redis/blob/unstable/COPYING
+
 [2]: https://github.com/redis/redis/blob/unstable/CONTRIBUTING
 
 Redis internals
@@ -257,7 +264,10 @@ Inside the root are the following important directories:
 
 * `src`: contains the Redis implementation, written in C.
 * `tests`: contains the unit tests, implemented in Tcl.
-* `deps`: contains libraries Redis uses. Everything needed to compile Redis is inside this directory; your system just needs to provide `libc`, a POSIX compatible interface and a C compiler. Notably `deps` contains a copy of `jemalloc`, which is the default allocator of Redis under Linux. Note that under `deps` there are also things which started with the Redis project, but for which the main repository is not `redis/redis`.
+* `deps`: contains libraries Redis uses. Everything needed to compile Redis is inside this directory; your system just
+  needs to provide `libc`, a POSIX compatible interface and a C compiler. Notably `deps` contains a copy of `jemalloc`,
+  which is the default allocator of Redis under Linux. Note that under `deps` there are also things which started with
+  the Redis project, but for which the main repository is not `redis/redis`.
 
 There are a few more directories but they are not very important for our goals
 here. We'll focus mostly on `src`, where the Redis implementation is contained,
@@ -294,6 +304,7 @@ the structure definition.
 Another important Redis data structure is the one defining a client.
 In the past it was called `redisClient`, now just `client`. The structure
 has many fields, here we'll just show the main ones:
+
 ```c
 struct client {
     int fd;
@@ -307,12 +318,16 @@ struct client {
     // ... many other fields ...
 }
 ```
+
 The client structure defines a *connected client*:
 
 * The `fd` field is the client socket file descriptor.
-* `argc` and `argv` are populated with the command the client is executing, so that functions implementing a given Redis command can read the arguments.
-* `querybuf` accumulates the requests from the client, which are parsed by the Redis server according to the Redis protocol and executed by calling the implementations of the commands the client is executing.
-* `reply` and `buf` are dynamic and static buffers that accumulate the replies the server sends to the client. These buffers are incrementally written to the socket as soon as the file descriptor is writeable.
+* `argc` and `argv` are populated with the command the client is executing, so that functions implementing a given Redis
+  command can read the arguments.
+* `querybuf` accumulates the requests from the client, which are parsed by the Redis server according to the Redis
+  protocol and executed by calling the implementations of the commands the client is executing.
+* `reply` and `buf` are dynamic and static buffers that accumulate the replies the server sends to the client. These
+  buffers are incrementally written to the socket as soon as the file descriptor is writeable.
 
 As you can see in the client structure above, arguments in a command
 are described as `robj` structures. The following is the full `robj`
@@ -351,15 +366,19 @@ the Redis server.
 
 There are two special functions called periodically by the event loop:
 
-1. `serverCron()` is called periodically (according to `server.hz` frequency), and performs tasks that must be performed from time to time, like checking for timed out clients.
-2. `beforeSleep()` is called every time the event loop fired, Redis served a few requests, and is returning back into the event loop.
+1. `serverCron()` is called periodically (according to `server.hz` frequency), and performs tasks that must be performed
+   from time to time, like checking for timed out clients.
+2. `beforeSleep()` is called every time the event loop fired, Redis served a few requests, and is returning back into
+   the event loop.
 
 Inside server.c you can find code that handles other vital things of the Redis server:
 
 * `call()` is used in order to call a given command in the context of a given client.
 * `activeExpireCycle()` handles eviction of keys with a time to live set via the `EXPIRE` command.
-* `performEvictions()` is called when a new write command should be performed but Redis is out of memory according to the `maxmemory` directive.
-* The global variable `redisCommandTable` defines all the Redis commands, specifying the name of the command, the function implementing the command, the number of arguments required, and other properties of each command.
+* `performEvictions()` is called when a new write command should be performed but Redis is out of memory according to
+  the `maxmemory` directive.
+* The global variable `redisCommandTable` defines all the Redis commands, specifying the name of the command, the
+  function implementing the command, the number of arguments required, and other properties of each command.
 
 networking.c
 ---
@@ -368,10 +387,15 @@ This file defines all the I/O functions with clients, masters and replicas
 (which in Redis are just special clients):
 
 * `createClient()` allocates and initializes a new client.
-* the `addReply*()` family of functions are used by command implementations in order to append data to the client structure, that will be transmitted to the client as a reply for a given command executed.
-* `writeToClient()` transmits the data pending in the output buffers to the client and is called by the *writable event handler* `sendReplyToClient()`.
-* `readQueryFromClient()` is the *readable event handler* and accumulates data read from the client into the query buffer.
-* `processInputBuffer()` is the entry point in order to parse the client query buffer according to the Redis protocol. Once commands are ready to be processed, it calls `processCommand()` which is defined inside `server.c` in order to actually execute the command.
+* the `addReply*()` family of functions are used by command implementations in order to append data to the client
+  structure, that will be transmitted to the client as a reply for a given command executed.
+* `writeToClient()` transmits the data pending in the output buffers to the client and is called by the *writable event
+  handler* `sendReplyToClient()`.
+* `readQueryFromClient()` is the *readable event handler* and accumulates data read from the client into the query
+  buffer.
+* `processInputBuffer()` is the entry point in order to parse the client query buffer according to the Redis protocol.
+  Once commands are ready to be processed, it calls `processCommand()` which is defined inside `server.c` in order to
+  actually execute the command.
 * `freeClient()` deallocates, disconnects and removes a client.
 
 aof.c and rdb.c
@@ -406,7 +430,8 @@ on the Redis dataset without directly accessing the internal data structures.
 The most important functions inside `db.c` which are used in many command
 implementations are the following:
 
-* `lookupKeyRead()` and `lookupKeyWrite()` are used in order to get a pointer to the value associated to a given key, or `NULL` if the key does not exist.
+* `lookupKeyRead()` and `lookupKeyWrite()` are used in order to get a pointer to the value associated to a given key,
+  or `NULL` if the key does not exist.
 * `dbAdd()` and its higher level counterpart `setKey()` create a new key in a Redis database.
 * `dbDelete()` removes a key and its associated value.
 * `emptyDb()` removes an entire single database or all the databases defined.
@@ -421,8 +446,10 @@ The `robj` structure defining Redis objects was already described. Inside
 a basic level, like functions to allocate new objects, handle the reference
 counting and so forth. Notable functions inside this file:
 
-* `incrRefCount()` and `decrRefCount()` are used in order to increment or decrement an object reference count. When it drops to 0 the object is finally freed.
-* `createObject()` allocates a new object. There are also specialized functions to allocate string objects having a specific content, like `createStringObjectFromLongLong()` and similar functions.
+* `incrRefCount()` and `decrRefCount()` are used in order to increment or decrement an object reference count. When it
+  drops to 0 the object is finally freed.
+* `createObject()` allocates a new object. There are also specialized functions to allocate string objects having a
+  specific content, like `createStringObjectFromLongLong()` and similar functions.
 
 This file also implements the `OBJECT` command.
 
@@ -434,7 +461,8 @@ approach it only after getting a bit familiar with the rest of the code base.
 In this file there is the implementation of both the master and replica role
 of Redis.
 
-One of the most important functions inside this file is `replicationFeedSlaves()` that writes commands to the clients representing replica instances connected
+One of the most important functions inside this file is `replicationFeedSlaves()` that writes commands to the clients
+representing replica instances connected
 to our master, so that the replicas can get the writes performed by the clients:
 this way their data set will remain synchronized with the one in the master.
 
@@ -445,13 +473,17 @@ replicas, or to continue the replication after a disconnection.
 Other C files
 ---
 
-* `t_hash.c`, `t_list.c`, `t_set.c`, `t_string.c`, `t_zset.c` and `t_stream.c` contains the implementation of the Redis data types. They implement both an API to access a given data type, and the client command implementations for these data types.
+* `t_hash.c`, `t_list.c`, `t_set.c`, `t_string.c`, `t_zset.c` and `t_stream.c` contains the implementation of the Redis
+  data types. They implement both an API to access a given data type, and the client command implementations for these
+  data types.
 * `ae.c` implements the Redis event loop, it's a self contained library which is simple to read and understand.
 * `sds.c` is the Redis string library, check http://github.com/antirez/sds for more information.
 * `anet.c` is a library to use POSIX networking in a simpler way compared to the raw interface exposed by the kernel.
 * `dict.c` is an implementation of a non-blocking hash table which rehashes incrementally.
-* `scripting.c` implements Lua scripting. It is completely self-contained and isolated from the rest of the Redis implementation and is simple enough to understand if you are familiar with the Lua API.
-* `cluster.c` implements the Redis Cluster. Probably a good read only after being very familiar with the rest of the Redis code base. If you want to read `cluster.c` make sure to read the [Redis Cluster specification][3].
+* `scripting.c` implements Lua scripting. It is completely self-contained and isolated from the rest of the Redis
+  implementation and is simple enough to understand if you are familiar with the Lua API.
+* `cluster.c` implements the Redis Cluster. Probably a good read only after being very familiar with the rest of the
+  Redis code base. If you want to read `cluster.c` make sure to read the [Redis Cluster specification][3].
 
 [3]: https://redis.io/topics/cluster-spec
 

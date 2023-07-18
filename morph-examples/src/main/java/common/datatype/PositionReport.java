@@ -22,7 +22,7 @@ import common.datatype.util.Constants;
 import common.datatype.util.IPositionIdentifier;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
 
 /**
  * A {@link PositionReport} from the LRB data generator.<br />
@@ -125,7 +125,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      *
      * @return the speed of this position report
      */
-    public final Integer getSpeed() {
+    public Integer getSpeed() {
         return (Integer) super.get(SPD_IDX);
     }
 
@@ -135,7 +135,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      * @return the VID of this position report
      */
     @Override
-    public final Integer getXWay() {
+    public Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
 
@@ -145,7 +145,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      * @return the VID of this position report
      */
     @Override
-    public final Short getLane() {
+    public Short getLane() {
         return (Short) super.get(LANE_IDX);
     }
 
@@ -155,7 +155,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      * @return the VID of this position report
      */
     @Override
-    public final Short getDirection() {
+    public Short getDirection() {
         return (Short) super.get(DIR_IDX);
     }
 
@@ -165,7 +165,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      * @return the VID of this position report
      */
     @Override
-    public final int getSegment() {
+    public int getSegment() {
         return (int) super.get(SEG_IDX);
     }
 
@@ -175,7 +175,7 @@ public final class PositionReport extends AbstractInputTuple implements IPositio
      * @return the VID of this position report
      */
     @Override
-    public final Integer getPosition() {
+    public Integer getPosition() {
         return (Integer) super.get(POS_IDX);
     }
 

@@ -14,11 +14,12 @@ import java.util.List;
  * Created by curry on 16/3/22.
  */
 public abstract class DynamicWorkloadGenerator extends DataGenerator {
-    protected List<String> tranToDecisionConf =new ArrayList<>();
+    protected List<String> tranToDecisionConf = new ArrayList<>();
     protected DynamicDataGeneratorConfig dynamicDataConfig;
+
     public DynamicWorkloadGenerator(DynamicDataGeneratorConfig dynamicDataConfig) {
         super(dynamicDataConfig);
-        this.dynamicDataConfig=dynamicDataConfig;
+        this.dynamicDataConfig = dynamicDataConfig;
     }
 
     /**
@@ -31,7 +32,7 @@ public abstract class DynamicWorkloadGenerator extends DataGenerator {
     public void generateStream() {
         //Init the Configuration
         for (int tupleNumber = 0; tupleNumber < nTuples + dynamicDataConfig.getTotalThreads(); tupleNumber++) {
-            if (tupleNumber%(dynamicDataConfig.getCheckpoint_interval()* dynamicDataConfig.getShiftRate()* dynamicDataConfig.getTotalThreads()) == 0) {
+            if (tupleNumber % (dynamicDataConfig.getCheckpoint_interval() * dynamicDataConfig.getShiftRate() * dynamicDataConfig.getTotalThreads()) == 0) {
                 String type = dynamicDataConfig.nextDataGeneratorConfig();
                 if (type != null) {
                     switchConfiguration(type);
@@ -40,6 +41,7 @@ public abstract class DynamicWorkloadGenerator extends DataGenerator {
             generateTuple();
         }
     }
+
     public abstract void switchConfiguration(String type);
 
     @Override
@@ -55,7 +57,7 @@ public abstract class DynamicWorkloadGenerator extends DataGenerator {
     @Override
     public void generateTPGProperties() {
         String type = dynamicDataConfig.nextDataGeneratorConfig();
-        while (type !=null) {
+        while (type != null) {
             switchConfiguration(type);
             type = dynamicDataConfig.nextDataGeneratorConfig();
         }

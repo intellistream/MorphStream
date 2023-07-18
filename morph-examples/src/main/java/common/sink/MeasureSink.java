@@ -1,44 +1,45 @@
 package common.sink;
 
-import common.Constants;
-import common.collections.Configuration;
-import common.collections.OsUtils;
 import common.datatype.util.LRTopologyControl;
 import common.sink.helper.stable_sink_helper;
-import engine.stream.components.operators.api.BaseSink;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.configuration.Constants;
+import intellistream.morphstream.engine.stream.components.operators.api.BaseSink;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.utils.SINK_CONTROL;
+import intellistream.morphstream.util.AppConfig;
+import intellistream.morphstream.util.OsUtils;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.profiler.MeasureTools;
-import util.AppConfig;
-import engine.txn.utils.SINK_CONTROL;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 
-import static common.CONTROL.*;
-import static engine.IRunner.CCOption_SStore;
+import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.configuration.Constants.CCOption_SStore;
 
 public class MeasureSink extends BaseSink {
     private static final Logger LOG = LoggerFactory.getLogger(MeasureSink.class);
-    private DescriptiveStatistics latency = new DescriptiveStatistics();
     private static final long serialVersionUID = 6249684803036342603L;
     protected final ArrayDeque<Long> latency_map = new ArrayDeque();
     public int punctuation_interval;
-    protected stable_sink_helper helper;
-    protected int ccOption;
     public int tthread;
-    int cnt = 0;
-    long start;
     public int totalEvents;
     public double interval;
     public long previous_measure_time;
     public boolean isRecovery;
     public boolean isFailure;
     public long remainTime = 0;
+    protected stable_sink_helper helper;
+    protected int ccOption;
+    int cnt = 0;
+    long start;
+    private DescriptiveStatistics latency = new DescriptiveStatistics();
 
     public MeasureSink() {
         super(new HashMap<>());
@@ -81,11 +82,11 @@ public class MeasureSink extends BaseSink {
     @Override
     public void execute(Tuple input) throws InterruptedException {
         check(cnt, input);
-        cnt ++;
+        cnt++;
     }
 
     protected void latency_measure(Tuple input) {
-        cnt ++;
+        cnt++;
         if (enable_latency_measurement) {
             this.latency.addValue(System.nanoTime() - input.getLong(1));
             long interval = System.nanoTime() - previous_measure_time;
@@ -114,6 +115,7 @@ public class MeasureSink extends BaseSink {
 
     /**
      * Only one sink will do the measure_end.
+     *
      * @param results
      */
     protected void measure_end(double results) {
@@ -153,9 +155,9 @@ public class MeasureSink extends BaseSink {
         }
         String directory;
         // TODO: to be refactored
-        if (config.getString("common").equals("StreamLedger")) {
+        if (config.getString("app_name").equals("StreamLedger")) {
             directory = String.format(statsFolderPattern,
-                    config.getString("common"), scheduler,
+                    config.getString("app_name"), scheduler,
                     config.getInt("FTOption"),
                     tthread, totalEvents,
                     config.getInt("NUM_ITEMS"),
@@ -172,9 +174,9 @@ public class MeasureSink extends BaseSink {
                     config.getBoolean("isTaskPlacing"),
                     config.getBoolean("isSelectiveLogging"),
                     config.getInt("checkpoint"));
-        } else if (config.getString("common").equals("GrepSum")) {
+        } else if (config.getString("app_name").equals("GrepSum")) {
             directory = String.format(statsFolderPattern,
-                    config.getString("common"), scheduler,
+                    config.getString("app_name"), scheduler,
                     config.getInt("FTOption"),
                     tthread, totalEvents,
                     config.getInt("NUM_ITEMS"),
@@ -191,9 +193,9 @@ public class MeasureSink extends BaseSink {
                     config.getBoolean("isTaskPlacing"),
                     config.getBoolean("isSelectiveLogging"),
                     config.getInt("checkpoint"));
-        } else if (config.getString("common").equals("OnlineBiding")){
+        } else if (config.getString("app_name").equals("OnlineBiding")) {
             directory = String.format(statsFolderPattern,
-                    config.getString("common"), scheduler,
+                    config.getString("app_name"), scheduler,
                     config.getInt("FTOption"),
                     tthread, totalEvents,
                     config.getInt("NUM_ITEMS"),
@@ -210,9 +212,9 @@ public class MeasureSink extends BaseSink {
                     config.getBoolean("isTaskPlacing"),
                     config.getBoolean("isSelectiveLogging"),
                     config.getInt("checkpoint"));
-        } else if (config.getString("common").equals("TollProcessing")) {
+        } else if (config.getString("app_name").equals("TollProcessing")) {
             directory = String.format(statsFolderPattern,
-                    config.getString("common"), scheduler,
+                    config.getString("app_name"), scheduler,
                     config.getInt("FTOption"),
                     tthread, totalEvents,
                     config.getInt("NUM_ITEMS"),
@@ -229,64 +231,64 @@ public class MeasureSink extends BaseSink {
                     config.getBoolean("isTaskPlacing"),
                     config.getBoolean("isSelectiveLogging"),
                     config.getInt("checkpoint"));
-        } else if (config.getString("common").equals("WindowedGrepSum")) {
-                directory = String.format(statsFolderPattern,
-                        config.getString("common"), scheduler,
-                        config.getInt("FTOption"),
-                        tthread, totalEvents,
-                        config.getInt("NUM_ITEMS"),
-                        config.getInt("Ratio_of_Multiple_State_Access"),
-                        config.getInt("State_Access_Skewness"),
-                        config.getInt("Period_of_Window_Reads"),
-                        config.getInt("windowSize"),
-                        config.getInt("Transaction_Length"),
-                        AppConfig.isCyclic,
-                        config.getString("compressionAlg"),
-                        config.getInt("complexity"),
-                        config.getBoolean("isHistoryView"),
-                        config.getBoolean("isAbortPushDown"),
-                        config.getBoolean("isTaskPlacing"),
-                        config.getBoolean("isSelectiveLogging"),
-                        config.getInt("checkpoint"));
-            } else if (config.getString("common").equals("SHJ")) {
-                directory = String.format(statsFolderPattern,
-                        config.getString("common"), scheduler,
-                        config.getInt("FTOption"),
-                        tthread, totalEvents,
-                        config.getInt("NUM_ITEMS"),
-                        config.getInt("Ratio_of_Multiple_State_Access"),
-                        config.getInt("State_Access_Skewness"),
-                        config.getInt("Ratio_of_Overlapped_Keys"),
-                        config.getInt("Ratio_of_Transaction_Aborts"),
-                        config.getInt("Transaction_Length"),
-                        AppConfig.isCyclic,
-                        config.getString("compressionAlg"),
-                        config.getInt("complexity"),
-                        config.getBoolean("isHistoryView"),
-                        config.getBoolean("isAbortPushDown"),
-                        config.getBoolean("isTaskPlacing"),
-                        config.getBoolean("isSelectiveLogging"),
-                        config.getInt("checkpoint"));
-            } else if (config.getString("common").equals("NonGrepSum")) {
-                directory = String.format(statsFolderPattern,
-                        config.getString("common"), scheduler,
-                        config.getInt("FTOption"),
-                        tthread, totalEvents,
-                        config.getInt("NUM_ITEMS"),
-                        config.getInt("NUM_ACCESS"),
-                        config.getInt("State_Access_Skewness"),
-                        config.getInt("Ratio_of_Non_Deterministic_State_Access"),
-                        config.getInt("Ratio_of_Transaction_Aborts"),
-                        config.getInt("Transaction_Length"),
-                        AppConfig.isCyclic,
-                        config.getString("compressionAlg"),
-                        config.getInt("complexity"),
-                        config.getBoolean("isHistoryView"),
-                        config.getBoolean("isAbortPushDown"),
-                        config.getBoolean("isTaskPlacing"),
-                        config.getBoolean("isSelectiveLogging"),
-                        config.getInt("checkpoint"));
-            } else {
+        } else if (config.getString("app_name").equals("WindowedGrepSum")) {
+            directory = String.format(statsFolderPattern,
+                    config.getString("app_name"), scheduler,
+                    config.getInt("FTOption"),
+                    tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("Ratio_of_Multiple_State_Access"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Period_of_Window_Reads"),
+                    config.getInt("windowSize"),
+                    config.getInt("Transaction_Length"),
+                    AppConfig.isCyclic,
+                    config.getString("compressionAlg"),
+                    config.getInt("complexity"),
+                    config.getBoolean("isHistoryView"),
+                    config.getBoolean("isAbortPushDown"),
+                    config.getBoolean("isTaskPlacing"),
+                    config.getBoolean("isSelectiveLogging"),
+                    config.getInt("checkpoint"));
+        } else if (config.getString("app_name").equals("SHJ")) {
+            directory = String.format(statsFolderPattern,
+                    config.getString("app_name"), scheduler,
+                    config.getInt("FTOption"),
+                    tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("Ratio_of_Multiple_State_Access"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Overlapped_Keys"),
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    config.getInt("Transaction_Length"),
+                    AppConfig.isCyclic,
+                    config.getString("compressionAlg"),
+                    config.getInt("complexity"),
+                    config.getBoolean("isHistoryView"),
+                    config.getBoolean("isAbortPushDown"),
+                    config.getBoolean("isTaskPlacing"),
+                    config.getBoolean("isSelectiveLogging"),
+                    config.getInt("checkpoint"));
+        } else if (config.getString("app_name").equals("NonGrepSum")) {
+            directory = String.format(statsFolderPattern,
+                    config.getString("app_name"), scheduler,
+                    config.getInt("FTOption"),
+                    tthread, totalEvents,
+                    config.getInt("NUM_ITEMS"),
+                    config.getInt("NUM_ACCESS"),
+                    config.getInt("State_Access_Skewness"),
+                    config.getInt("Ratio_of_Non_Deterministic_State_Access"),
+                    config.getInt("Ratio_of_Transaction_Aborts"),
+                    config.getInt("Transaction_Length"),
+                    AppConfig.isCyclic,
+                    config.getString("compressionAlg"),
+                    config.getInt("complexity"),
+                    config.getBoolean("isHistoryView"),
+                    config.getBoolean("isAbortPushDown"),
+                    config.getBoolean("isTaskPlacing"),
+                    config.getBoolean("isSelectiveLogging"),
+                    config.getInt("checkpoint"));
+        } else {
             throw new UnsupportedOperationException();
         }
         File file = new File(directory + fileName + ".runtime");

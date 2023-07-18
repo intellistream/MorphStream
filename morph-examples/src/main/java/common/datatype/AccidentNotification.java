@@ -19,10 +19,10 @@
 package common.datatype;
 
 import common.datatype.util.LRTopologyControl;
-import engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
 
-import static common.constants.BaseConstants.BaseField.MSG_ID;
-import static common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
+import static intellistream.morphstream.common.constants.BaseConstants.BaseField.MSG_ID;
+import static intellistream.morphstream.common.constants.BaseConstants.BaseField.SYSTEMTIMESTAMP;
 
 /**
  * An {@link AccidentNotification} represent an alert that must be sent to vehicle approaching an accident.

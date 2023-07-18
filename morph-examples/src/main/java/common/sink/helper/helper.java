@@ -1,6 +1,6 @@
 package common.sink.helper;
 
-import common.collections.OsUtils;
+import intellistream.morphstream.util.OsUtils;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static common.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 /**
  * Created by I309939 on 7/24/2016.

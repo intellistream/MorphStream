@@ -46,8 +46,7 @@ final class Throttler {
             // high rates: all throttling in intervals of 2ms
             throttleBatchSize = (int) ratePerSubtask / 500;
             nanosPerBatch = 2_000_000L;
-        }
-        else {
+        } else {
             throttleBatchSize = ((int) (ratePerSubtask / 20)) + 1;
             nanosPerBatch = ((int) (1_000_000_000L / ratePerSubtask)) * throttleBatchSize;
         }
@@ -70,8 +69,7 @@ final class Throttler {
         if (millisRemaining > 0) {
             endOfNextBatchNanos += nanosPerBatch;
             Thread.sleep(millisRemaining);
-        }
-        else {
+        } else {
             endOfNextBatchNanos = now + nanosPerBatch;
         }
     }

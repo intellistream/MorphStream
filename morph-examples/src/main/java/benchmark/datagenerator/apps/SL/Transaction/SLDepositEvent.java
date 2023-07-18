@@ -6,11 +6,11 @@ import benchmark.datagenerator.Event;
  * Streamledger deposit transaction, which write without dependency.
  */
 public class SLDepositEvent extends Event {
+    private final int accountId;
+    private final int assetId;
+    private final int accountAmount;
+    private final int assetAmount;
     private int id;
-    private int accountId;
-    private int assetId;
-    private int accountAmount;
-    private int assetAmount;
 
     public SLDepositEvent(int id, int accountId, int assetId) {
         this.id = id;

@@ -21,7 +21,7 @@ public class GephiOutputHandler extends FileOutputHandler {
         try {
 
             File file = new File(mRootPath + mDependencyEdgesFileName);
-            System.out.println(String.format("Edges path is %s", mRootPath + mDependencyEdgesFileName));
+            System.out.printf("Edges path is %s%n", mRootPath + mDependencyEdgesFileName);
             if (!file.exists())
                 file.createNewFile();
 

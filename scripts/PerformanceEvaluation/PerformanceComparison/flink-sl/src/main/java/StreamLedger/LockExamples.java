@@ -19,7 +19,9 @@ public class LockExamples {
                 RLock lock1 = redisson.getLock("lock");
                 lock1.lock();
                 lock1.unlock();
-            };
+            }
+
+            ;
         };
 
         t.start();

@@ -7,26 +7,26 @@ import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.GSWTPGDataGenerator;
 import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.GSWTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.GSWTPGDynamicDataGenerator;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
-import common.collections.Configuration;
-import common.collections.OsUtils;
-import engine.txn.TxnEvent;
 import common.param.gsw.WindowedMicroEvent;
 import common.param.mb.MicroEvent;
-import engine.txn.db.Database;
-import engine.txn.db.DatabaseException;
-import engine.txn.lock.SpinLock;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.Database;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
+import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.IntDataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.LongDataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.StringDataBox;
+import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.txn.transaction.TableInitilizer;
+import intellistream.morphstream.util.AppConfig;
+import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.scheduler.context.SchedulerContext;
-import engine.txn.storage.SchemaRecord;
-import engine.txn.storage.TableRecord;
-import engine.txn.storage.datatype.DataBox;
-import engine.txn.storage.datatype.IntDataBox;
-import engine.txn.storage.datatype.LongDataBox;
-import engine.txn.storage.datatype.StringDataBox;
-import engine.txn.storage.table.RecordSchema;
-import engine.txn.transaction.TableInitilizer;
-import util.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -34,26 +34,26 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 
-import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
-import static common.Constants.Event_Path;
-import static engine.txn.profiler.Metrics.NUM_ITEMS;
-import static engine.txn.transaction.State.configure_store;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_states_partition;
+import static intellistream.morphstream.configuration.Constants.Event_Path;
+import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
+import static intellistream.morphstream.engine.txn.transaction.State.configure_store;
 
 public class GSWInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(GSWInitializer.class);
     private final int numberOfStates;
     private final int startingValue = 10000;
+    private final DataGeneratorConfig dataConfig;
+    private final int partitionOffset;
+    private final int NUM_ACCESS;
+    private final int Transaction_Length;
     //different R-W ratio.
     //just enable one of the decision array
     protected transient boolean[] read_decision;
     int i = 0;
     private String dataRootPath;
     private DataGenerator dataGenerator;
-    private final DataGeneratorConfig dataConfig;
-    private final int partitionOffset;
-    private final int NUM_ACCESS;
-    private final int Transaction_Length;
 
 
     public GSWInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
@@ -71,13 +71,13 @@ public class GSWInitializer extends TableInitilizer {
     }
 
     protected void createTPGGenerator(Configuration config) {
-        if(config.getBoolean("isDynamic")) {
+        if (config.getBoolean("isDynamic")) {
             //TODO:add the dynamic workload dataGenerator
-            DynamicDataGeneratorConfig dynamicDataGeneratorConfig=new DynamicDataGeneratorConfig();
+            DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
             dataGenerator = new GSWTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
-        }else {
+        } else {
             GSWTPGDataGeneratorConfig dataConfig = new GSWTPGDataGeneratorConfig();
             dataConfig.initialize(config);
 
@@ -104,17 +104,17 @@ public class GSWInitializer extends TableInitilizer {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes;
             if (dataConfig instanceof GSWTPGDataGeneratorConfig)
-            bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%d_%s",
-                            dataConfig.getTotalThreads(),
-                            dataConfig.getTotalEvents(),
-                            dataConfig.getnKeyStates(),
-                            ((GSWTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
-                            ((GSWTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
-                            ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
-                            ((GSWTPGDataGeneratorConfig) dataConfig).Period_of_Window_Reads,
-                            ((GSWTPGDataGeneratorConfig) dataConfig).Transaction_Length,
-                            ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
-                            AppConfig.isCyclic)
+                bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%d_%d_%s",
+                                dataConfig.getTotalThreads(),
+                                dataConfig.getTotalEvents(),
+                                dataConfig.getnKeyStates(),
+                                ((GSWTPGDataGeneratorConfig) dataConfig).NUM_ACCESS,
+                                ((GSWTPGDataGeneratorConfig) dataConfig).State_Access_Skewness,
+                                ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Overlapped_Keys,
+                                ((GSWTPGDataGeneratorConfig) dataConfig).Period_of_Window_Reads,
+                                ((GSWTPGDataGeneratorConfig) dataConfig).Transaction_Length,
+                                ((GSWTPGDataGeneratorConfig) dataConfig).Ratio_of_Multiple_State_Access,
+                                AppConfig.isCyclic)
                         .getBytes(StandardCharsets.UTF_8));
             else
                 bytes = digest.digest(String.format("%d_%d_%d_%s_%s_%s",
@@ -177,7 +177,7 @@ public class GSWInitializer extends TableInitilizer {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
 //            assert value.length() == VALUE_LEN;
-            insertMicroRecord(_key, startingValue , pid, spinlock, thread_id);
+            insertMicroRecord(_key, startingValue, pid, spinlock, thread_id);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -238,9 +238,9 @@ public class GSWInitializer extends TableInitilizer {
             int keyLength = split.length - 2;
             HashMap<Integer, Integer> pids = new HashMap<>();
             long[] keys = new long[keyLength];
-            for (int i = 1; i < keyLength+1; i++) {
-                keys[i-1] = Long.parseLong(split[i]);
-                pids.put((int) (keys[i-1] / partitionOffset), 0);
+            for (int i = 1; i < keyLength + 1; i++) {
+                keys[i - 1] = Long.parseLong(split[i]);
+                pids.put((int) (keys[i - 1] / partitionOffset), 0);
             }
 
             // construct event
@@ -253,7 +253,7 @@ public class GSWInitializer extends TableInitilizer {
                     Arrays.toString(keys), // key_array
                     keyLength,
                     Transaction_Length,
-                    Boolean.parseBoolean(split[keyLength+1]));
+                    Boolean.parseBoolean(split[keyLength + 1]));
             DataHolder.events.add(event);
             if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();
@@ -334,17 +334,17 @@ public class GSWInitializer extends TableInitilizer {
 
     public void creates_Table(Configuration config) {
         RecordSchema s = MicroTableSchema();
-        db.createTable(s, "MicroTable",config.getInt("tthread"), config.getInt("NUM_ITEMS"));
+        db.createTable(s, "MicroTable", config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() !=0){
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
                 StringBuilder stringBuilder = new StringBuilder();
-                for(String decision:getTranToDecisionConf()){
+                for (String decision : getTranToDecisionConf()) {
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
-                config.put("WorkloadConfig",stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                config.put("WorkloadConfig", stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();

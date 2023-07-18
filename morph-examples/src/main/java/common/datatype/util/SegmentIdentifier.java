@@ -18,7 +18,7 @@
  */
 package common.datatype.util;
 
-import engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
 
 /**
  * {@link SegmentIdentifier} represent an express way, segment, and direction.

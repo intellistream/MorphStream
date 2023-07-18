@@ -1,36 +1,36 @@
 package combo.faulttolerance;
 
-import common.CONTROL;
-import common.collections.Configuration;
-import common.collections.OsUtils;
-import engine.txn.TxnEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.stream.components.operators.api.TransactionalBolt;
-import engine.stream.components.operators.api.TransactionalSpout;
-import engine.txn.db.DatabaseException;
-import engine.txn.durability.recovery.RedoLogResult;
-import engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
-import engine.stream.execution.runtime.tuple.impl.Marker;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
-import engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
+import intellistream.morphstream.configuration.CONTROL;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.TransactionalSpout;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Marker;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.durability.recovery.RedoLogResult;
+import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.profiler.Metrics;
+import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
+import intellistream.morphstream.util.FaultToleranceConstants;
+import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
-import engine.txn.profiler.MeasureTools;
-import engine.txn.profiler.Metrics;
-import util.FaultToleranceConstants;
-import engine.txn.utils.SOURCE_CONTROL;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.ExecutionException;
 
-import static common.CONTROL.enable_log;
-import static common.Constants.DEFAULT_STREAM_ID;
-import static engine.txn.content.Content.CCOption_SStore;
-import static engine.txn.content.Content.CCOption_TStream;
-import static util.FaultToleranceConstants.*;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.Constants.*;
+import static intellistream.morphstream.util.FaultToleranceConstants.*;
 
 public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTolerance {
     private static Logger LOG;
@@ -70,7 +70,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                 nextTuple_PATH();
             } else if (ftOption == FTOption_LV) {
                 nextTuple_LV();
-            } else if (ftOption == FTOption_Dependency){
+            } else if (ftOption == FTOption_Dependency) {
                 nextTuple_Dependency();
             } else if (ftOption == FTOption_Command) {
                 nextTuple_Command();
@@ -106,7 +106,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
         arrivalControl = config.getBoolean("arrivalControl");
         inputStoreRootPath = config.getString("rootFilePath") + OsUtils.OS_wrapper("inputStore");
         inputStoreCurrentPath = inputStoreRootPath + OsUtils.OS_wrapper(Integer.toString(counter));
-        switch(config.getString("compressionAlg")) {
+        switch (config.getString("compressionAlg")) {
             case "None":
                 this.compressionType = FaultToleranceConstants.CompressionType.None;
                 break;
@@ -165,15 +165,18 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
             global_cnt = (the_end - CONTROL.MeasureStart) * tthread;
         }
     }
+
     @Override
     public boolean snapshot(int counter) throws InterruptedException, BrokenBarrierException {
         return (counter % snapshot_interval == 0);
     }
+
     @Override
     public boolean input_store(long currentOffset) throws IOException, ExecutionException, InterruptedException {
         this.inputDurabilityHelper.storeInput(this.myevents, currentOffset, punctuation_interval, inputStoreCurrentPath);
         return true;
     }
+
     @Override
     public long recoverData() throws IOException, ExecutionException, InterruptedException {
         SnapshotResult snapshotResult = (SnapshotResult) this.ftManager.spoutAskRecovery(this.taskId, 0L);
@@ -240,16 +243,18 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
         this.sink.startRecovery = snapshotResult.snapshotId;
         return snapshotResult.snapshotId;
     }
+
     @Override
     public boolean input_reload(long snapshotOffset, long redoOffset) throws IOException, ExecutionException, InterruptedException {
         File file = new File(inputStoreRootPath + OsUtils.OS_wrapper(Long.toString(snapshotOffset)) + OsUtils.OS_wrapper(taskId + ".input"));
-        if(file.exists()) {
+        if (file.exists()) {
             inputDurabilityHelper.reloadInput(file, recoveryInput, redoOffset, snapshotOffset, punctuation_interval);
             return true;
         } else {
             return false;
         }
     }
+
     private void nextTuple_Native() throws BrokenBarrierException, IOException, InterruptedException, DatabaseException {
         if (counter == start_measure) {
             if (taskId == 0) {
@@ -266,7 +271,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                 event = myevents[counter];
             }
             long bid = mybids[counter];
-            if (CONTROL.enable_latency_measurement){
+            if (CONTROL.enable_latency_measurement) {
                 long time;
                 if (arrivalControl) {
                     time = this.systemStartTime + ((TxnEvent) event).getTimestamp() - remainTime;
@@ -280,9 +285,9 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
             bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
-            counter ++;
+            counter++;
 
-            if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                 if (model_switch(counter)) {
                     marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration));
                     bolt.execute(marker);
@@ -296,6 +301,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
             }
         }
     }
+
     private void nextTuple_ISC() throws BrokenBarrierException, IOException, InterruptedException, DatabaseException, ExecutionException {
         if (counter == start_measure) {
             if (taskId == 0) {
@@ -316,7 +322,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                     inputStoreCurrentPath = inputStoreRootPath + OsUtils.OS_wrapper(Integer.toString(counter));
                     if (counter != the_end)
                         input_store(counter);
-                    if (counter == the_end){
+                    if (counter == the_end) {
                         SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
                         SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                         if (taskId == 0)
@@ -335,7 +341,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                 event = myevents[counter];
             }
             long bid = mybids[counter];
-            if (CONTROL.enable_latency_measurement){
+            if (CONTROL.enable_latency_measurement) {
                 long time;
                 if (arrivalControl) {
                     time = this.systemStartTime + ((TxnEvent) event).getTimestamp() - remainTime;
@@ -349,9 +355,9 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
             bolt.execute(tuple);
-            counter ++;
+            counter++;
 
-            if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                 if (model_switch(counter)) {
                     if (snapshot(counter)) {
                         inputStoreCurrentPath = inputStoreRootPath + OsUtils.OS_wrapper(Integer.toString(counter));
@@ -376,6 +382,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
             }
         }
     }
+
     private void nextTuple_WSC() throws InterruptedException, BrokenBarrierException, IOException, DatabaseException, ExecutionException {
         if (counter < num_events_per_thread) {
             Object event;
@@ -385,7 +392,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                 event = myevents[counter];
             }
             long bid = mybids[counter];
-            if (CONTROL.enable_latency_measurement){
+            if (CONTROL.enable_latency_measurement) {
                 long time;
                 if (arrivalControl) {
                     time = this.systemStartTime + ((TxnEvent) event).getTimestamp() - remainTime;
@@ -399,9 +406,9 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
             bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
-            counter ++;
+            counter++;
 
-            if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                 if (model_switch(counter)) {
                     if (snapshot(counter)) {
                         inputStoreCurrentPath = inputStoreRootPath + OsUtils.OS_wrapper(Integer.toString(counter));
@@ -429,6 +436,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
             }
         }
     }
+
     private void nextTuple_PATH() throws InterruptedException, IOException, ExecutionException, BrokenBarrierException, DatabaseException {
         if (counter == start_measure) {
             if (taskId == 0) {
@@ -456,7 +464,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                         if (counter != the_end)
                             input_store(counter);
                     }
-                    if (counter == the_end){
+                    if (counter == the_end) {
                         SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
                         SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                         if (taskId == 0)
@@ -472,7 +480,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
             if (recoveryInput.size() != 0) {
                 event = recoveryInput.poll();
                 bid = ((TxnEvent) event).getBid();
-                if (CONTROL.enable_latency_measurement){
+                if (CONTROL.enable_latency_measurement) {
                     long time;
                     if (arrivalControl) {
                         time = this.systemStartTime + ((TxnEvent) event).getTimestamp() - remainTime;
@@ -488,7 +496,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
             } else {
                 event = myevents[counter];
                 long bid = mybids[counter];
-                if (CONTROL.enable_latency_measurement){
+                if (CONTROL.enable_latency_measurement) {
                     long time;
                     if (arrivalControl) {
                         time = this.systemStartTime + ((TxnEvent) event).getTimestamp() - remainTime;
@@ -502,8 +510,8 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                 tuple = new Tuple(bid, this.taskId, context, generalMsg);
                 bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
             }
-            counter ++;
-            if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+            counter++;
+            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                 if (model_switch(counter)) {
                     if (snapshot(counter)) {
                         inputStoreCurrentPath = inputStoreRootPath + OsUtils.OS_wrapper(Integer.toString(counter));
@@ -544,6 +552,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
             }
         }
     }
+
     private void nextTuple_Dependency() throws InterruptedException, IOException, ExecutionException, BrokenBarrierException, DatabaseException {
         if (counter == start_measure) {
             if (taskId == 0) {
@@ -571,7 +580,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                         if (counter != the_end)
                             input_store(counter);
                     }
-                    if (counter == the_end){
+                    if (counter == the_end) {
                         SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
                         SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                         if (taskId == 0)
@@ -590,7 +599,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                 event = myevents[counter];
             }
             long bid = mybids[counter];
-            if (CONTROL.enable_latency_measurement){
+            if (CONTROL.enable_latency_measurement) {
                 long time;
                 if (arrivalControl) {
                     time = this.systemStartTime + ((TxnEvent) event).getTimestamp() - remainTime;
@@ -604,9 +613,9 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
             bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
-            counter ++;
+            counter++;
 
-            if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                 if (model_switch(counter)) {
                     if (snapshot(counter)) {
                         inputStoreCurrentPath = inputStoreRootPath + OsUtils.OS_wrapper(Integer.toString(counter));
@@ -634,6 +643,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
             }
         }
     }
+
     private void nextTuple_LV() throws InterruptedException, IOException, ExecutionException, BrokenBarrierException, DatabaseException {
         if (counter == start_measure) {
             if (taskId == 0) {
@@ -661,7 +671,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                         if (counter != the_end)
                             input_store(counter);
                     }
-                    if (counter == the_end){
+                    if (counter == the_end) {
                         SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
                         SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                         if (taskId == 0)
@@ -680,7 +690,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                 event = myevents[counter];
             }
             long bid = mybids[counter];
-            if (CONTROL.enable_latency_measurement){
+            if (CONTROL.enable_latency_measurement) {
                 long time;
                 if (arrivalControl) {
                     time = this.systemStartTime + ((TxnEvent) event).getTimestamp() - remainTime;
@@ -694,9 +704,9 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
             bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
-            counter ++;
+            counter++;
 
-            if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                 if (model_switch(counter)) {
                     if (snapshot(counter)) {
                         inputStoreCurrentPath = inputStoreRootPath + OsUtils.OS_wrapper(Integer.toString(counter));
@@ -724,6 +734,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
             }
         }
     }
+
     private void nextTuple_Command() throws InterruptedException, IOException, ExecutionException, BrokenBarrierException, DatabaseException {
         if (counter == start_measure) {
             if (taskId == 0) {
@@ -751,7 +762,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                         if (counter != the_end)
                             input_store(counter);
                     }
-                    if (counter == the_end){
+                    if (counter == the_end) {
                         SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
                         SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
                         if (taskId == 0)
@@ -770,7 +781,7 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
                 event = myevents[counter];
             }
             long bid = mybids[counter];
-            if (CONTROL.enable_latency_measurement){
+            if (CONTROL.enable_latency_measurement) {
                 long time;
                 if (arrivalControl) {
                     time = this.systemStartTime + ((TxnEvent) event).getTimestamp() - remainTime;
@@ -784,9 +795,9 @@ public abstract class FTSPOUTCombo extends TransactionalSpout implements FaultTo
 
             tuple = new Tuple(bid, this.taskId, context, generalMsg);
             bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
-            counter ++;
+            counter++;
 
-            if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+            if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                 if (model_switch(counter)) {
                     if (snapshot(counter)) {
                         inputStoreCurrentPath = inputStoreRootPath + OsUtils.OS_wrapper(Integer.toString(counter));

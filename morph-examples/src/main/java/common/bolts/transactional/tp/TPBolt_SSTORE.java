@@ -2,19 +2,19 @@ package common.bolts.transactional.tp;
 
 import combo.SINKCombo;
 import common.bolts.transactional.sl.GlobalSorter;
-import engine.txn.TxnEvent;
 import common.param.lr.LREvent;
-import engine.stream.components.context.TopologyContext;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerSStore;
+import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.profiler.MeasureTools;
-import engine.txn.transaction.context.TxnContext;
-import engine.txn.transaction.impl.ordered.TxnManagerSStore;
-import engine.txn.utils.SOURCE_CONTROL;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -22,8 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.combo_bid_size;
-import static engine.txn.profiler.MeasureTools.*;
+import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.*;
 
 /**
  * Combine Read-Write for TStream.
@@ -32,6 +32,7 @@ public class TPBolt_SSTORE extends TPBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(TPBolt_SSTORE.class);
     private static final long serialVersionUID = -5968750340131744744L;
     ArrayDeque<Tuple> tuples = new ArrayDeque<>();
+
     public TPBolt_SSTORE(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
 
@@ -78,11 +79,12 @@ public class TPBolt_SSTORE extends TPBolt_LA {
             tuples.add(in);
         }
     }
+
     public void start_evaluate(int thread_Id, long mark_ID, int num_events) {
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);
         LA_RESETALL(transactionManager, thread_Id);
         // add bid_array for events
-        if (thread_Id ==0) {
+        if (thread_Id == 0) {
             int partitionOffset = config.getInt("NUM_ITEMS") / tthread;
             int[] p_bids = new int[(int) tthread];
             HashMap<Integer, Integer> pids = new HashMap<>();
@@ -96,6 +98,7 @@ public class TPBolt_SSTORE extends TPBolt_LA {
         }
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
+
     private void parseTollProcessingEvent(int partitionOffset, LREvent event, HashMap<Integer, Integer> pids) {
         pids.put((event.getPOSReport().getSegment() / partitionOffset), 0);
     }

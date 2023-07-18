@@ -4,20 +4,20 @@ import combo.SINKCombo;
 import common.param.ob.AlertEvent;
 import common.param.ob.BuyingEvent;
 import common.param.ob.ToppingEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.transaction.impl.TxnManagerNoLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.transaction.impl.TxnManagerNoLock;
 
 import java.util.Map;
 
-import static common.CONTROL.combo_bid_size;
-import static engine.txn.profiler.MeasureTools.BEGIN_ACCESS_TIME_MEASURE;
-import static engine.txn.profiler.MeasureTools.END_ACCESS_TIME_MEASURE_ACC;
+import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.BEGIN_ACCESS_TIME_MEASURE;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.END_ACCESS_TIME_MEASURE_ACC;
 
 public class OBBolt_nocc extends OBBolt {
     private static final Logger LOG = LoggerFactory.getLogger(OBBolt_nocc.class);

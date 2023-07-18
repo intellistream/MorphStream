@@ -5,27 +5,27 @@ import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.DataGeneratorConfig;
 import benchmark.datagenerator.apps.TP.TPTPGDynamicDataGenerator;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
-import common.collections.Configuration;
-import common.collections.OsUtils;
 import common.datatype.PositionReport;
-import engine.txn.TxnEvent;
 import common.param.lr.LREvent;
-import util.tools.randomNumberGenerator;
-import engine.txn.db.Database;
-import engine.txn.db.DatabaseException;
-import engine.txn.lock.SpinLock;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.Database;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
+import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.DoubleDataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.HashSetDataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.StringDataBox;
+import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.txn.transaction.TableInitilizer;
+import intellistream.morphstream.util.AppConfig;
+import intellistream.morphstream.util.OsUtils;
+import intellistream.morphstream.util.randomNumberGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.scheduler.context.SchedulerContext;
-import engine.txn.storage.SchemaRecord;
-import engine.txn.storage.TableRecord;
-import engine.txn.storage.datatype.DataBox;
-import engine.txn.storage.datatype.DoubleDataBox;
-import engine.txn.storage.datatype.HashSetDataBox;
-import engine.txn.storage.datatype.StringDataBox;
-import engine.txn.storage.table.RecordSchema;
-import engine.txn.transaction.TableInitilizer;
-import util.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -36,19 +36,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static common.CONTROL.enable_log;
-import static engine.txn.transaction.State.configure_store;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.engine.txn.transaction.State.configure_store;
 
 public class TPInitializer extends TableInitilizer {
     private static final Logger LOG = LoggerFactory.getLogger(TPInitializer.class);
     private final int numberOfStates;
-    private String dataRootPath;
-    private DataGenerator dataGenerator;
     private final DataGeneratorConfig dataConfig;
     private final int partitionOffset;
     private final int NUM_ACCESS;
     private final int Transaction_Length;
-    public TPInitializer(Database db,int numberOfStates, double theta, int tthread, Configuration config) {
+    private String dataRootPath;
+    private DataGenerator dataGenerator;
+
+    public TPInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
         floor_interval = (int) Math.floor(numberOfStates / (double) tthread);//NUM_ITEMS / tthread;
         this.dataRootPath = config.getString("rootFilePath") + OsUtils.OS_wrapper("inputs");
@@ -60,12 +61,14 @@ public class TPInitializer extends TableInitilizer {
         createTPGGenerator(config);
         dataConfig = dataGenerator.getDataConfig();
     }
+
     protected void createTPGGenerator(Configuration config) {
         DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
         dynamicDataGeneratorConfig.initialize(config);
         configurePath(dynamicDataGeneratorConfig);
         dataGenerator = new TPTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
     }
+
     private void configurePath(DynamicDataGeneratorConfig dynamicDataGeneratorConfig) {
         MessageDigest digest;
         String subFolder = null;
@@ -91,7 +94,7 @@ public class TPInitializer extends TableInitilizer {
 
     @Override
     public void loadDB(int thread_id, SpinLock[] spinlock, int NUMTasks) {
-        int partition_interval = (int) Math.ceil(numberOfStates / (double) NUMTasks);;
+        int partition_interval = (int) Math.ceil(numberOfStates / (double) NUMTasks);
         int left_bound = thread_id * partition_interval;
         int right_bound;
         if (thread_id == NUMTasks - 1) {//last executor need to handle left-over
@@ -238,6 +241,7 @@ public class TPInitializer extends TableInitilizer {
             reader.close();
         }
     }
+
     private void loadTollProcessingEvents(BufferedReader reader, int totalEvents, boolean shufflingActive, long[] p_bids) throws IOException {
         String txn = reader.readLine();
         int count = 0;
@@ -245,26 +249,26 @@ public class TPInitializer extends TableInitilizer {
             LREvent event;
             PositionReport positionReport;
             String[] split = txn.split(",");
-            if (split[split.length-1].equals("true")) {
+            if (split[split.length - 1].equals("true")) {
                 positionReport = new PositionReport((short) 0,
-                        randomNumberGenerator.generate(1,100),
+                        randomNumberGenerator.generate(1, 100),
                         200,
-                        randomNumberGenerator.generate(1,4),
-                        (short)randomNumberGenerator.generate(1,4),
-                        (short)randomNumberGenerator.generate(1,1),
+                        randomNumberGenerator.generate(1, 4),
+                        (short) randomNumberGenerator.generate(1, 4),
+                        (short) randomNumberGenerator.generate(1, 1),
                         Integer.parseInt(split[1]),
-                        randomNumberGenerator.generate(1,100));
+                        randomNumberGenerator.generate(1, 100));
             } else {
                 positionReport = new PositionReport((short) 0,
-                        randomNumberGenerator.generate(1,100),
-                        randomNumberGenerator.generate(60,180),
-                        randomNumberGenerator.generate(1,4),
-                        (short)randomNumberGenerator.generate(1,4),
-                        (short)randomNumberGenerator.generate(1,1),
+                        randomNumberGenerator.generate(1, 100),
+                        randomNumberGenerator.generate(60, 180),
+                        randomNumberGenerator.generate(1, 4),
+                        (short) randomNumberGenerator.generate(1, 4),
+                        (short) randomNumberGenerator.generate(1, 1),
                         Integer.parseInt(split[1]),
-                        randomNumberGenerator.generate(1,100));
+                        randomNumberGenerator.generate(1, 100));
             }
-            event = new LREvent(positionReport,dataConfig.getTotalThreads(),Long.parseLong(split[0]));
+            event = new LREvent(positionReport, dataConfig.getTotalThreads(), Long.parseLong(split[0]));
             DataHolder.events.add(event);
             if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();
@@ -274,6 +278,7 @@ public class TPInitializer extends TableInitilizer {
             shuffleEvents(DataHolder.events, totalEvents);
         }
     }
+
     private void shuffleEvents(ArrayList<TxnEvent> txnEvents, int totalEvents) {
         Random random = new Random();
         int index;
@@ -301,19 +306,19 @@ public class TPInitializer extends TableInitilizer {
 
     public void creates_Table(Configuration config) {
         RecordSchema s = SpeedScheme();
-        db.createTable(s, "segment_speed",config.getInt("tthread"), config.getInt("NUM_ITEMS"));
+        db.createTable(s, "segment_speed", config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         RecordSchema b = CntScheme();
-        db.createTable(b, "segment_cnt",config.getInt("tthread"), config.getInt("NUM_ITEMS"));
+        db.createTable(b, "segment_cnt", config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
                 StringBuilder stringBuilder = new StringBuilder();
-                for(String decision:getTranToDecisionConf()){
+                for (String decision : getTranToDecisionConf()) {
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
-                config.put("WorkloadConfig",stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                config.put("WorkloadConfig", stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -1,18 +1,18 @@
 package common.faulttolerance.inputReload;
 
-import common.collections.Configuration;
-import common.collections.OsUtils;
-import common.io.ByteIO.SyncFileAppender;
-import common.io.Encoding.decoder.*;
-import common.io.Encoding.encoder.*;
-import common.io.Utils.Binary;
-import engine.txn.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import engine.txn.durability.inputStore.InputDurabilityHelper;
-import engine.txn.durability.struct.FaultToleranceRelax;
-import engine.txn.profiler.MeasureTools;
-import util.FaultToleranceConstants;
+import intellistream.morphstream.common.io.ByteIO.SyncFileAppender;
+import intellistream.morphstream.common.io.Encoding.decoder.*;
+import intellistream.morphstream.common.io.Encoding.encoder.*;
+import intellistream.morphstream.common.io.Utils.Binary;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.durability.inputStore.InputDurabilityHelper;
+import intellistream.morphstream.engine.txn.durability.struct.FaultToleranceRelax;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.util.FaultToleranceConstants;
+import intellistream.morphstream.util.OsUtils;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -28,17 +28,18 @@ import java.util.concurrent.Future;
 import static java.nio.file.StandardOpenOption.READ;
 
 /**
- *  protected Encoder typeEncoder;//int
- *  protected Encoder timestampEncoder;//long
- *  protected Encoder bidEncoder;//long
- *  protected Encoder v1Encoder;//sourceAccountId(int)
- *  protected Encoder v2Encoder;//sourceAssetId(int)
- *  protected Encoder v3Encoder;//accountValue(long)
- *  protected Encoder v4Encoder;//bookEntryValue(long)
- *  protected Encoder v5Encoder;//destinationAccountId(int)
- *  protected Encoder v6Encoder;//destinationAssetId(int)
+ * protected Encoder typeEncoder;//int
+ * protected Encoder timestampEncoder;//long
+ * protected Encoder bidEncoder;//long
+ * protected Encoder v1Encoder;//sourceAccountId(int)
+ * protected Encoder v2Encoder;//sourceAssetId(int)
+ * protected Encoder v3Encoder;//accountValue(long)
+ * protected Encoder v4Encoder;//bookEntryValue(long)
+ * protected Encoder v5Encoder;//destinationAccountId(int)
+ * protected Encoder v6Encoder;//destinationAssetId(int)
  */
 public class SLInputDurabilityHelper extends InputDurabilityHelper {
+    public ByteArrayOutputStream baos = new ByteArrayOutputStream();
     protected Encoder timestampEncoder;
     protected Decoder timestampDecoder;
     protected Encoder longEncoder;
@@ -49,8 +50,6 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
     protected Decoder stringDecoder;
     //Whether encode input in an entire string
     protected boolean isStringEncoded = false;
-    public ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
 
 
     public SLInputDurabilityHelper(Configuration configuration, int taskId, FaultToleranceConstants.CompressionType compressionType) {
@@ -59,7 +58,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
         this.encodingType = compressionType;
         this.ftOption = configuration.getInt("FTOption");
         this.taskId = taskId;
-        switch(compressionType) {
+        switch (compressionType) {
             case None:
                 this.isCompression = false;
                 break;
@@ -67,12 +66,12 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                 this.timestampEncoder = new LongGorillaEncoder();
                 this.timestampDecoder = new LongGorillaDecoder();
                 this.longEncoder = new LongGorillaEncoder();
-                for (int i = 0; i < longDecoders.length; i ++) {
+                for (int i = 0; i < longDecoders.length; i++) {
                     longDecoders[i] = new LongGorillaDecoder();
                 }
                 this.intEncoder = new IntGorillaEncoder();
-                for (int i = 0; i < intDecoders.length; i ++) {
-                   intDecoders[i] = new IntGorillaDecoder();
+                for (int i = 0; i < intDecoders.length; i++) {
+                    intDecoders[i] = new IntGorillaDecoder();
                 }
                 break;
             case Delta2Delta:
@@ -83,11 +82,11 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                 this.timestampEncoder = new DeltaBinaryEncoder.LongDeltaEncoder();
                 this.timestampDecoder = new DeltaBinaryDecoder.LongDeltaDecoder();
                 this.longEncoder = new DeltaBinaryEncoder.LongDeltaEncoder();
-                for (int i = 0; i < longDecoders.length; i ++) {
+                for (int i = 0; i < longDecoders.length; i++) {
                     longDecoders[i] = new DeltaBinaryDecoder.LongDeltaDecoder();
                 }
                 this.intEncoder = new DeltaBinaryEncoder.IntDeltaEncoder();
-                for (int i = 0; i < intDecoders.length; i ++) {
+                for (int i = 0; i < intDecoders.length; i++) {
                     intDecoders[i] = new DeltaBinaryDecoder.IntDeltaDecoder();
                 }
                 break;
@@ -95,11 +94,11 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                 this.timestampEncoder = new LongRleEncoder();
                 this.timestampDecoder = new LongRleDecoder();
                 this.longEncoder = new LongRleEncoder();
-                for (int i = 0; i < longDecoders.length; i ++) {
+                for (int i = 0; i < longDecoders.length; i++) {
                     longDecoders[i] = new LongRleDecoder();
                 }
                 this.intEncoder = new IntRleEncoder();
-                for (int i = 0; i < intDecoders.length; i ++) {
+                for (int i = 0; i < intDecoders.length; i++) {
                     intDecoders[i] = new IntRleDecoder();
                 }
                 break;
@@ -115,11 +114,11 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                 this.timestampEncoder = new LongZigzagEncoder();
                 this.timestampDecoder = new LongZigzagDecoder();
                 this.longEncoder = new LongZigzagEncoder();
-                for (int i = 0; i < longDecoders.length; i ++) {
+                for (int i = 0; i < longDecoders.length; i++) {
                     longDecoders[i] = new LongZigzagDecoder();
                 }
                 this.intEncoder = new IntZigzagEncoder();
-                for (int i = 0; i < intDecoders.length; i ++) {
+                for (int i = 0; i < intDecoders.length; i++) {
                     intDecoders[i] = new IntRleDecoder();
                 }
                 break;
@@ -127,16 +126,17 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                 this.timestampEncoder = new LongRleEncoder();
                 this.timestampDecoder = new LongRleDecoder();
                 this.longEncoder = new LongGorillaEncoder();
-                for (int i = 0; i < longDecoders.length; i ++) {
+                for (int i = 0; i < longDecoders.length; i++) {
                     longDecoders[i] = new LongGorillaDecoder();
                 }
                 this.intEncoder = new IntRleEncoder();
-                for (int i = 0; i < intDecoders.length; i ++) {
+                for (int i = 0; i < intDecoders.length; i++) {
                     intDecoders[i] = new IntRleDecoder();
                 }
                 break;
         }
     }
+
     @Override
     public void storeInput(Object[] myevents, long currentOffset, int interval, String inputStoreCurrentPath) throws IOException, ExecutionException, InterruptedException {
         File file = new File(inputStoreCurrentPath);
@@ -152,6 +152,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             storeInputWithCompression(myevents, currentOffset, interval, file);
         }
     }
+
     @Override
     public void reloadInput(File inputFile, Queue<Object> lostEvents, long redoOffset, long startOffset, int interval) throws IOException, ExecutionException, InterruptedException {
         if (isCompression) {
@@ -160,21 +161,23 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             reloadInputWithoutCompression(inputFile, lostEvents, redoOffset, startOffset, interval);
         }
     }
+
     private void storeInputWithoutCompression(Object[] myevents, long currentOffset, int interval, File inputFile) throws IOException, ExecutionException, InterruptedException {
         MeasureTools.BEGIN_PERSIST_TIME_MEASURE(this.taskId);
         BufferedWriter EventBufferedWriter = new BufferedWriter(new FileWriter(inputFile, true));
-        for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
-            EventBufferedWriter.write( myevents[i].toString() + "\n");
+        for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
+            EventBufferedWriter.write(myevents[i].toString() + "\n");
         }
         EventBufferedWriter.close();
         MeasureTools.END_PERSIST_TIME_MEASURE(this.taskId);
     }
+
     private void storeInputWithCompression(Object[] myevents, long currentOffset, int interval, File inputFile) throws IOException, ExecutionException, InterruptedException {
         MeasureTools.BEGIN_COMPRESSION_TIME_MEASURE(this.taskId);
         Path path = Paths.get(inputFile.getPath());
-        if (!isStringEncoded){
+        if (!isStringEncoded) {
             //Type Compression
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 if (myevents[i] instanceof TransactionEvent) {
                     this.intEncoder.encode(0, baos);
                 } else {
@@ -186,7 +189,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             int position0 = baos.size();
             baos.reset();
             //Timestamp Compression
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 this.timestampEncoder.encode(((TxnEvent) myevents[i]).getTimestamp(), baos);
             }
             this.timestampEncoder.flush(baos);
@@ -194,7 +197,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             int position1 = baos.size() + position0;
             baos.reset();
             //Bid Compression
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 this.longEncoder.encode(((TxnEvent) myevents[i]).getBid(), baos);
             }
             this.longEncoder.flush(baos);
@@ -202,7 +205,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             int position2 = baos.size() + position1;
             baos.reset();
             //sourceAccountId Compression
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 if (myevents[i] instanceof TransactionEvent) {
                     this.intEncoder.encode(Integer.parseInt(((TransactionEvent) myevents[i]).getSourceAccountId()), baos);
                 } else {
@@ -214,7 +217,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             int position3 = baos.size() + position2;
             baos.reset();
             //sourceAssetId Compression
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 if (myevents[i] instanceof TransactionEvent) {
                     this.intEncoder.encode(Integer.parseInt(((TransactionEvent) myevents[i]).getSourceBookEntryId()), baos);
                 } else {
@@ -226,7 +229,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             int position4 = baos.size() + position3;
             baos.reset();
             //accountValue Compression
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 if (myevents[i] instanceof TransactionEvent) {
                     this.longEncoder.encode(((TransactionEvent) myevents[i]).getAccountTransfer(), baos);
                 } else {
@@ -238,7 +241,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             int position5 = baos.size() + position4;
             baos.reset();
             //bookEntryValue Compression
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 if (myevents[i] instanceof TransactionEvent) {
                     this.longEncoder.encode(((TransactionEvent) myevents[i]).getBookEntryTransfer(), baos);
                 } else {
@@ -250,7 +253,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             int position6 = baos.size() + position5;
             baos.reset();
             //destinationAccountId Compression only for Transfer event
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 if (myevents[i] instanceof TransactionEvent) {
                     this.intEncoder.encode(Integer.parseInt(((TransactionEvent) myevents[i]).getTargetAccountId()), baos);
                 }
@@ -260,7 +263,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             int position7 = baos.size() + position6;
             baos.reset();
             //destinationAssetId Compression only for Transfer event
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 if (myevents[i] instanceof TransactionEvent) {
                     this.intEncoder.encode(Integer.parseInt(((TransactionEvent) myevents[i]).getTargetBookEntryId()), baos);
                 }
@@ -297,7 +300,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             MeasureTools.END_PERSIST_TIME_MEASURE(this.taskId);
         } else {
             MeasureTools.BEGIN_COMPRESSION_TIME_MEASURE(this.taskId);
-            for (int i = (int) currentOffset; i < currentOffset + interval; i ++) {
+            for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
                 stringEncoder.encode(new Binary(myevents[i].toString()), baos);
             }
             stringEncoder.flush(baos);
@@ -310,6 +313,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             MeasureTools.END_PERSIST_TIME_MEASURE(this.taskId);
         }
     }
+
     private void reloadInputWithCompression(File inputFile, Queue<Object> lostEvents, long redoOffset, long startOffset, int interval) throws IOException, ExecutionException, InterruptedException {
         Path path = Paths.get(inputFile.getPath());
         AsynchronousFileChannel afc = AsynchronousFileChannel.open(path, READ);
@@ -330,7 +334,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                 int position7 = dataBuffer.getInt();
                 int position8 = dataBuffer.getInt();
 
-                dataBuffer.limit( position0 + 40);
+                dataBuffer.limit(position0 + 40);
                 ByteBuffer buffer0 = dataBuffer.slice();//Type
                 ByteBuffer buffer1 = getByteBuffer(dataBuffer, position0, position1);//Timestamp
                 ByteBuffer buffer2 = getByteBuffer(dataBuffer, position1, position2);//Bid
@@ -342,7 +346,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                 ByteBuffer buffer8 = getByteBuffer(dataBuffer, position7, position8);//destinationAssetId only for Transfer Event
 
                 //Align to offset
-                while(startOffset != redoOffset) {
+                while (startOffset != redoOffset) {
                     int type = intDecoders[0].readInt(buffer0);
                     timestampDecoder.readLong(buffer1);
                     longDecoders[0].readLong(buffer2);
@@ -354,12 +358,12 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                         intDecoders[3].readInt(buffer7);
                         intDecoders[4].readInt(buffer8);
                     }
-                    startOffset ++;
+                    startOffset++;
                 }
                 int number = 0;
                 long groupId = startOffset + interval;
                 while (intDecoders[0].hasNext(buffer0)) {
-                    number ++;
+                    number++;
                     if (number == interval) {
                         groupId += interval;
                         number = 0;
@@ -374,17 +378,17 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                         continue;
                     }
                     int sourceAccountId = intDecoders[1].readInt(buffer3);
-                    int npid =  (sourceAccountId / partitionOffset);
-                    pids.put(( sourceAccountId / partitionOffset), 0);
+                    int npid = (sourceAccountId / partitionOffset);
+                    pids.put((sourceAccountId / partitionOffset), 0);
                     int sourceAssetId = intDecoders[2].readInt(buffer4);
-                    pids.put(( sourceAssetId / partitionOffset), 0);
+                    pids.put((sourceAssetId / partitionOffset), 0);
                     long accountValue = longDecoders[1].readLong(buffer5);
                     long bookEntryValue = longDecoders[2].readLong(buffer6);
                     if (type == 0) {
                         int destinationAccountId = intDecoders[3].readInt(buffer7);
-                        pids.put(( destinationAccountId / partitionOffset), 0);
+                        pids.put((destinationAccountId / partitionOffset), 0);
                         int destinationAssetId = intDecoders[4].readInt(buffer8);
-                        pids.put(( destinationAssetId / partitionOffset), 0);
+                        pids.put((destinationAssetId / partitionOffset), 0);
                         event = new TransactionEvent(
                                 (int) bid, //bid
                                 npid, //pid
@@ -417,9 +421,9 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                 }
             }
         } else {
-            while(startOffset != redoOffset) {
+            while (startOffset != redoOffset) {
                 stringDecoder.readBinary(dataBuffer);
-                startOffset ++;
+                startOffset++;
             }
             int number = 0;
             long groupId = startOffset + interval;
@@ -429,7 +433,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                 if (event != null) {
                     lostEvents.add(event);
                 }
-                number ++;
+                number++;
                 if (number == interval) {
                     groupId += interval;
                     number = 0;
@@ -437,11 +441,12 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             }
         }
     }
+
     private void reloadInputWithoutCompression(File inputFile, Queue<Object> lostEvents, long redoOffset, long startOffset, int interval) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile)));
-        while(startOffset != redoOffset) {
+        while (startOffset != redoOffset) {
             reader.readLine();
-            startOffset ++;
+            startOffset++;
         }
         int number = 0;
         long groupId = startOffset + interval;
@@ -452,7 +457,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             if (event != null) {
                 lostEvents.add(event);
             }
-            number ++;
+            number++;
             if (number == interval) {
                 groupId += interval;
                 number = 0;
@@ -463,10 +468,11 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
     }
 
     private ByteBuffer getByteBuffer(ByteBuffer dataBuffer, int position1, int position2) {
-        dataBuffer.position( position1 + 40);
+        dataBuffer.position(position1 + 40);
         dataBuffer.limit(position2 + 40);
         return dataBuffer.slice();
     }
+
     private TxnEvent getEventFromString(String txn, long groupId) {
         int[] p_bids = new int[tthread];
         String[] split = txn.split(",");

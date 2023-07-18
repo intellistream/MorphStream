@@ -2,26 +2,26 @@ package common.bolts.transactional.nongs;
 
 import combo.SINKCombo;
 import common.bolts.transactional.sl.GlobalSorter;
-import engine.txn.TxnEvent;
 import common.param.mb.NonMicroEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.txn.content.common.CommonMetaTypes;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
-import engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
-import engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
+import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
+import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerSStore;
+import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
+import intellistream.morphstream.util.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.profiler.MeasureTools;
-import engine.txn.storage.SchemaRecord;
-import engine.txn.storage.SchemaRecordRef;
-import engine.txn.storage.datatype.DataBox;
-import engine.txn.transaction.context.TxnContext;
-import engine.txn.transaction.impl.ordered.TxnManagerSStore;
-import util.AppConfig;
-import engine.txn.utils.SOURCE_CONTROL;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -29,14 +29,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
-import static common.Constants.DEFAULT_STREAM_ID;
-import static engine.txn.content.common.CommonMetaTypes.AccessType.NON_READ_WRITE_COND_READN;
-import static engine.txn.content.common.CommonMetaTypes.AccessType.READ_WRITE;
-import static engine.txn.profiler.MeasureTools.*;
-import static engine.txn.profiler.MeasureTools.END_WAIT_TIME_MEASURE_ACC;
+import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
+import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.AccessType.NON_READ_WRITE_COND_READN;
+import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.AccessType.READ_WRITE;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.*;
 
-public class NonGSBolt_sstore extends NonGSBolt{
+public class NonGSBolt_sstore extends NonGSBolt {
     private static final Logger LOG = LoggerFactory.getLogger(NonGSBolt_sstore.class);
     private static final long serialVersionUID = -1837448729429847022L;
     ArrayDeque<Tuple> tuples = new ArrayDeque<>();
@@ -44,6 +43,7 @@ public class NonGSBolt_sstore extends NonGSBolt{
     public NonGSBolt_sstore(int fid) {
         super(LOG, fid, null);
     }
+
     public NonGSBolt_sstore(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
     }
@@ -57,10 +57,12 @@ public class NonGSBolt_sstore extends NonGSBolt{
             System.exit(-1);
         }
     }
+
     @Override
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         context.getGraph().topology.tableinitilizer.loadDB(thread_Id, context.getGraph().topology.spinlock, this.context.getNUMTasks());
     }
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
@@ -85,6 +87,7 @@ public class NonGSBolt_sstore extends NonGSBolt{
             tuples.add(in);
         }
     }
+
     public void start_evaluate(int thread_Id, double mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
         SOURCE_CONTROL.getInstance().preStateAccessBarrier(thread_Id);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
         // add bid_array for events
@@ -106,6 +109,7 @@ public class NonGSBolt_sstore extends NonGSBolt{
         }
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
+
     private void parseMicroEvent(int partitionOffset, NonMicroEvent event, HashMap<Integer, Integer> pids) {
         if (event.isNon_Deterministic_StateAccess()) {//For non-deterministic state access, we need to add all the partitions.
             for (int i = 0; i < tthread; i++) {
@@ -117,6 +121,7 @@ public class NonGSBolt_sstore extends NonGSBolt{
             }
         }
     }
+
     @Override
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
         for (double i = _bid; i < _bid + combo_bid_size; i++) {
@@ -125,6 +130,7 @@ public class NonGSBolt_sstore extends NonGSBolt{
             GlobalSorter.addEvent(event);
         }
     }
+
     @Override
     protected void LAL_PROCESS(long _bid) throws DatabaseException {
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
@@ -139,9 +145,9 @@ public class NonGSBolt_sstore extends NonGSBolt{
         LA_UNLOCK_Reentrance(transactionManager, event.partition_indexs, thread_Id);
         END_WAIT_TIME_MEASURE_ACC(thread_Id);
     }
+
     protected void LAL(NonMicroEvent event, double i, double _bid) throws DatabaseException {
         if (event.isAbort()) {
-            return;
         } else {
             if (event.isNon_Deterministic_StateAccess()) {
                 WRITE_LOCK_ALL(this.context.getGraph().topology.spinlock);
@@ -150,6 +156,7 @@ public class NonGSBolt_sstore extends NonGSBolt{
             }
         }
     }
+
     @Override
     protected void PostLAL_process(long bid) throws DatabaseException, InterruptedException {
         for (double i = _bid; i < _bid + _combo_bid_size; i++) {
@@ -167,20 +174,25 @@ public class NonGSBolt_sstore extends NonGSBolt{
                 WRITE_UNLOCK_ALL(this.context.getGraph().topology.spinlock);
         }
     }
+
     protected void WRITE_LOCK_AHEAD(NonMicroEvent event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_WRITE);
     }
+
     protected void WRITE_LOCK_ALL(SpinLock[] spinLocks) throws DatabaseException {
         transactionManager.lock_all(spinLocks);
     }
+
     protected void WRITE_UNLOCK_ALL(SpinLock[] spinLocks) throws DatabaseException {
         transactionManager.unlock_all(spinLocks);
     }
+
     protected boolean write_request_noLock(NonMicroEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, READ_WRITE);
     }
+
     protected boolean non_write_request_noLock(NonMicroEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, NON_READ_WRITE_COND_READN);
     }
@@ -227,6 +239,7 @@ public class NonGSBolt_sstore extends NonGSBolt{
         }
         END_POST_TIME_MEASURE(thread_Id);
     }
+
     protected void WRITE_POST(NonMicroEvent event) throws InterruptedException {
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.

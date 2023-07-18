@@ -1,27 +1,27 @@
 package common.bolts.transactional.sl;
 
 import combo.SINKCombo;
-import engine.txn.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.txn.db.DatabaseException;
-import engine.txn.durability.logging.LoggingResult.LoggingResult;
-import engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.durability.logging.LoggingResult.LoggingResult;
+import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.profiler.Metrics;
+import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.function.Condition;
+import intellistream.morphstream.engine.txn.transaction.function.DEC;
+import intellistream.morphstream.engine.txn.transaction.function.INC;
+import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
+import intellistream.morphstream.util.FaultToleranceConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.profiler.MeasureTools;
-import engine.txn.profiler.Metrics;
-import engine.txn.storage.SchemaRecord;
-import engine.txn.transaction.context.TxnContext;
-import engine.txn.transaction.function.Condition;
-import engine.txn.transaction.function.DEC;
-import engine.txn.transaction.function.INC;
-import engine.txn.transaction.impl.ordered.TxnManagerTStream;
-import util.FaultToleranceConstants;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
-import static engine.txn.profiler.MeasureTools.*;
+import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.*;
 
 public class SLBolt_ts_ft extends SLBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_ts_ft.class);
@@ -79,14 +79,14 @@ public class SLBolt_ts_ft extends SLBolt {
                 {
                     transactionManager.start_evaluate(thread_Id, in.getBID(), num_events);//start lazy evaluation in transaction manager.
                     if (Objects.equals(in.getMarker().getMessage(), "snapshot")) {
-                        MeasureTools.BEGIN_SNAPSHOT_TIME_MEASURE(this.thread_Id);
+                        BEGIN_SNAPSHOT_TIME_MEASURE(this.thread_Id);
                         this.db.asyncSnapshot(in.getMarker().getSnapshotId(), this.thread_Id, this.ftManager);
                         MeasureTools.END_SNAPSHOT_TIME_MEASURE(this.thread_Id);
                     } else if (Objects.equals(in.getMarker().getMessage(), "commit") || Objects.equals(in.getMarker().getMessage(), "commit_early")) {
                         MeasureTools.BEGIN_LOGGING_TIME_MEASURE(this.thread_Id);
                         this.db.asyncCommit(in.getMarker().getSnapshotId(), this.thread_Id, this.loggingManager);
                         MeasureTools.END_LOGGING_TIME_MEASURE(this.thread_Id);
-                    } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot") || Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")){
+                    } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot") || Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {
                         MeasureTools.BEGIN_LOGGING_TIME_MEASURE(this.thread_Id);
                         this.db.asyncCommit(in.getMarker().getSnapshotId(), this.thread_Id, this.loggingManager);
                         MeasureTools.END_LOGGING_TIME_MEASURE(this.thread_Id);
@@ -107,9 +107,9 @@ public class SLBolt_ts_ft extends SLBolt {
                 END_POST_TIME_MEASURE_ACC(thread_Id);
                 if (Objects.equals(in.getMarker().getMessage(), "snapshot")) {
                     this.ftManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new SnapshotResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
-                } else if (Objects.equals(in.getMarker().getMessage(), "commit")){
+                } else if (Objects.equals(in.getMarker().getMessage(), "commit")) {
                     this.loggingManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new LoggingResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
-                } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot")){
+                } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot")) {
                     this.ftManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new SnapshotResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
                     this.loggingManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new LoggingResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
                 } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {

@@ -1,6 +1,6 @@
 package benchmark.datagenerator;
 
-import common.collections.Configuration;
+import intellistream.morphstream.configuration.Configuration;
 
 public abstract class DataGeneratorConfig {
     private Integer totalEvents;

@@ -3,18 +3,18 @@ package benchmark.datagenerator.apps.GSW.TPGTxnGenerator;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.GSW.TPGTxnGenerator.Transaction.GSWEvent;
-import util.tools.FastZipfGenerator;
+import intellistream.morphstream.util.AppConfig;
+import intellistream.morphstream.util.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.AppConfig;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
-import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_states_partition;
 
 /**
  * \textbf{Workload Configurations.}
@@ -45,18 +45,14 @@ public class GSWTPGDataGenerator extends DataGenerator {
     // independent transactions.
     private final boolean isUnique = false;
     private final FastZipfGenerator keyZipf;
-
-    private int floor_interval;
-    public FastZipfGenerator[] partitionedKeyZipf;
-
-
     private final Random random = new Random(0); // the transaction type decider
-    public transient FastZipfGenerator p_generator; // partition generator
     private final HashMap<Integer, Integer> nGeneratedIds = new HashMap<>();
+    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
+    public FastZipfGenerator[] partitionedKeyZipf;
+    public transient FastZipfGenerator p_generator; // partition generator
+    private int floor_interval;
     private ArrayList<Event> events;
     private int eventID = 0;
-
-    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
 
 
     // TODO: can specify the window length here, the window event will be generated according to the window length periodically
@@ -76,7 +72,7 @@ public class GSWTPGDataGenerator extends DataGenerator {
 //        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
         int MAX_LEVEL = 256;
         for (int i = 0; i < nKeyState; i++) {
-            idToLevel.put(i, i% MAX_LEVEL);
+            idToLevel.put(i, i % MAX_LEVEL);
         }
 
         events = new ArrayList<>(nTuples);
@@ -116,7 +112,7 @@ public class GSWTPGDataGenerator extends DataGenerator {
             NUM_ACCESS = 1;
             Transaction_Length = 1;
         }
-        int[] keys = new int[NUM_ACCESS*Transaction_Length];
+        int[] keys = new int[NUM_ACCESS * Transaction_Length];
         // record each write key of operation, make them unique
         Set<Integer> writeKeys = new HashSet<>(Transaction_Length);
         int writeLevel = -1;

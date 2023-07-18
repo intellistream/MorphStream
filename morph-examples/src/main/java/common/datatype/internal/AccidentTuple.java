@@ -18,11 +18,11 @@
  */
 package common.datatype.internal;
 
-import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import engine.stream.execution.runtime.tuple.impl.Fields;
-import util.datatypes.StreamValues;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.util.Time;
+import intellistream.morphstream.util.datatypes.StreamValues;
 
 /**
  * {@link AccidentTuple} represents an intermediate result tuple; and reports and accident that occurred in a specific
@@ -98,7 +98,7 @@ public final class AccidentTuple extends StreamValues implements ISegmentIdentif
      *
      * @return the timestamp of this tuple
      */
-    public final Short getTime() {
+    public Short getTime() {
         return (Short) super.get(TIME_IDX);
     }
 
@@ -107,7 +107,7 @@ public final class AccidentTuple extends StreamValues implements ISegmentIdentif
      *
      * @return the 'minute number' of this tuple
      */
-    public final short getMinuteNumber() {
+    public short getMinuteNumber() {
         return Time.getMinute(this.getTime().shortValue());
     }
 
@@ -117,7 +117,7 @@ public final class AccidentTuple extends StreamValues implements ISegmentIdentif
      * @return the expressway of this tuple
      */
     @Override
-    public final Integer getXWay() {
+    public Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
 
@@ -127,7 +127,7 @@ public final class AccidentTuple extends StreamValues implements ISegmentIdentif
      * @return the segment of this tuple
      */
     @Override
-    public final int getSegment() {
+    public int getSegment() {
         return (Integer) super.get(SEG_IDX);
     }
 
@@ -137,7 +137,7 @@ public final class AccidentTuple extends StreamValues implements ISegmentIdentif
      * @return the direction of this tuple
      */
     @Override
-    public final Short getDirection() {
+    public Short getDirection() {
         return (Short) super.get(DIR_IDX);
     }
 }

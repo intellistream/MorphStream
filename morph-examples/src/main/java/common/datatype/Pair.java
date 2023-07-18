@@ -59,8 +59,8 @@ class Pair<L, R> {
     @Override
     public boolean equals(Object other) {
         boolean isEqual = false;
-        if (null != other && other instanceof common.model.predictor.Pair) {
-            common.model.predictor.Pair pairOther = (common.model.predictor.Pair) other;
+        if (null != other && other instanceof intellistream.morphstream.common.model.predictor.Pair) {
+            intellistream.morphstream.common.model.predictor.Pair pairOther = (intellistream.morphstream.common.model.predictor.Pair) other;
             isEqual = this.left.equals(pairOther.getLeft()) &&
                     this.right.equals(pairOther.getRight());
         }

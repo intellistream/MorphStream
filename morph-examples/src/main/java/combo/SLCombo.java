@@ -2,21 +2,21 @@ package combo;
 
 import benchmark.DataHolder;
 import common.bolts.transactional.sl.*;
-import common.collections.Configuration;
-import engine.txn.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.txn.TxnEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 
-import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_shared_state;
-import static engine.txn.content.Content.*;
+import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
+import static intellistream.morphstream.configuration.CONTROL.enable_shared_state;
+import static intellistream.morphstream.configuration.Constants.*;
 
 public class SLCombo extends SPOUTCombo {
     private static final Logger LOG = LoggerFactory.getLogger(SLCombo.class);
@@ -145,7 +145,7 @@ public class SLCombo extends SPOUTCombo {
                 _combo_bid_size = 1;
                 break;
             }
-            case CCOption_TStream: {//T-Stream
+            case CCOption_MorphStream: {//T-Stream
                 bolt = new SLBolt_ts(0, sink);
                 break;
             }

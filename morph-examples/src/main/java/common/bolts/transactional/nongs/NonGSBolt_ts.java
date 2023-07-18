@@ -2,38 +2,41 @@ package common.bolts.transactional.nongs;
 
 import combo.SINKCombo;
 import common.param.mb.NonMicroEvent;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.function.SUM;
+import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.profiler.MeasureTools;
-import engine.txn.transaction.context.TxnContext;
-import engine.txn.transaction.function.SUM;
-import engine.txn.transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.combo_bid_size;
-import static common.CONTROL.enable_latency_measurement;
-import static engine.txn.profiler.MeasureTools.*;
-import static engine.txn.profiler.Metrics.NUM_ITEMS;
+import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
+import static intellistream.morphstream.configuration.CONTROL.enable_latency_measurement;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.*;
+import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 public class NonGSBolt_ts extends NonGSBolt {
     private static final Logger LOG = LoggerFactory.getLogger(NonGSBolt_ts.class);
     private static final long serialVersionUID = 1802551870447129582L;
     Collection<NonMicroEvent> nonMicroEvents;
+
     public NonGSBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
     }
+
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
         nonMicroEvents = new ArrayDeque<>();
     }
+
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
@@ -44,6 +47,7 @@ public class NonGSBolt_ts extends NonGSBolt {
             RANGE_WRITE_CONSTRUCT(event, txnContext);
         }
     }
+
     private void RANGE_WRITE_CONSTRUCT(NonMicroEvent event, TxnContext txnContext) throws DatabaseException {
         SUM sum;
         if (event.isAbort()) {
@@ -64,7 +68,7 @@ public class NonGSBolt_ts extends NonGSBolt {
             }
             int writeKeyIdx = i * NUM_ACCESS;
             if (event.isNon_Deterministic_StateAccess()) {
-                transactionManager.Asy_ModifyRecord_Non_ReadN( txnContext,
+                transactionManager.Asy_ModifyRecord_Non_ReadN(txnContext,
                         "MicroTable",
                         String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
                         event.getRecord_refs()[writeKeyIdx],//to be fill up.
@@ -115,13 +119,13 @@ public class NonGSBolt_ts extends NonGSBolt {
     }
 
     private void READ_POST() throws InterruptedException {
-        for (NonMicroEvent event:nonMicroEvents) {
+        for (NonMicroEvent event : nonMicroEvents) {
             READ_POST(event);
         }
     }
 
     private void READ_REQUEST_CORE() {
-        for (NonMicroEvent event:nonMicroEvents) {
+        for (NonMicroEvent event : nonMicroEvents) {
             READ_CORE(event);
         }
     }

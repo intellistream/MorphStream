@@ -1,12 +1,12 @@
 package benchmark.datagenerator.apps.SL.OCTxnGenerator;
 
 import benchmark.datagenerator.DataGeneratorConfig;
-import common.collections.Configuration;
-import util.tools.ZipfGenerator;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.util.ZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static common.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 /**
  * Generator Config that is tunable for comprehensive experiments
@@ -17,7 +17,6 @@ public class LayeredOCDataGeneratorConfig extends DataGeneratorConfig {
     private String fanoutDist;
     private String idGenType;
     private float[] dependenciesDistributionForLevels;
-
 
 
     @Override

@@ -1,18 +1,18 @@
 package common.param.mb;
 
-import engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
+import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.IntDataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.StringDataBox;
 import org.apache.commons.lang.StringUtils;
-import engine.txn.storage.SchemaRecordRef;
-import engine.txn.storage.datatype.DataBox;
-import engine.txn.storage.datatype.IntDataBox;
-import engine.txn.storage.datatype.StringDataBox;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static common.constants.GrepSumConstants.Constant.VALUE_LEN;
-import static engine.txn.profiler.Metrics.NUM_ACCESSES;
+import static intellistream.morphstream.common.constants.GrepSumConstants.Constant.VALUE_LEN;
+import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ACCESSES;
 
 /**
  * Support Multi workset since 1 SEP 2018.

@@ -1,29 +1,27 @@
 package combo;
 
-import common.CONTROL;
-import common.collections.Configuration;
-import common.collections.OsUtils;
-import engine.stream.components.context.TopologyContext;
-import engine.stream.components.operators.api.TransactionalBolt;
-import engine.stream.components.operators.api.TransactionalSpout;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
-import engine.stream.execution.runtime.tuple.impl.Marker;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
-import engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
+import intellistream.morphstream.configuration.CONTROL;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.TransactionalSpout;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Marker;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
+import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
-import engine.txn.utils.SOURCE_CONTROL;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.enable_log;
-import static common.Constants.DEFAULT_STREAM_ID;
-import static engine.txn.content.Content.CCOption_SStore;
-import static engine.txn.content.Content.CCOption_TStream;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.Constants.*;
 
 //TODO: Re-name microbenchmark as GS (Grep and Sum).
 public abstract class SPOUTCombo extends TransactionalSpout {
@@ -75,7 +73,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                 bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
                 counter++;
 
-                if (ccOption == CCOption_TStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+                if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
                     if (model_switch(counter)) {
                         marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration));
                         bolt.execute(marker);

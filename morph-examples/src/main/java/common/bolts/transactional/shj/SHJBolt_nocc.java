@@ -1,10 +1,10 @@
 package common.bolts.transactional.shj;
 
 import combo.SINKCombo;
-import engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.txn.transaction.impl.TxnManagerNoLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.transaction.impl.TxnManagerNoLock;
 
 /**
  * Combine Read-Write for nocc.

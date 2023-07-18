@@ -1,7 +1,7 @@
 package common.param.shj;
 
-import engine.txn.TxnEvent;
-import engine.txn.storage.SchemaRecordRef;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 
 import java.util.Arrays;
 
@@ -15,7 +15,6 @@ public class SHJEvent extends TxnEvent {
     private final String streamID;
     private final String amount;
     private final String[] lookupKeys;
-    public volatile SchemaRecordRef srcIndexRecordRef = new SchemaRecordRef();
     private final SchemaRecordRef[] lookupIndexRecords;
     private final double myBid;
     private final int myPid;
@@ -23,6 +22,7 @@ public class SHJEvent extends TxnEvent {
     private final String my_partition_index;
     private final int my_number_of_partitions;
     private final String[] turnoverRatePair = new String[2];
+    public volatile SchemaRecordRef srcIndexRecordRef = new SchemaRecordRef();
 
 
     public SHJEvent(long bid, int pid, String bid_array, String partition_index, int number_of_partitions,
@@ -47,6 +47,7 @@ public class SHJEvent extends TxnEvent {
     public String getStreamID() {
         return streamID;
     }
+
     public String getKey() {
         return key;
     }
@@ -54,32 +55,39 @@ public class SHJEvent extends TxnEvent {
     public String getAmount() {
         return amount;
     }
+
     public String[] getLookupKeys() {
         return lookupKeys;
     }
+
     public SchemaRecordRef[] getLookupIndexRecords() {
         return lookupIndexRecords;
+    }
+
+    public String[] getTurnoverRatePair() {
+        return turnoverRatePair;
     }
 
     public void setTurnoverRatePair(String matchingTupleAddr) {
         turnoverRatePair[1] = matchingTupleAddr;
     }
-    public String[] getTurnoverRatePair() {
-        return turnoverRatePair;
-    }
 
     public double getMyBid() {
         return myBid;
     }
+
     public int getMyPid() {
         return myPid;
     }
+
     public String getMyBidArray() {
         return my_bid_array;
     }
+
     public String getMyPartitionIndex() {
         return my_partition_index;
     }
+
     public int getMyNumberOfPartitions() {
         return my_number_of_partitions;
     }

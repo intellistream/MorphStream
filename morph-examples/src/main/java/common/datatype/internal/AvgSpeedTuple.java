@@ -18,11 +18,11 @@
  */
 package common.datatype.internal;
 
-import common.collections.Time;
 import common.datatype.util.ISegmentIdentifier;
 import common.datatype.util.LRTopologyControl;
-import util.datatypes.StreamValues;
-import engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.util.Time;
+import intellistream.morphstream.util.datatypes.StreamValues;
 
 /**
  * {@link AvgSpeedTuple} represents an intermediate result tuple; the average speed of all vehicle in a segment within a
@@ -104,7 +104,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
      *
      * @return the 'minute number' of this tuple
      */
-    public final Short getMinuteNumber() {
+    public Short getMinuteNumber() {
         return (Short) super.get(MINUTE_IDX);
     }
 
@@ -114,7 +114,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
      * @return the VID of this tuple
      */
     @Override
-    public final Integer getXWay() {
+    public Integer getXWay() {
         return (Integer) super.get(XWAY_IDX);
     }
 
@@ -124,7 +124,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
      * @return the VID of this tuple
      */
     @Override
-    public final int getSegment() {
+    public int getSegment() {
         return (Integer) super.get(SEG_IDX);
     }
 
@@ -134,7 +134,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
      * @return the VID of this tuple
      */
     @Override
-    public final Short getDirection() {
+    public Short getDirection() {
         return (Short) super.get(DIR_IDX);
     }
 
@@ -143,7 +143,7 @@ public final class AvgSpeedTuple extends StreamValues implements ISegmentIdentif
      *
      * @return the average speed of this tuple
      */
-    public final Double getAvgSpeed() {
+    public Double getAvgSpeed() {
         return (Double) super.get(AVGS_IDX);
     }
 }

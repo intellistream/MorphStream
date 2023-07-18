@@ -1,21 +1,21 @@
 package common.bolts.transactional.ob;
 
 import combo.SINKCombo;
-import engine.txn.TxnEvent;
-import engine.stream.components.context.TopologyContext;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerSStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.transaction.context.TxnContext;
-import engine.txn.transaction.impl.ordered.TxnManagerSStore;
 
 import java.util.Map;
 
-import static common.CONTROL.enable_log;
-import static common.CONTROL.enable_states_partition;
-import static engine.txn.profiler.MeasureTools.*;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_states_partition;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.*;
 
 public class OBBolt_sstore extends OBBolt_LA {
     private static final Logger LOG = LoggerFactory.getLogger(OBBolt_sstore.class);

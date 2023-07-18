@@ -18,7 +18,8 @@ public class TransferDepositHandler extends RichMapFunction<Either<DepositEvent,
     private JedisPooled jedis;
     private RLock lock;
 
-    public TransferDepositHandler() {}
+    public TransferDepositHandler() {
+    }
 
     @Override
     public void open(Configuration parameters) {
@@ -32,8 +33,7 @@ public class TransferDepositHandler extends RichMapFunction<Either<DepositEvent,
     public TransactionResult map(Either<DepositEvent, TransactionEvent> depositOrTransferEvent) throws Exception {
         if (depositOrTransferEvent.isRight()) {
             return transfer(depositOrTransferEvent.right());
-        }
-        else {
+        } else {
             return deposit(depositOrTransferEvent.left());
         }
     }
@@ -110,6 +110,7 @@ public class TransferDepositHandler extends RichMapFunction<Either<DepositEvent,
 
     public void randomDelay() {
         long start = System.nanoTime();
-        while (System.nanoTime() - start < 10000) {}
+        while (System.nanoTime() - start < 10000) {
+        }
     }
 }

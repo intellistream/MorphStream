@@ -1,6 +1,6 @@
 package benchmark;
 
-import engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.TxnEvent;
 
 import java.util.ArrayList;
 

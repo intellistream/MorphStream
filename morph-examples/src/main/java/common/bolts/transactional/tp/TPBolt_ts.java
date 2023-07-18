@@ -2,25 +2,25 @@ package common.bolts.transactional.tp;
 
 import combo.SINKCombo;
 import common.param.lr.LREvent;
-import engine.stream.components.context.TopologyContext;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.collector.OutputCollector;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.function.AVG;
+import intellistream.morphstream.engine.txn.transaction.function.CNT;
+import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.transaction.context.TxnContext;
-import engine.txn.transaction.function.AVG;
-import engine.txn.transaction.function.CNT;
-import engine.txn.transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.combo_bid_size;
-import static common.constants.TPConstants.Constant.NUM_SEGMENTS;
-import static engine.txn.profiler.MeasureTools.*;
+import static intellistream.morphstream.common.constants.TPConstants.Constant.NUM_SEGMENTS;
+import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.*;
 
 /**
  * Combine Read-Write for TStream.

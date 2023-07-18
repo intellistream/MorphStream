@@ -1,10 +1,10 @@
 package common.sink;
 
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static common.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 public class PKSink extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(PKSink.class);

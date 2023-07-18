@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static common.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 public class FileOutputHandler implements IOutputHandler {
     protected static final Logger log = LoggerFactory.getLogger(FileOutputHandler.class);

@@ -1,8 +1,8 @@
 package common.param.lr;
 
 import common.datatype.PositionReport;
-import engine.txn.TxnEvent;
-import engine.txn.storage.SchemaRecordRef;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 
 /**
  * Currently only consider position events.
@@ -57,6 +57,6 @@ public class LREvent extends TxnEvent {
 
     @Override
     public LREvent cloneEvent() {
-        return new LREvent(this.posreport,tthread,bid);
+        return new LREvent(this.posreport, tthread, bid);
     }
 }

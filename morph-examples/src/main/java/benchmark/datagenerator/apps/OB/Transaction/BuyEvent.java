@@ -10,6 +10,7 @@ public class BuyEvent extends Event {
     private final int id;
     private final int key;
     private final boolean isAbort;
+
     public BuyEvent(int id, int key, boolean isAbort) {
         this.id = id;
         this.key = key;
@@ -18,10 +19,9 @@ public class BuyEvent extends Event {
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder(String.valueOf(id));
-        str.append(",").append(key);
-        str.append(",").append(isAbort);
+        String str = String.valueOf(id) + "," + key +
+                "," + isAbort;
 
-        return str.toString();
+        return str;
     }
 }

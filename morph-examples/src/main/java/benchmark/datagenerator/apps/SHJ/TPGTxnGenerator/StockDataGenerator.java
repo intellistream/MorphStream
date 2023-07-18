@@ -3,7 +3,7 @@ package benchmark.datagenerator.apps.SHJ.TPGTxnGenerator;
 import benchmark.datagenerator.DataGenerator;
 import benchmark.datagenerator.Event;
 import benchmark.datagenerator.apps.SHJ.TPGTxnGenerator.Transaction.SHJEvent;
-import util.tools.FastZipfGenerator;
+import intellistream.morphstream.util.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,20 +11,17 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static common.CONTROL.enable_log;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 /**
  * Read from Stock Dataset, construct events accordingly.
  */
 public class StockDataGenerator extends DataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(StockDataGenerator.class);
-
-    private ArrayList<Event> events;
-    private int eventID = 0;
-
+    private final int eventID = 0;
     private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
-
     private final BufferedReader reader;
+    private ArrayList<Event> events;
 
 
     public StockDataGenerator(SHJTPGDataGeneratorConfig dataConfig) throws FileNotFoundException {

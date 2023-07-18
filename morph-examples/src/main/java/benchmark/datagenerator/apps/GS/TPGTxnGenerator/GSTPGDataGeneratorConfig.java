@@ -1,7 +1,7 @@
 package benchmark.datagenerator.apps.GS.TPGTxnGenerator;
 
 import benchmark.datagenerator.DataGeneratorConfig;
-import common.collections.Configuration;
+import intellistream.morphstream.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +26,6 @@ public class GSTPGDataGeneratorConfig extends DataGeneratorConfig {
         Ratio_of_Overlapped_Keys = config.getInt("Ratio_of_Overlapped_Keys", 0);
         Ratio_of_Transaction_Aborts = config.getInt("Ratio_of_Transaction_Aborts", 0);
         Transaction_Length = config.getInt("Transaction_Length", 1);
-        Ratio_of_Multiple_State_Access = config.getInt("Ratio_of_Multiple_State_Access",100);
+        Ratio_of_Multiple_State_Access = config.getInt("Ratio_of_Multiple_State_Access", 100);
     }
 }

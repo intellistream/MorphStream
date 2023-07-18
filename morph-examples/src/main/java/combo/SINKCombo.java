@@ -1,19 +1,19 @@
 package combo;
 
 import common.sink.MeasureSink;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SINKCombo extends MeasureSink {
     private static final Logger LOG = LoggerFactory.getLogger(SINKCombo.class);
     private static final long serialVersionUID = 5481794109405775823L;
-    int cnt = 0;
-    boolean start_measure = false;
-    int global_cnt;
     public long lastTask = -1;
     public long startRecovery = -1;
     public boolean stopRecovery = false;
+    int cnt = 0;
+    boolean start_measure = false;
+    int global_cnt;
 
     public void start() {
         if (!start_measure) {//only once.

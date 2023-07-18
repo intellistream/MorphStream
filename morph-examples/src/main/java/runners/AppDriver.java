@@ -1,10 +1,10 @@
 package runners;
 
-import common.collections.Configuration;
-import engine.stream.components.Topology;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.Topology;
+import intellistream.morphstream.engine.stream.topology.AbstractTopology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.stream.topology.AbstractTopology;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -43,7 +43,8 @@ public class AppDriver {
                 AbstractTopology topology = (AbstractTopology) c.newInstance(topologyName, config);
                 topology.initialize();
                 return topology.buildTopology();
-            } catch (InvocationTargetException | IllegalAccessException | InstantiationException | NoSuchMethodException e) {
+            } catch (InvocationTargetException | IllegalAccessException | InstantiationException |
+                     NoSuchMethodException e) {
                 e.printStackTrace();
             }
             return null;

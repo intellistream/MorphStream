@@ -9,25 +9,25 @@ import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGenerator;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import benchmark.datagenerator.apps.SL.TPGTxnGenerator.SLTPGDynamicDataGenerator;
 import benchmark.dynamicWorkloadGenerator.DynamicDataGeneratorConfig;
-import common.collections.Configuration;
-import common.collections.OsUtils;
-import engine.txn.TxnEvent;
 import common.param.sl.DepositEvent;
 import common.param.sl.TransactionEvent;
-import engine.txn.db.Database;
-import engine.txn.db.DatabaseException;
-import engine.txn.lock.SpinLock;
+import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.db.Database;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.lock.SpinLock;
+import intellistream.morphstream.engine.txn.scheduler.context.SchedulerContext;
+import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.txn.storage.TableRecord;
+import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.LongDataBox;
+import intellistream.morphstream.engine.txn.storage.datatype.StringDataBox;
+import intellistream.morphstream.engine.txn.storage.table.RecordSchema;
+import intellistream.morphstream.engine.txn.transaction.TableInitilizer;
+import intellistream.morphstream.util.AppConfig;
+import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.scheduler.context.SchedulerContext;
-import engine.txn.storage.SchemaRecord;
-import engine.txn.storage.TableRecord;
-import engine.txn.storage.datatype.DataBox;
-import engine.txn.storage.datatype.LongDataBox;
-import engine.txn.storage.datatype.StringDataBox;
-import engine.txn.storage.table.RecordSchema;
-import engine.txn.transaction.TableInitilizer;
-import util.AppConfig;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
@@ -35,8 +35,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 
-import static common.CONTROL.enable_log;
-import static engine.txn.transaction.State.configure_store;
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.engine.txn.transaction.State.configure_store;
 
 public class SLInitializer extends TableInitilizer {
 
@@ -44,9 +44,9 @@ public class SLInitializer extends TableInitilizer {
     private final int numberOfStates;
     private final int startingBalance = 1000000;
     private final int partitionOffset;
+    private final DataGeneratorConfig dataConfig;
     private String dataRootPath;
     private DataGenerator dataGenerator;
-    private DataGeneratorConfig dataConfig;
 
     public SLInitializer(Database db, int numberOfStates, double theta, int tthread, Configuration config) {
         super(db, theta, tthread, config);
@@ -115,7 +115,7 @@ public class SLInitializer extends TableInitilizer {
                                 AppConfig.isCyclic,
                                 config.getString("workloadType"))
                         .getBytes(StandardCharsets.UTF_8));
-            else if(dataConfig instanceof DynamicDataGeneratorConfig)
+            else if (dataConfig instanceof DynamicDataGeneratorConfig)
                 bytes = digest.digest(String.format("%d_%d_%d_%d_%d_%d_%d_%s_%s",
                                 dataConfig.getTotalThreads(),
                                 dataConfig.getTotalEvents(),
@@ -429,14 +429,14 @@ public class SLInitializer extends TableInitilizer {
         db.createTable(b, "bookEntries", config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         try {
             prepare_input_events(config.getInt("totalEvents"));
-            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){
+            if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0) {
                 StringBuilder stringBuilder = new StringBuilder();
-                for(String decision:getTranToDecisionConf()){
+                for (String decision : getTranToDecisionConf()) {
                     stringBuilder.append(decision);
                     stringBuilder.append(";");
                 }
-                stringBuilder.deleteCharAt(stringBuilder.length()-1);
-                config.put("WorkloadConfig",stringBuilder.toString());
+                stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+                config.put("WorkloadConfig", stringBuilder.toString());
             }
         } catch (IOException e) {
             e.printStackTrace();

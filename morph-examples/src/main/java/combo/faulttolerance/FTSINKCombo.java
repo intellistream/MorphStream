@@ -1,9 +1,9 @@
 package combo.faulttolerance;
 
 import combo.SINKCombo;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
-import engine.txn.profiler.MeasureTools;
-import engine.txn.profiler.Metrics;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.profiler.Metrics;
 
 public class FTSINKCombo extends SINKCombo {
     @Override

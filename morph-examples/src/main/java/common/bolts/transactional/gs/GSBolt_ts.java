@@ -2,29 +2,31 @@ package common.bolts.transactional.gs;
 
 import combo.SINKCombo;
 import common.param.mb.MicroEvent;
-import engine.txn.db.DatabaseException;
-import engine.stream.execution.ExecutionGraph;
-import engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.transaction.function.SUM;
+import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import engine.txn.profiler.MeasureTools;
-import engine.txn.transaction.context.TxnContext;
-import engine.txn.transaction.function.SUM;
-import engine.txn.transaction.impl.ordered.TxnManagerTStream;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.concurrent.BrokenBarrierException;
 
-import static common.CONTROL.*;
-import static engine.txn.profiler.MeasureTools.*;
-import static engine.txn.profiler.Metrics.NUM_ITEMS;
+import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
+import static intellistream.morphstream.configuration.CONTROL.enable_latency_measurement;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.*;
+import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 public class GSBolt_ts extends GSBolt {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     private final double write_useful_time = 556;//write-compute time pre-measured.
     Collection<MicroEvent> microEvents;
+    int i = 0;
     private int writeEvents;
 
     public GSBolt_ts(int fid, SINKCombo sink) {
@@ -54,7 +56,7 @@ public class GSBolt_ts extends GSBolt {
 //            } else {
 //                write_construct(event, txnContext);
 //            }
-            RANGE_WRITE_CONSRUCT((MicroEvent) event, txnContext);
+            RANGE_WRITE_CONSRUCT(event, txnContext);
         }
     }
 
@@ -118,7 +120,7 @@ public class GSBolt_ts extends GSBolt {
             READ_POST(event);
         }
     }
-    int i=0;
+
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 

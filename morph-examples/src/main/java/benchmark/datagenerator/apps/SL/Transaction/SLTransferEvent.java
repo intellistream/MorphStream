@@ -6,13 +6,13 @@ import benchmark.datagenerator.Event;
  * Streamledger related transaction data
  */
 public class SLTransferEvent extends Event {
-    private int id;
-    private int sourceAccountId;
-    private int destinationAccountId;
-    private int sourceAssetId;
-    private int destinationAssetId;
-    private int accountTransfer;
-    private int bookEntryTransfer;
+    private final int id;
+    private final int sourceAccountId;
+    private final int destinationAccountId;
+    private final int sourceAssetId;
+    private final int destinationAssetId;
+    private final int accountTransfer;
+    private final int bookEntryTransfer;
 
     public SLTransferEvent(int id, int sourceAccountId, int sourceAssetId, int destinationAccountId, int destinationAssetId) {
         this.id = id;

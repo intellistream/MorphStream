@@ -1,6 +1,6 @@
 package common.bolts.transactional.sl;
 
-import engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.TxnEvent;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 

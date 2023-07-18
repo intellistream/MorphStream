@@ -19,7 +19,7 @@
 package common.datatype;
 
 import common.datatype.util.LRTopologyControl;
-import engine.stream.execution.runtime.tuple.impl.Fields;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
 
 /**
  * A {@link DailyExpenditureRequest} from the LRB data generator.<br />
