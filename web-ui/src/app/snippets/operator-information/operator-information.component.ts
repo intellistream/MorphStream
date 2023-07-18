@@ -23,6 +23,8 @@ export class OperatorInformationComponent {
     numOfPD: 120
   }
 
+  @Input() isRunning: boolean = true;
+
   constructor(private modalService: NzModalService) {
   }
 

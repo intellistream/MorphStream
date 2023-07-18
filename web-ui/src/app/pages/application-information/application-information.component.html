@@ -9,8 +9,11 @@
           <nz-breadcrumb-item>
             <a [routerLink]="['../../']">Overview</a>
           </nz-breadcrumb-item>
-          <nz-breadcrumb-item>
+          <nz-breadcrumb-item *ngIf="application.isRunning">
             <a [routerLink]="['../../applications/processing-applications']">Processing Applications</a>
+          </nz-breadcrumb-item>
+          <nz-breadcrumb-item *ngIf="!application.isRunning">
+            <a [routerLink]="['../../applications/finished-applications']">Finished Applications</a>
           </nz-breadcrumb-item>
           <nz-breadcrumb-item>Application Details</nz-breadcrumb-item>
         </nz-breadcrumb>
@@ -44,7 +47,7 @@
       <nz-col nzSpan="8">
         <nz-row>
           <nz-col nzSpan="24" id="app-card-col">
-            <app-application-card cardWidth="100%" style="width: 100%; display: block"></app-application-card>
+            <app-application-card [application]="application" cardWidth="100%" style="width: 100%; display: block"></app-application-card>
           </nz-col>
         </nz-row>
         <div nz-row id="progress-bar-section" nzJustify="space-around" nzAlign="middle">
@@ -88,7 +91,7 @@
       </nz-col>
       <!--    Information Showcase    -->
       <nz-col nzSpan="15">
-        <app-application-board style="width: 100%; display: block; margin-bottom: 26px"></app-application-board>
+        <app-application-board [application]="application" style="width: 100%; display: block; margin-bottom: 26px"></app-application-board>
       </nz-col>
     </div>
   </nz-content>

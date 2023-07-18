@@ -1,6 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {Application} from "../../model/application";
 import {Router} from "@angular/router";
+import {ApplicationService} from "../../shared/services/application.service";
 
 @Component({
   selector: 'app-application-card',
@@ -77,10 +78,11 @@ export class ApplicationCardComponent {
   @Input() cardWidth: string = "480px";
   @Input()  cardHeight: string = "270px";
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private applicationService: ApplicationService) {
   }
 
   navigateToAppDetails() {
+    this.applicationService.setCurrentApplication(this.application);
     this.router.navigate(['overview/application-details']);
   }
 }

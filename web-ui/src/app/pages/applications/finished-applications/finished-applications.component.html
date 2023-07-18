@@ -4,7 +4,7 @@
       <span><b>Finished Applications</b></span>
     </div>
     <div nz-row class="separator"></div>
-    <div class="application-card" *ngFor="let application of completedApplications" (click)="navigateToAppDetails()">
+    <div class="application-card" *ngFor="let application of completedApplications" (click)="navigateToAppDetails(application)">
       <nz-row>
         <span><b>{{ application.name }}</b></span>
       </nz-row>

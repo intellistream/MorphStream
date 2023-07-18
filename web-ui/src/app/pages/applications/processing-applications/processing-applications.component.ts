@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import {Application} from "../../../model/application";
 import {Router} from "@angular/router";
+import {ApplicationService} from "../../../shared/services/application.service";
 
 @Component({
   selector: 'app-pocessing-applications',
@@ -8,7 +9,7 @@ import {Router} from "@angular/router";
   styleUrls: ['./processing-applications.component.less']
 })
 export class ProcessingApplicationsComponent {
-  constructor(private router: Router) {
+  constructor(private router: Router, private applicationService: ApplicationService) {
   }
 
   // Data for testing
@@ -79,18 +80,59 @@ export class ProcessingApplicationsComponent {
     },
     {
       id: 2,
-      name: "Online Social Media Event Detection Number Two",
-      numOfThreads: 4,
+      name: "Online Social Media Event Detection",
+      numOfThreads: 8,
       cpu: "Intel(R) Xeon(R) Silver 4310 CPU @2.10GHz",
-      ram: "64GB",
-      startTime: "2023-April-26 13:55:12",
-      duration: "02:76:43",
+      ram: "32GB",
+      startTime: "2023-Mar-10 09:15:27",
+      duration: "00:08:17",
       isRunning: true,
-      operators: []
+      operators: [
+        {
+          id: 1,
+          name: "Spout",
+          numOfInstances: 1,
+          throughput: -1, // tuples/s
+          latency: -1,  // ms
+          explorationStrategy: "NA",
+          schedulingGranularity: "NA",
+          abortHandling: "NA",
+          numOfTD: -1,
+          numOfLD: -1,
+          numOfPD: -1
+        },
+        {
+          id: 2,
+          name: "Tweet Registrant",
+          numOfInstances: 8,
+          throughput: 10, // tuples/s
+          latency: 200.1,  // ms
+          explorationStrategy: "Non-Structured Exploration",
+          schedulingGranularity: "Fine-Grained Unit",
+          abortHandling: "Lazy Abort",
+          numOfTD: 1234,
+          numOfLD: 4321,
+          numOfPD: 134
+        },
+        {
+          id: 3,
+          name: "Word Updater",
+          numOfInstances: 8,
+          throughput: 12.2, // tuples/s
+          latency: 314.1,  // ms
+          explorationStrategy: "Non-Structured Exploration",
+          schedulingGranularity: "Fine-Grained Unit",
+          abortHandling: "Lazy Abort",
+          numOfTD: 346,
+          numOfLD: 568,
+          numOfPD: 123
+        },
+      ]
     }
   ];
 
-  navigateToAppDetails() {
+  navigateToAppDetails(application: Application) {
+    this.applicationService.setCurrentApplication(application);
     this.router.navigate(['overview/application-details']);
   }
 }
