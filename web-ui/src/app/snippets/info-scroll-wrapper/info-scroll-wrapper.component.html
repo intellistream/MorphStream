@@ -11,7 +11,7 @@
       </div>
       <div class="scroll-item" *ngFor="let operator of operators">
         <span class="arrow" *ngIf="operator.name !='Spout'">&#8594;</span>
-        <span [ngStyle]="{ 'border-color': selectedOperator === operator ? 'var(--border-accent-a)' : 'var(--border-accent-b)' }" class="scroll-item-text" (click)="onOperatorClick(operator)"><b>{{ operator.name }}</b></span>
+        <span [ngStyle]="{ 'border-color': selectedOperator.id == operator.id ? 'var(--border-accent-a)' : 'var(--border-accent-b)' }" class="scroll-item-text" (click)="onOperatorClick(operator)"><b>{{ operator.name }}</b></span>
       </div>
     </div>
     <div>

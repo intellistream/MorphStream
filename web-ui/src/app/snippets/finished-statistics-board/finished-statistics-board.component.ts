@@ -24,9 +24,21 @@ export class FinishedStatisticsBoardComponent implements AfterViewInit {
       type: 'pie',
       name: 'Processing Time',
       data: [
-        ['exploration', 78490],
-        ['tpg construction', 19573],
-        ['other', 12322]
+        {
+          name: 'exploration',
+          y: 78490,
+          color: '#8BDB4D'
+        },
+        {
+          name: 'tpg construction',
+          y: 19573,
+          color: '#0FB2E5'
+        },
+        {
+          name: 'other',
+          y: 12322,
+          color: '#EF5A5A'
+        }
       ]
     }]
   };
@@ -45,22 +57,43 @@ export class FinishedStatisticsBoardComponent implements AfterViewInit {
     },
     xAxis: {
       categories: ['100', '200', '300', '400', '500', '600', '700', '800', '900', '1000'],
+      lineColor: '#ffffff',
+      labels: {
+        style: {
+          color: '#ffffff'
+        }
+      }
     },
     yAxis: {
       title: {
-        text: 'Value'
+        text: 'Value',
+        style: {
+          color: '#ffffff',
+        }
+      },
+      labels: {
+        style: {
+          color: '#ffffff'
+        }
+      },
+    },
+    legend: {
+      itemStyle: {
+        color: '#ffffff' // 图例项的颜色
       }
     },
     series: [
       {
         type: 'area',
         name: 'Throughput (10k tuples/s)',
-        data: [2.1, 2.5, 1.9, 1.3, 2.1, 2.1, 2.3, 3.2, 3.0, 2.7]
+        data: [2.1, 2.5, 1.9, 1.3, 2.1, 2.1, 2.3, 3.2, 3.0, 2.7],
+        color: '#8BDB4D'
       },
       {
         type: 'area',
         name: 'latency (s)',
-        data: [1.9, 1.8, 1.9, 2.2, 2.3, 2.0, 2.1, 1.8, 1.9, 1.7]
+        data: [1.9, 1.8, 1.9, 2.2, 2.3, 2.0, 2.1, 1.8, 1.9, 1.7],
+        color: '#0FB2E5'
       }]
   };
 

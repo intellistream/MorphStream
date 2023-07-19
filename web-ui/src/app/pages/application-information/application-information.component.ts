@@ -29,6 +29,5 @@ export class ApplicationInformationComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.application = this.applicationService.getCurrentApplication();
-    console.log(this.application.isRunning)
   }
 }
