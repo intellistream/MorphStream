@@ -2,7 +2,7 @@ package intellistream.morphstream.examples.tsp.tollprocessing.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
 import intellistream.morphstream.examples.tsp.streamledger.op.GlobalSorter;
-import intellistream.morphstream.examples.tsp.tollprocessing.events.LREvent;
+import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -89,7 +89,7 @@ public class TPBolt_SSTORE extends TPBolt_LA {
             int[] p_bids = new int[(int) tthread];
             HashMap<Integer, Integer> pids = new HashMap<>();
             for (TxnEvent event : GlobalSorter.sortedEvents) {
-                parseTollProcessingEvent(partitionOffset, (LREvent) event, pids);
+                parseTollProcessingEvent(partitionOffset, (TPTxnEvent) event, pids);
                 event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
                 pids.replaceAll((k, v) -> p_bids[k]++);
                 pids.clear();
@@ -99,7 +99,7 @@ public class TPBolt_SSTORE extends TPBolt_LA {
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
 
-    private void parseTollProcessingEvent(int partitionOffset, LREvent event, HashMap<Integer, Integer> pids) {
+    private void parseTollProcessingEvent(int partitionOffset, TPTxnEvent event, HashMap<Integer, Integer> pids) {
         pids.put((event.getPOSReport().getSegment() / partitionOffset), 0);
     }
 
@@ -120,7 +120,7 @@ public class TPBolt_SSTORE extends TPBolt_LA {
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id);
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
-        REQUEST_LOCK_AHEAD((LREvent) event, txn_context[0]);
+        REQUEST_LOCK_AHEAD((TPTxnEvent) event, txn_context[0]);
         END_LOCK_TIME_MEASURE_ACC(thread_Id);
         LA_UNLOCK_Reentrance(transactionManager, event.partition_indexs, thread_Id);
         END_WAIT_TIME_MEASURE_ACC(thread_Id);

@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.tollprocessing.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.tollprocessing.events.LREvent;
+import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -25,7 +25,7 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 public class TPBolt_ts_s extends TPBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TPBolt_ts_s.class);
-    ArrayDeque<LREvent> LREvents;
+    ArrayDeque<TPTxnEvent> TPTxnEvents;
 
     public TPBolt_ts_s(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -40,7 +40,7 @@ public class TPBolt_ts_s extends TPBolt {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
                 NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BF"));
-        LREvents = new ArrayDeque<>();
+        TPTxnEvents = new ArrayDeque<>();
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
@@ -54,7 +54,7 @@ public class TPBolt_ts_s extends TPBolt {
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
              */
-            int readSize = LREvents.size();
+            int readSize = TPTxnEvents.size();
             MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
             {
                 transactionManager.start_evaluate(thread_Id, in.getBID(), readSize);
@@ -67,7 +67,7 @@ public class TPBolt_ts_s extends TPBolt {
             }
             MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
             //all tuples in the holder is finished.
-            LREvents.clear();
+            TPTxnEvents.clear();
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize);
         } else {
             execute_ts_normal(in);
@@ -79,7 +79,7 @@ public class TPBolt_ts_s extends TPBolt {
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + _combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            LREvent event = (LREvent) input_event;
+            TPTxnEvent event = (TPTxnEvent) input_event;
             if (enable_latency_measurement) {
                 (event).setTimestamp(timestamp);
             }
@@ -87,7 +87,7 @@ public class TPBolt_ts_s extends TPBolt {
         }
     }
 
-    protected void REQUEST_CONSTRUCT(LREvent event, TxnContext txnContext) throws DatabaseException {
+    protected void REQUEST_CONSTRUCT(TPTxnEvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.BeginTransaction(txnContext);
 //        transactionManager.Asy_ModifyRecord_Read(txnContext
 //                , "segment_speed"
@@ -108,16 +108,16 @@ public class TPBolt_ts_s extends TPBolt {
                 , new CNT(event.getPOSReport().getVid())
         );          //asynchronously return.
         transactionManager.CommitTransaction(txnContext);
-        LREvents.add(event);
+        TPTxnEvents.add(event);
     }
 
     protected void REQUEST_REQUEST_CORE() {
-        for (LREvent event : LREvents) {
+        for (TPTxnEvent event : TPTxnEvents) {
             TXN_REQUEST_CORE_TS(event);
         }
     }
 
-    private void TXN_REQUEST_CORE_TS(LREvent event) {
+    private void TXN_REQUEST_CORE_TS(TPTxnEvent event) {
         if (event.success[0] != 0) {
             event.count = event.count_value.getRecord().getValue().getInt();
             event.lav = event.speed_value.getRecord().getValue().getDouble();
@@ -125,7 +125,7 @@ public class TPBolt_ts_s extends TPBolt {
     }
 
     protected void REQUEST_POST() throws InterruptedException {
-        for (LREvent event : LREvents) {
+        for (TPTxnEvent event : TPTxnEvents) {
             REQUEST_POST(event);
         }
     }

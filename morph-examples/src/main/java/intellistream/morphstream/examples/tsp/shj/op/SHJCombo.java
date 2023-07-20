@@ -2,7 +2,7 @@ package intellistream.morphstream.examples.tsp.shj.op;
 
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.SPOUTCombo;
-import intellistream.morphstream.examples.tsp.shj.events.SHJEvent;
+import intellistream.morphstream.examples.tsp.shj.events.SHJTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -23,7 +23,7 @@ public class SHJCombo extends SPOUTCombo {
     int pre_concurrency = 0;
     int[] concerned_length = new int[]{40};
     int cnt = 0;
-    ArrayDeque<SHJEvent> prevents = new ArrayDeque<>();
+    ArrayDeque<SHJTxnEvent> prevents = new ArrayDeque<>();
 
     public SHJCombo() {
         super(LOG, 0);
@@ -47,7 +47,7 @@ public class SHJCombo extends SPOUTCombo {
         return pre_key == key;
     }
 
-    private int check_conflict(SHJEvent pre_event, SHJEvent event) { //TODO: Check this
+    private int check_conflict(SHJTxnEvent pre_event, SHJTxnEvent event) { //TODO: Check this
         int conf = 0;//in case no conflict at all.
 //        for (int key : event.getKeys()) {
 //            int[] preEventKeys = pre_event.getKeys();
@@ -59,9 +59,9 @@ public class SHJCombo extends SPOUTCombo {
         return conf;
     }
 
-    private int conflict(SHJEvent event) {
+    private int conflict(SHJTxnEvent event) {
         int conc = 1;//in case no conflict at all.
-        for (SHJEvent prevent : prevents) {
+        for (SHJTxnEvent prevent : prevents) {
             conc -= check_conflict(prevent, event);
         }
         return Math.max(0, conc);
@@ -70,8 +70,8 @@ public class SHJCombo extends SPOUTCombo {
     protected void show_stats() {
         while (cnt < 8) {
             for (Object myevent : myevents) {
-                concurrency += conflict((SHJEvent) myevent);
-                prevents.add((SHJEvent) myevent);
+                concurrency += conflict((SHJTxnEvent) myevent);
+                prevents.add((SHJTxnEvent) myevent);
                 if (prevents.size() == concerned_length[cnt]) {
                     if (pre_concurrency == 0)
                         pre_concurrency = concurrency;

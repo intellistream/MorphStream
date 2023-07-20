@@ -3,7 +3,7 @@ package intellistream.morphstream.examples.tsp.tollprocessing.op;
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.AbstractLRBTuple;
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.PositionReport;
-import intellistream.morphstream.examples.tsp.tollprocessing.events.LREvent;
+import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -30,20 +30,20 @@ public class TPCombo extends SPOUTCombo {
     int pre_concurrency = 0;
     int[] concerned_length = new int[]{1, 10, 50, 100, 250, 500, 750, 1000};
     int cnt = 0;
-    ArrayDeque<LREvent> prevents = new ArrayDeque<>();
+    ArrayDeque<TPTxnEvent> prevents = new ArrayDeque<>();
 
     public TPCombo() {
         super(LOG, 0);
     }
 
-    private boolean check_conflict(LREvent pre_event, LREvent event) {
+    private boolean check_conflict(TPTxnEvent pre_event, TPTxnEvent event) {
         Integer pre_segment = pre_event.getPOSReport().getSegment();
         Integer current_segment = event.getPOSReport().getSegment();
         return pre_segment.equals(current_segment);
     }
 
-    private boolean conflict(LREvent event) {
-        for (LREvent prevent : prevents) {
+    private boolean conflict(TPTxnEvent event) {
+        for (TPTxnEvent prevent : prevents) {
             if (check_conflict(prevent, event))
                 return true;
         }
@@ -52,7 +52,7 @@ public class TPCombo extends SPOUTCombo {
 
     protected void show_stats() {
         for (Object myevent : myevents) {
-            Integer segment = ((LREvent) myevent).getPOSReport().getSegment();
+            Integer segment = ((TPTxnEvent) myevent).getPOSReport().getSegment();
             stats.addValue(segment);
             boolean containsKey = keys.containsKey(segment);
             if (containsKey) {
@@ -67,10 +67,10 @@ public class TPCombo extends SPOUTCombo {
         LOG.info(stats.toString());
         while (cnt < 8) {
             for (Object myevent : myevents) {
-                if (!conflict((LREvent) myevent)) {
+                if (!conflict((TPTxnEvent) myevent)) {
                     concurrency++;
                 }
-                prevents.add((LREvent) myevent);
+                prevents.add((TPTxnEvent) myevent);
                 if (prevents.size() == concerned_length[cnt]) {
                     if (pre_concurrency == 0)
                         pre_concurrency = concurrency;
@@ -92,7 +92,7 @@ public class TPCombo extends SPOUTCombo {
         Integer vid = Integer.parseInt(token[2]);
         if (type == AbstractLRBTuple.position_report) {
             return
-                    new LREvent(new PositionReport(//
+                    new TPTxnEvent(new PositionReport(//
                             time,//
                             vid,//
                             Integer.parseInt(token[3]), // speed

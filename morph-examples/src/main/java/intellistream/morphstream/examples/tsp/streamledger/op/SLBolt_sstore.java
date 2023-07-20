@@ -1,8 +1,8 @@
 package intellistream.morphstream.examples.tsp.streamledger.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.streamledger.events.DepositEvent;
-import intellistream.morphstream.examples.tsp.streamledger.events.TransactionEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.DepositTxnEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.TransactionTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -88,12 +88,12 @@ public class SLBolt_sstore extends SLBolt_LA {
             int[] p_bids = new int[(int) tthread];
             HashMap<Integer, Integer> pids = new HashMap<>();
             for (TxnEvent event : GlobalSorter.sortedEvents) {
-                if (event instanceof TransactionEvent) {
-                    parseTransactionEvent(partitionOffset, (TransactionEvent) event, pids);
+                if (event instanceof TransactionTxnEvent) {
+                    parseTransactionEvent(partitionOffset, (TransactionTxnEvent) event, pids);
                     event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
                     pids.replaceAll((k, v) -> p_bids[k]++);
-                } else if (event instanceof DepositEvent) {
-                    parseDepositEvent(partitionOffset, (DepositEvent) event, pids);
+                } else if (event instanceof DepositTxnEvent) {
+                    parseDepositEvent(partitionOffset, (DepositTxnEvent) event, pids);
                     event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
                     pids.replaceAll((k, v) -> p_bids[k]++);
                 } else {
@@ -106,12 +106,12 @@ public class SLBolt_sstore extends SLBolt_LA {
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
 
-    private void parseDepositEvent(int partitionOffset, DepositEvent event, HashMap<Integer, Integer> pids) {
+    private void parseDepositEvent(int partitionOffset, DepositTxnEvent event, HashMap<Integer, Integer> pids) {
         pids.put((int) (Long.parseLong(event.getAccountId()) / partitionOffset), 0);
         pids.put((int) (Long.parseLong(event.getBookEntryId()) / partitionOffset), 0);
     }
 
-    private void parseTransactionEvent(int partitionOffset, TransactionEvent event, HashMap<Integer, Integer> pids) {
+    private void parseTransactionEvent(int partitionOffset, TransactionTxnEvent event, HashMap<Integer, Integer> pids) {
         pids.put((int) (Long.parseLong(event.getSourceAccountId()) / partitionOffset), 0);
         pids.put((int) (Long.parseLong(event.getSourceBookEntryId()) / partitionOffset), 0);
         pids.put((int) (Long.parseLong(event.getTargetAccountId()) / partitionOffset), 0);
@@ -139,10 +139,10 @@ public class SLBolt_sstore extends SLBolt_LA {
 //        LA_LOCK(_pid, event.num_p(), transactionManager, event.getBid_array(), _bid, tthread);
         LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id);
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
-        if (event instanceof DepositEvent) {
-            DEPOSITE_LOCK_AHEAD((DepositEvent) event, txn_context[0]);
+        if (event instanceof DepositTxnEvent) {
+            DEPOSITE_LOCK_AHEAD((DepositTxnEvent) event, txn_context[0]);
         } else {
-            TRANSFER_LOCK_AHEAD((TransactionEvent) event, txn_context[0]);
+            TRANSFER_LOCK_AHEAD((TransactionTxnEvent) event, txn_context[0]);
         }
         END_LOCK_TIME_MEASURE_ACC(thread_Id);
 //      LA_UNLOCK(_pid, event.num_p(), transactionManager, tthread);

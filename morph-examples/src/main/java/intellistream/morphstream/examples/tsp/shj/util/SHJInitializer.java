@@ -3,11 +3,11 @@ package intellistream.morphstream.examples.tsp.shj.util;
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.datagen.DataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.SHJ.TPGTxnGenerator.SHJTPGDataGenerator;
-import intellistream.morphstream.examples.utils.datagen.apps.SHJ.TPGTxnGenerator.SHJTPGDataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.SHJ.TPGTxnGenerator.SHJTPGDynamicDataGenerator;
+import intellistream.morphstream.examples.tsp.shj.events.SHJTPGDataGenerator;
+import intellistream.morphstream.examples.tsp.shj.events.SHJTPGDataGeneratorConfig;
+import intellistream.morphstream.examples.tsp.shj.events.SHJTPGDynamicDataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DynamicDataGeneratorConfig;
-import intellistream.morphstream.examples.tsp.shj.events.SHJEvent;
+import intellistream.morphstream.examples.tsp.shj.events.SHJTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.txn.TxnEvent;
 import intellistream.morphstream.engine.txn.db.Database;
@@ -231,7 +231,7 @@ public class SHJInitializer extends TableInitilizer {
             String[] lookupKeys = new String[keyLength];
             System.arraycopy(split, 4, lookupKeys, 0, keyLength);
 
-            SHJEvent event = new SHJEvent(
+            SHJTxnEvent event = new SHJTxnEvent(
                     Integer.parseInt(split[0]), //bid
                     npid, //pid
                     Arrays.toString(p_bids), //bid_arrary
@@ -284,25 +284,25 @@ public class SHJInitializer extends TableInitilizer {
         BufferedWriter w;
         w = new BufferedWriter(new FileWriter(new File(event_path + OsUtils.OS_wrapper(file_name))));
         for (Object event : db.getEventManager().input_events) {
-            SHJEvent SHJEvent = (SHJEvent) event;
+            SHJTxnEvent SHJTxnEvent = (SHJTxnEvent) event;
             String sb =
-                    SHJEvent.getBid() +//0 -- bid
+                    SHJTxnEvent.getBid() +//0 -- bid
                             split_exp +
-                            SHJEvent.getPid() +//1
+                            SHJTxnEvent.getPid() +//1
                             split_exp +
-                            Arrays.toString(SHJEvent.getBid_array()) +//2
+                            Arrays.toString(SHJTxnEvent.getBid_array()) +//2
                             split_exp +
-                            SHJEvent.num_p() +//3 num of p
+                            SHJTxnEvent.num_p() +//3 num of p
                             split_exp +
                             "SHJEvent" +//4 input_event types.
                             split_exp +
-                            SHJEvent.getKey() +//5 tweet ID
+                            SHJTxnEvent.getKey() +//5 tweet ID
                             split_exp +
-                            SHJEvent.getStreamID() +//6 stream ID
+                            SHJTxnEvent.getStreamID() +//6 stream ID
                             split_exp +
-                            SHJEvent.getAmount() + //7 address
+                            SHJTxnEvent.getAmount() + //7 address
                             split_exp +
-                            Arrays.toString(SHJEvent.getLookupKeys())//8 lookup keys
+                            Arrays.toString(SHJTxnEvent.getLookupKeys())//8 lookup keys
                     ;
             w.write(sb
                     + "\n");

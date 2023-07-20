@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.grepsumnon.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.grepsumnon.events.NonGS;
+import intellistream.morphstream.examples.tsp.grepsumnon.events.NGSTxnEvent;
 import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
@@ -22,7 +22,7 @@ public abstract class NonGSBolt extends TransactionalBolt {
         this.configPrefix = "non_gs";
     }
 
-    protected boolean READ_CORE(NonGS event) {
+    protected boolean READ_CORE(NGSTxnEvent event) {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             SchemaRecordRef ref = event.getRecord_refs()[i];
             if (ref.isEmpty()) {
@@ -35,7 +35,7 @@ public abstract class NonGSBolt extends TransactionalBolt {
         return true;
     }
 
-    protected void READ_POST(NonGS event) throws InterruptedException {
+    protected void READ_POST(NGSTxnEvent event) throws InterruptedException {
         int sum = 0;
         if (POST_COMPUTE_COMPLEXITY != 0) {
             for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {

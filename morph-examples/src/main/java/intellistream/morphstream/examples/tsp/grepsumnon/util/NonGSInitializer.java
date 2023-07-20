@@ -3,9 +3,9 @@ package intellistream.morphstream.examples.tsp.grepsumnon.util;
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.datagen.DataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.NonGS.NonGSTPGDynamicDataGenerator;
+import intellistream.morphstream.examples.tsp.grepsumnon.events.NGSTPGDynamicDataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DynamicDataGeneratorConfig;
-import intellistream.morphstream.examples.tsp.grepsumnon.events.NonGS;
+import intellistream.morphstream.examples.tsp.grepsumnon.events.NGSTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.txn.TxnEvent;
 import intellistream.morphstream.engine.txn.db.Database;
@@ -42,7 +42,7 @@ public class NonGSInitializer extends TableInitilizer {
     private final int partitionOffset;
     private final int NUM_ACCESS;
     private final int Transaction_Length;
-    //different R-W ratio.
+
     //just enable one of the decision array
     protected transient boolean[] read_decision;
     int i = 0;
@@ -68,7 +68,7 @@ public class NonGSInitializer extends TableInitilizer {
             DynamicDataGeneratorConfig dynamicDataGeneratorConfig = new DynamicDataGeneratorConfig();
             dynamicDataGeneratorConfig.initialize(config);
             configurePath(dynamicDataGeneratorConfig);
-            dataGenerator = new NonGSTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
+            dataGenerator = new NGSTPGDynamicDataGenerator(dynamicDataGeneratorConfig);
         }
     }
 
@@ -215,7 +215,7 @@ public class NonGSInitializer extends TableInitilizer {
             }
 
             // construct event
-            NonGS event = new NonGS(
+            NGSTxnEvent event = new NGSTxnEvent(
                     Integer.parseInt(split[0]), //bid,
                     npid, //pid
                     Arrays.toString(p_bids), //bid_array

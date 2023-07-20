@@ -1,16 +1,16 @@
 package intellistream.morphstream.examples.tsp.onlinebiding.util;
 
-import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingTxnEvent;
 
 /**
  * Data type describing the result of a processed transaction.
  * It describes whether the transaction was successful as well as the resulting account balances.
  */
 public class BidingResult {
-    private BuyingEvent event;
+    private BuyingTxnEvent event;
     private boolean success;
 
-    public BidingResult(BuyingEvent event, boolean success) {
+    public BidingResult(BuyingTxnEvent event, boolean success) {
         this.success = success;
     }
 

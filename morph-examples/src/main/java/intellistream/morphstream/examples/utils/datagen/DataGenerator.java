@@ -1,7 +1,5 @@
 package intellistream.morphstream.examples.utils.datagen;
 
-import intellistream.morphstream.examples.utils.datagen.apps.SL.output.GephiOutputHandler;
-import intellistream.morphstream.examples.utils.datagen.apps.SL.output.IOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +14,6 @@ public abstract class DataGenerator {
     protected DataGeneratorConfig dataConfig;
     protected IOutputHandler dataOutputHandler; // dump data to the specified path
     protected int windowCount = 0;
-
 
     public DataGenerator(DataGeneratorConfig dataConfig) {
         this.dataConfig = dataConfig;
@@ -37,7 +34,7 @@ public abstract class DataGenerator {
         for (int tupleNumber = 0; tupleNumber < nTuples + dataConfig.getTotalThreads(); tupleNumber++) {//add a padding to avoid non-integral-divided problem.
             generateTuple();
         }
-        System.out.println(windowCount);
+        LOG.info(" "+windowCount);
     }
 
     protected abstract void generateTuple();

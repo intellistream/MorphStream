@@ -1,9 +1,9 @@
 package intellistream.morphstream.examples.tsp.onlinebiding.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -32,7 +32,7 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 public class OBBolt_ts_s extends OBBolt {
     private static final Logger LOG = LoggerFactory.getLogger(OBBolt_ts_s.class);
-    ArrayDeque<BuyingEvent> buyingEvents = new ArrayDeque<>();
+    ArrayDeque<BuyingTxnEvent> buyingEvents = new ArrayDeque<>();
     private int alertEvents = 0, toppingEvents = 0;
 
     public OBBolt_ts_s(int fid, SINKCombo sink) {
@@ -90,17 +90,17 @@ public class OBBolt_ts_s extends OBBolt {
             TxnEvent event = (TxnEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            if (event instanceof BuyingEvent) {
-                BUYING_REQUEST_CONSTRUCT((BuyingEvent) event, txnContext);
-            } else if (event instanceof AlertEvent) {
-                ALERT_REQUEST_CONSTRUCT((AlertEvent) event, txnContext);
+            if (event instanceof BuyingTxnEvent) {
+                BUYING_REQUEST_CONSTRUCT((BuyingTxnEvent) event, txnContext);
+            } else if (event instanceof AlertTxnEvent) {
+                ALERT_REQUEST_CONSTRUCT((AlertTxnEvent) event, txnContext);
             } else {
-                TOPPING_REQUEST_CONSTRUCT((ToppingEvent) event, txnContext);
+                TOPPING_REQUEST_CONSTRUCT((ToppingTxnEvent) event, txnContext);
             }
         }
     }
 
-    private void BUYING_REQUEST_CONSTRUCT(BuyingEvent event, TxnContext txnContext) throws DatabaseException {
+    private void BUYING_REQUEST_CONSTRUCT(BuyingTxnEvent event, TxnContext txnContext) throws DatabaseException {
         //it simply construct the operations and return.
         transactionManager.BeginTransaction(txnContext);
         for (int i = 0; i < NUM_ACCESSES_PER_BUY; i++) {
@@ -119,7 +119,7 @@ public class OBBolt_ts_s extends OBBolt {
         buyingEvents.add(event);
     }
 
-    protected void ALERT_REQUEST_CONSTRUCT(AlertEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void ALERT_REQUEST_CONSTRUCT(AlertTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         transactionManager.BeginTransaction(txnContext);
         for (int i = 0; i < event.getNum_access(); i++)
@@ -131,7 +131,7 @@ public class OBBolt_ts_s extends OBBolt {
         alertEvents++;
     }
 
-    protected void TOPPING_REQUEST_CONSTRUCT(ToppingEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void TOPPING_REQUEST_CONSTRUCT(ToppingTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         transactionManager.BeginTransaction(txnContext);
         for (int i = 0; i < event.getNum_access(); i++)
@@ -144,7 +144,7 @@ public class OBBolt_ts_s extends OBBolt {
     }
 
     private void BUYING_REQUEST_CORE() {
-        for (BuyingEvent event : buyingEvents) {
+        for (BuyingTxnEvent event : buyingEvents) {
             BUYING_REQUEST_CORE(event);
         }
     }
@@ -155,13 +155,13 @@ public class OBBolt_ts_s extends OBBolt {
      * @param event
      */
     @Override
-    protected void BUYING_REQUEST_CORE(BuyingEvent event) {
+    protected void BUYING_REQUEST_CORE(BuyingTxnEvent event) {
         //measure_end if any item is not able to buy.
         event.biding_result = new BidingResult(event, event.success[0] == NUM_ACCESSES_PER_BUY);
     }
 
     private void BUYING_REQUEST_POST() throws InterruptedException {
-        for (BuyingEvent event : buyingEvents) {
+        for (BuyingTxnEvent event : buyingEvents) {
             BUYING_REQUEST_POST(event);
         }
     }

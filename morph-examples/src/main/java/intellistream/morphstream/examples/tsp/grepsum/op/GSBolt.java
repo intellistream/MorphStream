@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.grepsum.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.grepsum.events.GSEvent;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTxnEvent;
 import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
@@ -34,7 +34,7 @@ public abstract class GSBolt extends TransactionalBolt {
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
 
-    protected boolean READ_CORE(GSEvent event) {
+    protected boolean READ_CORE(GSTxnEvent event) {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             SchemaRecordRef ref = event.getRecord_refs()[i];
             if (ref.isEmpty()) {
@@ -48,7 +48,7 @@ public abstract class GSBolt extends TransactionalBolt {
     }
 
     //    volatile int com_result = 0;
-    protected void READ_POST(GSEvent event) throws InterruptedException {
+    protected void READ_POST(GSTxnEvent event) throws InterruptedException {
         int sum = 0;
         if (POST_COMPUTE_COMPLEXITY != 0) {
             for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
@@ -74,7 +74,7 @@ public abstract class GSBolt extends TransactionalBolt {
         sum = 0;
     }
 
-    protected void WRITE_POST(GSEvent event) throws InterruptedException {
+    protected void WRITE_POST(GSTxnEvent event) throws InterruptedException {
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {
@@ -84,7 +84,7 @@ public abstract class GSBolt extends TransactionalBolt {
         }
     }
 
-    protected void WRITE_CORE(GSEvent event) {
+    protected void WRITE_CORE(GSTxnEvent event) {
 //        long start = System.nanoTime();
         long sum = 0;
         DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
@@ -104,19 +104,19 @@ public abstract class GSBolt extends TransactionalBolt {
         TargetValue_value.setLong(sum);
     }
 
-    protected void READ_LOCK_AHEAD(GSEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void READ_LOCK_AHEAD(GSTxnEvent event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_ONLY);
     }
 
-    protected void WRITE_LOCK_AHEAD(GSEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void WRITE_LOCK_AHEAD(GSTxnEvent event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_WRITE);
     }
 
-    private boolean process_request_noLock(GSEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
+    private boolean process_request_noLock(GSTxnEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             boolean rt = transactionManager.SelectKeyRecord_noLock(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
@@ -129,7 +129,7 @@ public abstract class GSBolt extends TransactionalBolt {
         return false;
     }
 
-    private boolean process_request(GSEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
+    private boolean process_request(GSTxnEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException, InterruptedException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             boolean rt = transactionManager.SelectKeyRecord(txnContext, "MicroTable", String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
             if (rt) {
@@ -141,19 +141,19 @@ public abstract class GSBolt extends TransactionalBolt {
         return false;
     }
 
-    protected boolean read_request_noLock(GSEvent event, TxnContext txnContext) throws DatabaseException {
+    protected boolean read_request_noLock(GSTxnEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, READ_ONLY);
     }
 
-    protected boolean write_request_noLock(GSEvent event, TxnContext txnContext) throws DatabaseException {
+    protected boolean write_request_noLock(GSTxnEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, READ_WRITE);
     }
 
-    protected boolean read_request(GSEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected boolean read_request(GSTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         return !process_request(event, txnContext, READ_ONLY);
     }
 
-    protected boolean write_request(GSEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected boolean write_request(GSTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         return !process_request(event, txnContext, READ_WRITE);
     }
 
@@ -166,7 +166,7 @@ public abstract class GSBolt extends TransactionalBolt {
     protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            GSEvent event = (GSEvent) input_event;
+            GSTxnEvent event = (GSTxnEvent) input_event;
             (event).setTimestamp(timestamp);
             boolean flag = event.ABORT_EVENT();
             if (flag) {//read

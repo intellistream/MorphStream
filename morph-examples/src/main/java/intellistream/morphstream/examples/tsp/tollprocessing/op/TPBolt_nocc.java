@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.tollprocessing.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.tollprocessing.events.LREvent;
+import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -55,11 +55,11 @@ public class TPBolt_nocc extends TPBolt {
     @Override
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            txn_process((LREvent) input_event, i, _bid);
+            txn_process((TPTxnEvent) input_event, i, _bid);
         }
     }
 
-    private void txn_process(LREvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void txn_process(TPTxnEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
         TXN_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         TXN_REQUEST_CORE(input_event);

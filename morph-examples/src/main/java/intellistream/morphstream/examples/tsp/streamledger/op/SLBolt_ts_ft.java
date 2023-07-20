@@ -1,8 +1,8 @@
 package intellistream.morphstream.examples.tsp.streamledger.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.streamledger.events.DepositEvent;
-import intellistream.morphstream.examples.tsp.streamledger.events.TransactionEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.DepositTxnEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.TransactionTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -36,8 +36,8 @@ public class SLBolt_ts_ft extends SLBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SLBolt_ts_ft.class);
     private static final long serialVersionUID = -5968750340131744744L;
     //write-compute time pre-measured.
-    ArrayDeque<TransactionEvent> transactionEvents;
-    ArrayDeque<DepositEvent> depositEvents;
+    ArrayDeque<TransactionTxnEvent> transactionTxnEvents;
+    ArrayDeque<DepositTxnEvent> depositTxnEvents;
 
     public SLBolt_ts_ft(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -55,8 +55,8 @@ public class SLBolt_ts_ft extends SLBolt {
         int numberOfStates = config.getInt("NUM_ITEMS");
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id,
                 numberOfStates, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BFS"));
-        transactionEvents = new ArrayDeque<>();
-        depositEvents = new ArrayDeque<>();
+        transactionTxnEvents = new ArrayDeque<>();
+        depositTxnEvents = new ArrayDeque<>();
     }
 
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
@@ -71,8 +71,8 @@ public class SLBolt_ts_ft extends SLBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
 
         if (in.isMarker()) {
-            int transSize = transactionEvents.size();
-            int depoSize = depositEvents.size();
+            int transSize = transactionTxnEvents.size();
+            int depoSize = depositTxnEvents.size();
             int num_events = transSize + depoSize;
             {
                 MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
@@ -115,8 +115,8 @@ public class SLBolt_ts_ft extends SLBolt {
                 } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {
                     this.ftManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new SnapshotResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
                 }
-                transactionEvents.clear();
-                depositEvents.clear();
+                transactionTxnEvents.clear();
+                depositTxnEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
             if (this.sink.lastTask >= 0 && in.getMarker().getSnapshotId() * this.tthread >= this.sink.lastTask) {
@@ -144,17 +144,17 @@ public class SLBolt_ts_ft extends SLBolt {
             TxnEvent event = (TxnEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
-            if (event instanceof DepositEvent) {
-                DEPOSITE_REQUEST_CONSTRUCT((DepositEvent) event, txnContext);
-            } else if (event instanceof TransactionEvent) {
-                TRANSFER_REQUEST_CONSTRUCT((TransactionEvent) event, txnContext);
+            if (event instanceof DepositTxnEvent) {
+                DEPOSITE_REQUEST_CONSTRUCT((DepositTxnEvent) event, txnContext);
+            } else if (event instanceof TransactionTxnEvent) {
+                TRANSFER_REQUEST_CONSTRUCT((TransactionTxnEvent) event, txnContext);
             } else
                 throw new UnknownError();
             MeasureTools.END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
         }
     }
 
-    protected void TRANSFER_REQUEST_CONSTRUCT(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void TRANSFER_REQUEST_CONSTRUCT(TransactionTxnEvent event, TxnContext txnContext) throws DatabaseException {
 
         String[] accTable = new String[]{"accounts"};
         String[] astTable = new String[]{"bookEntries"};
@@ -204,33 +204,33 @@ public class SLBolt_ts_ft extends SLBolt {
 
         transactionManager.CommitTransaction(txnContext);
 
-        transactionEvents.add(event);
+        transactionTxnEvents.add(event);
     }
 
-    protected void DEPOSITE_REQUEST_CONSTRUCT(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void DEPOSITE_REQUEST_CONSTRUCT(DepositTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         transactionManager.BeginTransaction(txnContext);
         transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()));// read and modify the account itself.
         transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()));// read and modify the asset itself.
         transactionManager.CommitTransaction(txnContext);
 
-        depositEvents.add(event);
+        depositTxnEvents.add(event);
     }
 
     private void DEPOSITE_REQUEST_POST() throws InterruptedException {
-        for (DepositEvent event : depositEvents) {
+        for (DepositTxnEvent event : depositTxnEvents) {
             DEPOSITE_REQUEST_POST(event);
         }
     }
 
     private void TRANSFER_REQUEST_POST() throws InterruptedException {
-        for (TransactionEvent event : transactionEvents) {
+        for (TransactionTxnEvent event : transactionTxnEvents) {
             TRANSFER_REQUEST_POST(event);
         }
     }
 
     private void TRANSFER_REQUEST_CORE() throws InterruptedException {
-        for (TransactionEvent event : transactionEvents) {
+        for (TransactionTxnEvent event : transactionTxnEvents) {
 
             SchemaRecord srcAccountValueRecord = event.src_account_value.getRecord();
             SchemaRecord dstAccountValueRecord = event.dst_account_value.getRecord();

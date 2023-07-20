@@ -2,7 +2,7 @@ package intellistream.morphstream.examples.tsp.grepsumnon.op;
 
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.SPOUTCombo;
-import intellistream.morphstream.examples.tsp.grepsum.events.GSEvent;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -24,7 +24,7 @@ public class NonGSCombo extends SPOUTCombo {
     int pre_concurrency = 0;
     int[] concerned_length = new int[]{40};
     int cnt = 0;
-    ArrayDeque<GSEvent> prevents = new ArrayDeque<>();
+    ArrayDeque<GSTxnEvent> prevents = new ArrayDeque<>();
 
     public NonGSCombo() {
         super(LOG, 0);

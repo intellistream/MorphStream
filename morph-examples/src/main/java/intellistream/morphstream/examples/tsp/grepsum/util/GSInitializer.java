@@ -3,11 +3,11 @@ package intellistream.morphstream.examples.tsp.grepsum.util;
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.datagen.DataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.GS.TPGTxnGenerator.GSTPGDataGenerator;
-import intellistream.morphstream.examples.utils.datagen.apps.GS.TPGTxnGenerator.GSTPGDataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.GS.TPGTxnGenerator.GSTPGDynamicDataGenerator;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTPGDataGenerator;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTPGDataGeneratorConfig;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTPGDynamicDataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DynamicDataGeneratorConfig;
-import intellistream.morphstream.examples.tsp.grepsum.events.GSEvent;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.txn.TxnEvent;
 import intellistream.morphstream.engine.txn.db.Database;
@@ -242,7 +242,7 @@ public class GSInitializer extends TableInitilizer {
             }
 
             // construct event
-            GSEvent event = new GSEvent(
+            GSTxnEvent event = new GSTxnEvent(
                     Integer.parseInt(split[0]), //bid,
                     npid, //pid
                     Arrays.toString(p_bids), //bid_array
@@ -293,21 +293,21 @@ public class GSInitializer extends TableInitilizer {
         BufferedWriter w;
         w = new BufferedWriter(new FileWriter(new File(event_path + OsUtils.OS_wrapper(file_name))));
         for (Object event : db.getEventManager().input_events) {
-            GSEvent GSEvent = (GSEvent) event;
+            GSTxnEvent GSTxnEvent = (GSTxnEvent) event;
             String sb =
-                    GSEvent.getBid() +//0 -- bid
+                    GSTxnEvent.getBid() +//0 -- bid
                             split_exp +
-                            GSEvent.getPid() +//1
+                            GSTxnEvent.getPid() +//1
                             split_exp +
-                            Arrays.toString(GSEvent.getBid_array()) +//2
+                            Arrays.toString(GSTxnEvent.getBid_array()) +//2
                             split_exp +
-                            GSEvent.num_p() +//3 num of p
+                            GSTxnEvent.num_p() +//3 num of p
                             split_exp +
                             "MicroEvent" +//4 input_event types.
                             split_exp +
-                            Arrays.toString(GSEvent.getKeys()) +//5 keys
+                            Arrays.toString(GSTxnEvent.getKeys()) +//5 keys
                             split_exp +
-                            GSEvent.ABORT_EVENT()//6
+                            GSTxnEvent.ABORT_EVENT()//6
                     ;
             w.write(sb
                     + "\n");

@@ -4,7 +4,7 @@ import intellistream.morphstream.examples.utils.SINKCombo;
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.TollNotification;
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.util.AvgValue;
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.util.SegmentIdentifier;
-import intellistream.morphstream.examples.tsp.tollprocessing.events.LREvent;
+import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTxnEvent;
 import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
@@ -50,7 +50,7 @@ public abstract class TPBolt extends TransactionalBolt {
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
 
-    protected void TXN_REQUEST_NOLOCK(LREvent event, TxnContext txnContext) throws DatabaseException {
+    protected void TXN_REQUEST_NOLOCK(TPTxnEvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.SelectKeyRecord_noLock(txnContext, "segment_speed"
                 , String.valueOf(event.getPOSReport().getSegment())
                 , event.speed_value//holder to be filled up.
@@ -61,7 +61,7 @@ public abstract class TPBolt extends TransactionalBolt {
                 , READ_WRITE);
     }
 
-    protected void TXN_REQUEST(LREvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void TXN_REQUEST(TPTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         transactionManager.SelectKeyRecord(txnContext, "segment_speed"
                 , String.valueOf(event.getPOSReport().getSegment())
                 , event.speed_value//holder to be filled up.
@@ -72,7 +72,7 @@ public abstract class TPBolt extends TransactionalBolt {
                 , READ_WRITE);
     }
 
-    protected void REQUEST_LOCK_AHEAD(LREvent event, TxnContext txnContext) throws DatabaseException {
+    protected void REQUEST_LOCK_AHEAD(TPTxnEvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.lock_ahead(txnContext, "segment_speed", String.valueOf(event.getPOSReport().getSegment()), event.speed_value, READ_WRITE);
         transactionManager.lock_ahead(txnContext, "segment_cnt", String.valueOf(event.getPOSReport().getSegment()), event.count_value, READ_WRITE);
     }
@@ -94,7 +94,7 @@ public abstract class TPBolt extends TransactionalBolt {
         return null;
     }
 
-    void REQUEST_POST(LREvent event) throws InterruptedException {
+    void REQUEST_POST(TPTxnEvent event) throws InterruptedException {
         tollNotification = toll_process(event.getPOSReport().getVid(), event.count, event.lav, event.getPOSReport().getTime());
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
@@ -111,14 +111,14 @@ public abstract class TPBolt extends TransactionalBolt {
     protected void POST_PROCESS(long bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            LREvent event = (LREvent) input_event;
-            ((LREvent) input_event).setTimestamp(timestamp);
+            TPTxnEvent event = (TPTxnEvent) input_event;
+            ((TPTxnEvent) input_event).setTimestamp(timestamp);
             REQUEST_POST(event);
         }
         END_POST_TIME_MEASURE(thread_Id);
     }
 
-    protected void TXN_REQUEST_CORE(LREvent event) {
+    protected void TXN_REQUEST_CORE(TPTxnEvent event) {
         AppConfig.randomDelay();
         DataBox dataBox = event.count_value.getRecord().getValues().get(1);
         HashSet cnt_segment = dataBox.getHashSet();

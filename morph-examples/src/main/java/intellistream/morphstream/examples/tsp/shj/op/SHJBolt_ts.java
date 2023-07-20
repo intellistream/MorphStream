@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.shj.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.shj.events.SHJEvent;
+import intellistream.morphstream.examples.tsp.shj.events.SHJTxnEvent;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -25,7 +25,7 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 public class SHJBolt_ts extends SHJBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SHJBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
-    Collection<SHJEvent> joinEvents;
+    Collection<SHJTxnEvent> joinEvents;
 
     public SHJBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -45,14 +45,14 @@ public class SHJBolt_ts extends SHJBolt {
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            SHJEvent event = (SHJEvent) input_event;
+            SHJTxnEvent event = (SHJTxnEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             SHJ_REQUEST_CONSTRUCT(event, txnContext);
         }
     }
 
-    private void SHJ_REQUEST_CONSTRUCT(SHJEvent event, TxnContext txnContext) throws DatabaseException {
+    private void SHJ_REQUEST_CONSTRUCT(SHJTxnEvent event, TxnContext txnContext) throws DatabaseException {
 
         String updateIndexTable = ""; //index to update
         String lookupIndexTable = ""; //index to lookup
@@ -97,13 +97,13 @@ public class SHJBolt_ts extends SHJBolt {
     }
 
     void SHJ_REQUEST_CORE() throws InterruptedException {
-        for (SHJEvent event : joinEvents) {
+        for (SHJTxnEvent event : joinEvents) {
             SHJ_CORE(event);
         }
     }
 
     void SHJ_REQUEST_POST() throws InterruptedException {
-        for (SHJEvent event : joinEvents) {
+        for (SHJTxnEvent event : joinEvents) {
             SHJ_POST(event);
         }
     }

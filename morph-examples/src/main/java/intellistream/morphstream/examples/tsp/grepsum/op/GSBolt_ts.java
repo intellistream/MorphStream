@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.grepsum.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.grepsum.events.GSEvent;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTxnEvent;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -25,7 +25,7 @@ public class GSBolt_ts extends GSBolt {
     private static final Logger LOG = LoggerFactory.getLogger(GSBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     private final double write_useful_time = 556;//write-compute time pre-measured.
-    Collection<GSEvent> GSEvents;
+    Collection<GSTxnEvent> GSTxnEvents;
     int i = 0;
     private int writeEvents;
 
@@ -47,7 +47,7 @@ public class GSBolt_ts extends GSBolt {
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            GSEvent event = (GSEvent) input_event;
+            GSTxnEvent event = (GSTxnEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             boolean flag = event.ABORT_EVENT();
@@ -60,7 +60,7 @@ public class GSBolt_ts extends GSBolt {
         }
     }
 
-    private void RANGE_WRITE_CONSRUCT(GSEvent event, TxnContext txnContext) throws DatabaseException {
+    private void RANGE_WRITE_CONSRUCT(GSTxnEvent event, TxnContext txnContext) throws DatabaseException {
         SUM sum;
         if (event.ABORT_EVENT()) {
             sum = new SUM(-1);
@@ -89,14 +89,14 @@ public class GSBolt_ts extends GSBolt {
                     event.success);          //asynchronously return.
         }
         transactionManager.CommitTransaction(txnContext);
-        GSEvents.add(event);
+        GSTxnEvents.add(event);
     }
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
-        GSEvents = new ArrayDeque<>();
+        GSTxnEvents = new ArrayDeque<>();
     }
 
     void READ_REQUEST_CORE() throws InterruptedException {
@@ -110,13 +110,13 @@ public class GSBolt_ts extends GSBolt {
 //                END_POST_TIME_MEASURE_ACC(thread_Id);
 //            }
 //        }
-        for (GSEvent event : GSEvents) {
+        for (GSTxnEvent event : GSTxnEvents) {
             READ_CORE(event);
         }
     }
 
     void READ_POST() throws InterruptedException {
-        for (GSEvent event : GSEvents) {
+        for (GSTxnEvent event : GSTxnEvents) {
             READ_POST(event);
         }
     }
@@ -125,7 +125,7 @@ public class GSBolt_ts extends GSBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
 
         if (in.isMarker()) {
-            int num_events = GSEvents.size();
+            int num_events = GSTxnEvents.size();
             /**
              *  MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id); at {@link #execute_ts_normal(Tuple)}}.
              */
@@ -143,7 +143,7 @@ public class GSBolt_ts extends GSBolt {
                 }
                 END_POST_TIME_MEASURE_ACC(thread_Id);
                 //all tuples in the holder is finished.
-                GSEvents.clear();
+                GSTxnEvents.clear();
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
         } else {

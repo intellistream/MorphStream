@@ -1,8 +1,8 @@
 package intellistream.morphstream.examples.tsp.onlinebiding.op;
 
-import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingTxnEvent;
 import intellistream.morphstream.engine.txn.TxnEvent;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
@@ -20,12 +20,12 @@ public abstract class OBBolt_LA extends OBBolt {
     }
 
     protected void LAL(Object event, long i, long _bid) throws DatabaseException {
-        if (event instanceof BuyingEvent) {
-            BUYING_REQUEST_LOCKAHEAD((BuyingEvent) event, txn_context[(int) (i - _bid)]);
-        } else if (event instanceof AlertEvent) {
-            ALERT_REQUEST_LOCKAHEAD((AlertEvent) event, txn_context[(int) (i - _bid)]);
-        } else if (event instanceof ToppingEvent) {
-            TOPPING_REQUEST_LOCKAHEAD((ToppingEvent) event, txn_context[(int) (i - _bid)]);
+        if (event instanceof BuyingTxnEvent) {
+            BUYING_REQUEST_LOCKAHEAD((BuyingTxnEvent) event, txn_context[(int) (i - _bid)]);
+        } else if (event instanceof AlertTxnEvent) {
+            ALERT_REQUEST_LOCKAHEAD((AlertTxnEvent) event, txn_context[(int) (i - _bid)]);
+        } else if (event instanceof ToppingTxnEvent) {
+            TOPPING_REQUEST_LOCKAHEAD((ToppingTxnEvent) event, txn_context[(int) (i - _bid)]);
         } else {
             if (enable_log) LOG.error("Wrong");
             System.exit(-1);
@@ -49,20 +49,20 @@ public abstract class OBBolt_LA extends OBBolt {
         //txn process phase.
         for (long i = _bid; i < _bid + _combo_bid_size; i++) {
             TxnEvent event = (TxnEvent) input_event;
-            if (event instanceof BuyingEvent) {
-                BUYING_REQUEST_NOLOCK((BuyingEvent) event, txn_context[(int) (i - _bid)]);
+            if (event instanceof BuyingTxnEvent) {
+                BUYING_REQUEST_NOLOCK((BuyingTxnEvent) event, txn_context[(int) (i - _bid)]);
                 BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-                BUYING_REQUEST_CORE((BuyingEvent) event);
+                BUYING_REQUEST_CORE((BuyingTxnEvent) event);
                 END_ACCESS_TIME_MEASURE_ACC(thread_Id);
-            } else if (event instanceof AlertEvent) {
-                ALERT_REQUEST_NOLOCK((AlertEvent) event, txn_context[(int) (i - _bid)]);
+            } else if (event instanceof AlertTxnEvent) {
+                ALERT_REQUEST_NOLOCK((AlertTxnEvent) event, txn_context[(int) (i - _bid)]);
                 BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-                ALERT_REQUEST_CORE((AlertEvent) event);
+                ALERT_REQUEST_CORE((AlertTxnEvent) event);
                 END_ACCESS_TIME_MEASURE_ACC(thread_Id);
             } else {
-                TOPPING_REQUEST_NOLOCK((ToppingEvent) event, txn_context[(int) (i - _bid)]);
+                TOPPING_REQUEST_NOLOCK((ToppingTxnEvent) event, txn_context[(int) (i - _bid)]);
                 BEGIN_ACCESS_TIME_MEASURE(thread_Id);
-                TOPPING_REQUEST_CORE((ToppingEvent) event);
+                TOPPING_REQUEST_CORE((ToppingTxnEvent) event);
                 END_ACCESS_TIME_MEASURE_ACC(thread_Id);
             }
             transactionManager.CommitTransaction(txn_context[(int) (i - _bid)]);

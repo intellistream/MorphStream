@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.grepsumnon.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.grepsumnon.events.NonGS;
+import intellistream.morphstream.examples.tsp.grepsumnon.events.NGSTxnEvent;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -24,7 +24,7 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 public class NonGSBolt_ts extends NonGSBolt {
     private static final Logger LOG = LoggerFactory.getLogger(NonGSBolt_ts.class);
     private static final long serialVersionUID = 1802551870447129582L;
-    Collection<NonGS> nonGS;
+    Collection<NGSTxnEvent> nonGS;
 
     public NonGSBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -41,14 +41,14 @@ public class NonGSBolt_ts extends NonGSBolt {
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            NonGS event = (NonGS) input_event;
+            NGSTxnEvent event = (NGSTxnEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             RANGE_WRITE_CONSTRUCT(event, txnContext);
         }
     }
 
-    private void RANGE_WRITE_CONSTRUCT(NonGS event, TxnContext txnContext) throws DatabaseException {
+    private void RANGE_WRITE_CONSTRUCT(NGSTxnEvent event, TxnContext txnContext) throws DatabaseException {
         SUM sum;
         if (event.isAbort()) {
             sum = new SUM(-1);
@@ -119,13 +119,13 @@ public class NonGSBolt_ts extends NonGSBolt {
     }
 
     private void READ_POST() throws InterruptedException {
-        for (NonGS event : nonGS) {
+        for (NGSTxnEvent event : nonGS) {
             READ_POST(event);
         }
     }
 
     private void READ_REQUEST_CORE() {
-        for (NonGS event : nonGS) {
+        for (NGSTxnEvent event : nonGS) {
             READ_CORE(event);
         }
     }

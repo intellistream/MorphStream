@@ -2,7 +2,7 @@ package intellistream.morphstream.examples.tsp.shj.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
 import intellistream.morphstream.examples.tsp.streamledger.op.GlobalSorter;
-import intellistream.morphstream.examples.tsp.shj.events.SHJEvent;
+import intellistream.morphstream.examples.tsp.shj.events.SHJTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -87,7 +87,7 @@ public class SHJBolt_sstore extends SHJBolt_LA {
             int[] p_bids = new int[(int) tthread];
             HashMap<Integer, Integer> pids = new HashMap<>();
             for (TxnEvent event : GlobalSorter.sortedEvents) {
-                parseIBWJEvent(partitionOffset, (SHJEvent) event, pids);
+                parseIBWJEvent(partitionOffset, (SHJTxnEvent) event, pids);
                 event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
                 pids.replaceAll((k, v) -> p_bids[k]++);
                 pids.clear();
@@ -97,7 +97,7 @@ public class SHJBolt_sstore extends SHJBolt_LA {
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
 
-    private void parseIBWJEvent(int partitionOffset, SHJEvent event, HashMap<Integer, Integer> pids) {
+    private void parseIBWJEvent(int partitionOffset, SHJTxnEvent event, HashMap<Integer, Integer> pids) {
         pids.put((int) (Long.parseLong(event.getKey()) / partitionOffset), 0);
     }
 
@@ -122,7 +122,7 @@ public class SHJBolt_sstore extends SHJBolt_LA {
 //        LA_LOCK(_pid, event.num_p(), transactionManager, event.getBid_array(), _bid, tthread);
         LA_LOCK_Reentrance(transactionManager, event.getBid_array(), event.partition_indexs, _bid, thread_Id);
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
-        SHJ_LOCK_AHEAD((SHJEvent) event, txn_context[0]); //lock record's corresponding partition
+        SHJ_LOCK_AHEAD((SHJTxnEvent) event, txn_context[0]); //lock record's corresponding partition
 
         END_LOCK_TIME_MEASURE_ACC(thread_Id);
 //      LA_UNLOCK(_pid, event.num_p(), transactionManager, tthread);

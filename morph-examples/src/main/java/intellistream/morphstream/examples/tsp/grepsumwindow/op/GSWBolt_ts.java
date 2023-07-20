@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.grepsumwindow.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.grepsumwindow.events.WindowedMicroEvent;
+import intellistream.morphstream.examples.tsp.grepsumwindow.events.GSWTxnEvent;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -25,7 +25,7 @@ public class GSWBolt_ts extends GSWBolt {
     private static final Logger LOG = LoggerFactory.getLogger(GSWBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
     private final double write_useful_time = 556;//write-compute time pre-measured.
-    Collection<WindowedMicroEvent> events;
+    Collection<GSWTxnEvent> events;
     private int writeEvents;
 
     public GSWBolt_ts(int fid, SINKCombo sink) {
@@ -46,7 +46,7 @@ public class GSWBolt_ts extends GSWBolt {
         BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            WindowedMicroEvent event = (WindowedMicroEvent) input_event;
+            GSWTxnEvent event = (GSWTxnEvent) input_event;
             if (enable_latency_measurement)
                 (event).setTimestamp(timestamp);
             boolean flag = event.READ_EVENT();
@@ -58,7 +58,7 @@ public class GSWBolt_ts extends GSWBolt {
         }
     }
 
-    private void RANGE_WRITE_CONSRUCT(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException {
+    private void RANGE_WRITE_CONSRUCT(GSWTxnEvent event, TxnContext txnContext) throws DatabaseException {
         SUM sum = new SUM();
 
         transactionManager.BeginTransaction(txnContext);
@@ -88,7 +88,7 @@ public class GSWBolt_ts extends GSWBolt {
         events.add(event);
     }
 
-    private void WINDOW_READ_CONSRUCT(WindowedMicroEvent event, TxnContext txnContext) throws DatabaseException {
+    private void WINDOW_READ_CONSRUCT(GSWTxnEvent event, TxnContext txnContext) throws DatabaseException {
         SUM sum = new SUM();
 
         transactionManager.BeginTransaction(txnContext);
@@ -125,13 +125,13 @@ public class GSWBolt_ts extends GSWBolt {
     }
 
     void READ_REQUEST_CORE() throws InterruptedException {
-        for (WindowedMicroEvent event : events) {
+        for (GSWTxnEvent event : events) {
             READ_CORE(event);
         }
     }
 
     void READ_POST() throws InterruptedException {
-        for (WindowedMicroEvent event : events) {
+        for (GSWTxnEvent event : events) {
             READ_POST(event);
         }
     }

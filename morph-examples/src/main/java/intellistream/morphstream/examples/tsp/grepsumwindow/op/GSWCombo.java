@@ -2,7 +2,7 @@ package intellistream.morphstream.examples.tsp.grepsumwindow.op;
 
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.SPOUTCombo;
-import intellistream.morphstream.examples.tsp.grepsum.events.GSEvent;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -23,7 +23,7 @@ public class GSWCombo extends SPOUTCombo {
     int pre_concurrency = 0;
     int[] concerned_length = new int[]{40};
     int cnt = 0;
-    ArrayDeque<GSEvent> prevents = new ArrayDeque<>();
+    ArrayDeque<GSTxnEvent> prevents = new ArrayDeque<>();
 
     public GSWCombo() {
         super(LOG, 0);
@@ -58,7 +58,7 @@ public class GSWCombo extends SPOUTCombo {
         return pre_key == key;
     }
 
-    private int check_conflict(GSEvent pre_event, GSEvent event) {
+    private int check_conflict(GSTxnEvent pre_event, GSTxnEvent event) {
         int conf = 0;//in case no conflict at all.
         for (int key : event.getKeys()) {
             int[] preEventKeys = pre_event.getKeys();
@@ -70,9 +70,9 @@ public class GSWCombo extends SPOUTCombo {
         return conf;
     }
 
-    private int conflict(GSEvent event) {
+    private int conflict(GSTxnEvent event) {
         int conc = 1;//in case no conflict at all.
-        for (GSEvent prevent : prevents) {
+        for (GSTxnEvent prevent : prevents) {
             conc -= check_conflict(prevent, event);
         }
         return Math.max(0, conc);
@@ -81,8 +81,8 @@ public class GSWCombo extends SPOUTCombo {
     protected void show_stats() {
         while (cnt < 8) {
             for (Object myevent : myevents) {
-                concurrency += conflict((GSEvent) myevent);
-                prevents.add((GSEvent) myevent);
+                concurrency += conflict((GSTxnEvent) myevent);
+                prevents.add((GSTxnEvent) myevent);
                 if (prevents.size() == concerned_length[cnt]) {
                     if (pre_concurrency == 0)
                         pre_concurrency = concurrency;

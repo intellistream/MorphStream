@@ -1,6 +1,6 @@
 package intellistream.morphstream.examples.tsp.streamledger.op;
 
-import intellistream.morphstream.examples.tsp.streamledger.events.TransactionEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.TransactionTxnEvent;
 
 import static java.util.Objects.requireNonNull;
 
@@ -9,7 +9,7 @@ import static java.util.Objects.requireNonNull;
  * It describes whether the transaction was successful as well as the resulting account balances.
  */
 public class TransactionResult {
-    private TransactionEvent transaction;
+    private TransactionTxnEvent transaction;
     private boolean success;
     private long newSourceAccountBalance;
     private long newTargetAccountBalance;
@@ -23,7 +23,7 @@ public class TransactionResult {
      * @param newTargetAccountBalance The resulting balance of the target account.
      */
     public TransactionResult(
-            TransactionEvent transaction,
+            TransactionTxnEvent transaction,
             boolean success,
             long newSourceAccountBalance,
             long newTargetAccountBalance) {
@@ -39,11 +39,11 @@ public class TransactionResult {
     // ------------------------------------------------------------------------
     //  Properties
     // ------------------------------------------------------------------------
-    public TransactionEvent getTransaction() {
+    public TransactionTxnEvent getTransaction() {
         return transaction;
     }
 
-    public void setTransaction(TransactionEvent transaction) {
+    public void setTransaction(TransactionTxnEvent transaction) {
         this.transaction = transaction;
     }
 

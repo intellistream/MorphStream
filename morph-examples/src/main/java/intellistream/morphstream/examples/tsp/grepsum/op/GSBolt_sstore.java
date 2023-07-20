@@ -2,7 +2,7 @@ package intellistream.morphstream.examples.tsp.grepsum.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
 import intellistream.morphstream.examples.tsp.streamledger.op.GlobalSorter;
-import intellistream.morphstream.examples.tsp.grepsum.events.GSEvent;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -93,8 +93,8 @@ public class GSBolt_sstore extends GSBolt_LA {
             int[] p_bids = new int[(int) tthread];
             HashMap<Integer, Integer> pids = new HashMap<>();
             for (TxnEvent event : GlobalSorter.sortedEvents) {
-                if (event instanceof GSEvent) {
-                    parseMicroEvent(partitionOffset, (GSEvent) event, pids);
+                if (event instanceof GSTxnEvent) {
+                    parseMicroEvent(partitionOffset, (GSTxnEvent) event, pids);
                     event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
                     pids.replaceAll((k, v) -> p_bids[k]++);
                 } else {
@@ -107,7 +107,7 @@ public class GSBolt_sstore extends GSBolt_LA {
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
 
-    private void parseMicroEvent(int partitionOffset, GSEvent event, HashMap<Integer, Integer> pids) {
+    private void parseMicroEvent(int partitionOffset, GSTxnEvent event, HashMap<Integer, Integer> pids) {
         for (int key : event.getKeys()) {
             pids.put(key / partitionOffset, 0);
         }
@@ -125,7 +125,7 @@ public class GSBolt_sstore extends GSBolt_LA {
     @Override
     protected void LAL_PROCESS(long _bid) throws DatabaseException {
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
-        GSEvent event = (GSEvent) input_event;
+        GSTxnEvent event = (GSTxnEvent) input_event;
         int _pid = event.getPid();
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         //ensures that locks are added in the input_event sequence order.

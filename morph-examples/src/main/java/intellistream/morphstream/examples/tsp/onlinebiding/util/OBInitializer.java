@@ -3,11 +3,11 @@ package intellistream.morphstream.examples.tsp.onlinebiding.util;
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.datagen.DataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.OB.OBTPGDynamicDataGenerator;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.OBTPGDynamicDataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DynamicDataGeneratorConfig;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.txn.TxnEvent;
 import intellistream.morphstream.engine.txn.db.Database;
@@ -236,9 +236,9 @@ public class OBInitializer extends TableInitilizer {
                     pids.put(keys[i - 1] / partitionOffset, 0);
                 }
                 if (split[split.length - 1].equals("1")) {
-                    event = new AlertEvent(keyLength, keys, rnd, npid, Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(), Arrays.toString(pids.keySet().toArray(new Integer[0])));
+                    event = new AlertTxnEvent(keyLength, keys, rnd, npid, Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(), Arrays.toString(pids.keySet().toArray(new Integer[0])));
                 } else {
-                    event = new ToppingEvent(keyLength, keys, rnd, npid, Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(), Arrays.toString(pids.keySet().toArray(new Integer[0])));
+                    event = new ToppingTxnEvent(keyLength, keys, rnd, npid, Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(), Arrays.toString(pids.keySet().toArray(new Integer[0])));
                 }
             } else {
                 int npid = (int) (Long.parseLong(split[1]) / partitionOffset);
@@ -249,9 +249,9 @@ public class OBInitializer extends TableInitilizer {
                     pids.put(keys[i - 1] / partitionOffset, 0);
                 }
                 if (split[split.length - 1].equals("true")) {
-                    event = new BuyingEvent(keys, npid, Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(), Arrays.toString(pids.keySet().toArray(new Integer[0])), true);
+                    event = new BuyingTxnEvent(keys, npid, Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(), Arrays.toString(pids.keySet().toArray(new Integer[0])), true);
                 } else {
-                    event = new BuyingEvent(keys, npid, Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(), Arrays.toString(pids.keySet().toArray(new Integer[0])), false);
+                    event = new BuyingTxnEvent(keys, npid, Arrays.toString(p_bids), Integer.parseInt(split[0]), pids.size(), Arrays.toString(pids.keySet().toArray(new Integer[0])), false);
                 }
             }
             DataHolder.txnEvents.add(event);
@@ -286,54 +286,54 @@ public class OBInitializer extends TableInitilizer {
         w = new BufferedWriter(new FileWriter(new File(event_path + OsUtils.OS_wrapper(file_name))));
         for (Object event : db.getEventManager().input_events) {
             StringBuilder sb = new StringBuilder();
-            if (event instanceof BuyingEvent) {
-                sb.append(((BuyingEvent) event).getBid());//0 -- bid
+            if (event instanceof BuyingTxnEvent) {
+                sb.append(((BuyingTxnEvent) event).getBid());//0 -- bid
                 sb.append(split_exp);
-                sb.append(((BuyingEvent) event).getPid());//1
+                sb.append(((BuyingTxnEvent) event).getPid());//1
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((BuyingEvent) event).getBid_array()));//2
+                sb.append(Arrays.toString(((BuyingTxnEvent) event).getBid_array()));//2
                 sb.append(split_exp);
-                sb.append(((BuyingEvent) event).num_p());//3
+                sb.append(((BuyingTxnEvent) event).num_p());//3
                 sb.append(split_exp);
                 sb.append("BuyingEvent");//input_event types.
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((BuyingEvent) event).getItemId()));//5
+                sb.append(Arrays.toString(((BuyingTxnEvent) event).getItemId()));//5
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((BuyingEvent) event).getBidPrice()));//6
+                sb.append(Arrays.toString(((BuyingTxnEvent) event).getBidPrice()));//6
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((BuyingEvent) event).getBidQty()));//7
-            } else if (event instanceof AlertEvent) {
-                sb.append(((AlertEvent) event).getBid());//0 -- bid
+                sb.append(Arrays.toString(((BuyingTxnEvent) event).getBidQty()));//7
+            } else if (event instanceof AlertTxnEvent) {
+                sb.append(((AlertTxnEvent) event).getBid());//0 -- bid
                 sb.append(split_exp);
-                sb.append(((AlertEvent) event).getPid());
+                sb.append(((AlertTxnEvent) event).getPid());
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((AlertEvent) event).getBid_array()));
+                sb.append(Arrays.toString(((AlertTxnEvent) event).getBid_array()));
                 sb.append(split_exp);
-                sb.append(((AlertEvent) event).num_p());
+                sb.append(((AlertTxnEvent) event).num_p());
                 sb.append(split_exp);
                 sb.append("AlertEvent");//input_event types.
                 sb.append(split_exp);
-                sb.append(((AlertEvent) event).getNum_access());//5
+                sb.append(((AlertTxnEvent) event).getNum_access());//5
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((AlertEvent) event).getItemId()));//6
+                sb.append(Arrays.toString(((AlertTxnEvent) event).getItemId()));//6
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((AlertEvent) event).getAsk_price()));
-            } else if (event instanceof ToppingEvent) {
-                sb.append(((ToppingEvent) event).getBid());//0 -- bid
+                sb.append(Arrays.toString(((AlertTxnEvent) event).getAsk_price()));
+            } else if (event instanceof ToppingTxnEvent) {
+                sb.append(((ToppingTxnEvent) event).getBid());//0 -- bid
                 sb.append(split_exp);
-                sb.append(((ToppingEvent) event).getPid());
+                sb.append(((ToppingTxnEvent) event).getPid());
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((ToppingEvent) event).getBid_array()));
+                sb.append(Arrays.toString(((ToppingTxnEvent) event).getBid_array()));
                 sb.append(split_exp);
-                sb.append(((ToppingEvent) event).num_p());
+                sb.append(((ToppingTxnEvent) event).num_p());
                 sb.append(split_exp);
                 sb.append("ToppingEvent");//input_event types.
                 sb.append(split_exp);
-                sb.append(((ToppingEvent) event).getNum_access());//5
+                sb.append(((ToppingTxnEvent) event).getNum_access());//5
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((ToppingEvent) event).getItemId()));//6
+                sb.append(Arrays.toString(((ToppingTxnEvent) event).getItemId()));//6
                 sb.append(split_exp);
-                sb.append(Arrays.toString(((ToppingEvent) event).getItemTopUp()));
+                sb.append(Arrays.toString(((ToppingTxnEvent) event).getItemTopUp()));
             }
             w.write(sb + "\n");
         }

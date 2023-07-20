@@ -11,6 +11,7 @@
         <module>morph-core</module>
         <module>morph-examples</module>
         <module>morph-clients</module>
+        <module>morph-benchmark</module>
     </modules>
 
     <build>
@@ -37,7 +38,7 @@
         <json.version>20141113</json.version>
         <jedis.version>2.4.2</jedis.version>
         <sedis.version>1.2.2</sedis.version>
-        <slf4j.version>1.7.7</slf4j.version>
+        <slf4j.version>2.0.7</slf4j.version>
         <commons-cli.version>1.3.1</commons-cli.version>
         <snakeyaml.version>1.11</snakeyaml.version>
     </properties>

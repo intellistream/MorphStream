@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.tollprocessing.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.tollprocessing.events.LREvent;
+import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTxnEvent;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import org.slf4j.Logger;
@@ -13,7 +13,7 @@ public abstract class TPBolt_LA extends TPBolt {
         super(log, fid, sink);
     }
 
-    protected void LAL(LREvent event, long i, long _bid) throws DatabaseException {
+    protected void LAL(TPTxnEvent event, long i, long _bid) throws DatabaseException {
         REQUEST_LOCK_AHEAD(event, txn_context[(int) (i - _bid)]);
     }
 
@@ -27,7 +27,7 @@ public abstract class TPBolt_LA extends TPBolt {
         long lock_time_measure = 0;
         for (long i = _bid; i < _bid + _combo_bid_size; i++) {
             txn_context[(int) (i - _bid)] = new TxnContext(thread_Id, this.fid, i);
-            LREvent event = (LREvent) input_event;
+            TPTxnEvent event = (TPTxnEvent) input_event;
             LAL(event, i, _bid);
             BEGIN_LOCK_TIME_MEASURE(thread_Id);
             END_LOCK_TIME_MEASURE(thread_Id);
@@ -40,7 +40,7 @@ public abstract class TPBolt_LA extends TPBolt {
         int _combo_bid_size = 1;
         //txn process phase.
         for (long i = _bid; i < _bid + _combo_bid_size; i++) {
-            LREvent event = (LREvent) input_event;
+            TPTxnEvent event = (TPTxnEvent) input_event;
             TXN_REQUEST_NOLOCK(event, txn_context[(int) (i - _bid)]);
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
             TXN_REQUEST_CORE(event);

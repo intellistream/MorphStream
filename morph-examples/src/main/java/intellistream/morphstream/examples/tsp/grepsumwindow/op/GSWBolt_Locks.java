@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.grepsumwindow.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.grepsumwindow.events.WindowedMicroEvent;
+import intellistream.morphstream.examples.tsp.grepsumwindow.events.GSWTxnEvent;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -23,7 +23,7 @@ public class GSWBolt_Locks extends GSWBolt {
         super(LOG, fid, sink);
     }
 
-    protected void write_txn_process(WindowedMicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void write_txn_process(GSWTxnEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
         boolean success = write_request(event, txn_context[(int) (i - _bid)]);
         if (success) {
@@ -43,7 +43,7 @@ public class GSWBolt_Locks extends GSWBolt {
         }
     }
 
-    protected void read_txn_process(WindowedMicroEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void read_txn_process(GSWTxnEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         boolean success = read_request(event, txn_context[(int) (i - _bid)]);
         if (success) {
             BEGIN_ACCESS_TIME_MEASURE(thread_Id);
@@ -65,7 +65,7 @@ public class GSWBolt_Locks extends GSWBolt {
     @Override
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            WindowedMicroEvent event = (WindowedMicroEvent) input_event;
+            GSWTxnEvent event = (GSWTxnEvent) input_event;
             boolean flag = event.READ_EVENT();
             if (flag) {
                 read_txn_process(event, i, _bid);

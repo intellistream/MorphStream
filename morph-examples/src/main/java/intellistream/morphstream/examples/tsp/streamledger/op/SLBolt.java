@@ -1,8 +1,8 @@
 package intellistream.morphstream.examples.tsp.streamledger.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.streamledger.events.DepositEvent;
-import intellistream.morphstream.examples.tsp.streamledger.events.TransactionEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.DepositTxnEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.TransactionTxnEvent;
 import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
@@ -34,13 +34,13 @@ public abstract class SLBolt extends TransactionalBolt {
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
     }
 
-    protected void DEPOSITE_REQUEST_NOLOCK(DepositEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void DEPOSITE_REQUEST_NOLOCK(DepositTxnEvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.SelectKeyRecord_noLock(txnContext, "accounts", event.getAccountId(), event.account_value, READ_WRITE);
         transactionManager.SelectKeyRecord_noLock(txnContext, "bookEntries", event.getBookEntryId(), event.asset_value, READ_WRITE);
         assert event.account_value.getRecord() != null && event.asset_value.getRecord() != null;
     }
 
-    protected void TRANSFER_REQUEST_NOLOCK(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void TRANSFER_REQUEST_NOLOCK(TransactionTxnEvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.SelectKeyRecord_noLock(txnContext, "accounts", event.getSourceAccountId(), event.src_account_value, READ_WRITE);
         transactionManager.SelectKeyRecord_noLock(txnContext, "accounts", event.getTargetAccountId(), event.dst_account_value, READ_WRITE);
         transactionManager.SelectKeyRecord_noLock(txnContext, "bookEntries", event.getSourceBookEntryId(), event.src_asset_value, READ_WRITE);
@@ -48,13 +48,13 @@ public abstract class SLBolt extends TransactionalBolt {
         assert event.src_account_value.getRecord() != null && event.dst_account_value.getRecord() != null && event.src_asset_value.getRecord() != null && event.dst_asset_value.getRecord() != null;
     }
 
-    protected void DEPOSITE_REQUEST(DepositEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void DEPOSITE_REQUEST(DepositTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         transactionManager.SelectKeyRecord(txnContext, "accounts", event.getAccountId(), event.account_value, READ_WRITE);
         transactionManager.SelectKeyRecord(txnContext, "bookEntries", event.getBookEntryId(), event.asset_value, READ_WRITE);
         assert event.account_value.getRecord() != null && event.asset_value.getRecord() != null;
     }
 
-    protected void TRANSFER_REQUEST(TransactionEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
+    protected void TRANSFER_REQUEST(TransactionTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         transactionManager.SelectKeyRecord(txnContext, "accounts", event.getSourceAccountId(), event.src_account_value, READ_WRITE);
         transactionManager.SelectKeyRecord(txnContext, "accounts", event.getTargetAccountId(), event.dst_account_value, READ_WRITE);
         transactionManager.SelectKeyRecord(txnContext, "bookEntries", event.getSourceBookEntryId(), event.src_asset_value, READ_WRITE);
@@ -62,19 +62,19 @@ public abstract class SLBolt extends TransactionalBolt {
         assert event.src_account_value.getRecord() != null && event.dst_account_value.getRecord() != null && event.src_asset_value.getRecord() != null && event.dst_asset_value.getRecord() != null;
     }
 
-    protected void TRANSFER_LOCK_AHEAD(TransactionEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void TRANSFER_LOCK_AHEAD(TransactionTxnEvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.lock_ahead(txnContext, "accounts", event.getSourceAccountId(), event.src_account_value, READ_WRITE);
         transactionManager.lock_ahead(txnContext, "accounts", event.getTargetAccountId(), event.dst_account_value, READ_WRITE);
         transactionManager.lock_ahead(txnContext, "bookEntries", event.getSourceBookEntryId(), event.src_asset_value, READ_WRITE);
         transactionManager.lock_ahead(txnContext, "bookEntries", event.getTargetBookEntryId(), event.dst_asset_value, READ_WRITE);
     }
 
-    protected void DEPOSITE_LOCK_AHEAD(DepositEvent event, TxnContext txnContext) throws DatabaseException {
+    protected void DEPOSITE_LOCK_AHEAD(DepositTxnEvent event, TxnContext txnContext) throws DatabaseException {
         transactionManager.lock_ahead(txnContext, "accounts", event.getAccountId(), event.account_value, READ_WRITE);
         transactionManager.lock_ahead(txnContext, "bookEntries", event.getBookEntryId(), event.asset_value, READ_WRITE);
     }
 
-    protected void TRANSFER_REQUEST_CORE(TransactionEvent event) throws InterruptedException {
+    protected void TRANSFER_REQUEST_CORE(TransactionTxnEvent event) throws InterruptedException {
 //        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         // measure_end the preconditions
         DataBox sourceAccountBalance_value = event.src_account_value.getRecord().getValues().get(1);
@@ -111,7 +111,7 @@ public abstract class SLBolt extends TransactionalBolt {
 //        END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
-    protected void DEPOSITE_REQUEST_CORE(DepositEvent event) {
+    protected void DEPOSITE_REQUEST_CORE(DepositTxnEvent event) {
 //        BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         List<DataBox> values = event.account_value.getRecord().getValues();
         AppConfig.randomDelay();
@@ -129,18 +129,18 @@ public abstract class SLBolt extends TransactionalBolt {
     protected void POST_PROCESS(long _bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            if (input_event instanceof DepositEvent) {
-                ((DepositEvent) input_event).setTimestamp(timestamp);
-                DEPOSITE_REQUEST_POST((DepositEvent) input_event);
+            if (input_event instanceof DepositTxnEvent) {
+                ((DepositTxnEvent) input_event).setTimestamp(timestamp);
+                DEPOSITE_REQUEST_POST((DepositTxnEvent) input_event);
             } else {
-                ((TransactionEvent) input_event).setTimestamp(timestamp);
-                TRANSFER_REQUEST_POST((TransactionEvent) input_event);
+                ((TransactionTxnEvent) input_event).setTimestamp(timestamp);
+                TRANSFER_REQUEST_POST((TransactionTxnEvent) input_event);
             }
         }
         END_POST_TIME_MEASURE(thread_Id);
     }
 
-    protected void TRANSFER_REQUEST_POST(TransactionEvent event) throws InterruptedException {
+    protected void TRANSFER_REQUEST_POST(TransactionTxnEvent event) throws InterruptedException {
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {
@@ -150,7 +150,7 @@ public abstract class SLBolt extends TransactionalBolt {
         }
     }
 
-    void DEPOSITE_REQUEST_POST(DepositEvent event) throws InterruptedException {
+    void DEPOSITE_REQUEST_POST(DepositTxnEvent event) throws InterruptedException {
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {

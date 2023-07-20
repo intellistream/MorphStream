@@ -1,9 +1,9 @@
 package intellistream.morphstream.examples.tsp.onlinebiding.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -45,31 +45,31 @@ public class OBBolt_nocc extends OBBolt {
 
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            if (input_event instanceof BuyingEvent) {
-                buying_txn_process((BuyingEvent) input_event, i, _bid);
-            } else if (input_event instanceof AlertEvent) {
-                alert_txn_process((AlertEvent) input_event, i, _bid);
+            if (input_event instanceof BuyingTxnEvent) {
+                buying_txn_process((BuyingTxnEvent) input_event, i, _bid);
+            } else if (input_event instanceof AlertTxnEvent) {
+                alert_txn_process((AlertTxnEvent) input_event, i, _bid);
             } else {
-                topping_txn_process((ToppingEvent) input_event, i, _bid);
+                topping_txn_process((ToppingTxnEvent) input_event, i, _bid);
             }
         }
     }
 
-    private void topping_txn_process(ToppingEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void topping_txn_process(ToppingTxnEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
         TOPPING_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         TOPPING_REQUEST_CORE(input_event);
         END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
-    private void alert_txn_process(AlertEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void alert_txn_process(AlertTxnEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
         ALERT_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         ALERT_REQUEST_CORE(input_event);
         END_ACCESS_TIME_MEASURE_ACC(thread_Id);
     }
 
-    private void buying_txn_process(BuyingEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void buying_txn_process(BuyingTxnEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
         BUYING_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         BUYING_REQUEST_CORE(input_event);

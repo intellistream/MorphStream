@@ -1,8 +1,8 @@
 package intellistream.morphstream.examples.tsp.streamledger.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.streamledger.events.DepositEvent;
-import intellistream.morphstream.examples.tsp.streamledger.events.TransactionEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.DepositTxnEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.TransactionTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -47,20 +47,20 @@ public class SLBolt_nocc extends SLBolt {
     @Override
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
-            if (input_event instanceof DepositEvent) {
-                depo_txn_process((DepositEvent) input_event, i, _bid);
+            if (input_event instanceof DepositTxnEvent) {
+                depo_txn_process((DepositTxnEvent) input_event, i, _bid);
             } else {
-                trans_txn_process((TransactionEvent) input_event, i, _bid);
+                trans_txn_process((TransactionTxnEvent) input_event, i, _bid);
             }
         }
     }
 
-    private void trans_txn_process(TransactionEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void trans_txn_process(TransactionTxnEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
         TRANSFER_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success contains index time and other overhead.
         TRANSFER_REQUEST_CORE(input_event);//time to access shared states.
     }
 
-    private void depo_txn_process(DepositEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
+    private void depo_txn_process(DepositTxnEvent input_event, long i, long _bid) throws DatabaseException, InterruptedException {
         DEPOSITE_REQUEST(input_event, txn_context[(int) (i - _bid)]);//always success contains index time and other overhead.
         DEPOSITE_REQUEST_CORE(input_event);//time to access shared states.
     }

@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.tollprocessing.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.tollprocessing.events.LREvent;
+import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -28,7 +28,7 @@ import static intellistream.morphstream.engine.txn.profiler.MeasureTools.*;
 public class TPBolt_ts extends TPBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TPBolt_ts.class);
     private static final long serialVersionUID = -5968750340131744744L;
-    ArrayDeque<LREvent> LREvents = new ArrayDeque<>();
+    ArrayDeque<TPTxnEvent> TPTxnEvents = new ArrayDeque<>();
 
     public TPBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
@@ -53,14 +53,14 @@ public class TPBolt_ts extends TPBolt {
     protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException {
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
-            LREvent event = (LREvent) input_event;
+            TPTxnEvent event = (TPTxnEvent) input_event;
             (event).setTimestamp(timestamp);
             REQUEST_CONSTRUCT(event, txnContext);
         }
 
     }
 
-    protected void REQUEST_CONSTRUCT(LREvent event, TxnContext txnContext) throws DatabaseException {
+    protected void REQUEST_CONSTRUCT(TPTxnEvent event, TxnContext txnContext) throws DatabaseException {
         //it simply construct the operations and return.
         transactionManager.Asy_ModifyRecord_Read(txnContext
                 , "segment_speed"
@@ -74,7 +74,7 @@ public class TPBolt_ts extends TPBolt {
                 , event.count_value//holder to be filled up.
                 , new CNT(event.getPOSReport().getVid())
         );          //asynchronously return.
-        LREvents.add(event);
+        TPTxnEvents.add(event);
     }
 
     @Override
@@ -87,12 +87,12 @@ public class TPBolt_ts extends TPBolt {
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
         if (in.isMarker()) {
-            int readSize = LREvents.size();
+            int readSize = TPTxnEvents.size();
             transactionManager.start_evaluate(thread_Id, this.fid, readSize);//start lazy evaluation in transaction manager.
             REQUEST_REQUEST_CORE();
             REQUEST_POST();
             END_TOTAL_TIME_MEASURE_TS(thread_Id, readSize);
-            LREvents.clear();//clear stored events.
+            TPTxnEvents.clear();//clear stored events.
         } else {
             execute_ts_normal(in);
         }
@@ -100,19 +100,19 @@ public class TPBolt_ts extends TPBolt {
 
     protected void REQUEST_POST() throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
-        for (LREvent event : LREvents) {
+        for (TPTxnEvent event : TPTxnEvents) {
             REQUEST_POST(event);
         }
         END_POST_TIME_MEASURE_ACC(thread_Id);
     }
 
     protected void REQUEST_REQUEST_CORE() {
-        for (LREvent event : LREvents) {
+        for (TPTxnEvent event : TPTxnEvents) {
             TXN_REQUEST_CORE_TS(event);
         }
     }
 
-    private void TXN_REQUEST_CORE_TS(LREvent event) {
+    private void TXN_REQUEST_CORE_TS(TPTxnEvent event) {
         event.count = event.count_value.getRecord().getValue().getInt();
         event.lav = event.speed_value.getRecord().getValue().getDouble();
     }

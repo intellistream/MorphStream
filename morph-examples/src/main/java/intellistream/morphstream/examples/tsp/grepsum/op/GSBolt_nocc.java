@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.grepsum.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.grepsum.events.GSEvent;
+import intellistream.morphstream.examples.tsp.grepsum.events.GSTxnEvent;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.impl.TxnManagerNoLock;
@@ -28,7 +28,7 @@ public class GSBolt_nocc extends GSBolt_Locks {
     }
 
     @Override
-    protected void write_txn_process(GSEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void write_txn_process(GSTxnEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         write_request(event, txn_context[(int) (i - _bid)]);//always success
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         WRITE_CORE(event);
@@ -37,7 +37,7 @@ public class GSBolt_nocc extends GSBolt_Locks {
     }
 
     @Override
-    protected void read_txn_process(GSEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
+    protected void read_txn_process(GSTxnEvent event, long i, long _bid) throws DatabaseException, InterruptedException {
         read_request(event, txn_context[(int) (i - _bid)]);//always success..
         BEGIN_ACCESS_TIME_MEASURE(thread_Id);
         READ_CORE(event);

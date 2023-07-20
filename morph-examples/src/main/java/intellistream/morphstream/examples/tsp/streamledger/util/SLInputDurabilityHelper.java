@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.streamledger.util;
 
-import intellistream.morphstream.examples.tsp.streamledger.events.DepositEvent;
-import intellistream.morphstream.examples.tsp.streamledger.events.TransactionEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.DepositTxnEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.TransactionTxnEvent;
 import intellistream.morphstream.common.io.ByteIO.SyncFileAppender;
 import intellistream.morphstream.common.io.Encoding.decoder.*;
 import intellistream.morphstream.common.io.Encoding.encoder.*;
@@ -178,7 +178,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
         if (!isStringEncoded) {
             //Type Compression
             for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
-                if (myevents[i] instanceof TransactionEvent) {
+                if (myevents[i] instanceof TransactionTxnEvent) {
                     this.intEncoder.encode(0, baos);
                 } else {
                     this.intEncoder.encode(1, baos);
@@ -206,10 +206,10 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             baos.reset();
             //sourceAccountId Compression
             for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
-                if (myevents[i] instanceof TransactionEvent) {
-                    this.intEncoder.encode(Integer.parseInt(((TransactionEvent) myevents[i]).getSourceAccountId()), baos);
+                if (myevents[i] instanceof TransactionTxnEvent) {
+                    this.intEncoder.encode(Integer.parseInt(((TransactionTxnEvent) myevents[i]).getSourceAccountId()), baos);
                 } else {
-                    this.intEncoder.encode(Integer.parseInt(((DepositEvent) myevents[i]).getAccountId()), baos);
+                    this.intEncoder.encode(Integer.parseInt(((DepositTxnEvent) myevents[i]).getAccountId()), baos);
                 }
             }
             this.intEncoder.flush(baos);
@@ -218,10 +218,10 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             baos.reset();
             //sourceAssetId Compression
             for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
-                if (myevents[i] instanceof TransactionEvent) {
-                    this.intEncoder.encode(Integer.parseInt(((TransactionEvent) myevents[i]).getSourceBookEntryId()), baos);
+                if (myevents[i] instanceof TransactionTxnEvent) {
+                    this.intEncoder.encode(Integer.parseInt(((TransactionTxnEvent) myevents[i]).getSourceBookEntryId()), baos);
                 } else {
-                    this.intEncoder.encode(Integer.parseInt(((DepositEvent) myevents[i]).getBookEntryId()), baos);
+                    this.intEncoder.encode(Integer.parseInt(((DepositTxnEvent) myevents[i]).getBookEntryId()), baos);
                 }
             }
             this.intEncoder.flush(baos);
@@ -230,10 +230,10 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             baos.reset();
             //accountValue Compression
             for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
-                if (myevents[i] instanceof TransactionEvent) {
-                    this.longEncoder.encode(((TransactionEvent) myevents[i]).getAccountTransfer(), baos);
+                if (myevents[i] instanceof TransactionTxnEvent) {
+                    this.longEncoder.encode(((TransactionTxnEvent) myevents[i]).getAccountTransfer(), baos);
                 } else {
-                    this.longEncoder.encode(((DepositEvent) myevents[i]).getAccountTransfer(), baos);
+                    this.longEncoder.encode(((DepositTxnEvent) myevents[i]).getAccountTransfer(), baos);
                 }
             }
             this.longEncoder.flush(baos);
@@ -242,10 +242,10 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             baos.reset();
             //bookEntryValue Compression
             for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
-                if (myevents[i] instanceof TransactionEvent) {
-                    this.longEncoder.encode(((TransactionEvent) myevents[i]).getBookEntryTransfer(), baos);
+                if (myevents[i] instanceof TransactionTxnEvent) {
+                    this.longEncoder.encode(((TransactionTxnEvent) myevents[i]).getBookEntryTransfer(), baos);
                 } else {
-                    this.longEncoder.encode(((DepositEvent) myevents[i]).getBookEntryTransfer(), baos);
+                    this.longEncoder.encode(((DepositTxnEvent) myevents[i]).getBookEntryTransfer(), baos);
                 }
             }
             this.longEncoder.flush(baos);
@@ -254,8 +254,8 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             baos.reset();
             //destinationAccountId Compression only for Transfer event
             for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
-                if (myevents[i] instanceof TransactionEvent) {
-                    this.intEncoder.encode(Integer.parseInt(((TransactionEvent) myevents[i]).getTargetAccountId()), baos);
+                if (myevents[i] instanceof TransactionTxnEvent) {
+                    this.intEncoder.encode(Integer.parseInt(((TransactionTxnEvent) myevents[i]).getTargetAccountId()), baos);
                 }
             }
             this.intEncoder.flush(baos);
@@ -264,8 +264,8 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             baos.reset();
             //destinationAssetId Compression only for Transfer event
             for (int i = (int) currentOffset; i < currentOffset + interval; i++) {
-                if (myevents[i] instanceof TransactionEvent) {
-                    this.intEncoder.encode(Integer.parseInt(((TransactionEvent) myevents[i]).getTargetBookEntryId()), baos);
+                if (myevents[i] instanceof TransactionTxnEvent) {
+                    this.intEncoder.encode(Integer.parseInt(((TransactionTxnEvent) myevents[i]).getTargetBookEntryId()), baos);
                 }
             }
             this.intEncoder.flush(baos);
@@ -389,7 +389,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                         pids.put((destinationAccountId / partitionOffset), 0);
                         int destinationAssetId = intDecoders[4].readInt(buffer8);
                         pids.put((destinationAssetId / partitionOffset), 0);
-                        event = new TransactionEvent(
+                        event = new TransactionTxnEvent(
                                 (int) bid, //bid
                                 npid, //pid
                                 Arrays.toString(p_bids), //bid_arrary
@@ -403,7 +403,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
                                 bookEntryValue  //getBookEntryTransfer
                         );
                     } else {
-                        event = new DepositEvent(
+                        event = new DepositTxnEvent(
                                 (int) bid, //bid
                                 npid, //pid
                                 Arrays.toString(p_bids), //bid_array
@@ -486,7 +486,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             for (int i = 1; i < 5; i++) {
                 pids.put((int) (Long.parseLong(split[i]) / partitionOffset), 0);
             }
-            TransactionEvent event = new TransactionEvent(
+            TransactionTxnEvent event = new TransactionTxnEvent(
                     Integer.parseInt(split[0]), //bid
                     npid, //pid
                     Arrays.toString(p_bids), //bid_arrary
@@ -505,7 +505,7 @@ public class SLInputDurabilityHelper extends InputDurabilityHelper {
             for (int i = 1; i < 3; i++) {
                 pids.put((int) (Long.parseLong(split[i]) / partitionOffset), 0);
             }
-            DepositEvent event = new DepositEvent(
+            DepositTxnEvent event = new DepositTxnEvent(
                     Integer.parseInt(split[0]), //bid
                     npid, //pid
                     Arrays.toString(p_bids), //bid_array

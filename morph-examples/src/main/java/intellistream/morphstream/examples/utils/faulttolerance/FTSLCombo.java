@@ -2,8 +2,8 @@ package intellistream.morphstream.examples.utils.faulttolerance;
 
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.tsp.streamledger.util.SLInputDurabilityHelper;
-import intellistream.morphstream.examples.tsp.streamledger.events.DepositEvent;
-import intellistream.morphstream.examples.tsp.streamledger.events.TransactionEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.DepositTxnEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.TransactionTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -37,23 +37,23 @@ public class FTSLCombo extends FTSPOUTCombo {
 
     private int[] getKeys(TxnEvent event) {
         int[] keys;
-        if (event instanceof DepositEvent)
+        if (event instanceof DepositTxnEvent)
             keys = new int[]{
-                    Integer.parseInt(((DepositEvent) event).getAccountId()),
-                    Integer.parseInt(((DepositEvent) event).getBookEntryId())
+                    Integer.parseInt(((DepositTxnEvent) event).getAccountId()),
+                    Integer.parseInt(((DepositTxnEvent) event).getBookEntryId())
             };
         else
             keys = new int[]{
-                    Integer.parseInt(((TransactionEvent) event).getSourceAccountId()),
-                    Integer.parseInt(((TransactionEvent) event).getTargetAccountId()),
-                    Integer.parseInt(((TransactionEvent) event).getSourceBookEntryId()),
-                    Integer.parseInt(((TransactionEvent) event).getTargetBookEntryId())
+                    Integer.parseInt(((TransactionTxnEvent) event).getSourceAccountId()),
+                    Integer.parseInt(((TransactionTxnEvent) event).getTargetAccountId()),
+                    Integer.parseInt(((TransactionTxnEvent) event).getSourceBookEntryId()),
+                    Integer.parseInt(((TransactionTxnEvent) event).getTargetBookEntryId())
             };
         return keys;
     }
 
     private int getLength(TxnEvent event) {
-        if (event instanceof DepositEvent)
+        if (event instanceof DepositTxnEvent)
             return 2;
         return 4;
     }

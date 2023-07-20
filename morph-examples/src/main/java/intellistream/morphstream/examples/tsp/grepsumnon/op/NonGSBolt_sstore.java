@@ -2,7 +2,7 @@ package intellistream.morphstream.examples.tsp.grepsumnon.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
 import intellistream.morphstream.examples.tsp.streamledger.op.GlobalSorter;
-import intellistream.morphstream.examples.tsp.grepsumnon.events.NonGS;
+import intellistream.morphstream.examples.tsp.grepsumnon.events.NGSTxnEvent;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
@@ -96,8 +96,8 @@ public class NonGSBolt_sstore extends NonGSBolt {
             int[] p_bids = new int[(int) tthread];
             HashMap<Integer, Integer> pids = new HashMap<>();
             for (TxnEvent event : GlobalSorter.sortedEvents) {
-                if (event instanceof NonGS) {
-                    parseMicroEvent(partitionOffset, (NonGS) event, pids);
+                if (event instanceof NGSTxnEvent) {
+                    parseMicroEvent(partitionOffset, (NGSTxnEvent) event, pids);
                     event.setBid_array(Arrays.toString(p_bids), Arrays.toString(pids.keySet().toArray()));
                     pids.replaceAll((k, v) -> p_bids[k]++);
                 } else {
@@ -110,7 +110,7 @@ public class NonGSBolt_sstore extends NonGSBolt {
         SOURCE_CONTROL.getInstance().postStateAccessBarrier(thread_Id);
     }
 
-    private void parseMicroEvent(int partitionOffset, NonGS event, HashMap<Integer, Integer> pids) {
+    private void parseMicroEvent(int partitionOffset, NGSTxnEvent event, HashMap<Integer, Integer> pids) {
         if (event.isNon_Deterministic_StateAccess()) {//For non-deterministic state access, we need to add all the partitions.
             for (int i = 0; i < tthread; i++) {
                 pids.put(i, 0);
@@ -134,7 +134,7 @@ public class NonGSBolt_sstore extends NonGSBolt {
     @Override
     protected void LAL_PROCESS(long _bid) throws DatabaseException {
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
-        NonGS event = (NonGS) input_event;
+        NGSTxnEvent event = (NGSTxnEvent) input_event;
         int _pid = event.getPid();
         BEGIN_WAIT_TIME_MEASURE(thread_Id);
         //ensures that locks are added in the input_event sequence order.
@@ -146,7 +146,7 @@ public class NonGSBolt_sstore extends NonGSBolt {
         END_WAIT_TIME_MEASURE_ACC(thread_Id);
     }
 
-    protected void LAL(NonGS event, double i, double _bid) throws DatabaseException {
+    protected void LAL(NGSTxnEvent event, double i, double _bid) throws DatabaseException {
         if (event.isAbort()) {
         } else {
             if (event.isNon_Deterministic_StateAccess()) {
@@ -160,7 +160,7 @@ public class NonGSBolt_sstore extends NonGSBolt {
     @Override
     protected void PostLAL_process(long bid) throws DatabaseException, InterruptedException {
         for (double i = _bid; i < _bid + _combo_bid_size; i++) {
-            NonGS event = (NonGS) input_event;
+            NGSTxnEvent event = (NGSTxnEvent) input_event;
             if (event.isNon_Deterministic_StateAccess()) {
                 non_write_request_noLock(event, txn_context[(int) (i - _bid)]);
             } else {
@@ -175,7 +175,7 @@ public class NonGSBolt_sstore extends NonGSBolt {
         }
     }
 
-    protected void WRITE_LOCK_AHEAD(NonGS event, TxnContext txnContext) throws DatabaseException {
+    protected void WRITE_LOCK_AHEAD(NGSTxnEvent event, TxnContext txnContext) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i)
             transactionManager.lock_ahead(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], READ_WRITE);
@@ -189,15 +189,15 @@ public class NonGSBolt_sstore extends NonGSBolt {
         transactionManager.unlock_all(spinLocks);
     }
 
-    protected boolean write_request_noLock(NonGS event, TxnContext txnContext) throws DatabaseException {
+    protected boolean write_request_noLock(NGSTxnEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, READ_WRITE);
     }
 
-    protected boolean non_write_request_noLock(NonGS event, TxnContext txnContext) throws DatabaseException {
+    protected boolean non_write_request_noLock(NGSTxnEvent event, TxnContext txnContext) throws DatabaseException {
         return !process_request_noLock(event, txnContext, NON_READ_WRITE_COND_READN);
     }
 
-    private boolean process_request_noLock(NonGS event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
+    private boolean process_request_noLock(NGSTxnEvent event, TxnContext txnContext, CommonMetaTypes.AccessType accessType) throws DatabaseException {
         for (int i = 0; i < event.TOTAL_NUM_ACCESS; ++i) {
             boolean rt = transactionManager.SelectKeyRecord_noLock(txnContext, "MicroTable",
                     String.valueOf(event.getKeys()[i]), event.getRecord_refs()[i], accessType);
@@ -210,7 +210,7 @@ public class NonGSBolt_sstore extends NonGSBolt {
         return false;
     }
 
-    protected void WRITE_CORE(NonGS event) {
+    protected void WRITE_CORE(NGSTxnEvent event) {
         long sum = 0;
         DataBox TargetValue_value = event.getRecord_refs()[0].getRecord().getValues().get(1);
         int NUM_ACCESS = event.TOTAL_NUM_ACCESS / event.Txn_Length;
@@ -233,14 +233,14 @@ public class NonGSBolt_sstore extends NonGSBolt {
     protected void POST_PROCESS(long bid, long timestamp, int combo_bid_size) throws InterruptedException {
         BEGIN_POST_TIME_MEASURE(thread_Id);
         for (double i = _bid; i < _bid + combo_bid_size; i++) {
-            NonGS event = (NonGS) input_event;
+            NGSTxnEvent event = (NGSTxnEvent) input_event;
             (event).setTimestamp(timestamp);
             WRITE_POST(event);
         }
         END_POST_TIME_MEASURE(thread_Id);
     }
 
-    protected void WRITE_POST(NonGS event) throws InterruptedException {
+    protected void WRITE_POST(NGSTxnEvent event) throws InterruptedException {
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {

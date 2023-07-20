@@ -3,10 +3,10 @@ package intellistream.morphstream.examples.tsp.tollprocessing.util;
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.datagen.DataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.TP.TPTPGDynamicDataGenerator;
+import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTPGDynamicDataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DynamicDataGeneratorConfig;
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.PositionReport;
-import intellistream.morphstream.examples.tsp.tollprocessing.events.LREvent;
+import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.txn.TxnEvent;
 import intellistream.morphstream.engine.txn.db.Database;
@@ -246,7 +246,7 @@ public class TPInitializer extends TableInitilizer {
         String txn = reader.readLine();
         int count = 0;
         while (txn != null) {
-            LREvent event;
+            TPTxnEvent event;
             PositionReport positionReport;
             String[] split = txn.split(",");
             if (split[split.length - 1].equals("true")) {
@@ -268,7 +268,7 @@ public class TPInitializer extends TableInitilizer {
                         Integer.parseInt(split[1]),
                         randomNumberGenerator.generate(1, 100));
             }
-            event = new LREvent(positionReport, dataConfig.getTotalThreads(), Long.parseLong(split[0]));
+            event = new TPTxnEvent(positionReport, dataConfig.getTotalThreads(), Long.parseLong(split[0]));
             DataHolder.txnEvents.add(event);
             if (enable_log) LOG.debug(String.format("%d deposit read...", count));
             txn = reader.readLine();

@@ -2,9 +2,9 @@ package intellistream.morphstream.examples.tsp.onlinebiding.op;
 
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.SPOUTCombo;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingEvent;
-import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.AlertTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.BuyingTxnEvent;
+import intellistream.morphstream.examples.tsp.onlinebiding.events.ToppingTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -38,22 +38,22 @@ public class OBCombo extends SPOUTCombo {
 
     private int[] getKeys(TxnEvent event) {
         int[] keys;
-        if (event instanceof AlertEvent)
-            keys = ((AlertEvent) event).getItemId();
-        else if (event instanceof ToppingEvent)
-            keys = ((ToppingEvent) event).getItemId();
+        if (event instanceof AlertTxnEvent)
+            keys = ((AlertTxnEvent) event).getItemId();
+        else if (event instanceof ToppingTxnEvent)
+            keys = ((ToppingTxnEvent) event).getItemId();
         else
-            keys = ((BuyingEvent) event).getItemId();
+            keys = ((BuyingTxnEvent) event).getItemId();
         return keys;
     }
 
     private int getLength(TxnEvent event) {
-        if (event instanceof AlertEvent)
-            return ((AlertEvent) event).getItemId().length;
-        else if (event instanceof ToppingEvent)
-            return ((ToppingEvent) event).getItemId().length;
+        if (event instanceof AlertTxnEvent)
+            return ((AlertTxnEvent) event).getItemId().length;
+        else if (event instanceof ToppingTxnEvent)
+            return ((ToppingTxnEvent) event).getItemId().length;
         else
-            return ((BuyingEvent) event).getItemId().length;
+            return ((BuyingTxnEvent) event).getItemId().length;
     }
 
     private int check_conflict(TxnEvent pre_event, TxnEvent event) {

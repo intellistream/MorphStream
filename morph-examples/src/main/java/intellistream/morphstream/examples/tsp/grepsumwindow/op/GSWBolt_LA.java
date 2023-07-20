@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.grepsumwindow.op;
 
 import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.examples.tsp.grepsumwindow.events.WindowedMicroEvent;
+import intellistream.morphstream.examples.tsp.grepsumwindow.events.GSWTxnEvent;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import org.slf4j.Logger;
@@ -13,7 +13,7 @@ public abstract class GSWBolt_LA extends GSWBolt {
         super(log, fid, sink);
     }
 
-    protected void LAL(WindowedMicroEvent event, long i, long _bid) throws DatabaseException {
+    protected void LAL(GSWTxnEvent event, long i, long _bid) throws DatabaseException {
         boolean flag = event.READ_EVENT();
         if (flag) {//read
             READ_LOCK_AHEAD(event, txn_context[(int) (i - _bid)]);
@@ -29,7 +29,7 @@ public abstract class GSWBolt_LA extends GSWBolt {
         //ensures that locks are added in the input_event sequence order.
         transactionManager.getOrderLock().blocking_wait(_bid);
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
-        WindowedMicroEvent event = (WindowedMicroEvent) input_event;
+        GSWTxnEvent event = (GSWTxnEvent) input_event;
         LAL(event, 0, _bid);
         BEGIN_LOCK_TIME_MEASURE(thread_Id);
         END_LOCK_TIME_MEASURE(thread_Id);
@@ -40,7 +40,7 @@ public abstract class GSWBolt_LA extends GSWBolt {
     protected void PostLAL_process(long _bid) throws DatabaseException, InterruptedException {
         //txn process phase.
         for (long i = _bid; i < _bid + _combo_bid_size; i++) {
-            WindowedMicroEvent event = (WindowedMicroEvent) input_event;
+            GSWTxnEvent event = (GSWTxnEvent) input_event;
             boolean flag = event.READ_EVENT();
             if (flag) {//read
                 read_request_noLock(event, txn_context[(int) (i - _bid)]);

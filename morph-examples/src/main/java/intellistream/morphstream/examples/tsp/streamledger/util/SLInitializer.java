@@ -3,14 +3,14 @@ package intellistream.morphstream.examples.tsp.streamledger.util;
 import intellistream.morphstream.engine.txn.DataHolder;
 import intellistream.morphstream.examples.utils.datagen.DataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.SL.OCTxnGenerator.LayeredOCDataGenerator;
-import intellistream.morphstream.examples.utils.datagen.apps.SL.OCTxnGenerator.LayeredOCDataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.SL.TPGTxnGenerator.SLTPGDataGenerator;
-import intellistream.morphstream.examples.utils.datagen.apps.SL.TPGTxnGenerator.SLTPGDataGeneratorConfig;
-import intellistream.morphstream.examples.utils.datagen.apps.SL.TPGTxnGenerator.SLTPGDynamicDataGenerator;
+import intellistream.morphstream.examples.tsp.streamledger.events.OCTxnGenerator.LayeredOCDataGenerator;
+import intellistream.morphstream.examples.tsp.streamledger.events.OCTxnGenerator.LayeredOCDataGeneratorConfig;
+import intellistream.morphstream.examples.tsp.streamledger.events.TPGTxnGenerator.SLTPGDataGenerator;
+import intellistream.morphstream.examples.tsp.streamledger.events.TPGTxnGenerator.SLTPGDataGeneratorConfig;
+import intellistream.morphstream.examples.tsp.streamledger.events.TPGTxnGenerator.SLTPGDynamicDataGenerator;
 import intellistream.morphstream.examples.utils.datagen.DynamicDataGeneratorConfig;
-import intellistream.morphstream.examples.tsp.streamledger.events.DepositEvent;
-import intellistream.morphstream.examples.tsp.streamledger.events.TransactionEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.DepositTxnEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.TransactionTxnEvent;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.txn.TxnEvent;
 import intellistream.morphstream.engine.txn.db.Database;
@@ -358,7 +358,7 @@ public class SLInitializer extends TableInitilizer {
                 }
 //                List<Integer> list = new ArrayList<>(pids.keySet());
 //                Collections.shuffle(list);
-                TransactionEvent event = new TransactionEvent(
+                TransactionTxnEvent event = new TransactionTxnEvent(
                         Integer.parseInt(split[0]), //bid
                         npid, //pid
                         Arrays.toString(p_bids), //bid_arrary
@@ -382,7 +382,7 @@ public class SLInitializer extends TableInitilizer {
                 for (int i = 1; i < 3; i++) {
                     pids.put((int) (Long.parseLong(split[i]) / partitionOffset), 0);
                 }
-                DepositEvent event = new DepositEvent(
+                DepositTxnEvent event = new DepositTxnEvent(
                         Integer.parseInt(split[0]), //bid
                         npid, //pid
                         Arrays.toString(p_bids), //bid_array
