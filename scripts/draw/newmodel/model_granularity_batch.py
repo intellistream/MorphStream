@@ -102,15 +102,15 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_Stat
     y = [[] for _ in range(w)]
 
     for batchInterval in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathGS("OP_NS_A", events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
+        inputEvents = tthread * batchInterval
+        op_gs_path = getPathGS("OP_NS_A", inputEvents, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[0].append(float(throughput))
 
     for batchInterval in x_axis:
-        events = tthread * batchInterval
-        op_gs_path = getPathGS("OG_NS_A", events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
+        inputEvents = tthread * batchInterval
+        op_gs_path = getPathGS("OG_NS_A", inputEvents, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
         lines = open(op_gs_path).readlines()
         throughput = lines[0].split(": ")[1]
         y[1].append(float(throughput))
@@ -119,9 +119,9 @@ def ReadFileGS(x_axis, tthread, batchInterval, NUM_ITEMS, Ratio_of_Multiple_Stat
 
     return y
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
+def getPathGS(algo, inputEvents, tthread, NUM_ITEMS, Ratio_of_Multiple_State_Access, key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity):
     return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}_{}'\
-        .format(algo, tthread, events, NUM_ITEMS,Ratio_of_Multiple_State_Access , key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
+        .format(algo, tthread, inputEvents, NUM_ITEMS,Ratio_of_Multiple_State_Access , key_skewness, overlap_ratio, abort_ratio, txn_length, isCyclic, complexity)
 
 
 if __name__ == '__main__':

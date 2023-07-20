@@ -362,14 +362,14 @@ the Redis server.
 
 * `initServerConfig()` sets up the default values of the `server` structure.
 * `initServer()` allocates the data structures needed to operate, setup the listening socket, and so forth.
-* `aeMain()` starts the event loop which listens for new connections.
+* `aeMain()` starts the inputEvent loop which listens for new connections.
 
-There are two special functions called periodically by the event loop:
+There are two special functions called periodically by the inputEvent loop:
 
 1. `serverCron()` is called periodically (according to `server.hz` frequency), and performs tasks that must be performed
    from time to time, like checking for timed out clients.
-2. `beforeSleep()` is called every time the event loop fired, Redis served a few requests, and is returning back into
-   the event loop.
+2. `beforeSleep()` is called every time the inputEvent loop fired, Redis served a few requests, and is returning back into
+   the inputEvent loop.
 
 Inside server.c you can find code that handles other vital things of the Redis server:
 
@@ -389,9 +389,9 @@ This file defines all the I/O functions with clients, masters and replicas
 * `createClient()` allocates and initializes a new client.
 * the `addReply*()` family of functions are used by command implementations in order to append data to the client
   structure, that will be transmitted to the client as a reply for a given command executed.
-* `writeToClient()` transmits the data pending in the output buffers to the client and is called by the *writable event
+* `writeToClient()` transmits the data pending in the output buffers to the client and is called by the *writable inputEvent
   handler* `sendReplyToClient()`.
-* `readQueryFromClient()` is the *readable event handler* and accumulates data read from the client into the query
+* `readQueryFromClient()` is the *readable inputEvent handler* and accumulates data read from the client into the query
   buffer.
 * `processInputBuffer()` is the entry point in order to parse the client query buffer according to the Redis protocol.
   Once commands are ready to be processed, it calls `processCommand()` which is defined inside `server.c` in order to
@@ -476,7 +476,7 @@ Other C files
 * `t_hash.c`, `t_list.c`, `t_set.c`, `t_string.c`, `t_zset.c` and `t_stream.c` contains the implementation of the Redis
   data types. They implement both an API to access a given data type, and the client command implementations for these
   data types.
-* `ae.c` implements the Redis event loop, it's a self contained library which is simple to read and understand.
+* `ae.c` implements the Redis inputEvent loop, it's a self contained library which is simple to read and understand.
 * `sds.c` is the Redis string library, check http://github.com/antirez/sds for more information.
 * `anet.c` is a library to use POSIX networking in a simpler way compared to the raw interface exposed by the kernel.
 * `dict.c` is an implementation of a non-blocking hash table which rehashes incrementally.

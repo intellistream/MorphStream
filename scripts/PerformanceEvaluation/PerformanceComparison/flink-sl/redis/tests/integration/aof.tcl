@@ -264,7 +264,7 @@ tags {"aof"} {
             # socket buffers, and will install a write handler, then we sleep
             # a big and issue the incr command, hoping that the last portion of
             # the output buffer write, and the processing of the incr will happen
-            # in the same event loop cycle.
+            # in the same inputEvent loop cycle.
             # Since the socket buffers and timing are unpredictable, we fuzz this
             # test with slightly different sizes and sleeps a few times.
             for {set i 0} {$i < 10} {incr i} {

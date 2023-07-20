@@ -32,8 +32,8 @@ tags "modules" {
             r config set rdbcompression no ;# rdb progress is only checked once in 2mb
             r BGREWRITEAOF
             waitForBgrewriteaof r
-            assert_equal [string match {*module-event-persistence-aof-start*} [exec tail -20 < [srv 0 stdout]]] 1
-            assert_equal [string match {*module-event-persistence-end*} [exec tail -20 < [srv 0 stdout]]] 1
+            assert_equal [string match {*module-inputEvent-persistence-aof-start*} [exec tail -20 < [srv 0 stdout]]] 1
+            assert_equal [string match {*module-inputEvent-persistence-end*} [exec tail -20 < [srv 0 stdout]]] 1
         }
 
         test {Test module aof load and rdb/aof progress hooks} {
@@ -41,7 +41,7 @@ tags "modules" {
             for {set j 0} {$j < 4000} {incr j} {
                 r set "bar$j" x
             }
-            # set some configs that will cause many loading progress events during aof loading
+            # set some configs that will cause many loading progress inputEvents during aof loading
             r config set key-load-delay 500
             r config set dynamic-hz no
             r config set hz 500
@@ -52,8 +52,8 @@ tags "modules" {
             assert_lessthan 2 [r hooks.event_count loading-progress-rdb] ;# comes from the preamble section
             assert_lessthan 2 [r hooks.event_count loading-progress-aof]
             if {$::verbose} {
-                puts "rdb progress events [r hooks.event_count loading-progress-rdb]"
-                puts "aof progress events [r hooks.event_count loading-progress-aof]"
+                puts "rdb progress inputEvents [r hooks.event_count loading-progress-rdb]"
+                puts "aof progress inputEvents [r hooks.event_count loading-progress-aof]"
             }
         }
         # undo configs before next test
@@ -156,7 +156,7 @@ tags "modules" {
 
         # look into the log file of the server that just exited
         test {Test shutdown hook} {
-            assert_equal [string match {*module-event-shutdown*} [exec tail -5 < $replica_stdout]] 1
+            assert_equal [string match {*module-inputEvent-shutdown*} [exec tail -5 < $replica_stdout]] 1
         }
 
     }

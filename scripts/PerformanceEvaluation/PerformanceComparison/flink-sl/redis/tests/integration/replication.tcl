@@ -732,7 +732,7 @@ start_server {tags {"repl"}} {
 
 test "diskless replication child being killed is collected" {
     # when diskless master is waiting for the replica to become writable
-    # it removes the read event from the rdb pipe so if the child gets killed
+    # it removes the read inputEvent from the rdb pipe so if the child gets killed
     # the replica will hung. and the master may not collect the pid with waitpid
     start_server {tags {"repl"}} {
         set master [srv 0 client]
@@ -773,9 +773,9 @@ test "diskless replication child being killed is collected" {
 
 test "diskless replication read pipe cleanup" {
     # In diskless replication, we create a read pipe for the RDB, between the child and the parent.
-    # When we close this pipe (fd), the read handler also needs to be removed from the event loop (if it still registered).
+    # When we close this pipe (fd), the read handler also needs to be removed from the inputEvent loop (if it still registered).
     # Otherwise, next time we will use the same fd, the registration will be fail (panic), because
-    # we will use EPOLL_CTL_MOD (the fd still register in the event loop), on fd that already removed from epoll_ctl
+    # we will use EPOLL_CTL_MOD (the fd still register in the inputEvent loop), on fd that already removed from epoll_ctl
     start_server {tags {"repl"}} {
         set master [srv 0 client]
         set master_host [srv 0 host]
@@ -842,7 +842,7 @@ test {replicaof right after disconnection} {
                 after 100
 
                 # when replica2 will wake up from the sleep it will find both disconnection
-                # from it's master and also a replicaof command at the same event loop
+                # from it's master and also a replicaof command at the same inputEvent loop
                 $master client kill type replica
                 $replica2 replicaof $replica1_host $replica1_port
                 $rd read

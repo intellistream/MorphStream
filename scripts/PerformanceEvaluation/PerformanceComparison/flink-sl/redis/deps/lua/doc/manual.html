@@ -1509,9 +1509,9 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 
 
 <p>
-    We call the keys in a metatable <em>events</em>
+    We call the keys in a metatable <em>inputEvents</em>
     and the values <em>metamethods</em>.
-    In the previous example, the event is <code>"add"</code>
+    In the previous example, the inputEvent is <code>"add"</code>
     and the metamethod is the function that performs the addition.
 
 
@@ -1543,9 +1543,9 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
     A metatable also can define a function to be called when a userdata
     is garbage collected.
     For each of these operations Lua associates a specific key
-    called an <em>event</em>.
+    called an <em>inputEvent</em>.
     When Lua performs one of these operations over a value,
-    it checks whether this value has a metatable with the corresponding event.
+    it checks whether this value has a metatable with the corresponding inputEvent.
     If so, the value associated with that key (the metamethod)
     controls how Lua will perform the operation.
 
@@ -1572,13 +1572,13 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
     we use the expression
 
 <pre>
-     metatable(obj)[event]
+     metatable(obj)[inputEvent]
 </pre>
 <p>
     This should be read as
 
 <pre>
-     rawget(getmetatable(obj) or {}, event)
+     rawget(getmetatable(obj) or {}, inputEvent)
 </pre>
 <p>
 
@@ -1601,8 +1601,8 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
             then Lua tries the second operand.
 
         <pre>
-     function getbinhandler (op1, op2, event)
-       return metatable(op1)[event] or metatable(op2)[event]
+     function getbinhandler (op1, op2, inputEvent)
+       return metatable(op1)[inputEvent] or metatable(op2)[inputEvent]
      end
 </pre>
         <p>
@@ -1743,15 +1743,15 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
         and the same metamethod for the selected operation.
 
         <pre>
-     function getcomphandler (op1, op2, event)
+     function getcomphandler (op1, op2, inputEvent)
        if type(op1) ~= type(op2) then return nil end
-       local mm1 = metatable(op1)[event]
-       local mm2 = metatable(op2)[event]
+       local mm1 = metatable(op1)[inputEvent]
+       local mm2 = metatable(op2)[inputEvent]
        if mm1 == mm2 then return mm1 else return nil end
      end
 </pre>
         <p>
-            The "eq" event is defined as follows:
+            The "eq" inputEvent is defined as follows:
 
         <pre>
      function eq_event (op1, op2)
@@ -2863,7 +2863,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
     Pushes onto the stack the value <code>t[k]</code>,
     where <code>t</code> is the value at the given valid index.
     As in Lua, this function may trigger a metamethod
-    for the "index" event (see <a href="#2.8">&sect;2.8</a>).
+    for the "index" inputEvent (see <a href="#2.8">&sect;2.8</a>).
 
 
 <hr>
@@ -2911,7 +2911,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
     This function pops the key from the stack
     (putting the resulting value in its place).
     As in Lua, this function may trigger a metamethod
-    for the "index" event (see <a href="#2.8">&sect;2.8</a>).
+    for the "index" inputEvent (see <a href="#2.8">&sect;2.8</a>).
 
 
 <hr>
@@ -3811,7 +3811,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 <p>
     This function pops the value from the stack.
     As in Lua, this function may trigger a metamethod
-    for the "newindex" event (see <a href="#2.8">&sect;2.8</a>).
+    for the "newindex" inputEvent (see <a href="#2.8">&sect;2.8</a>).
 
 
 <hr>
@@ -3858,7 +3858,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 <p>
     This function pops both the key and the value from the stack.
     As in Lua, this function may trigger a metamethod
-    for the "newindex" event (see <a href="#2.8">&sect;2.8</a>).
+    for the "newindex" inputEvent (see <a href="#2.8">&sect;2.8</a>).
 
 
 <hr>
@@ -4171,7 +4171,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 <hr>
 <h3><a name="lua_Debug"><code>lua_Debug</code></a></h3>
 <pre>typedef struct lua_Debug {
-  int event;
+  int inputEvent;
   const char *name;           /* (n) */
   const char *namewhat;       /* (n) */
   const char *what;           /* (S) */
@@ -4452,15 +4452,15 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 
 <p>
     Whenever a hook is called, its <code>ar</code> argument has its field
-    <code>event</code> set to the specific event that triggered the hook.
-    Lua identifies these events with the following constants:
+    <code>inputEvent</code> set to the specific inputEvent that triggered the hook.
+    Lua identifies these inputEvents with the following constants:
     <a name="pdf-LUA_HOOKCALL"><code>LUA_HOOKCALL</code></a>, <a name="pdf-LUA_HOOKRET"><code>LUA_HOOKRET</code></a>,
     <a name="pdf-LUA_HOOKTAILRET"><code>LUA_HOOKTAILRET</code></a>, <a name="pdf-LUA_HOOKLINE"><code>LUA_HOOKLINE</code></a>,
     and <a name="pdf-LUA_HOOKCOUNT"><code>LUA_HOOKCOUNT</code></a>.
-    Moreover, for line events, the field <code>currentline</code> is also set.
+    Moreover, for line inputEvents, the field <code>currentline</code> is also set.
     To get the value of any other field in <code>ar</code>,
     the hook must call <a href="#lua_getinfo"><code>lua_getinfo</code></a>.
-    For return events, <code>event</code> can be <code>LUA_HOOKRET</code>,
+    For return inputEvents, <code>inputEvent</code> can be <code>LUA_HOOKRET</code>,
     the normal value, or <code>LUA_HOOKTAILRET</code>.
     In the latter case, Lua is simulating a return from
     a function that did a tail call;
@@ -4485,7 +4485,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 
 <p>
     Argument <code>f</code> is the hook function.
-    <code>mask</code> specifies on which events the hook will be called:
+    <code>mask</code> specifies on which inputEvents the hook will be called:
     it is formed by a bitwise or of the constants
     <a name="pdf-LUA_MASKCALL"><code>LUA_MASKCALL</code></a>,
     <a name="pdf-LUA_MASKRET"><code>LUA_MASKRET</code></a>,
@@ -4493,7 +4493,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
     and <a name="pdf-LUA_MASKCOUNT"><code>LUA_MASKCOUNT</code></a>.
     The <code>count</code> argument is only meaningful when the mask
     includes <code>LUA_MASKCOUNT</code>.
-    For each event, the hook is called as explained below:
+    For each inputEvent, the hook is called as explained below:
 
 <ul>
 
@@ -4510,12 +4510,12 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
     <li><b>The line hook:</b> is called when the interpreter is about to
         start the execution of a new line of code,
         or when it jumps back in the code (even to the same line).
-        (This event only happens while Lua is executing a Lua function.)
+        (This inputEvent only happens while Lua is executing a Lua function.)
     </li>
 
     <li><b>The count hook:</b> is called after the interpreter executes every
         <code>count</code> instructions.
-        (This event only happens while Lua is executing a Lua function.)
+        (This inputEvent only happens while Lua is executing a Lua function.)
     </li>
 
 </ul>
@@ -8034,18 +8034,18 @@ Returns the environment of object <code>o</code>.
 
 <p>
     When the hook is called, its first parameter is a string
-    describing the event that has triggered its call:
+    describing the inputEvent that has triggered its call:
     <code>"call"</code>, <code>"return"</code> (or <code>"tail return"</code>,
     when simulating a return from a tail call),
     <code>"line"</code>, and <code>"count"</code>.
-    For line events,
+    For line inputEvents,
     the hook also gets the new line number as its second parameter.
     Inside a hook,
     you can call <code>getinfo</code> with level&nbsp;2 to get more information about
     the running function
     (level&nbsp;0 is the <code>getinfo</code> function,
     and level&nbsp;1 is the hook function),
-    unless the event is <code>"tail return"</code>.
+    unless the inputEvent is <code>"tail return"</code>.
     In this case, Lua is only simulating the return,
     and a call to <code>getinfo</code> will return invalid data.
 

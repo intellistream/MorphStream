@@ -1,9 +1,9 @@
 package intellistream.morphstream.examples.tsp.shj;
 
-import combo.SHJCombo;
-import combo.SINKCombo;
-import common.bolts.transactional.shj.*;
-import common.topology.transactional.initializer.SHJInitializer;
+import intellistream.morphstream.examples.tsp.shj.op.SHJCombo;
+import intellistream.morphstream.examples.utils.SINKCombo;
+import intellistream.morphstream.examples.tsp.shj.op.*;
+import intellistream.morphstream.examples.tsp.shj.util.SHJInitializer;
 import intellistream.morphstream.common.constants.SHJConstants.Component;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;

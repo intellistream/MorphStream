@@ -2411,7 +2411,7 @@ struct extent_hooks_s {
 	  <para><varname>num_wait</varname> (<type>uint64_t</type>): Number of
 	  times the mutex was wait-acquired, which means the mutex contention
 	  was not solved by spin-retry, and blocking operation was likely
-	  involved in order to acquire the mutex.  This event generally implies
+	  involved in order to acquire the mutex.  This inputEvent generally implies
 	  higher cost / longer delay, and should be investigated if it happens
 	  often.</para>
 
@@ -2430,7 +2430,7 @@ struct extent_hooks_s {
 
 	  <para><varname>num_owner_switch</varname> (<type>uint64_t</type>):
 	  Number of times the current mutex owner is different from the previous
-	  one.  This event does not generally imply an issue; rather it is an
+	  one.  This inputEvent does not generally imply an issue; rather it is an
 	  indicator of how often the protected data are accessed by different
 	  threads.
 	  </para>

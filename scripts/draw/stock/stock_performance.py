@@ -97,9 +97,9 @@ def ReadFile():
     source_file = "/home/myc/workspace/MorphStream-Stock/application/src/main/java/benchmark/datagenerator/apps/SHJ/dataset/stock_dataset_v2.csv"
     fp = open(source_file)
     event_ts_offset = {}
-    events = fp.readlines()
-    for event in events:
-        textArr = event.split(",")
+    inputEvents = fp.readlines()
+    for inputEvent in inputEvents:
+        textArr = inputEvent.split(",")
         event_ts_offset[int(textArr[0])] = int(textArr[1])
 
     file = "/home/myc/workspace/MorphStream-Stock/test"

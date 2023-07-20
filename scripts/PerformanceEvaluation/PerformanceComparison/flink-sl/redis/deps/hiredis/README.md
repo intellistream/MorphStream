@@ -326,7 +326,7 @@ of the error.
 
 ## Asynchronous API
 
-Hiredis comes with an asynchronous API that works easily with any event library.
+Hiredis comes with an asynchronous API that works easily with any inputEvent library.
 Examples are bundled that show using Hiredis with [libev](http://software.schmorp.de/pkg/libev.html)
 and [libevent](http://monkey.org/~provos/libevent/).
 
@@ -374,7 +374,7 @@ int redisAsyncSetDisconnectCallback(redisAsyncContext *ac, redisDisconnectCallba
 
 ### Sending commands and their callbacks
 
-In an asynchronous context, commands are automatically pipelined due to the nature of an event loop.
+In an asynchronous context, commands are automatically pipelined due to the nature of an inputEvent loop.
 Therefore, unlike the synchronous API, there is only a single way to send commands.
 Because commands are sent to Redis asynchronously, issuing a command requires a callback function
 that is called when the reply is received. Reply callbacks should have the following prototype:
@@ -422,7 +422,7 @@ have been written to the socket, their respective replies have been read and the
 callbacks have been executed. After this, the disconnection callback is executed with the
 `REDIS_OK` status and the context object is freed.
 
-### Hooking it up to event library *X*
+### Hooking it up to inputEvent library *X*
 
 There are a few hooks that need to be set on the context object after it is created.
 See the `adapters/` directory for bindings to *libev* and *libevent*.

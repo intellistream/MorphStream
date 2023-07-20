@@ -1,6 +1,5 @@
 package intellistream.morphstream.engine.txn.db;
 
-import intellistream.morphstream.engine.txn.content.common.TxnParam;
 import intellistream.morphstream.engine.txn.operator.QueryPlan;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
@@ -17,7 +16,6 @@ import java.util.*;
  */
 public class SimpleDatabase {
     private final LockManager lockMan;
-    public TxnParam param;
     public Map<String, SimpleTable> tables;
     private long numTransactions;
 

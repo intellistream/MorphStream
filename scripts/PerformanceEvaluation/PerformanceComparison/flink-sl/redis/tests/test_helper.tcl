@@ -296,7 +296,7 @@ proc test_server_main {} {
     set ::clients_time_history {}
     set ::failed_tests {}
 
-    # Enter the event loop to handle clients I/O
+    # Enter the inputEvent loop to handle clients I/O
     after 100 test_server_cron
     vwait forever
 }

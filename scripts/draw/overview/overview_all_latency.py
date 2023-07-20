@@ -126,11 +126,11 @@ def DrawFigure(xvalues, yvalues, legend_labels, x_label, y_label, x_min, x_max, 
 def ReadFileSL(batchInterval, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     x_axis = []
     y_axis = []
-    events = tthread * batchInterval
+    inputEvents = tthread * batchInterval
 
     if isCyclic == "true":
         col = []
-        f = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        f = getPathSL("OPGSA", inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(f).readlines()
         count = 0
         for line in lines:
@@ -145,7 +145,7 @@ def ReadFileSL(batchInterval, tthread, NUM_ITEMS, deposit_ratio, key_skewness, o
         y_axis.append(coly)
     elif isCyclic == "false":
         col = []
-        f = getPathSL("GSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        f = getPathSL("GSA", inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(f).readlines()
         count = 0
         for line in lines:
@@ -162,7 +162,7 @@ def ReadFileSL(batchInterval, tthread, NUM_ITEMS, deposit_ratio, key_skewness, o
         print("error")
 
     col = []
-    f = getPathSL("TStream", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+    f = getPathSL("TStream", inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     lines = open(f).readlines()
     count = 0
     for line in lines:
@@ -177,7 +177,7 @@ def ReadFileSL(batchInterval, tthread, NUM_ITEMS, deposit_ratio, key_skewness, o
     y_axis.append(coly)
 
     col = []
-    f = getPathSL("PAT", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio,
+    f = getPathSL("PAT", inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio,
                   isCyclic, complexity)
     lines = open(f).readlines()
     count = 0
@@ -199,11 +199,11 @@ def ReadFileSL(batchInterval, tthread, NUM_ITEMS, deposit_ratio, key_skewness, o
 def ReadFileGS(batchInterval, tthread, NUM_ITEMS, NUM_ACCESS,  key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     x_axis = []
     y_axis = []
-    events = tthread * batchInterval
+    inputEvents = tthread * batchInterval
 
     if isCyclic == "true":
         col = []
-        f = getPathGS("OPGSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
+        f = getPathGS("OPGSA", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
                     isCyclic, complexity)
         lines = open(f).readlines()
         count = 0
@@ -219,7 +219,7 @@ def ReadFileGS(batchInterval, tthread, NUM_ITEMS, NUM_ACCESS,  key_skewness, ove
         y_axis.append(coly)
     elif isCyclic == "false":
         col = []
-        f = getPathGS("GSA", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        f = getPathGS("GSA", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
         lines = open(f).readlines()
         count = 0
         for line in lines:
@@ -236,7 +236,7 @@ def ReadFileGS(batchInterval, tthread, NUM_ITEMS, NUM_ACCESS,  key_skewness, ove
         print("error")
 
     col = []
-    f = getPathGS("TStream", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
+    f = getPathGS("TStream", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
                   isCyclic, complexity)
     lines = open(f).readlines()
     count = 0
@@ -252,7 +252,7 @@ def ReadFileGS(batchInterval, tthread, NUM_ITEMS, NUM_ACCESS,  key_skewness, ove
     y_axis.append(coly)
 
     col = []
-    f = getPathGS("PAT", events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
+    f = getPathGS("PAT", inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio,
                   isCyclic, complexity)
     lines = open(f).readlines()
     count = 0
@@ -270,23 +270,23 @@ def ReadFileGS(batchInterval, tthread, NUM_ITEMS, NUM_ACCESS,  key_skewness, ove
     return x_axis, y_axis
 
 
-def getPathSL(algo, events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+def getPathSL(algo, inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     return FILE_FOLER + '/StreamLedger/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}.latency'\
-        .format(algo, tthread, events, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        .format(algo, tthread, inputEvents, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
 
-def getPathGS(algo, events, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+def getPathGS(algo, inputEvents, tthread, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
     return FILE_FOLER + '/GrepSum/{}/threads = {}/totalEvents = {}/{}_{}_{}_{}_{}_{}_{}.latency'\
-        .format(algo, tthread, events, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+        .format(algo, tthread, inputEvents, NUM_ITEMS, NUM_ACCESS, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
 
-def getCountSL(events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
-    file = getPathSL("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+def getCountSL(inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+    file = getPathSL("OPGSA", inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     f = open(file, "r")
     read = f.readlines()
     return len(read)
 
-def getCountGS(events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
-    file = getPathGS("OPGSA", events, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
+def getCountGS(inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity):
+    file = getPathGS("OPGSA", inputEvents, tthread, NUM_ITEMS, deposit_ratio, key_skewness, overlap_ratio, abort_ratio, isCyclic, complexity)
     f = open(file, "r")
     read = f.readlines()
     return len(read)

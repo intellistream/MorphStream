@@ -63,7 +63,7 @@ proc show_cluster_status {} {
             if {$empty == 5} break ; # Our exit condition: no more logs
 
             # Emit the one with the smallest time (that is the first
-            # event in the time line).
+            # inputEvent in the time line).
             puts "\[$best port $R_port($best)\] [lindex $log($best) 0]"
             set log($best) [lrange $log($best) 1 end]
         }

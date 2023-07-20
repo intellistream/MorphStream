@@ -23,7 +23,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>runners.BenchmarkRunner</mainClass>
+                            <mainClass>intellistream.morphstream.examples.benchmark.BenchmarkRunner</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

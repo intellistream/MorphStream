@@ -660,10 +660,10 @@ brevity.  Much more detail can be found in the git revision history:
       could cause data structure corruption that would most likely result in a
       segfault.
     + Fix irealloc_prof() to prof_alloc_rollback() on OOM.
-    + Make one call to prof_active_get_unlocked() per allocation event, and use
+    + Make one call to prof_active_get_unlocked() per allocation inputEvent, and use
       the result throughout the relevant functions that handle an allocation
-      event.  Also add a missing check in prof_realloc().  These fixes protect
-      allocation events against concurrent prof_active changes.
+      inputEvent.  Also add a missing check in prof_realloc().  These fixes protect
+      allocation inputEvents against concurrent prof_active changes.
     + Fix ixallocx_prof() to pass usize_max and zero to ixallocx_prof_sample()
       in the correct order.
     + Fix prof_realloc() to call prof_free_sampled_object() after calling

@@ -70,7 +70,7 @@ public abstract class AbstractSpout extends Operator {
 
     private void openFile(String fileName) throws FileNotFoundException {
         boolean split;
-        split = !OsUtils.isMac() && config.getBoolean("split", true);
+        split = !OsUtils.isMac() && config.getBoolean("split", true);//TODO: Removed the entry in properties file: split=false
         if (split) {
             splitRead(fileName);
         } else {

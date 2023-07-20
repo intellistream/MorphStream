@@ -55,7 +55,7 @@ If you use MorphStream in your paper, please cite our work.
 	bibtex_show  = {true},
 	selected     = {true},
 	pdf          = {papers/MorphStream.pdf},
-	code         = {https://github.com/cli/MorphStream},
+	code         = {https://github.com/intellistream/MorphStream},
 	tag          = {full paper}
 }
 ```
