@@ -1,7 +1,5 @@
 import {Component, Input} from '@angular/core';
 import {Operator} from "../../model/operator";
-import {NzModalService} from "ng-zorro-antd/modal";
-import {TpgGraphComponent} from "../../pages/application-information/tpg-graph/tpg-graph.component";
 
 @Component({
   selector: 'app-operator-information',
@@ -23,17 +21,17 @@ export class OperatorInformationComponent {
     numOfPD: 120
   }
 
-  constructor(private modalService: NzModalService) {
+  constructor() {
   }
 
-  onTpgClick() {
-    this.modalService.create({
-      nzTitle: `TPG of ${this.operator.name}`,
-      nzContent: TpgGraphComponent,
-      nzFooter: null,
-      nzWidth: '1248px',
-      nzBodyStyle: {height: "748px"},
-      nzCentered: true
-    });
-  }
+  // onTpgClick() {
+  //   this.modalService.create({
+  //     nzTitle: `TPG of ${this.operator.name}`,
+  //     nzContent: TpgGraphComponent,
+  //     nzFooter: null,
+  //     nzWidth: '1248px',
+  //     nzBodyStyle: {height: "748px"},
+  //     nzCentered: true
+  //   });
+  // }
 }

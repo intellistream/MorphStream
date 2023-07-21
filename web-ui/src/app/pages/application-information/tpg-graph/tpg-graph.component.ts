@@ -1,5 +1,4 @@
-import {AfterViewInit, Component, ElementRef, Input} from '@angular/core';
-import { NzModalRef } from 'ng-zorro-antd/modal';
+import {AfterViewInit, Component, ElementRef, Input, ViewChild} from '@angular/core';
 
 import G6 from '@antv/g6';
 
@@ -127,7 +126,17 @@ export class TpgGraphComponent implements AfterViewInit {
     ],
   }
 
+  @ViewChild('graphContainer', { static: false }) graphContainer!: ElementRef;
+
   ngAfterViewInit() {
+    let containerWidth = 0;
+    if (this.graphContainer) {
+      const container: HTMLDivElement = this.graphContainer.nativeElement;
+      containerWidth = container.offsetWidth;
+    }
+
+
+
     const grid = new G6.Grid();
 
     // // minimap plugin
@@ -143,7 +152,6 @@ export class TpgGraphComponent implements AfterViewInit {
       offsetX: 10,
       offsetY: 20,
       getContent(e) {
-        console.log(e)
         const outDiv = document.createElement('div');
         outDiv.style.width = '180px';
         outDiv.innerHTML = `
@@ -161,8 +169,8 @@ export class TpgGraphComponent implements AfterViewInit {
         default: ['drag-canvas', 'zoom-canvas'],  // 'drag-node'
       },
       container: 'graph-container',
-      width: 1200,
-      height: 700,
+      width: containerWidth,
+      height: 500,
       layout: {
         type: 'concentric',
         nodeSize: 30,
@@ -188,6 +196,6 @@ export class TpgGraphComponent implements AfterViewInit {
     canvas.style.zIndex = 2;
   }
 
-  constructor(private modal: NzModalRef, private elementRef: ElementRef) {
+  constructor(private elementRef: ElementRef) {
   }
 }
