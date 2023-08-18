@@ -32,7 +32,6 @@ import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -51,9 +50,7 @@ public class CommandLoggingManager implements LoggingManager {
     private static final Logger LOG = LoggerFactory.getLogger(CommandLoggingManager.class);
     protected final int num_items;
     protected final int delta;
-    @Nonnull
     protected String loggingPath;
-    @Nonnull
     protected LoggingOptions loggingOptions;
     protected int parallelNum;
     protected Map<String, BaseTable> tables;

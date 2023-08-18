@@ -35,7 +35,6 @@ import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -55,9 +54,7 @@ public class DependencyLoggingManager implements LoggingManager {
     protected final int delta;
     //Used when recovery
     public CommandPrecedenceGraph cpg = new CommandPrecedenceGraph();
-    @Nonnull
     protected String loggingPath;
-    @Nonnull
     protected LoggingOptions loggingOptions;
     protected int parallelNum;
     protected Map<String, BaseTable> tables;

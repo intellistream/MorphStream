@@ -24,7 +24,6 @@ import intellistream.morphstream.util.graph.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -46,9 +45,7 @@ public class PathLoggingManager implements LoggingManager {
     private final ConcurrentHashMap<String, Graph> graphs = new ConcurrentHashMap<>();//TableToGraph
     public ConcurrentHashMap<Integer, PathRecord> threadToPathRecord = new ConcurrentHashMap<>();
     public HistoryViews historyViews = new HistoryViews();//Used when recovery
-    @Nonnull
     protected String loggingPath;
-    @Nonnull
     protected LoggingOptions loggingOptions;
     protected int parallelNum;
 

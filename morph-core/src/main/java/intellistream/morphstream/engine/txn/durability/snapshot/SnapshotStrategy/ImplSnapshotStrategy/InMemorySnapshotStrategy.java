@@ -20,7 +20,7 @@ import intellistream.morphstream.util.Deserialize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -38,13 +38,9 @@ import static java.nio.file.StandardOpenOption.READ;
 public class InMemorySnapshotStrategy implements SnapshotStrategy<InMemoryFullSnapshotResources> {
     private static final Logger LOG = LoggerFactory.getLogger(InMemorySnapshotStrategy.class);
     private static final String DESCRIPTION = "Full snapshot of In-Memory Database";
-    @Nonnull
     protected Map<String, BaseTable> tables;
-    @Nonnull
     protected SnapshotOptions snapshotOptions;
-    @Nonnull
     protected String snapshotPath;
-    @Nonnull
     protected ConcurrentHashMap<String, InMemoryKvStateInfo> kvStateInformation = new ConcurrentHashMap<>();
 
     public InMemorySnapshotStrategy(Map<String, BaseTable> tables, SnapshotOptions snapshotOptions, String snapshotPath) {
