@@ -104,14 +104,13 @@ public class TransactionEvent extends TxnEvent {
     // ------------------------------------------------------------------------
     @Override
     public String toString() {
-        return "TransactionEvent (" + bid + ") {"
-                + "sourceAccountId=" + sourceAccountId
-                + ", targetAccountId=" + targetAccountId
-                + ", sourceBookEntryId=" + sourceBookEntryId
-                + ", targetBookEntryId=" + targetBookEntryId
-                + ", accountTransfer=" + accountTransfer
-                + ", bookEntryTransfer=" + bookEntryTransfer
-                + ", minAccountBalance=" + minAccountBalance
-                + '}';
+        return  getBid() +
+                "," + getSourceAccountId() +
+                "," + getSourceBookEntryId() +
+                "," + getTargetAccountId() +
+                "," + getTargetBookEntryId() +
+                "," + getAccountTransfer() +
+                "," + getBookEntryTransfer() +
+                "," + getTimestamp();
     }
 }

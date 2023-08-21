@@ -17,6 +17,7 @@ import common.topology.transactional.*;
 import components.Topology;
 import components.TopologyComponent;
 import components.exception.UnhandledCaseException;
+import durability.struct.FaultToleranceRelax;
 import execution.ExecutionNode;
 import execution.runtime.executorThread;
 import lock.SpinLock;
@@ -37,13 +38,18 @@ import static common.CONTROL.*;
 import static common.constants.LinearRoadConstants.Conf.Executor_Threads;
 import static common.constants.OnlineBidingSystemConstants.Conf.OB_THREADS;
 import static common.constants.StreamLedgerConstants.Conf.SL_THREADS;
+import static content.LVTStreamContent.LVTSTREAM_CONTENT;
 import static content.LWMContentImpl.LWM_CONTENT;
 import static content.LockContentImpl.LOCK_CONTENT;
 import static content.SStoreContentImpl.SSTORE_CONTENT;
 import static content.TStreamContentImpl.T_STREAMCONTENT;
 import static content.common.ContentCommon.content_type;
+import static content.common.ContentCommon.loggingRecord_type;
 import static profiler.MeasureTools.METRICS_REPORT;
+import static profiler.MeasureTools.METRICS_REPORT_WITH_FAILURE;
 import static profiler.Metrics.timer;
+import static utils.FaultToleranceConstants.*;
+import static utils.FaultToleranceConstants.LOGOption_command;
 
 public class MorphStreamRunner extends Runner {
     private static final Logger log = LoggerFactory.getLogger(MorphStreamRunner.class);
@@ -103,7 +109,11 @@ public class MorphStreamRunner extends Runner {
                         content_type = LWM_CONTENT;
                         break;
                     case CCOption_MorphStream:
-                        content_type = T_STREAMCONTENT;//records the multi-version of table record.
+                        if (config.getInt("FTOption") == 4) {
+                            content_type = LVTSTREAM_CONTENT;//records the multi-version of table record.
+                        } else {
+                            content_type = T_STREAMCONTENT;
+                        }
                         break;
                     case CCOption_SStore://SStore
                         content_type = SSTORE_CONTENT;//records the multi-version of table record.
@@ -162,7 +172,35 @@ public class MorphStreamRunner extends Runner {
                     break;
                 }
             }
+            switch (config.getInt("FTOption", 0)) {
+                case 0:
+                case 1:
+                    loggingRecord_type = LOGOption_no;
+                    break;
+                case 2:
+                    loggingRecord_type = LOGOption_wal;
+                    break;
+                case 3:
+                    loggingRecord_type = LOGOption_path;
+                    break;
+                case 4:
+                    loggingRecord_type = LOGOption_lv;
+                    break;
+                case 5:
+                    loggingRecord_type = LOGOption_dependency;
+                    break;
+                case 6:
+                    loggingRecord_type = LOGOption_command;
+                    break;
+                default:
+                    System.exit(-1);
+            }
+
             OperationChainCommon.cleanUp = config.getBoolean("cleanUp");
+            FaultToleranceRelax.isHistoryView = config.getBoolean("isHistoryView");
+            FaultToleranceRelax.isAbortPushDown = config.getBoolean("isAbortPushDown");
+            FaultToleranceRelax.isTaskPlacing = config.getBoolean("isTaskPlacing");
+            FaultToleranceRelax.isSelectiveLogging = config.getBoolean("isSelectiveLogging");
         } else {
             config.putAll(Configuration.fromStr(configStr));
         }
@@ -187,7 +225,7 @@ public class MorphStreamRunner extends Runner {
 
     private static double runTopologyLocally(Topology topology, Configuration conf) throws InterruptedException {
         if (enable_memory_measurement) {
-            timer.scheduleAtFixedRate(new Metrics.RuntimeMemory(),0,  500);
+            timer.scheduleAtFixedRate(new Metrics.RuntimeHardware(conf.getString("rootFilePath")),0,  10);
         }
         TopologySubmitter submitter = new TopologySubmitter();
         try {
@@ -197,6 +235,14 @@ public class MorphStreamRunner extends Runner {
         }
         executorThread sinkThread = submitter.getOM().getEM().getSinkThread();
         long start = System.currentTimeMillis();
+        if (conf.getBoolean("isFailure")) {
+            int failureTime = conf.getInt("failureTime"); // Emulate system failure after (ms)
+            sinkThread.join(failureTime);
+
+            if (enable_log) log.info("System failure after " + failureTime / 1E3 + "s.");
+            METRICS_REPORT_WITH_FAILURE(conf.getInt("CCOption", 0), conf.getInt("FTOption", 0), conf.getInt("tthread"), conf.getString("rootFilePath"), conf.getInt("snapshotInterval"));
+            System.exit(0);
+        }
         sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
         long time_elapsed = (long) ((System.currentTimeMillis() - start) / 1E3 / 60);//in mins
         if (time_elapsed > 20) {
@@ -258,113 +304,7 @@ public class MorphStreamRunner extends Runner {
                     if (lock != null)
                         log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
                 }
-
-                // decide the output path of metrics.
-                String statsFolderPattern = OsUtils.osWrapperPostFix(rootPath)
-                        + OsUtils.osWrapperPostFix("stats")
-                        + OsUtils.osWrapperPostFix("%s")
-                        + OsUtils.osWrapperPostFix("%s")
-                        + OsUtils.osWrapperPostFix("threads = %d")
-                        + OsUtils.osWrapperPostFix("totalEvents = %d")
-                        + OsUtils.osWrapperPostFix("%d_%d_%d_%d_%d_%d_%s_%d");
-
-                if (config.getInt("CCOption") == CCOption_SStore) {
-                    scheduler = "PAT";
-                }
-
-                String statsFolderPath;
-                if (config.getString("common").equals("StreamLedger")) {
-                    statsFolderPath = String.format(statsFolderPattern,
-                            config.getString("common"), scheduler, tthread, totalEvents,
-                            config.getInt("NUM_ITEMS"),
-                            config.getInt("Ratio_Of_Deposit"),
-                            config.getInt("State_Access_Skewness"),
-                            config.getInt("Ratio_of_Overlapped_Keys"),
-                            config.getInt("Ratio_of_Transaction_Aborts"),
-                            config.getInt("Transaction_Length"),
-                            AppConfig.isCyclic,
-                            config.getInt("complexity"));
-                } else if (config.getString("common").equals("GrepSum")) {
-                    statsFolderPath = String.format(statsFolderPattern,
-                            config.getString("common"), scheduler, tthread, totalEvents,
-                            config.getInt("NUM_ITEMS"),
-                            config.getInt("Ratio_of_Multiple_State_Access"),
-                            config.getInt("State_Access_Skewness"),
-                            config.getInt("Ratio_of_Overlapped_Keys"),
-                            config.getInt("Ratio_of_Transaction_Aborts"),
-                            config.getInt("Transaction_Length"),
-                            AppConfig.isCyclic,
-                            config.getInt("complexity"));
-                } else if (config.getString("common").equals("OnlineBiding")){
-                    statsFolderPath = String.format(statsFolderPattern,
-                            config.getString("common"), scheduler, tthread, totalEvents,
-                            config.getInt("NUM_ITEMS"),
-                            config.getInt("NUM_ACCESS"),
-                            config.getInt("State_Access_Skewness"),
-                            config.getInt("Ratio_of_Overlapped_Keys"),
-                            config.getInt("Ratio_of_Transaction_Aborts"),
-                            config.getInt("Transaction_Length"),
-                            AppConfig.isCyclic,
-                            config.getInt("complexity"));
-                } else if (config.getString("common").equals("TollProcessing")){
-                    statsFolderPath = String.format(statsFolderPattern,
-                            config.getString("common"), scheduler, tthread, totalEvents,
-                            config.getInt("NUM_ITEMS"),
-                            config.getInt("NUM_ACCESS"),
-                            config.getInt("State_Access_Skewness"),
-                            config.getInt("Ratio_of_Overlapped_Keys"),
-                            config.getInt("Ratio_of_Transaction_Aborts"),
-                            config.getInt("Transaction_Length"),
-                            AppConfig.isCyclic,
-                            config.getInt("complexity"));
-                } else if (config.getString("common").equals("WindowedGrepSum")) {
-                    statsFolderPath = String.format(statsFolderPattern,
-                            config.getString("common"), scheduler, tthread, totalEvents,
-                            config.getInt("NUM_ITEMS"),
-                            config.getInt("Ratio_of_Multiple_State_Access"),
-                            config.getInt("State_Access_Skewness"),
-                            config.getInt("Period_of_Window_Reads"),
-                            config.getInt("windowSize"),
-                            config.getInt("Transaction_Length"),
-                            AppConfig.isCyclic,
-                            config.getInt("complexity"));
-                } else if (config.getString("common").equals("SHJ")) {
-                    statsFolderPath = String.format(statsFolderPattern,
-                            config.getString("common"), scheduler, tthread, totalEvents,
-                            config.getInt("NUM_ITEMS"),
-                            config.getInt("Ratio_of_Multiple_State_Access"),
-                            config.getInt("State_Access_Skewness"),
-                            config.getInt("Ratio_of_Overlapped_Keys"),
-                            config.getInt("Ratio_of_Transaction_Aborts"),
-                            config.getInt("Transaction_Length"),
-                            AppConfig.isCyclic,
-                            config.getInt("complexity"));
-                } else if (config.getString("common").equals("NonGrepSum")) {
-                    statsFolderPath = String.format(statsFolderPattern,
-                            config.getString("common"), scheduler, tthread, totalEvents,
-                            config.getInt("NUM_ITEMS"),
-                            config.getInt("NUM_ACCESS"),
-                            config.getInt("State_Access_Skewness"),
-                            config.getInt("Ratio_of_Non_Deterministic_State_Access"),
-                            config.getInt("Ratio_of_Transaction_Aborts"),
-                            config.getInt("Transaction_Length"),
-                            AppConfig.isCyclic,
-                            config.getInt("complexity"));
-                } else
-                    throw new UnsupportedOperationException();
-                File file = new File(statsFolderPath);
-                log.info("Dumping stats to...");
-                log.info(String.valueOf(file.getAbsoluteFile()));
-                file.mkdirs();
-
-                if (file.exists())
-                    file.delete();
-                try {
-                    file.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                METRICS_REPORT(config.getInt("CCOption", 0), file, tthread, rt, config.getInt("phaseNum"), config.getInt("shiftRate"));
+                METRICS_REPORT(config.getInt("CCOption", 0), config.getInt("FTOption", 0), tthread, rt, config.getInt("phaseNum"), config.getInt("shiftRate"), config.getInt("snapshotInterval"));
             }
         }//end of profile.
     }

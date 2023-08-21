@@ -15,7 +15,9 @@ import scheduler.context.op.OPNSContext;
 import scheduler.context.op.OPNSAContext;
 import scheduler.context.op.OPSContext;
 import scheduler.context.op.OPSAContext;
+import scheduler.context.recovery.RSContext;
 import scheduler.impl.IScheduler;
+import scheduler.impl.recovery.RScheduler;
 import storage.*;
 import storage.datatype.DataBox;
 import storage.table.BaseTable;
@@ -24,6 +26,7 @@ import transaction.context.TxnAccess;
 import transaction.context.TxnContext;
 import transaction.function.Condition;
 import transaction.function.Function;
+import utils.SOURCE_CONTROL;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -69,6 +72,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             this.setSchedulerContext(thisTaskId, thread_count, schedulerType, scheduler);
             context = contexts.get(schedulerType);
         }
+        if (recoveryScheduler != null) {
+            this.setSchedulerContext(thisTaskId, thread_count, "Recovery", recoveryScheduler);
+            context = contexts.get("Recovery");
+        }
 //        LOG.info("Engine initialize:" + " Total Working Threads:" + tthread);
     }
 
@@ -105,6 +112,9 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             case OP_DFS_A:
                 schedulerContext = new OPSAContext(thisTaskId);
                 break;
+            case Recovery:
+                schedulerContext = new RSContext(thisTaskId);
+                break;
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + scheduler_type);
         }
@@ -114,6 +124,16 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     public void  switchContext(String schedulerType) {
         context = contexts.get(schedulerType);
+    }
+    @Override
+    public void switch_scheduler(int thread_Id, long mark_ID) {
+        if (scheduler instanceof RScheduler) {
+            SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
+            String schedulerType = collector.getDecision(thread_Id);
+            this.SwitchScheduler(schedulerType, thread_Id, mark_ID);
+            this.switchContext(schedulerType);
+            SOURCE_CONTROL.getInstance().waitForSchedulerSwitch(thread_Id);
+        }
     }
 
     public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {

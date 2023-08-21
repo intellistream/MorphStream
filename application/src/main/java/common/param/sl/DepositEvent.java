@@ -79,12 +79,12 @@ public class DepositEvent extends TxnEvent {
     // ------------------------------------------------------------------------
     @Override
     public String toString() {
-        return "DepositEvent {"
-                + "accountId=" + accountId
-                + ", bookEntryId=" + bookEntryId
-                + ", accountTransfer=" + accountTransfer
-                + ", bookEntryTransfer=" + bookEntryTransfer
-                + '}';
+        return getBid() +
+                "," + getAccountId() +
+                "," + getBookEntryId() +
+                "," + getAccountTransfer() +
+                "," + getBookEntryTransfer() +
+                "," + getTimestamp();
     }
 
     public DepositEvent cloneEvent() {

@@ -25,6 +25,8 @@ public interface TPConstants extends BaseConstants {
 
     interface Constant {
         int NUM_SEGMENTS = 100;
+        int MAX_SPEED = 200;
+        int MAX_INT = 200;
     }
 
     interface Field extends BaseField {

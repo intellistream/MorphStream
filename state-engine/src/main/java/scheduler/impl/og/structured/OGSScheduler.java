@@ -1,18 +1,22 @@
 package scheduler.impl.og.structured;
 
+import durability.struct.FaultToleranceRelax;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import profiler.MeasureTools;
 import scheduler.context.og.OGSContext;
 import scheduler.impl.og.OGScheduler;
 import scheduler.struct.og.Operation;
 import scheduler.struct.og.OperationChain;
 import scheduler.struct.op.MetaTypes;
 import transaction.impl.ordered.MyList;
+import utils.FaultToleranceConstants;
 import utils.SOURCE_CONTROL;
 
 import java.util.ArrayList;
 
 import static common.CONTROL.enable_log;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 public abstract class OGSScheduler<Context extends OGSContext> extends OGScheduler<Context> {
     private static final Logger log = LoggerFactory.getLogger(OGSScheduler.class);
@@ -28,6 +32,9 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
         needAbortHandling = false;//reset needAbortHandling here
         int threadId = context.thisThreadId;
         tpg.firstTimeExploreTPG(context);
+        if (tpg.isLogging == LOGOption_path && FaultToleranceRelax.isSelectiveLogging) {
+            this.loggingManager.selectiveLoggingPartition(context.thisThreadId);
+        }
         SOURCE_CONTROL.getInstance().exploreTPGBarrier(threadId);//sync for all threads to come to this line to ensure chains are constructed for the current batch.
     }
 
@@ -93,6 +100,11 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
     protected void checkTransactionAbort(Operation operation, OperationChain operationChain) {
         // in coarse-grained algorithms, we will not handle transaction abort gracefully, just update the state of the operation
         operation.stateTransition(MetaTypes.OperationStateType.ABORTED);
+        if (isLogging == FaultToleranceConstants.LOGOption_path && operation.getTxnOpId() == 0) {
+            MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+            this.tpg.threadToPathRecord.get(operation.context.thisThreadId).addAbortBid(operation.bid);
+            MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+        }
         // save the abort information and redo the batch.
         needAbortHandling = true;
     }

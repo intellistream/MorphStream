@@ -7,6 +7,7 @@ import execution.runtime.collector.OutputCollector;
 import execution.runtime.tuple.JumboTuple;
 import execution.runtime.tuple.impl.Tuple;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -23,12 +24,12 @@ public class BasicBoltBatchExecutor extends BoltExecutor {
         super.prepare(stormConf, context, collector);
     }
 
-    public void execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+    public void execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
         _op.execute(in);
     }
 
     @Override
-    public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+    public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
         _op.execute(in);
     }
 }

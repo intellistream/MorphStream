@@ -52,6 +52,8 @@ public interface Content {
 
     //	LWMContentImpl.XLockQueue GetXLockQueue();
     SchemaRecord ReadAccess(TxnContext context, CommonMetaTypes.AccessType accessType);
+    //Used to checkpoint the schema record
+    SchemaRecord ReadAccess(long snapshotId, boolean clean);
 
     SchemaRecord readPreValues(long ts);
 
@@ -84,4 +86,9 @@ public interface Content {
     void LockPartitions();
 
     void UnlockPartitions();
+    int[] getWriteLVs();//Used by LVStreamContent
+    int[] getReadLVs();//Used by LVStreamContent
+    int[] getLVs();//Used by LVStreamContent
+    void updateWriteLv(int lsn, int partition);
+    void updateReadLv(int lsn, int partition);
 }

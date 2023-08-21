@@ -1,5 +1,6 @@
 package scheduler.impl.op.nonstructured;
 
+import durability.struct.FaultToleranceRelax;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import profiler.MeasureTools;
@@ -10,6 +11,7 @@ import scheduler.struct.op.Operation;
 import utils.SOURCE_CONTROL;
 
 import static common.CONTROL.enable_log;
+import static utils.FaultToleranceConstants.LOGOption_path;
 
 public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Context, Operation> {
     private static final Logger log = LoggerFactory.getLogger(OPNSScheduler.class);
@@ -26,12 +28,14 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
     public void INITIALIZE(Context context) {
         needAbortHandling = false;//reset needAbortHandling here
         tpg.firstTimeExploreTPG(context);
+        if (tpg.isLogging == LOGOption_path && FaultToleranceRelax.isSelectiveLogging) {
+            this.loggingManager.selectiveLoggingPartition(context.thisThreadId);
+        }
         context.partitionStateManager.initialize(executableTaskListener);
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
 
     public void REINITIALIZE(Context context) {
-        needAbortHandling = false;
         tpg.secondTimeExploreTPG(context);//Do not need to reset needAbortHandling here, as lazy approach only handles abort once for one batch.
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
     }
@@ -129,6 +133,11 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
             MeasureTools.BEGIN_NOTIFY_TIME_MEASURE(threadId);
             if (remove.isFailed && !remove.getOperationState().equals(OperationStateType.ABORTED)) {
                 needAbortHandling = true;
+                if (isLogging == LOGOption_path && remove.txnOpId == 0) {
+                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(threadId);
+                    this.tpg.threadToPathRecord.get(context.thisThreadId).addAbortBid(remove.bid);
+                    MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(threadId);
+                }
             }
             NOTIFY(remove, context);
             MeasureTools.END_NOTIFY_TIME_MEASURE(threadId);

@@ -12,6 +12,7 @@ import transaction.TxnManager;
 import transaction.context.TxnContext;
 import utils.SOURCE_CONTROL;
 
+import java.io.IOException;
 import java.util.concurrent.BrokenBarrierException;
 
 import static common.CONTROL.combo_bid_size;
@@ -114,7 +115,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
      * @throws BrokenBarrierException
      */
     @Override
-    public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+    public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
         MeasureTools.BEGIN_TOTAL_TIME_MEASURE(thread_Id);
         PRE_EXECUTE(in);
         MeasureTools.END_PREPARE_TIME_MEASURE(thread_Id);
@@ -128,7 +129,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     }
 
     @Override
-    public boolean checkpoint(int counter) {
+    public boolean model_switch(int counter) {
         return false;
     }
 

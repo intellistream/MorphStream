@@ -8,6 +8,7 @@ import execution.ExecutionNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Queue;
 import java.util.concurrent.BrokenBarrierException;
@@ -139,7 +140,7 @@ public abstract class executorThread extends Thread {
         return executor.getInputStreamController().getRQ();
     }
 
-    void routing() throws InterruptedException, DatabaseException, BrokenBarrierException {
+    void routing() throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
 //        int s = 0;
         if (start) {
             cnt = 0;
@@ -152,9 +153,9 @@ public abstract class executorThread extends Thread {
         end_emit = System.nanoTime();
     }
 
-    protected abstract void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException;
+    protected abstract void _execute_noControl() throws InterruptedException, DatabaseException, BrokenBarrierException, IOException;
 
-    protected abstract void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException;
+    protected abstract void _execute() throws InterruptedException, DatabaseException, BrokenBarrierException, IOException;
 
     public int getExecutorID() {
         return executor.getExecutorID();

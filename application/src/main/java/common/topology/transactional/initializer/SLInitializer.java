@@ -165,8 +165,8 @@ public class SLInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
-            insertAccountRecord(_key, startingBalance, pid, spinlock);
-            insertAssetRecord(_key, startingBalance, pid, spinlock);
+            insertAccountRecord(_key, startingBalance, pid, spinlock, thread_id);
+            insertAssetRecord(_key, startingBalance, pid, spinlock, thread_id);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -200,8 +200,8 @@ public class SLInitializer extends TableInitilizer {
         for (int key = left_bound; key < right_bound; key++) {
             pid = get_pid(partition_interval, key);
             _key = String.valueOf(key);
-            insertAccountRecord(_key, startingBalance, pid, spinlock);
-            insertAssetRecord(_key, startingBalance, pid, spinlock);
+            insertAccountRecord(_key, startingBalance, pid, spinlock, thread_id);
+            insertAssetRecord(_key, startingBalance, pid, spinlock, thread_id);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -232,12 +232,12 @@ public class SLInitializer extends TableInitilizer {
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
      * initial account value_list is 0...?
      */
-    private void insertAccountRecord(String key, long value, int pid, SpinLock[] spinlock_) {
+    private void insertAccountRecord(String key, long value, int pid, SpinLock[] spinlock_, int partition_id) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("accounts", new TableRecord(AccountRecord(key, value), pid, spinlock_));
+                db.InsertRecord("accounts", new TableRecord(AccountRecord(key, value), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("accounts", new TableRecord(AccountRecord(key, value)));
+                db.InsertRecord("accounts", new TableRecord(AccountRecord(key, value), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -247,12 +247,12 @@ public class SLInitializer extends TableInitilizer {
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
      * initial asset value_list is 0...?
      */
-    private void insertAssetRecord(String key, long value, int pid, SpinLock[] spinlock_) {
+    private void insertAssetRecord(String key, long value, int pid, SpinLock[] spinlock_, int partition_id) {
         try {
             if (spinlock_ != null)
-                db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value), pid, spinlock_));
+                db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value), pid, spinlock_), partition_id);
             else
-                db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value)));
+                db.InsertRecord("bookEntries", new TableRecord(AssetRecord(key, value), this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -424,9 +424,9 @@ public class SLInitializer extends TableInitilizer {
 
     public void creates_Table(Configuration config) {
         RecordSchema s = AccountsScheme();
-        db.createTable(s, "accounts");
+        db.createTable(s, "accounts", config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         RecordSchema b = BookEntryScheme();
-        db.createTable(b, "bookEntries");
+        db.createTable(b, "bookEntries", config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         try {
             prepare_input_events(config.getInt("totalEvents"));
             if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){

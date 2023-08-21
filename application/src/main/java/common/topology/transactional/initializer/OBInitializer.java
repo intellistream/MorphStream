@@ -109,7 +109,7 @@ public class OBInitializer extends TableInitilizer {
             right_bound = (thread_id + 1) * partition_interval;
         }
         for (int key = left_bound; key < right_bound; key++) {
-            insertItemRecords(key, 100);
+            insertItemRecords(key, 100, thread_id);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -127,7 +127,7 @@ public class OBInitializer extends TableInitilizer {
         }
         for (int key = left_bound; key < right_bound; key++) {
             int pid = get_pid(partition_interval, key);
-            insertItemRecords(key, 100, pid, spinlock);
+            insertItemRecords(key, 100, pid, spinlock, thread_id);
         }
         if (enable_log)
             LOG.info("Thread:" + thread_id + " finished loading data from: " + left_bound + " to: " + right_bound);
@@ -148,27 +148,27 @@ public class OBInitializer extends TableInitilizer {
      * "INSERT INTO Table (key, value_list) VALUES (?, ?);"
      * initial account value_list is 0...?
      */
-    private void insertItemRecords(int key, long value) {
+    private void insertItemRecords(int key, long value, int partition_id) {
         List<DataBox> values = new ArrayList<>();
         values.add(new IntDataBox(key));
         values.add(new LongDataBox(rnd.nextInt(MAX_Price)));//random price goods.
         values.add(new LongDataBox(value));//by default 100 qty of each good.
         SchemaRecord schemaRecord = new SchemaRecord(values);
         try {
-            db.InsertRecord("goods", new TableRecord(schemaRecord));
+            db.InsertRecord("goods", new TableRecord(schemaRecord,this.tthread), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
     }
 
-    private void insertItemRecords(int key, long value, int pid, SpinLock[] spinlock_) {
+    private void insertItemRecords(int key, long value, int pid, SpinLock[] spinlock_, int partition_id) {
         List<DataBox> values = new ArrayList<>();
         values.add(new IntDataBox(key));
         values.add(new LongDataBox(rnd.nextInt(MAX_Price)));//random price goods.
         values.add(new LongDataBox(value));//by default 100 qty of each good.
         SchemaRecord schemaRecord = new SchemaRecord(values);
         try {
-            db.InsertRecord("goods", new TableRecord(schemaRecord, pid, spinlock_));
+            db.InsertRecord("goods", new TableRecord(schemaRecord, pid, spinlock_), partition_id);
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -344,7 +344,7 @@ public class OBInitializer extends TableInitilizer {
 
     public void creates_Table(Configuration config) {
         RecordSchema s = Goods();
-        db.createTable(s, "goods");
+        db.createTable(s, "goods", config.getInt("tthread"), config.getInt("NUM_ITEMS"));
         try {
             prepare_input_events(config.getInt("totalEvents"));
             if (getTranToDecisionConf() != null && getTranToDecisionConf().size() != 0){//input data already exist

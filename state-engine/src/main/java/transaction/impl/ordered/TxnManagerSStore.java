@@ -49,7 +49,7 @@ public class TxnManagerSStore extends TxnManagerDedicatedLocked {
     public boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap)
             throws DatabaseException {
         record.is_visible_ = false;
-        TableRecord tb_record = new TableRecord(record);
+        TableRecord tb_record = new TableRecord(record, (int) this.thread_count_);
         if (storageManager_.getTable(table_name).InsertRecord(tb_record)) {//maybe we can also skip this for testing purpose.
             while (!tb_record.content_.TryWriteLock()) {
                 txn_context.is_retry_ = true;//retry, no abort..
