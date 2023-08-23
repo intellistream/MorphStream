@@ -1,7 +1,7 @@
 package intellistream.morphstream.configuration;
 
 import intellistream.morphstream.util.datatypes.DataTypeUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.HashMap;
 import java.util.Map;

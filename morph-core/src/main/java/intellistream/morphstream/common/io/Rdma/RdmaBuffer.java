@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class RdmaBuffer {
     private static final Logger LOG = LoggerFactory.getLogger(RdmaBuffer.class);
-    private IbvMr ibvMr;
+    private IbvMr ibvMr;//Memory Region
     private final long address;
     private final int length;
     private final MemoryBlock block;

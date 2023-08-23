@@ -22,8 +22,7 @@ public class RdmaChannel {
     private static final AtomicInteger idGenerator = new AtomicInteger(0);
     private final int id = idGenerator.getAndIncrement();
 
-    private final ConcurrentHashMap<Integer, ConcurrentLinkedDeque<SVCPostSend>> svcPostSendCache =
-            new ConcurrentHashMap();
+    private final ConcurrentHashMap<Integer, ConcurrentLinkedDeque<SVCPostSend>> svcPostSendCache = new ConcurrentHashMap();
 
     enum RdmaChannelType { RPC, RDMA_READ_REQUESTOR, RDMA_READ_RESPONDER }
     private final RdmaChannelType rdmaChannelType;
@@ -36,16 +35,17 @@ public class RdmaChannel {
     private final int teardownListenTimeout;
     private final int resolvePathTimeout;
     private RdmaCmId cmId = null;
-    private IbvCQ cq = null;
-    private IbvQP qp = null;
+    private IbvCQ cq = null;// InfiniBand Completion Queue
+    private IbvQP qp = null;//InfiniBand Queue Pair
     private final AtomicBoolean isStopped = new AtomicBoolean(false);
 
     // Send a credit report on every (recvDepth / RECV_CREDIT_REPORT_RATIO) receive credit reclaims
     private static final int RECV_CREDIT_REPORT_RATIO = 8;
     private Semaphore remoteRecvCredits;
+    private Semaphore sendBudgetSemaphore;
+
     private int localRecvCreditsPendingReport = 0;
 
-    private Semaphore sendBudgetSemaphore;
     private final ConcurrentLinkedDeque<PendingSend> sendWrQueue = new ConcurrentLinkedDeque<>();
 
     private class PendingSend {
