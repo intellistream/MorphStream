@@ -1,5 +1,6 @@
 package intellistream.morphstream.common.io.Utils;
 
+import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -898,5 +899,25 @@ public class BytesUtils {
         short s = (short) (s0 | s1);
         return s;
     }
+    public static long byteStringAsBytes(String byteString) {
+        byteString = byteString.trim().toLowerCase();
+        long multiplier = 1;
+
+        if (byteString.endsWith("k")) {
+            multiplier = 1024;
+            byteString = byteString.substring(0, byteString.length() - 1);
+        } else if (byteString.endsWith("m")) {
+            multiplier = 1024 * 1024;
+            byteString = byteString.substring(0, byteString.length() - 1);
+        } else if (byteString.endsWith("g")) {
+            multiplier = 1024 * 1024 * 1024;
+            byteString = byteString.substring(0, byteString.length() - 1);
+        } else if (byteString.endsWith("t")) {
+            multiplier = 1024L * 1024 * 1024 * 1024;
+            byteString = byteString.substring(0, byteString.length() - 1);
+        }
+        return Long.parseLong(byteString) * multiplier;
+    }
+
 }
 
