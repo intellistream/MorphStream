@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {ApplicationService} from "../../shared/services/application.service";
 import {Application} from "../../model/application";
+import {WebsocketService} from "../../services/utils/websocket.service";
 
 @Component({
   selector: 'app-application-information',
@@ -16,7 +17,7 @@ export class ApplicationInformationComponent implements OnInit, AfterViewInit {
 
   application!: Application;
 
-  constructor(private applicationService: ApplicationService) {
+  constructor(private applicationService: ApplicationService, private websocketService: WebsocketService) {
   }
 
   ngAfterViewInit() {
@@ -29,5 +30,13 @@ export class ApplicationInformationComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.application = this.applicationService.getCurrentApplication();
+
+    this.websocketService.connect("ws://localhost:5001/websocket");
+
+    this.websocketService.messageSubject.subscribe(data => {
+        console.log(data);
+    });
+
+    this.websocketService.sendMessage("Hello World", function () {console.log("HAHA")});
   }
 }

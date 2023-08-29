@@ -26,7 +26,7 @@
 
     <artifactId>affinity</artifactId>
     <version>3.21ea80-SNAPSHOT</version>
-    <packaging>bundle</packaging>
+<!--    <packaging>bundle</packaging>-->
     <name>OpenHFT/Java-Thread-Affinity/affinity</name>
     <description>Java Thread Affinity library</description>
 
@@ -98,59 +98,59 @@
                 </property>
             </activation>
             <build>
-                <plugins>
-                    <!-- Makefile has execute permissions in git so should not be necessary to chmod +x here -->
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.0.0</version>
-                        <executions>
-                            <execution>
-                                <!-- this execution happens just after compiling the java classes, and builds the native code. -->
-                                <id>build-native</id>
-                                <phase>process-classes</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>${project.basedir}/${native.source.dir}/Makefile</executable>
-                                    <workingDirectory>${project.basedir}/${native.source.dir}</workingDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
+<!--                <plugins>-->
+<!--                    &lt;!&ndash; Makefile has execute permissions in git so should not be necessary to chmod +x here &ndash;&gt;-->
+<!--                    <plugin>-->
+<!--                        <groupId>org.codehaus.mojo</groupId>-->
+<!--                        <artifactId>exec-maven-plugin</artifactId>-->
+<!--                        <version>3.0.0</version>-->
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                &lt;!&ndash; this execution happens just after compiling the java classes, and builds the native code. &ndash;&gt;-->
+<!--                                <id>build-native</id>-->
+<!--                                <phase>process-classes</phase>-->
+<!--                                <goals>-->
+<!--                                    <goal>exec</goal>-->
+<!--                                </goals>-->
+<!--                                <configuration>-->
+<!--                                    <executable>${project.basedir}/${native.source.dir}/Makefile</executable>-->
+<!--                                    <workingDirectory>${project.basedir}/${native.source.dir}</workingDirectory>-->
+<!--                                </configuration>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                    </plugin>-->
+<!--                </plugins>-->
             </build>
         </profile>
     </profiles>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <compilerArgument>-Xlint:deprecation</compilerArgument>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-compiler-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <compilerArgument>-Xlint:deprecation</compilerArgument>-->
+<!--                    <source>1.8</source>-->
+<!--                    <target>1.8</target>-->
+<!--                    <encoding>UTF-8</encoding>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-scm-publish-plugin</artifactId>
-                <version>3.1.0</version>
-                <configuration>
-                    <checkoutDirectory>${project.build.directory}/scmpublish/javadoc</checkoutDirectory>
-                    <checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}
-                    </checkinComment>
-                    <content>${project.reporting.outputDirectory}</content>
-                    <skipDeletedFiles>true</skipDeletedFiles>
-                    <pubScmUrl>scm:git:git@github.com:OpenHFT/Java-Thread-Affinity</pubScmUrl>
-                    <scmBranch>gh-pages</scmBranch>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-scm-publish-plugin</artifactId>-->
+<!--                <version>3.1.0</version>-->
+<!--                <configuration>-->
+<!--                    <checkoutDirectory>${project.build.directory}/scmpublish/javadoc</checkoutDirectory>-->
+<!--                    <checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}-->
+<!--                    </checkinComment>-->
+<!--                    <content>${project.reporting.outputDirectory}</content>-->
+<!--                    <skipDeletedFiles>true</skipDeletedFiles>-->
+<!--                    <pubScmUrl>scm:git:git@github.com:OpenHFT/Java-Thread-Affinity</pubScmUrl>-->
+<!--                    <scmBranch>gh-pages</scmBranch>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <!--
                 generate maven dependencies versions file that can be used later
                 to install the right bundle in test phase.
@@ -159,50 +159,50 @@
 
                     target/classes/META-INF/maven/dependencies.properties
             -->
-            <plugin>
-                <groupId>org.apache.servicemix.tooling</groupId>
-                <artifactId>depends-maven-plugin</artifactId>
-                <version>1.4.0</version>
-                <executions>
-                    <execution>
-                        <id>generate-depends-file</id>
-                        <goals>
-                            <goal>generate-depends-file</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>OpenHFT :: ${project.artifactId}</Bundle-Name>
-                        <Bundle-Version>${project.version}</Bundle-Version>
-                        <Import-Package>
-                            com.sun.jna.platform.*;resolution:=optional,
-                            *
-                        </Import-Package>
-                        <Export-Package>
-                            net.openhft.affinity.*;-noimport:=true,
-                            net.openhft.ticker.*;-noimport:=true
-                        </Export-Package>
-                    </instructions>
-                </configuration>
-                <executions>
-                    <!--
-                      This execution makes sure that the manifest is available
-                      when the tests are executed
-                    -->
-                    <execution>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.servicemix.tooling</groupId>-->
+<!--                <artifactId>depends-maven-plugin</artifactId>-->
+<!--                <version>1.4.0</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>generate-depends-file</id>-->
+<!--                        <goals>-->
+<!--                            <goal>generate-depends-file</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.felix</groupId>-->
+<!--                <artifactId>maven-bundle-plugin</artifactId>-->
+<!--                <extensions>true</extensions>-->
+<!--                <configuration>-->
+<!--                    <instructions>-->
+<!--                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>-->
+<!--                        <Bundle-Name>OpenHFT :: ${project.artifactId}</Bundle-Name>-->
+<!--                        <Bundle-Version>${project.version}</Bundle-Version>-->
+<!--                        <Import-Package>-->
+<!--                            com.sun.jna.platform.*;resolution:=optional,-->
+<!--                            *-->
+<!--                        </Import-Package>-->
+<!--                        <Export-Package>-->
+<!--                            net.openhft.affinity.*;-noimport:=true,-->
+<!--                            net.openhft.ticker.*;-noimport:=true-->
+<!--                        </Export-Package>-->
+<!--                    </instructions>-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    &lt;!&ndash;-->
+<!--                      This execution makes sure that the manifest is available-->
+<!--                      when the tests are executed-->
+<!--                    &ndash;&gt;-->
+<!--                    <execution>-->
+<!--                        <goals>-->
+<!--                            <goal>manifest</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 

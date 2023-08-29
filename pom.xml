@@ -13,6 +13,7 @@
         <module>stream-engine</module>
         <module>application</module>
         <module>affinity</module>
+        <module>web-dashboard</module>
     </modules>
 
     <build>
