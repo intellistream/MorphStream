@@ -2,6 +2,7 @@ import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/
 import {ApplicationService} from "../../shared/services/application.service";
 import {Application} from "../../model/application";
 import {WebsocketService} from "../../services/utils/websocket.service";
+import {BasicInfoRequest} from "../../DTO/BasicInfoRequest";
 
 @Component({
   selector: 'app-application-information',
@@ -37,6 +38,15 @@ export class ApplicationInformationComponent implements OnInit, AfterViewInit {
         console.log(data);
     });
 
-    this.websocketService.sendMessage("Hello World", function () {console.log("HAHA")});
+    let msg: BasicInfoRequest = {
+      "type": "BasicInfoRequest",
+      "appId": "1",
+      "correlationId": ""
+    }
+
+    // this.websocketService.sendMessage(msg);
+    this.websocketService.sendRequest<any>(msg).subscribe(response => {
+      console.log(response);
+    });
   }
 }

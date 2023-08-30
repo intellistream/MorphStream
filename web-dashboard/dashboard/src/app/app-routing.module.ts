@@ -10,8 +10,8 @@ const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: '/overview' },
   { path: 'overview/application-details', component: ApplicationInformationComponent },
   { path: 'overview', component: OverviewComponent },
-  { path: 'applications/finished-applications', component: FinishedApplicationsComponent},
-  { path: 'applications/processing-applications', component: ProcessingApplicationsComponent}
+  { path: 'applications/finished-applications', component: FinishedApplicationsComponent },
+  { path: 'applications/processing-applications', component: ProcessingApplicationsComponent }
 ];
 
 @NgModule({

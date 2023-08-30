@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
 import {interval, Subject} from 'rxjs';
+// import {uuid} from 'uuidv4'
 
 /**
  * WebsocketService provides APIs about communications with backend
@@ -44,13 +45,33 @@ export class WebsocketService {
   /**
    * Send a message to backend
    */
-  sendMessage(message, callback) {
+  sendMessageWithCallback(message, callback) {
     this.waitForConnection(function (websocket) {
       websocket.send(message);
       if (typeof callback !== "undefined") {
         callback();
       }
     }, 1000);
+  }
+
+  sendMessage(message) {
+    this.sendMessageWithCallback(message, undefined);
+  }
+
+  /**
+   * Send a request and expecting a response
+   */
+  sendRequest<T>(requestMsg) {
+    // register a new uuid
+    // let correlationId = uuid();
+    let correlationId = "abcdefg";
+    requestMsg.correlationId = correlationId;
+
+    this.sendMessage(JSON.stringify(requestMsg));
+
+    const responseSubject = new Subject<T>();
+    this.subjectMap.set(correlationId, responseSubject);
+    return responseSubject.asObservable();
   }
 
   /**
@@ -95,11 +116,38 @@ export class WebsocketService {
   /**
    * Message received
    */
-  onMessage(event) {
-    console.log("New message received", event.data);
-    const message = JSON.parse(event.data);
-    console.log("Message received time: ", new Date().getTime());
-    return message;
+  // onMessage(msg) {
+  //   const message = JSON.parse(msg.data);
+  //   const key = message.key;
+  //
+  //   if (this.subscriptions.get(key)) {
+  //     this.subscriptions.get(key)!.next(message);
+  //     this.deleteKey(msg.key);
+  //   }
+  //
+  //   console.log("New message received: ", + message);
+  //   return message;
+  // }
+
+  private subjectMap: Map<string, Subject<any>> = new Map();
+
+  onMessage(msg) {
+    const message = JSON.parse(msg.data); // parse the received message
+    // check the type of the message => response |
+    if (message.type === "response") {
+      const correlationId: string = message.correlationId;
+      // find the corresponding subject
+      if (this.subjectMap.has(correlationId)) {
+        const subject = this.subjectMap.get(correlationId);
+        subject?.next(message);
+        subject?.complete(); // subject is finished, cancel subscribe
+        this.subjectMap.delete(correlationId);
+      }
+    } else {
+      // pass message to messageSubject
+      this.messageSubject.next(message);
+      console.log("undefined message: " + message);
+    }
   }
 
   /**
@@ -200,4 +248,26 @@ export class WebsocketService {
       this.runTimeSubscription.unsubscribe();
     }
   }
+
+  // deleteKey(key: string) {
+  //   if (this.subscriptions.has(key)) {
+  //     // const subscription = this.subscriptions.get(key);
+  //     // subscription?.complete();
+  //     this.subscriptions.delete(key);
+  //   }
+  // }
+  //
+  // subscribeToKey(key: string): Observable<any> {
+  //   if (!this.subscriptions.has(key)) {
+  //     this.subscriptions.set(key, new Subject<any>());
+  //   }
+  //   return this.subscriptions.get(key)!.asObservable();
+  // }
+  //
+  // unsubscribeToKey(key: string) {
+  //   if (this.subscriptions.has(key)) {
+  //     const subscription = this.subscriptions.get(key);
+  //     subscription?.complete();
+  //   }
+  // }
 }
