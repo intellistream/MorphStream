@@ -35,7 +35,7 @@ public class RdmaNode {
     private final ArrayList<Integer> cpuArrayList = new ArrayList<>();
     private int cpuIndex = 0;
     private final RdmaCompletionListener receiveListener;
-    RdmaNode(String hostName, boolean isExecutor, final RdmaShuffleConf conf, final RdmaCompletionListener receiveListener) throws Exception {
+    public RdmaNode(String hostName, boolean isExecutor, final RdmaShuffleConf conf, final RdmaCompletionListener receiveListener) throws Exception {
         this.conf = conf;
         this.receiveListener = receiveListener;
         try {

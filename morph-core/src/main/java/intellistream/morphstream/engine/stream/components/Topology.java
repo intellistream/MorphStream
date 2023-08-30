@@ -29,7 +29,7 @@ public class Topology implements Serializable {
     public TableInitilizer tableinitilizer;
     private TopologyComponent sink;
     /**
-     * global scheduler template..
+     * global scheduler template.
      */
     private InputStreamController scheduler;
     private Platform p;

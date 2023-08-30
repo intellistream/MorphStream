@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractTopology {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractTopology.class);
-    protected final TopologyBuilder builder;
+    public final TopologyBuilder builder;
     protected final Configuration config;
     private final String topologyName;
 
