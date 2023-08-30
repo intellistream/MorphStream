@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.stream.controller.affinity;
 
-import intellistream.morphstream.common.platform.Platform;
+import intellistream.morphstream.common.io.Enums.platform.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

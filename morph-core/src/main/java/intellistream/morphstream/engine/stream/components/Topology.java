@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.stream.components;
 
 import intellistream.morphstream.common.constants.BaseConstants;
-import intellistream.morphstream.common.platform.Platform;
+import intellistream.morphstream.common.io.Enums.platform.Platform;
 import intellistream.morphstream.configuration.Constants;
 import intellistream.morphstream.engine.stream.controller.input.InputStreamController;
 import intellistream.morphstream.engine.stream.topology.TransactionTopology;

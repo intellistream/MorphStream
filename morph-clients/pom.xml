@@ -30,5 +30,11 @@
             <artifactId>morph-core</artifactId>
             <version>${morphstream.version}</version>
         </dependency>
+        <dependency>
+            <groupId>intellistream</groupId>
+            <artifactId>morph-benchmark</artifactId>
+            <version>0.1</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>

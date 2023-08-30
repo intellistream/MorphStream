@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.stream.execution;
 
-import intellistream.morphstream.common.platform.Platform;
+import intellistream.morphstream.common.io.Enums.platform.Platform;
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.configuration.Constants;

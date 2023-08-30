@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.platform;
+package intellistream.morphstream.common.io.Enums.platform;
 
 import intellistream.morphstream.util.CacheInfo;
 
