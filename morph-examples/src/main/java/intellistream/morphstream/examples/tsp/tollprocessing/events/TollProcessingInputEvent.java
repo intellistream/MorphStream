@@ -1,6 +1,6 @@
 package intellistream.morphstream.examples.tsp.tollprocessing.events;
 
-import intellistream.morphstream.api.InputEvent;
+import intellistream.morphstream.api.input.InputEvent;
 
 /**
  * Toll Processing data

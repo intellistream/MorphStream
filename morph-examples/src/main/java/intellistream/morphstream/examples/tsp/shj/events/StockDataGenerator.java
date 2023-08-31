@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.shj.events;
 
 import intellistream.morphstream.examples.utils.datagen.DataGenerator;
-import intellistream.morphstream.api.InputEvent;
+import intellistream.morphstream.api.input.InputEvent;
 import intellistream.morphstream.util.FastZipfGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

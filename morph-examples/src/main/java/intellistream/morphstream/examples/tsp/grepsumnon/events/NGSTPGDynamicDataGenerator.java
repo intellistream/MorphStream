@@ -1,6 +1,6 @@
 package intellistream.morphstream.examples.tsp.grepsumnon.events;
 
-import intellistream.morphstream.api.InputEvent;
+import intellistream.morphstream.api.input.InputEvent;
 import intellistream.morphstream.examples.utils.datagen.DynamicDataGeneratorConfig;
 import intellistream.morphstream.examples.utils.datagen.DynamicWorkloadGenerator;
 import intellistream.morphstream.util.AppConfig;

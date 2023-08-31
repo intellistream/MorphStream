@@ -1,5 +1,6 @@
 package intellistream.morphstream.examples.utils;
 
+import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
@@ -13,7 +14,9 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import intellistream.morphstream.examples.utils.SINKCombo;
+import intellistream.morphstream.util.InputSource;
 import intellistream.morphstream.util.OsUtils;
+import jdk.internal.util.xml.impl.Input;
 import org.slf4j.Logger;
 
 import java.io.FileNotFoundException;
@@ -61,7 +64,14 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                     sink.start();
             }
             if (counter < num_events_per_thread) {
-                Object event = myevents[counter];
+
+                //TODO: InputSource inputSource should be retrieved from client.getInputSource();
+                //TODO: Should we keep both streaming and original input?
+                InputSource inputSource = new InputSource("streaming");
+                inputSource.setStaticInputSource("path");
+                TransactionalEvent txnEvent = inputSource.getNextTxnEvent();
+
+                Object event = myevents[counter]; //this should be txnEvent already
 
                 long bid = mybids[counter];
                 if (CONTROL.enable_latency_measurement)
@@ -81,7 +91,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
                     }
                 }
 
-                if (counter == the_end) {
+                if (counter == the_end) { //TODO: Refactor this part, remove the_end, use stopEvent indicator
 //                    if (ccOption == CCOption_SStore)
 //                        MeasureTools.END_TOTAL_TIME_MEASURE(taskId);//otherwise deadlock.
                     SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers

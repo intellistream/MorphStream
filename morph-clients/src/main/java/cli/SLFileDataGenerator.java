@@ -1,9 +1,10 @@
-package intellistream.morphstream.examples.tsp.streamledger.events.TPGTxnGenerator;
+package cli;
 
-import intellistream.morphstream.examples.utils.datagen.DataGenerator;
+import com.beust.jcommander.Parameter;
 import intellistream.morphstream.api.input.InputEvent;
 import intellistream.morphstream.examples.tsp.streamledger.events.SLDepositInputEvent;
 import intellistream.morphstream.examples.tsp.streamledger.events.SLTransferInputEvent;
+import intellistream.morphstream.examples.tsp.streamledger.events.TPGTxnGenerator.SLTPGDataGeneratorConfig;
 import intellistream.morphstream.util.AppConfig;
 import intellistream.morphstream.util.FastZipfGenerator;
 import org.slf4j.Logger;
@@ -19,80 +20,43 @@ import java.util.Random;
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
 import static intellistream.morphstream.configuration.CONTROL.enable_states_partition;
 
+
 /**
- * \textbf{Workload Configurations.}
- * We extend SL for workload sensitivity study by tweaking its workload generation for varying dependency characteristics. The default configuration and varying values of parameters are summarized in \tony{Table~\ref{}}.
- * Specifically, we vary the following parameters during workload generation.
- * \begin{enumerate}
- * \item \textbf{Ratio of State Access Types:}
- * We vary the ratio of functional dependencies in the workload by tuning the ratio between transfer (w/ functional dependency) and deposit (w/o functional dependency) requests in the input stream.
- * \item \textbf{State Access Skewness:}
- * To present a more realistic scenario, we model the access distribution as Zipfian skew, where certain states are more likely to be accessed than others. The skewness is controlled by the parameter $\theta$ of the Zipfian distribution. More skewed state access also stands for more temporal dependencies in the workload.
- * \item \textbf{Transaction Length:}
- * We vary the number of operations in the same transaction, which essentially determines the logical dependency depth.
- * \item \textbf{Transaction Aborts:}
- * Transaction will be aborted when balance will become negative. To systematically evaluate the effectiveness of \system in handling transaction aborts, we insert artificial abort in state transactions and vary its ratio in the workload.
- * \end{enumerate}
+ * A data generator defined by client based on customized needs.
+ * We are expecting the client to generate data file that matches the format of its TransactionalEvent 
  */
-public class SLTPGDataGenerator extends DataGenerator {
-    private static final Logger LOG = LoggerFactory.getLogger(SLTPGDataGenerator.class);
-
-    private final int Ratio_Of_Deposit;  // ratio of state access type i.e. deposit or transfer
-    private final int State_Access_Skewness; // ratio of state access, following zipf distribution
-    private final int Transaction_Length; // transaction length, 4 or 8 or longer
-    private final int Ratio_of_Transaction_Aborts; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
-    private final int Ratio_of_Overlapped_Keys; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
+public class SLFileDataGenerator {
+    private static final Logger LOG = LoggerFactory.getLogger(SLFileDataGenerator.class);
+    private static String filePath;
+    private int fileSize;
+    private static int totalThreads = 4;
+    private static int totalEvents = 10000;
+    private static int totalRecords = 10000;
+    
+    private static final int Ratio_Of_Deposit = 25;  // ratio of state access type i.e. deposit or transfer
+    private static final int State_Access_Skewness = 20; // ratio of state access, following zipf distribution
+    private final int Transaction_Length = 4; // transaction length, 4 or 8 or longer
+    private static final int Ratio_of_Transaction_Aborts = 0; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
+    private static final int Ratio_of_Overlapped_Keys = 10; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.
     // control the number of txns overlap with each other.
-    private final ArrayList<Integer> generatedAcc = new ArrayList<>();
-    private final ArrayList<Integer> generatedAst = new ArrayList<>();
+    private static final ArrayList<Integer> generatedAcc = new ArrayList<>();
+    private static final ArrayList<Integer> generatedAst = new ArrayList<>();
     // independent transactions.
-    private final boolean isUnique = false;
-    private final FastZipfGenerator accountZipf;
-    private final FastZipfGenerator assetZipf;
-    private final Random random = new Random(0); // the transaction type decider
-    private final HashMap<Integer, Integer> nGeneratedAccountIds = new HashMap<>();
-    private final HashMap<Integer, Integer> nGeneratedAssetIds = new HashMap<>();
-    private final HashMap<Integer, Integer> idToLevel = new HashMap<>();
-    public FastZipfGenerator[] partitionedAccountZipf;
-    public FastZipfGenerator[] partitionedAssetZipf;
-    public transient FastZipfGenerator p_generator; // partition generator
-    private int floor_interval;
-    private ArrayList<InputEvent> inputEvents;
-    private int eventID = 0;
+    private static final boolean isUnique = false;
+    private static final FastZipfGenerator accountZipf = new FastZipfGenerator(totalRecords, (double) State_Access_Skewness / 100, 0, 12345678);
+    private static final FastZipfGenerator assetZipf = new FastZipfGenerator(totalRecords, (double) State_Access_Skewness / 100, 0, 123456789);
+    private static final Random random = new Random(0); // the transaction type decider
+    private static final HashMap<Integer, Integer> nGeneratedAccountIds = new HashMap<>();
+    private static final HashMap<Integer, Integer> nGeneratedAssetIds = new HashMap<>();
+    private static final HashMap<Integer, Integer> idToLevel = new HashMap<>();
+    public static FastZipfGenerator[] partitionedAccountZipf;
+    public static FastZipfGenerator[] partitionedAssetZipf;
+    public static transient FastZipfGenerator p_generator = new FastZipfGenerator(totalRecords, (double) State_Access_Skewness / 100, 0); // partition generator
+    private static int floor_interval;
+    private static ArrayList<InputEvent> inputEvents = new ArrayList<>(totalEvents);
+    private static int eventID = 0;
 
-    public SLTPGDataGenerator(SLTPGDataGeneratorConfig dataConfig) {
-        super(dataConfig);
-
-        // TODO: temporarily hard coded, will update later
-        Ratio_Of_Deposit = dataConfig.Ratio_Of_Deposit;//0-100 (%)
-        State_Access_Skewness = dataConfig.State_Access_Skewness;
-        Transaction_Length = 4;
-        Ratio_of_Transaction_Aborts = dataConfig.Ratio_of_Transaction_Aborts;
-        Ratio_of_Overlapped_Keys = dataConfig.Ratio_of_Overlapped_Keys;
-
-        int nKeyState = dataConfig.getnKeyStates();
-
-        // allocate levels for each key, to prevent circular.
-//        int MAX_LEVEL = (nKeyState / dataConfig.getTotalThreads()) / 2;
-        int MAX_LEVEL = 256;
-        for (int i = 0; i < nKeyState; i++) {
-            idToLevel.put(i, random.nextInt(MAX_LEVEL));
-        }
-
-        inputEvents = new ArrayList<>(nTuples);
-        // zipf state access generator
-        accountZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 12345678);
-        assetZipf = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0, 123456789);
-        configure_store(1, (double) State_Access_Skewness / 100, dataConfig.getTotalThreads(), nKeyState);
-        p_generator = new FastZipfGenerator(nKeyState, (double) State_Access_Skewness / 100, 0);
-    }
-
-    public static void main(String[] args) {
-        FastZipfGenerator fastZipfGenerator = new FastZipfGenerator(10, 1, 0);
-        fastZipfGenerator.show_sample();
-    }
-
-    public void configure_store(double scale_factor, double theta, int tthread, int numItems) {
+    public static void configure_store(double scale_factor, double theta, int tthread, int numItems) {
         floor_interval = (int) Math.floor(numItems / (double) tthread);//NUM_ITEMS / tthread;
         partitionedAccountZipf = new FastZipfGenerator[tthread];//overhead_total number of working threads.
         partitionedAssetZipf = new FastZipfGenerator[tthread];//overhead_total number of working threads.
@@ -102,7 +66,7 @@ public class SLTPGDataGenerator extends DataGenerator {
         }
     }
 
-    protected void generateTuple() {
+    protected static void generateTuple() {
         InputEvent inputEvent;
         int next = random.nextInt(100);
         if (next < Ratio_Of_Deposit) {
@@ -113,7 +77,7 @@ public class SLTPGDataGenerator extends DataGenerator {
         inputEvents.add(inputEvent);
     }
 
-    private InputEvent randomTransferEvent() {
+    private static InputEvent randomTransferEvent() {
         // make sure source and destination are different
         int srcAcc, dstAcc, srcAst, dstAst;
 
@@ -121,23 +85,23 @@ public class SLTPGDataGenerator extends DataGenerator {
             if (enable_states_partition) {
                 int partitionId = key_to_partition(p_generator.next());
                 int[] accKeys = getKeys(partitionedAccountZipf[partitionId],
-                        partitionedAccountZipf[(partitionId + 2) % dataConfig.getTotalThreads()],
+                        partitionedAccountZipf[(partitionId + 2) % totalThreads],
                         partitionId,
-                        (partitionId + 2) % dataConfig.getTotalThreads(),
+                        (partitionId + 2) % totalThreads,
                         generatedAcc);
                 srcAcc = accKeys[0];
                 dstAcc = accKeys[1];
-                int[] astKeys = getKeys(partitionedAssetZipf[(partitionId + 1) % dataConfig.getTotalThreads()],
-                        partitionedAssetZipf[(partitionId + 3) % dataConfig.getTotalThreads()],
-                        (partitionId + 1) % dataConfig.getTotalThreads(),
-                        (partitionId + 3) % dataConfig.getTotalThreads(),
+                int[] astKeys = getKeys(partitionedAssetZipf[(partitionId + 1) % totalThreads],
+                        partitionedAssetZipf[(partitionId + 3) % totalThreads],
+                        (partitionId + 1) % totalThreads,
+                        (partitionId + 3) % totalThreads,
                         generatedAst);
                 srcAst = astKeys[0];
                 dstAst = astKeys[1];
                 assert srcAcc / floor_interval == partitionId;
-                assert srcAst / floor_interval == (partitionId + 1) % dataConfig.getTotalThreads();
-                assert dstAcc / floor_interval == (partitionId + 2) % dataConfig.getTotalThreads();
-                assert dstAst / floor_interval == (partitionId + 3) % dataConfig.getTotalThreads();
+                assert srcAst / floor_interval == (partitionId + 1) % totalThreads;
+                assert dstAcc / floor_interval == (partitionId + 2) % totalThreads;
+                assert dstAst / floor_interval == (partitionId + 3) % totalThreads;
             } else {
                 int[] accKeys = getKeys(accountZipf, generatedAcc);
                 srcAcc = accKeys[0];
@@ -173,14 +137,14 @@ public class SLTPGDataGenerator extends DataGenerator {
         return t;
     }
 
-    private InputEvent randomDepositEvent() {
+    private static InputEvent randomDepositEvent() {
         int acc;
         int ast;
         if (!isUnique) {
             if (enable_states_partition) {
                 int partitionId = key_to_partition(p_generator.next());
                 acc = getKey(partitionedAccountZipf[partitionId], partitionId, generatedAcc);
-                ast = getKey(partitionedAssetZipf[(partitionId + 1) % dataConfig.getTotalThreads()], (partitionId + 1) % dataConfig.getTotalThreads(), generatedAst);
+                ast = getKey(partitionedAssetZipf[(partitionId + 1) % totalThreads], (partitionId + 1) % totalThreads, generatedAst);
             } else {
                 acc = getKey(accountZipf, generatedAcc);
                 ast = getKey(assetZipf, generatedAst);
@@ -201,11 +165,11 @@ public class SLTPGDataGenerator extends DataGenerator {
         return t;
     }
 
-    public int key_to_partition(int key) {
+    public static int key_to_partition(int key) {
         return (int) Math.floor((double) key / floor_interval);
     }
 
-    private int[] getKeys(FastZipfGenerator zipfGeneratorSrc, FastZipfGenerator zipfGeneratorDst, int partitionSrc, int partitionDst, ArrayList<Integer> generatedKeys) {
+    private static int[] getKeys(FastZipfGenerator zipfGeneratorSrc, FastZipfGenerator zipfGeneratorDst, int partitionSrc, int partitionDst, ArrayList<Integer> generatedKeys) {
         int[] keys = new int[2];
         keys[0] = getKey(zipfGeneratorSrc, partitionSrc, generatedKeys);
         keys[1] = getKey(zipfGeneratorDst, partitionDst, generatedKeys);
@@ -227,7 +191,7 @@ public class SLTPGDataGenerator extends DataGenerator {
         return keys;
     }
 
-    private int getKey(FastZipfGenerator zipfGenerator, int partitionId, ArrayList<Integer> generatedKeys) {
+    private static int getKey(FastZipfGenerator zipfGenerator, int partitionId, ArrayList<Integer> generatedKeys) {
         int key;
         key = zipfGenerator.next();
         int next = random.nextInt(100);
@@ -248,7 +212,7 @@ public class SLTPGDataGenerator extends DataGenerator {
         return key;
     }
 
-    private int[] getKeys(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+    private static int[] getKeys(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
         int[] keys = new int[2];
         keys[0] = getKey(zipfGenerator, generatedKeys);
         keys[1] = getKey(zipfGenerator, generatedKeys);
@@ -270,7 +234,7 @@ public class SLTPGDataGenerator extends DataGenerator {
         return keys;
     }
 
-    private int getKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+    private static int getKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
         int srcKey;
         srcKey = zipfGenerator.next();
         int next = random.nextInt(100);
@@ -282,7 +246,7 @@ public class SLTPGDataGenerator extends DataGenerator {
         return srcKey;
     }
 
-    private int getUniqueKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
+    private static int getUniqueKey(FastZipfGenerator zipfGenerator, ArrayList<Integer> generatedKeys) {
         int key;
         key = zipfGenerator.next();
         while (generatedKeys.contains(key)) {
@@ -292,37 +256,44 @@ public class SLTPGDataGenerator extends DataGenerator {
         return key;
     }
 
-    public void dumpGeneratedDataToFile() {
+    public static void dumpGeneratedDataToFile() {
         if (enable_log) LOG.info("++++++" + nGeneratedAccountIds.size());
         if (enable_log) LOG.info("++++++" + nGeneratedAssetIds.size());
 
         if (enable_log) LOG.info("Dumping transactions...");
-        try {
-            dataOutputHandler.sinkEvents(inputEvents);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            dataOutputHandler.sinkEvents(inputEvents);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
-        File versionFile = new File(dataConfig.getRootPath().substring(0, dataConfig.getRootPath().length() - 1)
-                + String.format("_%d.txt", dataConfig.getTotalEvents()));
+        File versionFile = new File(filePath + String.format("_%d.txt", totalEvents));
         try {
             versionFile.createNewFile();
             FileWriter fileWriter = new FileWriter(versionFile);
-            fileWriter.write(String.format("Total number of threads  : %d\n", dataConfig.getTotalThreads()));
-            fileWriter.write(String.format("Total Events      : %d\n", dataConfig.getTotalEvents()));
+            fileWriter.write(String.format("Total number of threads  : %d\n", totalThreads));
+            fileWriter.write(String.format("Total Events      : %d\n", totalEvents));
             fileWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    @Override
-    public void clearDataStructures() {
-        if (inputEvents != null) {
-            inputEvents.clear();
+    public static void generateStream() {
+        for (int tupleNumber = 0; tupleNumber < totalEvents + totalThreads; tupleNumber++) {//add a padding to avoid non-integral-divided problem.
+            generateTuple();
         }
-        inputEvents = new ArrayList<>();
-        // clear the data structure in super class
-        super.clearDataStructures();
     }
+
+    public static void main(String[] args) {
+        int MAX_LEVEL = 256;
+        for (int i = 0; i < totalRecords; i++) {
+            idToLevel.put(i, random.nextInt(MAX_LEVEL));
+        }
+        configure_store(1, (double) State_Access_Skewness / 100, totalThreads, totalRecords);
+        generateStream();
+        dumpGeneratedDataToFile();
+        
+    }
+    
 }

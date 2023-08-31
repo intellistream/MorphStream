@@ -1,6 +1,6 @@
 package intellistream.morphstream.examples.tsp.grepsumnon.events;
 
-import intellistream.morphstream.api.InputEvent;
+import intellistream.morphstream.api.input.InputEvent;
 
 public class NGSInputEvent extends InputEvent {
     private final int id;

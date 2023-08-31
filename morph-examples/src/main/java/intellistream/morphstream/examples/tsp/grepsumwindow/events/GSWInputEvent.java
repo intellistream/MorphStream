@@ -1,6 +1,6 @@
 package intellistream.morphstream.examples.tsp.grepsumwindow.events;
 
-import intellistream.morphstream.api.InputEvent;
+import intellistream.morphstream.api.input.InputEvent;
 
 /**
  * Streamledger related transaction data

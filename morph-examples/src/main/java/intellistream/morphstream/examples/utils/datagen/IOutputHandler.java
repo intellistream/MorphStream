@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.utils.datagen;
 
 
-import intellistream.morphstream.api.InputEvent;
+import intellistream.morphstream.api.input.InputEvent;
 import intellistream.morphstream.examples.tsp.streamledger.events.OCTxnGenerator.SLDataOperationChain;
 
 import java.io.IOException;

@@ -1,6 +1,6 @@
 package intellistream.morphstream.examples.tsp.onlinebiding.events;
 
-import intellistream.morphstream.api.InputEvent;
+import intellistream.morphstream.api.input.InputEvent;
 
 /**
  * OnlineBidding Event for (buy)

@@ -1,6 +1,6 @@
 package intellistream.morphstream.examples.tsp.streamledger.events.TPGTxnGenerator;
 
-import intellistream.morphstream.api.InputEvent;
+import intellistream.morphstream.api.input.InputEvent;
 import intellistream.morphstream.examples.tsp.streamledger.events.SLDepositInputEvent;
 import intellistream.morphstream.examples.tsp.streamledger.events.SLTransferInputEvent;
 import intellistream.morphstream.examples.utils.datagen.DynamicDataGeneratorConfig;

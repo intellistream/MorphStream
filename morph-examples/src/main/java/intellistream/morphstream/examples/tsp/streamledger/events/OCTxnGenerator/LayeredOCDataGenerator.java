@@ -1,7 +1,7 @@
 package intellistream.morphstream.examples.tsp.streamledger.events.OCTxnGenerator;
 
 import intellistream.morphstream.examples.utils.datagen.DataGenerator;
-import intellistream.morphstream.api.InputEvent;
+import intellistream.morphstream.api.input.InputEvent;
 import intellistream.morphstream.examples.tsp.streamledger.events.SLTransferInputEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
