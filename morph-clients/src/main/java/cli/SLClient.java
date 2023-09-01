@@ -17,7 +17,7 @@ public class SLClient {
     public static void main(String[] args) throws Exception {
         CliFrontend SLClient = CliFrontend.getOrCreate().appName("SLClient");
         SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
-        SLClient.initializeDB();
+        SLClient.prepare();
 
         //TODO:Function fun = new function implements Function(){}
         //TODO:TxnDescription transfer = new TxnDescriptor(new source_table, source_key, condition_table, condition_key, condition, function, type)

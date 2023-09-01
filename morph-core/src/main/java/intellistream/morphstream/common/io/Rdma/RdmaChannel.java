@@ -540,13 +540,12 @@ public class RdmaChannel {
         }
     }
 
-    public void rdmaSendInQueue(RdmaCompletionListener listener, long[] localAddresses, int[] lKeys,
-                                int[] sizes) throws IOException {
+    public void rdmaSendInQueue(RdmaCompletionListener listener, long[] localAddresses, int[] lKeys, long[] sizes) throws IOException {
         LinkedList<IbvSendWR> sendWRList = new LinkedList<>();
         for (int i = 0; i < localAddresses.length; i++) {
             IbvSge sendSge = new IbvSge();
             sendSge.setAddr(localAddresses[i]);
-            sendSge.setLength(sizes[i]);
+            sendSge.setLength((int) sizes[i]);
             sendSge.setLkey(lKeys[i]);
 
             LinkedList<IbvSge> sendSgeList = new LinkedList<>();

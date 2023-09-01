@@ -336,4 +336,5 @@ public class RdmaNode {
     private int getNextCpuVector() {
         return cpuArrayList.get(cpuIndex++ % cpuArrayList.size());
     }
+    public InetSocketAddress getLocalInetSocketAddress() { return localInetSocketAddress; }
 }

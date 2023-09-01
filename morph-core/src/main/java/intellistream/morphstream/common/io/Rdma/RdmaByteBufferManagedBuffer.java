@@ -58,9 +58,7 @@ public class RdmaByteBufferManagedBuffer extends RdmaManagedBuffer{
     }
 
     @Override
-    public long getLength() {
-        return byteBuffer.capacity();
-    }
+    public long getLength() {return byteBuffer.capacity();}
 
     @Override
     public String toString() {

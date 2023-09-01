@@ -1,5 +1,7 @@
 package intellistream.morphstream.api.launcher;
 
+import intellistream.morphstream.common.io.Rdma.RdmaShuffleManager;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.BlockManagerId;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.optimization.OptimizationManager;
 import intellistream.morphstream.engine.stream.topology.TransactionTopology;
@@ -12,6 +14,8 @@ public class MorphStreamEvn {
     private Configuration configuration;
     private Database database;
     private OptimizationManager OM;
+    private RdmaShuffleManager RM;
+    private BlockManagerId blockManagerId;
     private TransactionTopology topology;
     public static MorphStreamEvn ourInstance = new MorphStreamEvn();
     public static MorphStreamEvn get() {
@@ -29,6 +33,8 @@ public class MorphStreamEvn {
     public OptimizationManager OM() {
         return OM;
     }
+    public RdmaShuffleManager RM() {return RM;}
+    public BlockManagerId blockManagerId() {return blockManagerId;}
 
     public TransactionTopology topology() {
         return topology;
