@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class RdmaMapTaskOutput {
-    private static final int ENTRY_SIZE = 8 + 4 + 4;
+    public static final int ENTRY_SIZE = 8 + 4 + 4;
     // Only address and key. For map output we don't need a length
-    private static final int MAP_ENTRY_SIZE = 8 + 4;
+    public static final int MAP_ENTRY_SIZE = 8 + 4;
     private final int startPartitionId;
     private final int lastPartitionId;
     private final int numPartitions;

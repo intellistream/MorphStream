@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 
 public class RdmaShuffleManager {
@@ -33,8 +35,12 @@ public class RdmaShuffleManager {
     private final Map<RdmaShuffleManagerId, RdmaChannel> rdmaShuffleManagersMap = new ConcurrentHashMap<>();// shuffleManagerId -> rdmaChannel
     private final Map<BlockManagerId, RdmaShuffleManagerId> blockManagerIdToRdmaShuffleManagerId = new ConcurrentHashMap<>(); // blockManagerId -> rdmaShuffleManagerId
     private final Map<Integer, RdmaBuffer> shuffleIdToBufferAddress = new ConcurrentHashMap<>(); // shuffleId -> shuffleBuffer
+
     // Used by executor only
     public RdmaShuffleReaderStats rdmaShuffleReaderStats;
+    private final ConcurrentHashMap<Integer, BufferInfo> shuffleIdToDriverBufferInfo = new ConcurrentHashMap<>();//Mapping from shuffleId to driver's address, length, key of MapOutputLocation buffer
+    private final ConcurrentHashMap<Integer, Future<RdmaBuffer>> shuffleIdToMapAddressBuffer = new ConcurrentHashMap<>();//shuffleId -> RdmaBuffer for mapTaskOutput
+
     public RdmaShuffleManager(RdmaShuffleConf conf, boolean isDriver) throws Exception {
         this.conf = conf;
         this.isDriver = isDriver;
@@ -65,7 +71,7 @@ public class RdmaShuffleManager {
         assert rdmaNode != null;
         //Establish a connection to the driver in the background.
         if (shouldSendHelloMsg) {
-            CompletableFuture.completedFuture(this.getRdmaChannelToDiver(true)).thenAccept(rdmaChannel -> {
+            CompletableFuture.completedFuture(this.getRdmaChannelToDriver(true)).thenAccept(rdmaChannel -> {
                 try {
                     int port = rdmaChannel.getSourceSocketAddress().getPort();
                     RdmaByteBufferManagedBuffer[] buffers = new RdmaShuffleManagerHelloRpcMsg(localRdmaShuffleManagerId, port).toRdmaByteBufferManagedBuffers(getRdmaByteBufferManagedBuffer, conf.recvWrSize);
@@ -102,7 +108,86 @@ public class RdmaShuffleManager {
             });
         }
     }
-    public RdmaChannel getRdmaChannelToDiver(boolean mustRetry) throws IOException, InterruptedException {
+
+    /**
+     * Retrieves on each executor MapTaskOutputTable from driver.
+     * @param shuffleId
+     * @return
+     */
+    public Future<RdmaBuffer> getMapTaskOutputTable(int shuffleId) {
+        return shuffleIdToMapAddressBuffer.computeIfAbsent(shuffleId, new Function<Integer, CompletableFuture<RdmaBuffer>>() {
+            @Override
+            public CompletableFuture<RdmaBuffer> apply(Integer shuffleId) {
+                try {
+                    CompletableFuture<RdmaBuffer> result = new CompletableFuture<>();
+                    long startTime = System.currentTimeMillis();
+                    BufferInfo bufferInfo = shuffleIdToDriverBufferInfo.get(shuffleId);
+                    long rAddress = bufferInfo.address;
+                    int rLength = bufferInfo.length;
+                    int rKey = bufferInfo.rkey;
+                    RdmaBuffer mapTaskOutputBuffer = getRdmaBufferManager().get(rLength);
+                    RdmaChannel channel = getRdmaChannelToDriver(true);
+                    RdmaCompletionListener listener = new RdmaCompletionListener() {
+                        @Override
+                        public void onSuccess(ByteBuffer buf) {
+                            result.complete(mapTaskOutputBuffer);
+                            LOG.info("RDMA read mapTaskOutput table for shuffleId: " + shuffleId + "took: " + (System.currentTimeMillis() - startTime) + " ms");
+                        }
+                        @Override
+                        public void onFailure(Throwable exception) {
+                            LOG.error("Failed to RDMA read mapTaskOutput table for shuffleId: " + shuffleId + " from driver", exception);
+                            result.completeExceptionally(exception);
+                        }
+                    };
+                    long[] addresses = new long[]{rAddress};
+                    int[] sizes = new int[]{rLength};
+                    int[] rKeys = new int[]{rKey};
+                    channel.rdmaReadInQueue(listener, mapTaskOutputBuffer.getAddress(), mapTaskOutputBuffer.getLkey(), sizes, addresses, rKeys);
+                    return result;
+                } catch (IOException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Doing RDMA write of MapTaskOutput buffer to driver at position of mapId * Entry_Size
+     * @param shuffleId
+     * @return
+     */
+    public Future<Boolean> publicMapTaskOutput(int shuffleId, int mapId, RdmaMapTaskOutput mapTaskOutput) throws IOException, InterruptedException {
+        assert isDriver;
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        RdmaBuffer rdmaBuffer = getRdmaBufferManager().get(RdmaMapTaskOutput.MAP_ENTRY_SIZE);
+        ByteBuffer buf = rdmaBuffer.getByteBuffer();
+        buf.putLong(mapTaskOutput.getRdmaBuffer().getAddress());
+        buf.putInt(mapTaskOutput.getRdmaBuffer().getLkey());
+
+        BufferInfo bufferInfo = shuffleIdToDriverBufferInfo.get(shuffleId);
+        long driverTableAddress = bufferInfo.address;
+        int driverTableKey = bufferInfo.rkey;
+        long startTime = System.currentTimeMillis();
+        RdmaCompletionListener writeListener = new RdmaCompletionListener() {
+            @Override
+            public void onSuccess(ByteBuffer buf) {
+                LOG.info("RDMA write mapTaskOutput table for shuffleId: " + shuffleId + "took: " + (System.currentTimeMillis() - startTime) + " ms");
+                getRdmaBufferManager().put(rdmaBuffer);
+                result.complete(true);
+            }
+            @Override
+            public void onFailure(Throwable exception) {
+                LOG.error("Failed to RDMA write mapTaskOutput table for shuffleId: " + shuffleId + " to driver", exception);
+                getRdmaBufferManager().put(rdmaBuffer);
+                result.completeExceptionally(exception);
+            }
+        };
+        getRdmaChannelToDriver(true).rdmaWriteInQueue(writeListener, rdmaBuffer.getAddress(), RdmaMapTaskOutput.MAP_ENTRY_SIZE, rdmaBuffer.getLkey(),
+                driverTableAddress + (long) mapId * RdmaMapTaskOutput.MAP_ENTRY_SIZE, driverTableKey);
+        return result;
+    }
+
+    public RdmaChannel getRdmaChannelToDriver(boolean mustRetry) throws IOException, InterruptedException {
         return getRdmaChannel(conf.driverHost, conf.driverPort, mustRetry, RdmaChannel.RdmaChannelType.RPC);
     }
     public RdmaChannel getRdmaChannelOfREAD_REQUESTOR(RdmaShuffleManagerId rdmaShuffleManagerId, boolean mustRetry) throws IOException, InterruptedException {
@@ -201,5 +286,19 @@ public class RdmaShuffleManager {
             LOG.error("Exception in Receive RdmaCompletionListener (ignoring): ", exception);
         }
     };
+
+    /**
+     * Information needed to do RDMA read of remote buffer
+     */
+    class BufferInfo {
+        long address;
+        int length;
+        int rkey;
+        BufferInfo(long address, int length, int rkey) {
+            this.address = address;
+            this.length = length;
+            this.rkey = rkey;
+        }
+    }
 
 }
