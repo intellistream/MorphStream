@@ -1,6 +1,6 @@
 package intellistream.morphstream.common.io.Rdma.Msg;
 
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.RdmaShuffleManagerId;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.Id.RdmaShuffleManagerId;
 import javafx.util.Pair;
 
 import java.io.DataInputStream;

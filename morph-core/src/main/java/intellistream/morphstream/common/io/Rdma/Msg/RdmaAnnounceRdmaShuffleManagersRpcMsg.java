@@ -1,13 +1,12 @@
 package intellistream.morphstream.common.io.Rdma.Msg;
 
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.RdmaShuffleManagerId;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.Id.RdmaShuffleManagerId;
 import javafx.util.Pair;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

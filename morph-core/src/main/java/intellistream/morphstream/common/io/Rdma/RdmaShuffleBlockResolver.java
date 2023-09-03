@@ -1,6 +1,6 @@
 package intellistream.morphstream.common.io.Rdma;
 
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.RdmaWrapperShuffleData;
+import intellistream.morphstream.common.io.Rdma.Shuffle.RW.RdmaWrapperShuffleData;
 
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;

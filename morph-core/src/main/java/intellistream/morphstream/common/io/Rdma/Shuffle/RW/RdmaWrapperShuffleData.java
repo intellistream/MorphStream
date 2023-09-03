@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Rdma.RdmaUtils;
+package intellistream.morphstream.common.io.Rdma.Shuffle.RW;
 
 import intellistream.morphstream.common.io.Rdma.ByteBufferBackedInputStream;
 import intellistream.morphstream.common.io.Rdma.RdmaMappedFile;

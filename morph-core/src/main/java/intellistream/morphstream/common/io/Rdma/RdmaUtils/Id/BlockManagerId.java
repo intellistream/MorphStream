@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Rdma.RdmaUtils;
+package intellistream.morphstream.common.io.Rdma.RdmaUtils.Id;
 
 public class BlockManagerId {
     private String executorId;

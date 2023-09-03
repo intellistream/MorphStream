@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Rdma.Shuffle;
+package intellistream.morphstream.common.io.Rdma.Shuffle.Handle;
 
 import java.io.Serializable;
 
