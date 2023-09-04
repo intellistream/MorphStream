@@ -11,13 +11,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 
-public class ApplicationSpoutCombo extends TransactionalSpout {
-    private static final Logger LOG = LoggerFactory.getLogger(ApplicationSpoutCombo.class);
+public class ApplicationSpout extends TransactionalSpout {
+    private static final Logger LOG = LoggerFactory.getLogger(ApplicationSpout.class);
     private HashMap<String, TxnDescription> TxnDescriptionHashMap;
     private RdmaShuffleManager rdmaShuffleManager;
     private Configuration conf = MorphStreamEnv.get().configuration();
     protected ApplicationBolt transactionalBolt;
-    public ApplicationSpoutCombo(HashMap<String, TxnDescription> txnDescriptionHashMap) throws Exception {
+    public ApplicationSpout(HashMap<String, TxnDescription> txnDescriptionHashMap) throws Exception {
         super(LOG, 0);
         this.TxnDescriptionHashMap = txnDescriptionHashMap;
         this.transactionalBolt = new ApplicationBolt(txnDescriptionHashMap);

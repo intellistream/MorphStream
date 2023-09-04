@@ -2,7 +2,7 @@ package cli;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
-import intellistream.morphstream.api.launcher.MorphStreamEvn;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,7 @@ import static intellistream.morphstream.configuration.CONTROL.enable_log;
 public class CliFrontend {
     private static final Logger LOG = LoggerFactory.getLogger(CliFrontend.class);
     private String appName = "";
-    private final MorphStreamEvn env = MorphStreamEvn.get();
+    private final MorphStreamEnv env = MorphStreamEnv.get();
     public static CliFrontend getOrCreate() {
         return new CliFrontend();
     }
@@ -51,7 +51,7 @@ public class CliFrontend {
 
     }
 
-    public MorphStreamEvn evn() {
+    public MorphStreamEnv evn() {
         return env;
     }
 }

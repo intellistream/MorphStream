@@ -1,6 +1,6 @@
 package intellistream.morphstream.common.io.Rdma;
 
-import intellistream.morphstream.api.launcher.MorphStreamEvn;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Msg.RdmaAnnounceRdmaShuffleManagersRpcMsg;
 import intellistream.morphstream.common.io.Rdma.Msg.RdmaRpcMsg;
 import intellistream.morphstream.common.io.Rdma.Msg.RdmaShuffleManagerHelloRpcMsg;
@@ -67,8 +67,8 @@ public class RdmaShuffleManager {
             if (localRdmaShuffleManagerId == null) {
                 assert rdmaNode == null;
                 shouldSendHelloMsg = true;
-                rdmaNode = new RdmaNode(MorphStreamEvn.get().blockManagerId().getHost(), true, conf, receiveListener);
-                localRdmaShuffleManagerId = new RdmaShuffleManagerId(rdmaNode.getLocalInetSocketAddress().getHostName(), rdmaNode.getLocalInetSocketAddress().getPort(), MorphStreamEvn.get().blockManagerId());
+                rdmaNode = new RdmaNode(MorphStreamEnv.get().blockManagerId().getHost(), true, conf, receiveListener);
+                localRdmaShuffleManagerId = new RdmaShuffleManagerId(rdmaNode.getLocalInetSocketAddress().getHostName(), rdmaNode.getLocalInetSocketAddress().getPort(), MorphStreamEnv.get().blockManagerId());
             }
         }
 

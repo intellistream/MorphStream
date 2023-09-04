@@ -1,7 +1,9 @@
 package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.engine.txn.TxnEvent;
+import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 
+import javax.xml.validation.Schema;
 import java.util.HashMap;
 
 /**
@@ -12,37 +14,57 @@ import java.util.HashMap;
  */
 
 public class TransactionalEvent extends TxnEvent {
-
-    private final HashMap<String, String> keys; //<keyName, key> assume key must be string
-    private final HashMap<String, String> values; //<valueName, value>
-    private final HashMap<String, String> valueTypes; //<valueName, valueDataType>
-    private final String[] flags; //["Deposit", "Transfer"]
+    private HashMap<String, String> keyMap; //<keyName, key> assume key must be string, including sourceKey, targetKey, and conditionKey
+    private HashMap<String, String> valueMap; //<valueName, value>
+    private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
+    private String flag; //"Deposit" or "Transfer"
+    private HashMap<String, SchemaRecord> record_refs;
 
     public TransactionalEvent(long bid,
-                              HashMap<String, String> keys,
-                              HashMap<String, String> values,
-                              HashMap<String, String> valueTypes,
-                              String[] flags) {
+                              HashMap<String, String> keyMap,
+                              HashMap<String, String> valueMap,
+                              HashMap<String, String> valueTypeMap,
+                              String flag) {
         super(bid);
-        this.keys = keys;
-        this.values = values;
-        this.valueTypes = valueTypes;
-        this.flags = flags;
+        this.keyMap = keyMap;
+        this.valueMap = valueMap;
+        this.valueTypeMap = valueTypeMap;
+        this.flag = flag;
     }
 
-    public HashMap<String, String> getKeys() {
-        return this.keys;
+    public TransactionalEvent(long bid) {
+        super(bid);
     }
 
-    public HashMap<String, String> getValues() {
-        return values;
+    public void setKeyMap(HashMap<String, String> keyMap) {
+        this.keyMap = keyMap;
     }
 
-    public HashMap<String, String> getValueTypes() {
-        return valueTypes;
+    public void setValueMap(HashMap<String, String> valueMap) {
+        this.valueMap = valueMap;
     }
 
-    public String[] getFlags() {
-        return flags;
+    public void setValueTypeMap(HashMap<String, String> valueTypeMap) {
+        this.valueTypeMap = valueTypeMap;
+    }
+
+    public void setFlag(String flag) {
+        this.flag = flag;
+    }
+
+    public HashMap<String, String> getKeyMap() {
+        return this.keyMap;
+    }
+
+    public HashMap<String, String> getValueMap() {
+        return this.valueMap;
+    }
+
+    public HashMap<String, String> getValueTypeMap() {
+        return this.valueTypeMap;
+    }
+
+    public String getFlags() {
+        return this.flag;
     }
 }

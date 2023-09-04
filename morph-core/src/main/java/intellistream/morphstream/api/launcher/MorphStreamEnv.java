@@ -7,7 +7,7 @@ import intellistream.morphstream.engine.stream.optimization.OptimizationManager;
 import intellistream.morphstream.engine.stream.topology.TransactionTopology;
 import intellistream.morphstream.engine.txn.db.Database;
 
-public class MorphStreamEvn {
+public class MorphStreamEnv {
     private JCommanderHandler jCommanderHandler;
     private Configuration configuration;
     private Database database;
@@ -15,8 +15,8 @@ public class MorphStreamEvn {
     private RdmaShuffleManager RM;
     private BlockManagerId blockManagerId;
     private TransactionTopology topology;
-    public static MorphStreamEvn ourInstance = new MorphStreamEvn();
-    public static MorphStreamEvn get() {
+    public static MorphStreamEnv ourInstance = new MorphStreamEnv();
+    public static MorphStreamEnv get() {
         return ourInstance;
     }
     public Configuration configuration() {

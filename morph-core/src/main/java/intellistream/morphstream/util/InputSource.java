@@ -80,10 +80,9 @@ public class InputSource {
             valueTypes.put(entry.getKey(), entry.getValue().getAsString());
         }
 
-        String[] flags = flagsJSON.entrySet().stream()
-                .map(entry -> entry.getValue().getAsString()).toArray(String[]::new);
+        String flag = flagsJSON.entrySet().stream().toString();
 
-        TransactionalEvent txnEvent = new TransactionalEvent(this.bid, keys, values, valueTypes, flags);
+        TransactionalEvent txnEvent = new TransactionalEvent(this.bid, keys, values, valueTypes, flag);
         bid++;
         return txnEvent;
     }

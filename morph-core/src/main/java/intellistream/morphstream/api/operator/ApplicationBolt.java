@@ -20,4 +20,6 @@ public class ApplicationBolt extends TransactionalBolt {
     protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
 
     }
+
+    //TODO: During post process, increment inputEvent's bid and pass downstream
 }
