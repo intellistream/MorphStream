@@ -18,7 +18,7 @@ public class RdmaWrapperShuffleData {
     private final int shuffleId;
     private final int numPartitions;
     private final RdmaShuffleManager rdmaShuffleManager;
-    private final ConcurrentHashMap<Integer, RdmaMappedFile> rdmaMappedFileByMapId = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, RdmaMappedFile> rdmaMappedFileByMapId = new ConcurrentHashMap<>();//MapId -> RdmaMappedFile
     public RdmaWrapperShuffleData(int shuffleId, int numPartitions, RdmaShuffleManager rdmaShuffleManager) {
         this.shuffleId = shuffleId;
         this.numPartitions = numPartitions;

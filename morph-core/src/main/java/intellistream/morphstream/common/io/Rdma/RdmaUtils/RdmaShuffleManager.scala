@@ -234,24 +234,15 @@ private[spark] class RdmaShuffleManager(val conf: SparkConf, isDriver: Boolean) 
       val baseShuffleHandle = handle.asInstanceOf[BaseShuffleHandle[K, _, C]]
       if (handle.isInstanceOf[RdmaBaseShuffleHandle[_, _, _]]) {
         val rdmaBaseShuffleHandle = baseShuffleHandle.asInstanceOf[RdmaBaseShuffleHandle[K, _, C]]
-        BufferInfo(
-          rdmaBaseShuffleHandle.driverTableAddress,
-          rdmaBaseShuffleHandle.driverTableLength,
-          rdmaBaseShuffleHandle.driverTableRKey
-        )
+
+        BufferInfo(rdmaBaseShuffleHandle.driverTableAddress, rdmaBaseShuffleHandle.driverTableLength, rdmaBaseShuffleHandle.driverTableRKey)
       } else {
-        val rdmaSerializedShuffle =
-          baseShuffleHandle.asInstanceOf[RdmaSerializedShuffleHandle[K, C]]
-        BufferInfo(
-          rdmaSerializedShuffle.driverTableAddress,
-          rdmaSerializedShuffle.driverTableLength,
-          rdmaSerializedShuffle.driverTableRKey
-        )
+        val rdmaSerializedShuffle = baseShuffleHandle.asInstanceOf[RdmaSerializedShuffleHandle[K, C]]
+        BufferInfo(rdmaSerializedShuffle.driverTableAddress, rdmaSerializedShuffle.driverTableLength, rdmaSerializedShuffle.driverTableRKey)
       }
     })
 
-    new RdmaShuffleReader(handle.asInstanceOf[BaseShuffleHandle[K, _, C]], startPartition,
-      endPartition, context)
+    new RdmaShuffleReader(handle.asInstanceOf[BaseShuffleHandle[K, _, C]], startPartition, endPartition, context)
   }
 
   override def getWriter[K, V](handle: ShuffleHandle, mapId: Int, context: TaskContext): ShuffleWriter[K, V] = {

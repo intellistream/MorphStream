@@ -7,6 +7,10 @@ import intellistream.morphstream.common.io.Rdma.Msg.RdmaShuffleManagerHelloRpcMs
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Id.BlockManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Id.RdmaShuffleManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Stats.RdmaShuffleReaderStats;
+import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.RdmaBaseShuffleHandle;
+import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.ShuffleHandle;
+import intellistream.morphstream.common.io.Rdma.Shuffle.RW.ShuffleReader;
+import intellistream.morphstream.common.io.Rdma.Shuffle.RW.ShuffleWrite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,6 +112,25 @@ public class RdmaShuffleManager {
             });
         }
     }
+
+    public ShuffleWrite getWrite(ShuffleHandle handle, int mapId) throws Exception {
+        //RdmaNode can't be initialized in constructor for executors, so the first call will initialize
+        startRdmaNodeIfMissing();
+    }
+
+    public ShuffleReader getReader(ShuffleHandle handle, int startPartition, int endPartition) throws Exception {
+        //RdmaNode can't be initialized in constructor for executors, so the first call will initialize
+        startRdmaNodeIfMissing();
+        shuffleIdToDriverBufferInfo.computeIfAbsent(handle.shuffleId, new Function<Integer, BufferInfo>() {
+            @Override
+            public BufferInfo apply(Integer shuffleId) {
+                RdmaBaseShuffleHandle rdmaBaseShuffleHandle = (RdmaBaseShuffleHandle) handle;
+                return new BufferInfo(rdmaBaseShuffleHandle.driverTableAddress, rdmaBaseShuffleHandle.driverTableLength, rdmaBaseShuffleHandle.driverTableRKey);
+            }
+        });
+
+    }
+
 
     /**
      * Retrieves on each executor MapTaskOutputTable from driver.
