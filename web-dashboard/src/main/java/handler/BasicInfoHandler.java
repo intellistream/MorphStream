@@ -6,34 +6,57 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
+import object.Response;
 import object.request.BasicInfoRequest;
 import object.response.BasicInfoResponse;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @ChannelHandler.Sharable
 public class BasicInfoHandler extends SimpleChannelInboundHandler<BasicInfoRequest> {
-    private final String PATH = "C:\\Users\\siqxi\\data\\stats\\test_data.json";
-
+    private final String PATH = "C:\\Users\\siqxi\\data\\stats\\";  // TODO: Extract this to Config
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, BasicInfoRequest request) throws Exception {
         String appId = request.getAppId();
         String correlationId = request.getCorrelationId();
-
         log.debug("New request received => Basic info request for id: {}", appId);
 
-        // retrieving data
+        // retrieving basic historical data
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            // Convert a JSON to an object
-            BasicInfoResponse response = objectMapper.readValue(new File(PATH), BasicInfoResponse.class);
-            response.setCorrelationId(correlationId);
 
-            channelHandlerContext.writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(response)));
-            System.out.println("Data sent: " + response);
+            if (Integer.parseInt(appId) != 0) {
+                // Retrieve single job data
+                BasicInfoResponse basicInfoResponse = objectMapper.readValue(new File(PATH + appId + ".json"), BasicInfoResponse.class);   // Convert a JSON to a BasicInfoResponse
+                Response<BasicInfoResponse> response = new Response<>();
+                response.setType("response");
+                response.setCorrelationId(correlationId);
+                response.setData(basicInfoResponse);
+                channelHandlerContext.writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(response)));
+            } else {
+                // Retrieve all historical jobs data
+                Response<List<BasicInfoResponse>> response = new Response<>();
+                response.setType("response");
+                response.setCorrelationId(correlationId);
+                response.setData(new ArrayList<>());
+
+                File directory = new File(PATH);
+                if (directory.exists() && directory.isDirectory()) {
+                    FilenameFilter jsonFilter = (dir, name) -> name.endsWith(".json");
+                    File[] jsonFiles = directory.listFiles(jsonFilter);
+                    for (File jsonFile: jsonFiles) {
+                        BasicInfoResponse singleAppRes = objectMapper.readValue(jsonFile, BasicInfoResponse.class);   // Convert a JSON to an object
+                        response.getData().add(singleAppRes);
+                    }
+                    channelHandlerContext.writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(response)));
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

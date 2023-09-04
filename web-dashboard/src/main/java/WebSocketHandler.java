@@ -1,4 +1,5 @@
 import handler.BasicInfoHandler;
+import handler.DetailedInfoHandler;
 import handler.ObjectConvertHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -22,6 +23,7 @@ public class WebSocketHandler extends ChannelInitializer<SocketChannel> {
                 .addLast("protocolHandler", new WebSocketServerProtocolHandler("/websocket"))
                 .addLast("object-convertor", new ObjectConvertHandler())
                 // self-defined handlers
-                .addLast("single-basic-info-handler", new BasicInfoHandler());
+                .addLast("basic-info-handler", new BasicInfoHandler())
+                .addLast("detailed-info-handler", new DetailedInfoHandler());
     }
 }

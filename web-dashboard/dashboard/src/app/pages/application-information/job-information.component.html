@@ -95,7 +95,7 @@
       </nz-col>
     </nz-row>
     <nz-row *ngIf="!application.isRunning">
-      <app-finished-statistics-board style="width: 100%; display: block"></app-finished-statistics-board>
+      <app-finished-statistics-board style="width: 100%; display: block" [job]="application"></app-finished-statistics-board>
     </nz-row>
   </nz-content>
 </div>

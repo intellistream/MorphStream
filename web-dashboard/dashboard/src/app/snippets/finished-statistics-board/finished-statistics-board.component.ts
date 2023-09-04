@@ -1,6 +1,7 @@
-import {AfterViewInit, Component} from '@angular/core';
+import {AfterViewInit, Component, Input} from '@angular/core';
 import * as Highcharts from 'highcharts';
 import { Options } from 'highcharts';
+import {Application} from "../../model/Application";
 
 @Component({
   selector: 'app-finished-statistics-board',
@@ -8,6 +9,9 @@ import { Options } from 'highcharts';
   styleUrls: ['./finished-statistics-board.component.less']
 })
 export class FinishedStatisticsBoardComponent implements AfterViewInit {
+  @Input()
+  job: Application;
+
   timeChartData: Options = {
     chart: {
       type: 'pie',

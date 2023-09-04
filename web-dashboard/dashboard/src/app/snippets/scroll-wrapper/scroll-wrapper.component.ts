@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, ElementRef, Input, ViewChild} from '@angular/core';
-import {Application} from "../../model/application";
+import {BasicApplication} from "../../model/BasicApplication";
 
 @Component({
   selector: 'app-scroll-wrapper',
@@ -10,7 +10,7 @@ export class ScrollWrapperComponent implements AfterViewInit {
   @ViewChild('runningAppContainer') scrollContainer!: ElementRef<HTMLElement>;
   @ViewChild('leftButton') leftButton!: ElementRef<HTMLButtonElement>;
   @ViewChild('rightButton') rightButton!: ElementRef<HTMLButtonElement>;
-  @Input() applications: Application[] = [];
+  @Input() applications: BasicApplication[] = [];
 
   ngAfterViewInit() {
     this.checkScrolling();

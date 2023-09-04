@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {interval, Subject} from 'rxjs';
-// import {uuid} from 'uuidv4'
+import { v4 as uuidv4 } from 'uuid';// import {uuid} from 'uuidv4'
 
 /**
  * WebsocketService provides APIs about communications with backend
@@ -8,7 +8,7 @@ import {interval, Subject} from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class WebsocketService {
+export class Websocket {
   messageSubject: Subject<any>;                            // subject -> send messages
   private url;                                             // default requested url
   private webSocket: WebSocket;                            // websocket
@@ -63,11 +63,9 @@ export class WebsocketService {
    */
   sendRequest<T>(requestMsg) {
     // register a new uuid
-    // let correlationId = uuid();
-    let correlationId = "abcdefg";
-    requestMsg.correlationId = correlationId;
-
-    this.sendMessage(JSON.stringify(requestMsg));
+    let correlationId = uuidv4();
+    requestMsg.correlationId = correlationId; // bind a correlationId to this msg
+    this.sendMessage(JSON.stringify(requestMsg)); // send message
 
     const responseSubject = new Subject<T>();
     this.subjectMap.set(correlationId, responseSubject);
@@ -139,14 +137,14 @@ export class WebsocketService {
       // find the corresponding subject
       if (this.subjectMap.has(correlationId)) {
         const subject = this.subjectMap.get(correlationId);
-        subject?.next(message);
+
+        subject?.next(message.data);
         subject?.complete(); // subject is finished, cancel subscribe
         this.subjectMap.delete(correlationId);
       }
     } else {
       // pass message to messageSubject
       this.messageSubject.next(message);
-      console.log("undefined message: " + message);
     }
   }
 
@@ -248,26 +246,4 @@ export class WebsocketService {
       this.runTimeSubscription.unsubscribe();
     }
   }
-
-  // deleteKey(key: string) {
-  //   if (this.subscriptions.has(key)) {
-  //     // const subscription = this.subscriptions.get(key);
-  //     // subscription?.complete();
-  //     this.subscriptions.delete(key);
-  //   }
-  // }
-  //
-  // subscribeToKey(key: string): Observable<any> {
-  //   if (!this.subscriptions.has(key)) {
-  //     this.subscriptions.set(key, new Subject<any>());
-  //   }
-  //   return this.subscriptions.get(key)!.asObservable();
-  // }
-  //
-  // unsubscribeToKey(key: string) {
-  //   if (this.subscriptions.has(key)) {
-  //     const subscription = this.subscriptions.get(key);
-  //     subscription?.complete();
-  //   }
-  // }
 }

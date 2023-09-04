@@ -1,5 +1,5 @@
 import {AbstractRequest} from "./AbstractRequest";
 
-export interface BasicInfoRequest extends AbstractRequest {
+export interface DetailedInfoRequest extends AbstractRequest {
   appId: string;
 }

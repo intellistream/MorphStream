@@ -1,13 +1,13 @@
 import { Injectable } from "@angular/core";
-import {Application} from "../../model/application";
+import {BasicApplication} from "../../model/BasicApplication";
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApplicationService {
-  private currentApplication!: Application;
+  private currentApplication!: BasicApplication;
 
-  setCurrentApplication(application: Application) {
+  setCurrentApplication(application: BasicApplication) {
     this.currentApplication = application;
   }
 

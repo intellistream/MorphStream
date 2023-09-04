@@ -22,7 +22,7 @@ import { ApplicationCardComponent } from "./snippets/application-card/applicatio
 import { NzGridModule } from "ng-zorro-antd/grid";
 import { ScrollWrapperComponent } from "./snippets/scroll-wrapper/scroll-wrapper.component";
 import { NzButtonModule } from "ng-zorro-antd/button";
-import { ApplicationInformationComponent } from "./pages/application-information/application-information.component";
+import { JobInformationComponent } from "./pages/application-information/job-information.component";
 import { NzBreadCrumbModule } from "ng-zorro-antd/breadcrumb";
 import { NzProgressModule } from "ng-zorro-antd/progress";
 import { ApplicationBoardComponent } from "./snippets/application-board/application-board.component";
@@ -47,7 +47,7 @@ registerLocaleData(en);
     FinishedApplicationsComponent,
     ApplicationCardComponent,
     ScrollWrapperComponent,
-    ApplicationInformationComponent,
+    JobInformationComponent,
     ApplicationBoardComponent,
     InfoScrollWrapperComponent,
     OperatorInformationComponent,
