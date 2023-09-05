@@ -53,4 +53,4 @@ target/
 results/
 *.lock
 *.nolock
-dependency-reduced-pom.xml
+dependency-reduced-pom.xml.DS_Store
