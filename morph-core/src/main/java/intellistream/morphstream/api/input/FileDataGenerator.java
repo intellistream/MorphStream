@@ -55,10 +55,6 @@ public class FileDataGenerator {
         dumpGeneratedDataToFile();
         return rootPath + fileName;
     }
-    public static void main(String[] args) throws Exception {
-        FileDataGenerator fileDataGenerator = new FileDataGenerator();
-        fileDataGenerator.prepareInputData();
-    }
 
     private void generateStream() {
         for (int tupleNumber = 0; tupleNumber < totalEvents + totalThreads; tupleNumber++) {
