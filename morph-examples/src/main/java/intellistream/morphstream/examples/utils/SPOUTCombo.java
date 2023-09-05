@@ -13,10 +13,8 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tupl
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
-import intellistream.morphstream.examples.utils.SINKCombo;
-import intellistream.morphstream.util.InputSource;
+import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.util.OsUtils;
-import jdk.internal.util.xml.impl.Input;
 import org.slf4j.Logger;
 
 import java.io.FileNotFoundException;
@@ -67,7 +65,7 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
                 //TODO: InputSource inputSource should be retrieved from client.getInputSource();
                 //TODO: Should we keep both streaming and original input?
-                InputSource inputSource = new InputSource("streaming");
+                InputSource inputSource = new InputSource(InputSource.InputSourceType.FILE_STRING);
                 inputSource.setStaticInputSource("path");
                 TransactionalEvent txnEvent = inputSource.getNextTxnEvent();
 
