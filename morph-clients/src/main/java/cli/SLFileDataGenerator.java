@@ -27,14 +27,16 @@ import static intellistream.morphstream.configuration.CONTROL.enable_states_part
  */
 public class SLFileDataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(SLFileDataGenerator.class);
+    //File configuration
     private static String filePath;
-    private int fileSize;
+    //System configuration
     private static int totalThreads = 4;
+    //Event configuration
     private static int totalEvents = 10000;
     private static int totalRecords = 10000;
-    
-    private static final int Ratio_Of_Deposit = 25;  // ratio of state access type i.e. deposit or transfer
     private static final int State_Access_Skewness = 20; // ratio of state access, following zipf distribution
+
+    private static final int Ratio_Of_Deposit = 25;  // ratio of state access type i.e. deposit or transfer
     private final int Transaction_Length = 4; // transaction length, 4 or 8 or longer
     private static final int Ratio_of_Transaction_Aborts = 0; // ratio of transaction aborts, fail the transaction or not. i.e. transfer amount might be invalid.
     private static final int Ratio_of_Overlapped_Keys = 10; // ratio of overlapped keys in transactions, which affects the dependencies and circulars.

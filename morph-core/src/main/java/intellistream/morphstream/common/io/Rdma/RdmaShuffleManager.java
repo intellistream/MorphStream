@@ -116,6 +116,7 @@ public class RdmaShuffleManager {
     public ShuffleWrite getWrite(ShuffleHandle handle, int mapId) throws Exception {
         //RdmaNode can't be initialized in constructor for executors, so the first call will initialize
         startRdmaNodeIfMissing();
+        return null;
     }
 
     public ShuffleReader getReader(ShuffleHandle handle, int startPartition, int endPartition) throws Exception {
@@ -128,7 +129,7 @@ public class RdmaShuffleManager {
                 return new BufferInfo(rdmaBaseShuffleHandle.driverTableAddress, rdmaBaseShuffleHandle.driverTableLength, rdmaBaseShuffleHandle.driverTableRKey);
             }
         });
-
+        return null;
     }
 
 

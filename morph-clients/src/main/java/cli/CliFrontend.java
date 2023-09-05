@@ -6,6 +6,7 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
@@ -39,9 +40,16 @@ public class CliFrontend {
         return true;
     }
 
-    public boolean prepare() {
+    public void prepare() {
         //TODO:initialize Database and configure input and output
-        return true;
+        String inputFile = env.configuration().getString("input.file");
+        File file = new File(inputFile);
+        if (file.exists()) {
+            LOG.info("Data already exists.. skipping data generation...");
+        } else {
+            String fileName = env.fileDataGenerator().prepareInputData();
+            env.configuration().put("input.file", fileName);
+        }
     }
     public void run() {
 

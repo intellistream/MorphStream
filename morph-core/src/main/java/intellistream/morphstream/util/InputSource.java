@@ -82,7 +82,7 @@ public class InputSource {
 
         String flag = flagsJSON.entrySet().stream().toString();
 
-        TransactionalEvent txnEvent = new TransactionalEvent(this.bid, keys, values, valueTypes, flag);
+        TransactionalEvent txnEvent = new TransactionalEvent(this.bid, keys, values, valueTypes, flag, false);
         bid++;
         return txnEvent;
     }

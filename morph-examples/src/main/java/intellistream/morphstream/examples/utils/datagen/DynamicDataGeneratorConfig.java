@@ -64,15 +64,14 @@ public class DynamicDataGeneratorConfig extends DataGeneratorConfig {
     }
 
     /**
-     * Generate the configuration based on type and application
-     *
+     * Generate the configuration based on type
      * @return
      */
     public String nextDataGeneratorConfig() {
         String phaseType;
         if (phase < this.phaseType.length) {
             phaseType = this.phaseType[phase];
-            phase++;
+            phase ++;
         } else {
             return null;
         }

@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.launcher;
 
+import intellistream.morphstream.api.input.FileDataGenerator;
 import intellistream.morphstream.common.io.Rdma.RdmaShuffleManager;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Id.BlockManagerId;
 import intellistream.morphstream.configuration.Configuration;
@@ -15,6 +16,7 @@ public class MorphStreamEnv {
     private RdmaShuffleManager RM;
     private BlockManagerId blockManagerId;
     private TransactionTopology topology;
+    private FileDataGenerator fileDataGenerator = new FileDataGenerator();
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     public static MorphStreamEnv get() {
         return ourInstance;
@@ -33,6 +35,7 @@ public class MorphStreamEnv {
     }
     public RdmaShuffleManager RM() {return RM;}
     public BlockManagerId blockManagerId() {return blockManagerId;}
+    public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
 
     public TransactionTopology topology() {
         return topology;

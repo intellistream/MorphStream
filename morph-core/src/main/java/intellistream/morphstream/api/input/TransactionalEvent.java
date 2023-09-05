@@ -18,18 +18,21 @@ public class TransactionalEvent extends TxnEvent {
     private HashMap<String, String> valueMap; //<valueName, value>
     private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
     private String flag; //"Deposit" or "Transfer"
+    private Boolean isAbort = false;
     private HashMap<String, SchemaRecord> record_refs;
 
     public TransactionalEvent(long bid,
                               HashMap<String, String> keyMap,
                               HashMap<String, String> valueMap,
                               HashMap<String, String> valueTypeMap,
-                              String flag) {
+                              String flag,
+                              Boolean isAbort) {
         super(bid);
         this.keyMap = keyMap;
         this.valueMap = valueMap;
         this.valueTypeMap = valueTypeMap;
         this.flag = flag;
+        this.isAbort = isAbort;
     }
 
     public TransactionalEvent(long bid) {
@@ -66,5 +69,26 @@ public class TransactionalEvent extends TxnEvent {
 
     public String getFlags() {
         return this.flag;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String key : keyMap.keySet()) {
+            stringBuilder.append(key).append(":").append(keyMap.get(key)).append(",");
+        }
+        stringBuilder.append(";");
+        for (String value : valueMap.keySet()) {
+            stringBuilder.append(value).append(":").append(valueMap.get(value)).append(",");
+        }
+        stringBuilder.append(";");
+        for (String valueType : valueTypeMap.keySet()) {
+            stringBuilder.append(valueType).append(":").append(valueTypeMap.get(valueType)).append(",");
+        }
+        stringBuilder.append(";");
+        stringBuilder.append(flag);
+        stringBuilder.append(";");
+        stringBuilder.append(isAbort);
+        return stringBuilder.toString();
     }
 }
