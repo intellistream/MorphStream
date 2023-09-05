@@ -1,0 +1,46 @@
+<div id="main-container">
+  <nz-content>
+    <div nz-row class="title">
+      <nz-col nzSpan="24">
+        <span id="title-text"><b>Submit New Job</b></span>
+        <div nz-row class="separator"></div>
+      </nz-col>
+    </div>
+
+    <nz-upload
+      nzType="drag"
+      [nzMultiple]="true"
+    >
+      <p class="ant-upload-drag-icon">
+        <span nz-icon nzType="inbox"></span>
+      </p>
+      <p class="ant-upload-text">Click or drag file to this area to upload</p>
+      <p class="ant-upload-hint">
+        Upload a Jar file to submit
+      </p>
+    </nz-upload>
+
+    <button nz-button nzType="primary" id="btn-submit">Submit</button>
+
+    <nz-table [nzData]="listOfData">
+      <thead>
+      <tr>
+        <th>Name</th>
+        <th>Upload Time</th>
+        <th>Entry Class</th>
+        <th>Action</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let data of listOfData">
+        <td>{{ data.name }}</td>
+        <td>{{ data.uploadTime }}</td>
+        <td>{{ data.entry }}</td>
+        <td>
+          <a>Delete</a>
+        </td>
+      </tr>
+      </tbody>
+    </nz-table>
+  </nz-content>
+</div>

@@ -32,8 +32,12 @@ import { NzCardModule } from "ng-zorro-antd/card";
 import { TpgGraphComponent } from "./pages/application-information/tpg-graph/tpg-graph.component";
 import { NzModalModule } from "ng-zorro-antd/modal";
 import { FinishedStatisticsBoardComponent } from "./snippets/finished-statistics-board/finished-statistics-board.component";
-import {NzTabsModule} from "ng-zorro-antd/tabs";
-import {NzDescriptionsModule} from "ng-zorro-antd/descriptions";
+import { SubmitNewJobComponent } from "./pages/submit-new-job/submit-new-job.component";
+import { NzTabsModule } from "ng-zorro-antd/tabs";
+import { NzDescriptionsModule } from "ng-zorro-antd/descriptions";
+import {NzDividerModule} from "ng-zorro-antd/divider";
+import {NzTableModule} from "ng-zorro-antd/table";
+import {NzUploadModule} from "ng-zorro-antd/upload";
 
 registerLocaleData(en);
 
@@ -52,7 +56,8 @@ registerLocaleData(en);
     InfoScrollWrapperComponent,
     OperatorInformationComponent,
     TpgGraphComponent,
-    FinishedStatisticsBoardComponent
+    FinishedStatisticsBoardComponent,
+    SubmitNewJobComponent
   ],
   imports: [
     BrowserModule,
@@ -71,7 +76,10 @@ registerLocaleData(en);
     NzCardModule,
     NzModalModule,
     NzTabsModule,
-    NzDescriptionsModule
+    NzDescriptionsModule,
+    NzDividerModule,
+    NzTableModule,
+    NzUploadModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
