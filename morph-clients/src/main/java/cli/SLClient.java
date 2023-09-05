@@ -1,13 +1,12 @@
 package cli;
 
 import intellistream.morphstream.api.input.TransactionalEvent;
-import intellistream.morphstream.api.operator.ApplicationSink;
 import intellistream.morphstream.api.operator.ApplicationSpoutCombo;
-import intellistream.morphstream.api.operator.ApplicationBolt;
 import intellistream.morphstream.api.output.Result;
+import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
-import intellistream.morphstream.engine.stream.components.grouping.ShuffleGrouping;
+import intellistream.morphstream.api.utils.TxnDataHolder;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,20 +17,48 @@ import java.util.HashMap;
 public class SLClient {
     private static final Logger log = LoggerFactory.getLogger(SLClient.class);
 
-    //TODO: How to pass event arguments (event.transferAmount) to UDF?
-    // Should client get access to TransactionEvent? This UDF should be passed into OPScheduler for execution, we cannot pass-in the entire event.
-    public Object transferFunction(double srcBalance, double condBalance, double transferAmount) {
-        Object newSrcBalance = null;
-        if (condBalance > 100) {
-            newSrcBalance = srcBalance - transferAmount;
+    /**
+     * Client-defined customized txn-UDF, which will be executed in Schedulers
+     * This is a callback method using Reflection mechanism, invoked by referencing its className & methodName
+     * Before execution, Scheduler should have access to all SchemaRecords required and add them into txnDescriptor
+     *
+     * @param stateAccess Stores everything bolt needs (transaction info, post-processing UDF)
+     * @param dataHolder Let client specify arguments-in-TxnEvent that are used to construct txn or during txn-UDF
+     */
+//    public void srcTransferFunction(TxnDescription txnDescriptor, TransactionalEvent event) {
+//        StateObject srcAccountState = txnDescriptor.getStateAccess("srcTransfer").getStateObject("srcAccountState");
+//        double srcBalance = srcAccountState.getDoubleValue("balance");
+//        double transferAmount = (double) event.getValueMap().get("transferAmount");
+//        if (srcBalance > 100) {
+//            srcAccountState.setDoubleValue("balance", srcBalance - transferAmount);
+//        }
+//    }
+
+    public void srcTransferFunction(StateAccess stateAccess, TxnDataHolder dataHolder) {
+        StateObject srcAccountState = stateAccess.getStateObject("srcAccountState");
+        double srcBalance = srcAccountState.getDoubleValue("balance");
+        double transferAmount = dataHolder.doubleMap.get("transferAmount");
+        if (srcBalance > 100) {
+            srcAccountState.setDoubleValue("balance", srcBalance - transferAmount);
         }
-        return newSrcBalance;
     }
 
-    public Result transferPost(double srcBalance) {
+    public void destTransferFunction(StateAccess stateAccess, TxnDataHolder dataHolder) {
+        StateObject srcAccountState = stateAccess.getStateObject("srcAccountState");
+        StateObject destAccountState = stateAccess.getStateObject("srcAccountState");
+        double srcBalance = srcAccountState.getDoubleValue("balance");
+        double transferAmount = dataHolder.doubleMap.get("transferAmount");
+        if (srcBalance > 100) {
+            destAccountState.setDoubleValue("balance", srcBalance + transferAmount);
+        }
+    }
+
+    public Result transferPostFunction(TxnDescription txnDescriptor) {
         Result result = new Result();
-        //TODO: UDF for post process
-//        result.setKeyMap();
+        Double[] stateAccessResults = new Double[2];
+        stateAccessResults[0] = txnDescriptor.getStateAccess("srcTransfer").getStateObject("srcAccountState").getDoubleValue("balance");
+        stateAccessResults[1] = txnDescriptor.getStateAccess("destTransfer").getStateObject("destAccountState").getDoubleValue("balance");
+        result.setResults(stateAccessResults);
         return result;
     }
 
@@ -41,41 +68,42 @@ public class SLClient {
         SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
         SLClient.prepare();
 
-        //TODO:Function fun = new function implements Function(){}
-        //TODO:TxnDescription transfer = new TxnDescriptor(new source_table, source_key, condition_table, condition_key, condition, function, type)
-        //TODO:TxnDescription deposit = new TxnDescriptor(new source_table, source_key, condition_table, condition_key, condition, function, type)
-
-        //Define transaction for Combo to execute
+        //Initialize transactions for Combo to execute
         HashMap<String, TxnDescription> txnDescriptions = new HashMap<>();
-        TxnDescription transferDescription = new TxnDescription();
-        txnDescriptions.put("transfer", transferDescription);
-        TxnDescription depositDescription = new TxnDescription();
-        txnDescriptions.put("deposit", depositDescription);
 
-        //TODO: return a abstract Record object that carries read result? (StateObject)
-        transferDescription.addStateAccess(AccessType.READ, "accounts", "accountID");
-        transferDescription.addStateAccess(AccessType.WRITE, "accounts", "accountID");
+        TxnDataHolder txnDataHolder = new TxnDataHolder();
+        txnDataHolder.doubleMap.put("transferAmount", null); //TODO: Pass TxnEvent data into txnDataHolder
 
+        //Transfer transaction
+        TxnDescription transferDescriptor = new TxnDescription();
+        txnDescriptions.put("transfer", transferDescriptor);
         /**
-         * User just needs to define txn following txn logic: define state accesses, and intermediate UDF
-         * The rest (extract sourceRecord, destRecord, condRecord, etc.) are handled by system.
-         *
-         * TxnDescription txnDescriptor = new TxnDescription()
-         * txnDescriptor.addStateAccess("Read_Modify", srcTableName, srcKeyName)
-         * txnDescriptor.addStateAccess("Cond", condTableName, condKeyName)
-         *
-         * UDF function(Record srcRecord, Record condRecord) {
-         *     if (condRecordA.getValue(fieldName) > 100) {
-         *         srcRecord.getValue(fieldName).incLong(value1)
-         *     } else {
-         *         srcRecord.getValue(fieldName).incLong(value2)
-         *     }
-         * }
-         *
-         * txnDescriptor.addUDF(function(srcRecord, condRecord)) //using java Reflection
-         *
-         *
+         * One state access can be defined as one of the follows:
+         * 1. Read only (read from one or more records)
+         * 2. Write only (write to one record)
+         * 3. Modify (read from one or more records, then write to one record)
+         * Note: for each state access, client needs to define its UDF (avoid if-else during UDF execution)
          */
+        //Define state accesses
+        StateAccess srcTransfer = new StateAccess(AccessType.MODIFY);
+        srcTransfer.addStateObject("srcAccountState", AccessType.MODIFY, "accounts", "accountID");
+        srcTransfer.setTxnUDFName("srcTransferFunction"); //Method invoked by its name during reflection
+
+        StateAccess destTransfer = new StateAccess(AccessType.MODIFY);
+        destTransfer.addStateObject("srcAccountState", AccessType.MODIFY, "accounts", "accountID");
+        destTransfer.setTxnUDFName("destTransferFunction");
+
+        //Add state accesses to transaction
+        transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
+        transferDescriptor.addStateAccess("destTransfer", destTransfer);
+
+        //Define bolt post-processing
+        transferDescriptor.setPostUDFName("transferPostFunction"); //Method invoked by its name during reflection
+
+
+        //Deposit transaction
+        TxnDescription depositDescriptor = new TxnDescription();
+        txnDescriptions.put("deposit", depositDescriptor);
 
 
         //Define topology

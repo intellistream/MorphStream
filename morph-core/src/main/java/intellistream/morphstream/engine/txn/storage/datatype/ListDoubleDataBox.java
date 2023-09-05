@@ -24,14 +24,14 @@ public class ListDoubleDataBox extends DataBox {
     @Override
     public DataBox clone() {
         ListDoubleDataBox dataBox = new ListDoubleDataBox(movingAverageWindow);
-        for (Double item : this.getList()) {
+        for (Double item : this.getDoubleList()) {
             dataBox.addItem(item);
         }
         return dataBox;
     }
 
     @Override
-    public List<Double> getList() {
+    public List<Double> getDoubleList() {
         return this.list;
     }
 

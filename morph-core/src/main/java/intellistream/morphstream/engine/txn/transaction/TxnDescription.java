@@ -1,43 +1,42 @@
 package intellistream.morphstream.engine.txn.transaction;
 
-import intellistream.morphstream.api.state.StateObject;
-import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
-import intellistream.morphstream.engine.txn.transaction.function.Condition;
-import intellistream.morphstream.engine.txn.transaction.function.Function;
+import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.utils.TxnDataHolder;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 //TODO: For now, assume each event carries one transaction (txn_length==1)
 public class TxnDescription {
-    private String name; //Txn identifier, used in engine (OPScheduler) to distinguish different transactions
-    private ArrayList<String> tablesToRead;
-    private ArrayList<String> keyNamesToRead; //Used to retrieve condition or source keys from TransactionEvent.conditionKeyMap.get("conditionKeyName")
-    private String tableToWrite;
-    private String keyNameToWrite;
-    private String tableToModify;
-    private String keyNameToModify;
-    private Function function; //TODO: Rename & abstract to user-defined function? Use java.Reflection to pass-in method
+    private String name;
+    private final HashMap<String, StateAccess> stateAccessMap; //Distinguish diff UDFs in OPScheduler by their names
+    private String postUDFName; //Method name of post-processing UDF, used to invoke post-UDF using Method Reflection in bolts
+    private TxnDataHolder dataHolder; //Holds all utils data used during txn, data are most probably provided by input txnEvent
 
     public TxnDescription() {
-
+        stateAccessMap = new HashMap<>();
     }
 
-    public void addStateAccess(AccessType type, String tableName, String keyName) {
-        if (type == AccessType.READ) {
-            tablesToRead.add(tableName);
-            keyNamesToRead.add(keyName);
-            //TODO: keyName refers to the keyName in TransactionalEvent. System auto read key's value from TransEvent using keyName.
-            // Alternatively, consider expose TransactionalEvent to client, let him directly input keyValue.
-        } else if (type == AccessType.WRITE) {
-            tableToWrite = tableName;
-            keyNameToWrite = keyName;
-        } else if (type == AccessType.MODIFY) {
-            tableToModify = tableName;
-            keyNameToModify = keyName;
-        }
+    public void addStateAccess(String stateAccessName, StateAccess stateAccess) {
+        stateAccessMap.put(stateAccessName, stateAccess);
     }
 
+    public StateAccess getStateAccess(String stateAccessName) {
+        return stateAccessMap.get(stateAccessName);
+    }
 
+    public void setPostUDFName(String postUDFName) {
+        this.postUDFName = postUDFName;
+    }
 
+    public String getPostUDFName() {
+        return postUDFName;
+    }
 
+    public void setDataHolder(TxnDataHolder dataHolder) {
+        this.dataHolder = dataHolder;
+    }
+
+    public TxnDataHolder getDataHolder() {
+        return dataHolder;
+    }
 }

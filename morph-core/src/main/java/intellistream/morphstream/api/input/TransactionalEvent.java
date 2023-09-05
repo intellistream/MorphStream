@@ -1,9 +1,7 @@
 package intellistream.morphstream.api.input;
 
 import intellistream.morphstream.engine.txn.TxnEvent;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 
-import javax.xml.validation.Schema;
 import java.util.HashMap;
 
 /**
@@ -15,15 +13,14 @@ import java.util.HashMap;
 
 public class TransactionalEvent extends TxnEvent {
     private HashMap<String, String> keyMap; //<keyName, key> assume key must be string, including sourceKey, targetKey, and conditionKey
-    private HashMap<String, String> valueMap; //<valueName, value>
+    private HashMap<String, Object> valueMap; //<valueName, value>
     private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
     private String flag; //"Deposit" or "Transfer"
     private Boolean isAbort = false;
-    private HashMap<String, SchemaRecord> record_refs;
 
     public TransactionalEvent(long bid,
                               HashMap<String, String> keyMap,
-                              HashMap<String, String> valueMap,
+                              HashMap<String, Object> valueMap,
                               HashMap<String, String> valueTypeMap,
                               String flag,
                               Boolean isAbort) {
@@ -43,7 +40,7 @@ public class TransactionalEvent extends TxnEvent {
         this.keyMap = keyMap;
     }
 
-    public void setValueMap(HashMap<String, String> valueMap) {
+    public void setValueMap(HashMap<String, Object> valueMap) {
         this.valueMap = valueMap;
     }
 
@@ -59,7 +56,7 @@ public class TransactionalEvent extends TxnEvent {
         return this.keyMap;
     }
 
-    public HashMap<String, String> getValueMap() {
+    public HashMap<String, Object> getValueMap() {
         return this.valueMap;
     }
 

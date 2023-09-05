@@ -83,7 +83,7 @@ public abstract class DataBox implements Comparable, Cloneable {
         throw new DataBoxException("not float type");
     }
 
-    public List<Double> getList() {
+    public List<Double> getDoubleList() {
         throw new DataBoxException("not list type");
     }
 

@@ -25,6 +25,10 @@ public class Result {
         transactionalEvent.setKeyMap(keyMap);
     }
 
+    public void setValueMap(HashMap<String, Object> valueMap) {
+        transactionalEvent.setValueMap(valueMap);
+    }
+
 
 
 }

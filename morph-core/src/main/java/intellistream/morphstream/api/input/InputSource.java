@@ -80,7 +80,7 @@ public class InputSource {
             keys.put(entry.getKey(), entry.getValue().getAsString());
         }
 
-        HashMap<String, String> values = new HashMap<>();
+        HashMap<String, Object> values = new HashMap<>();
         for (Map.Entry<String, JsonElement> entry : valuesJSON.entrySet()) {
             values.put(entry.getKey(), entry.getValue().getAsString());
         }
@@ -100,7 +100,7 @@ public class InputSource {
     public TransactionalEvent inputFromStringToTxnEvent(String input) {
         String [] inputArray = input.split(";");
         HashMap<String, String> keyMaps = new HashMap<>();
-        HashMap<String, String> valueMaps = new HashMap<>();
+        HashMap<String, Object> valueMaps = new HashMap<>();
         HashMap<String, String> valueTypeMaps = new HashMap<>();
         String [] keyMapPairs = inputArray[0].split(",");
         for (int i = 0; i < keyMapPairs.length; i ++) {
