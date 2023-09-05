@@ -22,7 +22,7 @@ import java.util.*;
 public class FileDataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(FileDataGenerator.class);
     private final Random random = new Random(0);
-    private Configuration configuration = MorphStreamEnv.get().configuration();
+    private Configuration configuration = new Configuration();
     //File configuration
     private String fileName;
     private String rootPath;
@@ -49,7 +49,8 @@ public class FileDataGenerator {
     private int phase;
     private static ArrayList<TransactionalEvent> inputEvents;
     private int floor_interval;
-    public String prepareInputData() {
+    public String prepareInputData() throws IOException {
+        configure_store();
         generateStream();
         dumpGeneratedDataToFile();
         return rootPath + fileName;
@@ -67,9 +68,10 @@ public class FileDataGenerator {
             generateTuple(nextEvent());
         }
     }
-    private void dumpGeneratedDataToFile() {
+    private void dumpGeneratedDataToFile() throws IOException {
         LOG.info("Dumping generated data to file...");
-
+        sinkEvents();
+        LOG.info("Dumping generated data to file... Done!");
     }
     private void sinkEvents() throws IOException {
         BufferedWriter transferEventBufferedWriter = CreateWriter(fileName);
@@ -79,7 +81,7 @@ public class FileDataGenerator {
         transferEventBufferedWriter.close();
     }
     private BufferedWriter CreateWriter(String FileName) throws IOException {
-        File file = new File(rootPath + FileName);
+        File file = new File(rootPath + OsUtils.OS_wrapper(FileName));
         if (!file.exists())
             file.createNewFile();
         return Files.newBufferedWriter(Paths.get(file.getPath()));
@@ -118,6 +120,10 @@ public class FileDataGenerator {
                 while (partition == partition1) partition1 = random.nextInt(totalThreads);
                 keys[i] = String.valueOf(partitionZipfGeneratorHashMap.get(eventType).get(partition1).next());
             }
+        } else {
+            for (int i = 1; i < keys.length; i++) {
+                keys[i] = String.valueOf(partitionZipfGeneratorHashMap.get(eventType).get(partition).next());
+            }
         }
         return keys;
     }
@@ -130,7 +136,10 @@ public class FileDataGenerator {
     }
 
     private void configure_store() {
-        rootPath = configuration.getString("rootPath", "/data") + OsUtils.OS_wrapper("inputs");
+        rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark/") + OsUtils.OS_wrapper("inputs");
+        if (!new File(rootPath).exists()) {
+            new File(rootPath).mkdirs();
+        }
         fileName = configuration.getString("fileName", "events.txt");
         totalThreads = configuration.getInt("totalThreads", 4);
         punctuation = configuration.getInt("punctuation", 1000);

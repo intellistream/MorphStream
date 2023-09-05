@@ -1,6 +1,5 @@
 package intellistream.morphstream.common.io.Utils;
 
-import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

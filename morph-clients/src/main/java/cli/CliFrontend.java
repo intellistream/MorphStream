@@ -40,7 +40,7 @@ public class CliFrontend {
         return true;
     }
 
-    public void prepare() {
+    public void prepare() throws IOException {
         //TODO:initialize Database and configure input and output
         String inputFile = env.configuration().getString("input.file");
         File file = new File(inputFile);

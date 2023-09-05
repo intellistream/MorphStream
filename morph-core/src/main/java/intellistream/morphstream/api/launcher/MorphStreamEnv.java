@@ -10,13 +10,13 @@ import intellistream.morphstream.engine.txn.db.Database;
 
 public class MorphStreamEnv {
     private JCommanderHandler jCommanderHandler;
-    private Configuration configuration;
+    private final Configuration configuration = new Configuration();
+    private final FileDataGenerator fileDataGenerator = new FileDataGenerator();
     private Database database;
     private OptimizationManager OM;
     private RdmaShuffleManager RM;
     private BlockManagerId blockManagerId;
     private TransactionTopology topology;
-    private FileDataGenerator fileDataGenerator = new FileDataGenerator();
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     public static MorphStreamEnv get() {
         return ourInstance;
