@@ -1,7 +1,9 @@
 <div class="scroll-wrapper">
   <button class="scroll-button left-button" (click)="scrollLeft()" #leftButton>&lt;</button>
   <div #runningAppContainer class="scroll-container">
-    <app-application-card [application]="application" *ngFor="let application of applications"></app-application-card>
+    <ng-container *ngFor="let application of applications">
+      <app-application-card [application]="application" style="display: inline-block"></app-application-card>
+    </ng-container>
 <!--      button to add a new application-->
 <!--      <div id="addNewAppBtn">-->
 <!--      </div>-->

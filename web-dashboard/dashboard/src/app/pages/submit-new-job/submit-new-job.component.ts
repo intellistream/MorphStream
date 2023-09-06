@@ -7,4 +7,19 @@ import { Component } from '@angular/core';
 })
 export class SubmitNewJobComponent {
   listOfData: any[] =[];
+  isVisible = false;
+
+  handleCancel(): void {
+    console.log('Button cancel clicked!');
+    this.isVisible = false;
+  }
+
+  handleOk(): void {
+    console.log('Button ok clicked!');
+    this.isVisible = false;
+  }
+
+  onAddNew(): void {
+    this.isVisible = true;
+  }
 }

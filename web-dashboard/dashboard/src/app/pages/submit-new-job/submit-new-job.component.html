@@ -1,27 +1,17 @@
 <div id="main-container">
   <nz-content>
-    <div nz-row class="title">
+    <nz-row class="title">
       <nz-col nzSpan="24">
-        <span id="title-text"><b>Submit New Job</b></span>
-        <div nz-row class="separator"></div>
+        <nz-row nzAlign="middle" nzJustify="space-between">
+          <span id="title-text"><b>Submit New Job</b></span>
+          <button nz-button nzType="text" id="btn-add-new" nzSize="default" (click)="onAddNew()">
+            <span nz-icon nzType="plus"></span>
+            Upload New
+          </button>
+        </nz-row>
+        <nz-row class="separator"></nz-row>
       </nz-col>
-    </div>
-
-    <nz-upload
-      nzType="drag"
-      [nzMultiple]="true"
-    >
-      <p class="ant-upload-drag-icon">
-        <span nz-icon nzType="inbox"></span>
-      </p>
-      <p class="ant-upload-text">Click or drag file to this area to upload</p>
-      <p class="ant-upload-hint">
-        Upload a Jar file to submit
-      </p>
-    </nz-upload>
-
-    <button nz-button nzType="primary" id="btn-submit">Submit</button>
-
+    </nz-row>
     <nz-table [nzData]="listOfData">
       <thead>
       <tr>
@@ -44,3 +34,21 @@
     </nz-table>
   </nz-content>
 </div>
+<nz-modal [(nzVisible)]="isVisible" nzTitle="Upload" id="upload-modal" [nzFooter]="modalFooter" (nzOnCancel)="handleCancel()">
+  <ng-container *nzModalContent>
+    <div id="modal-content">
+      <div class="clearfix">
+        <nz-upload nzListType="picture">
+          <button nz-button id="btn-upload" nzType="text">
+            <span nz-icon nzType="upload"></span>
+            Upload
+          </button>
+        </nz-upload>
+      </div>
+    </div>
+  </ng-container>
+</nz-modal>
+<ng-template #modalFooter>
+  <button nz-button nzType="text" (click)="handleCancel()" id="btn-submit">Submit</button>
+  <button nz-button nzType="default" (click)="handleOk()" id="btn-cancel">Cancel</button>
+</ng-template>

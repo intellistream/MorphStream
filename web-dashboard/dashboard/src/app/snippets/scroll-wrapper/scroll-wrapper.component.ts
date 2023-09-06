@@ -44,7 +44,7 @@ export class ScrollWrapperComponent implements AfterViewInit {
     const leftButton = this.leftButton.nativeElement;
     const rightButton = this.rightButton.nativeElement;
 
-    if (container.scrollWidth <= container.clientWidth) {
+    if (container.scrollWidth < container.clientWidth) {
       leftButton.style.visibility = 'hidden';
       rightButton.style.visibility = 'hidden';
     } else {
