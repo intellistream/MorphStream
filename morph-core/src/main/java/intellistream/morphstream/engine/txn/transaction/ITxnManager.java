@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.transaction;
 
+import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
@@ -26,6 +27,7 @@ public interface ITxnManager {
     OrderLock getOrderLock();//shared.
 
     PartitionedOrderLock.LOCK getOrderLock(int p_id);//partitioned. Global ordering can not be partitioned.
+    boolean AccessRecord(StateAccess stateAccess);
 
     /**
      * Read-only

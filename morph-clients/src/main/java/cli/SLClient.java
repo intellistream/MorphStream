@@ -1,10 +1,11 @@
 package cli;
 
-import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.operator.ApplicationSpoutCombo;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
+import intellistream.morphstream.api.state.StateObjectDescription;
 import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
 import intellistream.morphstream.api.utils.TxnDataHolder;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
@@ -22,7 +23,7 @@ public class SLClient {
      * This is a callback method using Reflection mechanism, invoked by referencing its className & methodName
      * Before execution, Scheduler should have access to all SchemaRecords required and add them into txnDescriptor
      *
-     * @param stateAccess Stores everything bolt needs (transaction info, post-processing UDF)
+     * @param access Stores everything bolt needs (transaction info, post-processing UDF)
      * @param dataHolder Let client specify arguments-in-TxnEvent that are used to construct txn or during txn-UDF
      */
 //    public void srcTransferFunction(TxnDescription txnDescriptor, TransactionalEvent event) {
@@ -34,8 +35,8 @@ public class SLClient {
 //        }
 //    }
 
-    public void srcTransferFunction(StateAccess stateAccess, TxnDataHolder dataHolder) {
-        StateObject srcAccountState = stateAccess.getStateObject("srcAccountState");
+    public void srcTransferFunction(StateAccess access, TxnDataHolder dataHolder) {
+        StateObject srcAccountState = access.getStateObject("srcAccountState");
         double srcBalance = srcAccountState.getDoubleValue("balance");
         double transferAmount = dataHolder.doubleMap.get("transferAmount");
         if (srcBalance > 100) {
@@ -43,9 +44,9 @@ public class SLClient {
         }
     }
 
-    public void destTransferFunction(StateAccess stateAccess, TxnDataHolder dataHolder) {
-        StateObject srcAccountState = stateAccess.getStateObject("srcAccountState");
-        StateObject destAccountState = stateAccess.getStateObject("srcAccountState");
+    public void destTransferFunction(StateAccess access, TxnDataHolder dataHolder) {
+        StateObject srcAccountState = access.getStateObject("srcAccountState");
+        StateObject destAccountState = access.getStateObject("destAccountState");
         double srcBalance = srcAccountState.getDoubleValue("balance");
         double transferAmount = dataHolder.doubleMap.get("transferAmount");
         if (srcBalance > 100) {
@@ -53,11 +54,11 @@ public class SLClient {
         }
     }
 
-    public Result transferPostFunction(TxnDescription txnDescriptor) {
+    public Result transferPostFunction(TxnDescription txnDescriptor, StateAccess access) {
         Result result = new Result();
         Double[] stateAccessResults = new Double[2];
-        stateAccessResults[0] = txnDescriptor.getStateAccess("srcTransfer").getStateObject("srcAccountState").getDoubleValue("balance");
-        stateAccessResults[1] = txnDescriptor.getStateAccess("destTransfer").getStateObject("destAccountState").getDoubleValue("balance");
+        stateAccessResults[0] = access.getStateObject("srcAccountState").getDoubleValue("balance");
+        stateAccessResults[1] = access.getStateObject("destAccountState").getDoubleValue("balance");
         result.setResults(stateAccessResults);
         return result;
     }
@@ -85,12 +86,15 @@ public class SLClient {
          * Note: for each state access, client needs to define its UDF (avoid if-else during UDF execution)
          */
         //Define state accesses
-        StateAccess srcTransfer = new StateAccess(AccessType.MODIFY);
-        srcTransfer.addStateObject("srcAccountState", AccessType.MODIFY, "accounts", "accountID");
+        StateAccessDescription srcTransfer = new StateAccessDescription(AccessType.MODIFY);
+        //User can add more state objects to access
+        srcTransfer.addStateObjectDescription("srcAccountState", AccessType.MODIFY, "accounts", "srcAccountID", "accountValue");
         srcTransfer.setTxnUDFName("srcTransferFunction"); //Method invoked by its name during reflection
 
-        StateAccess destTransfer = new StateAccess(AccessType.MODIFY);
-        destTransfer.addStateObject("srcAccountState", AccessType.MODIFY, "accounts", "accountID");
+        StateAccessDescription destTransfer = new StateAccessDescription(AccessType.MODIFY);
+        //User can add more state objects to access
+        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue");
+        destTransfer.addStateObjectDescription("destAccountState", AccessType.MODIFY, "accounts", "destAccountID", "accountValue");
         destTransfer.setTxnUDFName("destTransferFunction");
 
         //Add state accesses to transaction

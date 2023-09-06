@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.transaction.impl;
 
+import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
@@ -194,6 +195,11 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
 
     @Override
     public abstract boolean CommitTransaction(TxnContext txn_context);
+
+    @Override
+    public boolean AccessRecord(StateAccess stateAccess) {
+        throw new UnsupportedOperationException();
+    }
 
     // Those should not be used by dedicated locked txn manager.
     @Override

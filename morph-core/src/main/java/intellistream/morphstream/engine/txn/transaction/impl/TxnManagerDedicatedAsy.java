@@ -1,5 +1,8 @@
 package intellistream.morphstream.engine.txn.transaction.impl;
 
+import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.StateAccessDescription;
+import intellistream.morphstream.api.utils.ClientSideMetaTypes;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.OrderLock;
@@ -43,8 +46,6 @@ import static intellistream.morphstream.configuration.CONTROL.enable_log;
  */
 public abstract class TxnManagerDedicatedAsy extends TxnManager {
     private static final Logger log = LoggerFactory.getLogger(TxnManagerDedicatedAsy.class);
-
-
     protected final String thisComponentId;
     public HashMap<String, SchedulerContext> contexts;
     public SchedulerContext context;
@@ -158,6 +159,17 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
     public PartitionedOrderLock.LOCK getOrderLock(int pid) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean AccessRecord(StateAccess stateAccess) {
+        ClientSideMetaTypes.AccessType accessType = stateAccess.getAccessType();
+        if (accessType == ClientSideMetaTypes.AccessType.MODIFY) {
+        }
+        return false;
+    }
+    public boolean Asy_ModifyRecord(TxnContext txnContext, StateAccess access) {
+        return false;
     }
 
     public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;

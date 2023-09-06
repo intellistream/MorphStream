@@ -1,33 +1,33 @@
 package intellistream.morphstream.api.state;
 
-import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
+import intellistream.morphstream.api.utils.ClientSideMetaTypes;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 
 public class StateAccess {
-    private final AccessType accessType;
-    private final HashMap<String, StateObject> stateObjectMap; //Store all state objects required during txn-UDF
-    private String txnUDFName; //Method name of txn UDF, used to invoke txn UDF using Method Reflection during OPScheduler
-
-    public StateAccess(AccessType type) {
-        accessType = type;
+    private ClientSideMetaTypes.AccessType accessType;
+    private HashMap<String, StateObject> stateObjectMap; //Store all state objects required during txn-UDF
+    private String txnUDFName;
+    public StateAccess(StateAccessDescription description) {
         stateObjectMap = new HashMap<>();
+        accessType = description.getAccessType();
+        txnUDFName = description.getTxnUDFName();
     }
 
-    public void addStateObject(String stateObjName, AccessType type, String tableName, String keyName) {
-        stateObjectMap.put(stateObjName, new StateObject(tableName, keyName, type));
+    public void setStateObject(String stateObjName, StateObject stateObject) {
+        stateObjectMap.put(stateObjName, stateObject);
     }
-
     public StateObject getStateObject(String stateObjName) {
         return stateObjectMap.get(stateObjName);
     }
-
-    public void setTxnUDFName(String udfName) {
-        txnUDFName = udfName;
+    public HashMap<String, StateObject> getStateObjectMap() {
+        return stateObjectMap;
     }
-
+    public ClientSideMetaTypes.AccessType getAccessType() {
+        return accessType;
+    }
     public String getTxnUDFName() {
         return txnUDFName;
     }
 }
+

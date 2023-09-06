@@ -1,29 +1,22 @@
 package intellistream.morphstream.api.state;
 
-
-import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * Used as a data carrier for SchemaRecord, provides simplified retrieval-by-columnName APIs.
- */
 public class StateObject {
-    private final String tableName;
-    private final String keyName;
-    private final AccessType type;
+    private final String table;
+    private final String key;
+    private final String value;
     private SchemaRecord schemaRecord;
     private HashMap<String, Integer> fieldNameToIndex; //TODO: Where to initialize?
-
-    public StateObject(String tableName, String keyName, AccessType type) {
-        this.tableName = tableName;
-        this.keyName = keyName;
-        this.type = type;
+    public StateObject(String table, String key, String value) {
+        this.table = table;
+        this.key = key;
+        this.value = value;
     }
-
     /**
      * Called in Schedulers, set SchemaRecord
      */
@@ -73,7 +66,4 @@ public class StateObject {
     public List<Double> getDoubleListValue(String fieldName) {
         return schemaRecord.getValues().get(fieldNameToIndex.get(fieldName)).getDoubleList();
     }
-
-
-
 }
