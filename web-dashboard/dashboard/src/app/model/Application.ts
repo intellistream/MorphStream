@@ -1,16 +1,16 @@
 import {Operator} from "./operator";
+import {TotalTimeBreakdown} from "./TotalTimeBreakdown";
+import {SchedulerTimeBreakdown} from "./SchedulerTimeBreakdown";
 
 export interface Application {
   appId: string;
-  cpu: string;
-  duration: string;
   name: string;
   nthreads: string;
+  cpu: string;
   ram: string;
   startTime: string;
+  duration: string;
   isRunning: boolean;
-  operators: Operator[];
-
   nevents: number;
   minProcessTime: number;
   maxProcessTime: number;
@@ -18,4 +18,9 @@ export interface Application {
   latency: number;
   throughput: number;
   ncore: number;
+  operators: Operator[];
+  totalTimeBreakdown: TotalTimeBreakdown;
+  schedulerTimeBreakdown: SchedulerTimeBreakdown;
+  periodicalThroughput: number[];
+  periodicalLatency: number[];
 }

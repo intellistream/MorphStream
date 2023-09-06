@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, Input} from '@angular/core';
+import {AfterViewInit, Component, Input, OnInit} from '@angular/core';
 import * as Highcharts from 'highcharts';
 import { Options } from 'highcharts';
 import {Application} from "../../model/Application";
@@ -8,9 +8,9 @@ import {Application} from "../../model/Application";
   templateUrl: './finished-statistics-board.component.html',
   styleUrls: ['./finished-statistics-board.component.less']
 })
-export class FinishedStatisticsBoardComponent implements AfterViewInit {
+export class FinishedStatisticsBoardComponent implements AfterViewInit, OnInit {
   @Input()
-  job: Application;
+  job!: Application;
 
   timeChartData: Options = {
     chart: {
@@ -23,28 +23,7 @@ export class FinishedStatisticsBoardComponent implements AfterViewInit {
         color: '#ffffff',
         fontFamily: 'Inter'
       }
-    },
-    series: [{
-      type: 'pie',
-      name: 'Processing Time',
-      data: [
-        {
-          name: 'exploration',
-          y: 78490,
-          color: '#8BDB4D'
-        },
-        {
-          name: 'tpg construction',
-          y: 19573,
-          color: '#0FB2E5'
-        },
-        {
-          name: 'other',
-          y: 12322,
-          color: '#EF5A5A'
-        }
-      ]
-    }]
+    }
   };
 
   throughputLatencyData: Options = {
@@ -86,23 +65,49 @@ export class FinishedStatisticsBoardComponent implements AfterViewInit {
         color: '#ffffff' // 图例项的颜色
       }
     },
-    series: [
+  };
+
+  ngAfterViewInit() {
+    console.log(this.job)
+    Highcharts.chart('throughputLatencyContainer', this.throughputLatencyData)
+    Highcharts.chart('timeChartContainer', this.timeChartData);
+  }
+
+  ngOnInit(): void {
+    this.timeChartData.series = [{
+      type: 'pie',
+      name: 'Processing Time',
+      data: [
+        {
+          name: 'exploration',
+          y: this.job.schedulerTimeBreakdown.exploreTime,
+          color: '#8BDB4D'
+        },
+        {
+          name: 'tpg construction',
+          y: this.job.schedulerTimeBreakdown.constructTime,
+          color: '#0FB2E5'
+        },
+        {
+          name: 'other',
+          y: this.job.schedulerTimeBreakdown.abortTime + this.job.schedulerTimeBreakdown.trackingTime + this.job.schedulerTimeBreakdown.usefulTime,
+          color: '#EF5A5A'
+        }
+      ]
+    }]
+
+    this.throughputLatencyData.series = [
       {
         type: 'area',
         name: 'Throughput (10k tuples/s)',
-        data: [2.1, 2.5, 1.9, 1.3, 2.1, 2.1, 2.3, 3.2, 3.0, 2.7],
+        data: this.job.periodicalThroughput,
         color: '#8BDB4D'
       },
       {
         type: 'area',
         name: 'latency (s)',
-        data: [1.9, 1.8, 1.9, 2.2, 2.3, 2.0, 2.1, 1.8, 1.9, 1.7],
+        data: this.job.periodicalLatency,
         color: '#0FB2E5'
       }]
-  };
-
-  ngAfterViewInit() {
-    Highcharts.chart('throughputLatencyContainer', this.throughputLatencyData)
-    Highcharts.chart('timeChartContainer', this.timeChartData);
   }
 }

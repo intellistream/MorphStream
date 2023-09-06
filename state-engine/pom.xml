@@ -46,6 +46,12 @@
             <artifactId>common</artifactId>
             <version>${tstream.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>web-dashboard</artifactId>
+            <version>0.1</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
 </project>
