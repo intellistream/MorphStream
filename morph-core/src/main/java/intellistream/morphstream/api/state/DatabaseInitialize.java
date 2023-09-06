@@ -25,20 +25,20 @@ public class DatabaseInitialize {
     private HashMap<String, DataBox.Types> valueDataTypeMap = new HashMap<>();//table name to value data type
     private HashMap<String, RecordSchema> schemas;//table name to schema
     private int totalThreads;
-    private HashMap<String, Integer> numItemMap = new HashMap<>();//table name to number of items
+    private HashMap<String, Integer> numItemMaps = new HashMap<>();//table name to number of items
     public void creates_Table() {
         configure_db();
         for (String tableName : tableNames) {
-            MorphStreamEnv.get().database().createTable(schemas.get(tableName), tableName, totalThreads, numItemMap.get(tableName));
+            MorphStreamEnv.get().database().createTable(schemas.get(tableName), tableName, totalThreads, numItemMaps.get(tableName));
         }
     }
     public void loadDB(int threadId, SpinLock[] spinLocks) {
         for (String tableName : tableNames) {
-            int interval = (int) Math.ceil(numItemMap.get(tableName) / (double) totalThreads);
+            int interval = (int) Math.ceil(numItemMaps.get(tableName) / (double) totalThreads);
             int left_bound = threadId * interval;
             int right_bound;
             if (threadId == totalThreads - 1) {
-                right_bound = numItemMap.get(tableName);
+                right_bound = numItemMaps.get(tableName);
             } else {
                 right_bound = (threadId + 1) * interval;
             }
@@ -55,7 +55,7 @@ public class DatabaseInitialize {
     private void configure_db(){
         tableNames = configuration.getString("table_names","table1,table2").split(",");
         for (String tableName : tableNames) {
-            numItemMap.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
+            numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
             keyDataTypeMap.put(tableName, getDataType(configuration.getString(tableName + "_key_data_types","string")));
             valueDataTypeMap.put(tableName, getDataType(configuration.getString(tableName + "_value_data_types","int")));
             schemas.put(tableName, getRecordSchema(tableName));
@@ -157,5 +157,8 @@ public class DatabaseInitialize {
     }
     private int get_pid(int partition_interval, int key) {
         return (int) Math.floor(key / (double) partition_interval);//NUM_ITEMS / tthread;
+    }
+    public HashMap<String, Integer> getNumItemMaps() {
+        return numItemMaps;
     }
 }

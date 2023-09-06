@@ -30,11 +30,11 @@ public class FileDataGenerator {
     private int totalThreads = 4;
     private int punctuation;
     //Event configure
-    private HashMap<String, List<String>> eventKeyMap = new HashMap<>();//event -> key list
+    private HashMap<String, HashMap<String, Integer>> eventKeyMap = new HashMap<>();//event -> tableName -> keyNumber
     private HashMap<String, List<String>> eventValueMap = new HashMap<>();//event -> value list
     //InputStream configuration
     private int totalEvents;
-    private HashMap<String, Integer> numItemMaps;//table name (key) to number of items
+    private HashMap<String, Integer> numItemMaps = MorphStreamEnv.get().databaseInitialize().getNumItemMaps();//table name (key) to number of items
     private HashMap<String, Integer> intervalMaps = new HashMap<>();//table name (key) to interval
     private HashMap<String, Integer> stateAssessSkewMap = new HashMap<>();//event -> skew access skewness
     private HashMap<String, Integer> eventRatioMap = new HashMap<>();//event -> event ratio
@@ -54,6 +54,51 @@ public class FileDataGenerator {
         generateStream();
         dumpGeneratedDataToFile();
         return rootPath + fileName;
+    }
+    private void configure_store() {
+        rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark/") + OsUtils.OS_wrapper("inputs");
+        if (!new File(rootPath).exists()) {
+            new File(rootPath).mkdirs();
+        }
+        fileName = configuration.getString("fileName", "events.txt");
+        totalThreads = configuration.getInt("totalThreads", 4);
+        punctuation = configuration.getInt("punctuation", 1000);
+        totalEvents = configuration.getInt("totalEvents", totalThreads * punctuation);
+        phaseType = configuration.getString("workloadType", "default").split(",");
+        phase = 0;
+        eventType = configuration.getString("eventTypes", "event1,event2").split(",");
+        inputEvents = new ArrayList<TransactionalEvent>(totalEvents);
+        for (Map.Entry<String, Integer> s : numItemMaps.entrySet()) {
+            intervalMaps.put(s.getKey(), s.getValue() / totalThreads);
+        }
+        for (String event : eventType) {
+            String[] tableNames = configuration.getString(event + "_tables", "table1,table2").split(",");
+            for (String table : tableNames) {
+                HashMap<String, Integer> keyMap = new HashMap<>();
+                keyMap.put(table, configuration.getInt(table + "_keyNumber", 1));
+                eventKeyMap.put(event, keyMap);
+            }
+            eventValueMap.put(event, Arrays.asList(configuration.getString(event + "_values", "v1,v2").split(",")));
+            stateAssessSkewMap.put(event, configuration.getInt(event + ".State_Access_Skewness", 0));
+            eventRatioMap.put(event, configuration.getInt(event + ".Ratio_of_Event", 50));
+            for (int i = 0; i < eventRatioMap.get(event) / 10; i++) {
+                eventList.add(event);
+            }
+            eventAbortMap.put(event, configuration.getInt(event + ".Ratio_of_Transaction_Aborts", 0));
+            eventMultiPartitionMap.put(event, configuration.getInt(event + ".Ratio_of_Multi_Partition_Transactions", 0));
+            HashMap<String, FastZipfGenerator> zipfHashMap = new HashMap<>();//tableNames -> zipf generator
+            HashMap<String, List<FastZipfGenerator>> partitionZipfHashMap = new HashMap<>();//tableNames -> Lists of partition zipf generator
+            for (String tableName: eventKeyMap.get(event).keySet()) {
+                zipfHashMap.put(tableName, new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(event) / 100, 0,123456789));
+                List<FastZipfGenerator> zipfGenerators = new ArrayList<>();
+                for (int i = 0; i < totalThreads; i++) {
+                    zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(event) / 100, i * intervalMaps.get(tableName),123456789));
+                }
+                partitionZipfHashMap.put(tableName, zipfGenerators);
+            }
+            zipfGeneratorHashMap.put(event, zipfHashMap);
+            partitionZipfGeneratorHashMap.put(event, partitionZipfHashMap);
+        }
     }
 
     private void generateStream() {
@@ -84,12 +129,8 @@ public class FileDataGenerator {
     }
     private void generateTuple(String eventType) {
         TransactionalEvent inputEvent;
-        String[] keys = generateKey(eventType);
+        HashMap<String, List<String>> keys = generateKey(eventType);
         String[] values = generateValue(eventType);
-        HashMap<String, String> keyMap = new HashMap<>();
-        for (int i = 0; i < keys.length; i++) {
-            keyMap.put(eventKeyMap.get(eventType).get(i), keys[i]);
-        }
         HashMap<String, Object> valueMap = new HashMap<>();
         HashMap<String, String> valueTypeMap = new HashMap<>();
         for (int i = 0; i < values.length; i++) {
@@ -97,32 +138,36 @@ public class FileDataGenerator {
             valueTypeMap.put(eventValueMap.get(eventType).get(i), "int");
         }
         if (random.nextInt(1000) < eventRatioMap.get(eventType)) {
-            inputEvent = new TransactionalEvent(eventID, keyMap, valueMap, valueTypeMap, eventType, true);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, true);
         } else {
-            inputEvent = new TransactionalEvent(eventID, keyMap, valueMap, valueTypeMap, eventType, false);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, false);
         }
         inputEvents.add(inputEvent);
         eventID++;
     }
 
-    private String[] generateKey(String eventType) {
-        List<String> tableNames = eventKeyMap.get(eventType);
-        String[] keys = new String[eventKeyMap.get(eventType).size()];
-        int key = zipfGeneratorHashMap.get(eventType).get(tableNames.get(0)).next();
-        keys[0] = String.valueOf(key);
-        int partition = key_to_partition(tableNames.get(0), key);
-        if (random.nextInt(1000) < eventMultiPartitionMap.get(eventType)) {
-            for (int i = 1; i < keys.length; i++) {
-                int partition1 = random.nextInt(totalThreads);
-                while (partition == partition1) partition1 = random.nextInt(totalThreads);
-                keys[i] = String.valueOf(partitionZipfGeneratorHashMap.get(eventType).get(tableNames.get(i)).get(partition1).next());
+    private HashMap<String, List<String>> generateKey(String eventType) {//tableName -> List of keys
+        HashMap<String, List<String>> keyMap = new HashMap<>();
+        HashMap<String, Integer> keysForTable = this.eventKeyMap.get(eventType);
+        for (Map.Entry<String, Integer> entry : keysForTable.entrySet()) {
+            List<String> keys = new ArrayList<>();
+            int key = zipfGeneratorHashMap.get(eventType).get(entry.getKey()).next();
+            keys.add(String.valueOf(key));
+            int partition = key_to_partition(entry.getKey(), key);
+            if (random.nextInt(1000) < eventMultiPartitionMap.get(eventType)) {
+                for (int i = 1; i < entry.getValue(); i++) {
+                    int partition1 = random.nextInt(totalThreads);
+                    while (partition == partition1) partition1 = random.nextInt(totalThreads);
+                    keys.add(String.valueOf(partitionZipfGeneratorHashMap.get(eventType).get(entry.getKey()).get(partition1).next()));
+                }
+            } else {
+                for (int i = 1; i < entry.getValue(); i++) {
+                    keys.add(String.valueOf(partitionZipfGeneratorHashMap.get(eventType).get(entry.getKey()).get(partition).next()));
+                }
             }
-        } else {
-            for (int i = 1; i < keys.length; i++) {
-                keys[i] = String.valueOf(partitionZipfGeneratorHashMap.get(eventType).get(tableNames.get(i)).get(partition).next());
-            }
+            keyMap.put(entry.getKey(), keys);
         }
-        return keys;
+        return keyMap;
     }
     private String[] generateValue(String eventType) {
         String[] values = new String[eventValueMap.get(eventType).size()];
@@ -132,46 +177,6 @@ public class FileDataGenerator {
         return values;
     }
 
-    private void configure_store() {
-        rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark/") + OsUtils.OS_wrapper("inputs");
-        if (!new File(rootPath).exists()) {
-            new File(rootPath).mkdirs();
-        }
-        fileName = configuration.getString("fileName", "events.txt");
-        totalThreads = configuration.getInt("totalThreads", 4);
-        punctuation = configuration.getInt("punctuation", 1000);
-        totalEvents = configuration.getInt("totalEvents", totalThreads * punctuation);
-        phaseType = configuration.getString("workloadType", "default").split(",");
-        phase = 0;
-        eventType = configuration.getString("eventTypes", "event1,event2").split(",");
-        inputEvents = new ArrayList<TransactionalEvent>(totalEvents);
-        for (Map.Entry<String, Integer> s : numItemMaps.entrySet()) {
-            intervalMaps.put(s.getKey(), s.getValue() / totalThreads);
-        }
-        for (String event : eventType) {
-            eventKeyMap.put(event, Arrays.asList(configuration.getString(event + "_keys", "key1,key2").split(",")));
-            eventValueMap.put(event, Arrays.asList(configuration.getString(event + "_values", "v1,v2").split(",")));
-            stateAssessSkewMap.put(event, configuration.getInt(event + ".State_Access_Skewness", 0));
-            eventRatioMap.put(event, configuration.getInt(event + ".Ratio_of_Event", 50));
-            for (int i = 0; i < eventRatioMap.get(event) / 10; i++) {
-                eventList.add(event);
-            }
-            eventAbortMap.put(event, configuration.getInt(event + ".Ratio_of_Transaction_Aborts", 0));
-            eventMultiPartitionMap.put(event, configuration.getInt(event + ".Ratio_of_Multi_Partition_Transactions", 0));
-            HashMap<String, FastZipfGenerator> zipfHashMap = new HashMap<>();
-            HashMap<String, List<FastZipfGenerator>> partitionZipfHashMap = new HashMap<>();
-            for (String key: eventKeyMap.get(event)) {
-                zipfHashMap.put(key, new FastZipfGenerator(numItemMaps.get(key), (double) stateAssessSkewMap.get(event) / 100, 0,123456789));
-                List<FastZipfGenerator> zipfGenerators = new ArrayList<>();
-                for (int i = 0; i < totalThreads; i++) {
-                    zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(key), (double) stateAssessSkewMap.get(event) / 100, i * intervalMaps.get(key),123456789));
-                }
-                partitionZipfHashMap.put(key, zipfGenerators);
-            }
-            zipfGeneratorHashMap.put(event, zipfHashMap);
-            partitionZipfGeneratorHashMap.put(event, partitionZipfHashMap);
-        }
-    }
     private String nextEvent() {
         int next = new Random().nextInt(eventList.size());
         return eventList.get(next);

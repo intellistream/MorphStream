@@ -3,6 +3,7 @@ package intellistream.morphstream.api.input;
 import intellistream.morphstream.engine.txn.TxnEvent;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * This class is used in refined-API, to convert raw inputEvent to txnEvent
@@ -12,7 +13,7 @@ import java.util.HashMap;
  */
 
 public class TransactionalEvent extends TxnEvent {
-    private HashMap<String, String> keyMap; //<keyName, key> assume key must be string, including sourceKey, targetKey, and conditionKey
+    private HashMap<String, List<String>> keyMap; //<TableName, keys> assume key must be string, including sourceKey, targetKey, and conditionKey
     private HashMap<String, Object> valueMap; //<valueName, value>
     private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
     private HashMap<String, Object> condition; //TODO: Condition
@@ -20,7 +21,7 @@ public class TransactionalEvent extends TxnEvent {
     private Boolean isAbort = false;
 
     public TransactionalEvent(long bid,
-                              HashMap<String, String> keyMap,
+                              HashMap<String, List<String>> keyMap,
                               HashMap<String, Object> valueMap,
                               HashMap<String, String> valueTypeMap,
                               String flag,
@@ -37,7 +38,7 @@ public class TransactionalEvent extends TxnEvent {
         super(bid);
     }
 
-    public void setKeyMap(HashMap<String, String> keyMap) {
+    public void setKeyMap(HashMap<String, List<String>> keyMap) {
         this.keyMap = keyMap;
     }
 
@@ -53,7 +54,7 @@ public class TransactionalEvent extends TxnEvent {
         this.flag = flag;
     }
 
-    public HashMap<String, String> getKeyMap() {
+    public HashMap<String, List<String>> getKeyMap() {
         return this.keyMap;
     }
 

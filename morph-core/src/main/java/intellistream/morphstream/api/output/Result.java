@@ -19,11 +19,11 @@ public class Result {
     }
 
     public void setKeyMap(HashMap<String, String> keyMap) {
-        transactionalEvent.setKeyMap(keyMap);
+
     }
 
     public void setValueMap(HashMap<String, Object> valueMap) {
-        transactionalEvent.setValueMap(valueMap);
+
     }
 
 

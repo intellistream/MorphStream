@@ -42,6 +42,7 @@ public class CliFrontend {
 
     public void prepare() throws IOException {
         //TODO:initialize Database and configure input and output
+        env.databaseInitialize().creates_Table();
         String inputFile = env.configuration().getString("input.file");
         File file = new File(inputFile);
         if (file.exists()) {

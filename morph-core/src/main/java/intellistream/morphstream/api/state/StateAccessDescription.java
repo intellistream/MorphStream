@@ -14,8 +14,8 @@ public class StateAccessDescription {
         stateObjectDescriptionMap = new HashMap<>();
     }
 
-    public void addStateObjectDescription(String stateObjName, AccessType type, String tableName, String keyName, String valueName) {
-        stateObjectDescriptionMap.put(stateObjName, new StateObjectDescription(type, tableName, keyName, valueName));
+    public void addStateObjectDescription(String stateObjName, AccessType type, String tableName, String keyName, String valueName, int keyIndex) {
+        stateObjectDescriptionMap.put(stateObjName, new StateObjectDescription(type, tableName, keyName, valueName, keyIndex));
     }
 
     public StateObjectDescription getStateObjectDescription(String stateObjName) {

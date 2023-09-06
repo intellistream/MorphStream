@@ -13,15 +13,17 @@ import java.util.List;
  */
 public class StateObjectDescription {
     private final AccessType type;
+    private final int keyIndex;
     private final String tableName;
     private final String keyName;
     private final String valueName;
 
-    public StateObjectDescription(AccessType type, String tableName, String keyName, String valueName) {
+    public StateObjectDescription(AccessType type, String tableName, String keyName, String valueName, int keyIndex) {
         this.tableName = tableName;
         this.keyName = keyName;
         this.type = type;
         this.valueName = valueName;
+        this.keyIndex = keyIndex;
     }
 
     public String getValueName() {
@@ -30,6 +32,9 @@ public class StateObjectDescription {
 
     public String getKeyName() {
         return keyName;
+    }
+    public int getKeyIndex() {
+        return keyIndex;
     }
 
     public String getTableName() {

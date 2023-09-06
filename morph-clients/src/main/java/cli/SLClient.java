@@ -79,13 +79,13 @@ public class SLClient {
         //Define state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription(AccessType.MODIFY);
         //User can add more state objects to access
-        srcTransfer.addStateObjectDescription("srcAccountState", AccessType.MODIFY, "accounts", "srcAccountID", "accountValue");
+        srcTransfer.addStateObjectDescription("srcAccountState", AccessType.MODIFY, "accounts", "srcAccountID", "accountValue", 0);
         srcTransfer.setTxnUDFName("srcTransferFunction"); //Method invoked by its name during reflection
 
         StateAccessDescription destTransfer = new StateAccessDescription(AccessType.MODIFY);
         //User can add more state objects to access
-        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue");
-        destTransfer.addStateObjectDescription("destAccountState", AccessType.MODIFY, "accounts", "destAccountID", "accountValue");
+        destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue", 0);
+        destTransfer.addStateObjectDescription("destAccountState", AccessType.MODIFY, "accounts", "destAccountID", "accountValue", 1);
         destTransfer.setTxnUDFName("destTransferFunction");
 
         //Add state accesses to transaction

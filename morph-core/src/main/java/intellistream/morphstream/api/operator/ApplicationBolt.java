@@ -106,7 +106,7 @@ public class ApplicationBolt extends TransactionalBolt {
             StateAccess stateAccess = new StateAccess(accessDescription);
             //Each state access involves multiple state objects
             for (Map.Entry<String, StateObjectDescription> entry: accessDescription.getStateObjectDescriptionMap().entrySet()) {
-                String key = event.getKeyMap().get(entry.getValue().getKeyName());
+                String key = event.getKeyMap().get(entry.getValue().getTableName()).get(entry.getValue().getKeyIndex());
                 String value = (String) event.getValueMap().get(entry.getValue().getValueName());
                 StateObject stateObject = new StateObject(entry.getValue().getTableName(), key, value);
                 stateAccess.addStateObject(entry.getKey(), stateObject);
