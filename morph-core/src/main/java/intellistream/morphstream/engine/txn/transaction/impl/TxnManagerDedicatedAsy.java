@@ -162,18 +162,22 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     @Override
-    public boolean AccessRecord(StateAccess stateAccess) {
+    public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) {
         ClientSideMetaTypes.AccessType accessType = stateAccess.getAccessType();
         if (accessType == ClientSideMetaTypes.AccessType.MODIFY) {
         }
         return false;
     }
-    public boolean Asy_ModifyRecord(TxnContext txnContext, StateAccess access) {
+
+    public boolean Asy_ModifyRecord(StateAccess stateAccess, TxnContext txnContext) {
+        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_WRITE_COND;
         return false;
     }
 
+    //TODO: Never used
     public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
 
+    //TODO: Never used
     @Override
     public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String primary_key, List<DataBox> value, double[] enqueue_time) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE_ONLY;
@@ -206,6 +210,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
+    //TODO: Never used
     public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String primary_key, SchemaRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_ONLY;
         TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
@@ -221,6 +226,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
+    //TODO: Never used
     @Override
     public boolean Asy_ReadRecords(TxnContext txn_context, String srcTable, String primary_key, TableRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READS_ONLY;//read multiple versions.

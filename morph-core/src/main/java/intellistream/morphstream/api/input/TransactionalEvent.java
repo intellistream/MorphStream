@@ -15,6 +15,7 @@ public class TransactionalEvent extends TxnEvent {
     private HashMap<String, String> keyMap; //<keyName, key> assume key must be string, including sourceKey, targetKey, and conditionKey
     private HashMap<String, Object> valueMap; //<valueName, value>
     private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
+    private HashMap<String, Object> condition; //TODO: Condition
     private String flag; //"Deposit" or "Transfer"
     private Boolean isAbort = false;
 
@@ -64,7 +65,7 @@ public class TransactionalEvent extends TxnEvent {
         return this.valueTypeMap;
     }
 
-    public String getFlags() {
+    public String getFlag() {
         return this.flag;
     }
 

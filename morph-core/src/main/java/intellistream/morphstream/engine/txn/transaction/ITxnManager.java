@@ -27,7 +27,7 @@ public interface ITxnManager {
     OrderLock getOrderLock();//shared.
 
     PartitionedOrderLock.LOCK getOrderLock(int p_id);//partitioned. Global ordering can not be partitioned.
-    boolean AccessRecord(StateAccess stateAccess);
+    boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext);
 
     /**
      * Read-only

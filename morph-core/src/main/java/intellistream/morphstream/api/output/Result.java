@@ -11,9 +11,6 @@ public class Result {
 
     public Result() {
         transactionalEvent = new TransactionalEvent(0);
-        //TODO: Bolt need to pass bid downstream (for both combo and non-combo cases)
-        // Solution 1: Modify the TxnEvent class, make bid as not final, initialize Result in client's post-UDF with bid=0, then bolt modify bid after post-UDF
-        // Solution 2: xxx
     }
 
     //setXXX

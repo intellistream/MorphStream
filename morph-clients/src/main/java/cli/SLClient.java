@@ -26,15 +26,6 @@ public class SLClient {
      * @param access Stores everything bolt needs (transaction info, post-processing UDF)
      * @param dataHolder Let client specify arguments-in-TxnEvent that are used to construct txn or during txn-UDF
      */
-//    public void srcTransferFunction(TxnDescription txnDescriptor, TransactionalEvent event) {
-//        StateObject srcAccountState = txnDescriptor.getStateAccess("srcTransfer").getStateObject("srcAccountState");
-//        double srcBalance = srcAccountState.getDoubleValue("balance");
-//        double transferAmount = (double) event.getValueMap().get("transferAmount");
-//        if (srcBalance > 100) {
-//            srcAccountState.setDoubleValue("balance", srcBalance - transferAmount);
-//        }
-//    }
-
     public void srcTransferFunction(StateAccess access, TxnDataHolder dataHolder) {
         StateObject srcAccountState = access.getStateObject("srcAccountState");
         double srcBalance = srcAccountState.getDoubleValue("balance");

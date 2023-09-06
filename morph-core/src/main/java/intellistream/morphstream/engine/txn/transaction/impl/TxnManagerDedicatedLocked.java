@@ -197,7 +197,7 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     public abstract boolean CommitTransaction(TxnContext txn_context);
 
     @Override
-    public boolean AccessRecord(StateAccess stateAccess) {
+    public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) {
         throw new UnsupportedOperationException();
     }
 

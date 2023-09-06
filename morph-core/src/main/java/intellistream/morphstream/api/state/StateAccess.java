@@ -14,7 +14,7 @@ public class StateAccess {
         txnUDFName = description.getTxnUDFName();
     }
 
-    public void setStateObject(String stateObjName, StateObject stateObject) {
+    public void addStateObject(String stateObjName, StateObject stateObject) {
         stateObjectMap.put(stateObjName, stateObject);
     }
     public StateObject getStateObject(String stateObjName) {

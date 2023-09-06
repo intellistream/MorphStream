@@ -8,20 +8,20 @@ import java.util.HashMap;
 //TODO: For now, assume each event carries one transaction (txn_length==1)
 public class TxnDescription {
     private String name;
-    private final HashMap<String, StateAccessDescription> stateAccessMap; //Distinguish diff UDFs in OPScheduler by their names
+    private final HashMap<String, StateAccessDescription> stateAccessDescriptionMap; //Distinguish diff stateAccesses in OPScheduler by their names
     private String postUDFName; //Method name of post-processing UDF, used to invoke post-UDF using Method Reflection in bolts
-    private TxnDataHolder dataHolder; //Holds all utils data used during txn, data are most probably provided by input txnEvent
+    private TxnDataHolder dataHolder; //TODO: Holds all utils data used during txn, data are most probably provided by input txnEvent
 
     public TxnDescription() {
-        stateAccessMap = new HashMap<>();
+        stateAccessDescriptionMap = new HashMap<>();
     }
 
-    public void addStateAccess(String stateAccessName, StateAccessDescription stateAccessDescription) {
-        stateAccessMap.put(stateAccessName, stateAccessDescription);
+    public void addStateAccess(String stateAccessName, StateAccessDescription description) {
+        stateAccessDescriptionMap.put(stateAccessName, description);
     }
 
     public StateAccessDescription getStateAccess(String stateAccessName) {
-        return stateAccessMap.get(stateAccessName);
+        return stateAccessDescriptionMap.get(stateAccessName);
     }
 
     public void setPostUDFName(String postUDFName) {
@@ -39,7 +39,7 @@ public class TxnDescription {
     public TxnDataHolder getDataHolder() {
         return dataHolder;
     }
-    public HashMap<String, StateAccessDescription> getStateAccessMap() {
-        return stateAccessMap;
+    public HashMap<String, StateAccessDescription> getStateAccessDescriptionMap() {
+        return stateAccessDescriptionMap;
     }
 }
