@@ -50,7 +50,9 @@ public class DatabaseInitialize {
                 insertRecord(tableName, _key, pid, spinLocks, pid);
             }
         }
-
+    }
+    public void loadDB(int threadId) {
+        loadDB(threadId, null);
     }
     public void configure_db(){
         tableNames = configuration.getString("table_names","table1,table2").split(",");

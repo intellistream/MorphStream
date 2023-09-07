@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.operator;
 
 import intellistream.morphstream.api.input.TransactionalEvent;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateAccessDescription;
@@ -56,9 +57,7 @@ public class ApplicationBolt extends TransactionalBolt {
 
     //TODO: loadDB is only called by the first bolt in topology. Refine this.
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-        loadDB(transactionManager.getSchedulerContext(),
-                context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
-        // Aqif: For TStream taskId increases by 1 and executorId is always 0.
+        MorphStreamEnv.get().databaseInitialize().loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID());
     }
 
     @Override
