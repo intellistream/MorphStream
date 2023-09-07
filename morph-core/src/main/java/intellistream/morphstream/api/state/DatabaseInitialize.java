@@ -23,7 +23,7 @@ public class DatabaseInitialize {
     private String[] tableNames;
     private HashMap<String, DataBox.Types> keyDataTypeMap = new HashMap<>();//table name to key data type
     private HashMap<String, DataBox.Types> valueDataTypeMap = new HashMap<>();//table name to value data type
-    private HashMap<String, RecordSchema> schemas;//table name to schema
+    private HashMap<String, RecordSchema> schemas = new HashMap<>();//table name to schema
     private int totalThreads;
     private HashMap<String, Integer> numItemMaps = new HashMap<>();//table name to number of items
     public void creates_Table() {
@@ -52,7 +52,7 @@ public class DatabaseInitialize {
         }
 
     }
-    private void configure_db(){
+    public void configure_db(){
         tableNames = configuration.getString("table_names","table1,table2").split(",");
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));

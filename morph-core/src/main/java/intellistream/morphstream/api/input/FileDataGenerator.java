@@ -22,7 +22,7 @@ import java.util.*;
 public class FileDataGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(FileDataGenerator.class);
     private final Random random = new Random(0);
-    private Configuration configuration = MorphStreamEnv.get().configuration();
+    private Configuration configuration;
     //File configuration
     private String fileName;
     private String rootPath;
@@ -34,7 +34,7 @@ public class FileDataGenerator {
     private HashMap<String, List<String>> eventValueMap = new HashMap<>();//event -> value list
     //InputStream configuration
     private int totalEvents;
-    private HashMap<String, Integer> numItemMaps = MorphStreamEnv.get().databaseInitialize().getNumItemMaps();//table name (key) to number of items
+    private HashMap<String, Integer> numItemMaps;//table name (key) to number of items
     private HashMap<String, Integer> intervalMaps = new HashMap<>();//table name (key) to interval
     private HashMap<String, Integer> stateAssessSkewMap = new HashMap<>();//event -> skew access skewness
     private HashMap<String, Integer> eventRatioMap = new HashMap<>();//event -> event ratio
@@ -56,6 +56,8 @@ public class FileDataGenerator {
         return rootPath + fileName;
     }
     private void configure_store() {
+        configuration = MorphStreamEnv.get().configuration();
+        numItemMaps = MorphStreamEnv.get().databaseInitialize().getNumItemMaps();
         rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark/") + OsUtils.OS_wrapper("inputs");
         if (!new File(rootPath).exists()) {
             new File(rootPath).mkdirs();
@@ -73,11 +75,11 @@ public class FileDataGenerator {
         }
         for (String event : eventType) {
             String[] tableNames = configuration.getString(event + "_tables", "table1,table2").split(",");
+            HashMap<String, Integer> keyMap = new HashMap<>();
             for (String table : tableNames) {
-                HashMap<String, Integer> keyMap = new HashMap<>();
-                keyMap.put(table, configuration.getInt(table + "_keyNumber", 1));
-                eventKeyMap.put(event, keyMap);
+                keyMap.put(table, configuration.getInt(table + "_keyNumber", 2));
             }
+            eventKeyMap.put(event, keyMap);
             eventValueMap.put(event, Arrays.asList(configuration.getString(event + "_values", "v1,v2").split(",")));
             stateAssessSkewMap.put(event, configuration.getInt(event + ".State_Access_Skewness", 0));
             eventRatioMap.put(event, configuration.getInt(event + ".Ratio_of_Event", 50));
@@ -143,7 +145,7 @@ public class FileDataGenerator {
             inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, false);
         }
         inputEvents.add(inputEvent);
-        eventID++;
+        eventID ++;
     }
 
     private HashMap<String, List<String>> generateKey(String eventType) {//tableName -> List of keys

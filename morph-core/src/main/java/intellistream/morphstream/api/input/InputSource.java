@@ -8,7 +8,9 @@ import intellistream.morphstream.api.input.TransactionalEvent;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -66,46 +68,51 @@ public class InputSource {
 
     private TransactionalEvent inputFromJsonToTxnEvent(String input) {
         // Parse JSON from CSV line
-        JsonObject nestedHashMapJson = JsonParser.parseString(input).getAsJsonObject();
-
-        // Extract sub-JSON objects as needed
-        JsonObject keysJSON = nestedHashMapJson.getAsJsonObject("keys");
-        JsonObject valuesJSON = nestedHashMapJson.getAsJsonObject("values");
-        JsonObject valueTypesJSON = nestedHashMapJson.getAsJsonObject("valueTypes");
-        JsonObject flagsJSON = nestedHashMapJson.getAsJsonObject("flags");
-
-        // Convert JsonObject to java data structures
-        HashMap<String, String> keys = new HashMap<>();
-        for (Map.Entry<String, JsonElement> entry : keysJSON.entrySet()) {
-            keys.put(entry.getKey(), entry.getValue().getAsString());
-        }
-
-        HashMap<String, Object> values = new HashMap<>();
-        for (Map.Entry<String, JsonElement> entry : valuesJSON.entrySet()) {
-            values.put(entry.getKey(), entry.getValue().getAsString());
-        }
-
-        HashMap<String, String> valueTypes = new HashMap<>();
-        for (Map.Entry<String, JsonElement> entry : valueTypesJSON.entrySet()) {
-            valueTypes.put(entry.getKey(), entry.getValue().getAsString());
-        }
-
-        String flag = flagsJSON.entrySet().stream().toString();
-
-        TransactionalEvent txnEvent = new TransactionalEvent(this.bid, keys, values, valueTypes, flag, false);
-        bid++;
-        return txnEvent;
+//        JsonObject nestedHashMapJson = JsonParser.parseString(input).getAsJsonObject();
+//
+//        // Extract sub-JSON objects as needed
+//        JsonObject keysJSON = nestedHashMapJson.getAsJsonObject("keys");
+//        JsonObject valuesJSON = nestedHashMapJson.getAsJsonObject("values");
+//        JsonObject valueTypesJSON = nestedHashMapJson.getAsJsonObject("valueTypes");
+//        JsonObject flagsJSON = nestedHashMapJson.getAsJsonObject("flags");
+//
+//        // Convert JsonObject to java data structures
+//        HashMap<String, String> keys = new HashMap<>();
+//        for (Map.Entry<String, JsonElement> entry : keysJSON.entrySet()) {
+//            keys.put(entry.getKey(), entry.getValue().getAsString());
+//        }
+//
+//        HashMap<String, Object> values = new HashMap<>();
+//        for (Map.Entry<String, JsonElement> entry : valuesJSON.entrySet()) {
+//            values.put(entry.getKey(), entry.getValue().getAsString());
+//        }
+//
+//        HashMap<String, String> valueTypes = new HashMap<>();
+//        for (Map.Entry<String, JsonElement> entry : valueTypesJSON.entrySet()) {
+//            valueTypes.put(entry.getKey(), entry.getValue().getAsString());
+//        }
+//
+//        String flag = flagsJSON.entrySet().stream().toString();
+//
+//        TransactionalEvent txnEvent = new TransactionalEvent(this.bid, keys, values, valueTypes, flag, false);
+//        bid++;
+//        return txnEvent;
+        return null;
     }
 
     public TransactionalEvent inputFromStringToTxnEvent(String input) {
         String [] inputArray = input.split(";");
-        HashMap<String, String> keyMaps = new HashMap<>();
+        HashMap<String, List<String>> keyMaps = new HashMap<>();
         HashMap<String, Object> valueMaps = new HashMap<>();
         HashMap<String, String> valueTypeMaps = new HashMap<>();
         String [] keyMapPairs = inputArray[0].split(",");
         for (int i = 0; i < keyMapPairs.length; i ++) {
+            List<String> keys = new ArrayList<>();
             String [] keyMapPair = keyMapPairs[i].split(":");
-            keyMaps.put(keyMapPair[0], keyMapPair[1]);
+            for (int j = 1; j < keyMapPair.length; j ++) {
+                keys.add(keyMapPair[j]);
+            }
+            keyMaps.put(keyMapPair[0], keys);
         }
         String [] valueMapPairs = inputArray[1].split(",");
         for (int i = 0; i < valueMapPairs.length; i ++) {

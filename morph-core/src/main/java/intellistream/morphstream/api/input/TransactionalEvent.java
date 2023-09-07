@@ -73,17 +73,25 @@ public class TransactionalEvent extends TxnEvent {
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        for (String key : keyMap.keySet()) {
-            stringBuilder.append(key).append(":").append(keyMap.get(key)).append(",");
+        for (String tableName : keyMap.keySet()) {
+            stringBuilder.append(tableName).append(":");
+            for (String key : keyMap.get(tableName)) {
+                stringBuilder.append(key).append(":");
+            }
+            stringBuilder.deleteCharAt(stringBuilder.length() -1);
+            stringBuilder.append(",");
         }
+        stringBuilder.deleteCharAt(stringBuilder.length() -1);
         stringBuilder.append(";");
         for (String value : valueMap.keySet()) {
             stringBuilder.append(value).append(":").append(valueMap.get(value)).append(",");
         }
+        stringBuilder.deleteCharAt(stringBuilder.length() -1);
         stringBuilder.append(";");
         for (String valueType : valueTypeMap.keySet()) {
             stringBuilder.append(valueType).append(":").append(valueTypeMap.get(valueType)).append(",");
         }
+        stringBuilder.deleteCharAt(stringBuilder.length() -1);
         stringBuilder.append(";");
         stringBuilder.append(flag);
         stringBuilder.append(";");
