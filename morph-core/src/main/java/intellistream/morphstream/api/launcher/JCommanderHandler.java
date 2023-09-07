@@ -106,8 +106,6 @@ public class JCommanderHandler {
     /**
      * Dynamic workload
      */
-    @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
-    public String workloadType = "default";
     @Parameter(names = {"--shiftRate"}, description = "control the rate of the workload shift")
     public int shiftRate = 1;
     @Parameter(names = {"--phaseNum"}, description = "How many phases")
@@ -153,8 +151,6 @@ public class JCommanderHandler {
     @Parameter(names = {"--generator"}, description = "Generator for TStream.")
     public String generator = "TPGGenerator";
     //    public String generator = "OCGenerator";
-    @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 10000;
 
     @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
     public Integer Ratio_Of_Deposit = 25;
@@ -236,6 +232,35 @@ public class JCommanderHandler {
     @Parameter(names = {"--maxItr"}, description = "Max itr for graph partition alg: ")
     public int maxItr = 10;
 
+    //Database configurations
+    @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
+    public String tableNames = "table1,table2";
+    @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
+    public String numberItemsForTables = "1000000,1000000";
+    @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
+    public String keyDataTypesForTables = "string,string";
+    @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
+    public String valueDataTypesForTables = "int,int";
+    //Input event configurations
+    @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
+    public int totalEvents = 10000;
+    @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
+    public String workloadType = "default";
+    @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
+    public String eventTypes = "event1,event2";
+    @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
+    public String tableNameForEvents = "table1,table2;table1,table2";
+    @Parameter(names = {"keyNumberForEvents"}, description = "number of keys for each type of event, split by ;")
+    public String keyNumberForEvents = "2,2;2,2";
+    @Parameter(names = {"valueNameForEvents"}, description = "value names for each type of event, split by ;")
+    public String valueNameForEvents = "v1,v2;v1,v2";
+    @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
+    public String eventRatio = "0.5,0.5";
+    @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
+    public String ratioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
+    @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
+    public String stateAccessSkewnessForEvents = "0.5,0.5";
+
     public JCommanderHandler() {
         if (enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
     }
@@ -250,12 +275,34 @@ public class JCommanderHandler {
     }
 
     public void initializeCfg(HashMap<String, Object> config) {
+        //Input events configuration
+        config.put("tableNames", tableNames);
+        String[] tableNameString = tableNames.split(",");
+        for (int i = 0; i < tableNameString.length; i ++) {
+            config.put(tableNameString[i] + "_num_items", Integer.parseInt(numberItemsForTables.split(",")[i]));
+            config.put(tableNameString[i] + "_key_data_types", keyDataTypesForTables.split(",")[i]);
+            config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
+        }
+        //Database configuration
+        config.put("totalEvents", totalEvents);
+        config.put("workloadType", workloadType);
+        config.put("eventTypes", eventTypes);
+        String[] eventTypeString = eventTypes.split(";");
+        for (int i = 0; i < eventTypeString.length; i ++) {
+            config.put(eventTypeString[i] + "_tables", tableNameForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_key_number", keyNumberForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_values", valueNameForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_event_ratio", eventRatio.split(",")[i]);
+            config.put(eventTypeString[i] + "_ratio_of_multi_partition_transactions", ratioOfMultiPartitionTransactionsForEvents.split(",")[i]);
+            config.put(eventTypeString[i] + "_state_access_skewness", stateAccessSkewnessForEvents.split(",")[i]);
+        }
+
+        //Old Version
         config.put("queue_size", queue_size);
         config.put("app_name", application);
         config.put("ratio_of_multi_partition", ratio_of_multi_partition);
         config.put("number_partitions", number_partitions);
         config.put("machine", machine);
-        config.put("totalEvents", totalEvents);
         config.put("rootFilePath", rootPath);
         config.put("generator", generator);
         config.put("fanoutDist", fanoutDist);

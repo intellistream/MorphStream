@@ -245,7 +245,7 @@ public class RdmaShuffleManager {
                     if (!rdmaShuffleManagersMap.containsKey(helloMsg.rdmaShuffleManagerId)) {
                         //Keep mapping from BlockManagerId to RdmaShuffleManagerId
                         blockManagerIdToRdmaShuffleManagerId.put(helloMsg.rdmaShuffleManagerId.getBlockManagerId(), helloMsg.rdmaShuffleManagerId);
-                        // Since we're reusing executor <-> driver QP - whis will be taken from cache.
+                        // Since we're reusing executor <-> driver QP - which will be taken from cache.
                         RdmaChannel rdmaChannel = getRdmaChannel(helloMsg.rdmaShuffleManagerId.getBlockManagerId().getHost(), helloMsg.channelPort, false, RdmaChannel.RdmaChannelType.RPC);
                         rdmaShuffleManagersMap.put(helloMsg.rdmaShuffleManagerId, rdmaChannel);
                         RdmaAnnounceRdmaShuffleManagersRpcMsg announceMsg = new RdmaAnnounceRdmaShuffleManagersRpcMsg(new ArrayList<>(rdmaShuffleManagersMap.keySet()));

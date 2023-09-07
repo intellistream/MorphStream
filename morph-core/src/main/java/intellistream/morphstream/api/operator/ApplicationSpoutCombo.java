@@ -17,6 +17,7 @@ public class ApplicationSpoutCombo extends TransactionalSpout {
     private RdmaShuffleManager rdmaShuffleManager;
     private Configuration conf = MorphStreamEnv.get().configuration();
     protected ApplicationBolt transactionalBolt;
+    protected ApplicationSink transactionalSink;
     public ApplicationSpoutCombo(HashMap<String, TxnDescription> txnDescriptionHashMap) throws Exception {
         super(LOG, 0);
         this.TxnDescriptionHashMap = txnDescriptionHashMap;

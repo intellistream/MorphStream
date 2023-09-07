@@ -55,7 +55,7 @@ public class DatabaseInitialize {
         loadDB(threadId, null);
     }
     public void configure_db(){
-        tableNames = configuration.getString("table_names","table1,table2").split(",");
+        tableNames = configuration.getString("tableNames","table1,table2").split(",");
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
             keyDataTypeMap.put(tableName, getDataType(configuration.getString(tableName + "_key_data_types","string")));

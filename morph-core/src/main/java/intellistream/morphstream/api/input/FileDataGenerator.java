@@ -76,18 +76,19 @@ public class FileDataGenerator {
         for (String event : eventType) {
             String[] tableNames = configuration.getString(event + "_tables", "table1,table2").split(",");
             HashMap<String, Integer> keyMap = new HashMap<>();
-            for (String table : tableNames) {
-                keyMap.put(table, configuration.getInt(table + "_keyNumber", 2));
+            String[] keyNumbers = configuration.getString(event + "_key_number", "2,2").split(",");
+            for (int i = 0; i < tableNames.length; i++) {
+                keyMap.put(tableNames[i], Integer.parseInt(keyNumbers[i]));
             }
             eventKeyMap.put(event, keyMap);
             eventValueMap.put(event, Arrays.asList(configuration.getString(event + "_values", "v1,v2").split(",")));
             stateAssessSkewMap.put(event, configuration.getInt(event + ".State_Access_Skewness", 0));
-            eventRatioMap.put(event, configuration.getInt(event + ".Ratio_of_Event", 50));
+            eventRatioMap.put(event, configuration.getInt(event + "_event_ratio", 50));
             for (int i = 0; i < eventRatioMap.get(event) / 10; i++) {
                 eventList.add(event);
             }
-            eventAbortMap.put(event, configuration.getInt(event + ".Ratio_of_Transaction_Aborts", 0));
-            eventMultiPartitionMap.put(event, configuration.getInt(event + ".Ratio_of_Multi_Partition_Transactions", 0));
+            eventAbortMap.put(event, configuration.getInt(event + "_ratio_of_multi_partition_transactions", 0));
+            eventMultiPartitionMap.put(event, configuration.getInt(event + "_state_access_skewness", 0));
             HashMap<String, FastZipfGenerator> zipfHashMap = new HashMap<>();//tableNames -> zipf generator
             HashMap<String, List<FastZipfGenerator>> partitionZipfHashMap = new HashMap<>();//tableNames -> Lists of partition zipf generator
             for (String tableName: eventKeyMap.get(event).keySet()) {
