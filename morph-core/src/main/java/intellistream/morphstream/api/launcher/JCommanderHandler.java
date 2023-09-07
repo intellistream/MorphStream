@@ -242,6 +242,8 @@ public class JCommanderHandler {
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
     public String valueDataTypesForTables = "int,int";
     //Input event configurations
+    @Parameter(names = {"--inputFile"}, description = "path of input file ")
+    public String inputFile = "/Users/curryzjj/hair-loss/MorphStream/Benchmark/input/event.txt";
     @Parameter(names = {"--inputFileName"}, description = "input file name")
     public String inputFileName = "events.txt";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
@@ -286,6 +288,7 @@ public class JCommanderHandler {
             config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
         }
         //Input events configuration
+        config.put("inputFile", inputFile);
         config.put("inputFileName", inputFileName);
         config.put("totalEvents", totalEvents);
         config.put("workloadType", workloadType);

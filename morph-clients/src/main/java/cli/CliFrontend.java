@@ -43,13 +43,13 @@ public class CliFrontend {
     public void prepare() throws IOException {
         //TODO:initialize Database and configure input and output
         env.databaseInitialize().creates_Table();
-        String inputFile = env.configuration().getString("input.file");
+        String inputFile = env.configuration().getString("inputFile");
         File file = new File(inputFile);
         if (file.exists()) {
             LOG.info("Data already exists.. skipping data generation...");
         } else {
             String fileName = env.fileDataGenerator().prepareInputData();
-            env.configuration().put("input.file", fileName);
+            env.configuration().put("inputFile", fileName);
         }
     }
     public void run() {
