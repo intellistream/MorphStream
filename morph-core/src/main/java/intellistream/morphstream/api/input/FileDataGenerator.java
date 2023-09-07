@@ -62,7 +62,7 @@ public class FileDataGenerator {
         if (!new File(rootPath).exists()) {
             new File(rootPath).mkdirs();
         }
-        fileName = configuration.getString("fileName", "events.txt");
+        fileName = configuration.getString("inputFileName", "events.txt");
         totalThreads = configuration.getInt("totalThreads", 4);
         punctuation = configuration.getInt("punctuation", 1000);
         totalEvents = configuration.getInt("totalEvents", totalThreads * punctuation);

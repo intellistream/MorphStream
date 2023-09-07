@@ -242,6 +242,8 @@ public class JCommanderHandler {
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
     public String valueDataTypesForTables = "int,int";
     //Input event configurations
+    @Parameter(names = {"--inputFileName"}, description = "input file name")
+    public String inputFileName = "events.txt";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
     public int totalEvents = 10000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
@@ -275,7 +277,7 @@ public class JCommanderHandler {
     }
 
     public void initializeCfg(HashMap<String, Object> config) {
-        //Input events configuration
+        //Database configuration
         config.put("tableNames", tableNames);
         String[] tableNameString = tableNames.split(",");
         for (int i = 0; i < tableNameString.length; i ++) {
@@ -283,7 +285,8 @@ public class JCommanderHandler {
             config.put(tableNameString[i] + "_key_data_types", keyDataTypesForTables.split(",")[i]);
             config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
         }
-        //Database configuration
+        //Input events configuration
+        config.put("inputFileName", inputFileName);
         config.put("totalEvents", totalEvents);
         config.put("workloadType", workloadType);
         config.put("eventTypes", eventTypes);
