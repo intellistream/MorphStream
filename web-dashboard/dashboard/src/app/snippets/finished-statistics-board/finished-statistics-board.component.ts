@@ -99,7 +99,7 @@ export class FinishedStatisticsBoardComponent implements AfterViewInit, OnInit {
     this.throughputLatencyData.series = [
       {
         type: 'area',
-        name: 'Throughput (10k tuples/s)',
+        name: 'Throughput (k tuples/s)',
         data: this.job.periodicalThroughput,
         color: '#8BDB4D'
       },

@@ -10,18 +10,18 @@ import java.util.List;
 @ToString(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Job {
-    private String appId;
+    private Integer appId;
     private String name;
-    private String nthreads;
+    private Integer nthreads;
     private String CPU;
     private String RAM;
-    private String startTime;   // TODO: consider change to LocalDataTime
-    private String Duration;    // consider change to LocalDataTime
+    private String startTime;   // TODO: Consider change to LocalDataTime
+    private String Duration;    // TODO: Consider change to Duration
     private Boolean isRunning;
     private Integer nEvents;
-    private Double minProcessTime;
-    private Double maxProcessTime;
-    private Double meanProcessTime;
+    private Double minProcessTime;  // optional
+    private Double maxProcessTime;  // optional
+    private Double meanProcessTime; // optional
     private Double latency;
     private Double throughput;
     private Integer ncore;

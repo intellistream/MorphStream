@@ -72,6 +72,18 @@ export class Websocket {
     return responseSubject.asObservable();
   }
 
+  // sendUpload<T>(uploadMsg) {
+  //   let correlationId = uuidv4();
+  //   uploadMsg.correlationId = correlationId;
+  //
+  //   this.sendMessage(JSON.stringify(uploadMsg));
+  //
+  //   const responseSubject = new Subject<T>();
+  //   this.subjectMap.set(correlationId, responseSubject);
+  //   return responseSubject.asObservable();
+  //
+  // }
+
   /**
    * Create a new connection
    */

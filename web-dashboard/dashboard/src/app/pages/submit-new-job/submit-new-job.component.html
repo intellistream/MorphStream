@@ -38,7 +38,10 @@
   <ng-container *nzModalContent>
     <div id="modal-content">
       <div class="clearfix">
-        <nz-upload nzListType="picture">
+        <nz-upload
+          nzListType="picture"
+          [(nzFileList)]="fileList"
+          nzAction="http://localhost:5001/upload">
           <button nz-button id="btn-upload" nzType="text">
             <span nz-icon nzType="upload"></span>
             Upload

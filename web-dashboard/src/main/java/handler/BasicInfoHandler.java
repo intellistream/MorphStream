@@ -19,7 +19,7 @@ import java.util.List;
 @Slf4j
 @ChannelHandler.Sharable
 public class BasicInfoHandler extends SimpleChannelInboundHandler<BasicInfoRequest> {
-    private final String PATH = "C:\\Users\\siqxi\\data\\";  // TODO: Extract this to Config
+    private final String PATH = "C:\\Users\\siqxi\\data\\job\\";  // TODO: Extract this to Config
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, BasicInfoRequest request) throws Exception {

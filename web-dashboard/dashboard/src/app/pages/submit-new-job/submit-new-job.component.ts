@@ -1,4 +1,7 @@
 import { Component } from '@angular/core';
+import {NzUploadFile} from "ng-zorro-antd/upload";
+import {Observable} from "rxjs";
+import {SubmitNewJobService} from "./submit-new-job.service";
 
 @Component({
   selector: 'app-submit-new-job',
@@ -8,6 +11,10 @@ import { Component } from '@angular/core';
 export class SubmitNewJobComponent {
   listOfData: any[] =[];
   isVisible = false;
+  fileList: NzUploadFile[] = [];
+
+  constructor(private submitNewJobService: SubmitNewJobService) {
+  }
 
   handleCancel(): void {
     console.log('Button cancel clicked!');
@@ -22,4 +29,16 @@ export class SubmitNewJobComponent {
   onAddNew(): void {
     this.isVisible = true;
   }
+
+  // handleUpload = (item: any) => {
+  //   const formData = new FormData();
+  //   formData.append(item.name, item.file as any);
+  //
+  //   console.log(formData);
+  //
+  //   return this.submitNewJobService.uploadNewJob().subscribe(res => {
+  //       console.log("success", res.id);
+  //     }
+  //   );
+  // }
 }
