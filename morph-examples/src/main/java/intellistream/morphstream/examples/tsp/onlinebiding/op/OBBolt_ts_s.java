@@ -123,7 +123,7 @@ public class OBBolt_ts_s extends OBBolt {
         //it simply construct the operations and return.
         transactionManager.BeginTransaction(txnContext);
         for (int i = 0; i < event.getNum_access(); i++)
-            transactionManager.Asy_WriteRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), event.getAsk_price()[i], 1);//asynchronously return.
+            transactionManager.Asy_WriteRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), event.getAsk_price()[i]);//asynchronously return.
         BEGIN_POST_TIME_MEASURE(thread_Id);
         ALERT_REQUEST_POST(event);
         END_POST_TIME_MEASURE_ACC(thread_Id);
@@ -135,7 +135,7 @@ public class OBBolt_ts_s extends OBBolt {
         //it simply construct the operations and return.
         transactionManager.BeginTransaction(txnContext);
         for (int i = 0; i < event.getNum_access(); i++)
-            transactionManager.Asy_ModifyRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), new INC(event.getItemTopUp()[i]), 2);//asynchronously return.
+            transactionManager.Asy_ModifyRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), new INC(event.getItemTopUp()[i]));//asynchronously return.
         BEGIN_POST_TIME_MEASURE(thread_Id);
         TOPPING_REQUEST_POST(event);
         END_POST_TIME_MEASURE_ACC(thread_Id);

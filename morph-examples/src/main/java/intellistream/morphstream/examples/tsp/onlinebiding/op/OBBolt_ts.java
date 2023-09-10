@@ -62,7 +62,7 @@ public class OBBolt_ts extends OBBolt {
     protected void TOPPING_REQUEST_CONSTRUCT(ToppingTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         for (int i = 0; i < event.getNum_access(); i++)
-            transactionManager.Asy_ModifyRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), new INC(event.getItemTopUp()[i]), 2);//asynchronously return.
+            transactionManager.Asy_ModifyRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), new INC(event.getItemTopUp()[i]));//asynchronously return.
         BEGIN_POST_TIME_MEASURE(thread_Id);
         TOPPING_REQUEST_POST(event);
         END_POST_TIME_MEASURE_ACC(thread_Id);
@@ -72,7 +72,7 @@ public class OBBolt_ts extends OBBolt {
     protected void ALERT_REQUEST_CONSTRUCT(AlertTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         for (int i = 0; i < event.getNum_access(); i++)
-            transactionManager.Asy_WriteRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), event.getAsk_price()[i], 1);//asynchronously return.
+            transactionManager.Asy_WriteRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), event.getAsk_price()[i]);//asynchronously return.
         BEGIN_POST_TIME_MEASURE(thread_Id);
         ALERT_REQUEST_POST(event);
         END_POST_TIME_MEASURE_ACC(thread_Id);

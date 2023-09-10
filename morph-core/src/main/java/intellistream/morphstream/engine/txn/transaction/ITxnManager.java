@@ -67,17 +67,14 @@ public interface ITxnManager {
      * @param srcTable
      * @param key
      * @param value
-     * @param enqueue_time
      * @return
      * @throws DatabaseException
      */
-    boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String key, List<DataBox> value, double[] enqueue_time) throws DatabaseException;
+    boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String key, List<DataBox> value) throws DatabaseException;
 
-    boolean Asy_WriteRecord(TxnContext txn_context, String table, String id, long value, int column_id) throws DatabaseException;
+    boolean Asy_WriteRecord(TxnContext txn_context, String table, String id, long value) throws DatabaseException;
 
-    boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function, int column_id) throws DatabaseException;
-
-    boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function) throws DatabaseException;
+    boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function) throws DatabaseException;
 
     boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function) throws DatabaseException;
 

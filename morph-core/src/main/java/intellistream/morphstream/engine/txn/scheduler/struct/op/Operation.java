@@ -11,7 +11,6 @@ import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.transaction.function.Condition;
 import intellistream.morphstream.engine.txn.transaction.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,24 +55,24 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     /****************************Defined by MYC*************************************/
 
     public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-                                                          CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, Condition condition, TableRecord[] condition_records, int[] success) {
-        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition, condition_records, success, null);
+                                                          CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, TableRecord[] condition_records, int[] success) {
+        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition_records, success, null);
     }
 
     public <Context extends OPSchedulerContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            SchemaRecordRef record_ref, Function function, Condition condition,
+            SchemaRecordRef record_ref, Function function,
             TableRecord[] condition_records, int[] success) {
-        this(pKey, context, table_name, txn_context, bid, accessType, record, record_ref, function, condition, condition_records, success, null);
+        this(pKey, context, table_name, txn_context, bid, accessType, record, record_ref, function, condition_records, success, null);
     }
 
     public <Context extends OPSchedulerContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            SchemaRecordRef record_ref, Function function, Condition condition,
+            SchemaRecordRef record_ref, Function function,
             TableRecord[] condition_records, int[] success, WindowDescriptor windowContext) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid, windowContext, pKey);
+        super(function, table_name, record_ref, condition_records, success, txn_context, accessType, record, bid, windowContext, pKey);
         this.context = context;
 
         ld_head_operation = null;
@@ -101,9 +100,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends OPSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables,
                                                           String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                           CommonMetaTypes.AccessType accessType, TableRecord record,
-                                                          SchemaRecordRef record_ref, Function function, Condition condition,
+                                                          SchemaRecordRef record_ref, Function function,
                                                           TableRecord[] condition_records, int[] success) {
-        super(function, table_name, record_ref, condition_records, condition, success, txn_context, accessType, record, record, bid, null, pKey);
+        super(function, table_name, record_ref, condition_records, success, txn_context, accessType, record, bid, null, pKey);
         this.context = context;
         this.isNonDeterministicOperation = isNonDeterministicOperation;
         this.tables = tables;

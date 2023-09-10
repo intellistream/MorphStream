@@ -97,22 +97,22 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             switch (request.accessType) {
                 case WRITE_ONLY:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, null, null, null, null);
+                            request.d_record, null, null, null);
                     set_op.value = request.value;
                     break;
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.function, request.condition, request.condition_records, request.success);
+                            request.d_record, request.function, request.condition_records, request.success);
                     break;
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition, request.condition_records, request.success);
+                            request.d_record, request.record_ref, request.function, request.condition_records, request.success);
                     break;
                 case READ_WRITE_READ:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, null, null, request.success);
+                            request.d_record, request.record_ref, request.function, null, request.success);
                     break;
                 default:
                     throw new UnsupportedOperationException();
@@ -314,10 +314,9 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
         // apply function
         AppConfig.randomDelay();
 
-        if (sourceAccountBalance > operation.condition.arg1
-                && sourceAccountBalance > operation.condition.arg2) {
+        if (sourceAccountBalance > 100) {//Old conditions: event.getMinAccountBalance()(default=0), event.getAccountTransfer()(default=100)
             // read
-            SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+            SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
 
             if (operation.function instanceof INC) {
@@ -336,14 +335,14 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     }
 
     protected void Depo_Fun(AbstractOperation operation, long mark_ID, boolean clean) {
-        SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
         List<DataBox> values = srcRecord.getValues();
         //apply function to modify..
         AppConfig.randomDelay();
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
         tempo_record.getValues().get(1).incLong(operation.function.delta_long);//compute.
-        operation.s_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
+        operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
     protected void GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
@@ -360,7 +359,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             }
         }
         sum /= keysLength;
-        SchemaRecord srcRecord = operation.s_record.content_.readPreValues(operation.bid);
+        SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
         SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
         if (operation.function.delta_long != -1) {
             if (operation.function instanceof SUM) {
@@ -376,7 +375,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
 
     protected void TollProcess_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         AppConfig.randomDelay();
-        List<DataBox> srcRecord = operation.s_record.record_.getValues();
+        List<DataBox> srcRecord = operation.d_record.record_.getValues();
         if (operation.function instanceof AVG) {
             if (operation.function.delta_double < MAX_SPEED) {
                 double latestAvgSpeeds = srcRecord.get(1).getDouble();

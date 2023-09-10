@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
+import intellistream.morphstream.api.utils.UDF;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,7 +10,8 @@ import java.util.Set;
 public class StateAccessDescription {
     private final AccessType accessType;
     private final HashMap<String, StateObjectDescription> stateObjectDescriptionMap; //Store all state objects required during txn-UDF
-    private String txnUDFName; //Method name of txn UDF, used to invoke txn UDF using Method Reflection during OPScheduler
+    private UDF txnUDF; //Method name of txn UDF, used to invoke txn UDF using Method Reflection during OPScheduler
+    private String txnUDFName;
 
     public StateAccessDescription(AccessType type) {
         accessType = type;
@@ -31,13 +33,22 @@ public class StateAccessDescription {
         return stateObjectDescriptionMap.entrySet();
     }
 
-    public void setTxnUDFName(String udfName) {
-        txnUDFName = udfName;
+    public void setTxnUDF(UDF udf) {
+        txnUDF = udf;
     }
 
-    public String getTxnUDFName() {
-        return txnUDFName;
+    public void setTxnUDFName(String name) {
+        txnUDFName = name;
     }
+
+    public String getTxnUDFClassName() {
+        return txnUDF.getClassName();
+    }
+
+    public String getTxnUDFMethodName() {
+        return txnUDF.getMethodName();
+    }
+
     public AccessType getAccessType() {
         return accessType;
     }

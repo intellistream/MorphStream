@@ -368,8 +368,8 @@ public class SLInitializer extends TableInitilizer {
                         split[2],//getSourceBookEntryId
                         split[3],//getTargetAccountId
                         split[4],//getTargetBookEntryId
-                        Long.parseLong(split[5]), //getAccountTransfer
-                        Long.parseLong(split[6])  //getBookEntryTransfer
+                        Long.parseLong(split[5]), //getAccountTransfer, default=100
+                        Long.parseLong(split[6])  //getBookEntryTransfers, default=100
 //                        accountTransfer,
 //                        bookEntryTransfer
                 );

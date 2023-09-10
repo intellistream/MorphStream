@@ -213,22 +213,17 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
     }
 
     @Override
-    public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String key, List<DataBox> value, double[] enqueue_time) throws DatabaseException {
+    public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String key, List<DataBox> value) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_WriteRecord(TxnContext txn_context, String table, String id, long value, int column_id) throws DatabaseException {
+    public boolean Asy_WriteRecord(TxnContext txn_context, String table, String id, long value) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function, int column_id) throws DatabaseException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function) throws DatabaseException {
+    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function) throws DatabaseException {
         throw new UnsupportedOperationException();
     }
 

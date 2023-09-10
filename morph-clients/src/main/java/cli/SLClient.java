@@ -8,6 +8,7 @@ import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
 import intellistream.morphstream.api.utils.TxnDataHolder;
+import intellistream.morphstream.api.utils.UDF;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,6 +84,7 @@ public class SLClient {
         //Define 1st state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription(AccessType.WRITE);
         srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
+//        UDF srcTransferUDF = new UDF("SLClient", "srcTransferFunction");
         srcTransfer.setTxnUDFName("srcTransferFunction"); //Method invoked by its name during reflection
 
         //Define 2nd state accesses
