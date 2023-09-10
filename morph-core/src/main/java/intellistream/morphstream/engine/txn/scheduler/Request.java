@@ -152,18 +152,18 @@ public class Request {
         this.accessType = accessType;
         this.table_name = table_name;
         this.src_key = src_key;
-        this.s_record = s_record;
-        this.d_record = d_record;
-        this.function = function;
+        this.s_record = s_record; //replace by r_record[]?
+        this.d_record = d_record; //rename to w_record
+        this.function = function; //replace with String (className & udfName)
         this.record_ref = record_ref;
         this.condition_sourceTable = condition_sourceTable;
         this.condition_source = condition_source;
         this.condition_records = condition_records;
-        this.condition = condition;
-        this.success = success;
-        this.column_id = column_id;
-        this.enqueue_time = enqueue_time;
-        this.tables = baseTable;
+        this.condition = condition; //remove, done in txnUDF
+        this.success = success; //int[1], initialized during txnEvent creation as {0}
+        this.column_id = column_id; //remove, useless
+        this.enqueue_time = enqueue_time; //remove, never used
+        this.tables = baseTable; //used for non-deter, allow null input
     }
 
 }

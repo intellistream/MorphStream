@@ -4,10 +4,9 @@ public interface ClientSideMetaTypes {
     enum AccessType {
         READ,
         WRITE,
-        MODIFY,
-        WRITE_READ,
-        MODIFY_READ,
-        WINDOWED_READ,
-        NON_READ_WRITE_COND_READN
+        WINDOW_READ,
+        WINDOW_WRITE,
+        NON_DETER_READ,
+        NON_DETER_WRITE
     }
 }

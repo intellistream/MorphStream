@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.txn.transaction.impl;
 
 import intellistream.morphstream.api.state.StateAccess;
-import intellistream.morphstream.api.state.StateAccessDescription;
+import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.ClientSideMetaTypes;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -33,10 +33,7 @@ import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
@@ -164,13 +161,37 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     @Override
     public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) {
         ClientSideMetaTypes.AccessType accessType = stateAccess.getAccessType();
-        if (accessType == ClientSideMetaTypes.AccessType.MODIFY) {
+        if (accessType == ClientSideMetaTypes.AccessType.WRITE) {
         }
         return false;
     }
 
-    public boolean Asy_ModifyRecord(StateAccess stateAccess, TxnContext txnContext) {
+    public boolean Asy_ModifyRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_WRITE_COND;
+        ArrayList<TableRecord> readRecords = new ArrayList<>(); //TODO: Refine this by split readRecords and writeRecord in StateAccess
+        TableRecord writeRecord = null;
+        String srcTable;
+        String srcKey;
+        for (StateObject stateObj : stateAccess.getStateObjectMap().values()) {
+            ClientSideMetaTypes.AccessType type = stateObj.getType();
+            if (type == ClientSideMetaTypes.AccessType.WRITE) {
+                writeRecord = storageManager_.getTable(stateObj.getTable()).SelectKeyRecord(stateObj.getKey());
+            } else if (type == ClientSideMetaTypes.AccessType.READ) {
+                readRecords.add(storageManager_.getTable(stateObj.getTable()).SelectKeyRecord(stateObj.getKey()));
+            }
+        }
+//        if (writeRecord != null) {
+//            if (enableGroup) {
+//                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+//                        key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
+//            } else {
+//                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+//                        key, s_record, s_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
+//            }
+//        } else {
+//            if (enable_log) log.info("No record is found:" + key);
+//            return false;
+//        }
         return false;
     }
 

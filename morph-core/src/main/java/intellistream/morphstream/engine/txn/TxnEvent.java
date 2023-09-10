@@ -3,7 +3,7 @@ package intellistream.morphstream.engine.txn;
 import java.util.Arrays;
 
 public class TxnEvent implements Comparable<TxnEvent> {
-    protected final long bid;//as msg id.
+    protected long bid;//as msg id.
     protected final int pid;
     protected final int number_of_partitions;
     public double[] enqueue_time = new double[1];

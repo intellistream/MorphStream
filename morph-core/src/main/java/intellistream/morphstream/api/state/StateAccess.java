@@ -7,11 +7,9 @@ import java.util.HashMap;
 public class StateAccess {
     private ClientSideMetaTypes.AccessType accessType;
     private HashMap<String, StateObject> stateObjectMap; //Store all state objects required during txn-UDF
-    private String txnUDFName;
     public StateAccess(StateAccessDescription description) {
         stateObjectMap = new HashMap<>();
         accessType = description.getAccessType();
-        txnUDFName = description.getTxnUDFName();
     }
 
     public void addStateObject(String stateObjName, StateObject stateObject) {
@@ -26,8 +24,6 @@ public class StateAccess {
     public ClientSideMetaTypes.AccessType getAccessType() {
         return accessType;
     }
-    public String getTxnUDFName() {
-        return txnUDFName;
-    }
+
 }
 

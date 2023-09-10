@@ -38,6 +38,10 @@ public class TransactionalEvent extends TxnEvent {
         super(bid);
     }
 
+    public void setBid(long bid) {
+        this.bid = bid;
+    }
+
     public void setKeyMap(HashMap<String, List<String>> keyMap) {
         this.keyMap = keyMap;
     }
@@ -54,12 +58,12 @@ public class TransactionalEvent extends TxnEvent {
         this.flag = flag;
     }
 
-    public HashMap<String, List<String>> getKeyMap() {
-        return this.keyMap;
+    public Object getValue(String valueName) {
+        return this.valueMap.get(valueName);
     }
 
-    public HashMap<String, Object> getValueMap() {
-        return this.valueMap;
+    public String getKey(String tableName, int keyIndex) {
+        return this.keyMap.get(tableName).get(keyIndex);
     }
 
     public HashMap<String, String> getValueTypeMap() {

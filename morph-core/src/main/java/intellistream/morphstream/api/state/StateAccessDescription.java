@@ -3,6 +3,8 @@ package intellistream.morphstream.api.state;
 import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class StateAccessDescription {
     private final AccessType accessType;
@@ -23,6 +25,10 @@ public class StateAccessDescription {
     }
     public HashMap<String, StateObjectDescription> getStateObjectDescriptionMap() {
         return stateObjectDescriptionMap;
+    }
+
+    public Set<Map.Entry<String, StateObjectDescription>> getStateObjectEntries() {
+        return stateObjectDescriptionMap.entrySet();
     }
 
     public void setTxnUDFName(String udfName) {

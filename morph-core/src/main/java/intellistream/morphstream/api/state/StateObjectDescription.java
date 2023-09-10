@@ -40,4 +40,8 @@ public class StateObjectDescription {
     public String getTableName() {
         return tableName;
     }
+
+    public AccessType getType() {
+        return type;
+    }
 }

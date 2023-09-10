@@ -26,6 +26,11 @@ public class Result {
 
     }
 
+    public void setBid(int bid) {
+        transactionalEvent.setBid(bid);
+    }
 
-
+    public TransactionalEvent getTransactionalEvent() {
+        return transactionalEvent;
+    }
 }

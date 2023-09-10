@@ -101,13 +101,14 @@ public class ApplicationBolt extends TransactionalBolt {
         TxnDescription txnDescription = txnDescriptionMap.get(txnFlag);
         transactionManager.BeginTransaction(txnContext);
         //Each event triggers multiple state accesses
-        for (StateAccessDescription accessDescription: txnDescription.getStateAccessDescriptionMap().values()) {
-            StateAccess stateAccess = new StateAccess(accessDescription);
+        for (StateAccessDescription stateAccessDesc: txnDescription.getStateAccessDescValues()) {
+            StateAccess stateAccess = new StateAccess(stateAccessDesc);
             //Each state access involves multiple state objects
-            for (Map.Entry<String, StateObjectDescription> entry: accessDescription.getStateObjectDescriptionMap().entrySet()) {
-                String key = event.getKeyMap().get(entry.getValue().getTableName()).get(entry.getValue().getKeyIndex());
-                String value = (String) event.getValueMap().get(entry.getValue().getValueName());
-                StateObject stateObject = new StateObject(entry.getValue().getTableName(), key, value);
+            for (Map.Entry<String, StateObjectDescription> entry: stateAccessDesc.getStateObjectEntries()) {
+                StateObjectDescription stateObjDesc = entry.getValue();
+                String stateObjKey = event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex());
+                String stateObjValue = (String) event.getValue(stateObjDesc.getValueName());
+                StateObject stateObject = new StateObject(stateObjDesc.getType(), stateObjDesc.getTableName(), stateObjKey, stateObjValue);
                 stateAccess.addStateObject(entry.getKey(), stateObject);
             }
             eventStateAccessMap.put((int) event.getBid(), stateAccess);
@@ -123,19 +124,18 @@ public class ApplicationBolt extends TransactionalBolt {
                 //Invoke client defined post-processing UDF using Reflection
                 Result postUDFResult;
                 try {
-                    Class<?> clientClass = Class.forName("SLClient");
+                    Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
                     Object clientObj = clientClass.getDeclaredConstructor().newInstance();
                     StateAccess stateAccess = eventStateAccessMap.get((int) event.getBid());
                     String postUDFName = txnDescriptionMap.get(event.getFlag()).getPostUDFName();
                     Method postUDF = clientClass.getMethod(postUDFName, StateAccess.class, TransactionalEvent.class);
                     postUDFResult = (Result) postUDF.invoke(clientObj, stateAccess, event);
                     if (!enable_app_combo) {
-                        collector.emit(event.getBid(), postUDFResult, event.getTimestamp());
+                        collector.emit(event.getBid(), postUDFResult.getTransactionalEvent(), event.getTimestamp());
                     } else {
                         if (enable_latency_measurement) {
                             //TODO: Define sink for bolt
-//                            sink.execute(new Tuple(event.getBid(), this.thread_Id, context,
-//                            new GeneralMsg<>(DEFAULT_STREAM_ID, event.transaction_result, event.getTimestamp())));
+//                            sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.transaction_result, event.getTimestamp())));
                         }
                     }
                 } catch (ClassNotFoundException e) {

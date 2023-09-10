@@ -13,6 +13,7 @@ import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 /**
  * TODO: Implementation of a simple command line frontend for executing programs.
+ * TODO: This class should be the receiving end of system, it waits for new app from clients, and perform system initialization.
  */
 public class CliFrontend {
     private static final Logger LOG = LoggerFactory.getLogger(CliFrontend.class);

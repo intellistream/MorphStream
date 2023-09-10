@@ -265,6 +265,10 @@ public class JCommanderHandler {
     @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
     public String stateAccessSkewnessForEvents = "0.5,0.5";
 
+    //Client
+    @Parameter(names = {"--clientClassName"}, description = "Client class name, used for UDF Reflection")
+    public String clientClassName = "Client";
+
     public JCommanderHandler() {
         if (enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
     }

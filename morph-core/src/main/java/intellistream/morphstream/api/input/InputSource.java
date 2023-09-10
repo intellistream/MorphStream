@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.input;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -8,10 +9,7 @@ import intellistream.morphstream.api.input.TransactionalEvent;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -67,70 +65,63 @@ public class InputSource {
     }
 
     private TransactionalEvent inputFromJsonToTxnEvent(String input) {
-        // Parse JSON from CSV line
-//        JsonObject nestedHashMapJson = JsonParser.parseString(input).getAsJsonObject();
-//
-//        // Extract sub-JSON objects as needed
-//        JsonObject keysJSON = nestedHashMapJson.getAsJsonObject("keys");
-//        JsonObject valuesJSON = nestedHashMapJson.getAsJsonObject("values");
-//        JsonObject valueTypesJSON = nestedHashMapJson.getAsJsonObject("valueTypes");
-//        JsonObject flagsJSON = nestedHashMapJson.getAsJsonObject("flags");
-//
-//        // Convert JsonObject to java data structures
-//        HashMap<String, String> keys = new HashMap<>();
-//        for (Map.Entry<String, JsonElement> entry : keysJSON.entrySet()) {
-//            keys.put(entry.getKey(), entry.getValue().getAsString());
-//        }
-//
-//        HashMap<String, Object> values = new HashMap<>();
-//        for (Map.Entry<String, JsonElement> entry : valuesJSON.entrySet()) {
-//            values.put(entry.getKey(), entry.getValue().getAsString());
-//        }
-//
-//        HashMap<String, String> valueTypes = new HashMap<>();
-//        for (Map.Entry<String, JsonElement> entry : valueTypesJSON.entrySet()) {
-//            valueTypes.put(entry.getKey(), entry.getValue().getAsString());
-//        }
-//
-//        String flag = flagsJSON.entrySet().stream().toString();
-//
-//        TransactionalEvent txnEvent = new TransactionalEvent(this.bid, keys, values, valueTypes, flag, false);
-//        bid++;
-//        return txnEvent;
-        return null;
+        Gson gson = new Gson();
+        JsonObject jsonObject = gson.fromJson(input, JsonObject.class);
+
+        HashMap<String, List<String>> keyMap = gson.fromJson(jsonObject.get("subJson1"), HashMap.class);
+        HashMap<String, Object> valueMap = gson.fromJson(jsonObject.get("subJson2"), HashMap.class);
+        HashMap<String, String> valueTypeMap = gson.fromJson(jsonObject.get("subJson3"), HashMap.class);
+        String flag = gson.fromJson(jsonObject.get("subJson4"), String.class);
+        String isAbort = gson.fromJson(jsonObject.get("subJson4"), String.class);
+
+        TransactionalEvent txnEvent;
+        if (isAbort.equals("true")) {
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
+        } else {
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
+        }
+
+        bid++;
+        return txnEvent;
     }
 
     public TransactionalEvent inputFromStringToTxnEvent(String input) {
         String [] inputArray = input.split(";");
-        HashMap<String, List<String>> keyMaps = new HashMap<>();
-        HashMap<String, Object> valueMaps = new HashMap<>();
-        HashMap<String, String> valueTypeMaps = new HashMap<>();
+        HashMap<String, List<String>> keyMap = new HashMap<>();
+        HashMap<String, Object> valueMap = new HashMap<>();
+        HashMap<String, String> valueTypeMap = new HashMap<>();
         String [] keyMapPairs = inputArray[0].split(",");
-        for (int i = 0; i < keyMapPairs.length; i ++) {
+
+        for (String pair : keyMapPairs) {
             List<String> keys = new ArrayList<>();
-            String [] keyMapPair = keyMapPairs[i].split(":");
-            for (int j = 1; j < keyMapPair.length; j ++) {
+            String[] keyMapPair = pair.split(":");
+            for (int j = 1; j < keyMapPair.length; j++) {
                 keys.add(keyMapPair[j]);
             }
-            keyMaps.put(keyMapPair[0], keys);
+            keyMap.put(keyMapPair[0], keys);
         }
         String [] valueMapPairs = inputArray[1].split(",");
-        for (int i = 0; i < valueMapPairs.length; i ++) {
-            String [] valueMapPair = valueMapPairs[i].split(":");
-            valueMaps.put(valueMapPair[0], valueMapPair[1]);
+        for (String mapPair : valueMapPairs) {
+            String[] valueMapPair = mapPair.split(":");
+            valueMap.put(valueMapPair[0], valueMapPair[1]);
         }
         String [] valueTypeMapPairs = inputArray[2].split(",");
-        for (int i = 0; i < valueTypeMapPairs.length; i ++) {
-            String [] valueTypeMapPair = valueTypeMapPairs[i].split(":");
-            valueTypeMaps.put(valueTypeMapPair[0], valueTypeMapPair[1]);
+        for (String typeMapPair : valueTypeMapPairs) {
+            String[] valueTypeMapPair = typeMapPair.split(":");
+            valueTypeMap.put(valueTypeMapPair[0], valueTypeMapPair[1]);
         }
         String flag = inputArray[3];
         String isAbort = inputArray[4];
+
+        TransactionalEvent txnEvent;
         if (isAbort.equals("true")) {
-            return new TransactionalEvent(this.bid, keyMaps, valueMaps, valueTypeMaps, flag, true);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
         } else {
-            return new TransactionalEvent(this.bid, keyMaps, valueMaps, valueTypeMaps, flag, false);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
         }
+
+        bid++;
+        return txnEvent;
     }
 
     public String getStaticFilePath() {

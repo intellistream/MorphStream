@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.state;
 
+import intellistream.morphstream.api.utils.ClientSideMetaTypes;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
 
 import java.util.HashMap;
@@ -7,12 +8,14 @@ import java.util.HashSet;
 import java.util.List;
 
 public class StateObject {
+    private final ClientSideMetaTypes.AccessType type;
     private final String table;
     private final String key;
     private final String value;
     private SchemaRecord schemaRecord;
     private HashMap<String, Integer> fieldNameToIndex; //TODO: Where to initialize?
-    public StateObject(String table, String key, String value) {
+    public StateObject(ClientSideMetaTypes.AccessType type, String table, String key, String value) {
+        this.type = type;
         this.table = table;
         this.key = key;
         this.value = value;
@@ -22,6 +25,22 @@ public class StateObject {
      */
     public void setSchemaRecord(SchemaRecord schemaRecord) {
         this.schemaRecord = schemaRecord;
+    }
+
+    public ClientSideMetaTypes.AccessType getType() {
+        return type;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getTable() {
+        return table;
+    }
+
+    public String getValue() {
+        return value;
     }
 
     public int getIntValue(String fieldName) {
