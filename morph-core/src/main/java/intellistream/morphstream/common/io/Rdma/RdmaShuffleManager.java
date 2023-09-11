@@ -43,7 +43,7 @@ public class RdmaShuffleManager {
     // Used by executor only
     public RdmaShuffleReaderStats rdmaShuffleReaderStats;
     private final ConcurrentHashMap<Integer, BufferInfo> shuffleIdToDriverBufferInfo = new ConcurrentHashMap<>();//Mapping from shuffleId to driver's address, length, key of MapOutputLocation buffer
-    private final ConcurrentHashMap<Integer, Future<RdmaBuffer>> shuffleIdToMapAddressBuffer = new ConcurrentHashMap<>();//shuffleId -> RdmaBuffer for mapTaskOutput
+    public final ConcurrentHashMap<Integer, Future<RdmaBuffer>> shuffleIdToMapAddressBuffer = new ConcurrentHashMap<>();//shuffleId -> RdmaBuffer for mapTaskOutput
 
     public RdmaShuffleManager(RdmaShuffleConf conf, boolean isDriver) throws Exception {
         this.conf = conf;
