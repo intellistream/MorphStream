@@ -1,5 +1,7 @@
 package intellistream.morphstream.common.io.Rdma;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -24,11 +26,7 @@ public class RdmaMapTaskOutput {
         if (startPartitionId > lastPartitionId) {
             throw new IllegalArgumentException("Reduce partition range must be positive");
         }
-
-//        SparkEnv sparkEnv = SparkEnv.get();
-//        this.bufferManager = (RdmaShuffleManager) sparkEnv.shuffleManager();
-        //TODO: add SparkEnv
-        this.bufferManager = null;
+        this.bufferManager = MorphStreamEnv.get().RM().getRdmaBufferManager();
         this.rdmaBuffer = bufferManager.get(size);
         this.byteBuffer = rdmaBuffer.getByteBuffer();
     }

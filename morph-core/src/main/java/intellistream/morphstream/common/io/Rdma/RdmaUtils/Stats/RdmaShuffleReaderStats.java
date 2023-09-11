@@ -1,7 +1,7 @@
 package intellistream.morphstream.common.io.Rdma.RdmaUtils.Stats;
 
 import intellistream.morphstream.common.io.Rdma.RdmaShuffleConf;
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.Id.BlockManagerId;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

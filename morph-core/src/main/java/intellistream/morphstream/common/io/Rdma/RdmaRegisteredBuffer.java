@@ -14,13 +14,13 @@ public class RdmaRegisteredBuffer {
         this.rdmaBuffer = rdmaBufferManager.get(length);
         assert this.rdmaBuffer != null;
     }
-    int getLkey() {
+    public int getLkey() {
         return rdmaBuffer.getLkey();
     }
     void retain() {
         refCount.incrementAndGet();
     }
-    void release() {
+    public void release() {
         int count = refCount.decrementAndGet();
         if (count <= 0) {
            free();
@@ -36,7 +36,7 @@ public class RdmaRegisteredBuffer {
             rdmaBuffer = null;
         }
     }
-    long getRegisteredAddress() {
+    public long getRegisteredAddress() {
         return rdmaBuffer.getAddress();
     }
     private int getRegisteredLength() {

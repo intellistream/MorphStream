@@ -3,7 +3,7 @@ package intellistream.morphstream.api.launcher;
 import intellistream.morphstream.api.input.FileDataGenerator;
 import intellistream.morphstream.api.state.DatabaseInitialize;
 import intellistream.morphstream.common.io.Rdma.RdmaShuffleManager;
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.Id.BlockManagerId;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.optimization.OptimizationManager;
 import intellistream.morphstream.engine.stream.topology.TransactionTopology;

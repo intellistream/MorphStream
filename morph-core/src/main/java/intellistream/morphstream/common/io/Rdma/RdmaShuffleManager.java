@@ -4,8 +4,8 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Rdma.Msg.RdmaAnnounceRdmaShuffleManagersRpcMsg;
 import intellistream.morphstream.common.io.Rdma.Msg.RdmaRpcMsg;
 import intellistream.morphstream.common.io.Rdma.Msg.RdmaShuffleManagerHelloRpcMsg;
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.Id.BlockManagerId;
-import intellistream.morphstream.common.io.Rdma.RdmaUtils.Id.RdmaShuffleManagerId;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
+import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.RdmaShuffleManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Stats.RdmaShuffleReaderStats;
 import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.RdmaBaseShuffleHandle;
 import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.ShuffleHandle;
@@ -37,7 +37,7 @@ public class RdmaShuffleManager {
     // Used by diver only
     private final Map<BlockManagerId, Map<Integer, Map<Integer, RdmaMapTaskOutput>>> mapTaskOutputsByBlockManagerId = new ConcurrentHashMap<>(); // blockManagerId -> shuffleId -> mapId -> mapTaskOutput
     private final Map<RdmaShuffleManagerId, RdmaChannel> rdmaShuffleManagersMap = new ConcurrentHashMap<>();// shuffleManagerId -> rdmaChannel
-    private final Map<BlockManagerId, RdmaShuffleManagerId> blockManagerIdToRdmaShuffleManagerId = new ConcurrentHashMap<>(); // blockManagerId -> rdmaShuffleManagerId
+    public final Map<BlockManagerId, RdmaShuffleManagerId> blockManagerIdToRdmaShuffleManagerId = new ConcurrentHashMap<>(); // blockManagerId -> rdmaShuffleManagerId
     private final Map<Integer, RdmaBuffer> shuffleIdToBufferAddress = new ConcurrentHashMap<>(); // shuffleId -> shuffleBuffer
 
     // Used by executor only
@@ -173,6 +173,9 @@ public class RdmaShuffleManager {
                 }
             }
         });
+    }
+    public RdmaRegisteredBuffer getRdmaRegisteredBuffer(int length) throws IOException {
+        return new RdmaRegisteredBuffer(getRdmaBufferManager(), length);
     }
 
     /**
@@ -310,6 +313,8 @@ public class RdmaShuffleManager {
             LOG.error("Exception in Receive RdmaCompletionListener (ignoring): ", exception);
         }
     };
+
+
 
     /**
      * Information needed to do RDMA read of remote buffer

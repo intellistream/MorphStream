@@ -464,7 +464,7 @@ public class RdmaChannel {
         }
     }
 
-    void rdmaReadInQueue(RdmaCompletionListener listener, long localAddress, int lKey, int[] sizes, long[] remoteAddresses, int[] rKeys) throws IOException {
+    public void rdmaReadInQueue(RdmaCompletionListener listener, long localAddress, int lKey, int[] sizes, long[] remoteAddresses, int[] rKeys) throws IOException {
         long offset = 0;
         LinkedList<IbvSendWR> readWRList = new LinkedList<>();
         for (int i = 0; i < remoteAddresses.length; i++) {
