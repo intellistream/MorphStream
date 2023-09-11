@@ -1,8 +1,6 @@
 package intellistream.morphstream.common.io.Rdma.Shuffle.Handle;
 
-import intellistream.morphstream.common.io.Rdma.Shuffle.ShuffleDependency;
-
-public class RdmaBaseShuffleHandle extends ShuffleHandle {
+public class RdmaBaseShuffleHandle<K,V,C> extends ShuffleHandle {
     public final long driverTableAddress;
     public final int driverTableLength;
     public final int driverTableRKey;

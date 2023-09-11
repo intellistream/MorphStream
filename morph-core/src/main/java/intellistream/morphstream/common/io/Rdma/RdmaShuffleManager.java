@@ -10,7 +10,7 @@ import intellistream.morphstream.common.io.Rdma.RdmaUtils.Stats.RdmaShuffleReade
 import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.RdmaBaseShuffleHandle;
 import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.ShuffleHandle;
 import intellistream.morphstream.common.io.Rdma.Shuffle.RW.ShuffleReader;
-import intellistream.morphstream.common.io.Rdma.Shuffle.RW.ShuffleWrite;
+import intellistream.morphstream.common.io.Rdma.Shuffle.RW.ShuffleWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +113,7 @@ public class RdmaShuffleManager {
         }
     }
 
-    public ShuffleWrite getWrite(ShuffleHandle handle, int mapId) throws Exception {
+    public ShuffleWriter getWrite(ShuffleHandle handle, int mapId) throws Exception {
         //RdmaNode can't be initialized in constructor for executors, so the first call will initialize
         startRdmaNodeIfMissing();
         return null;

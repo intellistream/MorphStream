@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Read;
+package intellistream.morphstream.common.io.Rdma.Shuffle.RW.Read;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Exception.rdma.MetadataFetchFailedException;
@@ -7,7 +7,7 @@ import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.RdmaShuffleManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Stats.RdmaShuffleReaderStats;
-import intellistream.morphstream.common.io.Read.Result.FetchResult;
+import intellistream.morphstream.common.io.Rdma.Shuffle.RW.Read.Result.FetchResult;
 import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -280,15 +280,90 @@ public class RdmaShuffleFetcherIterator implements Iterator<InputStream> {
            }
         }
     }
+    private void cleanup() {
+        //Close all the open streams
+        isStopped = true;
+        if (currentResult != null && currentResult instanceof FetchResult.SuccessFetchResult) {
+            if (((FetchResult.SuccessFetchResult) currentResult).getInputStream() != null) {
+                try {
+                    ((FetchResult.SuccessFetchResult) currentResult).getInputStream().close();
+                } catch (IOException e) {
+                    LOG.error("Failed to close input stream: " + e);
+                }
+            }
+        }
+        Iterator<FetchResult> iter = resultsQueue.iterator();
+        while (iter.hasNext()) {
+            FetchResult result = iter.next();
+            if (result instanceof FetchResult.SuccessFetchResult) {
+                if (((FetchResult.SuccessFetchResult) result).getInputStream() != null) {
+                    try {
+                        ((FetchResult.SuccessFetchResult) result).getInputStream().close();
+                    } catch (IOException e) {
+                        LOG.error("Failed to close input stream: " + e);
+                    }
+                }
+            }
+        }
+    }
+    private void initialize() throws IOException, InterruptedException {
+        //TODO:Add a task completion callback (called in both success and failure case) to cleanup.
 
+        startAsyncRemoteFetches();
+        //Get local rdma partition data
+        for (int i = startPartition; i < endPartition; i++) {
+            for (InputStream inputStream : rdmaShuffleManager.shuffleBlockResolver.getLocalRdmaPartition(shuffleId, i)) {
+                resultsQueue.put(new FetchResult.SuccessFetchResult(i, localBlockManagerId, inputStream));
+                numBlocksToFetch.incrementAndGet();
+            }
+        }
+    }
     @Override
     public boolean hasNext() {
-        return false;
+        return numBlocksProcessed < numBlocksToFetch.get();
     }
 
     @Override
     public InputStream next() {
-        return null;
+        if (!hasNext()) {
+            return null;
+        }
+
+        numBlocksProcessed += 1;
+        try {
+            currentResult = resultsQueue.take();
+            FetchResult result = currentResult;
+            if (result instanceof FetchResult.SuccessFetchResult) {
+                if (((FetchResult.SuccessFetchResult) result).getInputStream() != null) {
+                    curBytesInFlight.addAndGet(-((FetchResult.SuccessFetchResult) result).getInputStream().available());
+                }
+            }
+
+            //Start some pending remote fetches
+            while(!pendingFetchesQueue.isEmpty() && curBytesInFlight.get() < rdmaShuffleConf.maxBytesInFlight) {
+                PendingFetch pendingFetch = pendingFetchesQueue.poll();
+                curBytesInFlight.addAndGet(pendingFetch.totalLength);
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        fetchBlocks(pendingFetch);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
+            if (result instanceof FetchResult.SuccessFetchResult) {
+                return ((FetchResult.SuccessFetchResult) result).getInputStream();
+            } else if (result instanceof FetchResult.FailureFetchResult) {
+                throw new RuntimeException(((FetchResult.FailureFetchResult) result).getException());
+            } else if (result instanceof FetchResult.FailureMetadataFetchResult) {
+                throw ((FetchResult.FailureMetadataFetchResult) result).getException();
+            } else {
+                throw new RuntimeException("Unknown FetchResult type: " + result.getClass().getSimpleName());
+            }
+        } catch (InterruptedException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -339,7 +414,33 @@ public class RdmaShuffleFetcherIterator implements Iterator<InputStream> {
                 closed = true;
             }
         }
+        @Override
+        public int available() throws IOException {
+            return delegate.available();
+        }
+        @Override
+        public synchronized void mark(int readlimit) {
+            delegate.mark(readlimit);
+        }
+        @Override
+        public long skip(long n) throws IOException {
+            return delegate.skip(n);
+        }
+        @Override
+        public boolean markSupported() {
+            return delegate.markSupported();
+        }
+        @Override
+        public int read(byte[] b) throws IOException {
+            return delegate.read(b);
+        }
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return delegate.read(b, off, len);
+        }
+        @Override
+        public synchronized void reset() throws IOException {
+            delegate.reset();
+        }
     }
-
-
 }

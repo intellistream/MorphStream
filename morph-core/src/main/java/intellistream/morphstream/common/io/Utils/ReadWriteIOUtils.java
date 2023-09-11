@@ -3,7 +3,7 @@ package intellistream.morphstream.common.io.Utils;
 import intellistream.morphstream.common.io.Enums.CompressionType;
 import intellistream.morphstream.common.io.Enums.DataType;
 import intellistream.morphstream.common.io.Enums.Encoding;
-import intellistream.morphstream.common.io.Read.FileInput;
+import intellistream.morphstream.common.io.Rdma.Shuffle.RW.Read.FileInput;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
