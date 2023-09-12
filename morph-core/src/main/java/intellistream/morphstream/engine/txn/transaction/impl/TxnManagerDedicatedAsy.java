@@ -291,10 +291,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records, success));
+                        key, d_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records, success));
+                        key, d_record, function, null, new String[]{srcTable}, new String[]{key}, condition_records));
             }
         } else {
             if (enable_log) log.info("No record is found:" + key);
@@ -318,10 +318,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, null, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, null, condition_sourceTable, condition_source, condition_records));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, null, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, null, condition_sourceTable, condition_source, condition_records));
             }
         } else {
             if (enable_log) log.info("No record is found:" + key);
@@ -354,10 +354,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, record_ref, success));
+                        key, d_record, function, record_ref));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, record_ref, success));
+                        key, d_record, function, record_ref));
             }
         } else {
             if (enable_log) log.info("No record is found:" + key);
@@ -384,10 +384,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records));
             }
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
@@ -413,10 +413,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records));
             }
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
@@ -442,10 +442,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records));
             }
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
@@ -473,10 +473,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, tables, accessType, srcTable,
-                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, tables, accessType, srcTable,
-                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success));
+                        key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records));
             }
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.

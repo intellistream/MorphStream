@@ -104,7 +104,7 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     }
 
     protected void checkTransactionAbort(Operation operation) {
-        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+        if (operation.isFailed.get() && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             needAbortHandling.compareAndSet(false, true);
             failedOperations.push(operation); // operation need to wait until the last abort has completed
         }

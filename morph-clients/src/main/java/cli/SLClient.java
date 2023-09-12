@@ -39,7 +39,7 @@ public class SLClient {
         }
     }
 
-    public boolean destTransferFunction(StateAccess access, TxnDataHolder dataHolder) {
+    public boolean destTransferFunction(StateAccess access, TxnDataHolder dataHolder) { //TODO: For some app, need to pass-in event data to txnUDF. E.g. In OGScheduler, each TPEvent's own speed
         StateObject srcAccountState = access.getStateObject("srcAccountState");
         StateObject destAccountState = access.getStateObject("destAccountState");
         double srcBalance = srcAccountState.getDoubleValue("balance");

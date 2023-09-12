@@ -118,7 +118,7 @@ public class OGBFSAScheduler extends AbstractOGBFSScheduler<OGSAContext> {
 
     @Override
     protected void checkTransactionAbort(Operation operation, OperationChain operationChain) {
-        if (operation.isFailed
+        if (operation.isFailed.get()
                 && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             needAbortHandling.compareAndSet(false, true);
             failedOperations.push(operation); // operation need to wait until the last abort has completed

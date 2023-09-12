@@ -317,7 +317,7 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         oc.reset();
         for (Operation op : oc.getOperations()) {
             op.stateTransition(MetaTypes.OperationStateType.BLOCKED);
-            if (op.isFailed) { // transit state to aborted.
+            if (op.isFailed.get()) { // transit state to aborted.
                 op.stateTransition(MetaTypes.OperationStateType.ABORTED);
             }
         }

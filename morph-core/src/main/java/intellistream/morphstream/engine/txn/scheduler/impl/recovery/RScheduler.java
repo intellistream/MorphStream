@@ -103,16 +103,16 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.function, request.condition_records, request.success);
+                            request.d_record, request.function, request.condition_records);
                     break;
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition_records, request.success);
+                            request.d_record, request.record_ref, request.function, request.condition_records);
                     break;
                 case READ_WRITE_READ:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, null, request.success);
+                            request.d_record, request.record_ref, request.function, null);
                     break;
                 default:
                     throw new UnsupportedOperationException();
@@ -169,7 +169,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                 if (op.pdCount.get() == 0) {
                     MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
                     execute(op, mark_ID, false);
-                    if (op.isFailed) {
+                    if (op.isFailed.get()) {
                         op.operationState = MetaTypes.OperationStateType.ABORTED;
                         checkAbort();
                     } else {
@@ -326,11 +326,8 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
         } else {
-            op.isFailed = true;
+            op.isFailed.set(true);
         }
     }
 
@@ -368,7 +365,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
         } else {
-            operation.isFailed = true;
+            operation.isFailed.set(true);
         }
 
     }
@@ -388,7 +385,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                 srcRecord.get(1).setDouble(lav);//write to state.
                 operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
             } else {
-                operation.isFailed = true;
+                operation.isFailed.set(true);
             }
         } else {
             if (operation.function.delta_int < MAX_INT) {
@@ -396,7 +393,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                 cnt_segment.add(operation.function.delta_int);//update hashset; updated state also. TODO: be careful of this.
                 operation.record_ref.setRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             } else {
-                operation.isFailed = true;
+                operation.isFailed.set(true);
             }
         }
     }

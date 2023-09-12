@@ -130,11 +130,10 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
+        } else {
+            operation.isFailed.set(true);
         }
-        if (!operation.isFailed) {
+        if (!operation.isFailed.get()) {
             if (isLogging == LOGOption_path && !operation.pKey.equals(preValues.GetPrimaryKey()) && !operation.isCommit) {
                 MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
                 int id = getTaskId(operation.pKey, delta);
@@ -191,9 +190,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
+        } else {
+            operation.isFailed.set(true);
         }
     }
 
@@ -234,9 +232,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             disDeterministicRecord.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
             operation.deterministicRecords = new TableRecord[1];
             operation.deterministicRecords[0] = disDeterministicRecord;
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
+        } else {
+            operation.isFailed.set(true);
         }
     }
 
@@ -265,9 +262,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
+        } else {
+            operation.isFailed.set(true);
         }
     }
 
@@ -291,18 +287,12 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             commitLog(operation);
             return;
         }
-        int success;
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
-            success = operation.success[0];
             Transfer_Fun(operation, mark_ID, clean);
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
-            success = operation.success[0];
             if (this.tpg.getApp() == 1) {//SL
                 Transfer_Fun(operation, mark_ID, clean);
             } else {//OB
@@ -314,11 +304,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 long bid_qty = 1; //old condition: event.getBidQty(i)), default=1
                 if (bidPrice > askPrice || bid_qty < left_qty) {
                     d_record.get(2).setLong(left_qty - operation.function.delta_long);//new quantity.
-                    operation.success[0]++;
+                } else {
+                    operation.isFailed.set(true);
                 }
-            }
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
             if (this.tpg.getApp() == 1) { //SL
@@ -333,22 +321,14 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                     throw new UnsupportedOperationException();
             }
         } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
-            success = operation.success[0];
             GrepSum_Fun(operation, mark_ID, clean);
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
         } else if (operation.accessType.equals(NON_READ_WRITE_COND_READN)) {
-            success = operation.success[0];
             Non_GrepSum_Fun(operation, mark_ID, clean);
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
             }
         } else if (operation.accessType.equals(READ_WRITE_READ)) {
             //TODO: implement the operation
@@ -356,8 +336,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             AppConfig.randomDelay();
             List<DataBox> srcRecord = operation.d_record.record_.getValues();
             if (operation.function instanceof AVG) {
-                success = operation.success[0];
-//                if (operation.condition.arg1 < operation.condition.arg2) { //TODO: Different from OP's logic
+                if (true) { //TODO: Original condition: operation.condition.arg1 < operation.condition.arg2
                     double latestAvgSpeeds = srcRecord.get(1).getDouble();
                     double lav;
                     if (latestAvgSpeeds == 0) {//not initialized
@@ -367,12 +346,8 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 
                     srcRecord.get(1).setDouble(lav);//write to state.
                     operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
-                    synchronized (operation.success) {
-                        operation.success[0]++;
-//                    }
-                }
-                if (operation.success[0] == success) {
-                    operation.isFailed = true;
+                } else {
+                    operation.isFailed.set(true);
                 }
             } else {
                 HashSet cnt_segment = srcRecord.get(1).getHashSet();
@@ -385,14 +360,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             operation.d_record.record_.getValues().get(1).setLong(operation.value);
         } else if (operation.accessType.equals(WINDOWED_READ_ONLY)) {
             assert operation.record_ref != null;
-            success = operation.success[0];
             AppConfig.randomDelay();
             Windowed_GrepSum_Fun(operation, mark_ID, clean);
             operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            // operation success check, number of operation succeeded does not increase after execution
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
         } else {
             throw new UnsupportedOperationException();
         }
@@ -445,14 +415,14 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         for (Operation operation : operation_chain_list) {
             if (operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
                     || operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)
-                    || operation.isFailed) continue;
+                    || operation.isFailed.get()) continue;
             if (isConflicted(context, operationChain, operation)) {
                 return false;
             }
             MeasureTools.BEGIN_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
             execute(operation, mark_ID, false);
             MeasureTools.END_SCHEDULE_USEFUL_TIME_MEASURE(context.thisThreadId);
-            if (!operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+            if (!operation.isFailed.get() && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
                 operation.stateTransition(MetaTypes.OperationStateType.EXECUTED);
             } else {
                 checkTransactionAbort(operation, operationChain);
@@ -535,31 +505,31 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
         switch (request.accessType) {
             case WRITE_ONLY:
                 set_op = new Operation(false, null, request.src_key, null, request.table_name, null, null,
-                        null, request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
                 set_op.value = request.value;
                 break;
             case READ_WRITE_COND: // they can use the same method for processing
             case READ_WRITE:
                 set_op = new Operation(false, null, request.src_key, request.function, request.table_name, null, request.condition_records,
-                        request.success, request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
                 break;
             case READ_WRITE_COND_READ:
             case READ_WRITE_COND_READN:
                 set_op = new Operation(false, null, request.src_key, request.function, request.table_name, request.record_ref, request.condition_records,
-                        request.success, request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
                 break;
             case NON_READ_WRITE_COND_READN:
                 set_op = new Operation(true, request.tables, request.src_key, request.function, request.table_name, request.record_ref, request.condition_records,
-                        request.success, request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
                 break;
             case READ_WRITE_READ:
                 set_op = new Operation(false, null, request.src_key, request.function, request.table_name, request.record_ref, null,
-                        request.success, request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, null);
                 break;
             case WINDOWED_READ_ONLY:
                 WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
                 set_op = new Operation(false, null, request.src_key, request.function, request.table_name, request.record_ref, request.condition_records,
-                        request.success, request.txn_context, request.accessType, request.d_record, bid, targetContext, windowContext);
+                        request.txn_context, request.accessType, request.d_record, bid, targetContext, windowContext);
                 break;
             default:
                 throw new RuntimeException("Unexpected operation");
@@ -581,7 +551,7 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
                 if (conditioned_operation != null) {
                     if (!(conditioned_operation.getOperationState().equals(MetaTypes.OperationStateType.EXECUTED)
                             || conditioned_operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)
-                            || conditioned_operation.isFailed)) {
+                            || conditioned_operation.isFailed.get())) {
                         // blocked and busy wait
                         context.busyWaitQueue.add(operationChain);
                         return true;

@@ -98,7 +98,7 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
     }
 
     protected void checkTransactionAbort(Operation operation) {
-        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+        if (operation.isFailed.get() && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             for (Operation failedOp : failedOperations) {
                 if (failedOp.bid == operation.bid) { // avoid duplicate abort notification
                     return;

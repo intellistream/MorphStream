@@ -15,6 +15,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * TODO: clean ``state" and ``reference".
@@ -29,7 +30,7 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 //    public volatile Operation[] fdParentOps; // parent ops that accessing conditioned records and has smaller
 //    public volatile List<Operation> fd_parents; // parent ops that accessing conditioned records and has smaller
 //    public HashMap<TableRecord, Integer> condition_source_to_index;
-    public boolean isFailed = false; // whether the operation is failed, this is used to detect transaction abort
+    public AtomicBoolean isFailed = new AtomicBoolean(false); // whether the operation is failed, this is used to detect transaction abort
     public boolean isNonDeterministicOperation = false;
     public BaseTable[] tables;
     public TableRecord[] deterministicRecords;
@@ -42,9 +43,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     private Operation ld_head_operation = null; // the logical dependencies ops to be executed after this op.
     private OperationChain oc; // used for dependency resolved notification under greedy smart
 
-    public <Context extends OGSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables, String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records, int[] success,
+    public <Context extends OGSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables, String pKey, Function function, String table_name, SchemaRecordRef record_ref, TableRecord[] condition_records,
                                                           TxnContext txn_context, CommonMetaTypes.AccessType accessType, TableRecord d_record, long bid, Context context, WindowDescriptor windowDescriptor) {
-        super(function, table_name, record_ref, condition_records, success, txn_context, accessType, d_record, bid, windowDescriptor, pKey);
+        super(function, table_name, record_ref, condition_records, txn_context, accessType, d_record, bid, windowDescriptor, pKey);
 
         // finctional dependencies, this should be concurrent because cross thread access
         fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance

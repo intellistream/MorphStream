@@ -283,6 +283,7 @@ public class JCommanderHandler {
     }
 
     public void initializeCfg(HashMap<String, Object> config) {
+        config.put("clientClassName", clientClassName);
         //Database configuration
         config.put("tableNames", tableNames);
         String[] tableNameString = tableNames.split(",");

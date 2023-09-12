@@ -113,7 +113,7 @@ public class OGDFSAScheduler extends AbstractOGDFSScheduler<OGSAContext> {
 
     @Override
     protected void checkTransactionAbort(Operation operation, OperationChain OperationChain) {
-        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+        if (operation.isFailed.get() && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             for (Operation failedOp : failedOperations) {
                 if (failedOp.bid == operation.bid) {
                     return;

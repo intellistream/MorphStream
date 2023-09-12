@@ -73,7 +73,7 @@ public class OGNSAScheduler extends AbstractOGNSScheduler<OGNSAContext> {
 
     @Override
     protected void checkTransactionAbort(Operation operation, OperationChain operationChain) {
-        if (operation.isFailed && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
+        if (operation.isFailed.get() && !operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED)) {
             operationChain.needAbortHandling = true;
             operationChain.failedOperations.add(operation);
         }

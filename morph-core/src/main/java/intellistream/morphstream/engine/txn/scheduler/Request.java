@@ -18,7 +18,6 @@ public class Request {
     public final String[] condition_sourceTable;
     public final String[] condition_source;
     public final TableRecord[] condition_records;
-    public final int[] success;
     public long value;
     public BaseTable[] tables;
 
@@ -30,7 +29,7 @@ public class Request {
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,
                    String table_name) {
-        this(txn_context, null, accessType, table_name, null, null, null, null, null, null, null, null);
+        this(txn_context, null, accessType, table_name, null, null, null, null, null, null, null);
     }
 
     //Write-only
@@ -52,19 +51,7 @@ public class Request {
                    TableRecord d_record,
                    Function function,
                    SchemaRecordRef record_ref) {
-        this(txn_context, accessType, table_name, src_key, d_record, function, record_ref, null, null, null, null);
-    }
-
-    //condition. no column id
-    public Request(TxnContext txn_context,
-                   CommonMetaTypes.AccessType accessType,
-                   String table_name,
-                   String src_key,
-                   TableRecord d_record,
-                   Function function,
-                   SchemaRecordRef record_ref,
-                   int[] success) {
-        this(txn_context, accessType, table_name, src_key, d_record, function, record_ref, null, null, null, success);
+        this(txn_context, accessType, table_name, src_key, d_record, function, record_ref, null, null, null);
     }
 
     //no column id
@@ -77,9 +64,8 @@ public class Request {
                    SchemaRecordRef record_ref,
                    String[] condition_sourceTable,
                    String[] condition_source,
-                   TableRecord[] condition_records,
-                   int[] success) {
-        this(txn_context, null, accessType, table_name, src_key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records, success);
+                   TableRecord[] condition_records) {
+        this(txn_context, null, accessType, table_name, src_key, d_record, function, record_ref, condition_sourceTable, condition_source, condition_records);
     }
 
     //no condition, no ref.
@@ -89,7 +75,7 @@ public class Request {
                    String src_key,
                    TableRecord d_record,
                    Function function) {
-        this(txn_context, null, accessType, table_name, src_key, d_record, function, null, null, null, null, null);
+        this(txn_context, null, accessType, table_name, src_key, d_record, function, null, null, null, null);
     }
 
     public Request(TxnContext txn_context,
@@ -102,8 +88,7 @@ public class Request {
                    SchemaRecordRef record_ref,
                    String[] condition_sourceTable,
                    String[] condition_source,
-                   TableRecord[] condition_records,
-                   int[] success) {
+                   TableRecord[] condition_records) {
         this.txn_context = txn_context;
         this.accessType = accessType;
         this.table_name = table_name;
@@ -114,7 +99,6 @@ public class Request {
         this.condition_sourceTable = condition_sourceTable;
         this.condition_source = condition_source;
         this.condition_records = condition_records; //records to read from
-        this.success = success; //int[1], initialized during txnEvent creation as {0}
         this.tables = baseTable; //used for non-deter, allow null input
     }
 

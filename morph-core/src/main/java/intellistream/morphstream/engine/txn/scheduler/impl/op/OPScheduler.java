@@ -16,7 +16,6 @@ import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.Request;
 import intellistream.morphstream.engine.txn.scheduler.context.op.OPSchedulerContext;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
-import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.TaskPrecedenceGraph;
@@ -92,7 +91,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     public void execute(Operation operation, long mark_ID, boolean clean) {
 //        log.trace("++++++execute: " + operation);
         // if the operation is in state aborted or committable or committed, we can bypass the execution
-        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED) || operation.isFailed) {
+        if (operation.getOperationState().equals(MetaTypes.OperationStateType.ABORTED) || operation.isFailed.get()) {
             if (operation.isNonDeterministicOperation && operation.deterministicRecords != null) {
                 for (TableRecord tableRecord : operation.deterministicRecords) {
                     tableRecord.content_.DeleteLWM(operation.bid);
@@ -103,9 +102,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             commitLog(operation);
             return;
         }
-        int success;
         if (operation.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND_READ)) {
-            success = operation.success[0];
             if (this.tpg.getApp() == 5) {
                 SHJ_Fun(operation, mark_ID, clean);
             } else {
@@ -115,12 +112,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
-            // operation success check, number of operation succeeded does not increase after execution
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND)) {
-            success = operation.success[0];
             if (this.tpg.getApp() == 1) {//SL
                 Transfer_Fun(operation, mark_ID, clean);
             } else {//OB
@@ -132,12 +124,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 long bid_qty = 1; //old condition: event.getBidQty(i)), default=1
                 if (bidPrice > askPrice || bid_qty < left_qty) {
                     d_record.get(2).setLong(left_qty - operation.function.delta_long);//new quantity.
-                    operation.success[0]++;
+                } else {
+                    operation.isFailed.set(true);
                 }
-            }
-            // operation success check, number of operation succeeded does not increase after execution
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
             }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE)) {
             if (this.tpg.getApp() == 1) {
@@ -152,26 +141,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     throw new UnsupportedOperationException();
             }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND_READN)) {
-            success = operation.success[0];
             GrepSum_Fun(operation, mark_ID, clean);
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
-            // operation success check, number of operation succeeded does not increase after execution
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.NON_READ_WRITE_COND_READN)) {
-            success = operation.success[0];
             Non_GrepSum_Fun(operation, mark_ID, clean);
             // check whether needs to return a read results of the operation
             if (operation.record_ref != null) {
                 operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-            // operation success check, number of operation succeeded does not increase after execution
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
             }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.WRITE_ONLY)) {
             //OB-Alert
@@ -198,14 +177,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.WINDOWED_READ_ONLY)) {
             assert operation.record_ref != null;
-            success = operation.success[0];
             AppConfig.randomDelay();
             Windowed_GrepSum_Fun(operation, mark_ID, clean);
             operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            // operation success check, number of operation succeeded does not increase after execution
-            if (operation.success[0] == success) {
-                operation.isFailed = true;
-            }
         } else {
             throw new UnsupportedOperationException();
         }
@@ -213,7 +187,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         assert operation.getOperationState() != MetaTypes.OperationStateType.EXECUTED;
     }
 
-    protected void SHJ_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void SHJ_Fun(Operation operation, long previous_mark_ID, boolean clean) {
 
 //        AppConfig.randomDelay();
 
@@ -247,11 +221,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             // 3. insert new tuple into S/R table.
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
 
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
-
         } else {
+            operation.isFailed.set(true);
             throw new UnsupportedOperationException();
         }
         // 4: We do not need to delete old state from multi-versioned storage
@@ -277,22 +248,21 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
-            if (!operation.isFailed) {
-                if (isLogging == LOGOption_path && !operation.pKey.equals(preValues.GetPrimaryKey()) && !operation.isCommit) {
-                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
-                    int id = getTaskId(operation.pKey, delta);
-                    this.loggingManager.addLogRecord(new HistoryLog(id, operation.table_name, operation.pKey, preValues.GetPrimaryKey(), operation.bid, sourceAccountBalance));
-                    operation.isCommit = true;
-                    MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
-                }
+        } else {
+            operation.isFailed.set(true);
+        }
+        if (!operation.isFailed.get()) {
+            if (isLogging == LOGOption_path && !operation.pKey.equals(preValues.GetPrimaryKey()) && !operation.isCommit) {
+                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
+                int id = getTaskId(operation.pKey, delta);
+                this.loggingManager.addLogRecord(new HistoryLog(id, operation.table_name, operation.pKey, preValues.GetPrimaryKey(), operation.bid, sourceAccountBalance));
+                operation.isCommit = true;
+                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
             }
         }
     }
 
-    protected void Depo_Fun(AbstractOperation operation, long mark_ID, boolean clean) {
+    protected void Depo_Fun(Operation operation, long mark_ID, boolean clean) {
         SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
         List<DataBox> values = srcRecord.getValues();
         //apply function to modify..
@@ -303,7 +273,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
-    protected void GrepSum_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         int keysLength = operation.condition_records.length;
         SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
 
@@ -328,16 +298,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
+        } else {
+            operation.isFailed.set(true);
         }
-//        else {
-//            log.info("++++++ operation failed: " + operation);
-//        }
     }
 
-    protected void Non_GrepSum_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void Non_GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         int keysLength = operation.condition_records.length;
         SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
 
@@ -350,7 +316,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
             long value = preValues[i].getValues().get(1).getLong();
             //Read the corresponding value
-            preValues[i] = ((Operation) operation).tables[i].SelectKeyRecord(String.valueOf(value)).content_.readPreValues(operation.bid);
+            preValues[i] = operation.tables[i].SelectKeyRecord(String.valueOf(value)).content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
         }
 
@@ -361,7 +327,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
             long srcValue = srcRecord.getValues().get(1).getLong();
             // Read the corresponding value
-            SchemaRecord deterministicSchemaRecord = ((Operation) operation).tables[0].SelectKeyRecord(String.valueOf(srcValue)).content_.readPreValues(operation.bid);
+            SchemaRecord deterministicSchemaRecord = operation.tables[0].SelectKeyRecord(String.valueOf(srcValue)).content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(deterministicSchemaRecord);//tempo record
             if (operation.function instanceof SUM) {
                 tempo_record.getValues().get(1).setLong(sum);//compute.
@@ -371,24 +337,22 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             SchemaRecord disRecord = operation.d_record.content_.readPreValues(operation.bid);
             long disValue = srcRecord.getValues().get(1).getLong();
             // Read the corresponding value
-            TableRecord disDeterministicRecord = ((Operation) operation).tables[0].SelectKeyRecord(String.valueOf(disValue));
+            TableRecord disDeterministicRecord = operation.tables[0].SelectKeyRecord(String.valueOf(disValue));
             disDeterministicRecord.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            ((Operation) operation).deterministicRecords = new TableRecord[1];
-            ((Operation) operation).deterministicRecords[0] = disDeterministicRecord;
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
+            operation.deterministicRecords = new TableRecord[1];
+            operation.deterministicRecords[0] = disDeterministicRecord;
+        } else {
+            operation.isFailed.set(true);
         }
     }
 
-    protected void Windowed_GrepSum_Fun(AbstractOperation operation, long previous_mark_ID, boolean clean) {
+    protected void Windowed_GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         int keysLength = operation.condition_records.length;
 
         long sum = 0;
 
         // apply function
         AppConfig.randomDelay();
-
 
         for (int i = 0; i < keysLength; i++) {
 //            long start = System.nanoTime();
@@ -409,13 +373,9 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            synchronized (operation.success) {
-                operation.success[0]++;
-            }
+        } else {
+            operation.isFailed.set(true);
         }
-//        else {
-//            log.info("++++++ operation failed: " + operation);
-//        }
     }
 
     @Override
@@ -461,22 +421,22 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             switch (request.accessType) {
                 case WRITE_ONLY:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, null, null, null);
+                            request.d_record, null, null);
                     set_op.value = request.value;
                     break;
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.function, request.condition_records, request.success);
+                            request.d_record, request.function, request.condition_records);
                     break;
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition_records, request.success);
+                            request.d_record, request.record_ref, request.function, request.condition_records);
                     break;
                 case NON_READ_WRITE_COND_READN:
                     set_op = new Operation(true, request.tables, request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition_records, request.success);
+                            request.d_record, request.record_ref, request.function, request.condition_records);
                     break;
                 case READ_WRITE_READ:
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
@@ -485,7 +445,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 case WINDOWED_READ_ONLY:
                     WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
                     set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition_records, request.success, windowContext);
+                            request.d_record, request.record_ref, request.function, request.condition_records, windowContext);
                     break;
                 default:
                     throw new UnsupportedOperationException();

@@ -46,7 +46,7 @@ public class PartitionStateManagerWithAbort implements OperationStateListener, R
 
     @Override
     public void onOpProcessed(Operation operation) {
-        opSignalQueue.add(new OnProcessedSignal(operation, operation.isFailed));//
+        opSignalQueue.add(new OnProcessedSignal(operation, operation.isFailed.get()));//
     }
 
     public void onRootStart(Operation head) {
