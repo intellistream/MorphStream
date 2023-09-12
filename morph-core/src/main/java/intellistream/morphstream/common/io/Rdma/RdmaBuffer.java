@@ -72,7 +72,7 @@ public class RdmaBuffer {
         return result;
     }
 
-    long getAddress() {
+    public long getAddress() {
         return address;
     }
 
@@ -80,11 +80,11 @@ public class RdmaBuffer {
         return length;
     }
 
-    int getLkey() {
+    public int getLkey() {
         return ibvMr.getLkey();
     }
 
-    void free() {
+    public void free() {
         if (refCount.decrementAndGet() == 0) {
             unregister();
             unsafeAlloc.free(block);

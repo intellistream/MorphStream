@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Read;
+package intellistream.morphstream.common.io.Rdma.Shuffle.RW.Read;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.common.io.Exception.rdma.MetadataFetchFailedException;
@@ -7,7 +7,7 @@ import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.RdmaShuffleManagerId;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Stats.RdmaShuffleReaderStats;
-import intellistream.morphstream.common.io.Read.Result.FetchResult;
+import intellistream.morphstream.common.io.Rdma.Shuffle.RW.Read.Result.FetchResult;
 import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +16,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 public class RdmaShuffleFetcherIterator implements Iterator<InputStream> {
     private final Logger LOG = LoggerFactory.getLogger(RdmaShuffleFetcherIterator.class);
@@ -131,7 +130,7 @@ public class RdmaShuffleFetcherIterator implements Iterator<InputStream> {
             throw new RuntimeException(e);
         }
     }
-    private void startAsyncRemoteFetches() throws InterruptedException {
+    private void startAsyncRemoteFetches() throws InterruptedException, IOException {
         //0. Get the whole MapTaskOutputAddressTable
         RdmaBuffer rdmaBuffer = null;
         ByteBuffer mapTaskOutput = null;
@@ -181,22 +180,190 @@ public class RdmaShuffleFetcherIterator implements Iterator<InputStream> {
                }
            }
            for (List<Pair<BlockId, Long>> group : groups) {
-
-               for (Pair<BlockId, Long> blockPair : group) {
-
+               //1. Allocate memory for block location buffer
+               List<Pair<BlockId, Long>> eventBlocks = group.stream().filter(blockPair -> blockPair.getKey().isEventBlock()).collect(Collectors.toList());
+               int eventBlockCount = eventBlocks.size();
+               RdmaBuffer localBlockLocationBuffer = rdmaShuffleManager.getRdmaBufferManager().get(RdmaMapTaskOutput.ENTRY_SIZE * eventBlockCount);
+               long startTime = System.currentTimeMillis();
+               RdmaShuffleManagerId finalRequestedRdmaShuffleManagerId = requestedRdmaShuffleManagerId;
+               RdmaCompletionListener executorRdmaReadBlockLocationListener = new RdmaCompletionListener() {
+                   @Override
+                   public void onSuccess(ByteBuffer buffer) throws RuntimeException {
+                       //3. Finally, we have RdmaBlockLocation for this group of blocks. Let's fetch them
+                       LOG.info("RDMA read " + eventBlockCount + " block locations from " + finalRequestedRdmaShuffleManagerId.getBlockManagerId() + " in " + (System.currentTimeMillis() - startTime) + " ms");
+                       try {
+                           ByteBuffer blockLocationBuffer = localBlockLocationBuffer.getByteBuffer();
+                           int totalLength = 0;
+                           int totalReadRequests = 0;
+                           List<RdmaBlockLocation> curRdmaBlockLocations = new ArrayList<>();
+                           List<PendingFetch> pendingFetches = new ArrayList<>();
+                           for (int i = 0; i < eventBlockCount; i++) {
+                               //4. Parse RdmaBlockLocation in PendingFetches according to the block location length
+                               RdmaBlockLocation rdmaBlockLocation = new RdmaBlockLocation(blockLocationBuffer.getLong(), blockLocationBuffer.getInt(), blockLocationBuffer.getInt());
+                               if (totalLength + rdmaBlockLocation.length <= rdmaShuffleConf.shuffleReadBlockSize &&
+                                totalReadRequests < rdmaReadRequestsLimit) {
+                                   totalLength += rdmaBlockLocation.length;
+                                   totalReadRequests += 1;
+                               } else {
+                                   if (totalLength > 0) {
+                                        pendingFetches.add(new PendingFetch(finalRequestedRdmaShuffleManagerId, curRdmaBlockLocations, totalLength));
+                                   }
+                                   totalLength = rdmaBlockLocation.length;
+                                   totalReadRequests = 1;
+                                   curRdmaBlockLocations.clear();
+                               }
+                               curRdmaBlockLocations.add(rdmaBlockLocation);
+                           }
+                           localBlockLocationBuffer.free();
+                           if (totalLength > 0) {
+                               pendingFetches.add(new PendingFetch(finalRequestedRdmaShuffleManagerId, curRdmaBlockLocations, totalLength));
+                           }
+                           for (PendingFetch pendingFetch : pendingFetches) {
+                               //5. Start fetch if no more than rdmaShuffleConf.maxBytesInFlight are in progress
+                               numBlocksToFetch.addAndGet(pendingFetch.rdmaBlockLocations.size());
+                               if (curBytesInFlight.get() < rdmaShuffleConf.maxBytesInFlight) {
+                                   curBytesInFlight.addAndGet(pendingFetch.totalLength);
+                                   CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                                       try {
+                                           fetchBlocks(pendingFetch);
+                                       } catch (InterruptedException e) {
+                                           throw new RuntimeException(e);
+                                       }
+                                   });
+                               } else {
+                                   pendingFetchesQueue.add(pendingFetch);
+                               }
+                           }
+                           if (totalRemainingLocations.addAndGet(-eventBlockCount) == 0) {
+                               insertDummyResult();
+                           }
+                       } catch (IOException e) {
+                           throw new RuntimeException(e);
+                       }
+                   }
+                   @Override
+                   public void onFailure(Throwable exception) {
+                       Future<RdmaBuffer> mapOutputBuf = rdmaShuffleManager.shuffleIdToMapAddressBuffer.remove(shuffleId);
+                       if (mapOutputBuf != null) {
+                            try {
+                                 mapOutputBuf.get().free();
+                            } catch (InterruptedException | ExecutionException e) {
+                                 LOG.error("Failed to free mapOutputBuf: " + e);
+                            }
+                       }
+                       localBlockLocationBuffer.free();
+                       try {
+                           resultsQueue.put(new FetchResult.FailureMetadataFetchResult(new MetadataFetchFailedException(shuffleId, startPartition, exception.getMessage())));
+                           LOG.error("Failed to RDMA read " + eventBlockCount + " block locations from " + finalRequestedRdmaShuffleManagerId.getBlockManagerId() + " : " + exception);
+                       } catch (InterruptedException e) {
+                           throw new RuntimeException(e);
+                       }
+                   }
+               };
+               //2. RDMA read from other executor
+               long[] rAddresses = new long[eventBlocks.size()];
+               int[] rSizes = new int[eventBlocks.size()];
+               Arrays.fill(rSizes, RdmaMapTaskOutput.ENTRY_SIZE);
+               int[] rKeys = new int[eventBlocks.size()];
+               for (Pair<BlockId, Long> blockPair : eventBlocks) {
+                   //TODO: compute rAddress, rKey accounting to blockPair and mapTaskOutput
+                   rAddresses[eventBlocks.indexOf(blockPair)] = 0;
+                   rKeys[eventBlocks.indexOf(blockPair)] = 0;
+               }
+               try {
+                   RdmaChannel channelToExecutor = rdmaShuffleManager.getRdmaChannelOfREAD_REQUESTOR(requestedRdmaShuffleManagerId, true);
+                   channelToExecutor.rdmaReadInQueue(executorRdmaReadBlockLocationListener, localBlockLocationBuffer.getAddress(), localBlockLocationBuffer.getLkey(), rSizes, rAddresses, rKeys);
+               } catch (IOException e) {
+                   LOG.error("Failed to RDMA read block location buffer: " + e);
+                   executorRdmaReadBlockLocationListener.onFailure(e);
                }
            }
         }
     }
+    private void cleanup() {
+        //Close all the open streams
+        isStopped = true;
+        if (currentResult != null && currentResult instanceof FetchResult.SuccessFetchResult) {
+            if (((FetchResult.SuccessFetchResult) currentResult).getInputStream() != null) {
+                try {
+                    ((FetchResult.SuccessFetchResult) currentResult).getInputStream().close();
+                } catch (IOException e) {
+                    LOG.error("Failed to close input stream: " + e);
+                }
+            }
+        }
+        Iterator<FetchResult> iter = resultsQueue.iterator();
+        while (iter.hasNext()) {
+            FetchResult result = iter.next();
+            if (result instanceof FetchResult.SuccessFetchResult) {
+                if (((FetchResult.SuccessFetchResult) result).getInputStream() != null) {
+                    try {
+                        ((FetchResult.SuccessFetchResult) result).getInputStream().close();
+                    } catch (IOException e) {
+                        LOG.error("Failed to close input stream: " + e);
+                    }
+                }
+            }
+        }
+    }
+    private void initialize() throws IOException, InterruptedException {
+        //TODO:Add a task completion callback (called in both success and failure case) to cleanup.
 
+        startAsyncRemoteFetches();
+        //Get local rdma partition data
+        for (int i = startPartition; i < endPartition; i++) {
+            for (InputStream inputStream : rdmaShuffleManager.shuffleBlockResolver.getLocalRdmaPartition(shuffleId, i)) {
+                resultsQueue.put(new FetchResult.SuccessFetchResult(i, localBlockManagerId, inputStream));
+                numBlocksToFetch.incrementAndGet();
+            }
+        }
+    }
     @Override
     public boolean hasNext() {
-        return false;
+        return numBlocksProcessed < numBlocksToFetch.get();
     }
 
     @Override
     public InputStream next() {
-        return null;
+        if (!hasNext()) {
+            return null;
+        }
+
+        numBlocksProcessed += 1;
+        try {
+            currentResult = resultsQueue.take();
+            FetchResult result = currentResult;
+            if (result instanceof FetchResult.SuccessFetchResult) {
+                if (((FetchResult.SuccessFetchResult) result).getInputStream() != null) {
+                    curBytesInFlight.addAndGet(-((FetchResult.SuccessFetchResult) result).getInputStream().available());
+                }
+            }
+
+            //Start some pending remote fetches
+            while(!pendingFetchesQueue.isEmpty() && curBytesInFlight.get() < rdmaShuffleConf.maxBytesInFlight) {
+                PendingFetch pendingFetch = pendingFetchesQueue.poll();
+                curBytesInFlight.addAndGet(pendingFetch.totalLength);
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        fetchBlocks(pendingFetch);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
+            if (result instanceof FetchResult.SuccessFetchResult) {
+                return ((FetchResult.SuccessFetchResult) result).getInputStream();
+            } else if (result instanceof FetchResult.FailureFetchResult) {
+                throw new RuntimeException(((FetchResult.FailureFetchResult) result).getException());
+            } else if (result instanceof FetchResult.FailureMetadataFetchResult) {
+                throw ((FetchResult.FailureMetadataFetchResult) result).getException();
+            } else {
+                throw new RuntimeException("Unknown FetchResult type: " + result.getClass().getSimpleName());
+            }
+        } catch (InterruptedException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -247,7 +414,33 @@ public class RdmaShuffleFetcherIterator implements Iterator<InputStream> {
                 closed = true;
             }
         }
+        @Override
+        public int available() throws IOException {
+            return delegate.available();
+        }
+        @Override
+        public synchronized void mark(int readlimit) {
+            delegate.mark(readlimit);
+        }
+        @Override
+        public long skip(long n) throws IOException {
+            return delegate.skip(n);
+        }
+        @Override
+        public boolean markSupported() {
+            return delegate.markSupported();
+        }
+        @Override
+        public int read(byte[] b) throws IOException {
+            return delegate.read(b);
+        }
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return delegate.read(b, off, len);
+        }
+        @Override
+        public synchronized void reset() throws IOException {
+            delegate.reset();
+        }
     }
-
-
 }

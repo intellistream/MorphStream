@@ -10,7 +10,7 @@ import intellistream.morphstream.common.io.Rdma.RdmaUtils.Stats.RdmaShuffleReade
 import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.RdmaBaseShuffleHandle;
 import intellistream.morphstream.common.io.Rdma.Shuffle.Handle.ShuffleHandle;
 import intellistream.morphstream.common.io.Rdma.Shuffle.RW.ShuffleReader;
-import intellistream.morphstream.common.io.Rdma.Shuffle.RW.ShuffleWrite;
+import intellistream.morphstream.common.io.Rdma.Shuffle.RW.ShuffleWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ public class RdmaShuffleManager {
     // Used by executor only
     public RdmaShuffleReaderStats rdmaShuffleReaderStats;
     private final ConcurrentHashMap<Integer, BufferInfo> shuffleIdToDriverBufferInfo = new ConcurrentHashMap<>();//Mapping from shuffleId to driver's address, length, key of MapOutputLocation buffer
-    private final ConcurrentHashMap<Integer, Future<RdmaBuffer>> shuffleIdToMapAddressBuffer = new ConcurrentHashMap<>();//shuffleId -> RdmaBuffer for mapTaskOutput
+    public final ConcurrentHashMap<Integer, Future<RdmaBuffer>> shuffleIdToMapAddressBuffer = new ConcurrentHashMap<>();//shuffleId -> RdmaBuffer for mapTaskOutput
 
     public RdmaShuffleManager(RdmaShuffleConf conf, boolean isDriver) throws Exception {
         this.conf = conf;
@@ -113,7 +113,7 @@ public class RdmaShuffleManager {
         }
     }
 
-    public ShuffleWrite getWrite(ShuffleHandle handle, int mapId) throws Exception {
+    public ShuffleWriter getWrite(ShuffleHandle handle, int mapId) throws Exception {
         //RdmaNode can't be initialized in constructor for executors, so the first call will initialize
         startRdmaNodeIfMissing();
         return null;

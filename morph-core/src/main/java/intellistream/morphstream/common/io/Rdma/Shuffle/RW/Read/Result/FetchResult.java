@@ -1,4 +1,4 @@
-package intellistream.morphstream.common.io.Read.Result;
+package intellistream.morphstream.common.io.Rdma.Shuffle.RW.Read.Result;
 
 import intellistream.morphstream.common.io.Exception.rdma.MetadataFetchFailedException;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
