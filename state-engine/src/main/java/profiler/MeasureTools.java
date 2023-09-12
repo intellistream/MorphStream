@@ -1,27 +1,39 @@
 package profiler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import common.CONTROL;
+import common.collections.Configuration;
 import common.collections.OsUtils;
-import common.io.LocalFS.LocalDataOutputStream;
+import object.DAO.Job;
+import object.DAO.SchedulerTimeBreakdown;
+import object.DAO.TotalTimeBreakdown;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static common.CONTROL.*;
 import static common.IRunner.CCOption_MorphStream;
-import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.*;
 import static profiler.Metrics.*;
 import static utils.FaultToleranceConstants.*;
 
 public class MeasureTools {
     private static final Logger log = LoggerFactory.getLogger(MeasureTools.class);
     public static AtomicInteger counter = new AtomicInteger(0);
+    private static LocalDateTime jobStartTime;
+    private static final Random random = new Random();  // used to generate random ids for running jobs
 
     public static void Initialize() {
         Metrics.TxnRuntime.Initialize();
@@ -32,6 +44,7 @@ public class MeasureTools {
         Metrics.Scheduler_Record.Initialize();
         Metrics.RuntimePerformance.Initialize();
         Metrics.RecoveryPerformance.Initialize();
+        jobStartTime = LocalDateTime.now();
     }
 
     public static void SCHEDULE_TIME_RECORD(int threadId, int num_events) {
@@ -460,6 +473,107 @@ public class MeasureTools {
             e.printStackTrace();
         }
     }
+
+    public static void WriteJSONData(Configuration config, int tthread, double totalThroughput, int snapshotInterval) {
+        Job job = new Job();
+        job.setAppId(random.nextInt());
+        job.setNthreads(tthread);
+        job.setName(config.getString("application", "app"));
+        job.setNEvents(config.getInt("totalEvents", 0));
+        job.setThroughput(totalThroughput);
+        job.setIsRunning(false);
+
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        job.setStartTime(jobStartTime.format(dateTimeFormatter));
+
+        LocalDateTime currentTime = LocalDateTime.now();
+
+        Duration duration = Duration.between(jobStartTime, currentTime);
+
+        long hours = duration.toHours();
+        long minutes = duration.toMinutes() - hours * 60;
+        long seconds = duration.getSeconds() - hours * 60 * 60 - minutes * 60;
+
+        Formatter formatter = new Formatter();
+        formatter.format("%02d:%02d:%02d", hours, minutes, seconds);
+        job.setDuration(formatter.toString());
+
+        double totalProcessTime = 0;
+        double totalSerializeTime = 0;
+        double totalPersistTime = 0;
+        double totalStreamProcessTime = 0;
+        double totalTxnProcessTime = 0;
+        double totalOverheads = 0;
+        for (int threadId = 0; threadId < tthread; threadId++) {
+            totalProcessTime += Total_Record.totalProcessTimePerEvent[threadId].getMean();
+            if (snapshotInterval != 0) {
+                totalSerializeTime += Total_Record.compression_total[threadId].getMean() + Total_Record.serialization_total[threadId].getMean() + Total_Record.snapshot_serialization_total[threadId].getMean() / snapshotInterval;
+            }
+            totalPersistTime += Total_Record.persist_total[threadId].getMean();
+            totalStreamProcessTime += Total_Record.stream_total[threadId].getMean();
+            totalTxnProcessTime += Total_Record.txn_total[threadId].getMean();
+            totalOverheads += Total_Record.overhead_total[threadId].getMean();
+        }
+
+        // nanosecond to millisecond
+        job.setTotalTimeBreakdown(new TotalTimeBreakdown(totalProcessTime/1E6, totalSerializeTime/1E6, totalPersistTime/1E6, totalStreamProcessTime/1E6, totalOverheads/1E6, totalTxnProcessTime/1E6));
+
+        double explore_time = 0;
+        double useful_time = 0;
+        double abort_time = 0;
+        double construct_time = 0;
+        double tracking_time = 0;
+        for (int threadId = 0; threadId < tthread; threadId++) {
+            explore_time += Scheduler_Record.Explore[threadId].getMean();
+            useful_time += Scheduler_Record.Useful[threadId].getMean();
+            abort_time += Scheduler_Record.Abort[threadId].getMean();
+            construct_time += Scheduler_Record.Construct[threadId].getMean();
+            tracking_time += Scheduler_Record.Tracking[threadId].getMean();
+        }
+
+        job.setSchedulerTimeBreakdown(new SchedulerTimeBreakdown(explore_time/1E6, useful_time/1E6, abort_time/1E6, construct_time/1E6, tracking_time/1E6));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        List<double[]> latencys = new ArrayList<>();
+        List<double[]> throughputs = new ArrayList<>();
+        List<Double> periodicalLatency = new ArrayList<>();
+        List<Double> periodicalThroughput = new ArrayList<>();
+
+        for (int i = 0; i < tthread; i++) {
+            latencys.add(RuntimePerformance.Latency[i].getValues());
+            throughputs.add(RuntimePerformance.Throughput[i].getValues());
+        }
+        loop: for (int i = 0; i < latencys.get(0).length; i++) {
+            double throughput = 0;
+            double latency = 0;
+            for (int j = 0; j < tthread; j++) {
+                if (i >= throughputs.get(j).length || i >= latencys.get(j).length) {
+                    break loop;
+                }
+                throughput = throughput + throughputs.get(j)[i];
+                latency = latency + latencys.get(j)[i];
+            }
+            periodicalLatency.add(latency/1E3); // ms to s
+            periodicalThroughput.add(throughput);
+        }
+
+        job.setLatency(periodicalLatency.stream().mapToDouble(Double::doubleValue).average().orElse(0.0));  // s
+        job.setPeriodicalLatency(periodicalLatency);
+        job.setPeriodicalThroughput(periodicalThroughput);
+
+        try {
+            String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(job);
+            String jsonDirectory = "C:\\Users\\siqxi\\data\\job\\";
+            File file = new File(jsonDirectory + job.getAppId() + ".json");
+            BufferedWriter fileWriter = Files.newBufferedWriter(Paths.get(file.getPath()), CREATE, TRUNCATE_EXISTING);
+            fileWriter.write(json);
+            fileWriter.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private static void AverageTotalTimeBreakdownReport(int tthread, int snapshotInterval) {
         try {
             File file = new File(directory + fileNameSuffix + ".overall");
@@ -505,7 +619,7 @@ public class MeasureTools {
             e.printStackTrace();
         }
     }
-    private static void WriteThroughputPerPhase(int tthread, int phase, int shiftRate) {
+    private static void WriteThroughputPerPhase(int tthread, int shiftRate) {
         try {
             double[] tr = new double[Metrics.Runtime.ThroughputPerPhase.get(0).size()];
             //every punctuation
@@ -1046,7 +1160,13 @@ public class MeasureTools {
             e.printStackTrace();
         }
     }
-    public static void METRICS_REPORT(int ccOption, int FTOption, int tthread, double throughput, int phase, int shiftRate, int snapshotInterval) {
+    public static void METRICS_REPORT(Configuration config, int tthread, double throughput) {
+        int ccOption = config.getInt("CCOption", 0);
+        int FTOption = config.getInt("FTOption", 0);
+//        int phase = config.getInt("phaseNum");
+//        int shiftRate = config.getInt("shiftRate");
+        int snapshotInterval = config.getInt("snapshotInterval");
+
         WriteThroughputReport(throughput);
         AverageTotalTimeBreakdownReport(tthread, snapshotInterval);
         WritePersistFileSize(FTOption, tthread);
@@ -1063,6 +1183,8 @@ public class MeasureTools {
         WriteMemoryConsumption();
         WriteSSDConsumption();
         WriteSSDBandwidth();
+
+        WriteJSONData(config, tthread, throughput, snapshotInterval);
     }
     public static void METRICS_REPORT_WITH_FAILURE(int ccOption, int FTOption, int tthread, String rootFile, int snapshotInterval) {
         File file = new File(directory + fileNameSuffix + ".overall");
