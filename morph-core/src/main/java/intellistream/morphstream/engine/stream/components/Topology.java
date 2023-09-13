@@ -23,10 +23,6 @@ public class Topology implements Serializable {
      * <Operator ID, Operator>
      */
     private final LinkedHashMap<String, TopologyComponent> records;
-    public Database db;
-    public TransactionTopology txnTopology;
-    public SpinLock[] spinlock;
-    public TableInitilizer tableinitilizer;
     private TopologyComponent sink;
     /**
      * global scheduler template.

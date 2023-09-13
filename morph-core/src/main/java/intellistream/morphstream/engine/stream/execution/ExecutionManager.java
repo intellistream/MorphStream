@@ -96,8 +96,7 @@ public class ExecutionManager {
      * TODO: let's think about how to due with multi-thread per core in future..
      * All executors have to sync_ratio for OM to start, so it's safe to do initialization here. E.g., initialize database.
      */
-    public void distributeTasks(Configuration conf,
-                                CountDownLatch latch, Database db) throws UnhandledCaseException {
+    public void distributeTasks(Configuration conf, CountDownLatch latch, Database db) throws UnhandledCaseException {
         g.build_inputScheduler();
         this.loadFTManger();
         //TODO: support multi-stages later.

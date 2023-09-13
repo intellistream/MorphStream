@@ -2,6 +2,7 @@ package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.txn.db.CavaliaDatabase;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -19,7 +20,8 @@ import static intellistream.morphstream.engine.txn.storage.datatype.DataBox.Type
 
 public class DatabaseInitialize {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseInitialize.class);
-    private Configuration configuration = new Configuration();
+    private Configuration configuration = MorphStreamEnv.get().configuration();
+    private SpinLock[] spinlock = new SpinLock[configuration.getInt("tthread", 4)];
     private String[] tableNames;
     private HashMap<String, DataBox.Types> keyDataTypeMap = new HashMap<>();//table name to key data type
     private HashMap<String, DataBox.Types> valueDataTypeMap = new HashMap<>();//table name to value data type
@@ -51,11 +53,15 @@ public class DatabaseInitialize {
             }
         }
     }
-    public void loadDB(int threadId) {
-        loadDB(threadId, null);
+    public void loadDB(int threadId, boolean isPartition) {//Used by SStore
+        if (isPartition)
+            loadDB(threadId, spinlock);
+        else
+            loadDB(threadId, null);
     }
     public void configure_db(){
         tableNames = configuration.getString("tableNames","table1,table2").split(",");
+        totalThreads = configuration.getInt("tthread", 4);
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
             keyDataTypeMap.put(tableName, getDataType(configuration.getString(tableName + "_key_data_types","string")));
@@ -162,5 +168,8 @@ public class DatabaseInitialize {
     }
     public HashMap<String, Integer> getNumItemMaps() {
         return numItemMaps;
+    }
+    public void setSpinlock_(int i, SpinLock spinlock_) {
+        this.spinlock[i] = spinlock_;
     }
 }

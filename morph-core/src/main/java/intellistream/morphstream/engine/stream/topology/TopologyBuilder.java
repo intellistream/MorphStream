@@ -156,18 +156,6 @@ public class TopologyBuilder {
         topology.setScheduler(scheduler);
     }
 
-    public Topology createTopology(Database db, TransactionTopology txnTopology) {
-        if (topology.getScheduler() == null) {
-            if (CONTROL.enable_log) LOG.info("Tuple input scheduler is not set, use default scheduler instead!");
-            topology.setScheduler(new SequentialScheduler());
-        }
-        if (db != null) {
-            this.topology.db = db;
-            this.topology.txnTopology = txnTopology;
-        }
-        return topology;
-    }
-
     public Topology createTopology() {
         if (topology.getScheduler() == null) {
             if (CONTROL.enable_log)

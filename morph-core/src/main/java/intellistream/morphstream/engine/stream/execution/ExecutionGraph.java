@@ -30,7 +30,7 @@ import java.util.Set;
 public class ExecutionGraph extends RawExecutionGraph {
     private static final Logger LOG = LoggerFactory.getLogger(ExecutionGraph.class);
     private static final long serialVersionUID = 1435918828573882042L;
-    public final Topology topology;//make sure no reference to original topology. Each executionGraph should has its own Topology correspondingly.
+    public final Topology topology;//make sure no reference to original topology. Each executionGraph should hava its own Topology correspondingly.
     private final InputStreamController global_tuple_scheduler;
     private final Configuration conf;
     //	public LinkedList<ExecutionNode> bottleneck = new LinkedList<>();
@@ -202,7 +202,6 @@ public class ExecutionGraph extends RawExecutionGraph {
             if (CONTROL.enable_log) LOG.info("compressRatio must be greater than 1, and your setting:" + compressRatio);
             System.exit(-1);
         }
-//		int numTasks = 0;
         //create executionNode and assign unique vertex id to it.
         for (int i = 0; i < operator.getNumTasks() / compressRatio; i++) {
             //creates executor->Operator link
@@ -215,7 +214,6 @@ public class ExecutionGraph extends RawExecutionGraph {
             }
             addExecutor(vertex);
             operator.link_to_executor(vertex);//creates Operator->executor link.
-//			numTasks++;
         }
         //left-over
         int left_over = operator.getNumTasks() % compressRatio;
@@ -225,17 +223,6 @@ public class ExecutionGraph extends RawExecutionGraph {
             addExecutor(vertex);
             operator.link_to_executor(vertex);//creates Operator->executor link.
         }
-//		for (int i = 0; i < operator.getNumTasks() % compressRatio; i++) {
-//			//creates executor->Operator link
-//			ExecutionNode vertex = new ExecutionNode(operator, vertex_id++, p, 1);//Every executionNode obtain its unique vertex id..
-//			if (i == operator.getNumTasks() - 1) {
-//				vertex.setLast_executorOfBolt(true);
-//			}
-//			addExecutor(vertex);
-//			operator.link_to_executor(vertex);//creates Operator->executor link.
-////			numTasks++;
-//		}
-//		operator.numTasks = numTasks;//GetAndUpdate numTasks.
     }
 
     /**

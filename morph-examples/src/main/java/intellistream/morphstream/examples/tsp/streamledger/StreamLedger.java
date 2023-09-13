@@ -57,8 +57,6 @@ public class StreamLedger extends TransactionTopology {
         if (config.getBoolean("partition", false)) {
             for (int i = 0; i < tthread; i++)
                 spinlock_[i] = new SpinLock();
-//            ini.loadDB(scale_factor, theta, getPartition_interval(), spinlock_);
-            //initialize order locks.
             PartitionedOrderLock.getInstance().initilize(tthread);
         } else {
 //            ini.loadDB(scale_factor, theta);
@@ -111,7 +109,7 @@ public class StreamLedger extends TransactionTopology {
             e.printStackTrace();
         }
         builder.setGlobalScheduler(new SequentialScheduler());
-        return builder.createTopology(db, this);
+        return builder.createTopology();
     }
 
     @Override

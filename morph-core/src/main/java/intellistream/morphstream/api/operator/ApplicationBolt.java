@@ -57,7 +57,7 @@ public class ApplicationBolt extends TransactionalBolt {
 
     //TODO: loadDB is only called by the first bolt in topology. Refine this.
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-        MorphStreamEnv.get().databaseInitialize().loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID());
+        MorphStreamEnv.get().databaseInitialize().loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), false);
     }
 
     @Override

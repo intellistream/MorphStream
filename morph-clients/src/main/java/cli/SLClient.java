@@ -111,7 +111,7 @@ public class SLClient {
 
         //Define topology
         ApplicationSpoutCombo spoutCombo = new ApplicationSpoutCombo(txnDescriptions);
-        SLClient.env().transactionalTopology().builder.setSpout("spout", spoutCombo, 1);
+        SLClient.setSpout("spout", spoutCombo, 1);
 //
 //        builder.setGlobalScheduler(new SequentialScheduler());
 //        Topology topology = builder.createTopology(db, this);
