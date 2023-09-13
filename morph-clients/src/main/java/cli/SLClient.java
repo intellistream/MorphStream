@@ -8,12 +8,15 @@ import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
 import intellistream.morphstream.api.utils.TxnDataHolder;
-import intellistream.morphstream.api.utils.UDF;
+import intellistream.morphstream.engine.stream.components.Topology;
+import intellistream.morphstream.engine.stream.controller.input.scheduler.SequentialScheduler;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+
+import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 
 public class SLClient {
@@ -108,9 +111,17 @@ public class SLClient {
 
         //Define topology
         ApplicationSpoutCombo spoutCombo = new ApplicationSpoutCombo(txnDescriptions);
-        SLClient.evn().topology().builder.setSpout("spout", spoutCombo, 1);
+        SLClient.env().transactionalTopology().builder.setSpout("spout", spoutCombo, 1);
+//
+//        builder.setGlobalScheduler(new SequentialScheduler());
+//        Topology topology = builder.createTopology(db, this);
 
-        SLClient.run();
+        //Initiate runner
+        try {
+            SLClient.run();
+        } catch (InterruptedException ex) {
+            if (enable_log) log.error("Error in running topology locally", ex);
+        }
     }
 
 }

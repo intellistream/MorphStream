@@ -5,6 +5,7 @@ import intellistream.morphstream.api.state.DatabaseInitialize;
 import intellistream.morphstream.common.io.Rdma.RdmaShuffleManager;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
 import intellistream.morphstream.configuration.Configuration;
+import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.optimization.OptimizationManager;
 import intellistream.morphstream.engine.stream.topology.TransactionTopology;
 import intellistream.morphstream.engine.txn.db.Database;
@@ -18,7 +19,7 @@ public class MorphStreamEnv {
     private OptimizationManager OM;
     private RdmaShuffleManager RM;
     private BlockManagerId blockManagerId;
-    private TransactionTopology topology;
+    private TransactionTopology transactionTopology;
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     public static MorphStreamEnv get() {
         return ourInstance;
@@ -40,8 +41,8 @@ public class MorphStreamEnv {
     public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitialize databaseInitialize() {return databaseInitialize;}
 
-    public TransactionTopology topology() {
-        return topology;
+    public TransactionTopology transactionalTopology() {
+        return transactionTopology;
     }
 
 }

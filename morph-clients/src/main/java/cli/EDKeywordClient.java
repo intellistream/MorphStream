@@ -34,16 +34,16 @@ public class EDKeywordClient {
         txnDescriptions.put("deposit", depositDescription);
 
         ApplicationSpoutCombo spoutCombo = new ApplicationSpoutCombo(txnDescriptions);
-        EDKeywordClient.evn().topology().builder.setSpout("spout", spoutCombo, 1);
+        EDKeywordClient.env().transactionalTopology().builder.setSpout("spout", spoutCombo, 1);
 
         //Define topology
         ApplicationSpout spout = new ApplicationSpout(txnDescriptions); //TODO: For non-combo, what to specify for spout and bolt?
         ApplicationBolt bolt = new ApplicationBolt(txnDescriptions);
         ApplicationSink sink = new ApplicationSink(log);
 
-        EDKeywordClient.evn().topology().builder.setSpout("executor", spout, 1);
-        EDKeywordClient.evn().topology().builder.setBolt("executor", bolt, 1, new ShuffleGrouping("spout"));
-        EDKeywordClient.evn().topology().builder.setSink("sink", sink, 1, new ShuffleGrouping("executor"));
+        EDKeywordClient.env().transactionalTopology().builder.setSpout("executor", spout, 1);
+        EDKeywordClient.env().transactionalTopology().builder.setBolt("executor", bolt, 1, new ShuffleGrouping("spout"));
+        EDKeywordClient.env().transactionalTopology().builder.setSink("sink", sink, 1, new ShuffleGrouping("executor"));
 
 
         EDKeywordClient.run();
