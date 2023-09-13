@@ -86,7 +86,7 @@ public class CliFrontend {
 
 
     private void runTopologyLocally() throws InterruptedException {
-        Topology topology = MorphStreamEnv.get().createTopology();
+        Topology topology = env.createTopology();
         env.submitTopology(topology);
         listenToStop();
         //TODO: stop application

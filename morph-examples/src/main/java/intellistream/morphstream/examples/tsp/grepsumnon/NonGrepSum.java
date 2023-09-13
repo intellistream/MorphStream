@@ -67,7 +67,7 @@ public class NonGrepSum extends TransactionTopology {
             throw new RuntimeException(e);
         }
         builder.setGlobalScheduler(new SequentialScheduler());
-        return builder.createTopology(db, this);
+        return builder.createTopology();
     }
 
     @Override

@@ -103,7 +103,7 @@ public class SHJ extends TransactionTopology {
             e.printStackTrace();
         }
         builder.setGlobalScheduler(new SequentialScheduler());
-        return builder.createTopology(db, this);
+        return builder.createTopology();
     }
 
     @Override
