@@ -1,12 +1,14 @@
 package intellistream.morphstream.api.state;
 
-import intellistream.morphstream.api.utils.ClientSideMetaTypes;
+import intellistream.morphstream.api.utils.MetaTypes;
 
 import java.util.HashMap;
 
 public class StateAccess {
-    private ClientSideMetaTypes.AccessType accessType;
+    private MetaTypes.AccessType accessType;
     private HashMap<String, StateObject> stateObjectMap; //Store all state objects required during txn-UDF
+    private HashMap<String, Object> conditionList; //Store all conditions required during txn-UDF
+    public Object udfResult;
     public StateAccess(StateAccessDescription description) {
         stateObjectMap = new HashMap<>();
         accessType = description.getAccessType();
@@ -21,7 +23,7 @@ public class StateAccess {
     public HashMap<String, StateObject> getStateObjectMap() {
         return stateObjectMap;
     }
-    public ClientSideMetaTypes.AccessType getAccessType() {
+    public MetaTypes.AccessType getAccessType() {
         return accessType;
     }
 

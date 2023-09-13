@@ -7,7 +7,6 @@ import intellistream.morphstream.engine.txn.scheduler.signal.op.OnParentUpdatedS
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes.DependencyType;
 import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes.OperationStateType;
-import intellistream.morphstream.engine.txn.storage.SchemaRecordRef;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
@@ -17,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,25 +55,20 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     /****************************Defined by MYC*************************************/
 
-    public <Context extends OPSchedulerContext> Operation(String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-                                                          CommonMetaTypes.AccessType accessType, TableRecord d_record, Function function, TableRecord[] condition_records) {
-        this(pKey, context, table_name, txn_context, bid, accessType, d_record, null, function, condition_records, null);
+    public <Context extends OPSchedulerContext> Operation(
+            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+            CommonMetaTypes.AccessType accessType, TableRecord record,
+            Function function,
+            HashMap<String, TableRecord> read_records) {
+        this(pKey, context, table_name, txn_context, bid, accessType, record, function, read_records, null);
     }
 
     public <Context extends OPSchedulerContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            SchemaRecordRef record_ref, Function function,
-            TableRecord[] condition_records) {
-        this(pKey, context, table_name, txn_context, bid, accessType, record, record_ref, function, condition_records, null);
-    }
-
-    public <Context extends OPSchedulerContext> Operation(
-            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-            CommonMetaTypes.AccessType accessType, TableRecord record,
-            SchemaRecordRef record_ref, Function function,
-            TableRecord[] condition_records, WindowDescriptor windowContext) {
-        super(function, table_name, record_ref, condition_records, txn_context, accessType, record, bid, windowContext, pKey);
+            Function function,
+            HashMap<String, TableRecord> read_records, WindowDescriptor windowContext) {
+        super(function, table_name, read_records, txn_context, accessType, record, bid, windowContext, pKey);
         this.context = context;
 
         ld_head_operation = null;
@@ -101,9 +96,9 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends OPSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables,
                                                           String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                           CommonMetaTypes.AccessType accessType, TableRecord record,
-                                                          SchemaRecordRef record_ref, Function function,
-                                                          TableRecord[] condition_records) {
-        super(function, table_name, record_ref, condition_records, txn_context, accessType, record, bid, null, pKey);
+                                                          Function function,
+                                                          HashMap<String, TableRecord> read_records) {
+        super(function, table_name, read_records, txn_context, accessType, record, bid, null, pKey);
         this.context = context;
         this.isNonDeterministicOperation = isNonDeterministicOperation;
         this.tables = tables;

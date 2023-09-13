@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.defaultString;
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
 import static java.util.stream.Collectors.toList;
 
@@ -109,15 +110,15 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 Transfer_Fun(operation, mark_ID, clean);
             }
             // check whether needs to return a read results of the operation
-            if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            if (operation.stateAccess.getStateObject(defaultString) != null) {
+                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND)) {
             if (this.tpg.getApp() == 1) {//SL
                 Transfer_Fun(operation, mark_ID, clean);
             } else {//OB
                 AppConfig.randomDelay();
-                List<DataBox> d_record = operation.condition_records[0].content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType).getValues();
+                List<DataBox> d_record = operation.read_records.get(defaultString).content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType).getValues();
                 long askPrice = d_record.get(1).getLong();//price
                 long left_qty = d_record.get(2).getLong();//available qty;
                 long bidPrice = 100; //old condition: event.getBidPrice(i), default=100
@@ -143,21 +144,21 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND_READN)) {
             GrepSum_Fun(operation, mark_ID, clean);
             // check whether needs to return a read results of the operation
-            if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            if (operation.stateAccess.getStateObject(defaultString) != null) {
+                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.NON_READ_WRITE_COND_READN)) {
             Non_GrepSum_Fun(operation, mark_ID, clean);
             // check whether needs to return a read results of the operation
-            if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            if (operation.stateAccess.getStateObject(defaultString) != null) {
+                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.WRITE_ONLY)) {
             //OB-Alert
             AppConfig.randomDelay();
             operation.d_record.record_.getValues().get(1).setLong(operation.value);
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_READ)) {
-            assert operation.record_ref != null;
+            assert operation.stateAccess.getStateObject(defaultString) != null;
             AppConfig.randomDelay();
             List<DataBox> srcRecord = operation.d_record.record_.getValues();
             if (operation.function instanceof AVG) {
@@ -169,17 +170,17 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     lav = (latestAvgSpeeds + operation.function.delta_double) / 2;
 
                 srcRecord.get(1).setDouble(lav);//write to state.
-                operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
+                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
             } else {
                 HashSet cnt_segment = srcRecord.get(1).getHashSet();
                 cnt_segment.add(operation.function.delta_int);//update hashset; updated state also. TODO: be careful of this.
-                operation.record_ref.setRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
+                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.WINDOWED_READ_ONLY)) {
-            assert operation.record_ref != null;
+            assert operation.stateAccess.getStateObject(defaultString) != null;
             AppConfig.randomDelay();
             Windowed_GrepSum_Fun(operation, mark_ID, clean);
-            operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
         } else {
             throw new UnsupportedOperationException();
         }
@@ -192,13 +193,12 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 //        AppConfig.randomDelay();
 
         // 1. Match: given a key, search windowed state R_key from R table, search windowed state S_key from S table.
-        int keysLength = operation.condition_records.length;
+        int keysLength = operation.read_records.size();
         List<Long> rKeys = new ArrayList<>();
-        for (int i = 0; i < keysLength; i++) {
-            List<SchemaRecord> rSchemaRecordRange = operation.condition_records[i].content_.readPreValuesRange(operation.bid, 10240000);
+        for (TableRecord tableRecord : operation.read_records.values()) {
+            List<SchemaRecord> rSchemaRecordRange = tableRecord.content_.readPreValuesRange(operation.bid, 10240000);
             rKeys = rSchemaRecordRange.stream().map(schemaRecord -> schemaRecord.getValues().get(1).getLong()).collect(toList());
         }
-
 
         SchemaRecord sWindowedState = operation.d_record.content_.readPreValues(operation.bid);
 
@@ -230,7 +230,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
     // DD: Transfer event processing
     protected void Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+        SchemaRecord preValues = operation.read_records.get("default_key").content_.readPreValues(operation.bid);
         final long sourceAccountBalance = preValues.getValues().get(1).getLong();
 
         // apply function
@@ -274,17 +274,19 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     protected void GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        int keysLength = operation.condition_records.length;
-        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
+        int keysLength = operation.read_records.size();
+        SchemaRecord[] preValues = new SchemaRecord[operation.read_records.size()];
 
         long sum = 0;
 
         // apply function
         AppConfig.randomDelay();
 
-        for (int i = 0; i < keysLength; i++) {
-            preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
+        int i = 0;
+        for (TableRecord tableRecord : operation.read_records.values()) {
+            preValues[i] = tableRecord.content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
+            i++;
         }
 
         sum /= keysLength;
@@ -304,20 +306,20 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     protected void Non_GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        int keysLength = operation.condition_records.length;
-        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
+        int keysLength = operation.read_records.size();
+        SchemaRecord[] preValues = new SchemaRecord[operation.read_records.size()];
 
         long sum = 0;
 
         AppConfig.randomDelay();
 
-        for (int i = 0; i < keysLength; i++) {
-            //Get Deterministic Key
-            preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
+        int i = 0;
+        for (TableRecord tableRecord : operation.read_records.values()) {
+            preValues[i] = tableRecord.content_.readPreValues(operation.bid);
             long value = preValues[i].getValues().get(1).getLong();
-            //Read the corresponding value
             preValues[i] = operation.tables[i].SelectKeyRecord(String.valueOf(value)).content_.readPreValues(operation.bid);
             sum += preValues[i].getValues().get(1).getLong();
+            i++;
         }
 
         sum /= keysLength;
@@ -347,18 +349,16 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
     }
 
     protected void Windowed_GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        int keysLength = operation.condition_records.length;
+        int keysLength = operation.read_records.size();
 
         long sum = 0;
 
         // apply function
         AppConfig.randomDelay();
 
-        for (int i = 0; i < keysLength; i++) {
-//            long start = System.nanoTime();
-//            while (System.nanoTime() - start < 10000) {}
+        for (TableRecord tableRecord : operation.read_records.values()) {
             assert operation.windowContext.isWindowed();
-            List<SchemaRecord> schemaRecordRange = operation.condition_records[i].content_.readPreValuesRange(operation.bid, operation.windowContext.getRange());
+            List<SchemaRecord> schemaRecordRange = tableRecord.content_.readPreValuesRange(operation.bid, operation.windowContext.getRange());
             sum += schemaRecordRange.stream().mapToLong(schemaRecord -> schemaRecord.getValues().get(1).getLong()).sum();
         }
 
@@ -420,32 +420,32 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             Operation set_op;
             switch (request.accessType) {
                 case WRITE_ONLY:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
+                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, null, null);
                     set_op.value = request.value;
                     break;
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.function, request.condition_records);
+                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, request.read_records);
                     break;
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition_records);
+                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, request.read_records);
                     break;
                 case NON_READ_WRITE_COND_READN:
-                    set_op = new Operation(true, request.tables, request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition_records);
+                    set_op = new Operation(true, request.tables, request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, request.read_records);
                     break;
                 case READ_WRITE_READ:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, null, null);
+                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, null, null);
                     break;
                 case WINDOWED_READ_ONLY:
                     WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition_records, windowContext);
+                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, request.read_records, windowContext);
                     break;
                 default:
                     throw new UnsupportedOperationException();

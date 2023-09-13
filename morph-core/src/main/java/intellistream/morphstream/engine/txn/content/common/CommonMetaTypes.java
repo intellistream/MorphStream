@@ -13,6 +13,7 @@ public interface CommonMetaTypes {
     int kUpdate = 1;
     int kDelete = 2;
     int kAdhocTxn = 100;
+    String defaultString = "default";
 
     enum LockType {
         NO_LOCK, READ_LOCK, WRITE_LOCK, CERTIFY_LOCK

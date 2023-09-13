@@ -1,12 +1,7 @@
 package intellistream.morphstream.api.state;
 
 
-import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
-import intellistream.morphstream.engine.txn.storage.SchemaRecord;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 
 /**
  * Used as a data carrier for SchemaRecord, provides simplified retrieval-by-columnName APIs.

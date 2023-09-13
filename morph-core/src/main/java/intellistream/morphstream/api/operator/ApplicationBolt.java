@@ -34,17 +34,14 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 public class ApplicationBolt extends TransactionalBolt {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationBolt.class);
     private final HashMap<String, TxnDescription> txnDescriptionMap;//Transaction flag -> TxnDescription
-    private final HashMap<String, ArrayDeque<TransactionalEvent>> txnFlagEventMap;//Transaction flag -> Transactional events deque
-    private final HashMap<Integer, StateAccess> eventStateAccessMap;//Event.bid -> StateAccess
+    private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
+    private final HashMap<Integer, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
 
     public ApplicationBolt(HashMap<String, TxnDescription> txnDescriptionMap) {
         super(LOG, 0); //TODO: Check fid
         this.txnDescriptionMap = txnDescriptionMap;
-        txnFlagEventMap = new HashMap<>();
-        for (String txnFlag : txnDescriptionMap.keySet()) {
-            txnFlagEventMap.put(txnFlag, new ArrayDeque<>());
-        }
-        eventStateAccessMap = new HashMap<>();
+        eventQueue = new ArrayDeque<>();
+        eventStateAccessesMap = new HashMap<>();
     }
 
     @Override
@@ -99,9 +96,14 @@ public class ApplicationBolt extends TransactionalBolt {
     protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) {
         String txnFlag = event.getFlag();
         TxnDescription txnDescription = txnDescriptionMap.get(txnFlag);
+        //Initialize state access map for each event
+        eventStateAccessesMap.put((int) event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(txnContext);
         //Each event triggers multiple state accesses
-        for (StateAccessDescription stateAccessDesc: txnDescription.getStateAccessDescValues()) {
+        for (Map.Entry<String, StateAccessDescription> descEntry: txnDescription.getStateAccessDescEntries()) {
+            //Initialize state access based on state access description
+            String stateAccessName = descEntry.getKey();
+            StateAccessDescription stateAccessDesc = descEntry.getValue();
             StateAccess stateAccess = new StateAccess(stateAccessDesc);
             //Each state access involves multiple state objects
             for (Map.Entry<String, StateObjectDescription> entry: stateAccessDesc.getStateObjectEntries()) {
@@ -111,44 +113,42 @@ public class ApplicationBolt extends TransactionalBolt {
                 StateObject stateObject = new StateObject(stateObjDesc.getType(), stateObjDesc.getTableName(), stateObjKey, stateObjValue);
                 stateAccess.addStateObject(entry.getKey(), stateObject);
             }
-            eventStateAccessMap.put((int) event.getBid(), stateAccess);
+            eventStateAccessesMap.get((int) event.getBid()).put(stateAccessName, stateAccess);
             transactionManager.submitStateAccess(stateAccess, txnContext);
         }
         transactionManager.CommitTransaction(txnContext);
-        txnFlagEventMap.get(event.getFlag()).add(event);
+        eventQueue.add(event);
     }
 
     protected void Transaction_Post_Process() {
-        for (ArrayDeque<TransactionalEvent> eventQueue : txnFlagEventMap.values()) {
-            for (TransactionalEvent event : eventQueue) {
-                //Invoke client defined post-processing UDF using Reflection
-                Result postUDFResult;
-                try {
-                    Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
-                    Object clientObj = clientClass.getDeclaredConstructor().newInstance();
-                    StateAccess stateAccess = eventStateAccessMap.get((int) event.getBid());
-                    String postUDFName = txnDescriptionMap.get(event.getFlag()).getPostUDFName();
-                    Method postUDF = clientClass.getMethod(postUDFName, StateAccess.class, TransactionalEvent.class);
-                    postUDFResult = (Result) postUDF.invoke(clientObj, stateAccess, event);
-                    if (!enable_app_combo) {
-                        collector.emit(event.getBid(), postUDFResult.getTransactionalEvent(), event.getTimestamp());
-                    } else {
-                        if (enable_latency_measurement) {
-                            //TODO: Define sink for bolt
+        for (TransactionalEvent event : eventQueue) {
+            //Invoke client defined post-processing UDF using Reflection
+            Result postUDFResult;
+            try {
+                Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
+                Object clientObj = clientClass.getDeclaredConstructor().newInstance();
+                HashMap<String,StateAccess> stateAccesses = eventStateAccessesMap.get((int) event.getBid());
+                String postUDFName = txnDescriptionMap.get(event.getFlag()).getPostUDFName();
+                Method postUDF = clientClass.getMethod(postUDFName, HashMap.class, TransactionalEvent.class);
+                postUDFResult = (Result) postUDF.invoke(clientObj, stateAccesses, event);
+                if (!enable_app_combo) {
+                    collector.emit(event.getBid(), postUDFResult.getTransactionalEvent(), event.getTimestamp());
+                } else {
+                    if (enable_latency_measurement) {
+                        //TODO: Define sink for bolt
 //                            sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.transaction_result, event.getTimestamp())));
-                        }
                     }
-                } catch (ClassNotFoundException e) {
-                    throw new RuntimeException("Client class not found");
-                } catch (InstantiationException | IllegalAccessException e) {
-                    throw new RuntimeException("Fail to create instance for client class");
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException("Client post UDF method not found");
-                } catch (InvocationTargetException e) {
-                    throw new RuntimeException("Client post UDF invocation failed");
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Output emission interrupted");
                 }
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Client class not found");
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("Fail to create instance for client class");
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("Client post UDF method not found");
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException("Client post UDF invocation failed");
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Output emission interrupted");
             }
         }
     }
@@ -157,10 +157,7 @@ public class ApplicationBolt extends TransactionalBolt {
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {
 
         if (in.isMarker()) {
-            int numEvents = 0;
-            for (ArrayDeque<TransactionalEvent> eventQueue : txnFlagEventMap.values()) {
-                numEvents += eventQueue.size();
-            }
+            int numEvents = eventQueue.size();
             MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
             {
                 transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
@@ -171,9 +168,7 @@ public class ApplicationBolt extends TransactionalBolt {
                 Transaction_Post_Process();
             }
             MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
-            for (ArrayDeque<TransactionalEvent> eventQueue : txnFlagEventMap.values()) {
-                eventQueue.clear();
-            }
+            eventQueue.clear();
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, numEvents);
         } else {
             execute_ts_normal(in);

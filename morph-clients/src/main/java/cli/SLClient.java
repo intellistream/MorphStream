@@ -6,10 +6,7 @@ import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
-import intellistream.morphstream.api.utils.ClientSideMetaTypes.AccessType;
-import intellistream.morphstream.api.utils.TxnDataHolder;
-import intellistream.morphstream.engine.stream.components.Topology;
-import intellistream.morphstream.engine.stream.controller.input.scheduler.SequentialScheduler;
+import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,29 +22,35 @@ public class SLClient {
     /**
      * Client-defined customized txn-UDF, which will be executed in Schedulers
      * This is a callback method using Reflection mechanism, invoked by referencing its className & methodName
-     * Before execution, Scheduler should have access to all SchemaRecords required and add them into txnDescriptor
+     * Before execution, Scheduler should have access to all SchemaRecords required and add them into StateAccess
      *
      * @param access Stores everything bolt needs (transaction info, post-processing UDF)
-     * @param dataHolder Let client specify arguments-in-TxnEvent that are used to construct txn or during txn-UDF
      */
-    public boolean srcTransferFunction(StateAccess access, TxnDataHolder dataHolder) {
+
+    //Before executing udf, read schemaRecord from tableRecord and write into stateaccess
+    public boolean srcTransferFunction(StateAccess access) {
         StateObject srcAccountState = access.getStateObject("srcAccountState");
         double srcBalance = srcAccountState.getDoubleValue("balance");
-        double transferAmount = dataHolder.doubleMap.get("transferAmount");
+//        double transferAmount = dataHolder.doubleMap.get("transferAmount"); //TODO: Add condition support for stateAccess
+        double transferAmount = 100;
         if (srcBalance > 100 && srcBalance > transferAmount) {
-            srcAccountState.setDoubleValue("balance", srcBalance - transferAmount);
+            double newSrcBalance = srcAccountState.getDoubleValue("balance") - transferAmount;
+            access.udfResult = newSrcBalance;
             return true;
         } else {
-            return false;
+            return false; //abort txn
         }
     }
+    //after udf, use the returned value to update schemaRecord
+    //after update to schemaRecord, write the updated schemaRecord to stateAccess
 
-    public boolean destTransferFunction(StateAccess access, TxnDataHolder dataHolder) { //TODO: For some app, need to pass-in event data to txnUDF. E.g. In OGScheduler, each TPEvent's own speed
+    public boolean destTransferFunction(StateAccess access) {
         StateObject srcAccountState = access.getStateObject("srcAccountState");
         StateObject destAccountState = access.getStateObject("destAccountState");
         double srcBalance = srcAccountState.getDoubleValue("balance");
         double destBalance = destAccountState.getDoubleValue("balance");
-        double transferAmount = dataHolder.doubleMap.get("transferAmount");
+//        double transferAmount = dataHolder.doubleMap.get("transferAmount"); //TODO: Add condition support for stateAccess
+        double transferAmount = 100;
         if (srcBalance > 100 && srcBalance > transferAmount) {
             destAccountState.setDoubleValue("balance", destBalance + transferAmount);
             return true;

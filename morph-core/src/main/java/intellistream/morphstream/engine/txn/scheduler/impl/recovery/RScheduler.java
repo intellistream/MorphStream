@@ -13,6 +13,7 @@ import intellistream.morphstream.engine.txn.scheduler.struct.recovery.Operation;
 import intellistream.morphstream.engine.txn.scheduler.struct.recovery.OperationChain;
 import intellistream.morphstream.engine.txn.scheduler.struct.recovery.TaskPrecedenceGraph;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
+import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
 import intellistream.morphstream.engine.txn.storage.datatype.DoubleDataBox;
 import intellistream.morphstream.engine.txn.storage.datatype.IntDataBox;
@@ -34,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static intellistream.morphstream.common.constants.TPConstants.Constant.MAX_INT;
 import static intellistream.morphstream.common.constants.TPConstants.Constant.MAX_SPEED;
 import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.AccessType.*;
+import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.defaultString;
 import static intellistream.morphstream.util.FaultToleranceConstants.LOGOption_no;
 import static intellistream.morphstream.util.FaultToleranceConstants.LOGOption_path;
 
@@ -96,31 +98,31 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             Operation set_op;
             switch (request.accessType) {
                 case WRITE_ONLY:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, null, null, null);
+                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, null, null);
                     set_op.value = request.value;
                     break;
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.function, request.condition_records);
+                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, request.read_records);
                     break;
                 case READ_WRITE_COND_READ:
                 case READ_WRITE_COND_READN:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, request.condition_records);
+                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, request.read_records);
                     break;
                 case READ_WRITE_READ:
-                    set_op = new Operation(request.src_key, getTargetContext(request.src_key), request.table_name, request.txn_context, bid, request.accessType,
-                            request.d_record, request.record_ref, request.function, null);
+                    set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
+                            request.d_record, request.function, null);
                     break;
                 default:
                     throw new UnsupportedOperationException();
             }
             OperationChain curOC = tpg.addOperationToChain(set_op);
             set_op.setTxnOpId(txnOpId++);
-            if (request.condition_source != null) {
-                inspectDependency(context.groupId, curOC, set_op, request.table_name, request.src_key, request.condition_sourceTable, request.condition_source);
+            if (request.read_keys != null) {
+                inspectDependency(context.groupId, curOC, set_op, request.table_name, request.write_key, request.read_tables, request.read_keys);
             }
             MeasureTools.END_TPG_CONSTRUCTION_TIME_MEASURE(context.thisThreadId);
         }
@@ -281,8 +283,8 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     public void execute(Operation operation, long mark_ID, boolean clean) {
         if (operation.accessType.equals(READ_WRITE_COND_READ)) {
             Transfer_Fun(operation, mark_ID, clean);
-            if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            if (operation.stateAccess.getStateObject(defaultString) != null) {
+                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
             if (this.tpg.getApp() == 1) {//SL
@@ -294,8 +296,8 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             }
         } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
             GrepSum_Fun(operation, mark_ID, clean);
-            if (operation.record_ref != null) {
-                operation.record_ref.setRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
+            if (operation.stateAccess.getStateObject(defaultString) != null) {
+                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
         } else if (operation.accessType.equals(READ_WRITE_READ)) {
             TollProcess_Fun(operation, mark_ID, clean);
@@ -306,7 +308,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
         Operation op = (Operation) operation;
         final long sourceAccountBalance;
         if (op.historyView == null) {
-            SchemaRecord preValues = operation.condition_records[0].content_.readPreValues(operation.bid);
+            SchemaRecord preValues = operation.read_records.get(defaultString).content_.readPreValues(operation.bid);
             sourceAccountBalance = preValues.getValues().get(1).getLong();
         } else {
             sourceAccountBalance = Long.parseLong(String.valueOf(op.historyView));
@@ -343,16 +345,18 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     }
 
     protected void GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        int keysLength = operation.condition_records.length;
-        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.length];
+        int keysLength = operation.read_records.size();
+        SchemaRecord[] preValues = new SchemaRecord[operation.read_records.size()];
         long sum = 0;
         AppConfig.randomDelay();
         if (operation.historyView != null) {
             sum = Long.parseLong(String.valueOf(operation.historyView));
         } else {
-            for (int i = 0; i < keysLength; i++) {
-                preValues[i] = operation.condition_records[i].content_.readPreValues(operation.bid);
+            int i = 0;
+            for (TableRecord tableRecord : operation.read_records.values()) {
+                preValues[i] = tableRecord.content_.readPreValues(operation.bid);
                 sum += preValues[i].getValues().get(1).getLong();
+                i++;
             }
         }
         sum /= keysLength;
@@ -383,7 +387,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                     lav = (latestAvgSpeeds + operation.function.delta_double) / 2;
 
                 srcRecord.get(1).setDouble(lav);//write to state.
-                operation.record_ref.setRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
+                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
             } else {
                 operation.isFailed.set(true);
             }
@@ -391,7 +395,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             if (operation.function.delta_int < MAX_INT) {
                 HashSet cnt_segment = srcRecord.get(1).getHashSet();
                 cnt_segment.add(operation.function.delta_int);//update hashset; updated state also. TODO: be careful of this.
-                operation.record_ref.setRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
+                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             } else {
                 operation.isFailed.set(true);
             }

@@ -4,6 +4,7 @@ import intellistream.morphstream.api.state.StateAccessDescription;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 
 //TODO: For now, assume each event carries one transaction (txn_length==1)
 public class TxnDescription {
@@ -33,5 +34,9 @@ public class TxnDescription {
 
     public Collection<StateAccessDescription> getStateAccessDescValues() {
         return stateAccessDescriptionMap.values();
+    }
+
+    public Collection<Map.Entry<String, StateAccessDescription>> getStateAccessDescEntries() {
+        return stateAccessDescriptionMap.entrySet();
     }
 }
