@@ -79,14 +79,14 @@ public class GSBolt_ts extends GSBolt {
                 condition_table[j] = "MicroTable";
             }
             int writeKeyIdx = i * NUM_ACCESS;
-            transactionManager.Asy_ModifyRecord_ReadN(
+            transactionManager.Asy_WriteRecord_Cond(
                     txnContext,
                     "MicroTable",
                     String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
-                    event.getRecord_refs()[writeKeyIdx],//to be fill up.
-                    sum,
-                    condition_table, condition_source,//condition source, condition id.
-                    event.success);          //asynchronously return.
+                    //to be fill up.
+                    condition_table, condition_source,
+                    null//condition source, condition id.
+            );          //asynchronously return.
         }
         transactionManager.CommitTransaction(txnContext);
         GSTxnEvents.add(event);

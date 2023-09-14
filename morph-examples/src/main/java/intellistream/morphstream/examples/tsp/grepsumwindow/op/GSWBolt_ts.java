@@ -75,14 +75,14 @@ public class GSWBolt_ts extends GSWBolt {
             condition_table[j] = "MicroTable";
         }
         int writeKeyIdx = i * NUM_ACCESS;
-        transactionManager.Asy_ModifyRecord_ReadN(
+        transactionManager.Asy_WriteRecord_Cond(
                 txnContext,
                 "MicroTable",
                 String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
-                event.getRecord_refs()[writeKeyIdx],//to be fill up.
-                sum,
-                condition_table, condition_source,//condition source, condition id.
-                event.success);          //asynchronously return.
+                //to be fill up.
+                condition_table, condition_source,//condition source, condition id,
+                null
+        );          //asynchronously return.
 //        }
         transactionManager.CommitTransaction(txnContext);
         events.add(event);
@@ -108,10 +108,9 @@ public class GSWBolt_ts extends GSWBolt {
                     txnContext,
                     "MicroTable",
                     String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
-                    event.getRecord_refs()[writeKeyIdx],//to be fill up.
-                    sum,
-                    condition_table, condition_source,//condition source, condition id.
-                    event.success);          //asynchronously return.
+                    //to be fill up.
+                    condition_table, condition_source//condition source, condition id.
+            );          //asynchronously return.
         }
         transactionManager.CommitTransaction(txnContext);
         events.add(event);

@@ -180,8 +180,8 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
             checkDependencyForNonDeterministicStateAccess(oc, operation);
         } else {
             // FD
-            if (request.read_keys != null)
-                checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), request.read_tables, request.read_keys);
+            if (request.condition_keys != null)
+                checkFD(oc, operation, operation.table_name, operation.d_record.record_.GetPrimaryKey(), request.condition_tables, request.condition_keys);
         }
     }
 

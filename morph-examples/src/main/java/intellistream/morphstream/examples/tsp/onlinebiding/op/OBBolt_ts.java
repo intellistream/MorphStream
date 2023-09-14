@@ -11,9 +11,6 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tupl
 import intellistream.morphstream.engine.txn.TxnEvent;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.transaction.function.Condition;
-import intellistream.morphstream.engine.txn.transaction.function.DEC;
-import intellistream.morphstream.engine.txn.transaction.function.INC;
 import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import intellistream.morphstream.examples.tsp.onlinebiding.util.BidingResult;
 import org.slf4j.Logger;
@@ -62,7 +59,7 @@ public class OBBolt_ts extends OBBolt {
     protected void TOPPING_REQUEST_CONSTRUCT(ToppingTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         for (int i = 0; i < event.getNum_access(); i++)
-            transactionManager.Asy_ModifyRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), new INC(event.getItemTopUp()[i]));//asynchronously return.
+            transactionManager.Asy_WriteRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), null);//asynchronously return.
         BEGIN_POST_TIME_MEASURE(thread_Id);
         TOPPING_REQUEST_POST(event);
         END_POST_TIME_MEASURE_ACC(thread_Id);
@@ -72,7 +69,7 @@ public class OBBolt_ts extends OBBolt {
     protected void ALERT_REQUEST_CONSTRUCT(AlertTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         for (int i = 0; i < event.getNum_access(); i++)
-            transactionManager.Asy_WriteRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), event.getAsk_price()[i]);//asynchronously return.
+            transactionManager.Asy_WriteRecord(txnContext, "goods", String.valueOf(event.getItemId()[i]), null);//asynchronously return.
         BEGIN_POST_TIME_MEASURE(thread_Id);
         ALERT_REQUEST_POST(event);
         END_POST_TIME_MEASURE_ACC(thread_Id);
@@ -84,13 +81,11 @@ public class OBBolt_ts extends OBBolt {
         for (int i = 0; i < NUM_ACCESSES_PER_BUY; i++) {
             //it simply constructs the operations and return.
             //condition on itself.
-            transactionManager.Asy_ModifyRecord(//TODO: addOperation atomicity preserving later.
+            transactionManager.Asy_WriteRecord(//TODO: addOperation atomicity preserving later.
                     txnContext,
                     "goods",
                     String.valueOf(event.getItemId()[i]),
-                    new DEC(event.getBidQty(i)),
-                    new Condition(event.getBidPrice(i), event.getBidQty(i)),
-                    event.success
+                    null
             );
         }
         buyingEvents.add(event);

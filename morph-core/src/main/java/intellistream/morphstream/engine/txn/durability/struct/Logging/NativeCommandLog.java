@@ -11,8 +11,8 @@ public class NativeCommandLog extends CommandLog {
     public String id;
     public boolean isAborted = false;
 
-    public NativeCommandLog(long LSN, String tableName, String key, String OperationFunction, String[] conditions, String parameter) {
-        super(LSN, tableName, key, OperationFunction, conditions, parameter);
+    public NativeCommandLog(long LSN, String tableName, String key, String[] conditions) {
+        super(LSN, tableName, key, conditions);
     }
 
     public static NativeCommandLog getNativeCommandLog(String line) {
@@ -27,9 +27,7 @@ public class NativeCommandLog extends CommandLog {
                 continue;
             conditions.add(c);
         }
-        String OperationFunction = parts[4];
-        String parameter = parts[5];
-        NativeCommandLog commandLog = new NativeCommandLog(0, tableName, key, OperationFunction, conditions.toArray(new String[0]), parameter);
+        NativeCommandLog commandLog = new NativeCommandLog(0, tableName, key, conditions.toArray(new String[0]));
         commandLog.setId(id);
         return commandLog;
     }
@@ -54,8 +52,6 @@ public class NativeCommandLog extends CommandLog {
             stringBuilder.append(ckeys).append(",");
         }
         stringBuilder.append(";");
-        stringBuilder.append(OperationFunction).append(";");//4-OperationFunction
-        stringBuilder.append(parameter).append(";");//5-parameter
         return stringBuilder.toString();
     }
 

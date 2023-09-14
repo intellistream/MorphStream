@@ -68,22 +68,22 @@ public class NonGSBolt_ts extends NonGSBolt {
             }
             int writeKeyIdx = i * NUM_ACCESS;
             if (event.isNon_Deterministic_StateAccess()) {
-                transactionManager.Asy_ModifyRecord_Non_ReadN(txnContext,
+                transactionManager.Asy_WriteRecord_Non_Deter(txnContext,
                         "MicroTable",
                         String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
-                        event.getRecord_refs()[writeKeyIdx],//to be fill up.
-                        sum,
+                        //to be fill up.
                         condition_table, condition_source,//condition source, condition id.
-                        event.success);
+                        null
+                );
             } else {
-                transactionManager.Asy_ModifyRecord_ReadN(
+                transactionManager.Asy_WriteRecord_Cond(
                         txnContext,
                         "MicroTable",
                         String.valueOf(event.getKeys()[writeKeyIdx]), // src key to write ahead
-                        event.getRecord_refs()[writeKeyIdx],//to be fill up.
-                        sum,
-                        condition_table, condition_source,//condition source, condition id.
-                        event.success);          //asynchronously return.
+                        //to be fill up.
+                        condition_table, condition_source,
+                        null//condition source, condition id.
+                );          //asynchronously return.
             }
         }
         transactionManager.CommitTransaction(txnContext);

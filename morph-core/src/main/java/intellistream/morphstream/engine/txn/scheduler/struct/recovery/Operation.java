@@ -1,12 +1,12 @@
 package intellistream.morphstream.engine.txn.scheduler.struct.recovery;
 
+import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext;
 import intellistream.morphstream.engine.txn.scheduler.struct.AbstractOperation;
 import intellistream.morphstream.engine.txn.scheduler.struct.MetaTypes;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.transaction.function.Function;
 
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,9 +25,8 @@ public class Operation extends AbstractOperation implements Comparable<Operation
     public <Context extends RSContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            Function function,
-            HashMap<String, TableRecord> read_records) {
-        super(function, table_name, read_records, txn_context, accessType, record, bid, null, pKey);
+            HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
+        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
         this.context = context;
         this.pKey = pKey;
     }

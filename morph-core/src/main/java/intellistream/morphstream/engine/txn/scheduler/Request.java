@@ -5,7 +5,6 @@ import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.transaction.function.Function;
 
 import java.util.HashMap;
 
@@ -15,15 +14,13 @@ public class Request {
     public final String table_name;
     public final String write_key;
     public final TableRecord d_record;
-    public final Function function;
     public final StateAccess stateAccess;
-    public final String[] read_tables;
-    public final String[] read_keys;
-    public final HashMap<String, TableRecord> read_records;
-    public long value;
+    public final String[] condition_tables;
+    public final String[] condition_keys;
+    public final HashMap<String, TableRecord> condition_records;
     public BaseTable[] tables;
 
-    public Request(StateAccess stateAccess, StateAccess stateAccess1) {
+    public Request(StateAccess stateAccess) {
         this(null, null, null, stateAccess);
     }
 
@@ -31,17 +28,7 @@ public class Request {
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,
                    String table_name, StateAccess stateAccess) {
-        this(txn_context, null, accessType, table_name, null, null, null, stateAccess, null, null, null);
-    }
-
-    //Write-only
-    public Request(TxnContext txn_context,
-                   CommonMetaTypes.AccessType accessType,
-                   String table_name, String write_key,
-                   TableRecord d_record,
-                   StateAccess stateAccess, long value) {
-        this(txn_context, accessType, table_name, write_key, d_record, null, stateAccess);
-        this.value = value;
+        this(txn_context, null, accessType, table_name, null, null, stateAccess, null, null, null);
     }
 
     //no column id
@@ -50,12 +37,11 @@ public class Request {
                    String table_name,
                    String write_key,
                    TableRecord d_record,
-                   Function function,
-                   String[] read_tables,
-                   String[] read_keys,
-                   HashMap<String, TableRecord> read_records,
+                   String[] condition_tables,
+                   String[] condition_keys,
+                   HashMap<String, TableRecord> condition_records,
                    StateAccess stateAccess) {
-        this(txn_context, null, accessType, table_name, write_key, d_record, function, stateAccess, read_tables, read_keys, read_records);
+        this(txn_context, null, accessType, table_name, write_key, d_record, stateAccess, condition_tables, condition_keys, condition_records);
     }
 
     //no condition, no ref.
@@ -64,8 +50,8 @@ public class Request {
                    String table_name,
                    String write_key,
                    TableRecord d_record,
-                   Function function, StateAccess stateAccess) {
-        this(txn_context, null, accessType, table_name, write_key, d_record, function, stateAccess, null, null, null);
+                   StateAccess stateAccess) {
+        this(txn_context, null, accessType, table_name, write_key, d_record, stateAccess, null, null, null);
     }
 
     public Request(TxnContext txn_context,
@@ -74,21 +60,19 @@ public class Request {
                    String table_name,
                    String write_key,
                    TableRecord d_record,
-                   Function function,
                    StateAccess stateAccess,
-                   String[] read_tables,
-                   String[] read_keys,
-                   HashMap<String, TableRecord> read_records) {
+                   String[] condition_tables,
+                   String[] condition_keys,
+                   HashMap<String, TableRecord> condition_records) {
         this.txn_context = txn_context;
         this.accessType = accessType;
         this.table_name = table_name;
         this.write_key = write_key;
         this.d_record = d_record; //record to write to (or read-from if txn only has one read request)
-        this.function = function; //primitive functions or UDF
         this.stateAccess = stateAccess;
-        this.read_tables = read_tables;
-        this.read_keys = read_keys;
-        this.read_records = read_records; //records to read from
+        this.condition_tables = condition_tables;
+        this.condition_keys = condition_keys;
+        this.condition_records = condition_records; //records to read from in write operation
         this.tables = baseTable; //used for non-deter, allow null input
     }
 

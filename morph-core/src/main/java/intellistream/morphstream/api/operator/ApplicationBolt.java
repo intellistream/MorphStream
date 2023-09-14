@@ -33,9 +33,9 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 public class ApplicationBolt extends TransactionalBolt {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationBolt.class);
-    private final HashMap<String, TxnDescription> txnDescriptionMap;//Transaction flag -> TxnDescription
+    private final HashMap<String, TxnDescription> txnDescriptionMap;//Transaction flag -> TxnDescription. E.g. "transfer" -> transferTxnDescription
     private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
-    private final HashMap<Integer, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
+    private final HashMap<Long, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
 
     public ApplicationBolt(HashMap<String, TxnDescription> txnDescriptionMap) {
         super(LOG, 0); //TODO: Check fid
@@ -93,52 +93,65 @@ public class ApplicationBolt extends TransactionalBolt {
         }
     }
 
-    protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) {
-        String txnFlag = event.getFlag();
-        TxnDescription txnDescription = txnDescriptionMap.get(txnFlag);
+    protected void Transaction_Request_Construct(TransactionalEvent event, TxnContext txnContext) throws DatabaseException {
+        TxnDescription txnDescription = txnDescriptionMap.get(event.getFlag());
         //Initialize state access map for each event
-        eventStateAccessesMap.put((int) event.getBid(), new HashMap<>());
+        eventStateAccessesMap.put(event.getBid(), new HashMap<>());
         transactionManager.BeginTransaction(txnContext);
+
         //Each event triggers multiple state accesses
         for (Map.Entry<String, StateAccessDescription> descEntry: txnDescription.getStateAccessDescEntries()) {
             //Initialize state access based on state access description
             String stateAccessName = descEntry.getKey();
             StateAccessDescription stateAccessDesc = descEntry.getValue();
             StateAccess stateAccess = new StateAccess(stateAccessDesc);
+
             //Each state access involves multiple state objects
-            for (Map.Entry<String, StateObjectDescription> entry: stateAccessDesc.getStateObjectEntries()) {
-                StateObjectDescription stateObjDesc = entry.getValue();
-                String stateObjKey = event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex());
-                String stateObjValue = (String) event.getValue(stateObjDesc.getValueName());
-                StateObject stateObject = new StateObject(stateObjDesc.getType(), stateObjDesc.getTableName(), stateObjKey, stateObjValue);
-                stateAccess.addStateObject(entry.getKey(), stateObject);
+            for (StateObjectDescription stateObjDesc: stateAccessDesc.getStateObjDescList()) {
+                StateObject stateObject = new StateObject(
+                        stateObjDesc.getName(),
+                        stateObjDesc.getType(),
+                        stateObjDesc.getTableName(),
+                        event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex()),
+                        (String) event.getValue(stateObjDesc.getValueName())
+                );
+                stateAccess.addStateObject(stateObjDesc.getName(), stateObject);
             }
-            eventStateAccessesMap.get((int) event.getBid()).put(stateAccessName, stateAccess);
+
+            //Each state access involves multiple conditions (values that are not commonly shared among events)
+            for (String conditionName: stateAccessDesc.getConditionNames()) {
+                stateAccess.addCondition(conditionName, event.getValue(conditionName));
+            }
+
+            eventStateAccessesMap.get(event.getBid()).put(stateAccessName, stateAccess);
             transactionManager.submitStateAccess(stateAccess, txnContext);
         }
+
         transactionManager.CommitTransaction(txnContext);
         eventQueue.add(event);
     }
 
     protected void Transaction_Post_Process() {
         for (TransactionalEvent event : eventQueue) {
-            //Invoke client defined post-processing UDF using Reflection
             Result postUDFResult;
             try {
+                //Invoke client defined post-processing UDF using Reflection
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
                 Object clientObj = clientClass.getDeclaredConstructor().newInstance();
-                HashMap<String,StateAccess> stateAccesses = eventStateAccessesMap.get((int) event.getBid());
+                HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
                 String postUDFName = txnDescriptionMap.get(event.getFlag()).getPostUDFName();
                 Method postUDF = clientClass.getMethod(postUDFName, HashMap.class, TransactionalEvent.class);
                 postUDFResult = (Result) postUDF.invoke(clientObj, stateAccesses, event);
+
                 if (!enable_app_combo) {
                     collector.emit(event.getBid(), postUDFResult.getTransactionalEvent(), event.getTimestamp());
                 } else {
                     if (enable_latency_measurement) {
                         //TODO: Define sink for bolt
-//                            sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.transaction_result, event.getTimestamp())));
+//                        sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.transaction_result, event.getTimestamp())));
                     }
                 }
+
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Client class not found");
             } catch (InstantiationException | IllegalAccessException e) {
@@ -168,7 +181,10 @@ public class ApplicationBolt extends TransactionalBolt {
                 Transaction_Post_Process();
             }
             MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
-            eventQueue.clear();
+            {
+                eventQueue.clear();
+                eventStateAccessesMap.clear();
+            }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, numEvents);
         } else {
             execute_ts_normal(in);

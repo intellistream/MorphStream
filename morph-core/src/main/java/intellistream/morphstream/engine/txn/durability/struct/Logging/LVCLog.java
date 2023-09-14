@@ -12,8 +12,8 @@ public class LVCLog extends CommandLog {
     public boolean isAborted = false;
     private int[] LVs;
 
-    public LVCLog(long bid, String tableName, String key, String OperationFunction, String[] conditions, String parameter) {
-        super(-1, tableName, key, OperationFunction, conditions, parameter);
+    public LVCLog(long bid, String tableName, String key, String[] conditions) {
+        super(-1, tableName, key, conditions);
         this.bid = bid;
     }
 
@@ -25,7 +25,7 @@ public class LVCLog extends CommandLog {
                 continue;
             conditions.add(c);
         }
-        LVCLog lvcLog = new LVCLog(Long.parseLong(logParts[8]), logParts[2], logParts[3], logParts[5], conditions.toArray(new String[0]), logParts[6]);
+        LVCLog lvcLog = new LVCLog(Long.parseLong(logParts[8]), logParts[2], logParts[3], conditions.toArray(new String[0]));
         String[] LVs = logParts[1].split(",");
         int[] LVsInt = new int[LVs.length];
         for (int i = 0; i < LVs.length; i++) {
@@ -70,14 +70,12 @@ public class LVCLog extends CommandLog {
             stringBuilder.append(ckeys).append(",");//condition -4
         }
         stringBuilder.append(";");
-        stringBuilder.append(OperationFunction).append(";");//OperationFunction -5
-        stringBuilder.append(parameter).append(";");//parameter -6
         if (isAborted) {
-            stringBuilder.append(1).append(";");//isAborted -7
+            stringBuilder.append(1).append(";");//isAborted -5
         } else {
             stringBuilder.append(0).append(";");
         }
-        stringBuilder.append(bid).append(";");//bid -8
+        stringBuilder.append(bid).append(";");//bid -6
         return stringBuilder.toString();
     }
 

@@ -8,13 +8,15 @@ import java.util.HashSet;
 import java.util.List;
 
 public class StateObject {
+    private final String name;
     private final MetaTypes.AccessType type;
     private final String table;
     private final String key;
     private final String value;
     private SchemaRecord schemaRecord; //one version of table record
     private HashMap<String, Integer> fieldNameToIndex; //TODO: Where to initialize?
-    public StateObject(MetaTypes.AccessType type, String table, String key, String value) {
+    public StateObject(String name, MetaTypes.AccessType type, String table, String key, String value) {
+        this.name = name;
         this.type = type;
         this.table = table;
         this.key = key;
@@ -25,6 +27,10 @@ public class StateObject {
      */
     public void setSchemaRecord(SchemaRecord schemaRecord) {
         this.schemaRecord = schemaRecord;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public MetaTypes.AccessType getType() {

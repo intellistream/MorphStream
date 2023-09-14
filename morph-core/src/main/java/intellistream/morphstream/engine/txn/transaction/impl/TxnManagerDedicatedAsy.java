@@ -22,13 +22,10 @@ import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.recovery.RScheduler;
 import intellistream.morphstream.engine.txn.storage.*;
-import intellistream.morphstream.engine.txn.storage.datatype.DataBox;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.TxnManager;
 import intellistream.morphstream.engine.txn.transaction.context.TxnAccess;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.transaction.function.Condition;
-import intellistream.morphstream.engine.txn.transaction.function.Function;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,24 +157,27 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     }
 
     @Override
-    public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) {
+    public boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
         MetaTypes.AccessType accessType = stateAccess.getAccessType();
         if (accessType == MetaTypes.AccessType.WRITE) {
+            return Asy_WriteRecord(stateAccess, txnContext);
         }
         return false;
     }
 
-    //If read only, set src key and table to read key, and add this single read access into readRecords.
+    //TODO: If read only, set src key and table to read key, and add this single read access into readRecords.
 
-    public boolean Asy_ModifyRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
-        MetaTypes.AccessType accessType = MetaTypes.AccessType.WRITE;
-        ArrayList<TableRecord> readRecords = new ArrayList<>(); //TODO: Refine this by split readRecords and writeRecord in StateAccess
+    public boolean Asy_WriteRecord(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException {
+        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
+        HashMap<String, TableRecord> condition_records = new HashMap<>();
         TableRecord writeRecord = null;
-        String srcTable;
-        String srcKey;
-        for (StateObject stateObj : stateAccess.getStateObjectMap().values()) {
+        String srcTable = "";
+        String srcKey = "";
+        String[] condition_sourceTable = new String[stateAccess.getStateObjects().size()]; //TODO: update this array. For write with multi-read, Should condition_records include d_record?
+        String[] condition_source = new String[stateAccess.getStateObjects().size()];
+        for (StateObject stateObj : stateAccess.getStateObjects()) {
             MetaTypes.AccessType type = stateObj.getType();
-            readRecords.add(storageManager_.getTable(stateObj.getTable()).SelectKeyRecord(stateObj.getKey()));
+            condition_records.put(stateObj.getName(), storageManager_.getTable(stateObj.getTable()).SelectKeyRecord(stateObj.getKey()));
             if (type == MetaTypes.AccessType.WRITE) {
                 writeRecord = storageManager_.getTable(stateObj.getTable()).SelectKeyRecord(stateObj.getKey());
                 srcTable = stateObj.getTable();
@@ -185,197 +185,63 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             }
         }
         if (writeRecord != null) {
-//            if (enableGroup) {
-//                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-//                        key, d_record, d_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
-//            } else {
-//                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-//                        key, d_record, d_record, function, null, condition_sourceTable, condition_source, condition_records, condition, success));
-//            }
+            if (enableGroup) {
+                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+                        srcKey, writeRecord, condition_sourceTable, condition_source, condition_records, stateAccess));
+            } else {
+                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
+                        srcKey, writeRecord, condition_sourceTable, condition_source, condition_records, stateAccess));
+            }
         } else {
-//            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info("No record is found:" + srcKey);
             return false;
         }
-        return false;
     }
 
-    //TODO: Never used
-    public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
-
-    //TODO: Never used
+    // Those should not be used by dedicated locked txn manager.
     @Override
-    public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String primary_key, List<DataBox> value) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE_ONLY;
-        TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
-        if (t_record != null) {
+    public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String key) throws DatabaseException {
+        throw new UnsupportedOperationException();
+    }
+
+    //Each READ operation only targets a single record. For txn with multiple read requests, creates multiple READ operations.
+    public boolean Asy_ReadRecord(TxnContext txnContext, String srcTable, String srcKey, StateAccess stateAccess) throws DatabaseException {
+        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ;
+        TableRecord readRecord = storageManager_.getTable(srcTable).SelectKeyRecord(srcKey);
+        if (readRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable, null));
+                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, null));
+                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable, srcKey, readRecord, stateAccess));
             }
         } else {
-            if (enable_log) log.info("No record is found:" + primary_key);
+            if (enable_log) log.info("No record is found:" + srcKey);
             return false;
         }
     }
 
+    //By default, all WRITE operations return the updated SchemaRecord back to StateAccess.
     @Override
-    public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String primary_key, long value) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE_ONLY;
-        TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
-        if (t_record != null) {
+    public boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String srcKey, StateAccess stateAccess) throws DatabaseException {
+        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
+        TableRecord writeRecord = storageManager_.getTable(srcTable).SelectKeyRecord(srcKey);
+        if (writeRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, primary_key, srcTable, t_record, null, value));
+                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcKey, srcTable, writeRecord, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, primary_key, srcTable, t_record, null, value));
+                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcKey, srcTable, writeRecord, stateAccess));
             }
         } else {
-            if (enable_log) log.info("No record is found:" + primary_key);
-            return false;
-        }
-    }
-
-    //TODO: Never used
-    public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String primary_key, SchemaRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_ONLY;
-        TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
-        if (t_record != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable, null));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, null));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + primary_key);
-            return false;
-        }
-    }
-
-    //TODO: Never used
-    @Override
-    public boolean Asy_ReadRecords(TxnContext txn_context, String srcTable, String primary_key, TableRecordRef record_ref, double[] enqueue_time) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READS_ONLY;//read multiple versions.
-        TableRecord t_record = storageManager_.getTable(srcTable).SelectKeyRecord(primary_key);
-        if (t_record != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable, null));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable, null));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + primary_key);
-            return false;
-        }
-    }
-
-    @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String source_key, Function function) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_WRITE;
-        TableRecord d_record = storageManager_.getTable(srcTable).SelectKeyRecord(source_key);
-        if (d_record != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        source_key, d_record, function, null));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        source_key, d_record, function, null));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + source_key);
-            return false;
-        }
-    }
-
-    @Override
-    public boolean Asy_ModifyRecord(TxnContext txn_context, String srcTable, String key, Function function, Condition condition, int[] success) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_WRITE_COND;
-        TableRecord d_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        HashMap<String, TableRecord> read_records = new HashMap<>();
-        read_records.put(defaultString, d_record);
-        if (d_record != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, new String[]{srcTable}, new String[]{key}, read_records, null));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, new String[]{srcTable}, new String[]{key}, read_records, null));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + key);
-            return false;
-        }
-    }
-
-    @Override // TRANSFER_AST
-    public boolean Asy_ModifyRecord(TxnContext txn_context,
-                                    String srcTable, String key,
-                                    Function function,
-                                    String[] condition_sourceTable, String[] condition_source,
-                                    Condition condition,
-                                    int[] success) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_WRITE_COND;
-        HashMap<String, TableRecord> read_records = new HashMap<>();
-        for (int i = 0; i < condition_source.length; i++) {
-            read_records.put(defaultString, storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]));//TODO: improve this later.
-        }
-        TableRecord d_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        if (d_record != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, condition_sourceTable, condition_source, read_records, null));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, condition_sourceTable, condition_source, read_records, null));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + key);
-            return false;
-        }
-    }
-
-    @Override
-    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_WRITE_READ;
-        TableRecord d_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        if (d_record != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, null));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, null));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + key);
-            return false;
-        }
-    }
-
-    @Override
-    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref, Function function, Condition condition, int[] success) throws DatabaseException {
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_WRITE_READ;
-        TableRecord d_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        if (d_record != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, null));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, null));
-            }
-        } else {
-            if (enable_log) log.info("No record is found:" + key);
+            if (enable_log) log.info("No record is found:" + srcKey);
             return false;
         }
     }
 
     @Override // TRANSFER_ACT
-    public boolean Asy_ModifyRecord_Read(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
-                                         Function function,
-                                         String[] condition_sourceTable, String[] condition_source,
-                                         Condition condition, int[] success) throws DatabaseException {
+    public boolean Asy_WriteRecord_Cond(TxnContext txn_context, String srcTable, String key,
+                                        String[] condition_sourceTable, String[] condition_source, StateAccess stateAccess) throws DatabaseException {
 
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_WRITE_COND_READ;
+        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
         HashMap<String, TableRecord> read_records = new HashMap<>();
         for (int i = 0; i < condition_source.length; i++) {
             TableRecord tableRecord = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
@@ -389,10 +255,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, condition_sourceTable, condition_source, read_records, null));
+                        key, d_record, condition_sourceTable, condition_source, read_records, stateAccess));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, condition_sourceTable, condition_source, read_records, null));
+                        key, d_record, condition_sourceTable, condition_source, read_records, stateAccess));
             }
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
@@ -401,11 +267,11 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // TRANSFER_ACT
-    public boolean Asy_ModifyRecord_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
-                                          Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
+    @Override // Window READ
+    public boolean Asy_WindowReadRecords(TxnContext txn_context, String srcTable, String key,
+                                         String[] condition_sourceTable, String[] condition_source) throws DatabaseException {
 
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.READ_WRITE_COND_READN;
+        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_READ; //TODO: confirm this
         HashMap<String, TableRecord> read_records = new HashMap<>();
         for (int i = 0; i < condition_source.length; i++) {
             TableRecord tableRecord = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
@@ -419,10 +285,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, condition_sourceTable, condition_source, read_records, null));
+                        key, d_record, condition_sourceTable, condition_source, read_records, null));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, condition_sourceTable, condition_source, read_records, null));
+                        key, d_record, condition_sourceTable, condition_source, read_records, null));
             }
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
@@ -431,45 +297,15 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    @Override // Window
-    public boolean Asy_WindowReadRecords(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
-                                         Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
+    @Override
+    public boolean Asy_WriteRecord_Non_Deter(TxnContext txn_context, String srcTable, String key,
+                                             String[] condition_sourceTable, String[] condition_source, StateAccess stateAccess) throws DatabaseException {
 
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOWED_READ_ONLY;
-        HashMap<String, TableRecord> read_records = new HashMap<>();
-        for (int i = 0; i < condition_source.length; i++) {
-            TableRecord tableRecord = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
-            if (tableRecord == null) {
-                if (enable_log) log.info("No record is found for condition source:" + condition_source[i]);
-                return false;
-            }
-            read_records.put(defaultString, tableRecord);
-        }
-        TableRecord d_record = storageManager_.getTable(srcTable).SelectKeyRecord(key);
-        if (d_record != null) {
-            if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, condition_sourceTable, condition_source, read_records, null));
-            } else {
-                return scheduler.SubmitRequest(context, new Request(txn_context, accessType, srcTable,
-                        key, d_record, function, condition_sourceTable, condition_source, read_records, null));
-            }
-        } else {
-            // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
-            if (enable_log) log.info("No record is found:" + key);
-            return false;
-        }
-    }
-
-    @Override // TRANSFER_ACT
-    public boolean Asy_ModifyRecord_Non_ReadN(TxnContext txn_context, String srcTable, String key, SchemaRecordRef record_ref,
-                                              Function function, String[] condition_sourceTable, String[] condition_source, int[] success) throws DatabaseException {
-
-        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_READ_WRITE_COND_READN;
+        CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.NON_DETER_WRITE;
         HashMap<String, TableRecord> read_records = new HashMap<>();
         BaseTable[] tables = new BaseTable[condition_source.length];
         for (int i = 0; i < condition_source.length; i++) {
-            TableRecord tableRecord = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);//TODO: improve this later.
+            TableRecord tableRecord = storageManager_.getTable(condition_sourceTable[i]).SelectKeyRecord(condition_source[i]);
             if (tableRecord == null) {
                 if (enable_log) log.info("No record is found for condition source:" + condition_source[i]);
                 return false;
@@ -481,10 +317,10 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         if (d_record != null) {
             if (enableGroup) {
                 return schedulerByGroup.get(getGroupId(txn_context.thread_Id)).SubmitRequest(context, new Request(txn_context, tables, accessType, srcTable,
-                        key, d_record, function, null, condition_sourceTable, condition_source, read_records));
+                        key, d_record, stateAccess, condition_sourceTable, condition_source, read_records));
             } else {
                 return scheduler.SubmitRequest(context, new Request(txn_context, tables, accessType, srcTable,
-                        key, d_record, function, null, condition_sourceTable, condition_source, read_records));
+                        key, d_record, stateAccess, condition_sourceTable, condition_source, read_records));
             }
         } else {
             // if no record_ is found, then a "virtual record_" should be inserted as the placeholder so that we can lock_ratio it.
@@ -492,6 +328,16 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             return false;
         }
     }
+
+    //TODO: Never used
+    public abstract boolean InsertRecord(TxnContext txn_context, String table_name, SchemaRecord record, LinkedList<Long> gap) throws DatabaseException, InterruptedException;
+
+
+
+
+
+
+
 
     public void BeginTransaction(TxnContext txn_context) {
         if (enableGroup) {

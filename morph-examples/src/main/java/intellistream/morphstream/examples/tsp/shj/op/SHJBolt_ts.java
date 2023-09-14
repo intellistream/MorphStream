@@ -75,14 +75,13 @@ public class SHJBolt_ts extends SHJBolt {
 //        LOG.info("Constructing TC request: " + event.getMyBid());
         transactionManager.BeginTransaction(txnContext);
 
-        transactionManager.Asy_ModifyRecord_Read(txnContext,
+        transactionManager.Asy_WriteRecord_Cond(txnContext,
                 updateIndexTable, // source_table to write to
                 event.getKey(),  // source_key to write to
-                event.srcIndexRecordRef, // record to be filled up from READ
-                join, // overwrite empty index with new index
-                condition_table, condition_source, //condition_source_table, condition_source_key
-                null,
-                event.success
+                // record to be filled up from READ
+                // overwrite empty index with new index
+                condition_table, condition_source, //condition_source_table, condition_source_key,
+                null
         );
 
         transactionManager.CommitTransaction(txnContext);

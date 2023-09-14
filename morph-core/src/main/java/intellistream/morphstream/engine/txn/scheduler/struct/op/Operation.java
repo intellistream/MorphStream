@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler.struct.op;
 
+import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.scheduler.context.op.OPSContext;
 import intellistream.morphstream.engine.txn.scheduler.context.op.OPSchedulerContext;
@@ -10,7 +11,6 @@ import intellistream.morphstream.engine.txn.scheduler.struct.op.MetaTypes.Operat
 import intellistream.morphstream.engine.txn.storage.TableRecord;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.transaction.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,20 +55,12 @@ public class Operation extends AbstractOperation implements Comparable<Operation
 
     /****************************Defined by MYC*************************************/
 
+    //For read/write
     public <Context extends OPSchedulerContext> Operation(
             String pKey, Context context, String table_name, TxnContext txn_context, long bid,
             CommonMetaTypes.AccessType accessType, TableRecord record,
-            Function function,
-            HashMap<String, TableRecord> read_records) {
-        this(pKey, context, table_name, txn_context, bid, accessType, record, function, read_records, null);
-    }
-
-    public <Context extends OPSchedulerContext> Operation(
-            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
-            CommonMetaTypes.AccessType accessType, TableRecord record,
-            Function function,
-            HashMap<String, TableRecord> read_records, WindowDescriptor windowContext) {
-        super(function, table_name, read_records, txn_context, accessType, record, bid, windowContext, pKey);
+            HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
+        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
         this.context = context;
 
         ld_head_operation = null;
@@ -93,12 +85,42 @@ public class Operation extends AbstractOperation implements Comparable<Operation
         operationState = OperationStateType.BLOCKED;
     }
 
+    //For window read/write
+    public <Context extends OPSchedulerContext> Operation(
+            String pKey, Context context, String table_name, TxnContext txn_context, long bid,
+            CommonMetaTypes.AccessType accessType, TableRecord record,
+            HashMap<String, TableRecord> read_records, WindowDescriptor windowContext, StateAccess stateAccess) {
+        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, windowContext, pKey);
+        this.context = context;
+
+        ld_head_operation = null;
+        ld_descendant_operations = new ArrayDeque<>();
+
+        // finctional dependencies, this should be concurrent because cross thread access.
+        fd_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
+        fd_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // temporal dependencies
+        td_parents = new ConcurrentLinkedDeque<>(); // the finctional dependnecies ops to be executed in advance
+        td_children = new ConcurrentLinkedDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // finctional dependencies
+        ld_parents = new ArrayDeque<>(); // the finctional dependnecies ops to be executed in advance
+        ld_children = new ArrayDeque<>(); // the finctional dependencies ops to be executed after this op.
+        // finctional dependencies
+        // speculative parents to wait, include the last ready op
+        // speculative parents to wait, include the last ready op
+        ld_spec_children = new ArrayDeque<>(); // speculative children to notify.
+
+        operationMetadata = new OperationMetadata();
+//        operationState = new AtomicReference<>(OperationStateType.BLOCKED);
+        operationState = OperationStateType.BLOCKED;
+    }
+
+    //For non-deterministic read/write
     public <Context extends OPSchedulerContext> Operation(Boolean isNonDeterministicOperation, BaseTable[] tables,
                                                           String pKey, Context context, String table_name, TxnContext txn_context, long bid,
                                                           CommonMetaTypes.AccessType accessType, TableRecord record,
-                                                          Function function,
-                                                          HashMap<String, TableRecord> read_records) {
-        super(function, table_name, read_records, txn_context, accessType, record, bid, null, pKey);
+                                                          HashMap<String, TableRecord> read_records, StateAccess stateAccess) {
+        super(table_name, stateAccess, read_records, txn_context, accessType, record, bid, null, pKey);
         this.context = context;
         this.isNonDeterministicOperation = isNonDeterministicOperation;
         this.tables = tables;

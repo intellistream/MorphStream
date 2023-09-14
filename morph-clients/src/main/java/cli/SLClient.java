@@ -24,24 +24,23 @@ public class SLClient {
      * This is a callback method using Reflection mechanism, invoked by referencing its className & methodName
      * Before execution, Scheduler should have access to all SchemaRecords required and add them into StateAccess
      *
-     * @param access Stores everything bolt needs (transaction info, post-processing UDF)
+     * @param access Stores everything bolt needs, including StateObjects updated by Scheduler
      */
 
-    //Before executing udf, read schemaRecord from tableRecord and write into stateaccess
+    //Before executing udf, read schemaRecord from tableRecord and write into stateAccess
+    //TODO: abstracted common interfaces shared by UDFs (at least an remind client to define txnUDF and postUDF)
     public boolean srcTransferFunction(StateAccess access) {
         StateObject srcAccountState = access.getStateObject("srcAccountState");
         double srcBalance = srcAccountState.getDoubleValue("balance");
-//        double transferAmount = dataHolder.doubleMap.get("transferAmount"); //TODO: Add condition support for stateAccess
-        double transferAmount = 100;
+        double transferAmount = (double) access.getCondition("transferAmount");
         if (srcBalance > 100 && srcBalance > transferAmount) {
-            double newSrcBalance = srcAccountState.getDoubleValue("balance") - transferAmount;
-            access.udfResult = newSrcBalance;
+            access.udfResult = srcAccountState.getDoubleValue("balance") - transferAmount;
             return true;
         } else {
             return false; //abort txn
         }
     }
-    //after udf, use the returned value to update schemaRecord
+    //after udf, use the udfResult value to update schemaRecord
     //after update to schemaRecord, write the updated schemaRecord to stateAccess
 
     public boolean destTransferFunction(StateAccess access) {
@@ -49,21 +48,23 @@ public class SLClient {
         StateObject destAccountState = access.getStateObject("destAccountState");
         double srcBalance = srcAccountState.getDoubleValue("balance");
         double destBalance = destAccountState.getDoubleValue("balance");
-//        double transferAmount = dataHolder.doubleMap.get("transferAmount"); //TODO: Add condition support for stateAccess
-        double transferAmount = 100;
+        double transferAmount = (double) access.getCondition("transferAmount");
         if (srcBalance > 100 && srcBalance > transferAmount) {
-            destAccountState.setDoubleValue("balance", destBalance + transferAmount);
+            access.udfResult = srcAccountState.getDoubleValue("balance") + transferAmount;
             return true;
         } else {
             return false;
         }
     }
 
-    public Result transferPostFunction(StateAccess access, TransactionalEvent event) {
+    //Input: stateAccessMap, which stores all updated stateAccess results under each txn
+    public Result transferPostFunction(HashMap<String, StateAccess> stateAccessMap) {
         Result result = new Result();
+        StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
+        StateAccess destTransfer = stateAccessMap.get("destTransfer");
         Double[] stateAccessResults = new Double[2];
-        stateAccessResults[0] = access.getStateObject("srcAccountState").getDoubleValue("balance");
-        stateAccessResults[1] = access.getStateObject("destAccountState").getDoubleValue("balance");
+        stateAccessResults[0] = destTransfer.getStateObject("srcAccountState").getDoubleValue("balance");
+        stateAccessResults[1] = destTransfer.getStateObject("destAccountState").getDoubleValue("balance");
         result.setResults(stateAccessResults);
         return result;
     }
@@ -82,21 +83,24 @@ public class SLClient {
         txnDescriptions.put("transfer", transferDescriptor);
         /**
          * One state access can be defined as one of the follows:
-         * 1. Read only (read from one or more records)
-         * 2. Write only (write to one record)
-         * 3. Modify (read from one or more records, then write to one record)
-         * Note: for each state access, client needs to define its UDF (avoid if-else during UDF execution)
+         * READ
+         * WRITE
+         * WINDOW_READ
+         * WINDOW_WRITE
+         * NON_DETER_READ
+         * NON_DETER_WRITE
          */
         //Define 1st state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription(AccessType.WRITE);
         srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
-//        UDF srcTransferUDF = new UDF("SLClient", "srcTransferFunction");
+        srcTransfer.addConditionName("transferAmount");
         srcTransfer.setTxnUDFName("srcTransferFunction"); //Method invoked by its name during reflection
 
         //Define 2nd state accesses
         StateAccessDescription destTransfer = new StateAccessDescription(AccessType.WRITE);
         destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue", 0);
         destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", "accountValue", 1);
+        destTransfer.addConditionName("transferAmount");
         destTransfer.setTxnUDFName("destTransferFunction");
 
         //Add state accesses to transaction

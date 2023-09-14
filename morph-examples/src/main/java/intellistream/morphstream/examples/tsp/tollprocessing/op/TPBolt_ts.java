@@ -8,8 +8,6 @@ import intellistream.morphstream.engine.stream.execution.runtime.collector.Outpu
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.transaction.function.AVG;
-import intellistream.morphstream.engine.txn.transaction.function.CNT;
 import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,17 +60,15 @@ public class TPBolt_ts extends TPBolt {
 
     protected void REQUEST_CONSTRUCT(TPTxnEvent event, TxnContext txnContext) throws DatabaseException {
         //it simply construct the operations and return.
-        transactionManager.Asy_ModifyRecord_Read(txnContext
+        transactionManager.Asy_WriteRecord(txnContext
                 , "segment_speed"
                 , String.valueOf(event.getPOSReport().getSegment())
-                , event.speed_value//holder to be filled up.
-                , new AVG(event.getPOSReport().getSpeed())
+                , null
         );          //asynchronously return.
-        transactionManager.Asy_ModifyRecord_Read(txnContext
+        transactionManager.Asy_WriteRecord(txnContext
                 , "segment_cnt"
                 , String.valueOf(event.getPOSReport().getSegment())
-                , event.count_value//holder to be filled up.
-                , new CNT(event.getPOSReport().getVid())
+                , null
         );          //asynchronously return.
         TPTxnEvents.add(event);
     }

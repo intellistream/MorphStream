@@ -131,36 +131,31 @@ public class SLBolt_ts extends SLBolt {
         Condition condition4 = new Condition(event.getMinAccountBalance(), event.getBookEntryTransfer());
 
         transactionManager.BeginTransaction(txnContext);
-        transactionManager.Asy_ModifyRecord_Read(txnContext,
+        transactionManager.Asy_WriteRecord_Cond(txnContext,
                 "accounts",
-                event.getSourceAccountId(), event.src_account_value,//to be fill up.
-                decrement1,
+                event.getSourceAccountId(), //to be fill up.
                 accTable, accID,//condition source, condition id.
-                condition1,
-                event.success);          //asynchronously return.
+                null
+        );          //asynchronously return.
 
-        transactionManager.Asy_ModifyRecord(txnContext,
-                "bookEntries", event.getSourceBookEntryId()
-                , decrement2,
-                astTable, astID,
-                condition2,
-                event.success);   //asynchronously return.
+        transactionManager.Asy_WriteRecord_Cond(txnContext,
+                "bookEntries",
+                event.getSourceBookEntryId(),
+                astTable, astID, null
+        );   //asynchronously return.
 
-        transactionManager.Asy_ModifyRecord_Read(txnContext,
+        transactionManager.Asy_WriteRecord_Cond(txnContext,
                 "accounts",
-                event.getTargetAccountId(), event.dst_account_value,//to be fill up.
-                increment1,
-                accTable, accID//condition source, condition id.
-                , condition3,
-                event.success);          //asynchronously return.
+                event.getTargetAccountId(), //to be fill up.
+                accTable, accID,//condition source, condition id.
+                null
+        );          //asynchronously return.
 
-        transactionManager.Asy_ModifyRecord(txnContext,
+        transactionManager.Asy_WriteRecord_Cond(txnContext,
                 "bookEntries",
                 event.getTargetBookEntryId(),
-                increment2,
-                astTable, astID,
-                condition4,
-                event.success);   //asynchronously return.
+                astTable, astID, null
+        );   //asynchronously return.
 
         transactionManager.CommitTransaction(txnContext);
 
@@ -170,8 +165,8 @@ public class SLBolt_ts extends SLBolt {
     protected void DEPOSITE_REQUEST_CONSTRUCT(DepositTxnEvent event, TxnContext txnContext) throws DatabaseException, InterruptedException {
         //it simply construct the operations and return.
         transactionManager.BeginTransaction(txnContext);
-        transactionManager.Asy_ModifyRecord(txnContext, "accounts", event.getAccountId(), new INC(event.getAccountTransfer()));// read and modify the account itself.
-        transactionManager.Asy_ModifyRecord(txnContext, "bookEntries", event.getBookEntryId(), new INC(event.getBookEntryTransfer()));// read and modify the asset itself.
+        transactionManager.Asy_WriteRecord(txnContext, "accounts", event.getAccountId(), null);// read and modify the account itself.
+        transactionManager.Asy_WriteRecord(txnContext, "bookEntries", event.getBookEntryId(), null);// read and modify the asset itself.
         transactionManager.CommitTransaction(txnContext);
 
         depositTxnEvents.add(event);

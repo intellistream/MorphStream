@@ -9,9 +9,6 @@ import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tupl
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.transaction.function.AVG;
-import intellistream.morphstream.engine.txn.transaction.function.CNT;
-import intellistream.morphstream.engine.txn.transaction.function.Condition;
 import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,17 +92,12 @@ public class TPBolt_ts_s extends TPBolt {
 //                , event.speed_value//holder to be filled up.
 //                , new AVG(event.getPOSReport().getSpeed())
 //        );          //asynchronously return.
-        transactionManager.Asy_ModifyRecord_Read(txnContext
-                , "segment_speed", String.valueOf(event.getPOSReport().getSegment())
-                , event.speed_value
-                , new AVG(event.getPOSReport().getSpeed())
-                , new Condition(event.getPOSReport().getSpeed(), 200)
-                , event.success);
-        transactionManager.Asy_ModifyRecord_Read(txnContext
+        transactionManager.Asy_WriteRecord(txnContext
+                , "segment_speed", String.valueOf(event.getPOSReport().getSegment()), null
+        );
+        transactionManager.Asy_WriteRecord(txnContext
                 , "segment_cnt"
-                , String.valueOf(event.getPOSReport().getSegment())
-                , event.count_value//holder to be filled up.
-                , new CNT(event.getPOSReport().getVid())
+                , String.valueOf(event.getPOSReport().getSegment()), null
         );          //asynchronously return.
         transactionManager.CommitTransaction(txnContext);
         TPTxnEvents.add(event);

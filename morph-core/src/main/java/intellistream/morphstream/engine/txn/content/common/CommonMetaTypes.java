@@ -32,6 +32,12 @@ public interface CommonMetaTypes {
         GET, SET,
         READ_WRITE_COND_READN,
         WINDOWED_READ_ONLY,
-        NON_READ_WRITE_COND_READN
+        NON_READ_WRITE_COND_READN,
+        READ,
+        WRITE,
+        WINDOW_READ,
+        WINDOW_WRITE,
+        NON_DETER_READ,
+        NON_DETER_WRITE
     }
 }
