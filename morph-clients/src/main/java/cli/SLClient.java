@@ -1,6 +1,6 @@
 package cli;
 
-import intellistream.morphstream.api.input.TransactionalEvent;
+import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.operator.ApplicationSpoutCombo;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.StateAccess;
@@ -12,11 +12,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
 
 
-public class SLClient {
+public class SLClient extends Client {
     private static final Logger log = LoggerFactory.getLogger(SLClient.class);
 
     /**
@@ -28,37 +29,40 @@ public class SLClient {
      */
 
     //Before executing udf, read schemaRecord from tableRecord and write into stateAccess
-    //TODO: abstracted common interfaces shared by UDFs (at least an remind client to define txnUDF and postUDF)
-    public boolean srcTransferFunction(StateAccess access) {
-        StateObject srcAccountState = access.getStateObject("srcAccountState");
-        double srcBalance = srcAccountState.getDoubleValue("balance");
-        double transferAmount = (double) access.getCondition("transferAmount");
-        if (srcBalance > 100 && srcBalance > transferAmount) {
-            access.udfResult = srcAccountState.getDoubleValue("balance") - transferAmount;
-            return true;
+    public boolean transactionUDF(StateAccess access) {
+        String stateAccessName = access.getName();
+        if (Objects.equals(stateAccessName, "srcTransfer")) {
+            StateObject srcAccountState = access.getStateObject("srcAccountState");
+            double srcBalance = srcAccountState.getDoubleValue("balance");
+            double transferAmount = (double) access.getCondition("transferAmount");
+            if (srcBalance > 100 && srcBalance > transferAmount) {
+                access.udfResult = srcBalance - transferAmount;
+                return true;
+            } else {
+                return false; //abort txn
+            }
+        } else if (Objects.equals(stateAccessName, "destTransfer")) {
+            StateObject srcAccountState = access.getStateObject("srcAccountState");
+            StateObject destAccountState = access.getStateObject("destAccountState");
+            double srcBalance = srcAccountState.getDoubleValue("balance");
+            double destBalance = destAccountState.getDoubleValue("balance");
+            double transferAmount = (double) access.getCondition("transferAmount");
+            if (srcBalance > 100 && srcBalance > transferAmount) {
+                access.udfResult = destBalance + transferAmount;
+                return true;
+            } else {
+                return false; //abort txn
+            }
         } else {
-            return false; //abort txn
+            return false;
         }
     }
     //after udf, use the udfResult value to update schemaRecord
     //after update to schemaRecord, write the updated schemaRecord to stateAccess
 
-    public boolean destTransferFunction(StateAccess access) {
-        StateObject srcAccountState = access.getStateObject("srcAccountState");
-        StateObject destAccountState = access.getStateObject("destAccountState");
-        double srcBalance = srcAccountState.getDoubleValue("balance");
-        double destBalance = destAccountState.getDoubleValue("balance");
-        double transferAmount = (double) access.getCondition("transferAmount");
-        if (srcBalance > 100 && srcBalance > transferAmount) {
-            access.udfResult = srcAccountState.getDoubleValue("balance") + transferAmount;
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     //Input: stateAccessMap, which stores all updated stateAccess results under each txn
-    public Result transferPostFunction(HashMap<String, StateAccess> stateAccessMap) {
+    public Result postUDF(HashMap<String, StateAccess> stateAccessMap) {
         Result result = new Result();
         StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
         StateAccess destTransfer = stateAccessMap.get("destTransfer");
@@ -91,24 +95,24 @@ public class SLClient {
          * NON_DETER_WRITE
          */
         //Define 1st state accesses
-        StateAccessDescription srcTransfer = new StateAccessDescription(AccessType.WRITE);
+        StateAccessDescription srcTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
         srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
         srcTransfer.addConditionName("transferAmount");
-        srcTransfer.setTxnUDFName("srcTransferFunction"); //Method invoked by its name during reflection
+        srcTransfer.setTxnUDFName("transactionUDF"); //Method invoked by its name during reflection
 
         //Define 2nd state accesses
-        StateAccessDescription destTransfer = new StateAccessDescription(AccessType.WRITE);
+        StateAccessDescription destTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
         destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue", 0);
         destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", "accountValue", 1);
         destTransfer.addConditionName("transferAmount");
-        destTransfer.setTxnUDFName("destTransferFunction");
+        destTransfer.setTxnUDFName("transactionUDF");
 
         //Add state accesses to transaction
         transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
         transferDescriptor.addStateAccess("destTransfer", destTransfer);
 
         //Define bolt post-processing UDF
-        transferDescriptor.setPostUDFName("transferPostFunction"); //Method invoked by its name during reflection
+        transferDescriptor.setPostUDFName("postUDF"); //Method invoked by its name during reflection
 
 
         //Deposit transaction
@@ -119,10 +123,6 @@ public class SLClient {
         //Define topology
         ApplicationSpoutCombo spoutCombo = new ApplicationSpoutCombo(txnDescriptions);
         SLClient.setSpout("spout", spoutCombo, 1);
-
-//
-//        builder.setGlobalScheduler(new SequentialScheduler());
-//        Topology topology = builder.createTopology(db, this);
 
         //Initiate runner
         try {

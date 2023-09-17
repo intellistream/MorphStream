@@ -32,6 +32,7 @@ public class FileDataGenerator {
     //Event configure
     private HashMap<String, HashMap<String, Integer>> eventKeyMap = new HashMap<>();//event -> tableName -> keyNumber
     private HashMap<String, List<String>> eventValueMap = new HashMap<>();//event -> value list
+    private HashMap<String, List<String>> eventConditionMap = new HashMap<>();//event -> condition list
     //InputStream configuration
     private int totalEvents;
     private HashMap<String, Integer> numItemMaps;//table name (key) to number of items
@@ -39,7 +40,7 @@ public class FileDataGenerator {
     private HashMap<String, Integer> stateAssessSkewMap = new HashMap<>();//event -> skew access skewness
     private HashMap<String, Integer> eventRatioMap = new HashMap<>();//event -> event ratio
     private ArrayList<String> eventList = new ArrayList<>();//event list
-    private String[] eventType;//event list
+    private String[] eventTypes;//event list
     private int eventID = 0;
     private HashMap<String, HashMap<String,FastZipfGenerator>> zipfGeneratorHashMap= new HashMap<>();//event -> key -> zipf generator
     private HashMap<String, HashMap<String, List<FastZipfGenerator>>> partitionZipfGeneratorHashMap = new HashMap<>();//event -> key -> zipf generator
@@ -68,39 +69,40 @@ public class FileDataGenerator {
         totalEvents = configuration.getInt("totalEvents", totalThreads * punctuation);
         phaseType = configuration.getString("workloadType", "default").split(",");
         phase = 0;
-        eventType = configuration.getString("eventTypes", "event1,event2").split(",");
+        eventTypes = configuration.getString("eventTypes", "event1,event2").split(",");
         inputEvents = new ArrayList<TransactionalEvent>(totalEvents);
         for (Map.Entry<String, Integer> s : numItemMaps.entrySet()) {
             intervalMaps.put(s.getKey(), s.getValue() / totalThreads);
         }
-        for (String event : eventType) {
-            String[] tableNames = configuration.getString(event + "_tables", "table1,table2").split(",");
+        for (String eventType : eventTypes) {
+            String[] tableNames = configuration.getString(eventType + "_tables", "table1,table2").split(",");
             HashMap<String, Integer> keyMap = new HashMap<>();
-            String[] keyNumbers = configuration.getString(event + "_key_number", "2,2").split(",");
+            String[] keyNumbers = configuration.getString(eventType + "_key_number", "2,2").split(",");
             for (int i = 0; i < tableNames.length; i++) {
                 keyMap.put(tableNames[i], Integer.parseInt(keyNumbers[i]));
             }
-            eventKeyMap.put(event, keyMap);
-            eventValueMap.put(event, Arrays.asList(configuration.getString(event + "_values", "v1,v2").split(",")));
-            stateAssessSkewMap.put(event, configuration.getInt(event + ".State_Access_Skewness", 0));
-            eventRatioMap.put(event, configuration.getInt(event + "_event_ratio", 50));
-            for (int i = 0; i < eventRatioMap.get(event) / 10; i++) {
-                eventList.add(event);
+            eventKeyMap.put(eventType, keyMap);
+            eventValueMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_values", "v1,v2").split(",")));
+            eventConditionMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_conditions", "c1,c2").split(",")));
+            stateAssessSkewMap.put(eventType, configuration.getInt(eventType + ".State_Access_Skewness", 0));
+            eventRatioMap.put(eventType, configuration.getInt(eventType + "_event_ratio", 50));
+            for (int i = 0; i < eventRatioMap.get(eventType) / 10; i++) {
+                eventList.add(eventType);
             }
-            eventAbortMap.put(event, configuration.getInt(event + "_ratio_of_multi_partition_transactions", 0));
-            eventMultiPartitionMap.put(event, configuration.getInt(event + "_state_access_skewness", 0));
+            eventAbortMap.put(eventType, configuration.getInt(eventType + "_ratio_of_multi_partition_transactions", 0));
+            eventMultiPartitionMap.put(eventType, configuration.getInt(eventType + "_state_access_skewness", 0));
             HashMap<String, FastZipfGenerator> zipfHashMap = new HashMap<>();//tableNames -> zipf generator
             HashMap<String, List<FastZipfGenerator>> partitionZipfHashMap = new HashMap<>();//tableNames -> Lists of partition zipf generator
-            for (String tableName: eventKeyMap.get(event).keySet()) {
-                zipfHashMap.put(tableName, new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(event) / 100, 0,123456789));
+            for (String tableName: eventKeyMap.get(eventType).keySet()) {
+                zipfHashMap.put(tableName, new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(eventType) / 100, 0,123456789));
                 List<FastZipfGenerator> zipfGenerators = new ArrayList<>();
                 for (int i = 0; i < totalThreads; i++) {
-                    zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(event) / 100, i * intervalMaps.get(tableName),123456789));
+                    zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(eventType) / 100, i * intervalMaps.get(tableName),123456789));
                 }
                 partitionZipfHashMap.put(tableName, zipfGenerators);
             }
-            zipfGeneratorHashMap.put(event, zipfHashMap);
-            partitionZipfGeneratorHashMap.put(event, partitionZipfHashMap);
+            zipfGeneratorHashMap.put(eventType, zipfHashMap);
+            partitionZipfGeneratorHashMap.put(eventType, partitionZipfHashMap);
         }
     }
 
@@ -134,16 +136,19 @@ public class FileDataGenerator {
         TransactionalEvent inputEvent;
         HashMap<String, List<String>> keys = generateKey(eventType);
         String[] values = generateValue(eventType);
+        String[] conditions = generateCondition(eventType);
         HashMap<String, Object> valueMap = new HashMap<>();
         HashMap<String, String> valueTypeMap = new HashMap<>();
+        HashMap<String, Object> conditionMap = new HashMap<>();
         for (int i = 0; i < values.length; i++) {
             valueMap.put(eventValueMap.get(eventType).get(i), values[i]);
             valueTypeMap.put(eventValueMap.get(eventType).get(i), "int");
+            conditionMap.put(eventConditionMap.get(eventType).get(i), conditions[i]);
         }
         if (random.nextInt(1000) < eventRatioMap.get(eventType)) {
-            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, true);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, conditionMap, eventType, true);
         } else {
-            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, false);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, conditionMap, eventType, false);
         }
         inputEvents.add(inputEvent);
         eventID ++;
@@ -178,6 +183,14 @@ public class FileDataGenerator {
             values[i] = String.valueOf(random.nextInt(10000));
         }
         return values;
+    }
+
+    private String[] generateCondition(String eventType) {
+        String[] conditions = new String[eventConditionMap.get(eventType).size()];
+        for (int i = 0; i < conditions.length; i++) {
+            conditions[i] = String.valueOf(random.nextInt(100));
+        }
+        return conditions;
     }
 
     private String nextEvent() {

@@ -1,7 +1,7 @@
 package intellistream.morphstream.api.launcher;
 
 import intellistream.morphstream.api.input.FileDataGenerator;
-import intellistream.morphstream.api.state.DatabaseInitialize;
+import intellistream.morphstream.api.state.DatabaseInitializer;
 import intellistream.morphstream.common.io.Rdma.RdmaShuffleManager;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
 import intellistream.morphstream.configuration.Configuration;
@@ -22,7 +22,7 @@ public class MorphStreamEnv {
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
     private final FileDataGenerator fileDataGenerator = new FileDataGenerator();
-    private final DatabaseInitialize databaseInitialize = new DatabaseInitialize();
+    private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private Database database;
     private OptimizationManager OM;
     private RdmaShuffleManager RM;
@@ -49,13 +49,13 @@ public class MorphStreamEnv {
     public RdmaShuffleManager RM() {return RM;}
     public BlockManagerId blockManagerId() {return blockManagerId;}
     public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
-    public DatabaseInitialize databaseInitialize() {return databaseInitialize;}
+    public DatabaseInitializer databaseInitialize() {return databaseInitializer;}
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
-        this.databaseInitialize.creates_Table();
+        this.databaseInitializer.creates_Table();
         if (configuration.getBoolean("partition", false)) {
             for (int i = 0; i < configuration.getInt("tthread", 4); i++)
-                databaseInitialize.setSpinlock_(i, new SpinLock());
+                databaseInitializer.setSpinlock_(i, new SpinLock());
             PartitionedOrderLock.getInstance().initilize(configuration.getInt("tthread", 4));
         }
     }

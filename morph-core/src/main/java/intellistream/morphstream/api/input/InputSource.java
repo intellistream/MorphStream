@@ -1,10 +1,7 @@
 package intellistream.morphstream.api.input;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import intellistream.morphstream.api.input.TransactionalEvent;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -68,17 +65,19 @@ public class InputSource {
         Gson gson = new Gson();
         JsonObject jsonObject = gson.fromJson(input, JsonObject.class);
 
-        HashMap<String, List<String>> keyMap = gson.fromJson(jsonObject.get("subJson1"), HashMap.class);
-        HashMap<String, Object> valueMap = gson.fromJson(jsonObject.get("subJson2"), HashMap.class);
-        HashMap<String, String> valueTypeMap = gson.fromJson(jsonObject.get("subJson3"), HashMap.class);
+        HashMap<String, List<String>> keyMap = gson.fromJson(jsonObject.get("subJson0"), HashMap.class);
+        HashMap<String, Object> valueMap = gson.fromJson(jsonObject.get("subJson1"), HashMap.class);
+        HashMap<String, String> valueTypeMap = gson.fromJson(jsonObject.get("subJson2"), HashMap.class);
+        //TODO: Add conditionTypeMap per event, or define both value and condition type statically?
+        HashMap<String, Object> conditionMap = gson.fromJson(jsonObject.get("subJson3"), HashMap.class);
         String flag = gson.fromJson(jsonObject.get("subJson4"), String.class);
-        String isAbort = gson.fromJson(jsonObject.get("subJson4"), String.class);
+        String isAbort = gson.fromJson(jsonObject.get("subJson5"), String.class);
 
         TransactionalEvent txnEvent;
         if (isAbort.equals("true")) {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, conditionMap, flag, true);
         } else {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, conditionMap, flag, false);
         }
 
         bid++;
@@ -90,6 +89,7 @@ public class InputSource {
         HashMap<String, List<String>> keyMap = new HashMap<>();
         HashMap<String, Object> valueMap = new HashMap<>();
         HashMap<String, String> valueTypeMap = new HashMap<>();
+        HashMap<String, Object> conditionMap = new HashMap<>();
         String [] keyMapPairs = inputArray[0].split(",");
 
         for (String pair : keyMapPairs) {
@@ -110,14 +110,19 @@ public class InputSource {
             String[] valueTypeMapPair = typeMapPair.split(":");
             valueTypeMap.put(valueTypeMapPair[0], valueTypeMapPair[1]);
         }
-        String flag = inputArray[3];
-        String isAbort = inputArray[4];
+        String [] conditionMapPairs = inputArray[3].split(",");
+        for (String conditionPair : conditionMapPairs) {
+            String[] conditionMapPair = conditionPair.split(":");
+            conditionMap.put(conditionMapPair[0], conditionMapPair[1]);
+        }
+        String flag = inputArray[4];
+        String isAbort = inputArray[5];
 
         TransactionalEvent txnEvent;
         if (isAbort.equals("true")) {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, conditionMap, flag, true);
         } else {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, conditionMap, flag, false);
         }
 
         bid++;

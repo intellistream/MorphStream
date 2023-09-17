@@ -14,12 +14,12 @@ public class DependencyLog extends CommandLog {
     List<String> inEdges = new ArrayList<>();
     List<String> outEdges = new ArrayList<>();
 
-    public DependencyLog(long LSN, String tableName, String key, String[] conditions) {
-        super(LSN, tableName, key, conditions);
+    public DependencyLog(long LSN, String tableName, String key, String OperationFunction, String[] conditions, String parameter) {
+        super(LSN, tableName, key, OperationFunction, conditions, parameter);
     }
 
-    public DependencyLog(String id, String tableName, String key, List<String> inEdges, List<String> outEdges, String[] conditions, int isAborted) {
-        super(0, tableName, key, conditions);
+    public DependencyLog(String id, String tableName, String key, List<String> inEdges, List<String> outEdges, String[] conditions, String operationFunction, String para, int isAborted) {
+        super(0, tableName, key, operationFunction, conditions, para);
         this.inEdges = inEdges;
         this.outEdges = outEdges;
         this.id = id;
@@ -55,7 +55,7 @@ public class DependencyLog extends CommandLog {
         String operationFunction = strings[6];
         String parameter = strings[7];
         int isAborted = Integer.parseInt(strings[8]);
-        return new DependencyLog(id, tableName, key, inEdges, outEdges, conditions.toArray(new String[0]), isAborted);
+        return new DependencyLog(id, tableName, key, inEdges, outEdges, conditions.toArray(new String[0]), operationFunction, parameter, isAborted);
     }
 
     public void setId(String txn_id) {
@@ -110,6 +110,8 @@ public class DependencyLog extends CommandLog {
             stringBuilder.append(ckeys).append(",");
         }
         stringBuilder.append(";");
+        stringBuilder.append(OperationFunction).append(";");
+        stringBuilder.append(parameter).append(";");
         if (isAborted) {
             stringBuilder.append(1).append(";");
         } else {
