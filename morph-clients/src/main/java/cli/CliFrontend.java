@@ -43,12 +43,10 @@ public class CliFrontend {
             cmd.usage();
             return false;
         }
-        //TODO: add other configs, initializeCfg(config); // initialize AppConfig (TopologySubmitter)
+        // initialize AppConfig (TopologySubmitter)
         //TODO: add metric config
         // initialize AppConfig
-        //AppConfig.complexity = conf.getInt("complexity", 100000);
-        //AppConfig.windowSize = conf.getInt("windowSize", 1024);
-        //AppConfig.isCyclic = conf.getBoolean("isCyclic", true);
+        env.jCommanderHandler().initializeCfg(env.configuration());
         //if (CONTROL.enable_shared_state) {
         //    Metrics.COMPUTE_COMPLEXITY = conf.getInt("COMPUTE_COMPLEXITY");
         //    Metrics.POST_COMPUTE_COMPLEXITY = conf.getInt("POST_COMPUTE");

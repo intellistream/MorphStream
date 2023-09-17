@@ -1,7 +1,13 @@
 package intellistream.morphstream.api.launcher;
 
 import com.beust.jcommander.Parameter;
+import intellistream.morphstream.common.io.Enums.platform.HP_Machine;
+import intellistream.morphstream.common.io.Enums.platform.HUAWEI_Machine;
+import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.configuration.Constants;
+import intellistream.morphstream.engine.txn.durability.struct.FaultToleranceRelax;
+import intellistream.morphstream.engine.txn.scheduler.struct.OperationChainCommon;
+import intellistream.morphstream.util.AppConfig;
 import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +18,15 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
+import static intellistream.morphstream.engine.txn.content.LVTStreamContent.LVTSTREAM_CONTENT;
+import static intellistream.morphstream.engine.txn.content.LWMContentImpl.LWM_CONTENT;
+import static intellistream.morphstream.engine.txn.content.LockContentImpl.LOCK_CONTENT;
+import static intellistream.morphstream.engine.txn.content.SStoreContentImpl.SSTORE_CONTENT;
+import static intellistream.morphstream.engine.txn.content.TStreamContent.T_STREAMCONTENT;
+import static intellistream.morphstream.engine.txn.content.common.ContentCommon.content_type;
+import static intellistream.morphstream.engine.txn.content.common.ContentCommon.loggingRecord_type;
+import static intellistream.morphstream.util.FaultToleranceConstants.*;
+import static intellistream.morphstream.util.FaultToleranceConstants.LOGOption_command;
 
 public class JCommanderHandler {
     private static final Logger LOG = LoggerFactory.getLogger(JCommanderHandler.class);
@@ -270,7 +285,6 @@ public class JCommanderHandler {
     public String clientClassName = "Client";
 
     public JCommanderHandler() {
-        if (enable_log) LOG.info(String.format("Metric folder path %s.", metric_path));
     }
 
     public Properties loadProperties(String filename) throws IOException {
@@ -282,7 +296,8 @@ public class JCommanderHandler {
         return properties;
     }
 
-    public void initializeCfg(HashMap<String, Object> config) {
+    public void initializeCfg(Configuration config) {
+        assert config != null;
         config.put("clientClassName", clientClassName);
         //Database configuration
         config.put("tableNames", tableNames);
@@ -308,205 +323,64 @@ public class JCommanderHandler {
             config.put(eventTypeString[i] + "_state_access_skewness", stateAccessSkewnessForEvents.split(",")[i]);
         }
 
-        //Old Version
-        config.put("queue_size", queue_size);
-        config.put("app_name", application);
-        config.put("ratio_of_multi_partition", ratio_of_multi_partition);
-        config.put("number_partitions", number_partitions);
-        config.put("machine", machine);
-        config.put("rootFilePath", rootPath);
-        config.put("generator", generator);
-        config.put("fanoutDist", fanoutDist);
-        config.put("idGenType", idGenType);
-
-        if (application.equals("OnlineBiding")) {
-            config.put("Ratio_Of_Buying", Ratio_Of_Buying);
-        } else {
-            config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
-        }
-        config.put("State_Access_Skewness", State_Access_Skewness);
-        config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
-        config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
-        config.put("Period_of_Window_Reads", Period_of_Window_Reads);
-        config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
-        config.put("Transaction_Length", Transaction_Length);
-        config.put("Ratio_of_Non_Deterministic_State_Access", Ratio_of_Non_Deterministic_State_Access);
-
-        config.put("numberOfDLevels", numberOfDLevels);
-        if (isCyclic == 1) {
-            config.put("isCyclic", true);
-        } else {
-            config.put("isCyclic", false);
-        }
-        config.put("complexity", complexity);
-        config.put("windowSize", windowSize);
-
-        if (CCOption == 4)//S-Store enabled.
-            config.put("partition", true);
-        else
-            config.put("partition", enable_partition);
-        config.put("measure", enable_measurement);
-        config.put("tthread", tthread);
-
-        config.put("checkpoint", checkpoint_interval);
-
-        assert totalEvents % tthread == 0;
-
-        config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
-        config.put("POST_COMPUTE", POST_COMPUTE);
-        config.put("NUM_ACCESS", NUM_ACCESS);
-        config.put("NUM_ITEMS", NUM_ITEMS);
-        config.put("CCOption", CCOption);
-        config.put("linked", linked);
-        config.put("shared", shared);
-        config.put("ratio_of_read", ratio_of_read);
-        config.put("theta", theta);
-
-        if (batch != -1) {
-            config.put("batch", batch);
-        }
-        config.put("metrics.output", metric_path);
-        config.put("runtimeInSeconds", runtimeInSeconds);
-        config.put("size_tuple", size_tuple);
-        config.put("verbose", verbose);
-
-        String[] phaseType = workloadType.split(",");
-        switch (application) {
-            case "StreamLedger":
-                //bottomLine = "300,3000,500,1200,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                bottomLine = 0.2 * checkpoint_interval + "," + 2 * checkpoint_interval + "," + 0.3 * checkpoint_interval + "," + 0.8 * checkpoint_interval + "," + "0.3,0.7";//TD,LD,PD,SUM,VDD,R_of_A
-                phaseNum = shiftRate * phaseType.length;
+    }
+    private void configSystem(Configuration config) {
+        //Add platform specific configurations
+        //Configure Database Content Type
+        switch (config.getInt("CCOption", 0)) {
+            case Constants.CCOption_LOCK://lock_ratio
+            case Constants.CCOption_OrderLOCK://Ordered lock_ratio
+                content_type = LOCK_CONTENT;
                 break;
-            case "OnlineBiding":
-                bottomLine = "500,5000,1,6000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                schedulerPools = "OG_BFS_A,OG_NS_A,OG_NS";
-                defaultScheduler = "OG_BFS_A";
-                phaseNum = shiftRate * phaseType.length;
+            case Constants.CCOption_LWM://LWM
+                content_type = LWM_CONTENT;
                 break;
-            case "GrepSum":
-                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
-                defaultScheduler = "OP_NS_A";
-                phaseNum = shiftRate * phaseType.length;
+            case Constants.CCOption_MorphStream:
+                if (config.getInt("FTOption") == 4) {
+                    content_type = LVTSTREAM_CONTENT;//records the multi-version of table record.
+                } else {
+                    content_type = T_STREAMCONTENT;
+                }
                 break;
-            case "TollProcessing":
-                phaseNum = shiftRate;
-                defaultScheduler = "OG_BFS_A";
-                break;
-            case "WindowedGrepSum":
-                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
-                defaultScheduler = "OP_NS_A";
-                phaseNum = shiftRate * phaseType.length;
-                break;
-            case "SHJ":
-                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                schedulerPools = "OP_NS_A,OG_BFS_A,OP_NS,OP_NS_A";
-                defaultScheduler = "OP_NS_A";
-                phaseNum = shiftRate * phaseType.length;
-                break;
-            case "NonGrepSum":
-                //TODO: Add Conf settings to NonGrepSum
-                bottomLine = "500,5000,6500,3000,0.2,0.2";//TD,LD,PD,SUM,VDD,R_of_A
-                phaseNum = shiftRate * phaseType.length;
+            case Constants.CCOption_SStore://SStore
+                content_type = SSTORE_CONTENT;//records the multi-version of table record.
                 break;
             default:
-                throw new IllegalStateException("Unexpected value: " + application);
+                System.exit(-1);
         }
-        /* Dynamic switch scheduler*/
-        if (isDynamic == 1) {
-            config.put("isDynamic", true);
-            //config.put("totalEvents", phaseNum * tthread * checkpoint_interval);
-            config.put("schedulersPool", schedulerPools);
-            config.put("defaultScheduler", defaultScheduler);
-            config.put("scheduler", defaultScheduler);
-            config.put("isRuntime", isRuntime);
-            config.put("bottomLine", bottomLine);
-            config.put("WorkloadConfig", WorkloadConfig);
-        } else {
-            config.put("isDynamic", false);
-            config.put("scheduler", scheduler);
+        //Configure Fault Tolerance
+        switch (config.getInt("FTOption", 0)) {
+            case 0:
+            case 1:
+                loggingRecord_type = LOGOption_no;
+                break;
+            case 2:
+                loggingRecord_type = LOGOption_wal;
+                break;
+            case 3:
+                loggingRecord_type = LOGOption_path;
+                break;
+            case 4:
+                loggingRecord_type = LOGOption_lv;
+                break;
+            case 5:
+                loggingRecord_type = LOGOption_dependency;
+                break;
+            case 6:
+                loggingRecord_type = LOGOption_command;
+                break;
+            default:
+                System.exit(-1);
         }
-
-
-        /* Dynamic Workload Configuration*/
-        config.put("workloadType", workloadType);
-        config.put("shiftRate", shiftRate);
-        config.put("phaseNum", phaseNum);
-
-        /* Group scheduler*/
-        if (isGroup == 1) {
-            config.put("isGroup", true);
-            config.put("groupNum", groupNum);
-            config.put("SchedulersForGroup", SchedulersForGroup);
-            config.put("totalEvents", phaseNum * tthread * checkpoint_interval);
-            config.put("skewGroup", skewGroup);
-            config.put("Ratio_of_Transaction_Aborts_Highest", Ratio_of_Transaction_Aborts_Highest);
-        } else {
-            config.put("isGroup", false);
-            config.put("groupNum", 1);
-        }
-
-        /* Evaluation Configuration */
-        if (multicoreEvaluation == 0) {
-            config.put("multicoreEvaluation", false);
-        } else {
-            config.put("multicoreEvaluation", true);
-        }
-        config.put("maxThreads", maxThreads);
-
-        if (cleanUp == 0) {
-            config.put("cleanUp", false);
-        } else {
-            config.put("cleanUp", true);
-        }
-        /* Fault Tolerance */
-        config.put("FTOption", FTOption);
-        config.put("parallelNum", tthread);
-        config.put("compressionAlg", compressionAlg);
-        config.put("snapshotInterval", snapshotInterval);
-        config.put("arrivalRate", arrivalRate);
-        config.put("failureTime", failureTime);
-        config.put("measureInterval", measureInterval);
-        config.put("maxItr", maxItr);
-        if (arrivalControl == 0) {
-            config.put("arrivalControl", false);
-        } else {
-            config.put("arrivalControl", true);
-        }
-        if (isRecovery == 0) {
-            config.put("isRecovery", false);
-        } else {
-            config.put("isRecovery", true);
-        }
-        if (isFailure == 0) {
-            config.put("isFailure", false);
-        } else {
-            config.put("isFailure", true);
-        }
-        /* Fault Tolerance Relax */
-        if (isHistoryView == 0) {
-            config.put("isHistoryView", false);
-        } else {
-            config.put("isHistoryView", true);
-        }
-        if (isAbortPushDown == 0) {
-            config.put("isAbortPushDown", false);
-        } else {
-            config.put("isAbortPushDown", true);
-        }
-        if (isTaskPlacing == 0) {
-            config.put("isTaskPlacing", false);
-        } else {
-            config.put("isTaskPlacing", true);
-        }
-        if (isSelectiveLogging == 0) {
-            config.put("isSelectiveLogging", false);
-        } else {
-            config.put("isSelectiveLogging", true);
-        }
-
-        System.setProperty("my.log", metric_path);
+        OperationChainCommon.cleanUp = config.getBoolean("cleanUp");
+        FaultToleranceRelax.isHistoryView = config.getBoolean("isHistoryView");
+        FaultToleranceRelax.isAbortPushDown = config.getBoolean("isAbortPushDown");
+        FaultToleranceRelax.isTaskPlacing = config.getBoolean("isTaskPlacing");
+        FaultToleranceRelax.isSelectiveLogging = config.getBoolean("isSelectiveLogging");
+        //AppConfig
+        AppConfig.complexity = config.getInt("complexity", 100000);
+        AppConfig.windowSize = config.getInt("windowSize", 1024);
+        AppConfig.isCyclic = config.getBoolean("isCyclic", true);
+        //Add Metric Configuration
     }
-
 }

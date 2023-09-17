@@ -19,7 +19,7 @@ import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 
 public class MorphStreamEnv {
-    private JCommanderHandler jCommanderHandler;
+    private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
     private final FileDataGenerator fileDataGenerator = new FileDataGenerator();
     private final DatabaseInitialize databaseInitialize = new DatabaseInitialize();
@@ -28,8 +28,8 @@ public class MorphStreamEnv {
     private RdmaShuffleManager RM;
     private BlockManagerId blockManagerId;
     private Topology topology;
-    private TopologyBuilder topologyBuilder = new TopologyBuilder();
-    private TopologySubmitter topologySubmitter = new TopologySubmitter();
+    private final TopologyBuilder topologyBuilder = new TopologyBuilder();
+    private final TopologySubmitter topologySubmitter = new TopologySubmitter();
     public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     public static MorphStreamEnv get() {
         return ourInstance;
