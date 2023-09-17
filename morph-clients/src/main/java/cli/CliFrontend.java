@@ -95,7 +95,8 @@ public class CliFrontend {
     public void listenToStop() throws InterruptedException {
         executorThread sinkThread = env.OM().getEM().getSinkThread();
         sinkThread.join((long) (30 * 1E3 * 60));//sync_ratio for sink thread to stop. Maximally sync_ratio for 10 mins
-
+        env.OM().join();
+        env.OM().getEM().exist();
     }
 
     public MorphStreamEnv env() {

@@ -267,35 +267,35 @@ public class BenchmarkRunner extends Runner {
     }
 
     public void run() throws InterruptedException {
-        MeasureTools.Initialize();
-        LoadConfiguration();
-
-        // Get the descriptor for the given application
-        AppDriver.AppDescriptor app = driver.getApp(application);
-        if (app == null) {
-            throw new RuntimeException("The given application name " + application + " is invalid");
-        }
-        // In case topology names is given, create one
-        if (topologyName == null) {
-            topologyName = application;
-        }
-        // Get the topology
-        Topology topology = app.getTopology(topologyName, config);
-        topology.addMachine(platform);
-        // Run the topology
-        double rt = runTopologyLocally(topology, config);
-        if (enable_profile) {
-            if (rt != -1) {//returns normally.
-                log.info("finished measurement (k events/s):\t" + rt);
-            }
-            if (enable_shared_state) {
-                SpinLock[] spinlock = final_topology.spinlock;
-                for (SpinLock lock : spinlock) {
-                    if (lock != null)
-                        log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
-                }
-                METRICS_REPORT(config.getInt("CCOption", 0), config.getInt("FTOption", 0), tthread, rt, config.getInt("phaseNum"), config.getInt("shiftRate"), config.getInt("snapshotInterval"));
-            }
-        }//end of profile.
+//        MeasureTools.Initialize();
+//        LoadConfiguration();
+//
+//        // Get the descriptor for the given application
+//        AppDriver.AppDescriptor app = driver.getApp(application);
+//        if (app == null) {
+//            throw new RuntimeException("The given application name " + application + " is invalid");
+//        }
+//        // In case topology names is given, create one
+//        if (topologyName == null) {
+//            topologyName = application;
+//        }
+//        // Get the topology
+//        Topology topology = app.getTopology(topologyName, config);
+//        topology.addMachine(platform);
+//        // Run the topology
+//        double rt = runTopologyLocally(topology, config);
+//        if (enable_profile) {
+//            if (rt != -1) {//returns normally.
+//                log.info("finished measurement (k events/s):\t" + rt);
+//            }
+//            if (enable_shared_state) {
+//                SpinLock[] spinlock = final_topology.spinlock;
+//                for (SpinLock lock : spinlock) {
+//                    if (lock != null)
+//                        log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
+//                }
+//                METRICS_REPORT(config.getInt("CCOption", 0), config.getInt("FTOption", 0), tthread, rt, config.getInt("phaseNum"), config.getInt("shiftRate"), config.getInt("snapshotInterval"));
+//            }
+//        }//end of profile.
     }
 }
