@@ -304,7 +304,7 @@ public class MorphStreamRunner extends Runner {
                     if (lock != null)
                         log.info("Partition" + lock + " being locked:\t" + lock.count + "\t times");
                 }
-                METRICS_REPORT(config.getInt("CCOption", 0), config.getInt("FTOption", 0), tthread, rt, config.getInt("phaseNum"), config.getInt("shiftRate"), config.getInt("snapshotInterval"));
+                METRICS_REPORT(config, tthread, rt);
             }
         }//end of profile.
     }
