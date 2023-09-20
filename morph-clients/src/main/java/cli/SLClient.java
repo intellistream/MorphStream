@@ -1,7 +1,6 @@
 package cli;
 
-import intellistream.morphstream.api.input.TransactionalEvent;
-import intellistream.morphstream.api.operator.ApplicationSpoutCombo;
+import intellistream.morphstream.api.operator.spout.ApplicationSpoutCombo;
 import intellistream.morphstream.api.output.Result;
 import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateAccessDescription;
@@ -117,8 +116,7 @@ public class SLClient {
         //...
 
         //Define topology
-        ApplicationSpoutCombo spoutCombo = new ApplicationSpoutCombo(txnDescriptions);
-        SLClient.setSpout("spout", spoutCombo, 1);
+        SLClient.setSpoutCombo("spout", txnDescriptions, 1);
 
 //
 //        builder.setGlobalScheduler(new SequentialScheduler());

@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.stream.topology;
+package intellistream.morphstream.engine.stream.topology.delete;
 
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;

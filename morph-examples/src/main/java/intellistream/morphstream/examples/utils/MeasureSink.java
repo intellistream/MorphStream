@@ -3,7 +3,7 @@ package intellistream.morphstream.examples.utils;
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.util.LRTopologyControl;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.configuration.Constants;
-import intellistream.morphstream.engine.stream.components.operators.api.BaseSink;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.BaseSink;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;

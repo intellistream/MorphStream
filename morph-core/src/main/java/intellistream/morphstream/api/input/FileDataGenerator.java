@@ -136,14 +136,15 @@ public class FileDataGenerator {
         String[] values = generateValue(eventType);
         HashMap<String, Object> valueMap = new HashMap<>();
         HashMap<String, String> valueTypeMap = new HashMap<>();
+        HashMap<String, String> conditionMap = new HashMap<>();
         for (int i = 0; i < values.length; i++) {
             valueMap.put(eventValueMap.get(eventType).get(i), values[i]);
             valueTypeMap.put(eventValueMap.get(eventType).get(i), "int");
         }
         if (random.nextInt(1000) < eventRatioMap.get(eventType)) {
-            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, true);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, null, eventType, true);
         } else {
-            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, false);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, null, eventType, false);
         }
         inputEvents.add(inputEvent);
         eventID ++;

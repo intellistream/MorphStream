@@ -3,7 +3,7 @@ package intellistream.morphstream.examples.tsp.streamledger.op;
 import intellistream.morphstream.examples.utils.SINKCombo;
 import intellistream.morphstream.examples.tsp.streamledger.events.DepositTxnEvent;
 import intellistream.morphstream.examples.tsp.streamledger.events.TransactionTxnEvent;
-import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.TransactionalBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;

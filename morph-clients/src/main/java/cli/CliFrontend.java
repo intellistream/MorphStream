@@ -2,19 +2,25 @@ package cli;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
+import intellistream.morphstream.api.operator.spout.ApplicationSpout;
+import intellistream.morphstream.api.operator.spout.ApplicationSpoutCombo;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.grouping.Grouping;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractBolt;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractSpout;
+import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.executorThread;
+import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.configuration.Constants.CCOption_MorphStream;
 
 /**
  * TODO: Implementation of a simple command line frontend for executing programs.
@@ -43,39 +49,56 @@ public class CliFrontend {
             cmd.usage();
             return false;
         }
-        // initialize AppConfig (TopologySubmitter)
-        //TODO: add metric config
-        // initialize AppConfig
         env.jCommanderHandler().initializeCfg(env.configuration());
-        //if (CONTROL.enable_shared_state) {
-        //    Metrics.COMPUTE_COMPLEXITY = conf.getInt("COMPUTE_COMPLEXITY");
-        //    Metrics.POST_COMPUTE_COMPLEXITY = conf.getInt("POST_COMPUTE");
-        //    Metrics.NUM_ACCESSES = conf.getInt("NUM_ACCESS");
-        //    Metrics.NUM_ITEMS = conf.getInt("NUM_ITEMS");
-        //    Metrics.H2_SIZE = Metrics.NUM_ITEMS / conf.getInt("tthread");
-        //}
         return true;
     }
 
     public void prepare() throws IOException {
         env.DatabaseInitialize();
-        String inputFile = env.configuration().getString("inputFile");
-        File file = new File(inputFile);
-        if (file.exists()) {
-            LOG.info("Data already exists.. skipping data generation...");
-        } else {
-            String fileName = env.fileDataGenerator().prepareInputData();
-            env.configuration().put("inputFile", fileName);
+        if (env.configuration().getInt("inputSourceType", 0) == 0) {
+            String inputFile = env.configuration().getString("inputFile");
+            File file = new File(inputFile);
+            if (file.exists()) {
+                LOG.info("Data already exists.. skipping data generation...");
+            } else {
+                String fileName = env.fileDataGenerator().prepareInputData();
+                env.configuration().put("inputFile", fileName);
+            }
+            env.inputSource().initialize(env.configuration().getString("inputFile"), InputSource.InputSourceType.FILE_STRING);
+        } else if (env.configuration().getInt("inputSourceType", 0) == 1) {
+            String inputFile = env.configuration().getString("inputFile");
+            File file = new File(inputFile);
+            if (file.exists()) {
+                LOG.info("Data already exists.. skipping data generation...");
+            } else {
+                String fileName = env.fileDataGenerator().prepareInputData();
+                env.configuration().put("inputFile", fileName);
+            }
+            env.inputSource().initialize(env.configuration().getString("inputFile"), InputSource.InputSourceType.FILE_JSON);
         }
     }
     public void run() throws InterruptedException {
         runTopologyLocally();
         //TODO: run for distributed mode
     }
-    public void setSpout(String id, AbstractSpout spout, int numTasks) {
+    public void setSpoutCombo(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks) throws Exception {
+        ApplicationSpoutCombo spout = new ApplicationSpoutCombo(txnDescriptionHashMap);
         env.setSpout(id, spout, numTasks);
     }
-    public void setBolt(String id, AbstractBolt bolt, int numTasks, Grouping ... groups) {
+    public void setSpout(String id, int numTasks) throws Exception {
+        ApplicationSpout spout = new ApplicationSpout();
+        env.setSpout(id, spout, numTasks);
+    }
+    public void setBolt(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks, Grouping ... groups) {
+        AbstractBolt bolt = null;
+        switch (env.configuration().getInt("CCOption", 0)) {
+            case CCOption_MorphStream: {//T-Stream
+                bolt = new MorphStreamBolt(txnDescriptionHashMap);
+                break;
+            }
+            default:
+                if (enable_log) LOG.error("Please select correct CC option!");
+        }
         env.setBolt(id, bolt, numTasks, groups);
     }
     public void setSink(String id, AbstractBolt sink, int numTasks, Grouping ... groups) {

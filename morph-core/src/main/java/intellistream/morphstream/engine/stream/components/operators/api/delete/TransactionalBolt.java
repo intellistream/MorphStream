@@ -1,6 +1,6 @@
-package intellistream.morphstream.engine.stream.components.operators.api;
+package intellistream.morphstream.engine.stream.components.operators.api.delete;
 
-import intellistream.morphstream.engine.stream.components.operators.base.MapBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.Checkpointable;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -18,7 +18,7 @@ import java.util.concurrent.BrokenBarrierException;
 import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
 import static intellistream.morphstream.configuration.CONTROL.enable_latency_measurement;
 
-public abstract class TransactionalBolt extends MapBolt implements Checkpointable {
+public abstract class TransactionalBolt extends AbstractBolt implements Checkpointable {
     protected static final Logger LOG = LoggerFactory.getLogger(TransactionalBolt.class);
     private static final long serialVersionUID = -3899457584889441657L;
     public TxnManager transactionManager;
@@ -34,7 +34,7 @@ public abstract class TransactionalBolt extends MapBolt implements Checkpointabl
     int sum = 0;
 
     public TransactionalBolt(Logger log, int fid) {
-        super(log);
+        super(log, null, null, 1, 1, 1);
         this.fid = fid;
     }
 

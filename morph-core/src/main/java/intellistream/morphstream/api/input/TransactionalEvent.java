@@ -16,7 +16,7 @@ public class TransactionalEvent extends TxnEvent {
     private HashMap<String, List<String>> keyMap; //<TableName, keys> assume key must be string, including sourceKey, targetKey, and conditionKey
     private HashMap<String, Object> valueMap; //<valueName, value>
     private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
-    private HashMap<String, Object> conditionMap; //<conditionName, condition>
+    private HashMap<String, String> conditionMap; //<conditionName, condition>
     private String flag; //"Deposit" or "Transfer"
     private Boolean isAbort = false;
 
@@ -24,7 +24,7 @@ public class TransactionalEvent extends TxnEvent {
                               HashMap<String, List<String>> keyMap,
                               HashMap<String, Object> valueMap,
                               HashMap<String, String> valueTypeMap,
-                              HashMap<String, Object> conditionMap,
+                              HashMap<String, String> conditionMap,
                               String flag,
                               Boolean isAbort) {
         super(bid);
@@ -92,6 +92,13 @@ public class TransactionalEvent extends TxnEvent {
         stringBuilder.append(flag);
         stringBuilder.append(";");
         stringBuilder.append(isAbort);
+        if (conditionMap != null) {
+            stringBuilder.append(";");
+            for (String condition : conditionMap.keySet()) {
+                stringBuilder.append(condition).append(":").append(conditionMap.get(condition)).append(",");
+            }
+            stringBuilder.deleteCharAt(stringBuilder.length() -1);
+        }
         return stringBuilder.toString();
     }
 }

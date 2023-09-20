@@ -1,6 +1,7 @@
 package intellistream.morphstream.api.launcher;
 
 import intellistream.morphstream.api.input.FileDataGenerator;
+import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.state.DatabaseInitialize;
 import intellistream.morphstream.common.io.Rdma.RdmaShuffleManager;
 import intellistream.morphstream.common.io.Rdma.RdmaUtils.Block.BlockManagerId;
@@ -8,8 +9,8 @@ import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
 import intellistream.morphstream.engine.stream.components.grouping.Grouping;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractBolt;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractSpout;
+import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpout;
 import intellistream.morphstream.engine.stream.optimization.OptimizationManager;
 import intellistream.morphstream.engine.stream.topology.TopologyBuilder;
 import intellistream.morphstream.engine.stream.topology.TopologySubmitter;
@@ -19,9 +20,11 @@ import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 
 public class MorphStreamEnv {
+    public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     private final JCommanderHandler jCommanderHandler = new JCommanderHandler();
     private final Configuration configuration = new Configuration();
     private final FileDataGenerator fileDataGenerator = new FileDataGenerator();
+    private final InputSource inputSource = new InputSource();
     private final DatabaseInitialize databaseInitialize = new DatabaseInitialize();
     private Database database;
     private OptimizationManager OM;
@@ -30,7 +33,6 @@ public class MorphStreamEnv {
     private Topology topology;
     private final TopologyBuilder topologyBuilder = new TopologyBuilder();
     private final TopologySubmitter topologySubmitter = new TopologySubmitter();
-    public static MorphStreamEnv ourInstance = new MorphStreamEnv();
     public static MorphStreamEnv get() {
         return ourInstance;
     }
@@ -50,6 +52,7 @@ public class MorphStreamEnv {
     public BlockManagerId blockManagerId() {return blockManagerId;}
     public FileDataGenerator fileDataGenerator() {return fileDataGenerator;}
     public DatabaseInitialize databaseInitialize() {return databaseInitialize;}
+    public InputSource inputSource() {return inputSource;}
     public void DatabaseInitialize() {
         this.database = new CavaliaDatabase(configuration);
         this.databaseInitialize.creates_Table();

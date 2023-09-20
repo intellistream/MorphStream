@@ -1,5 +1,6 @@
-package intellistream.morphstream.engine.stream.components.operators.api;
+package intellistream.morphstream.engine.stream.components.operators.api.delete;
 
+import intellistream.morphstream.engine.stream.components.operators.api.Checkpointable;
 import intellistream.morphstream.engine.txn.durability.inputStore.InputDurabilityHelper;
 import intellistream.morphstream.util.FaultToleranceConstants;
 import org.slf4j.Logger;

@@ -257,6 +257,8 @@ public class JCommanderHandler {
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
     public String valueDataTypesForTables = "int,int";
     //Input event configurations
+    @Parameter(names = {"--inputFileType"}, description = "input file type, [txt, csv, json]")
+    public int inputFileType = 0;
     @Parameter(names = {"--inputFile"}, description = "path of input file ")
     public String inputFile = "/Users/curryzjj/hair-loss/MorphStream/Benchmark/input/event.txt";
     @Parameter(names = {"--inputFileName"}, description = "input file name")
@@ -284,8 +286,7 @@ public class JCommanderHandler {
     @Parameter(names = {"--clientClassName"}, description = "Client class name, used for UDF Reflection")
     public String clientClassName = "Client";
 
-    public JCommanderHandler() {
-    }
+    public JCommanderHandler() {}
 
     public Properties loadProperties(String filename) throws IOException {
         Properties properties = new Properties();
@@ -308,6 +309,7 @@ public class JCommanderHandler {
             config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
         }
         //Input events configuration
+        config.put("inputFileType", inputFileType);
         config.put("inputFile", inputFile);
         config.put("inputFileName", inputFileName);
         config.put("totalEvents", totalEvents);
@@ -382,5 +384,12 @@ public class JCommanderHandler {
         AppConfig.windowSize = config.getInt("windowSize", 1024);
         AppConfig.isCyclic = config.getBoolean("isCyclic", true);
         //Add Metric Configuration
+        //if (CONTROL.enable_shared_state) {
+        //    Metrics.COMPUTE_COMPLEXITY = conf.getInt("COMPUTE_COMPLEXITY");
+        //    Metrics.POST_COMPUTE_COMPLEXITY = conf.getInt("POST_COMPUTE");
+        //    Metrics.NUM_ACCESSES = conf.getInt("NUM_ACCESS");
+        //    Metrics.NUM_ITEMS = conf.getInt("NUM_ITEMS");
+        //    Metrics.H2_SIZE = Metrics.NUM_ITEMS / conf.getInt("tthread");
+        //}
     }
 }

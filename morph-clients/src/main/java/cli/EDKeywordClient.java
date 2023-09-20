@@ -1,10 +1,5 @@
 package cli;
 
-import intellistream.morphstream.api.operator.ApplicationSink;
-import intellistream.morphstream.api.operator.ApplicationSpout;
-import intellistream.morphstream.api.operator.ApplicationSpoutCombo;
-import intellistream.morphstream.api.operator.ApplicationBolt;
-import intellistream.morphstream.engine.stream.components.grouping.ShuffleGrouping;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,17 +28,17 @@ public class EDKeywordClient {
         TxnDescription depositDescription = new TxnDescription();
         txnDescriptions.put("deposit", depositDescription);
 
-        ApplicationSpoutCombo spoutCombo = new ApplicationSpoutCombo(txnDescriptions);
-        EDKeywordClient.setSpout("spout", spoutCombo, 1);
-
-        //Define topology
-        ApplicationSpout spout = new ApplicationSpout(txnDescriptions); //TODO: For non-combo, what to specify for spout and bolt?
-        ApplicationBolt bolt = new ApplicationBolt(txnDescriptions);
-        ApplicationSink sink = new ApplicationSink(log);
-
-        EDKeywordClient.setSpout("executor", spout, 1);
-        EDKeywordClient.setBolt("executor", bolt, 1, new ShuffleGrouping("spout"));
-        EDKeywordClient.setSink("sink", sink, 1, new ShuffleGrouping("executor"));
+//        ApplicationSpoutCombo spoutCombo = new ApplicationSpoutCombo(txnDescriptions);
+//        EDKeywordClient.setSpout("spout", spoutCombo, 1);
+//
+//        //Define topology
+//        ApplicationSpout spout = new ApplicationSpout(); //TODO: For non-combo, what to specify for spout and bolt?
+//        MorphStreamBolt bolt = new MorphStreamBolt(txnDescriptions);
+//        ApplicationSink sink = new ApplicationSink(log);
+//
+//        EDKeywordClient.setSpout("executor", spout, 1);
+//        EDKeywordClient.setBolt("executor", bolt, 1, new ShuffleGrouping("spout"));
+//        EDKeywordClient.setSink("sink", sink, 1, new ShuffleGrouping("executor"));
 
 
         EDKeywordClient.run();

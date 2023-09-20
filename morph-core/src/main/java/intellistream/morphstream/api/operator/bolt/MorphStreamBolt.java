@@ -1,4 +1,4 @@
-package intellistream.morphstream.api.operator;
+package intellistream.morphstream.api.operator.bolt;
 
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
@@ -7,16 +7,12 @@ import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.state.StateObjectDescription;
-import intellistream.morphstream.engine.stream.components.context.TopologyContext;
-import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
-import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
-import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
+import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
-import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,39 +25,19 @@ import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
-import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
-public class ApplicationBolt extends TransactionalBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(ApplicationBolt.class);
+public class MorphStreamBolt extends AbstractMorphStreamBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
     private final HashMap<String, TxnDescription> txnDescriptionMap;//Transaction flag -> TxnDescription. E.g. "transfer" -> transferTxnDescription
     private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
     private final HashMap<Long, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
 
-    public ApplicationBolt(HashMap<String, TxnDescription> txnDescriptionMap) {
+    public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap) {
         super(LOG, 0); //TODO: Check fid
         this.txnDescriptionMap = txnDescriptionMap;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
     }
-
-    @Override
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        super.initialize(thread_Id, thisTaskId, graph);
-        //TODO: Check txnManager inputs, such as fid
-        transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(),
-                thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
-    }
-
-    //TODO: loadDB is only called by the first bolt in topology. Refine this.
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-        MorphStreamEnv.get().databaseInitialize().loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), false);
-    }
-
-    @Override
-    protected void TXN_PROCESS(long _bid) throws DatabaseException, InterruptedException {
-        //Only used in Lock-based CC algorithms
-    }
-
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
         MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);

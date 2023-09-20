@@ -1,5 +1,6 @@
-package intellistream.morphstream.engine.stream.components.operators.api;
+package intellistream.morphstream.engine.stream.components.operators.api.delete;
 
+import intellistream.morphstream.engine.stream.components.operators.api.Operator;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.JumboTuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;

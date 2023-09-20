@@ -2,7 +2,7 @@ package intellistream;
 
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.Topology;
-import intellistream.morphstream.engine.stream.topology.AbstractTopology;
+import intellistream.morphstream.engine.stream.topology.delete.AbstractTopology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -8,7 +8,7 @@ import intellistream.morphstream.engine.stream.components.grouping.FieldsGroupin
 import intellistream.morphstream.engine.stream.components.grouping.ShuffleGrouping;
 import intellistream.morphstream.engine.stream.controller.input.scheduler.SequentialScheduler;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
-import intellistream.morphstream.engine.stream.topology.BasicTopology;
+import intellistream.morphstream.engine.stream.topology.delete.BasicTopology;
 import intellistream.morphstream.examples.streaming.util.SplitSentenceBolt;
 import intellistream.morphstream.examples.streaming.util.StringParserBolt;
 import intellistream.morphstream.examples.streaming.util.WordCountBolt;

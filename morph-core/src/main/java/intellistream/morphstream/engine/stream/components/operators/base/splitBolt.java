@@ -1,6 +1,6 @@
 package intellistream.morphstream.engine.stream.components.operators.base;
 
-import intellistream.morphstream.engine.stream.components.operators.api.BaseOperator;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.BaseOperator;
 import org.slf4j.Logger;
 
 import java.util.Map;

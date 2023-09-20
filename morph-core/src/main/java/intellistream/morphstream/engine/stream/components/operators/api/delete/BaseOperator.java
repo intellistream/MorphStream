@@ -1,5 +1,6 @@
-package intellistream.morphstream.engine.stream.components.operators.api;
+package intellistream.morphstream.engine.stream.components.operators.api.delete;
 
+import intellistream.morphstream.engine.stream.components.operators.api.delete.AbstractBolt;
 import org.slf4j.Logger;
 
 import java.util.Map;

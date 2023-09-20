@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.stream.components.operators.executor;
 
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractSpout;
+import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpout;
 import intellistream.morphstream.engine.stream.execution.ExecutionNode;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 

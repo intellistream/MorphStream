@@ -21,7 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class InputSource {
 
-    private final InputSourceType inputSourceType; //from file or streaming
+    private InputSourceType inputSourceType; //from file or streaming
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
     //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
     private final BlockingQueue<TransactionalEvent> inputQueue; //stores input data fetched from input source
@@ -34,8 +34,7 @@ public class InputSource {
         WEBSOCKET
     }
 
-    public InputSource(InputSourceType inputSourceType) {
-        this.inputSourceType = inputSourceType;
+    public InputSource() {
         this.inputQueue = new LinkedBlockingQueue<>();
         this.bid = 0;
     }
@@ -43,8 +42,9 @@ public class InputSource {
     /**
      * For InputSource from file, once file path is specified, automatically convert all lines into TransactionalEvents
      */
-    public void setStaticInputSource(String staticFilePath) throws IOException {
+    public void initialize(String staticFilePath, InputSourceType type) throws IOException {
         this.staticFilePath = staticFilePath;
+        this.inputSourceType = type;
         BufferedReader csvReader = new BufferedReader(new FileReader(this.staticFilePath));
         String input;
         while ((input = csvReader.readLine()) != null) {
@@ -76,9 +76,9 @@ public class InputSource {
 
         TransactionalEvent txnEvent;
         if (isAbort.equals("true")) {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, null, flag, true);
         } else {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap,null, flag, false);
         }
 
         bid++;
@@ -90,6 +90,7 @@ public class InputSource {
         HashMap<String, List<String>> keyMap = new HashMap<>();
         HashMap<String, Object> valueMap = new HashMap<>();
         HashMap<String, String> valueTypeMap = new HashMap<>();
+        HashMap<String, String> conditionMap = new HashMap<>();
         String [] keyMapPairs = inputArray[0].split(",");
 
         for (String pair : keyMapPairs) {
@@ -112,12 +113,20 @@ public class InputSource {
         }
         String flag = inputArray[3];
         String isAbort = inputArray[4];
-
+        if (inputArray.length == 5) {
+            conditionMap = null;
+        } else {
+            String [] conditionMapPairs = inputArray[3].split(",");
+            for (String conditionPairString : conditionMapPairs) {
+                String[] conditionPair = conditionPairString.split(":");
+                conditionMap.put(conditionPair[0], conditionPair[1]);
+            }
+        }
         TransactionalEvent txnEvent;
         if (isAbort.equals("true")) {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, conditionMap, flag, true);
         } else {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, conditionMap, flag, false);
         }
 
         bid++;

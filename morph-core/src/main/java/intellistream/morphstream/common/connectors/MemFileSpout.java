@@ -3,14 +3,17 @@ package intellistream.morphstream.common.connectors;
 import intellistream.morphstream.common.constants.BaseConstants;
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractSpout;
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.AbstractSpout;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Scanner;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
@@ -42,6 +45,11 @@ public class MemFileSpout extends AbstractSpout {
         counter = 0;
         taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
         load_input();
+    }
+
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+
     }
 
     @Override

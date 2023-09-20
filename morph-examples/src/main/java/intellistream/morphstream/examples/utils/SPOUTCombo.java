@@ -4,8 +4,8 @@ import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
-import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
-import intellistream.morphstream.engine.stream.components.operators.api.TransactionalSpout;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.TransactionalBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.TransactionalSpout;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Marker;
@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 
@@ -65,9 +66,6 @@ public abstract class SPOUTCombo extends TransactionalSpout {
 
                 //TODO: InputSource inputSource should be retrieved from client.getInputSource();
                 //TODO: Should we keep both streaming and original input?
-                InputSource inputSource = new InputSource(InputSource.InputSourceType.FILE_STRING);
-                inputSource.setStaticInputSource("path");
-                TransactionalEvent txnEvent = inputSource.getNextTxnEvent();
 
                 Object event = myevents[counter]; //this should be txnEvent already
 
@@ -150,5 +148,9 @@ public abstract class SPOUTCombo extends TransactionalSpout {
         } else {
             global_cnt = (the_end - CONTROL.MeasureStart) * tthread;
         }
+    }
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+        bolt.loadDB(conf, context, collector);
     }
 }

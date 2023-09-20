@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.stream.components.operators.api;
+package intellistream.morphstream.engine.stream.components.operators.api.delete;
 
 import intellistream.morphstream.common.constants.BaseConstants;
 import intellistream.morphstream.configuration.CONTROL;

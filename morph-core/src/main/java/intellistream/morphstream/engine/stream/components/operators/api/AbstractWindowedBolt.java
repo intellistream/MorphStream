@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.stream.components.operators.api;
 
+import intellistream.morphstream.engine.stream.components.operators.api.Operator;
 import intellistream.morphstream.engine.stream.components.windowing.TupleWindow;
 import org.slf4j.Logger;
 

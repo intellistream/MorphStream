@@ -1,7 +1,6 @@
 package intellistream.morphstream.engine.stream.components.operators.base;
 
-import intellistream.morphstream.engine.stream.components.operators.api.BaseOperator;
-import intellistream.morphstream.engine.stream.components.operators.api.Operator;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.BaseOperator;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -12,7 +11,7 @@ import java.util.Map;
  */
 public abstract class MapBolt extends BaseOperator {
     private static final long serialVersionUID = 9189077925508299274L;
-
+    public static final String map = "map";//Takes one element and produces one element. A map function that doubles the values of the input stream
     protected MapBolt(Logger log, Map<String, Double> input_selectivity) {
         super(log, input_selectivity, null, 1);
     }
@@ -30,6 +29,6 @@ public abstract class MapBolt extends BaseOperator {
     }
 
     public String output_type() {
-        return Operator.map;
+        return map;
     }
 }

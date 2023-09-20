@@ -26,14 +26,6 @@ import java.util.Map;
 import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
 
 public abstract class Operator implements IOperator {
-    /**
-     * Because the flexibility of noSQL stream processing, we force user to tell us the output formulation.
-     */
-    //TODO: This is not a complete list.
-    public static final String map = "map";//Takes one element and produces one element. A map function that doubles the values of the input stream
-    public static final String filter = "filter";//Evaluates a boolean function for each element and retains those for which the function returns true, e.g., A filter that filters out zero values:
-    public static final String reduce = "reduce";//Combine multiple input data into one output data.
-    public static final String w_apply = "w_apply";
     private static final long serialVersionUID = -7816511217365808709L;
     public final Map<String, Double> input_selectivity;//input_selectivity used to capture multi-stream effect.
     public final Map<String, Double> output_selectivity;//output_selectivity can be > 1
@@ -43,8 +35,6 @@ public abstract class Operator implements IOperator {
     public boolean scalable = true;
     public TopologyContext context;
     public transient Database db;//this is only used if the bolt is transactional bolt. DB is shared by all operators.
-    public transient FTManager ftManager;//this is only used if the bolt is fault tolerance bolt. FTManager is shared by all operators.
-    public transient FTManager loggingManager;//this is only used if the bolt is fault tolerance bolt. LoggingManager is shared by all operators.
     public transient TxnContext[] txn_context = new TxnContext[CONTROL.combo_bid_size];
     public int fid = -1;//if fid is -1 it means it does not participate
     public OrderLock lock;//used for lock_ratio-based ordering constraint.
@@ -64,9 +54,9 @@ public abstract class Operator implements IOperator {
      * @param read_selectivity
      * @param window_size
      */
-    Operator(Logger log, Map<String, Double> input_selectivity,
-             Map<String, Double> output_selectivity, double branch_selectivity,
-             double read_selectivity, double window_size) {
+    public Operator(Logger log, Map<String, Double> input_selectivity,
+                    Map<String, Double> output_selectivity, double branch_selectivity,
+                    double read_selectivity, double window_size) {
         LOG = log;
         if (input_selectivity == null) {
             this.input_selectivity = new HashMap<>();
@@ -87,7 +77,7 @@ public abstract class Operator implements IOperator {
         fields = new HashMap<>();
     }
 
-    Operator(Logger log, double w) {
+    public Operator(Logger log, double w) {
         LOG = log;
         this.input_selectivity = new HashMap<>();
         this.output_selectivity = new HashMap<>();
@@ -99,13 +89,46 @@ public abstract class Operator implements IOperator {
         window = w;
         fields = new HashMap<>();
     }
-
+    /**
+     * This is the API to talk to actual thread.
+     *
+     * @param conf
+     * @param context
+     * @param collector
+     */
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+        this.config = Configuration.fromMap(conf);
+        setContext(context);
+        this.collector = collector;
+        base_initialize(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
+    }
+    /**
+     * Base init will always be called.
+     *
+     * @param thread_Id
+     * @param thisTaskId
+     * @param graph
+     */
+    private void base_initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+        if (LOG == null) {
+            LOG = LoggerFactory.getLogger(Operator.class);
+            if (CONTROL.enable_log) LOG.info("The operator has no LOG, creates a default one for it here.");
+        }
+        if (OsUtils.isMac()) {
+            LogManager.getLogger(LOG.getName()).setLevel(Level.DEBUG);
+        } else {
+            LogManager.getLogger(LOG.getName()).setLevel(Level.INFO);
+        }
+        db = getContext().getDb();
+        initialize(thread_Id, thisTaskId, graph);
+    }
+    public abstract void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph);
+    public abstract void loadDB(Map conf, TopologyContext context, OutputCollector collector);
     public void setStateful() {
         Stateful = true;
     }
 
-    public void display() {
-    }
+    public void display() {}
 
     public OutputCollector getCollector() {
         return collector;
@@ -179,58 +202,9 @@ public abstract class Operator implements IOperator {
         this.results = results;
     }
 
-    /**
-     * This is the API to talk to actual thread.
-     *
-     * @param conf
-     * @param context
-     * @param collector
-     */
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
-        this.config = Configuration.fromMap(conf);
-        setContext(context);
-        this.collector = collector;
-        base_initialize(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getThisTaskId(), context.getGraph());
-    }
 
-    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-        loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), context.getGraph());
-    }
 
-    public void loadDB(int thread_Id, ExecutionGraph graph) {
-        graph.topology.tableinitilizer.loadDB(thread_Id, this.context.getNUMTasks());
-    }
 
-    public void loadDB(SchedulerContext schedulerContext, int thread_Id, ExecutionGraph graph) {
-        graph.topology.tableinitilizer.loadDB(schedulerContext, thread_Id, this.context.getNUMTasks());
-    }
-
-    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        if (CONTROL.enable_log) LOG.info("The operator" + executor.getOP() + "does not require initialization");
-    }
-
-    /**
-     * Base init will always be called.
-     *
-     * @param thread_Id
-     * @param thisTaskId
-     * @param graph
-     */
-    private void base_initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
-        if (LOG == null) {
-            LOG = LoggerFactory.getLogger(Operator.class);
-            if (CONTROL.enable_log) LOG.info("The operator has no LOG, creates a default one for it here.");
-        }
-        if (OsUtils.isMac()) {
-            LogManager.getLogger(LOG.getName()).setLevel(Level.DEBUG);
-        } else {
-            LogManager.getLogger(LOG.getName()).setLevel(Level.INFO);
-        }
-        ftManager = getContext().getFtManager();
-        loggingManager = getContext().getLoggingManager();
-        db = getContext().getDb();
-        initialize(thread_Id, thisTaskId, graph);
-    }
 
     public void setExecutionNode(ExecutionNode e) {
         this.executor = e;

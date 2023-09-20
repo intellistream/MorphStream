@@ -7,8 +7,8 @@ import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.TopologyComponent;
 import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
 import intellistream.morphstream.engine.stream.components.grouping.Grouping;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractBolt;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractSpout;
+import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpout;
 import intellistream.morphstream.engine.stream.components.operators.api.AbstractWindowedBolt;
 import intellistream.morphstream.engine.stream.components.operators.executor.BasicBoltBatchExecutor;
 import intellistream.morphstream.engine.stream.components.operators.executor.BasicSpoutBatchExecutor;
@@ -18,7 +18,6 @@ import intellistream.morphstream.engine.stream.components.streaminfo;
 import intellistream.morphstream.engine.stream.controller.input.InputStreamController;
 import intellistream.morphstream.engine.stream.controller.input.scheduler.SequentialScheduler;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.OutputFieldsDeclarer;
-import intellistream.morphstream.engine.txn.db.Database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

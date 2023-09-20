@@ -1,11 +1,11 @@
-package intellistream.morphstream.engine.stream.topology;
+package intellistream.morphstream.engine.stream.topology.delete;
 
 import intellistream.morphstream.common.constants.BaseConstants;
 import intellistream.morphstream.common.helper.parser.Parser;
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractSpout;
-import intellistream.morphstream.engine.stream.components.operators.api.BaseSink;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.AbstractSpout;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.BaseSink;
 import intellistream.morphstream.util.ClassLoaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

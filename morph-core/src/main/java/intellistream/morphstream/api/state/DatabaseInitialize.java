@@ -20,8 +20,8 @@ import static intellistream.morphstream.engine.txn.storage.datatype.DataBox.Type
 
 public class DatabaseInitialize {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseInitialize.class);
-    private Configuration configuration = MorphStreamEnv.get().configuration();
-    private SpinLock[] spinlock = new SpinLock[configuration.getInt("tthread", 4)];
+    private Configuration configuration;
+    private SpinLock[] spinlock;
     private String[] tableNames;
     private HashMap<String, DataBox.Types> keyDataTypeMap = new HashMap<>();//table name to key data type
     private HashMap<String, DataBox.Types> valueDataTypeMap = new HashMap<>();//table name to value data type
@@ -60,8 +60,10 @@ public class DatabaseInitialize {
             loadDB(threadId, null);
     }
     public void configure_db(){
+        configuration = MorphStreamEnv.get().configuration();
         tableNames = configuration.getString("tableNames","table1,table2").split(",");
         totalThreads = configuration.getInt("tthread", 4);
+        spinlock = new SpinLock[totalThreads];
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
             keyDataTypeMap.put(tableName, getDataType(configuration.getString(tableName + "_key_data_types","string")));

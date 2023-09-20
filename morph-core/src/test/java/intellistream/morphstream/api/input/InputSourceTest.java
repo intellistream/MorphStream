@@ -18,8 +18,8 @@ public class InputSourceTest extends TestCase {
     }
     public void testApp() throws IOException {
         assertTrue(true);
-        InputSource inputSource = new InputSource(InputSource.InputSourceType.FILE_STRING);
-        inputSource.setStaticInputSource("/Users/curryzjj/hair-loss/MorphStream/Benchmark/inputs/events.txt");
+        InputSource inputSource = new InputSource();
+        inputSource.initialize("/Users/curryzjj/hair-loss/MorphStream/Benchmark/inputs/events.txt", InputSource.InputSourceType.FILE_STRING);
         for (int i = 0; i < 100; i++) {
             TransactionalEvent txnEvent = inputSource.getNextTxnEvent();
             System.out.println(txnEvent);

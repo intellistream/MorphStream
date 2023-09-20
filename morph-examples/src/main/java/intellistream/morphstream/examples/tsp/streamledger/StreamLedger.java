@@ -13,7 +13,7 @@ import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.exception.InvalidIDException;
 import intellistream.morphstream.engine.stream.components.grouping.ShuffleGrouping;
 import intellistream.morphstream.engine.stream.controller.input.scheduler.SequentialScheduler;
-import intellistream.morphstream.engine.stream.topology.TransactionTopology;
+import intellistream.morphstream.engine.stream.topology.delete.TransactionTopology;
 import intellistream.morphstream.engine.txn.lock.PartitionedOrderLock;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.txn.transaction.TableInitilizer;

@@ -5,7 +5,7 @@ import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.TollN
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.util.AvgValue;
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.util.SegmentIdentifier;
 import intellistream.morphstream.examples.tsp.tollprocessing.events.TPTxnEvent;
-import intellistream.morphstream.engine.stream.components.operators.api.TransactionalBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.TransactionalBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;

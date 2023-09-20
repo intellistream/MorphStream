@@ -1,7 +1,6 @@
 package intellistream.morphstream.engine.stream.components.operators.base;
 
-import intellistream.morphstream.engine.stream.components.operators.api.BaseOperator;
-import intellistream.morphstream.engine.stream.components.operators.api.Operator;
+import intellistream.morphstream.engine.stream.components.operators.api.delete.BaseOperator;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -11,6 +10,7 @@ import java.util.Map;
  */
 public abstract class unionBolt extends BaseOperator {
     private static final long serialVersionUID = 4285498526255572237L;
+    public static final String reduce = "reduce";//Combine multiple input data into one output data.
 
     // private static final Logger LOG = LoggerFactory.getLogger(unionBolt.class);
     public unionBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity) {
@@ -28,6 +28,6 @@ public abstract class unionBolt extends BaseOperator {
     }
 
     public String output_type() {
-        return Operator.reduce;
+        return reduce;
     }
 }

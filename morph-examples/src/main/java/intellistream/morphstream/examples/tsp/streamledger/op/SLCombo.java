@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
+import java.util.Map;
 
 import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
 import static intellistream.morphstream.configuration.CONTROL.enable_shared_state;
@@ -160,5 +161,10 @@ public class SLCombo extends SPOUTCombo {
         if (enable_shared_state)
             bolt.loadDB(config, context, collector);
         loadEvent(config.getString("rootFilePath"), config, context, collector);
+    }
+
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+
     }
 }

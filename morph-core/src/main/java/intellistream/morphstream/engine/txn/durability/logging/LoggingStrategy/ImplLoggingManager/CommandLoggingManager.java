@@ -194,79 +194,78 @@ public class CommandLoggingManager implements LoggingManager {
     }
 
     private void SLExecute(NativeCommandLog task) {
-        if (task == null) return;
-        String table = task.tableName;
-        String pKey = task.key;
-        double value = Double.parseDouble(task.id);
-        long bid = (long) Math.floor(value);
-        if (task.condition.length > 0) {
-            SchemaRecord preValue = this.tables.get(table).SelectKeyRecord(task.condition[0]).content_.readPreValues(bid);
-            long sourceAccountBalance = preValue.getValues().get(1).getLong();
-            AppConfig.randomDelay();
-            SchemaRecord srcRecord = this.tables.get(table).SelectKeyRecord(pKey).record_;
-            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-            if (task.OperationFunction.equals(INC.class.getName())) {
-                tempo_record.getValues().get(1).incLong(sourceAccountBalance, Long.parseLong(task.parameter));//compute.
-            } else if (task.OperationFunction.equals(DEC.class.getName())) {
-                tempo_record.getValues().get(1).decLong(sourceAccountBalance, Long.parseLong(task.parameter));//compute.
-            }
-            this.tables.get(table).SelectKeyRecord(pKey).content_.updateMultiValues(bid, 0, false, tempo_record);
-        } else {
-            TableRecord src = this.tables.get(table).SelectKeyRecord(pKey);
-            SchemaRecord srcRecord = src.content_.readPreValues(bid);
-            List<DataBox> values = srcRecord.getValues();
-            AppConfig.randomDelay();
-            SchemaRecord tempo_record;
-            tempo_record = new SchemaRecord(values);//tempo record
-            tempo_record.getValues().get(1).incLong(Long.parseLong(task.parameter));//compute.
-            src.content_.updateMultiValues(bid, 0, false, tempo_record);
-        }
+//        if (task == null) return;
+//        String table = task.tableName;
+//        String pKey = task.key;
+//        double value = Double.parseDouble(task.id);
+//        long bid = (long) Math.floor(value);
+//        if (task.condition.length > 0) {
+//            SchemaRecord preValue = this.tables.get(table).SelectKeyRecord(task.condition[0]).content_.readPreValues(bid);
+//            long sourceAccountBalance = preValue.getValues().get(1).getLong();
+//            AppConfig.randomDelay();
+//            SchemaRecord srcRecord = this.tables.get(table).SelectKeyRecord(pKey).record_;
+//            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
+//            if (task.OperationFunction.equals(INC.class.getName())) {
+//                tempo_record.getValues().get(1).incLong(sourceAccountBalance, Long.parseLong(task.parameter));//compute.
+//            } else if (task.OperationFunction.equals(DEC.class.getName())) {
+//                tempo_record.getValues().get(1).decLong(sourceAccountBalance, Long.parseLong(task.parameter));//compute.
+//            }
+//            this.tables.get(table).SelectKeyRecord(pKey).content_.updateMultiValues(bid, 0, false, tempo_record);
+//        } else {
+//            TableRecord src = this.tables.get(table).SelectKeyRecord(pKey);
+//            SchemaRecord srcRecord = src.content_.readPreValues(bid);
+//            List<DataBox> values = srcRecord.getValues();
+//            AppConfig.randomDelay();
+//            SchemaRecord tempo_record;
+//            tempo_record = new SchemaRecord(values);//tempo record
+//            tempo_record.getValues().get(1).incLong(Long.parseLong(task.parameter));//compute.
+//            src.content_.updateMultiValues(bid, 0, false, tempo_record);
+//        }
     }
 
     private void GSExecute(NativeCommandLog task) {
-        if (task == null || task.isAborted) return;
-        String table = task.tableName;
-        String pKey = task.key;
-        double value = Double.parseDouble(task.id);
-        long bid = (long) Math.floor(value);
-        int keysLength = task.condition.length;
-        SchemaRecord[] preValues = new SchemaRecord[keysLength];
-        long sum = 0;
-        AppConfig.randomDelay();
-        for (int i = 0; i < keysLength; i++) {
-            preValues[i] = this.tables.get(table).SelectKeyRecord(task.condition[i]).content_.readPreValues(bid);
-            sum += preValues[i].getValues().get(1).getLong();
-        }
-        sum /= keysLength;
-        TableRecord srcRecord = this.tables.get(table).SelectKeyRecord(pKey);
-        SchemaRecord schemaRecord = srcRecord.content_.readPreValues(bid);
-        SchemaRecord tempo_record = new SchemaRecord(schemaRecord);//tempo record
-        if (task.OperationFunction.equals(SUM.class.getName())) {
-            tempo_record.getValues().get(1).setLong(sum);//compute.
-        } else
-            throw new UnsupportedOperationException();
+//        if (task == null || task.isAborted) return;
+//        String table = task.tableName;
+//        String pKey = task.key;
+//        double value = Double.parseDouble(task.id);
+//        long bid = (long) Math.floor(value);
+//        int keysLength = task.condition.length;
+//        SchemaRecord[] preValues = new SchemaRecord[keysLength];
+//        long sum = 0;
+//        AppConfig.randomDelay();
+//        for (int i = 0; i < keysLength; i++) {
+//            preValues[i] = this.tables.get(table).SelectKeyRecord(task.condition[i]).content_.readPreValues(bid);
+//            sum += preValues[i].getValues().get(1).getLong();
+//        }
+//        sum /= keysLength;
+//        TableRecord srcRecord = this.tables.get(table).SelectKeyRecord(pKey);
+//        SchemaRecord schemaRecord = srcRecord.content_.readPreValues(bid);
+//        SchemaRecord tempo_record = new SchemaRecord(schemaRecord);//tempo record
+//        if (task.OperationFunction.equals(SUM.class.getName())) {
+//            tempo_record.getValues().get(1).setLong(sum);//compute.
+//        } else
+//            throw new UnsupportedOperationException();
     }
 
     private void TPExecute(NativeCommandLog task) {
-        if (task == null || task.isAborted) return;
-        String table = task.tableName;
-        String pKey = task.key;
-        double value = Double.parseDouble(task.id);
-        AppConfig.randomDelay();
-        TableRecord srcRecord = this.tables.get(table).SelectKeyRecord(pKey);
-        if (task.OperationFunction.equals(AVG.class.getName())) {
-            double latestAvgSpeeds = srcRecord.record_.getValues().get(1).getDouble();
-            double lav;
-            if (latestAvgSpeeds == 0) {//not initialized
-                lav = Double.parseDouble(task.parameter);
-            } else
-                lav = (latestAvgSpeeds + Double.parseDouble(task.parameter)) / 2;
-
-            srcRecord.record_.getValues().get(1).setDouble(lav);//write to state.
-        } else {
-            HashSet cnt_segment = srcRecord.record_.getValues().get(1).getHashSet();
-            cnt_segment.add(Integer.parseInt(task.parameter));
-        }
-
+//        if (task == null || task.isAborted) return;
+//        String table = task.tableName;
+//        String pKey = task.key;
+//        double value = Double.parseDouble(task.id);
+//        AppConfig.randomDelay();
+//        TableRecord srcRecord = this.tables.get(table).SelectKeyRecord(pKey);
+//        if (task.OperationFunction.equals(AVG.class.getName())) {
+//            double latestAvgSpeeds = srcRecord.record_.getValues().get(1).getDouble();
+//            double lav;
+//            if (latestAvgSpeeds == 0) {//not initialized
+//                lav = Double.parseDouble(task.parameter);
+//            } else
+//                lav = (latestAvgSpeeds + Double.parseDouble(task.parameter)) / 2;
+//
+//            srcRecord.record_.getValues().get(1).setDouble(lav);//write to state.
+//        } else {
+//            HashSet cnt_segment = srcRecord.record_.getValues().get(1).getHashSet();
+//            cnt_segment.add(Integer.parseInt(task.parameter));
+//        }
     }
 }

@@ -1,7 +1,7 @@
 package intellistream.morphstream.engine.stream.components.operators.executor;
 
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.JumboTuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;

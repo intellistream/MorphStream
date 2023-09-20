@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
+import java.util.Map;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 import static intellistream.morphstream.configuration.Constants.*;
@@ -126,4 +127,5 @@ public class GSCombo extends SPOUTCombo {
         loadEvent(config.getString("rootFilePath"), config, context, collector);
 //        bolt.sink.batch_number_per_wm = batch_number_per_wm;
     }
+
 }
