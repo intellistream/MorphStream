@@ -57,7 +57,7 @@ public class FileDataGenerator {
     }
     private void configure_store() {
         configuration = MorphStreamEnv.get().configuration();
-        numItemMaps = MorphStreamEnv.get().databaseInitialize().getNumItemMaps();
+        numItemMaps = MorphStreamEnv.get().databaseInitializer().getNumItemMaps();
         rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark/") + OsUtils.OS_wrapper("inputs");
         if (!new File(rootPath).exists()) {
             new File(rootPath).mkdirs();

@@ -97,7 +97,7 @@ public class SLClient extends Client {
         srcTransfer.setTxnUDFName("transactionUDF"); //Method invoked by its name during reflection
 
         //Define 2nd state accesses
-        StateAccessDescription destTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
+        StateAccessDescription destTransfer = new StateAccessDescription("destTransfer", AccessType.WRITE);
         destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue", 0);
         destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", "accountValue", 1);
         destTransfer.addValueName("transferAmount");
