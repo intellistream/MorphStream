@@ -1,5 +1,7 @@
 package intellistream.morphstream.examples.tsp.grepsumwindow.op;
 
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.examples.utils.SINKCombo;
 import intellistream.morphstream.examples.tsp.grepsumwindow.events.GSWTxnEvent;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
@@ -121,6 +124,11 @@ public class GSWBolt_ts extends GSWBolt {
         super.initialize(thread_Id, thisTaskId, graph);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(), thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler", "BL"));
         events = new ArrayDeque<>();
+    }
+
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+
     }
 
     void READ_REQUEST_CORE() throws InterruptedException {
