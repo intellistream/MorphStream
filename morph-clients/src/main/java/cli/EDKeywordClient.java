@@ -1,5 +1,6 @@
 package cli;
 
+import intellistream.morphstream.engine.stream.components.grouping.ShuffleGrouping;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,7 @@ import java.util.HashMap;
  * Topology: Spout -> Tweet Registrant -> Word Updater -> Trend Calculator -> Sink
  */
 public class EDKeywordClient {
-    private static final Logger log = LoggerFactory.getLogger(EDKeywordClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EDKeywordClient.class);
 
     public static void main(String[] args) throws Exception {
         CliFrontend EDKeywordClient = CliFrontend.getOrCreate().appName("EDKeywordClient");
@@ -28,18 +29,9 @@ public class EDKeywordClient {
         TxnDescription depositDescription = new TxnDescription();
         txnDescriptions.put("deposit", depositDescription);
 
-//        ApplicationSpoutCombo spoutCombo = new ApplicationSpoutCombo(txnDescriptions);
-//        EDKeywordClient.setSpout("spout", spoutCombo, 1);
-//
-//        //Define topology
-//        ApplicationSpout spout = new ApplicationSpout(); //TODO: For non-combo, what to specify for spout and bolt?
-//        MorphStreamBolt bolt = new MorphStreamBolt(txnDescriptions);
-//        ApplicationSink sink = new ApplicationSink(log);
-//
-//        EDKeywordClient.setSpout("executor", spout, 1);
-//        EDKeywordClient.setBolt("executor", bolt, 1, new ShuffleGrouping("spout"));
-//        EDKeywordClient.setSink("sink", sink, 1, new ShuffleGrouping("executor"));
 
+        EDKeywordClient.setSpout("executor", 1);
+        EDKeywordClient.setBolt("executor", txnDescriptions, 1, 1, new ShuffleGrouping("spout"));
 
         EDKeywordClient.run();
     }

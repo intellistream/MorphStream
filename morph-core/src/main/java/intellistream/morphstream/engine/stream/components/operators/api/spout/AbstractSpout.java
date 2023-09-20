@@ -1,6 +1,7 @@
 package intellistream.morphstream.engine.stream.components.operators.api.spout;
 
 import intellistream.morphstream.api.input.TransactionalEvent;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.components.operators.api.Checkpointable;
 import intellistream.morphstream.engine.stream.components.operators.api.Operator;
@@ -31,7 +32,7 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
         this.fid = fid;
     }
     public void nextTuple() throws InterruptedException{
-        //TODO
+        //TODO:
     }
     @Override
     public boolean model_switch(int counter) {
@@ -43,6 +44,7 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
         punctuation_interval = config.getInt("checkpoint");
         totalEventsPerBatch = config.getInt("totalEvents");
         tthread = config.getInt("tthread");
+        inputQueue = MorphStreamEnv.get().inputSource().getInputQueue(thread_Id);
     }
     @Override
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {

@@ -9,7 +9,7 @@ import intellistream.morphstream.engine.stream.components.exception.InvalidIDExc
 import intellistream.morphstream.engine.stream.components.grouping.Grouping;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpout;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractWindowedBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.window.AbstractWindowedBolt;
 import intellistream.morphstream.engine.stream.components.operators.executor.BasicBoltBatchExecutor;
 import intellistream.morphstream.engine.stream.components.operators.executor.BasicSpoutBatchExecutor;
 import intellistream.morphstream.engine.stream.components.operators.executor.BasicWindowBoltBatchExecutor;

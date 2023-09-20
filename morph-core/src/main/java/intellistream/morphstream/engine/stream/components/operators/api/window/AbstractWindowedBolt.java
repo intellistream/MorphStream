@@ -1,4 +1,4 @@
-package intellistream.morphstream.engine.stream.components.operators.api;
+package intellistream.morphstream.engine.stream.components.operators.api.window;
 
 import intellistream.morphstream.engine.stream.components.operators.api.Operator;
 import intellistream.morphstream.engine.stream.components.windowing.TupleWindow;

@@ -21,7 +21,8 @@ public class InputSource {
     private InputSourceType inputSourceType; //from file or streaming
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
     //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
-    private final BlockingQueue<TransactionalEvent> inputQueue; //stores input data fetched from input source
+    private final HashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
+    private int spoutNum;
     private int bid;
     public enum InputSourceType {
         FILE_STRING,
@@ -32,33 +33,34 @@ public class InputSource {
     }
 
     public InputSource() {
-        this.inputQueue = new LinkedBlockingQueue<>();
+        this.inputQueues = new HashMap<>();
         this.bid = 0;
     }
 
     /**
      * For InputSource from file, once file path is specified, automatically convert all lines into TransactionalEvents
      */
-    public void initialize(String staticFilePath, InputSourceType inputSourceType) throws IOException {
+    public void initialize(String staticFilePath, InputSourceType inputSourceType, int spoutNum) throws IOException {
         this.staticFilePath = staticFilePath;
         this.inputSourceType = inputSourceType;
         BufferedReader csvReader = new BufferedReader(new FileReader(this.staticFilePath));
         String input;
+        for (int i = 0; i < spoutNum; i++) {
+            BlockingQueue<TransactionalEvent> inputQueue = new LinkedBlockingQueue<>();
+            this.inputQueues.put(i, inputQueue);
+        }
+        int index = 0;
         while ((input = csvReader.readLine()) != null) {
             if (this.inputSourceType == InputSourceType.FILE_STRING)
-                inputQueue.add(inputFromStringToTxnEvent(input));
+                inputQueues.get(index).add(inputFromStringToTxnEvent(input));
             else if (this.inputSourceType == InputSourceType.FILE_JSON)
-                inputQueue.add(inputFromJsonToTxnEvent(input));
+                inputQueues.get(index).add(inputFromJsonToTxnEvent(input));
+            index ++;
         }
     }
 
-    public TransactionalEvent getNextTxnEvent() {
-        try {
-            return inputQueue.take();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
-        }
+    public BlockingQueue<TransactionalEvent> getInputQueue(int spoutId) {
+        return this.inputQueues.get(spoutId);
     }
 
     private TransactionalEvent inputFromJsonToTxnEvent(String input) {

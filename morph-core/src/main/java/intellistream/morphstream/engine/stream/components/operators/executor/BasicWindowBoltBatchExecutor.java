@@ -2,8 +2,8 @@ package intellistream.morphstream.engine.stream.components.operators.executor;
 
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.context.TopologyContext;
-import intellistream.morphstream.engine.stream.components.operators.api.AbstractWindowedBolt;
-import intellistream.morphstream.engine.stream.components.operators.api.BaseWindowedBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.window.AbstractWindowedBolt;
+import intellistream.morphstream.engine.stream.components.operators.api.window.BaseWindowedBolt;
 import intellistream.morphstream.engine.stream.components.windowing.*;
 import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.JumboTuple;

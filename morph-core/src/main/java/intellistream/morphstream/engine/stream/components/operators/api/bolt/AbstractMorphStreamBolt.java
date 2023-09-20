@@ -16,8 +16,6 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 
 public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt {
-    protected int thread_Id;
-    protected int tthread;
     protected Object input_event;
     protected long timestamp;
     protected long _bid;

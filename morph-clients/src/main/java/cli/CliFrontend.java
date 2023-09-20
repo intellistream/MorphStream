@@ -5,6 +5,7 @@ import com.beust.jcommander.ParameterException;
 import intellistream.morphstream.api.input.InputSource;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
+import intellistream.morphstream.api.operator.bolt.SStoreBolt;
 import intellistream.morphstream.api.operator.spout.ApplicationSpout;
 import intellistream.morphstream.api.operator.spout.ApplicationSpoutCombo;
 import intellistream.morphstream.engine.stream.components.Topology;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 import static intellistream.morphstream.configuration.Constants.CCOption_MorphStream;
+import static intellistream.morphstream.configuration.Constants.CCOption_SStore;
 
 /**
  * TODO: Implementation of a simple command line frontend for executing programs.
@@ -64,7 +66,7 @@ public class CliFrontend {
                 String fileName = env.fileDataGenerator().prepareInputData();
                 env.configuration().put("inputFile", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFile"), InputSource.InputSourceType.FILE_STRING);
+            env.inputSource().initialize(env.configuration().getString("inputFile"), InputSource.InputSourceType.FILE_STRING, env.configuration().getInt("spoutNum"));
         } else if (env.configuration().getInt("inputSourceType", 0) == 1) {
             String inputFile = env.configuration().getString("inputFile");
             File file = new File(inputFile);
@@ -74,7 +76,7 @@ public class CliFrontend {
                 String fileName = env.fileDataGenerator().prepareInputData();
                 env.configuration().put("inputFile", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFile"), InputSource.InputSourceType.FILE_JSON);
+            env.inputSource().initialize(env.configuration().getString("inputFile"), InputSource.InputSourceType.FILE_JSON, env.configuration().getInt("spoutNum"));
         }
     }
     public void run() throws InterruptedException {
@@ -90,11 +92,15 @@ public class CliFrontend {
         ApplicationSpout spout = new ApplicationSpout();
         env.setSpout(id, spout, numTasks);
     }
-    public void setBolt(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks, Grouping ... groups) {
+    public void setBolt(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks, int fid, Grouping ... groups) {
         AbstractBolt bolt = null;
         switch (env.configuration().getInt("CCOption", 0)) {
             case CCOption_MorphStream: {//T-Stream
-                bolt = new MorphStreamBolt(txnDescriptionHashMap);
+                bolt = new MorphStreamBolt(txnDescriptionHashMap, fid);
+                break;
+            }
+            case CCOption_SStore:{
+                bolt = new SStoreBolt(txnDescriptionHashMap, fid);
                 break;
             }
             default:
@@ -102,7 +108,7 @@ public class CliFrontend {
         }
         env.setBolt(id, bolt, numTasks, groups);
     }
-    public void setSink(String id, AbstractBolt sink, int numTasks, Grouping ... groups) {
+    public void setSink(String id, AbstractBolt sink, int numTasks, int fid, Grouping ... groups) {
         env.setBolt(id, sink, numTasks, groups);
     }
 

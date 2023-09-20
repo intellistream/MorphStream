@@ -34,8 +34,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
     private final HashMap<Long, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
 
-    public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap) {
-        super(LOG, 0); //TODO: Check fid
+    public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
+        super(LOG, fid); //TODO: Check fid
         this.txnDescriptionMap = txnDescriptionMap;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();

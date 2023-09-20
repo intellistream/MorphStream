@@ -2,6 +2,7 @@ package intellistream.morphstream.api.operator.spout;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
+import intellistream.morphstream.api.operator.bolt.SStoreBolt;
 import intellistream.morphstream.common.io.Rdma.RdmaShuffleConf;
 import intellistream.morphstream.common.io.Rdma.RdmaShuffleManager;
 import intellistream.morphstream.configuration.Configuration;
@@ -34,9 +35,11 @@ public class ApplicationSpoutCombo extends AbstractSpoutCombo {
         super.initialize(thread_Id, thisTaskId, graph);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_MorphStream: {//T-Stream
-                bolt = new MorphStreamBolt(TxnDescriptionHashMap);
+                bolt = new MorphStreamBolt(TxnDescriptionHashMap, 0);
                 break;
             }
+            case CCOption_SStore:
+                bolt = new SStoreBolt(TxnDescriptionHashMap, 0);
             default:
                 if (enable_log) LOG.error("Please select correct CC option!");
         }

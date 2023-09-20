@@ -35,7 +35,6 @@ public class TopologyContext {
      * This is a global access memory structure,
      */
     public TopologyContext(ExecutionGraph g, Database db, FTManager ftManager, FTManager loggingManager, ExecutionNode executor, HashMap<Integer, executorThread> threadMap) {
-
         TopologyContext.graph = g;
         TopologyContext.db = db;
         TopologyContext.threadMap = threadMap;
