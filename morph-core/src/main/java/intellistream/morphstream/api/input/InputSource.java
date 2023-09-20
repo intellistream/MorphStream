@@ -68,17 +68,19 @@ public class InputSource {
         Gson gson = new Gson();
         JsonObject jsonObject = gson.fromJson(input, JsonObject.class);
 
-        HashMap<String, List<String>> keyMap = gson.fromJson(jsonObject.get("subJson1"), HashMap.class);
-        HashMap<String, Object> valueMap = gson.fromJson(jsonObject.get("subJson2"), HashMap.class);
-        HashMap<String, String> valueTypeMap = gson.fromJson(jsonObject.get("subJson3"), HashMap.class);
+        HashMap<String, List<String>> keyMap = gson.fromJson(jsonObject.get("subJson0"), HashMap.class);
+        HashMap<String, Object> valueMap = gson.fromJson(jsonObject.get("subJson1"), HashMap.class);
+        HashMap<String, String> valueTypeMap = gson.fromJson(jsonObject.get("subJson2"), HashMap.class);
+        //TODO: Add conditionTypeMap per event, or define both value and condition type statically?
+        HashMap<String, String> conditionMap = gson.fromJson(jsonObject.get("subJson3"), HashMap.class);
         String flag = gson.fromJson(jsonObject.get("subJson4"), String.class);
-        String isAbort = gson.fromJson(jsonObject.get("subJson4"), String.class);
+        String isAbort = gson.fromJson(jsonObject.get("subJson5"), String.class);
 
         TransactionalEvent txnEvent;
         if (isAbort.equals("true")) {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, null, flag, true);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, conditionMap, flag, true);
         } else {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap,null, flag, false);
+            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap,conditionMap, flag, false);
         }
 
         bid++;
@@ -113,10 +115,8 @@ public class InputSource {
         }
         String flag = inputArray[3];
         String isAbort = inputArray[4];
-        if (inputArray.length == 5) {
-            conditionMap = null;
-        } else {
-            String [] conditionMapPairs = inputArray[3].split(",");
+        if (inputArray.length == 6) {
+            String [] conditionMapPairs = inputArray[5].split(",");
             for (String conditionPairString : conditionMapPairs) {
                 String[] conditionPair = conditionPairString.split(":");
                 conditionMap.put(conditionPair[0], conditionPair[1]);

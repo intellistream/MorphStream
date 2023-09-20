@@ -56,64 +56,64 @@ public class TollProcessing extends TransactionTopology {
 
     @Override
     public Topology buildTopology() {
-        try {
-            spout.setFields(new Fields(Field.TEXT));//output of a spouts
-            builder.setSpout(LRTopologyControl.SPOUT, spout, spoutThreads);
-            if (enable_app_combo) {
-                //spout only.
-            } else {
-                switch (config.getInt("CCOption", 0)) {
-                    case CCOption_LOCK: {//no-order
-                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_nocc(0)//not available
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(LinearRoadConstants.Component.SPOUT));
-                        break;
-                    }
-                    case CCOption_OrderLOCK: {//LOB
-                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_olb(0)//
-                                , config.getInt(Executor_Threads, 2),
-                                new FieldsGrouping(
-                                        LRTopologyControl.DISPATCHER,
-                                        LRTopologyControl.POSITION_REPORTS_STREAM_ID
-                                        , SegmentIdentifier.getSchema())
-                        );
-                        break;
-                    }
-                    case CCOption_LWM: {//LWM
-                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_lwm(0) {
-                                }//
-                                , config.getInt(Executor_Threads, 2),
-                                new FieldsGrouping(
-                                        LRTopologyControl.DISPATCHER,
-                                        LRTopologyControl.POSITION_REPORTS_STREAM_ID
-                                        , SegmentIdentifier.getSchema())
-                        );
-                        break;
-                    }
-                    case CCOption_MorphStream: {//MorphStream
-                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_ts(0)//
-                                , config.getInt(Executor_Threads, 2),
-                                new FieldsGrouping(
-                                        LRTopologyControl.DISPATCHER,
-                                        LRTopologyControl.POSITION_REPORTS_STREAM_ID
-                                        , SegmentIdentifier.getSchema())
-                        );
-                        break;
-                    }
-                    case CCOption_SStore: {//SStore
-                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_SSTORE(0)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(LinearRoadConstants.Component.SPOUT));
-                        break;
-                    }
-                }
-                builder.setSink(LinearRoadConstants.Component.SINK, sink, sinkThreads
-                        , new ShuffleGrouping(EXECUTOR)
-                );
-            }
-        } catch (InvalidIDException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            spout.setFields(new Fields(Field.TEXT));//output of a spouts
+//            builder.setSpout(LRTopologyControl.SPOUT, spout, spoutThreads);
+//            if (enable_app_combo) {
+//                //spout only.
+//            } else {
+//                switch (config.getInt("CCOption", 0)) {
+//                    case CCOption_LOCK: {//no-order
+//                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_nocc(0)//not available
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(LinearRoadConstants.Component.SPOUT));
+//                        break;
+//                    }
+//                    case CCOption_OrderLOCK: {//LOB
+//                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_olb(0)//
+//                                , config.getInt(Executor_Threads, 2),
+//                                new FieldsGrouping(
+//                                        LRTopologyControl.DISPATCHER,
+//                                        LRTopologyControl.POSITION_REPORTS_STREAM_ID
+//                                        , SegmentIdentifier.getSchema())
+//                        );
+//                        break;
+//                    }
+//                    case CCOption_LWM: {//LWM
+//                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_lwm(0) {
+//                                }//
+//                                , config.getInt(Executor_Threads, 2),
+//                                new FieldsGrouping(
+//                                        LRTopologyControl.DISPATCHER,
+//                                        LRTopologyControl.POSITION_REPORTS_STREAM_ID
+//                                        , SegmentIdentifier.getSchema())
+//                        );
+//                        break;
+//                    }
+//                    case CCOption_MorphStream: {//MorphStream
+//                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_ts(0)//
+//                                , config.getInt(Executor_Threads, 2),
+//                                new FieldsGrouping(
+//                                        LRTopologyControl.DISPATCHER,
+//                                        LRTopologyControl.POSITION_REPORTS_STREAM_ID
+//                                        , SegmentIdentifier.getSchema())
+//                        );
+//                        break;
+//                    }
+//                    case CCOption_SStore: {//SStore
+//                        builder.setBolt(LinearRoadConstants.Component.EXECUTOR, new TPBolt_SSTORE(0)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(LinearRoadConstants.Component.SPOUT));
+//                        break;
+//                    }
+//                }
+//                builder.setSink(LinearRoadConstants.Component.SINK, sink, sinkThreads
+//                        , new ShuffleGrouping(EXECUTOR)
+//                );
+//            }
+//        } catch (InvalidIDException e) {
+//            e.printStackTrace();
+//        }
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology();
     }

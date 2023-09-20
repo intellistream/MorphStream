@@ -51,21 +51,21 @@ public class NonGrepSum extends TransactionTopology {
 
     @Override
     public Topology buildTopology() {
-        try {
-            builder.setSpout(Component.SPOUT, spout, spoutThreads);
-            if (!enable_app_combo) {
-                if (config.getInt("CCOption", 0) == CCOption_MorphStream) {//MorphStream
-                    builder.setBolt(GrepSumConstants.Component.EXECUTOR, new GSBolt_ts(0)//
-                            , config.getInt(Executor_Threads, 2)
-                            , new ShuffleGrouping(GrepSumConstants.Component.SPOUT));
-                }
-                builder.setSink(Component.SINK, sink, sinkThreads
-                        , new ShuffleGrouping(Component.EXECUTOR)
-                );
-            }
-        } catch (InvalidIDException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            builder.setSpout(Component.SPOUT, spout, spoutThreads);
+//            if (!enable_app_combo) {
+//                if (config.getInt("CCOption", 0) == CCOption_MorphStream) {//MorphStream
+//                    builder.setBolt(GrepSumConstants.Component.EXECUTOR, new GSBolt_ts(0)//
+//                            , config.getInt(Executor_Threads, 2)
+//                            , new ShuffleGrouping(GrepSumConstants.Component.SPOUT));
+//                }
+//                builder.setSink(Component.SINK, sink, sinkThreads
+//                        , new ShuffleGrouping(Component.EXECUTOR)
+//                );
+//            }
+//        } catch (InvalidIDException e) {
+//            throw new RuntimeException(e);
+//        }
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology();
     }

@@ -58,50 +58,50 @@ public class SHJ extends TransactionTopology {
 
     @Override
     public Topology buildTopology() {
-        try {
-            builder.setSpout(Component.SPOUT, new SHJCombo(), spoutThreads);
-            if (enable_app_combo) {// enabled by default
-                //spout only.
-            } else { // normal pipelined execution model.
-                switch (config.getInt("CCOption", 0)) {
-                    case CCOption_LOCK: {//no-order
-                        builder.setBolt(Component.EXECUTOR, new SHJBolt_nocc(1)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case CCOption_OrderLOCK: {//LOB
-                        builder.setBolt(Component.EXECUTOR, new SHJBolt_olb(1)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case CCOption_LWM: {//LWM
-                        builder.setBolt(Component.EXECUTOR, new SHJBolt_lwm(1)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case CCOption_MorphStream: {//MorphStream
-                        builder.setBolt(Component.EXECUTOR, new SHJBolt_ts(1)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case CCOption_SStore: {//SStore
-                        builder.setBolt(Component.EXECUTOR, new SHJBolt_sstore(1)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                }
-                builder.setSink(Component.SINK, new SINKCombo(), sinkThreads
-                        , new ShuffleGrouping(Component.EXECUTOR)
-                );
-            }
-        } catch (InvalidIDException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            builder.setSpout(Component.SPOUT, new SHJCombo(), spoutThreads);
+//            if (enable_app_combo) {// enabled by default
+//                //spout only.
+//            } else { // normal pipelined execution model.
+//                switch (config.getInt("CCOption", 0)) {
+//                    case CCOption_LOCK: {//no-order
+//                        builder.setBolt(Component.EXECUTOR, new SHJBolt_nocc(1)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case CCOption_OrderLOCK: {//LOB
+//                        builder.setBolt(Component.EXECUTOR, new SHJBolt_olb(1)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case CCOption_LWM: {//LWM
+//                        builder.setBolt(Component.EXECUTOR, new SHJBolt_lwm(1)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case CCOption_MorphStream: {//MorphStream
+//                        builder.setBolt(Component.EXECUTOR, new SHJBolt_ts(1)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case CCOption_SStore: {//SStore
+//                        builder.setBolt(Component.EXECUTOR, new SHJBolt_sstore(1)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                }
+//                builder.setSink(Component.SINK, new SINKCombo(), sinkThreads
+//                        , new ShuffleGrouping(Component.EXECUTOR)
+//                );
+//            }
+//        } catch (InvalidIDException e) {
+//            e.printStackTrace();
+//        }
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology();
     }

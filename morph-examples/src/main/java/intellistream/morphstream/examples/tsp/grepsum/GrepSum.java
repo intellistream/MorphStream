@@ -57,51 +57,51 @@ public class GrepSum extends TransactionTopology {
 
     @Override
     public Topology buildTopology() {
-        try {
-            builder.setSpout(Component.SPOUT, new GSCombo(), spoutThreads);
-            if (enable_app_combo) {// enabled by default
-                //spout only.
-            } else { // normal pipelined execution model.
-                switch (config.getInt("CCOption", 0)) {
-                    case CCOption_LOCK: {//no-order
-                        builder.setBolt(Component.EXECUTOR, new GSBolt_nocc(0)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case CCOption_OrderLOCK: {//LOB
-                        builder.setBolt(Component.EXECUTOR, new GSBolt_olb(0)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case CCOption_LWM: {//LWM
-                        builder.setBolt(Component.EXECUTOR, new GSBolt_lwm(0)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case CCOption_MorphStream: {//MorphStream
-                        builder.setBolt(Component.EXECUTOR, new GSBolt_ts(0)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case CCOption_SStore: {//SStore
-                        builder.setBolt(Component.EXECUTOR, new GSBolt_sstore(0)//
-                                , config.getInt(Executor_Threads, 2)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                }
-                builder.setSink(Component.SINK, new SINKCombo(), sinkThreads
-                        , new ShuffleGrouping(Component.EXECUTOR)
-                );
-            }
-        } catch (InvalidIDException e) {
-            e.printStackTrace();
-        }
-        builder.setGlobalScheduler(new SequentialScheduler());
+//        try {
+//            builder.setSpout(Component.SPOUT, new GSCombo(), spoutThreads);
+//            if (enable_app_combo) {// enabled by default
+//                //spout only.
+//            } else { // normal pipelined execution model.
+//                switch (config.getInt("CCOption", 0)) {
+//                    case CCOption_LOCK: {//no-order
+//                        builder.setBolt(Component.EXECUTOR, new GSBolt_nocc(0)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case CCOption_OrderLOCK: {//LOB
+//                        builder.setBolt(Component.EXECUTOR, new GSBolt_olb(0)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case CCOption_LWM: {//LWM
+//                        builder.setBolt(Component.EXECUTOR, new GSBolt_lwm(0)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case CCOption_MorphStream: {//MorphStream
+//                        builder.setBolt(Component.EXECUTOR, new GSBolt_ts(0)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case CCOption_SStore: {//SStore
+//                        builder.setBolt(Component.EXECUTOR, new GSBolt_sstore(0)//
+//                                , config.getInt(Executor_Threads, 2)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                }
+//                builder.setSink(Component.SINK, new SINKCombo(), sinkThreads
+//                        , new ShuffleGrouping(Component.EXECUTOR)
+//                );
+//            }
+//        } catch (InvalidIDException e) {
+//            e.printStackTrace();
+//        }
+//        builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology();
     }
 

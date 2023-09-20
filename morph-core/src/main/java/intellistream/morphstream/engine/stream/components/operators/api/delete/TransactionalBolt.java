@@ -1,7 +1,9 @@
 package intellistream.morphstream.engine.stream.components.operators.api.delete;
 
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
 import intellistream.morphstream.engine.stream.components.operators.api.Checkpointable;
 import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.combo_bid_size;
@@ -177,5 +180,10 @@ public abstract class TransactionalBolt extends AbstractBolt implements Checkpoi
         } else {
             SOURCE_CONTROL.getInstance().config(tthread, 1);
         }
+    }
+
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+
     }
 }

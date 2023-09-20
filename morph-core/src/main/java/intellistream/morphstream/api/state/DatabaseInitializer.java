@@ -2,7 +2,6 @@ package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
-import intellistream.morphstream.engine.txn.db.CavaliaDatabase;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.lock.SpinLock;
 import intellistream.morphstream.engine.txn.storage.SchemaRecord;
@@ -18,8 +17,8 @@ import java.util.List;
 
 import static intellistream.morphstream.engine.txn.storage.datatype.DataBox.Types.*;
 
-public class DatabaseInitialize {
-    private static final Logger LOG = LoggerFactory.getLogger(DatabaseInitialize.class);
+public class DatabaseInitializer {
+    private static final Logger LOG = LoggerFactory.getLogger(DatabaseInitializer.class);
     private Configuration configuration;
     private SpinLock[] spinlock;
     private String[] tableNames;

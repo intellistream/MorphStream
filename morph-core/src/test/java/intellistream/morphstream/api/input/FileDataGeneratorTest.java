@@ -11,7 +11,7 @@ public class FileDataGeneratorTest extends TestCase {
     }
     public void testApp() throws IOException {
         assertTrue(true);
-        MorphStreamEnv.get().databaseInitialize().configure_db();
+        MorphStreamEnv.get().databaseInitializer().configure_db();
         FileDataGenerator fileDataGenerator = new FileDataGenerator();
         fileDataGenerator.prepareInputData();
     }

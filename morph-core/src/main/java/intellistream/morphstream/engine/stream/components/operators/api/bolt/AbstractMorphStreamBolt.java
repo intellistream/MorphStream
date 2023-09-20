@@ -9,7 +9,6 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.transaction.impl.ordered.TxnManagerTStream;
 import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -38,7 +37,7 @@ public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt 
         }
     }
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
-        MorphStreamEnv.get().databaseInitialize().loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), false);
+        MorphStreamEnv.get().databaseInitializer().loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), false);
     }
     protected abstract void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException;
     protected abstract void PRE_TXN_PROCESS(long bid, long timestamp) throws DatabaseException, InterruptedException;

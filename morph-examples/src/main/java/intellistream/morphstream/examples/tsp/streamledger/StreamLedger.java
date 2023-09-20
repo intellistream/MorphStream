@@ -67,47 +67,47 @@ public class StreamLedger extends TransactionTopology {
 
     @Override
     public Topology buildTopology() {
-        try {
-            //Spout needs to put two types of events: deposits and transfers
-            //Deposits put values into Accounts and the Book
-            //Transfers atomically move values between accounts and book entries, under a precondition
-            builder.setSpout(Component.SPOUT, new FTSLCombo(), spoutThreads);
-            if (enable_app_combo) {
-                //spout only.
-            } else {
-                switch (config.getInt("CCOption", 0)) {
-                    case 1: {//LOB
-                        builder.setBolt(Component.SL, new SLBolt_olb(0)//
-                                , config.getInt(SL_THREADS, 1)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case 2: {//LWM
-                        builder.setBolt(Component.SL, new SLBolt_lwm(0)//
-                                , config.getInt(SL_THREADS, 1)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case 3: {//T-Stream
-                        builder.setBolt(Component.SL, new SLBolt_ts(0)//
-                                , config.getInt(SL_THREADS, 1)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                    case 4: {//SStore
-                        builder.setBolt(Component.SL, new SLBolt_sstore(0)//
-                                , config.getInt(SL_THREADS, 1)
-                                , new ShuffleGrouping(Component.SPOUT));
-                        break;
-                    }
-                }
-                builder.setSink(Component.SINK, new SINKCombo(), sinkThreads
-                        , new ShuffleGrouping(Component.SL)
-                );
-            }
-        } catch (InvalidIDException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            //Spout needs to put two types of events: deposits and transfers
+//            //Deposits put values into Accounts and the Book
+//            //Transfers atomically move values between accounts and book entries, under a precondition
+//            builder.setSpout(Component.SPOUT, new FTSLCombo(), spoutThreads);
+//            if (enable_app_combo) {
+//                //spout only.
+//            } else {
+//                switch (config.getInt("CCOption", 0)) {
+//                    case 1: {//LOB
+//                        builder.setBolt(Component.SL, new SLBolt_olb(0)//
+//                                , config.getInt(SL_THREADS, 1)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case 2: {//LWM
+//                        builder.setBolt(Component.SL, new SLBolt_lwm(0)//
+//                                , config.getInt(SL_THREADS, 1)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case 3: {//T-Stream
+//                        builder.setBolt(Component.SL, new SLBolt_ts(0)//
+//                                , config.getInt(SL_THREADS, 1)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                    case 4: {//SStore
+//                        builder.setBolt(Component.SL, new SLBolt_sstore(0)//
+//                                , config.getInt(SL_THREADS, 1)
+//                                , new ShuffleGrouping(Component.SPOUT));
+//                        break;
+//                    }
+//                }
+//                builder.setSink(Component.SINK, new SINKCombo(), sinkThreads
+//                        , new ShuffleGrouping(Component.SL)
+//                );
+//            }
+//        } catch (InvalidIDException e) {
+//            e.printStackTrace();
+//        }
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology();
     }

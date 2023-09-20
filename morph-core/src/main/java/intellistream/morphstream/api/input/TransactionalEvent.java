@@ -31,6 +31,7 @@ public class TransactionalEvent extends TxnEvent {
         this.keyMap = keyMap;
         this.valueMap = valueMap;
         this.valueTypeMap = valueTypeMap;
+        this.conditionMap = conditionMap;
         this.flag = flag;
         this.isAbort = isAbort;
     }
@@ -92,7 +93,7 @@ public class TransactionalEvent extends TxnEvent {
         stringBuilder.append(flag);
         stringBuilder.append(";");
         stringBuilder.append(isAbort);
-        if (conditionMap != null) {
+        if (!conditionMap.isEmpty()) {
             stringBuilder.append(";");
             for (String condition : conditionMap.keySet()) {
                 stringBuilder.append(condition).append(":").append(conditionMap.get(condition)).append(",");
