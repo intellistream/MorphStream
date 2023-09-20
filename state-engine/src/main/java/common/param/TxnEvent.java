@@ -11,6 +11,7 @@ public class TxnEvent implements Comparable<TxnEvent> {
     public int[] success;
     //embeded state.
     protected long timestamp;//emit timestamp
+//    protected long ts;
 
     public int[] partition_indexs;
 

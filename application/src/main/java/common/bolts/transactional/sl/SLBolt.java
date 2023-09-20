@@ -140,6 +140,10 @@ public abstract class SLBolt extends TransactionalBolt {
     }
 
     protected void TRANSFER_REQUEST_POST(TransactionEvent event) throws InterruptedException {
+        //double latency = System.nanoTime() - event.ts;
+        //latencyList.add(latency);
+        //double batchLatency = System.nanoTime() - batchStartTs;
+        //double throughput = batchSize / batchLatency;
         if (!enable_app_combo) {
             collector.emit(event.getBid(), true, event.getTimestamp());//the tuple is finished.
         } else {

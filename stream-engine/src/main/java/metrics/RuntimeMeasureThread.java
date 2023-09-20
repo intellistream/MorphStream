@@ -29,8 +29,8 @@ class RuntimeMeasureThread implements Runnable {
                 }
 
                 // TODO: Fetch runtime performance info from the corresponding bolt thread
-                DescriptiveStatistics latencyStats = bolt.getLatencyStats();
-                DescriptiveStatistics throughputStats = bolt.getThroughputStats();
+                DescriptiveStatistics latencyStats = bolt.getLatencyStats(); //try to get the latest latency from bolt (per batch), if bolt not ready, let measure thread wait
+                double throughputStats = bolt.getThroughputStats();
 
                 // Send the info back to the manager
                 RuntimeManager.updateLatencyStats(operatorID, threadID, latencyStats);

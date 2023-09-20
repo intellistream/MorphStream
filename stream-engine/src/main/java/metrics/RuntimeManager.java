@@ -4,7 +4,9 @@ import components.Topology;
 import components.operators.api.TransactionalBolt;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +20,7 @@ class RuntimeManager {
     private static final HashMap<String, RuntimeMeasureThread[]> measureThreadsMap = new HashMap<>();
     private static AtomicBoolean signaled;
     private static final HashMap<String, DescriptiveStatistics[]> latencyMap = new HashMap<>();
-    private static final HashMap<String, DescriptiveStatistics[]> throughputMap = new HashMap<>();
+    private static final HashMap<String, List<Double>> throughputMap = new HashMap<>();
 
     public void Initialize(Topology topology) {
         threadPool = new ThreadPoolExecutor(kMaxThreadNum, kMaxThreadNum, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
@@ -26,11 +28,10 @@ class RuntimeManager {
             int numThreads = topology.getComponent(operatorID).getNumTasks();
             measureThreadsMap.put(operatorID, new RuntimeMeasureThread[numThreads]);
             latencyMap.put(operatorID, new DescriptiveStatistics[numThreads]);
-            throughputMap.put(operatorID, new DescriptiveStatistics[numThreads]);
+            throughputMap.put(operatorID, new ArrayList<>());
 
             for (int threadID = 0; threadID < numThreads; threadID++) {
                 latencyMap.get(operatorID)[threadID] = new DescriptiveStatistics();
-                throughputMap.get(operatorID)[threadID] = new DescriptiveStatistics();
                 TransactionalBolt bolt = (TransactionalBolt) topology.getComponent(operatorID).getOp(); //TODO: Get bolt thread from topology
                 measureThreadsMap.get(operatorID)[threadID] = new RuntimeMeasureThread(operatorID, threadID, bolt);
                 threadPool.execute(measureThreadsMap.get(operatorID)[threadID]);
@@ -61,8 +62,8 @@ class RuntimeManager {
         latencyMap.get(operatorID)[threadID] = stats;
     }
 
-    public static void updateThroughputStats(String operatorID, int threadID, DescriptiveStatistics stats) {
-        throughputMap.get(operatorID)[threadID] = stats;
+    public static void updateThroughputStats(String operatorID, int threadID, double stats) {
+        throughputMap.get(operatorID).add(threadID, stats);
     }
 }
 
