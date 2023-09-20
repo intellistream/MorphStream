@@ -35,24 +35,24 @@ public class WordCount extends BasicTopology {
 
     @Override
     public Topology buildTopology() {
-        try {
-            spout.setFields(new Fields(Field.TEXT));
-            builder.setSpout(Component.SPOUT, new MemFileSpout(), spoutThreads);
-            StringParserBolt parserBolt = new StringParserBolt(parser, new Fields(Field.WORD));
-            builder.setBolt(Component.PARSER, parserBolt
-                    , config.getInt(WordCountConstants.Conf.PARSER_THREADS, 1)
-                    , new ShuffleGrouping(Component.SPOUT));
-            builder.setBolt(Component.SPLITTER, new SplitSentenceBolt()
-                    , config.getInt(WordCountConstants.Conf.SPLITTER_THREADS, 1)
-                    , new ShuffleGrouping(Component.PARSER));
-            builder.setBolt(Component.COUNTER, new WordCountBolt()
-                    , config.getInt(WordCountConstants.Conf.COUNTER_THREADS, 1)
-                    , new FieldsGrouping(Component.SPLITTER, new Fields(Field.WORD)));
-            builder.setSink(Component.SINK, new MeasureSink(), sinkThreads
-                    , new ShuffleGrouping(Component.COUNTER));
-        } catch (InvalidIDException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            spout.setFields(new Fields(Field.TEXT));
+//            builder.setSpout(Component.SPOUT, new MemFileSpout(), spoutThreads);
+//            StringParserBolt parserBolt = new StringParserBolt(parser, new Fields(Field.WORD));
+//            builder.setBolt(Component.PARSER, parserBolt
+//                    , config.getInt(WordCountConstants.Conf.PARSER_THREADS, 1)
+//                    , new ShuffleGrouping(Component.SPOUT));
+//            builder.setBolt(Component.SPLITTER, new SplitSentenceBolt()
+//                    , config.getInt(WordCountConstants.Conf.SPLITTER_THREADS, 1)
+//                    , new ShuffleGrouping(Component.PARSER));
+//            builder.setBolt(Component.COUNTER, new WordCountBolt()
+//                    , config.getInt(WordCountConstants.Conf.COUNTER_THREADS, 1)
+//                    , new FieldsGrouping(Component.SPLITTER, new Fields(Field.WORD)));
+//            builder.setSink(Component.SINK, new MeasureSink(), sinkThreads
+//                    , new ShuffleGrouping(Component.COUNTER));
+//        } catch (InvalidIDException e) {
+//            e.printStackTrace();
+//        }
         builder.setGlobalScheduler(new SequentialScheduler());
         return builder.createTopology();
     }
