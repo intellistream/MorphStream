@@ -8,6 +8,7 @@ import topology.TransactionTopology;
 import transaction.TableInitilizer;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 
 import static common.Constants.sinkType;
@@ -23,7 +24,7 @@ public class Topology implements Serializable {
     /**
      * <Operator ID, Operator>
      */
-    private final LinkedHashMap<String, TopologyComponent> records;
+    private final LinkedHashMap<String, TopologyComponent> records; //Operator name -> Operator
     public Database db;
     public TransactionTopology txnTopology;
     public SpinLock[] spinlock;
@@ -69,6 +70,10 @@ public class Topology implements Serializable {
 
     public LinkedHashMap<String, TopologyComponent> getRecords() {
         return records;
+    }
+
+    public Collection<String> getComponentIds() {
+        return records.keySet();
     }
 
     public void setSink(TopologyComponent sink) {

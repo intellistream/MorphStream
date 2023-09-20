@@ -34,6 +34,8 @@ public class SLBolt_ts extends SLBolt {
     ArrayDeque<TransactionEvent> transactionEvents;
     ArrayDeque<DepositEvent> depositEvents;
 
+    //double batchStartTs = 0;
+
     public SLBolt_ts(int fid, SINKCombo sink) {
         super(LOG, fid, sink);
 
@@ -64,8 +66,10 @@ public class SLBolt_ts extends SLBolt {
 
     @Override
     public void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException {
+        //event.ts = System.nanoTime();
 
         if (in.isMarker()) {
+            //batchFlag = 1;
             int transSize = transactionEvents.size();
             int depoSize = depositEvents.size();
             int num_events = transSize + depoSize;
@@ -92,6 +96,10 @@ public class SLBolt_ts extends SLBolt {
             }
             MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, num_events);
         } else {
+            //if (batchFlag) {
+            //  batchStartTs = System.nanoTime(); //for throughput measurement. Use a flag to measure only once at the start of each batch
+            //  batchFlag = 0;
+            //}
             execute_ts_normal(in);
         }
     }
