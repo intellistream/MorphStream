@@ -89,15 +89,14 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                         stateObjDesc.getName(),
                         stateObjDesc.getType(),
                         stateObjDesc.getTableName(),
-                        event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex()),
-                        (String) event.getValue(stateObjDesc.getValueName())
+                        event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex())
                 );
                 stateAccess.addStateObject(stateObjDesc.getName(), stateObject);
             }
 
             //Each state access involves multiple conditions (values that are not commonly shared among events)
-            for (String conditionName: stateAccessDesc.getConditionNames()) {
-                stateAccess.addCondition(conditionName, event.getValue(conditionName));
+            for (String conditionName: stateAccessDesc.getValueNames()) {
+                stateAccess.addValue(conditionName, event.getValue(conditionName));
             }
 
             eventStateAccessesMap.get(event.getBid()).put(stateAccessName, stateAccess);

@@ -32,7 +32,6 @@ public class FileDataGenerator {
     //Event configure
     private HashMap<String, HashMap<String, Integer>> eventKeyMap = new HashMap<>();//event -> tableName -> keyNumber
     private HashMap<String, List<String>> eventValueMap = new HashMap<>();//event -> value list
-    private HashMap<String, List<String>> eventConditionMap = new HashMap<>();//event -> condition list
     //InputStream configuration
     private int totalEvents;
     private HashMap<String, Integer> numItemMaps;//table name (key) to number of items
@@ -58,7 +57,7 @@ public class FileDataGenerator {
     }
     private void configure_store() {
         configuration = MorphStreamEnv.get().configuration();
-        numItemMaps = MorphStreamEnv.get().databaseInitializer().getNumItemMaps();
+        numItemMaps = MorphStreamEnv.get().databaseInitialize().getNumItemMaps();
         rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark/") + OsUtils.OS_wrapper("inputs");
         if (!new File(rootPath).exists()) {
             new File(rootPath).mkdirs();
@@ -83,11 +82,6 @@ public class FileDataGenerator {
             }
             eventKeyMap.put(eventType, keyMap);
             eventValueMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_values", "v1,v2").split(",")));
-            if (configuration.getString(eventType + "_conditions", "null").equals("null")) {
-                eventConditionMap.put(eventType, new ArrayList<>());
-            } else {
-                eventConditionMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_conditions", "null").split(",")));
-            }
             stateAssessSkewMap.put(eventType, configuration.getInt(eventType + ".State_Access_Skewness", 0));
             eventRatioMap.put(eventType, configuration.getInt(eventType + "_event_ratio", 50));
             for (int i = 0; i < eventRatioMap.get(eventType) / 10; i++) {
@@ -140,21 +134,16 @@ public class FileDataGenerator {
         TransactionalEvent inputEvent;
         HashMap<String, List<String>> keys = generateKey(eventType);
         String[] values = generateValue(eventType);
-        String[] conditions = generateCondition(eventType);
         HashMap<String, Object> valueMap = new HashMap<>();
         HashMap<String, String> valueTypeMap = new HashMap<>();
-        HashMap<String, String> conditionMap = new HashMap<>();
         for (int i = 0; i < values.length; i++) {
             valueMap.put(eventValueMap.get(eventType).get(i), values[i]);
             valueTypeMap.put(eventValueMap.get(eventType).get(i), "int");
         }
-        for (int i = 0; i < conditions.length; i++) {
-            conditionMap.put(eventConditionMap.get(eventType).get(i), conditions[i]);
-        }
         if (random.nextInt(1000) < eventRatioMap.get(eventType)) {
-            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, conditionMap, eventType, true);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, true);
         } else {
-            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, conditionMap, eventType, false);
+            inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, false);
         }
         inputEvents.add(inputEvent);
         eventID ++;
@@ -190,14 +179,6 @@ public class FileDataGenerator {
         }
         return values;
     }
-    private String[] generateCondition(String eventType) {
-        String[] conditions = new String[eventConditionMap.get(eventType).size()];
-        for (int i = 0; i < conditions.length; i++) {
-            conditions[i] = String.valueOf(random.nextInt(100));
-        }
-        return conditions;
-    }
-
 
     private String nextEvent() {
         int next = new Random().nextInt(eventList.size());

@@ -16,22 +16,19 @@ public class TransactionalEvent extends TxnEvent {
     private HashMap<String, List<String>> keyMap; //<TableName, keys> assume key must be string, including sourceKey, targetKey, and conditionKey
     private HashMap<String, Object> valueMap; //<valueName, value>
     private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
-    private HashMap<String, String> conditionMap; //<conditionName, condition>
-    private String flag; //"Deposit" or "Transfer"
+    private String flag; //E.g., "Deposit" or "Transfer"
     private Boolean isAbort = false;
 
     public TransactionalEvent(long bid,
                               HashMap<String, List<String>> keyMap,
                               HashMap<String, Object> valueMap,
                               HashMap<String, String> valueTypeMap,
-                              HashMap<String, String> conditionMap,
                               String flag,
                               Boolean isAbort) {
         super(bid);
         this.keyMap = keyMap;
         this.valueMap = valueMap;
         this.valueTypeMap = valueTypeMap;
-        this.conditionMap = conditionMap;
         this.flag = flag;
         this.isAbort = isAbort;
     }
@@ -54,9 +51,6 @@ public class TransactionalEvent extends TxnEvent {
 
     public String getKey(String tableName, int keyIndex) {
         return this.keyMap.get(tableName).get(keyIndex);
-    }
-    public Object getCondition(String conditionName) {
-        return this.conditionMap.get(conditionName);
     }
 
     public HashMap<String, String> getValueTypeMap() {
@@ -93,13 +87,6 @@ public class TransactionalEvent extends TxnEvent {
         stringBuilder.append(flag);
         stringBuilder.append(";");
         stringBuilder.append(isAbort);
-        if (!conditionMap.isEmpty()) {
-            stringBuilder.append(";");
-            for (String condition : conditionMap.keySet()) {
-                stringBuilder.append(condition).append(":").append(conditionMap.get(condition)).append(",");
-            }
-            stringBuilder.deleteCharAt(stringBuilder.length() -1);
-        }
         return stringBuilder.toString();
     }
 }

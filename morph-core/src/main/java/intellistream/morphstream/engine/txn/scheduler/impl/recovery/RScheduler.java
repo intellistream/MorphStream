@@ -316,10 +316,10 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
             SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
 
-            if (operation.stateAccess.getCondition("function") == "INC") {
-                tempo_record.getValues().get(1).incLong(sourceAccountBalance, (Long) operation.stateAccess.getCondition("delta_long"));//compute.
-            } else if (operation.stateAccess.getCondition("function") == "DEC") {
-                tempo_record.getValues().get(1).decLong(sourceAccountBalance, (Long) operation.stateAccess.getCondition("delta_long"));//compute.
+            if (operation.stateAccess.getValue("function") == "INC") {
+                tempo_record.getValues().get(1).incLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
+            } else if (operation.stateAccess.getValue("function") == "DEC") {
+                tempo_record.getValues().get(1).decLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
@@ -335,7 +335,7 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
         AppConfig.randomDelay();
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
-        tempo_record.getValues().get(1).incLong((Long) operation.stateAccess.getCondition("delta_long"));//compute.
+        tempo_record.getValues().get(1).incLong((Long) operation.stateAccess.getValue("delta_long"));//compute.
         operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
@@ -357,8 +357,8 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
         sum /= keysLength;
         SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
         SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-        if ((Long) operation.stateAccess.getCondition("delta_long") != -1) {
-            if (operation.stateAccess.getCondition("function") == "SUM") {
+        if ((Long) operation.stateAccess.getValue("delta_long") != -1) {
+            if (operation.stateAccess.getValue("function") == "SUM") {
                 tempo_record.getValues().get(1).setLong(sum);//compute.
             } else
                 throw new UnsupportedOperationException();
@@ -372,14 +372,14 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     protected void TollProcess_Fun(Operation operation, long previous_mark_ID, boolean clean) {
         AppConfig.randomDelay();
         List<DataBox> srcRecord = operation.d_record.record_.getValues();
-        if (operation.stateAccess.getCondition("function") == "AVG") {
-            if ((double) operation.stateAccess.getCondition("delta_double") < MAX_SPEED) {
+        if (operation.stateAccess.getValue("function") == "AVG") {
+            if ((double) operation.stateAccess.getValue("delta_double") < MAX_SPEED) {
                 double latestAvgSpeeds = srcRecord.get(1).getDouble();
                 double lav;
                 if (latestAvgSpeeds == 0) {//not initialized
-                    lav = (double) operation.stateAccess.getCondition("delta_double");
+                    lav = (double) operation.stateAccess.getValue("delta_double");
                 } else
-                    lav = (latestAvgSpeeds + (double) operation.stateAccess.getCondition("delta_double")) / 2;
+                    lav = (latestAvgSpeeds + (double) operation.stateAccess.getValue("delta_double")) / 2;
 
                 srcRecord.get(1).setDouble(lav);//write to state.
                 operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
@@ -387,9 +387,9 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                 operation.isFailed.set(true);
             }
         } else {
-            if ((int) operation.stateAccess.getCondition("delta_int") < MAX_INT) {
+            if ((int) operation.stateAccess.getValue("delta_int") < MAX_INT) {
                 HashSet cnt_segment = srcRecord.get(1).getHashSet();
-                cnt_segment.add(operation.stateAccess.getCondition("delta_int"));//update hashset; updated state also. TODO: be careful of this.
+                cnt_segment.add(operation.stateAccess.getValue("delta_int"));//update hashset; updated state also. TODO: be careful of this.
                 operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             } else {
                 operation.isFailed.set(true);

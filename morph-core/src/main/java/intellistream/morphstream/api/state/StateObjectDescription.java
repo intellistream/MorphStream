@@ -12,23 +12,17 @@ public class StateObjectDescription {
     private final int keyIndex;
     private final String tableName;
     private final String keyName;
-    private final String valueName;
 
-    public StateObjectDescription(String name, AccessType type, String tableName, String keyName, String valueName, int keyIndex) {
+    public StateObjectDescription(String name, AccessType type, String tableName, String keyName, int keyIndex) {
         this.name = name;
         this.tableName = tableName;
         this.keyName = keyName;
         this.type = type;
-        this.valueName = valueName;
         this.keyIndex = keyIndex;
     }
 
     public String getName() {
         return name;
-    }
-
-    public String getValueName() {
-        return valueName;
     }
 
     public String getKeyName() {

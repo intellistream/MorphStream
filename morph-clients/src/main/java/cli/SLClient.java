@@ -34,7 +34,7 @@ public class SLClient extends Client {
         if (Objects.equals(stateAccessName, "srcTransfer")) {
             StateObject srcAccountState = access.getStateObject("srcAccountState");
             double srcBalance = srcAccountState.getDoubleValue("balance");
-            double transferAmount = (double) access.getCondition("transferAmount");
+            double transferAmount = (double) access.getValue("transferAmount");
             if (srcBalance > 100 && srcBalance > transferAmount) {
                 access.udfResult = srcBalance - transferAmount;
                 return true;
@@ -46,7 +46,7 @@ public class SLClient extends Client {
             StateObject destAccountState = access.getStateObject("destAccountState");
             double srcBalance = srcAccountState.getDoubleValue("balance");
             double destBalance = destAccountState.getDoubleValue("balance");
-            double transferAmount = (double) access.getCondition("transferAmount");
+            double transferAmount = (double) access.getValue("transferAmount");
             if (srcBalance > 100 && srcBalance > transferAmount) {
                 access.udfResult = destBalance + transferAmount;
                 return true;
@@ -94,14 +94,14 @@ public class SLClient extends Client {
         //Define 1st state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
         srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
-        srcTransfer.addConditionName("transferAmount");
+        srcTransfer.addValueName("transferAmount");
         srcTransfer.setTxnUDFName("transactionUDF"); //Method invoked by its name during reflection
 
         //Define 2nd state accesses
         StateAccessDescription destTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
         destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue", 0);
         destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", "accountValue", 1);
-        destTransfer.addConditionName("transferAmount");
+        destTransfer.addValueName("transferAmount");
         destTransfer.setTxnUDFName("transactionUDF");
 
         //Add state accesses to transaction

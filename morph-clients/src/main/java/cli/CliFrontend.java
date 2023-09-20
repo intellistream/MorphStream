@@ -78,6 +78,7 @@ public class CliFrontend {
         }
     }
     public void run() throws InterruptedException {
+//        MeasureTools.Initialize();
         runTopologyLocally();
         //TODO: run for distributed mode
     }

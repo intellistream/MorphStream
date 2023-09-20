@@ -123,7 +123,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 long bidPrice = 100; //old condition: event.getBidPrice(i), default=100
                 long bid_qty = 1; //old condition: event.getBidQty(i)), default=1
                 if (bidPrice > askPrice || bid_qty < left_qty) {
-                    d_record.get(2).setLong(left_qty - (Long) operation.stateAccess.getCondition("delta_long"));//new quantity.
+                    d_record.get(2).setLong(left_qty - (Long) operation.stateAccess.getValue("delta_long"));//new quantity.
                 } else {
                     operation.isFailed.set(true);
                 }
@@ -135,8 +135,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 AppConfig.randomDelay();
                 SchemaRecord srcRecord = operation.d_record.content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType);
                 List<DataBox> values = srcRecord.getValues();
-                if (operation.stateAccess.getCondition("function").equals("INC")) { //TODO: Refine this.
-                    values.get(2).setLong(values.get(2).getLong() + (Long) operation.stateAccess.getCondition("delta_long"));//TODO: Refine this.
+                if (operation.stateAccess.getValue("function").equals("INC")) { //TODO: Refine this.
+                    values.get(2).setLong(values.get(2).getLong() + (Long) operation.stateAccess.getValue("delta_long"));//TODO: Refine this.
                 } else
                     throw new UnsupportedOperationException();
             }
@@ -155,24 +155,24 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.WRITE_ONLY)) {
             //OB-Alert
             AppConfig.randomDelay();
-            operation.d_record.record_.getValues().get(1).setLong((Long) operation.stateAccess.getCondition("ask_price")); //TODO: Refine it, used to be OBEvent.getAskPrice(i)
+            operation.d_record.record_.getValues().get(1).setLong((Long) operation.stateAccess.getValue("ask_price")); //TODO: Refine it, used to be OBEvent.getAskPrice(i)
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_READ)) {
             assert operation.stateAccess.getStateObject(defaultString) != null;
             AppConfig.randomDelay();
             List<DataBox> srcRecord = operation.d_record.record_.getValues();
-            if (operation.stateAccess.getCondition("function").equals("AVG")) { //TODO: Refine it
+            if (operation.stateAccess.getValue("function").equals("AVG")) { //TODO: Refine it
                 double latestAvgSpeeds = srcRecord.get(1).getDouble();
                 double lav;
                 if (latestAvgSpeeds == 0) {//not initialized
-                    lav = (double) operation.stateAccess.getCondition("delta_double");
+                    lav = (double) operation.stateAccess.getValue("delta_double");
                 } else
-                    lav = (latestAvgSpeeds + (double) operation.stateAccess.getCondition("delta_double")) / 2;
+                    lav = (latestAvgSpeeds + (double) operation.stateAccess.getValue("delta_double")) / 2;
 
                 srcRecord.get(1).setDouble(lav);//write to state.
                 operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
             } else {
                 HashSet cnt_segment = srcRecord.get(1).getHashSet();
-                cnt_segment.add(operation.stateAccess.getCondition("delta_int"));//update hashset; updated state also. TODO: be careful of this.
+                cnt_segment.add(operation.stateAccess.getValue("delta_int"));//update hashset; updated state also. TODO: be careful of this.
                 operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
             }
         } else if (operation.accessType.equals(CommonMetaTypes.AccessType.WINDOWED_READ_ONLY)) {
@@ -206,7 +206,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         // 2. Aggregation: given the matched results, apply aggregation function for stock exchange turnover rate.
         SchemaRecord tempo_record = new SchemaRecord(sWindowedState); //tempo record
-        if (operation.stateAccess.getCondition("function") == "JOIN") { //TODO: Refine this.
+        if (operation.stateAccess.getValue("function") == "JOIN") { //TODO: Refine this.
             long rSum = rKeys.stream().mapToLong(rKey -> rKey).sum();
             long sSum = sKeys.stream().mapToLong(sKey -> sKey).sum();
 
@@ -216,7 +216,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
             log.info("++++++ Stock id: " + operation.pKey + " Turnover rate: " + turnoverRate);
 
-            tempo_record.getValues().get(1).setLong((Long) operation.stateAccess.getCondition("delta_long"));
+            tempo_record.getValues().get(1).setLong((Long) operation.stateAccess.getValue("delta_long"));
             // 3. insert new tuple into S/R table.
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
 
@@ -240,10 +240,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
 
-            if (operation.stateAccess.getCondition("targetAccount") == "receiver") { //TODO: Refine this, split into two UDFs
-                tempo_record.getValues().get(1).incLong(sourceAccountBalance, (Long) operation.stateAccess.getCondition("delta_long"));//compute.
-            } else if (operation.stateAccess.getCondition("targetAccount") == "sender") {
-                tempo_record.getValues().get(1).decLong(sourceAccountBalance, (Long) operation.stateAccess.getCondition("delta_long"));//compute.
+            if (operation.stateAccess.getValue("targetAccount") == "receiver") { //TODO: Refine this, split into two UDFs
+                tempo_record.getValues().get(1).incLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
+            } else if (operation.stateAccess.getValue("targetAccount") == "sender") {
+                tempo_record.getValues().get(1).decLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
             } else
                 throw new UnsupportedOperationException();
             operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
@@ -268,7 +268,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         AppConfig.randomDelay();
         SchemaRecord tempo_record;
         tempo_record = new SchemaRecord(values);//tempo record
-        tempo_record.getValues().get(1).incLong((Long) operation.stateAccess.getCondition("delta_long"));//compute. default deposit amount = 100
+        tempo_record.getValues().get(1).incLong((Long) operation.stateAccess.getValue("delta_long"));//compute. default deposit amount = 100
         operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
     }
 
@@ -290,7 +290,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         sum /= keysLength;
 
-        if ((long) operation.stateAccess.getCondition("delta_long") != -1) {
+        if ((long) operation.stateAccess.getValue("delta_long") != -1) {
             // read
             SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
@@ -320,7 +320,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         sum /= keysLength;
 
-        if ((long) operation.stateAccess.getCondition("delta_long") != -1) {
+        if ((long) operation.stateAccess.getValue("delta_long") != -1) {
             // Get Deterministic Key
             SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
             long srcValue = srcRecord.getValues().get(1).getLong();
@@ -357,7 +357,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
 
         sum /= (long) keysLength * AppConfig.windowSize;
 
-        if ((long) operation.stateAccess.getCondition("delta_long") != -1) {
+        if ((long) operation.stateAccess.getValue("delta_long") != -1) {
             // read
             SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
             SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record

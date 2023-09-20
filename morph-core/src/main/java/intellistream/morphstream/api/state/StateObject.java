@@ -12,15 +12,13 @@ public class StateObject {
     private final MetaTypes.AccessType type;
     private final String table;
     private final String key;
-    private final String value;
     private SchemaRecord schemaRecord; //one version of table record
     private HashMap<String, Integer> fieldNameToIndex; //TODO: Where to initialize?
-    public StateObject(String name, MetaTypes.AccessType type, String table, String key, String value) {
+    public StateObject(String name, MetaTypes.AccessType type, String table, String key) {
         this.name = name;
         this.type = type;
         this.table = table;
         this.key = key;
-        this.value = value;
     }
     /**
      * Called in Schedulers, set SchemaRecord
@@ -43,10 +41,6 @@ public class StateObject {
 
     public String getTable() {
         return table;
-    }
-
-    public String getValue() {
-        return value;
     }
 
     public int getIntValue(String fieldName) {

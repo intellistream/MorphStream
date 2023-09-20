@@ -28,7 +28,7 @@ public class Request {
     public Request(TxnContext txn_context,
                    CommonMetaTypes.AccessType accessType,
                    String table_name, StateAccess stateAccess) {
-        this(txn_context, null, accessType, table_name, null, null, stateAccess, null, null, null);
+        this(txn_context, null, accessType, table_name, null, null, null, null, null, stateAccess);
     }
 
     //no column id
@@ -41,7 +41,7 @@ public class Request {
                    String[] condition_keys,
                    HashMap<String, TableRecord> condition_records,
                    StateAccess stateAccess) {
-        this(txn_context, null, accessType, table_name, write_key, d_record, stateAccess, condition_tables, condition_keys, condition_records);
+        this(txn_context, null, accessType, table_name, write_key, d_record, condition_tables, condition_keys, condition_records, stateAccess);
     }
 
     //no condition, no ref.
@@ -51,7 +51,7 @@ public class Request {
                    String write_key,
                    TableRecord d_record,
                    StateAccess stateAccess) {
-        this(txn_context, null, accessType, table_name, write_key, d_record, stateAccess, null, null, null);
+        this(txn_context, null, accessType, table_name, write_key, d_record, null, null, null, stateAccess);
     }
 
     public Request(TxnContext txn_context,
@@ -60,10 +60,10 @@ public class Request {
                    String table_name,
                    String write_key,
                    TableRecord d_record,
-                   StateAccess stateAccess,
                    String[] condition_tables,
                    String[] condition_keys,
-                   HashMap<String, TableRecord> condition_records) {
+                   HashMap<String, TableRecord> condition_records,
+                   StateAccess stateAccess) {
         this.txn_context = txn_context;
         this.accessType = accessType;
         this.table_name = table_name;

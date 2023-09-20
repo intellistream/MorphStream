@@ -9,13 +9,13 @@ public class StateAccessDescription {
     private final AccessType accessType;
     private final List<StateObjectDescription> stateObjDescList;
     private String txnUDFName;//Method name of txn UDF, used to invoke txn UDF using Method Reflection during OPScheduler
-    private final List<String> conditionNames;//Condition refers to values that are not commonly-shared among events, but used in txn-UDF
+    private final List<String> valueNames;//Condition refers to values that are not commonly-shared among events, but used in txn-UDF
 
     public StateAccessDescription(String name, AccessType type) {
         this.name = name;
         accessType = type;
         stateObjDescList = new ArrayList<>();
-        conditionNames = new ArrayList<>();
+        valueNames = new ArrayList<>();
     }
 
     public String getName() {
@@ -23,19 +23,19 @@ public class StateAccessDescription {
     }
 
     public void addStateObjectDescription(String stateObjName, AccessType type, String tableName, String keyName, String valueName, int keyIndex) {
-        stateObjDescList.add(new StateObjectDescription(stateObjName, type, tableName, keyName, valueName, keyIndex));
+        stateObjDescList.add(new StateObjectDescription(stateObjName, type, tableName, keyName, keyIndex));
     }
 
     public List<StateObjectDescription> getStateObjDescList() {
         return stateObjDescList;
     }
 
-    public void addConditionName(String name) {
-        conditionNames.add(name);
+    public void addValueName(String name) {
+        valueNames.add(name);
     }
 
-    public List<String> getConditionNames() {
-        return conditionNames;
+    public List<String> getValueNames() {
+        return valueNames;
     }
 
     public void setTxnUDFName(String name) {
