@@ -61,7 +61,8 @@ public abstract class AbstractOperation {
             } else {
                 conditions = new String[0];
             }
-            this.logRecord = new DependencyLog(bid, table_name, d_record.record_.GetPrimaryKey(), conditions);
+            this.logRecord = new DependencyLog(bid, table_name, d_record.record_.GetPrimaryKey(),
+                    (String) stateAccess.getCondition("function"), conditions, stateAccess.getConditionMap().toString());
             this.isCommit = false;
         } else if (loggingRecord_type == LOGOption_wal) {
             this.logRecord = new LogRecord(table_name, bid, d_record.record_.GetPrimaryKey());
@@ -77,7 +78,8 @@ public abstract class AbstractOperation {
             } else {
                 conditions = new String[0];
             }
-            this.logRecord = new LVCLog(bid, table_name, d_record.record_.GetPrimaryKey(), conditions);
+            this.logRecord = new LVCLog(bid, table_name, d_record.record_.GetPrimaryKey(),
+                    (String) stateAccess.getCondition("function"), conditions, stateAccess.getConditionMap().toString());
             this.isCommit = false;
         } else if (loggingRecord_type == LOGOption_command) {
             String[] conditions;
@@ -91,7 +93,8 @@ public abstract class AbstractOperation {
             } else {
                 conditions = new String[0];
             }
-            this.logRecord = new NativeCommandLog(bid, table_name, d_record.record_.GetPrimaryKey(), conditions);
+            this.logRecord = new NativeCommandLog(bid, table_name, d_record.record_.GetPrimaryKey(),
+                    (String) stateAccess.getCondition("function"), conditions, stateAccess.getConditionMap().toString());
             this.isCommit = false;
         }
     }

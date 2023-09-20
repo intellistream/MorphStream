@@ -1,5 +1,6 @@
 package intellistream.morphstream.api.operator.bolt;
 
+import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
@@ -109,18 +110,24 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     protected void Transaction_Post_Process() {
         for (TransactionalEvent event : eventQueue) {
-            Result postUDFResult;
+            Result udfResultReflect;
             try {
                 //Invoke client defined post-processing UDF using Reflection
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
-                Object clientObj = clientClass.getDeclaredConstructor().newInstance();
-                HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                String postUDFName = txnDescriptionMap.get(event.getFlag()).getPostUDFName();
-                Method postUDF = clientClass.getMethod(postUDFName, HashMap.class, TransactionalEvent.class);
-                postUDFResult = (Result) postUDF.invoke(clientObj, stateAccesses, event);
-
+                if (Client.class.isAssignableFrom(clientClass)) {
+                    // Cast the class object to MyAbstractClass
+                    Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
+                    HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
+                    // Option 1: Invoke postUDF using Interface
+                    udfResultReflect = clientObj.postUDF(stateAccesses);
+                    // Option 2: Invoke postUDF using Method Reflection
+//                    String postUDFName = txnDescriptionMap.get(event.getFlag()).getPostUDFName();
+//                    Method postUDF = clientClass.getMethod(postUDFName, HashMap.class);
+//                    udfResultReflect = (Result) postUDF.invoke(clientObj, stateAccesses);
+                    //We can also use reflection to access fields in client class
+                }
                 if (!enable_app_combo) {
-                    collector.emit(event.getBid(), postUDFResult.getTransactionalEvent(), event.getTimestamp());
+                    collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent(), event.getTimestamp());
                 } else {
                     if (enable_latency_measurement) {
                         //TODO: Define sink for bolt

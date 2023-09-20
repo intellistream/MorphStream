@@ -5,15 +5,21 @@ import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 import java.util.*;
 
 public class StateAccessDescription {
+    private final String name;
     private final AccessType accessType;
     private final List<StateObjectDescription> stateObjDescList;
     private String txnUDFName;//Method name of txn UDF, used to invoke txn UDF using Method Reflection during OPScheduler
     private final List<String> conditionNames;//Condition refers to values that are not commonly-shared among events, but used in txn-UDF
 
-    public StateAccessDescription(AccessType type) {
+    public StateAccessDescription(String name, AccessType type) {
+        this.name = name;
         accessType = type;
         stateObjDescList = new ArrayList<>();
         conditionNames = new ArrayList<>();
+    }
+
+    public String getName() {
+        return name;
     }
 
     public void addStateObjectDescription(String stateObjName, AccessType type, String tableName, String keyName, String valueName, int keyIndex) {

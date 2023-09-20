@@ -275,6 +275,8 @@ public class JCommanderHandler {
     public String keyNumberForEvents = "2,2;2,2";
     @Parameter(names = {"valueNameForEvents"}, description = "value names for each type of event, split by ;")
     public String valueNameForEvents = "v1,v2;v1,v2";
+    @Parameter(names = {"conditionNameForEvents"}, description = "condition names for each type of event, split by ;")
+    public String conditionNameForEvents = "c1,c2;c1,c2";
     @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
     public String eventRatio = "0.5,0.5";
     @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
@@ -320,6 +322,7 @@ public class JCommanderHandler {
             config.put(eventTypeString[i] + "_tables", tableNameForEvents.split(";")[i]);
             config.put(eventTypeString[i] + "_key_number", keyNumberForEvents.split(";")[i]);
             config.put(eventTypeString[i] + "_values", valueNameForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_conditions", conditionNameForEvents.split(";")[i]);
             config.put(eventTypeString[i] + "_event_ratio", eventRatio.split(",")[i]);
             config.put(eventTypeString[i] + "_ratio_of_multi_partition_transactions", ratioOfMultiPartitionTransactionsForEvents.split(",")[i]);
             config.put(eventTypeString[i] + "_state_access_skewness", stateAccessSkewnessForEvents.split(",")[i]);
