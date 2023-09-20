@@ -211,9 +211,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WRITE;
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
-        TableRecord writeRecord = null;
-        String srcTable = "";
-        String srcKey = "";
+
         String[] condition_tables = new String[stateAccess.getStateObjects().size()]; //TODO: For write with multi-read, Should condition_records include d_record?
         String[] condition_keys = new String[stateAccess.getStateObjects().size()];
 
@@ -225,24 +223,23 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             condition_tables[i] = stateObjTable;
             condition_keys[i] = stateObjKey;
             condition_records.put(stateObj.getName(), storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey));
-
-            MetaTypes.AccessType type = stateObj.getType();
-            if (type == MetaTypes.AccessType.WRITE) {
-                writeRecord = storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey);
-                srcTable = stateObjTable;
-                srcKey = stateObjKey;
-            }
         }
+
+        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+        String writeTable = writeStateObj.getTable();
+        String writeKey = writeStateObj.getKey();
+        TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
+
         if (writeRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-                        srcKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-                        srcKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
             }
         } else {
-            if (enable_log) log.info("No record is found:" + srcKey);
+            if (enable_log) log.info("No record is found:" + writeKey);
             return false;
         }
     }
@@ -281,9 +278,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         CommonMetaTypes.AccessType accessType = CommonMetaTypes.AccessType.WINDOW_WRITE;
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
-        TableRecord writeRecord = null;
-        String srcTable = "";
-        String srcKey = "";
+
         String[] condition_tables = new String[stateAccess.getStateObjects().size()];
         String[] condition_keys = new String[stateAccess.getStateObjects().size()];
 
@@ -295,24 +290,23 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             condition_tables[i] = stateObjTable;
             condition_keys[i] = stateObjKey;
             condition_records.put(stateObj.getName(), storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey));
-
-            MetaTypes.AccessType type = stateObj.getType();
-            if (type == MetaTypes.AccessType.WRITE) {
-                writeRecord = storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey);
-                srcTable = stateObjTable;
-                srcKey = stateObjKey;
-            }
         }
+
+        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+        String writeTable = writeStateObj.getTable();
+        String writeKey = writeStateObj.getKey();
+        TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
+
         if (writeRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-                        srcKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, srcTable,
-                        srcKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                return scheduler.SubmitRequest(context, new Request(txnContext, accessType, writeTable,
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
             }
         } else {
-            if (enable_log) log.info("No record is found:" + srcKey);
+            if (enable_log) log.info("No record is found:" + writeKey);
             return false;
         }
     }
@@ -353,9 +347,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         List<StateObject> stateObjects = new ArrayList<>(stateAccess.getStateObjects());
         HashMap<String, TableRecord> condition_records = new HashMap<>();
         BaseTable[] baseTables = new BaseTable[stateObjects.size()];
-        TableRecord writeRecord = null;
-        String srcTable = "";
-        String srcKey = "";
+
         String[] condition_tables = new String[stateAccess.getStateObjects().size()];
         String[] condition_keys = new String[stateAccess.getStateObjects().size()];
 
@@ -367,25 +359,24 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
             condition_tables[i] = stateObjTable;
             condition_keys[i] = stateObjKey;
             condition_records.put(stateObj.getName(), storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey));
-
-            MetaTypes.AccessType type = stateObj.getType();
-            if (type == MetaTypes.AccessType.WRITE) {
-                writeRecord = storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey);
-                srcTable = stateObjTable;
-                srcKey = stateObjKey;
-            }
             baseTables[i] = storageManager_.getTable(stateObjTable);
         }
+
+        StateObject writeStateObj = stateAccess.getStateObjectToWrite();
+        String writeTable = writeStateObj.getTable();
+        String writeKey = writeStateObj.getKey();
+        TableRecord writeRecord = storageManager_.getTable(writeTable).SelectKeyRecord(writeKey);
+
         if (writeRecord != null) {
             if (enableGroup) {
-                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, srcTable,
-                        srcKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                return schedulerByGroup.get(getGroupId(txnContext.thread_Id)).SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
             } else {
-                return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, srcTable,
-                        srcKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
+                return scheduler.SubmitRequest(context, new Request(txnContext, baseTables, accessType, writeTable,
+                        writeKey, writeRecord, condition_tables, condition_keys, condition_records, stateAccess));
             }
         } else {
-            if (enable_log) log.info("No record is found:" + srcKey);
+            if (enable_log) log.info("No record is found:" + writeKey);
             return false;
         }
     }

@@ -1,6 +1,8 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.op;
 
 
+import intellistream.morphstream.api.Client;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingEntry.LogRecord;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.CommandLoggingManager;
@@ -30,9 +32,8 @@ import intellistream.morphstream.util.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.defaultString;
 import static intellistream.morphstream.util.FaultToleranceConstants.*;
@@ -81,6 +82,10 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
         return tpg.threadToContextMap.get(threadId);
     }
 
+    private void readFunction(Operation operation) {
+
+    }
+
     /**
      * Used by tpgScheduler.
      *
@@ -102,6 +107,53 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
             commitLog(operation);
             return;
         }
+
+        /**
+         * Start of newly defined txn execution logic
+         */
+        //Before executing udf, read schemaRecord from tableRecord and write into stateAccess. Applicable to all 6 types of operations.
+        for (Map.Entry<String, TableRecord> entry : operation.condition_records.entrySet()) {
+            SchemaRecord readRecord = entry.getValue().content_.readPreValues(operation.bid);
+            operation.stateAccess.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
+        }
+
+        //UDF updates operation.udfResult, which is the value to be written to writeRecord
+        boolean udfSuccess = false;
+        try {
+            Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
+            if (Client.class.isAssignableFrom(clientClass)) {
+                Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
+                udfSuccess = clientObj.transactionUDF(operation.stateAccess);
+            }
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+             InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (udfSuccess) {
+            if (operation.accessType == CommonMetaTypes.AccessType.WRITE
+                    || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
+                    || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
+                //Update udf results to writeRecord
+                Object udfResult = operation.stateAccess.udfResult; //value to be written
+                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
+                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
+                //TODO: pass in the write object-type, avoid isInstanceOf check
+                tempo_record.getValues().get(1).setDouble((double) udfResult);
+                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
+                //Assign updated schemaRecord back to stateAccess
+                operation.stateAccess.setUpdatedStateObject(tempo_record);
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        } else {
+            operation.isFailed.set(true);
+        }
+        /**
+         * End of newly defined txn execution logic
+        */
+
+
         if (operation.accessType.equals(CommonMetaTypes.AccessType.READ_WRITE_COND_READ)) {
             if (this.tpg.getApp() == 5) {
                 SHJ_Fun(operation, mark_ID, clean);
@@ -413,6 +465,8 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, null, request.stateAccess);
                     break;
+                case READ:
+                case WRITE:
                 case READ_WRITE: // they can use the same method for processing
                 case READ_WRITE_COND:
                 case READ_WRITE_COND_READ:
@@ -424,10 +478,14 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                     set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, null, request.stateAccess);
                     break;
+                case NON_DETER_READ:
+                case NON_DETER_WRITE:
                 case NON_READ_WRITE_COND_READN:
                     set_op = new Operation(true, request.tables, request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,
                             request.d_record, request.condition_records, request.stateAccess);
                     break;
+                case WINDOW_READ:
+                case WINDOW_WRITE:
                 case WINDOWED_READ_ONLY:
                     WindowDescriptor windowContext = new WindowDescriptor(true, AppConfig.windowSize);
                     set_op = new Operation(request.write_key, getTargetContext(request.write_key), request.table_name, request.txn_context, bid, request.accessType,

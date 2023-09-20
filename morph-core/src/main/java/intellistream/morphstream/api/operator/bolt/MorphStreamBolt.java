@@ -8,6 +8,7 @@ import intellistream.morphstream.api.state.StateAccess;
 import intellistream.morphstream.api.state.StateAccessDescription;
 import intellistream.morphstream.api.state.StateObject;
 import intellistream.morphstream.api.state.StateObjectDescription;
+import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
@@ -92,11 +93,15 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                         event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex())
                 );
                 stateAccess.addStateObject(stateObjDesc.getName(), stateObject);
+                //Label writeRecord for easy reference
+                if (stateObjDesc.getType() == MetaTypes.AccessType.WRITE) {
+                    stateAccess.setWriteRecordName(stateObjDesc.getName());
+                }
             }
 
             //Each state access involves multiple conditions (values that are not commonly shared among events)
-            for (String conditionName: stateAccessDesc.getValueNames()) {
-                stateAccess.addValue(conditionName, event.getValue(conditionName));
+            for (String valueName: stateAccessDesc.getValueNames()) {
+                stateAccess.addValue(valueName, event.getValue(valueName));
             }
 
             eventStateAccessesMap.get(event.getBid()).put(stateAccessName, stateAccess);

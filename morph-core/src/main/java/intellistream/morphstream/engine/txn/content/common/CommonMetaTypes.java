@@ -33,6 +33,7 @@ public interface CommonMetaTypes {
         READ_WRITE_COND_READN,
         WINDOWED_READ_ONLY,
         NON_READ_WRITE_COND_READN,
+        //Below are newly defined 6 types of primitive state access operations
         READ,
         WRITE,
         WINDOW_READ,

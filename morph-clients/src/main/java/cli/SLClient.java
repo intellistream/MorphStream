@@ -28,7 +28,6 @@ public class SLClient extends Client {
      */
 
     //Before executing udf, read schemaRecord from tableRecord and write into stateAccess
-    //TODO: abstracted common interfaces shared by UDFs (at least an remind client to define txnUDF and postUDF)
     public boolean transactionUDF(StateAccess access) {
         String stateAccessName = access.getName();
         if (Objects.equals(stateAccessName, "srcTransfer")) {

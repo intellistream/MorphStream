@@ -9,4 +9,8 @@ public interface MetaTypes {
         NON_DETER_READ, //read only (single record)
         NON_DETER_WRITE //write only (single record) + read multiple records
     }
+
+    enum ValueType {
+        INT, LONG, FLOAT, DOUBLE, STRING, BOOLEAN
+    }
 }
