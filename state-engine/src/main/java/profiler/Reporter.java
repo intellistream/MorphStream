@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
-public class Reporter {
+public class Reporter implements Scheduled {
     public static boolean closed = false;
     private static DatagramSocket socket;
     private static InetSocketAddress address;
@@ -69,10 +69,12 @@ public class Reporter {
     public void reportLatency() {
         List<Double> latency = new ArrayList<>();
         for (int i = 0; i < tthread; i++) {
+            System.out.println(Metrics.RuntimePerformance.Latency[i]);
             latency.add(Metrics.RuntimePerformance.Latency[i].getMean());
         }
         // get the average of all threads' latency
         double overallLatency = latency.stream().mapToDouble(d -> d).average().orElse(0.0);
+        System.out.println(overallLatency);
         send("latency", overallLatency);
     }
 
@@ -83,6 +85,7 @@ public class Reporter {
         }
         // get sum of all threads' throughput
         double overallThroughput = throughput.stream().mapToDouble(d -> d).sum();
+        System.out.println(overallThroughput);
         send("throughput", overallThroughput);
     }
 
