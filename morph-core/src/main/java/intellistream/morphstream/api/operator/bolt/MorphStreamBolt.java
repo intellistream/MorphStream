@@ -4,10 +4,7 @@ import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
-import intellistream.morphstream.api.state.StateAccess;
-import intellistream.morphstream.api.state.StateAccessDescription;
-import intellistream.morphstream.api.state.StateObject;
-import intellistream.morphstream.api.state.StateObjectDescription;
+import intellistream.morphstream.api.state.*;
 import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
@@ -20,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,12 +29,14 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final HashMap<String, TxnDescription> txnDescriptionMap;//Transaction flag -> TxnDescription. E.g. "transfer" -> transferTxnDescription
     private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
     private final HashMap<Long, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
+    private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
 
     public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
-        super(LOG, fid); //TODO: Check fid
+        super(LOG, fid);
         this.txnDescriptionMap = txnDescriptionMap;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
+        tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
@@ -82,7 +80,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             //Initialize state access based on state access description
             String stateAccessName = descEntry.getKey();
             StateAccessDescription stateAccessDesc = descEntry.getValue();
-            StateAccess stateAccess = new StateAccess(stateAccessDesc);
+            StateAccess stateAccess = new StateAccess(event.getFlag(), stateAccessDesc);
 
             //Each state access involves multiple state objects
             for (StateObjectDescription stateObjDesc: stateAccessDesc.getStateObjDescList()) {
@@ -90,7 +88,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                         stateObjDesc.getName(),
                         stateObjDesc.getType(),
                         stateObjDesc.getTableName(),
-                        event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex())
+                        event.getKey(stateObjDesc.getTableName(), stateObjDesc.getKeyIndex()),
+                        tableFieldIndexMap.get(stateObjDesc.getTableName())
                 );
                 stateAccess.addStateObject(stateObjDesc.getName(), stateObject);
                 //Label writeRecord for easy reference

@@ -256,6 +256,8 @@ public class JCommanderHandler {
     public String keyDataTypesForTables = "string,string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
     public String valueDataTypesForTables = "int,int";
+    @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
+    public String valueNamesForTables = "value1,value2";
     //Input event configurations
     @Parameter(names = {"--inputFileType"}, description = "input file type, [txt, csv, json]")
     public int inputFileType = 0;
@@ -309,6 +311,7 @@ public class JCommanderHandler {
             config.put(tableNameString[i] + "_num_items", Integer.parseInt(numberItemsForTables.split(",")[i]));
             config.put(tableNameString[i] + "_key_data_types", keyDataTypesForTables.split(",")[i]);
             config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
+            config.put(tableNameString[i] + "_value_names", valueNamesForTables.split(",")[i]);
         }
         //Input events configuration
         config.put("inputFileType", inputFileType);

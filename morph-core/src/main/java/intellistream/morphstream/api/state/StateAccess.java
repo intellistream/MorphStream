@@ -7,22 +7,28 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public class StateAccess {
-    private final String name;
+    private final String txnName; //name of txn that a stateAccess belongs to
+    private final String stateAccessName;
     private String writeRecordName;
     private final MetaTypes.AccessType accessType;
     private final HashMap<String, StateObject> stateObjectMap; //Store all state objects required during txn-UDF
     private final HashMap<String, Object> valueMap; //Store all values required during txn-UDF, including WRITE value
-
     public Object udfResult;
-    public StateAccess(StateAccessDescription description) {
-        name = description.getName();
+
+    public StateAccess(String txnName, StateAccessDescription description) {
+        this.txnName = txnName;
+        stateAccessName = description.getName();
         stateObjectMap = new HashMap<>();
         accessType = description.getAccessType();
         valueMap = new HashMap<>();
     }
 
-    public String getName() {
-        return name;
+    public String getTxnName() {
+        return txnName;
+    }
+
+    public String getStateAccessName() {
+        return stateAccessName;
     }
 
     public MetaTypes.AccessType getAccessType() {

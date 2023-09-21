@@ -191,6 +191,6 @@ public abstract class DataBox implements Comparable, Cloneable {
      * An enum with the current supported types.
      */
     public enum Types {
-        BOOL, INT, LONG, TimestampType, FLOAT, STRING, OTHERS
+        BOOL, INT, LONG, TimestampType, FLOAT, DOUBLE, STRING, OTHERS
     }
 }

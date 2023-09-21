@@ -12,17 +12,17 @@ public class StateObject {
     private final MetaTypes.AccessType type;
     private final String table;
     private final String key;
-    private SchemaRecord schemaRecord; //one version of table record
-    private HashMap<String, Integer> fieldNameToIndex; //TODO: Where to initialize?
-    public StateObject(String name, MetaTypes.AccessType type, String table, String key) {
+    private SchemaRecord schemaRecord; //one version of TableRecord
+    private HashMap<String, Integer> fieldNameToIndex; //table field name -> index, field index starts from 1
+
+    public StateObject(String name, MetaTypes.AccessType type, String table, String key, HashMap<String, Integer> fieldNameToIndex) {
         this.name = name;
         this.type = type;
         this.table = table;
         this.key = key;
+        this.fieldNameToIndex = fieldNameToIndex;
     }
-    /**
-     * Called in Schedulers, set SchemaRecord
-     */
+
     public void setSchemaRecord(SchemaRecord schemaRecord) {
         this.schemaRecord = schemaRecord;
     }

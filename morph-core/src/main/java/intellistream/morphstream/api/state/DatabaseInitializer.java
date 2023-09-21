@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -22,11 +23,12 @@ public class DatabaseInitializer {
     private Configuration configuration;
     private SpinLock[] spinlock;
     private String[] tableNames;
-    private HashMap<String, DataBox.Types> keyDataTypeMap = new HashMap<>();//table name to key data type
-    private HashMap<String, DataBox.Types> valueDataTypeMap = new HashMap<>();//table name to value data type
-    private HashMap<String, RecordSchema> schemas = new HashMap<>();//table name to schema
+    private final HashMap<String, DataBox.Types> keyDataTypeMap = new HashMap<>();//table name to key data type
+    private final HashMap<String, DataBox.Types[]> valuesDataTypeMap = new HashMap<>();//table name to value data type
+    private final HashMap<String, String[]> fieldNamesMap = new HashMap<>();//table name to field names
+    private final HashMap<String, RecordSchema> schemas = new HashMap<>();//table name to schema
     private int totalThreads;
-    private HashMap<String, Integer> numItemMaps = new HashMap<>();//table name to number of items
+    private final HashMap<String, Integer> numItemMaps = new HashMap<>();//table name to number of items
     public void creates_Table() {
         configure_db();
         for (String tableName : tableNames) {
@@ -66,7 +68,8 @@ public class DatabaseInitializer {
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
             keyDataTypeMap.put(tableName, getDataType(configuration.getString(tableName + "_key_data_types","string")));
-            valueDataTypeMap.put(tableName, getDataType(configuration.getString(tableName + "_value_data_types","int")));
+            valuesDataTypeMap.put(tableName, getDataTypes(configuration.getString(tableName + "_value_data_types","int")));
+            fieldNamesMap.put(tableName, configuration.getString(tableName + "_value_names","value").split(","));
             schemas.put(tableName, getRecordSchema(tableName));
         }
     }
@@ -94,6 +97,12 @@ public class DatabaseInitializer {
             case FLOAT:
                 values.add(new FloatDataBox(Float.parseFloat(key)));
                 break;
+            case DOUBLE:
+                values.add(new DoubleDataBox(Double.parseDouble(key)));
+                break;
+            case BOOL:
+                values.add(new BoolDataBox(Boolean.parseBoolean(key)));
+                break;
             default:
                 values.add(new StringDataBox(key));
         }
@@ -112,6 +121,12 @@ public class DatabaseInitializer {
                 break;
             case FLOAT:
                 values.add(new FloatDataBox(Float.parseFloat(key)));
+                break;
+            case DOUBLE:
+                values.add(new DoubleDataBox(Double.parseDouble(key)));
+                break;
+            case BOOL:
+                values.add(new BoolDataBox(Boolean.parseBoolean(key)));
                 break;
             default:
                 values.add(new StringDataBox(key));
@@ -132,24 +147,38 @@ public class DatabaseInitializer {
             case FLOAT:
                 dataBoxes.add(new FloatDataBox());
                 break;
+            case DOUBLE:
+                dataBoxes.add(new DoubleDataBox());
+                break;
+            case BOOL:
+                dataBoxes.add(new BoolDataBox());
+                break;
             default:
                 dataBoxes.add(new StringDataBox());
         }
-        switch (valueDataTypeMap.get(tableName)){
-            case INT:
-                dataBoxes.add(new IntDataBox());
-                break;
-            case LONG:
-                dataBoxes.add(new LongDataBox());
-                break;
-            case FLOAT:
-                dataBoxes.add(new FloatDataBox());
-                break;
-            default:
-                dataBoxes.add(new StringDataBox());
+        for (DataBox.Types type : valuesDataTypeMap.get(tableName)){
+            switch (type){
+                case INT:
+                    dataBoxes.add(new IntDataBox());
+                    break;
+                case LONG:
+                    dataBoxes.add(new LongDataBox());
+                    break;
+                case FLOAT:
+                    dataBoxes.add(new FloatDataBox());
+                    break;
+                case DOUBLE:
+                    dataBoxes.add(new DoubleDataBox());
+                    break;
+                case BOOL:
+                    dataBoxes.add(new BoolDataBox());
+                    break;
+                default:
+                    dataBoxes.add(new StringDataBox());
+            }
         }
         fieldNames.add("Key");//PK
-        fieldNames.add("Value");
+        fieldNames.addAll(Arrays.asList(fieldNamesMap.get(tableName)));//values
         return new RecordSchema(fieldNames, dataBoxes);
     }
     private DataBox.Types getDataType (String type){
@@ -160,9 +189,39 @@ public class DatabaseInitializer {
                 return LONG;
             case "float":
                 return FLOAT;
+            case "double":
+                return DOUBLE;
+            case "boolean":
+                return BOOL;
             default:
                 return STRING;
         }
+    }
+    private DataBox.Types[] getDataTypes (String typeArray) {
+        String[] types = typeArray.split(",");
+        DataBox.Types[] dataTypes = new DataBox.Types[types.length];
+        for (int i = 0; i < types.length; i++) {
+            switch (types[i]) {
+                case "int":
+                    dataTypes[i] = INT;
+                    break;
+                case "long":
+                    dataTypes[i] = LONG;
+                    break;
+                case "float":
+                    dataTypes[i] = FLOAT;
+                    break;
+                case "double":
+                    dataTypes[i] = DOUBLE;
+                    break;
+                case "boolean":
+                    dataTypes[i] = BOOL;
+                    break;
+                default:
+                    dataTypes[i] = STRING;
+            }
+        }
+        return dataTypes;
     }
     private int get_pid(int partition_interval, int key) {
         return (int) Math.floor(key / (double) partition_interval);//NUM_ITEMS / tthread;
@@ -172,5 +231,16 @@ public class DatabaseInitializer {
     }
     public void setSpinlock_(int i, SpinLock spinlock_) {
         this.spinlock[i] = spinlock_;
+    }
+    public HashMap<String, HashMap<String, Integer>> getTableFieldIndexMap() {
+        HashMap<String, HashMap<String, Integer>> tableFieldIndexMap = new HashMap<>();
+        for (String tableName : tableNames) {
+            HashMap<String, Integer> fieldIndexMap = new HashMap<>();
+            for (int i = 0; i < fieldNamesMap.get(tableName).length; i++) {
+                fieldIndexMap.put(fieldNamesMap.get(tableName)[i], i + 1); //field index starts from 1
+            }
+            tableFieldIndexMap.put(tableName, fieldIndexMap);
+        }
+        return tableFieldIndexMap;
     }
 }

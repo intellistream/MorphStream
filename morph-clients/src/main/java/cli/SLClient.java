@@ -21,43 +21,49 @@ public class SLClient extends Client {
 
     /**
      * Client-defined customized txn-UDF, which will be executed in Schedulers
-     * This is a callback method using Reflection mechanism, invoked by referencing its className & methodName
-     * Before execution, Scheduler should have access to all SchemaRecords required and add them into StateAccess
+     * access.udfResult is the value to be written into schemaRecord
      *
      * @param access Stores everything bolt needs, including StateObjects updated by Scheduler
+     * @return true if txn-UDF is executed successfully, false if txn-UDF is aborted
      */
-
-    //Before executing udf, read schemaRecord from tableRecord and write into stateAccess
+    @Override
     public boolean transactionUDF(StateAccess access) {
-        String stateAccessName = access.getName();
-        if (Objects.equals(stateAccessName, "srcTransfer")) {
-            StateObject srcAccountState = access.getStateObject("srcAccountState");
-            double srcBalance = srcAccountState.getDoubleValue("balance");
-            double transferAmount = (double) access.getValue("transferAmount");
-            if (srcBalance > 100 && srcBalance > transferAmount) {
-                access.udfResult = srcBalance - transferAmount;
-                return true;
+        String transactionName = access.getTxnName();
+        if (Objects.equals(transactionName, "transfer")) {
+            String stateAccessName = access.getStateAccessName();
+            if (Objects.equals(stateAccessName, "srcTransfer")) {
+                StateObject srcAccountState = access.getStateObject("srcAccountState");
+                double srcBalance = srcAccountState.getDoubleValue("balance");
+                double transferAmount = (double) access.getValue("transferAmount");
+                if (srcBalance > 100 && srcBalance > transferAmount) {
+                    access.udfResult = srcBalance - transferAmount;
+                    return true;
+                } else {
+                    return false; //abort txn
+                }
+            } else if (Objects.equals(stateAccessName, "destTransfer")) {
+                StateObject srcAccountState = access.getStateObject("srcAccountState");
+                StateObject destAccountState = access.getStateObject("destAccountState");
+                double srcBalance = srcAccountState.getDoubleValue("balance");
+                double destBalance = destAccountState.getDoubleValue("balance");
+                double transferAmount = (double) access.getValue("transferAmount");
+                if (srcBalance > 100 && srcBalance > transferAmount) {
+                    access.udfResult = destBalance + transferAmount;
+                    return true;
+                } else {
+                    return false; //abort txn
+                }
             } else {
                 return false; //abort txn
             }
-        } else if (Objects.equals(stateAccessName, "destTransfer")) {
-            StateObject srcAccountState = access.getStateObject("srcAccountState");
-            StateObject destAccountState = access.getStateObject("destAccountState");
-            double srcBalance = srcAccountState.getDoubleValue("balance");
-            double destBalance = destAccountState.getDoubleValue("balance");
-            double transferAmount = (double) access.getValue("transferAmount");
-            if (srcBalance > 100 && srcBalance > transferAmount) {
-                access.udfResult = destBalance + transferAmount;
-                return true;
-            } else {
-                return false; //abort txn
-            }
+        } else if (Objects.equals(transactionName, "deposit")) {
+            return false;
         } else {
-            return false; //abort txn
+            return false;
         }
     }
-    //after udf, use the udfResult value to update schemaRecord
-    //after update to schemaRecord, write the updated schemaRecord to stateAccess
+
+    @Override
     public Result postUDF(HashMap<String, StateAccess> stateAccessMap) {
         Result result = new Result();
         StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
@@ -68,7 +74,6 @@ public class SLClient extends Client {
         result.setResults(stateAccessResults);
         return result;
     }
-
 
     public static void main(String[] args) throws Exception {
         CliFrontend SLClient = CliFrontend.getOrCreate().appName("SLClient");
