@@ -12,6 +12,7 @@
         <module>morph-examples</module>
         <module>morph-clients</module>
         <module>morph-benchmark</module>
+        <module>morph-web</module>
     </modules>
 
     <build>

@@ -1,0 +1,31 @@
+<nz-layout style="overflow: auto">
+  <app-header id="header"></app-header>
+  <app-header id="head-placeholder"></app-header>
+  <nz-layout>
+    <nz-sider nzCollapsible nzWidth="15%">
+      <ul nz-menu nzMode="inline">
+        <li nz-menu-item routerLink="/overview" nzSelected>
+          <span nz-icon nzType="project" nzTheme="outline"></span>
+          <span>Overview</span>
+        </li>
+        <li nz-submenu nzTitle="Applications" nzIcon="database">
+          <ul>
+            <li nz-menu-item routerLink="/applications/processing-applications">
+              <span>Processing applications</span>
+            </li>
+            <li nz-menu-item routerLink="/applications/finished-applications">Finished applications</li>
+          </ul>
+        </li>
+        <li nz-menu-item routerLink="/submit-new-job">
+          <span nz-icon nzType="appstore-add" nzTheme="outline"></span>
+          <span>Submit new Job</span>
+        </li>
+      </ul>
+    </nz-sider>
+    <nz-layout>
+      <nz-content id="content">
+        <router-outlet></router-outlet>
+      </nz-content>
+    </nz-layout>
+  </nz-layout>
+</nz-layout>

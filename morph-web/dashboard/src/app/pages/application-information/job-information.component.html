@@ -1,0 +1,101 @@
+<div id="main-container">
+  <nz-content>
+    <div nz-row class="title">
+      <nz-col nzSpan="8">
+        <span id="title-text"><b>Application Details</b></span>
+        <div nz-row class="separator"></div>
+        <!--    breadcrumb    -->
+        <nz-breadcrumb>
+          <nz-breadcrumb-item>
+            <a [routerLink]="['../../']">Overview</a>
+          </nz-breadcrumb-item>
+          <nz-breadcrumb-item *ngIf="application.isRunning">
+            <a [routerLink]="['../../applications/processing-applications']">Processing Applications</a>
+          </nz-breadcrumb-item>
+          <nz-breadcrumb-item *ngIf="!application.isRunning">
+            <a [routerLink]="['../../applications/finished-applications']">Finished Applications</a>
+          </nz-breadcrumb-item>
+          <nz-breadcrumb-item>Application Details</nz-breadcrumb-item>
+        </nz-breadcrumb>
+      </nz-col>
+      <nz-col nzSpan="6"></nz-col>
+      <!--   control bar   -->
+      <nz-col nzSpan="10" id="control-bar">
+        <div nz-row nzJustify="space-between" nzAlign="middle">
+          <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+            <span nz-icon nzType="home" nzTheme="outline"></span>
+          </button>
+          <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+            <span nz-icon nzType="redo" nzTheme="outline"></span>
+          </button>
+          <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+            <span nz-icon nzType="pause-circle" nzTheme="outline"></span>
+          </button>
+          <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+            <span nz-icon nzType="stop" style="color: var(--accent-color-warning)"></span>
+          </button>
+          <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+            <span nz-icon nzType="plus-circle" nzTheme="outline" style="color: var(--accent-color-success)"></span>
+          </button>
+          <button nz-button nzType="text" nzShape="circle" class="control-btn" nzSize="large">
+            <span nz-icon nzType="download" nzTheme="outline"></span>
+          </button>
+        </div>
+      </nz-col>
+    </div>
+    <nz-row nzJustify="space-between" nzAlign="top">
+      <nz-col nzSpan="8">
+        <nz-row>
+          <nz-col nzSpan="24" id="app-card-col">
+            <app-application-card [application]="application" cardWidth="100%" style="width: 100%; display: block"></app-application-card>
+          </nz-col>
+        </nz-row>
+        <div nz-row id="progress-bar-section" nzJustify="space-around" nzAlign="middle" *ngIf="application.isRunning">
+          <nz-col nzSpan="10">
+            <nz-row class="sub-progress-bar-section">
+              <span class="text-subtitle"><b>Overall Throughput</b></span>
+            </nz-row>
+            <nz-row nzJustify="center" nzAlign="middle">
+              <nz-col nzSpan="24" class="progress-bar-col" #progressBarCol>
+                <nz-progress
+                  [nzWidth]="progressBarWidth"
+                  nzType="circle"
+                  [nzPercent]="100"
+                  [nzStrokeColor]="{ '0%': '#8BDB4D', '50%': '#73B540', '100%': '#69A53A' }"
+                  [nzStrokeWidth]="16"
+                  [nzFormat]="overallThroughput"
+                  nzStatus="active"
+                ></nz-progress>
+              </nz-col>
+            </nz-row>
+          </nz-col>
+          <nz-col nzSpan="10">
+            <nz-row class="sub-progress-bar-section">
+              <span class="text-subtitle"><b>Processing Latency</b></span>
+            </nz-row>
+            <nz-row nzJustify="center" nzAlign="middle">
+              <nz-col nzSpan="24" class="progress-bar-col">
+                <nz-progress
+                  [nzWidth]="progressBarWidth"
+                  nzType="circle"
+                  [nzPercent]="100"
+                  [nzStrokeColor]="{ '0%': '#0FB2E5', '50%': '#0D93BD', '100%': '#0C86AC' }"
+                  [nzStrokeWidth]="16"
+                  [nzFormat]="processingLatency"
+                  nzStatus="active"
+                ></nz-progress>
+              </nz-col>
+            </nz-row>
+          </nz-col>
+        </div>
+      </nz-col>
+      <!--    Information Showcase    -->
+      <nz-col nzSpan="15">
+        <app-application-board [application]="application" style="width: 100%; display: block; margin-bottom: 16px"></app-application-board>
+      </nz-col>
+    </nz-row>
+    <nz-row *ngIf="application && !application.isRunning">
+      <app-finished-statistics-board style="width: 100%; display: block" [job]="application"></app-finished-statistics-board>
+    </nz-row>
+  </nz-content>
+</div>

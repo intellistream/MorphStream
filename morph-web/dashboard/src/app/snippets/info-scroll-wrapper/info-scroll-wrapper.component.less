@@ -1,0 +1,99 @@
+.info-scroll-wrapper {
+  position: relative;
+}
+
+.left-button {
+  left: 0;
+  margin-right: 10px;
+}
+
+.right-button {
+  right: 0;
+  margin-left: 10px;
+}
+
+.scroll-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  background-color: rgba(128, 128, 128, 0.5);
+  border: none;
+  cursor: pointer;
+  width: 40px;
+  height: 60px;
+}
+
+.scroll-button:hover {
+  background-color: rgba(128, 128, 128, 0.8);
+}
+
+.scroll-container {
+  white-space: nowrap;
+  overflow-x: auto;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.scroll-container::-webkit-scrollbar{
+  display: none;
+}
+
+.operator-container {
+  font-size: var(--title-tertiary);
+}
+
+.info-container {
+  font-size: var(--text-body);
+}
+
+.scroll-item-title {
+  width: 100px;
+  display: inline-block;
+  white-space: normal;
+  margin-left: 40px;
+  margin-right: 40px;
+}
+
+.scroll-item {
+  display: inline-block;
+  white-space: normal;
+  vertical-align: middle;
+}
+
+.scroll-item-text {
+  width: 160px;
+  display: inline-block;
+  padding: 20px 30px;
+  border: var(--border-accent-b) solid 3px;
+  font-size: var(--text-body);
+  border-radius: 10px;
+  vertical-align: middle;
+  text-align: center;
+  cursor: pointer;
+}
+
+.scroll-item-sub-text {
+  width: 160px;
+  display: inline-block;
+  padding: 2px 30px;
+  margin-right: 40px;
+  text-align: center;
+}
+
+.arrow {
+  display: inline-block;
+  font-size: 40px;
+  font-weight: 700;
+  font-family: "Proxima Nova", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  vertical-align: middle;
+}
+
+.scroll-item-sub-title {
+  width: 140px;
+  display: inline-block;
+  margin-left: 20px;
+  margin-right: 20px;
+  margin-top: 20px;
+}
+
