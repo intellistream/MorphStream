@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {Websocket} from "../../services/utils/websocket";
 import {Observable} from "rxjs";
 import {Application} from "../../model/Application";
-import {DetailedInfoRequest} from "../../DTO/DetailedInfoRequest";
+import {DetailedInfoRequest} from "../../dto/DetailedInfoRequest";
 
 @Injectable({
   providedIn: 'root'

@@ -9,9 +9,6 @@ import java.util.*;
 import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.kMaxThreadNum;
 
 public class Metrics {
-    public static final DescriptiveStatistics usedMemory = new DescriptiveStatistics();
-    public static final DescriptiveStatistics SSDBandwidth = new DescriptiveStatistics();
-    public static final DescriptiveStatistics usedFileSize = new DescriptiveStatistics();
     public static int COMPUTE_COMPLEXITY = 10;//default setting. 1, 10, 100
     public static int POST_COMPUTE_COMPLEXITY = 1;
     //change to 3 for S_STORE testing.
@@ -21,6 +18,10 @@ public class Metrics {
     public static Timer timer = new Timer();
     public static String directory;
     public static String fileNameSuffix;
+
+    public static final DescriptiveStatistics usedMemory = new DescriptiveStatistics();
+    public static final DescriptiveStatistics SSDBandwidth = new DescriptiveStatistics();
+    public static final DescriptiveStatistics usedFileSize = new DescriptiveStatistics();
 
     public static void RESET_COUNTERS(int thread_id) {
         //reset accumulative counters.
