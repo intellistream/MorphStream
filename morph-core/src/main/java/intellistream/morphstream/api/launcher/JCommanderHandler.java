@@ -30,29 +30,35 @@ import static intellistream.morphstream.util.FaultToleranceConstants.LOGOption_c
 
 public class JCommanderHandler {
     private static final Logger LOG = LoggerFactory.getLogger(JCommanderHandler.class);
+
     /**
-     * Workload Specific Parameters.
+     * System configurations
      */
-    @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
-    public String application = "StreamLedger";
-    //public String application = "SHJ";
-    //public String application = "GrepSum";
-    //public String application = "WindowedGrepSum";
-    //public String application = "OnlineBiding";
-    //public String application = "TollProcessing";
-    @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
-    public String topologyName;
-    @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
-    public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
-    @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
-    public int POST_COMPUTE = 0;// 1, 10, 100
-    @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
-    public int NUM_ITEMS = 100_000;//
-    //    public int NUM_ITEMS = 500;//
-    @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
-    public int NUM_ACCESS = 5;//
-    @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
-    public double ratio_of_read = 0.0; //<=1
+    @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
+    public int CCOption = Constants.CCOption_MorphStream;
+//    public int CCOption = CCOption_SStore;
+//    public int CCOption = CCOption_LOCK;
+    @Parameter(names = {"--generator"}, description = "Generator for TStream.")
+    public String generator = "TPGGenerator";
+//    public String generator = "OCGenerator";
+    @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
+    public boolean linked = false;
+    @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
+    public boolean shared = true;
+    @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
+    public boolean enable_partition = false;
+    @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
+    public int batch = 1;
+    @Parameter(names = {"--tthread"}, description = "total execution threads")
+    public int tthread = 4;// default total execution threads
+    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
+    public int checkpoint_interval = 2500;//checkpoint per thread.
+    @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
+    public String fanoutDist = "uniform";
+    @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
+    public String idGenType = "uniform";
+    @Parameter(names = {"--isCyclic"}, description = "isCyclic of generated OC.")
+    public int isCyclic = 0;
     @Parameter(names = {"--ratio_of_multi_partition"}, description = "ratio_of_multi_partition")
     public double ratio_of_multi_partition = 0; //<=1
     @Parameter(names = {"--number_partitions"}, description = "number_partitions")
@@ -61,31 +67,19 @@ public class JCommanderHandler {
     public double theta = 0.6; //0.6==medium contention
     @Parameter(names = {"--size_tuple"}, description = "size_tuple (number of elements in state)")
     public int size_tuple = 0;
-    /**
-     * System Tuning Parameters.
-     */
-    @Parameter(names = {"--linked"}, description = "Communication Queue as Linked List or Array (default).")
-    public boolean linked = false;
-    @Parameter(names = {"--shared"}, description = "Communication Queue  is shared (default) by multi producers.")
-    public boolean shared = true;
-    @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
-    public int batch = 1;
     @Parameter(names = {"-queue_size"}, description = "Output queue size limit.", required = false)
     public int queue_size = 10000;
+    @Parameter(names = {"-t", "--topology-name"}, required = false, description = "The name of the application")
+    public String topologyName;
+
+
+
     /**
-     * TStream Specific Parameters.
+     * Scheduling configurations
      */
-    @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 4;// default total execution threads
-    @Parameter(names = {"--CCOption"}, description = "Selecting different concurrency control options.")
-    public int CCOption = Constants.CCOption_MorphStream;
-    //    public int CCOption = CCOption_SStore;
-//    public int CCOption = CCOption_LOCK;
-    @Parameter(names = {"--partition"}, description = "Partitioning database. It must be enabled for S-Store scheme and it is optional for TStream scheme.")
-    public boolean enable_partition = false;
     @Parameter(names = {"--scheduler"}, description = "Scheduler for TStream.")
     public String scheduler = "OP_BFS_A";
-    //public String scheduler = "OG_BFS_A";
+    //    public String scheduler = "OG_BFS_A";
 //    public String scheduler = "OG_DFS";
 //    public String scheduler = "OG_DFS_A";
 //    public String scheduler = "OG_NS";
@@ -97,14 +91,6 @@ public class JCommanderHandler {
 //    public String scheduler = "OP_DFS";
 //    public String scheduler = "OP_DFS_A";
 //    public String scheduler = "TStream";
-    @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
-    public String fanoutDist = "uniform";
-    @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
-    public String idGenType = "uniform";
-
-    /**
-     * Dynamic Scheduler
-     */
     @Parameter(names = {"--isRuntime"}, description = "Collect runtime information")
     public boolean isRuntime = false;
     @Parameter(names = {"--isDynamic"}, description = "Dynamic Workload")
@@ -117,17 +103,8 @@ public class JCommanderHandler {
     public String bottomLine = "";
     @Parameter(names = {"--WorkloadConfig"}, description = "WorkloadConfigs(TD,LD,PD,VDD,R_of_A,isCD,isCC,markId)")
     public String WorkloadConfig = "";
-
     /**
-     * Dynamic workload
-     */
-    @Parameter(names = {"--shiftRate"}, description = "control the rate of the workload shift")
-    public int shiftRate = 1;
-    @Parameter(names = {"--phaseNum"}, description = "How many phases")
-    public int phaseNum = 1;
-
-    /**
-     * Scheduler for group
+     * Scheduler for group configurations
      */
     @Parameter(names = {"--isGroup"}, description = "Group for TP")
     public int isGroup = 0;
@@ -140,83 +117,64 @@ public class JCommanderHandler {
     @Parameter(names = {"--high_abort_ratio"}, description = "abort ratio for groups")
     public Integer Ratio_of_Transaction_Aborts_Highest = 0;
 
-    /**
-     * Benchmarking Specific Parameters.
-     */
-    @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
-    public String configStr;
-    @Parameter(names = {"--measure"}, description = "enable measurement")
-    public boolean enable_measurement = false;
-    @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
-    @Parameter(names = {"-mp"}, description = "Metric path", required = false)
-    public String metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
-    @Parameter(names = {"--machine"}, description = "which machine to use? 0 (default): a simple one-socket machine with four cores. Add your machine specification accordingly and select them by change this specification")
-    public int machine = 0;
-    @Parameter(names = {"-r", "--runtime"}, description = "Runtime in seconds for the Brisk.topology (local mode only)")
-    public int runtimeInSeconds = 30;
-    @Parameter(names = {"--verbose"}, description = "whether print execution detail")
-    public boolean verbose = false;
+
+
 
     /**
-     * generator parameters
+     * Workload tuning configurations
      */
-    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 2500;//checkpoint per thread.
-    @Parameter(names = {"--generator"}, description = "Generator for TStream.")
-    public String generator = "TPGGenerator";
-    //    public String generator = "OCGenerator";
-
+    @Parameter(names = {"-a", "--app"}, description = "The application to be executed")
+    public String application = "StreamLedger";
+//    public String application = "SHJ";
+//    public String application = "GrepSum";
+//    public String application = "WindowedGrepSum";
+//    public String application = "OnlineBiding";
+//    public String application = "TollProcessing";
+    @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
+    public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
+    @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
+    public int POST_COMPUTE = 0;// 1, 10, 100
+    @Parameter(names = {"--NUM_ACCESS"}, description = "Number of state access per transaction")
+    public int NUM_ACCESS = 5;//
+    @Parameter(names = {"--ratio_of_read"}, description = "ratio_of_read")
+    public double ratio_of_read = 0.0; //<=1
     @Parameter(names = {"--deposit_ratio"}, description = "Ratio of deposit for SL.")
     public Integer Ratio_Of_Deposit = 25;
-
     @Parameter(names = {"--buying_ratio"}, description = "Ratio of buying for OB.")
     public Integer Ratio_Of_Buying = 25;
-
     @Parameter(names = {"--key_skewness"}, description = "State access skewness.")
     public Integer State_Access_Skewness = 20;
-
     @Parameter(names = {"--multiple_ratio"}, description = "State access skewness.")
     public Integer Ratio_of_Multiple_State_Access = 100;
-
     @Parameter(names = {"--overlap_ratio"}, description = "Ratio of overlapped keys.")
     public Integer Ratio_of_Overlapped_Keys = 10;
-
     @Parameter(names = {"--abort_ratio"}, description = "Ratio of transaction aborts.")
     public Integer Ratio_of_Transaction_Aborts = 0;
-
     @Parameter(names = {"--window_trigger_period"}, description = "Ratio of window events in the transaction.")
     public Integer Period_of_Window_Reads = 1024;
-
     @Parameter(names = {"--window_size"}, description = "Window Size for the window operations.")
     public Integer windowSize = 1024;
     @Parameter(names = {"--nondeterministic_ratio"}, description = "Ratio_of_Non_Deterministic_State_Access.(10 -> 0.01%)")
     public Integer Ratio_of_Non_Deterministic_State_Access = 0;
-
     @Parameter(names = {"--txn_length"}, description = "Transaction Length.")
     public Integer Transaction_Length = 1;
-
     @Parameter(names = {"--numberOfDLevels"}, description = "Maximum number of input data dependency levels.")
     public Integer numberOfDLevels = 1024;
-
-    @Parameter(names = {"--isCyclic"}, description = "isCyclic of generated OC.")
-    public int isCyclic = 0;
-
     @Parameter(names = {"--complexity"}, description = "Dummy UDF complexity for state access process.")
     public Integer complexity = 0;
+    /**
+     * Dynamic workload
+     */
+    @Parameter(names = {"--shiftRate"}, description = "control the rate of the workload shift")
+    public int shiftRate = 1;
+    @Parameter(names = {"--phaseNum"}, description = "How many phases")
+    public int phaseNum = 1;
+
+
 
     /**
-     * Evaluation parameters
+     * Fault tolerance configurations
      */
-    @Parameter(names = {"--multicoreEvaluation"}, description = "Evaluation the multicoreScalability. Default to be false.")
-    public Integer multicoreEvaluation = 0;
-    @Parameter(names = {"--maxThreads"}, description = "Evaluation the multicoreScalability. The max number of threads.")
-    public Integer maxThreads = 24;
-    //SystemOverhead
-    @Parameter(names = {"--cleanUp"}, description = "Whether to clean temporal objects. Default to be false.")
-    public Integer cleanUp = 0;
-
-    /* Fault Tolerance */
     @Parameter(names = {"--FTOption"}, description = "Fault tolerance mechanisms: 0 for noFT, 1 for checkpoint, 2 for wal, ")
     public Integer FTOption = 0;
     @Parameter(names = {"--compressionAlg"}, description = "compression Alg: ")
@@ -247,7 +205,13 @@ public class JCommanderHandler {
     @Parameter(names = {"--maxItr"}, description = "Max itr for graph partition alg: ")
     public int maxItr = 10;
 
-    //Database configurations
+
+
+    /**
+     * Database configurations
+     */
+    @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
+    public int NUM_ITEMS = 100_000;//number of records in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
     public String tableNames = "table1,table2";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
@@ -258,7 +222,14 @@ public class JCommanderHandler {
     public String valueDataTypesForTables = "int,int";
     @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
     public String valueNamesForTables = "value1,value2";
-    //Input event configurations
+
+
+
+    /**
+     * Input configurations
+     */
+    @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
+    public String configStr; //TODO: if config string specified, load configs from the file using loadProperties()
     @Parameter(names = {"--inputFileType"}, description = "input file type, [txt, csv, json]")
     public int inputFileType = 0;
     @Parameter(names = {"--inputFile"}, description = "path of input file ")
@@ -286,9 +257,40 @@ public class JCommanderHandler {
     @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
     public String stateAccessSkewnessForEvents = "0.5,0.5";
 
-    //Client
+
+
+    /**
+     * Benchmarking and evaluation parameters
+     */
+    @Parameter(names = {"--measure"}, description = "enable measurement")
+    public boolean enable_measurement = false;
+    @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
+    @Parameter(names = {"-mp"}, description = "Metric path", required = false)
+    public String metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
+    @Parameter(names = {"--machine"}, description = "which machine to use? 0 (default): a simple one-socket machine with four cores. Add your machine specification accordingly and select them by change this specification")
+    public int machine = 0;
+    @Parameter(names = {"-r", "--runtime"}, description = "Runtime in seconds for the Brisk.topology (local mode only)")
+    public int runtimeInSeconds = 30;
+    @Parameter(names = {"--verbose"}, description = "whether print execution detail")
+    public boolean verbose = false;
+    @Parameter(names = {"--multicoreEvaluation"}, description = "Evaluation the multicoreScalability. Default to be false.")
+    public Integer multicoreEvaluation = 0;
+    @Parameter(names = {"--maxThreads"}, description = "Evaluation the multicoreScalability. The max number of threads.")
+    public Integer maxThreads = 24;
+    //SystemOverhead
+    @Parameter(names = {"--cleanUp"}, description = "Whether to clean temporal objects. Default to be false.")
+    public Integer cleanUp = 0;
+
+
+
+    /**
+     * Client configurations
+     */
     @Parameter(names = {"--clientClassName"}, description = "Client class name, used for UDF Reflection")
-    public String clientClassName = "Client";
+    public String clientClassName = "SLClient";
+
+
 
     public JCommanderHandler() {}
 
@@ -303,8 +305,137 @@ public class JCommanderHandler {
 
     public void initializeCfg(Configuration config) {
         assert config != null;
+        /* Client configurations */
         config.put("clientClassName", clientClassName);
-        //Database configuration
+
+        /* System configurations */
+        config.put("CCOption", CCOption);
+        config.put("generator", generator);
+        config.put("linked", linked);
+        config.put("shared", shared);
+        if (CCOption == 4)//S-Store enabled.
+            config.put("partition", true);
+        else
+            config.put("partition", enable_partition);
+        if (batch != -1) {
+            config.put("batch", batch);
+        }
+        config.put("tthread", tthread);
+        config.put("checkpoint", checkpoint_interval);
+        config.put("fanoutDist", fanoutDist);
+        config.put("idGenType", idGenType);
+        if (isCyclic == 1) {
+            config.put("isCyclic", true);
+        } else {
+            config.put("isCyclic", false);
+        }
+        config.put("ratio_of_multi_partition", ratio_of_multi_partition);
+        config.put("number_partitions", number_partitions);
+        config.put("theta", theta);
+        config.put("size_tuple", size_tuple);
+        config.put("queue_size", queue_size);
+
+        /* Dynamic switch scheduler */
+        if (isDynamic == 1) {
+            config.put("isDynamic", true);
+            //config.put("totalEvents", phaseNum * tthread * checkpoint_interval);
+            config.put("schedulersPool", schedulerPools);
+            config.put("defaultScheduler", defaultScheduler);
+            config.put("scheduler", defaultScheduler);
+            config.put("isRuntime", isRuntime);
+            config.put("bottomLine", bottomLine);
+            config.put("WorkloadConfig", WorkloadConfig);
+        } else {
+            config.put("isDynamic", false);
+            config.put("scheduler", scheduler);
+        }
+        // Group scheduler
+        if (isGroup == 1) {
+            config.put("isGroup", true);
+            config.put("groupNum",groupNum);
+            config.put("SchedulersForGroup",SchedulersForGroup);
+            config.put("totalEvents",phaseNum * tthread * checkpoint_interval);
+            config.put("skewGroup",skewGroup);
+            config.put("Ratio_of_Transaction_Aborts_Highest",Ratio_of_Transaction_Aborts_Highest);
+        } else {
+            config.put("isGroup", false);
+            config.put("groupNum",1);
+        }
+
+        /* Workload configurations */
+        config.put("common", application);
+        config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
+        config.put("POST_COMPUTE", POST_COMPUTE);
+        config.put("NUM_ACCESS", NUM_ACCESS);
+        if (application.equals("OnlineBiding")){
+            config.put("Ratio_Of_Buying", Ratio_Of_Buying);
+        }else {
+            config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        }
+        config.put("State_Access_Skewness", State_Access_Skewness);
+        config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
+        config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
+        config.put("Period_of_Window_Reads", Period_of_Window_Reads);
+        config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
+        config.put("Transaction_Length", Transaction_Length);
+        config.put("Ratio_of_Non_Deterministic_State_Access", Ratio_of_Non_Deterministic_State_Access);
+        config.put("complexity", complexity);
+        config.put("windowSize", windowSize);
+        config.put("numberOfDLevels", numberOfDLevels);
+        config.put("ratio_of_read", ratio_of_read);
+        // Dynamic workload configurations
+        config.put("shiftRate", shiftRate);
+        config.put("phaseNum", phaseNum);
+
+
+        /* Fault tolerance configurations */
+        config.put("FTOption", FTOption);
+        config.put("parallelNum", tthread);
+        config.put("compressionAlg", compressionAlg);
+        config.put("snapshotInterval", snapshotInterval);
+        config.put("arrivalRate", arrivalRate);
+        config.put("failureTime", failureTime);
+        config.put("measureInterval", measureInterval);
+        config.put("maxItr",maxItr);
+        // Fault tolerance relax
+        if (isHistoryView == 0) {
+            config.put("isHistoryView", false);
+        } else {
+            config.put("isHistoryView", true);
+        }
+        if (isAbortPushDown == 0) {
+            config.put("isAbortPushDown", false);
+        } else {
+            config.put("isAbortPushDown", true);
+        }
+        if (isTaskPlacing == 0) {
+            config.put("isTaskPlacing", false);
+        } else {
+            config.put("isTaskPlacing", true);
+        }
+        if (isSelectiveLogging == 0) {
+            config.put("isSelectiveLogging", false);
+        } else {
+            config.put("isSelectiveLogging", true);
+        }
+        if (arrivalControl == 0) {
+            config.put("arrivalControl", false);
+        } else {
+            config.put("arrivalControl", true);
+        }
+        if (isRecovery == 0) {
+            config.put("isRecovery", false);
+        } else {
+            config.put("isRecovery", true);
+        }
+        if (isFailure == 0) {
+            config.put("isFailure", false);
+        } else {
+            config.put("isFailure", true);
+        }
+
+        /* Database configurations */
+        config.put("NUM_ITEMS", NUM_ITEMS);
         config.put("tableNames", tableNames);
         String[] tableNameString = tableNames.split(",");
         for (int i = 0; i < tableNameString.length; i ++) {
@@ -313,7 +444,8 @@ public class JCommanderHandler {
             config.put(tableNameString[i] + "_value_data_types", valueDataTypesForTables.split(",")[i]);
             config.put(tableNameString[i] + "_value_names", valueNamesForTables.split(",")[i]);
         }
-        //Input events configuration
+
+        /* Input configurations */
         config.put("inputFileType", inputFileType);
         config.put("inputFile", inputFile);
         config.put("inputFileName", inputFileName);
@@ -331,7 +463,26 @@ public class JCommanderHandler {
             config.put(eventTypeString[i] + "_state_access_skewness", stateAccessSkewnessForEvents.split(",")[i]);
         }
 
+        /* Benchmarking and evaluation configurations */
+        config.put("measure", enable_measurement);
+        config.put("machine", machine);
+        config.put("rootFilePath", rootPath);
+        config.put("metrics.output", metric_path);
+        config.put("verbose", verbose);
+        config.put("runtimeInSeconds", runtimeInSeconds);
+        if (multicoreEvaluation == 0) {
+            config.put("multicoreEvaluation",false);
+        } else {
+            config.put("multicoreEvaluation",true);
+        }
+        config.put("maxThreads",maxThreads);
+        if (cleanUp == 0) {
+            config.put("cleanUp",false);
+        } else {
+            config.put("cleanUp",true);
+        }
     }
+
     private void configSystem(Configuration config) {
         //Add platform specific configurations
         //Configure Database Content Type

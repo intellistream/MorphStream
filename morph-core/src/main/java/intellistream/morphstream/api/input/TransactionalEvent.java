@@ -17,14 +17,14 @@ public class TransactionalEvent extends TxnEvent {
     private HashMap<String, Object> valueMap; //<valueName, value>
     private HashMap<String, String> valueTypeMap; //<valueName, valueDataType>
     private String flag; //E.g., "Deposit" or "Transfer"
-    private Boolean isAbort = false;
+    private boolean isAbort = false;
 
     public TransactionalEvent(long bid,
                               HashMap<String, List<String>> keyMap,
                               HashMap<String, Object> valueMap,
                               HashMap<String, String> valueTypeMap,
                               String flag,
-                              Boolean isAbort) {
+                              boolean isAbort) {
         super(bid);
         this.keyMap = keyMap;
         this.valueMap = valueMap;

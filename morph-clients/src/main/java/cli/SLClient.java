@@ -77,7 +77,8 @@ public class SLClient extends Client {
 
     public static void main(String[] args) throws Exception {
         CliFrontend SLClient = CliFrontend.getOrCreate().appName("SLClient");
-        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
+//        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
+        SLClient.LoadConfiguration(null, args); //TODO: add loadConfig from file
         SLClient.prepare();
 
         //Initialize transactions for Combo to execute
