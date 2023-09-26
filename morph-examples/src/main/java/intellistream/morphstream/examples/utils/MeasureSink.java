@@ -1,5 +1,7 @@
 package intellistream.morphstream.examples.utils;
 
+import intellistream.morphstream.engine.stream.components.context.TopologyContext;
+import intellistream.morphstream.engine.stream.execution.runtime.collector.OutputCollector;
 import intellistream.morphstream.examples.tsp.tollprocessing.util.datatype.util.LRTopologyControl;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.configuration.Constants;
@@ -18,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.Map;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
 import static intellistream.morphstream.configuration.Constants.CCOption_SStore;
@@ -76,6 +79,11 @@ public class MeasureSink extends BaseSink {
             setMetricDirectory(config);
         SINK_CONTROL.getInstance().config();
         if (enable_log) LOG.info("expected last events = " + totalEvents);
+    }
+
+    @Override
+    public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
+
     }
 
     @Override

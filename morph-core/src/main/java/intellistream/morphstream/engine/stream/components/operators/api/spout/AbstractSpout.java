@@ -26,13 +26,13 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
     public GeneralMsg generalMsg;
     public Tuple tuple;
     public Tuple marker;
+    public int taskId;
+    protected int ccOption;
     protected int myiteration = 0;//start from 1st iteration.
+    public long systemStartTime;
     protected AbstractSpout(Logger log, int fid) {
         super(log, 1);
         this.fid = fid;
-    }
-    public void nextTuple() throws InterruptedException{
-        //TODO:
     }
     @Override
     public boolean model_switch(int counter) {
@@ -45,7 +45,10 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
         totalEventsPerBatch = config.getInt("totalEvents");
         tthread = config.getInt("tthread");
         inputQueue = MorphStreamEnv.get().inputSource().getInputQueue(thread_Id);
+        ccOption = config.getInt("CCOption", 0);
+        taskId = getContext().getThisTaskIndex();//context.getThisTaskId(); start from 0..
     }
+    public abstract void nextTuple() throws InterruptedException;
     @Override
     public void loadDB(Map conf, TopologyContext context, OutputCollector collector) {
         throw new UnsupportedOperationException();

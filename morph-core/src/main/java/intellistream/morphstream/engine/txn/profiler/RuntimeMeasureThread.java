@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.profiler;
 
+import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.delete.TransactionalBolt;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
@@ -7,9 +8,9 @@ class RuntimeMeasureThread implements Runnable {
     private String operatorID;
     private int threadID;
     private boolean signaled;
-    TransactionalBolt bolt;
+    AbstractBolt bolt;
 
-    public RuntimeMeasureThread(String operatorID, int threadID, TransactionalBolt bolt) {
+    public RuntimeMeasureThread(String operatorID, int threadID, AbstractBolt bolt) {
         this.operatorID = operatorID;
         this.threadID = threadID;
         this.bolt = bolt;
@@ -33,8 +34,8 @@ class RuntimeMeasureThread implements Runnable {
                 double throughputStats = bolt.getThroughputStats();
 
                 // Send the info back to the manager
-                Metrics.RuntimeManager.updateLatencyStats(operatorID, threadID, latencyStats);
-                Metrics.RuntimeManager.updateThroughputStats(operatorID, threadID, throughputStats);
+//                Metrics.RuntimeManager.updateLatencyStats(operatorID, threadID, latencyStats);
+//                Metrics.RuntimeManager.updateThroughputStats(operatorID, threadID, throughputStats);
             }
         } catch (InterruptedException e) {
             e.printStackTrace();

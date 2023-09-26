@@ -19,4 +19,9 @@ public class ApplicationSpout extends AbstractSpout {
             this.rdmaShuffleManager = new RdmaShuffleManager(new RdmaShuffleConf(conf), conf.getBoolean("isDriver"));
         }
     }
+
+    @Override
+    public void nextTuple() throws InterruptedException {
+        //TODO: implement nextTuple for non-combo spout
+    }
 }

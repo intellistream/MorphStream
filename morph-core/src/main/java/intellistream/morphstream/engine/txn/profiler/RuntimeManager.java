@@ -25,19 +25,19 @@ class RuntimeManager {
 
     public void Initialize(Topology topology) {
         threadPool = new ThreadPoolExecutor(kMaxThreadNum, kMaxThreadNum, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        for (String operatorID : topology.getComponentIds()) {
-            int numThreads = topology.getComponent(operatorID).getNumTasks();
-            measureThreadsMap.put(operatorID, new RuntimeMeasureThread[numThreads]);
-            latencyMap.put(operatorID, new DescriptiveStatistics[numThreads]);
-            throughputMap.put(operatorID, new ArrayList<>());
-
-            for (int threadID = 0; threadID < numThreads; threadID++) {
-                latencyMap.get(operatorID)[threadID] = new DescriptiveStatistics();
-                TransactionalBolt bolt = (TransactionalBolt) topology.getComponent(operatorID).getOp(); //TODO: Get bolt thread from topology
-                measureThreadsMap.get(operatorID)[threadID] = new RuntimeMeasureThread(operatorID, threadID, bolt);
-                threadPool.execute(measureThreadsMap.get(operatorID)[threadID]);
-            }
-        }
+//        for (String operatorID : topology.getComponentIds()) {
+//            int numThreads = topology.getComponent(operatorID).getNumTasks();
+//            measureThreadsMap.put(operatorID, new RuntimeMeasureThread[numThreads]);
+//            latencyMap.put(operatorID, new DescriptiveStatistics[numThreads]);
+//            throughputMap.put(operatorID, new ArrayList<>());
+//
+//            for (int threadID = 0; threadID < numThreads; threadID++) {
+//                latencyMap.get(operatorID)[threadID] = new DescriptiveStatistics();
+//                TransactionalBolt bolt = (TransactionalBolt) topology.getComponent(operatorID).getOp(); //TODO: Get bolt thread from topology
+//                measureThreadsMap.get(operatorID)[threadID] = new RuntimeMeasureThread(operatorID, threadID, bolt);
+//                threadPool.execute(measureThreadsMap.get(operatorID)[threadID]);
+//            }
+//        }
 
         // Initialize AtomicBoolean to track whether a signal has been sent in this cycle
         signaled = new AtomicBoolean(false);

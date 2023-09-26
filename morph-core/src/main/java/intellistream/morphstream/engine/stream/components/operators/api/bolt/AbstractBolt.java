@@ -4,6 +4,7 @@ import intellistream.morphstream.engine.stream.components.operators.api.Operator
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.JumboTuple;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -21,4 +22,6 @@ public abstract class AbstractBolt extends Operator {
         }
     }
     public abstract void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException;
+    public abstract DescriptiveStatistics getLatencyStats();
+    public abstract double getThroughputStats();
 }

@@ -1,18 +1,26 @@
-package intellistream.morphstream.api.operator.bolt;
+package intellistream.morphstream.api.operator.bolt.ft;
 
 import intellistream.morphstream.api.Client;
 import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.output.Result;
-import intellistream.morphstream.api.state.*;
+import intellistream.morphstream.api.state.StateAccess;
+import intellistream.morphstream.api.state.StateAccessDescription;
+import intellistream.morphstream.api.state.StateObject;
+import intellistream.morphstream.api.state.StateObjectDescription;
 import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
+import intellistream.morphstream.engine.stream.execution.ExecutionGraph;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
+import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
+import intellistream.morphstream.engine.txn.durability.logging.LoggingResult.LoggingResult;
+import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.util.FaultToleranceConstants;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,27 +30,31 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.engine.txn.profiler.MeasureTools.BEGIN_SNAPSHOT_TIME_MEASURE;
 
-public class MorphStreamBolt extends AbstractMorphStreamBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
+public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBoltFT.class);
     private final HashMap<String, TxnDescription> txnDescriptionMap;//Transaction flag -> TxnDescription. E.g. "transfer" -> transferTxnDescription
     private final ArrayDeque<TransactionalEvent> eventQueue;//Transactional events deque
     private final HashMap<Long, HashMap<String,StateAccess>> eventStateAccessesMap;//{Event.bid -> {stateAccessName -> stateAccess}}. In fact, this maps each event to its txn.
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
+    public FTManager ftManager;
+    public FTManager loggingManager;
 
-    public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
+    public MorphStreamBoltFT(HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
         super(LOG, fid);
         this.txnDescriptionMap = txnDescriptionMap;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
-    public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap, int fid, AbstractSink sink) {
+    public MorphStreamBoltFT(HashMap<String, TxnDescription> txnDescriptionMap, int fid, AbstractSink sink) {
         super(LOG, fid);
         this.sink = sink;
         this.isCombo = true;
@@ -50,6 +62,13 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
+    }
+
+    @Override
+    public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
+        super.initialize(thread_Id, thisTaskId, graph);
+        this.ftManager = getContext().getFtManager();
+        this.loggingManager = getContext().getLoggingManager();
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
@@ -170,21 +189,45 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
-            MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
             {
                 transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
+                if (Objects.equals(in.getMarker().getMessage(), "snapshot")) {
+                    BEGIN_SNAPSHOT_TIME_MEASURE(this.thread_Id);
+                    this.db.asyncSnapshot(in.getMarker().getSnapshotId(), this.thread_Id, this.ftManager);
+                    MeasureTools.END_SNAPSHOT_TIME_MEASURE(this.thread_Id);
+                } else if (Objects.equals(in.getMarker().getMessage(), "commit") || Objects.equals(in.getMarker().getMessage(), "commit_early")) {
+                    MeasureTools.BEGIN_LOGGING_TIME_MEASURE(this.thread_Id);
+                    this.db.asyncCommit(in.getMarker().getSnapshotId(), this.thread_Id, this.loggingManager);
+                    MeasureTools.END_LOGGING_TIME_MEASURE(this.thread_Id);
+                } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot") || Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {
+                    MeasureTools.BEGIN_LOGGING_TIME_MEASURE(this.thread_Id);
+                    this.db.asyncCommit(in.getMarker().getSnapshotId(), this.thread_Id, this.loggingManager);
+                    MeasureTools.END_LOGGING_TIME_MEASURE(this.thread_Id);
+                    BEGIN_SNAPSHOT_TIME_MEASURE(this.thread_Id);
+                    this.db.asyncSnapshot(in.getMarker().getSnapshotId(), this.thread_Id, this.ftManager);
+                    MeasureTools.END_SNAPSHOT_TIME_MEASURE(this.thread_Id);
+                }
             }
-            MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
-            MeasureTools.BEGIN_POST_TIME_MEASURE(thread_Id);
+            if (Objects.equals(in.getMarker().getMessage(), "commit_early") || Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {
+                this.loggingManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new LoggingResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
+            }
             {
                 Transaction_Post_Process();
             }
-            MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
+            if (Objects.equals(in.getMarker().getMessage(), "snapshot")) {
+                this.ftManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new SnapshotResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
+            } else if (Objects.equals(in.getMarker().getMessage(), "commit")) {
+                this.loggingManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new LoggingResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
+            } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot")) {
+                this.ftManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new SnapshotResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
+                this.loggingManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new LoggingResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
+            } else if (Objects.equals(in.getMarker().getMessage(), "commit_snapshot_early")) {
+                this.ftManager.boltRegister(this.thread_Id, FaultToleranceConstants.FaultToleranceStatus.Commit, new SnapshotResult(in.getMarker().getSnapshotId(), this.thread_Id, null));
+            }
             {
                 eventQueue.clear();
                 eventStateAccessesMap.clear();
             }
-            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, numEvents);
         } else {
             execute_ts_normal(in);
         }
