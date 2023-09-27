@@ -6,7 +6,7 @@ import { NZ_I18N } from 'ng-zorro-antd/i18n';
 import { en_US } from 'ng-zorro-antd/i18n';
 import {NgOptimizedImage, registerLocaleData} from '@angular/common';
 import en from '@angular/common/locales/en';
-import { FormsModule } from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
@@ -38,6 +38,8 @@ import { NzDescriptionsModule } from "ng-zorro-antd/descriptions";
 import {NzDividerModule} from "ng-zorro-antd/divider";
 import {NzTableModule} from "ng-zorro-antd/table";
 import {NzUploadModule} from "ng-zorro-antd/upload";
+import {NzFormModule} from "ng-zorro-antd/form";
+import {NzSelectModule} from "ng-zorro-antd/select";
 
 registerLocaleData(en);
 
@@ -79,7 +81,10 @@ registerLocaleData(en);
     NzDescriptionsModule,
     NzDividerModule,
     NzTableModule,
-    NzUploadModule
+    NzUploadModule,
+    NzFormModule,
+    ReactiveFormsModule,
+    NzSelectModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
