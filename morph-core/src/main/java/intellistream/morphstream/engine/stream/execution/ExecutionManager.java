@@ -114,23 +114,22 @@ public class ExecutionManager {
                 int totalThread = conf.getInt("tthread");
                 int numberOfStates = conf.getInt("NUM_ITEMS");
                 String schedulerType = conf.getString("scheduler");
-                int app = conf.getInt("app");
                 TxnManager.loggingManager = db.getLoggingManager();
                 if (conf.getBoolean("isDynamic")) {
                     String schedulers = conf.getString("schedulersPool");
-                    TxnManager.initSchedulerPoolForDynamicWorkload(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates, app);
+                    TxnManager.initSchedulerPoolForDynamicWorkload(conf.getString("defaultScheduler"), schedulers, totalThread, numberOfStates);
                     //Configure the bottom line for triggering scheduler switching in Collector(include the isRuntime and when to switch)
                     TxnManager.setBottomLine(conf.getString("bottomLine"));
                     if (!conf.getBoolean("isRuntime")) {
                         TxnManager.setWorkloadConfig(conf.getString("WorkloadConfig"));
                     }
                 } else if (conf.getBoolean("isGroup")) {
-                    TxnManager.initSchedulersByGroupForMultipleWorkload(conf.getString("SchedulersForGroup"), totalThread, numberOfStates, app);
+                    TxnManager.initSchedulersByGroupForMultipleWorkload(conf.getString("SchedulersForGroup"), totalThread, numberOfStates);
                 } else {
-                    TxnManager.initScheduleForStaticWorkload(schedulerType, totalThread, numberOfStates, app);
+                    TxnManager.initScheduleForStaticWorkload(schedulerType, totalThread, numberOfStates);
                 }
                 if (conf.getBoolean("isRecovery")) {
-                    TxnManager.initRecoveryScheduler(conf.getInt("FTOption"), totalThread, numberOfStates, app);
+                    TxnManager.initRecoveryScheduler(conf.getInt("FTOption"), totalThread, numberOfStates);
                 }
             }
         }

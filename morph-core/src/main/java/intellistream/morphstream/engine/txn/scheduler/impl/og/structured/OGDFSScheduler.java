@@ -15,8 +15,8 @@ import java.util.Collection;
 public class OGDFSScheduler extends AbstractOGDFSScheduler<OGSContext> {
 
 
-    public OGDFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OGDFSScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     /**

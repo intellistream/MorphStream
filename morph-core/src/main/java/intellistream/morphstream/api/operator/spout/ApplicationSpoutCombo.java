@@ -44,9 +44,12 @@ public class ApplicationSpoutCombo extends AbstractSpoutCombo {
             }
             case CCOption_SStore:
                 bolt = new SStoreBolt(TxnDescriptionHashMap, 0, this.sink);
+                break;
             default:
                 if (enable_log) LOG.error("Please select correct CC option!");
+                break;
         }
+        bolt.prepare(conf, context, collector);
     }
     @Override
     public void nextTuple() throws InterruptedException {

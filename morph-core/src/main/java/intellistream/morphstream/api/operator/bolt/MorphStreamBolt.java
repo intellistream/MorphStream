@@ -135,7 +135,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                     Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
                     HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
                     // Option 1: Invoke postUDF using Interface
-                    udfResultReflect = clientObj.postUDF(stateAccesses);
+                    udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
                     // Option 2: Invoke postUDF using Method Reflection
 //                    String postUDFName = txnDescriptionMap.get(event.getFlag()).getPostUDFName();
 //                    Method postUDF = clientClass.getMethod(postUDFName, HashMap.class);

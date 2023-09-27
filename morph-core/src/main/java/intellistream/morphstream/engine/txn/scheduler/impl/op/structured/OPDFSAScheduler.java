@@ -23,8 +23,8 @@ public class OPDFSAScheduler<Context extends OPSAContext> extends OPDFSScheduler
     public final ConcurrentLinkedDeque<Operation> failedOperations = new ConcurrentLinkedDeque<>();//aborted operations per thread.
     public final AtomicBoolean needAbortHandling = new AtomicBoolean(false);//if any operation is aborted during processing.
 
-    public OPDFSAScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OPDFSAScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     /**

@@ -14,8 +14,8 @@ public class OGNSAScheduler extends AbstractOGNSScheduler<OGNSAContext> {
 
     public final ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
-    public OGNSAScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OGNSAScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     @Override

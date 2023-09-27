@@ -16,8 +16,8 @@ public class OPNSAScheduler<Context extends OPNSAContext> extends OPNSScheduler<
 
     public ExecutableTaskListener executableTaskListener = new ExecutableTaskListener();
 
-    public OPNSAScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OPNSAScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     @Override

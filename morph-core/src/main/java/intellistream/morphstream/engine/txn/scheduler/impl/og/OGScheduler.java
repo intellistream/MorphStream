@@ -1,6 +1,9 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.og;
 
 
+import intellistream.morphstream.api.Client;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
+import intellistream.morphstream.engine.txn.content.common.CommonMetaTypes;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingEntry.LogRecord;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.CommandLoggingManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.DependencyLoggingManager;
@@ -31,9 +34,11 @@ import intellistream.morphstream.util.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.AccessType.*;
 import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.defaultString;
@@ -47,9 +52,9 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
     public LoggingManager loggingManager; // Used by fault tolerance
     public int isLogging;// Used by fault tolerance
 
-    protected OGScheduler(int totalThreads, int NUM_ITEMS, int app) {
+    protected OGScheduler(int totalThreads, int NUM_ITEMS) {
         delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads); // Check id generation in DateGenerator.
-        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
+        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS);
     }
 
     /**
@@ -102,171 +107,6 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
 //        MeasureTools.SCHEDULE_TIME_RECORD(threadId, num_events);
     }
 
-    /**
-     * Transfer event processing
-     *
-     * @param operation
-     * @param previous_mark_ID
-     * @param clean
-     */
-    protected void Transfer_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        SchemaRecord preValues = operation.condition_records.get("default_key").content_.readPreValues(operation.bid);
-        final long sourceAccountBalance = preValues.getValues().get(1).getLong();
-
-        // apply function
-        AppConfig.randomDelay();
-
-        if (sourceAccountBalance > 100) {//Old conditions: event.getMinAccountBalance()(default=0), event.getAccountTransfer()(default=100)
-            // read
-            SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-            if (operation.stateAccess.getValue("function") == "INC") {
-                tempo_record.getValues().get(1).incLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
-            } else if (operation.stateAccess.getValue("function") == "DEC") {
-                tempo_record.getValues().get(1).decLong(sourceAccountBalance, (Long) operation.stateAccess.getValue("delta_long"));//compute.
-            } else
-                throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-        } else {
-            operation.isFailed.set(true);
-        }
-        if (!operation.isFailed.get()) {
-            if (isLogging == LOGOption_path && !operation.pKey.equals(preValues.GetPrimaryKey()) && !operation.isCommit) {
-                MeasureTools.BEGIN_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
-                int id = getTaskId(operation.pKey, delta);
-                this.loggingManager.addLogRecord(new HistoryLog(id, operation.table_name, operation.pKey, preValues.GetPrimaryKey(), operation.bid, sourceAccountBalance));
-                operation.isCommit = true;
-                MeasureTools.END_SCHEDULE_TRACKING_TIME_MEASURE(operation.context.thisThreadId);
-            }
-        }
-    }
-
-    /**
-     * Deposite event processing
-     *
-     * @param operation
-     * @param mark_ID
-     * @param clean
-     */
-    protected void Depo_Fun(Operation operation, long mark_ID, boolean clean) {
-        SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-        List<DataBox> values = srcRecord.getValues();
-        AppConfig.randomDelay();
-        //apply function to modify..
-        SchemaRecord tempo_record;
-        tempo_record = new SchemaRecord(values);//tempo record
-        tempo_record.getValues().get(1).incLong((Long) operation.stateAccess.getValue("delta_long"));//compute.
-        operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-    }
-
-    protected void GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        int keysLength = operation.condition_records.size();
-        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.size()];
-
-        long sum = 0;
-
-        // apply function
-        AppConfig.randomDelay();
-
-        int i = 0;
-        for (TableRecord tableRecord : operation.condition_records.values()) {
-            preValues[i] = tableRecord.content_.readPreValues(operation.bid);
-            sum += preValues[i].getValues().get(1).getLong();
-            i++;
-        }
-
-        sum /= keysLength;
-
-        if ((Long) operation.stateAccess.getValue("delta_long") != -1) {
-            // read
-            SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-            // apply function
-
-            if (operation.stateAccess.getValue("function") == "SUM") {
-//                tempo_record.getValues().get(1).incLong(tempo_record, sum);//compute.
-                tempo_record.getValues().get(1).setLong(sum);//compute.
-            } else
-                throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-        } else {
-            operation.isFailed.set(true);
-        }
-    }
-
-    protected void Non_GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        int keysLength = operation.condition_records.size();
-        SchemaRecord[] preValues = new SchemaRecord[operation.condition_records.size()];
-
-        long sum = 0;
-        // apply function
-        AppConfig.randomDelay();
-
-        int i = 0;
-        for (TableRecord tableRecord : operation.condition_records.values()) {
-            //Get Deterministic Key
-            preValues[i] = tableRecord.content_.readPreValues(operation.bid);
-            long value = preValues[i].getValues().get(1).getLong();
-            //Read the corresponding value
-            preValues[i] = operation.tables[i].SelectKeyRecord(String.valueOf(value)).content_.readPreValues(operation.bid);
-            i++;
-        }
-
-        sum /= keysLength;
-
-        if ((Long) operation.stateAccess.getValue("delta_long") != -1) {
-            // Get Deterministic Key
-            SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-            long srcValue = srcRecord.getValues().get(1).getLong();
-            // Read the corresponding value
-            SchemaRecord deterministicSchemaRecord = operation.tables[0].SelectKeyRecord(String.valueOf(srcValue)).content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(deterministicSchemaRecord);//tempo record
-            if (operation.stateAccess.getValue("function") == "SUM") {
-                tempo_record.getValues().get(1).setLong(sum);//compute.
-            } else
-                throw new UnsupportedOperationException();
-            // Get Deterministic Key
-            SchemaRecord disRecord = operation.d_record.content_.readPreValues(operation.bid);
-            long disValue = srcRecord.getValues().get(1).getLong();
-            // Read the corresponding value
-            TableRecord disDeterministicRecord = operation.tables[0].SelectKeyRecord(String.valueOf(disValue));
-            disDeterministicRecord.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-            operation.deterministicRecords = new TableRecord[1];
-            operation.deterministicRecords[0] = disDeterministicRecord;
-        } else {
-            operation.isFailed.set(true);
-        }
-    }
-
-    protected void Windowed_GrepSum_Fun(Operation operation, long previous_mark_ID, boolean clean) {
-        int keysLength = operation.condition_records.size();
-
-        long sum = 0;
-
-        // apply function
-        AppConfig.randomDelay();
-
-        for (TableRecord tableRecord : operation.condition_records.values()) {
-            assert operation.windowContext.isWindowed();
-            List<SchemaRecord> schemaRecordRange = tableRecord.content_.readPreValuesRange(operation.bid, operation.windowContext.getRange());
-            sum += schemaRecordRange.stream().mapToLong(schemaRecord -> schemaRecord.getValues().get(1).getLong()).sum();
-        }
-
-        sum /= keysLength;
-
-        if ((Long) operation.stateAccess.getValue("delta_long") != -1) { // TODO: we use the d_record to store the aggregated result here, will be optimized in the future.
-            // read
-            SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
-            SchemaRecord tempo_record = new SchemaRecord(srcRecord);//tempo record
-            if (operation.stateAccess.getValue("function") == "SUM") {
-                tempo_record.getValues().get(1).setLong(sum);//compute.
-            } else
-                throw new UnsupportedOperationException();
-            operation.d_record.content_.updateMultiValues(operation.bid, previous_mark_ID, clean, tempo_record);//it may reduce NUMA-traffic.
-        } else {
-            operation.isFailed.set(true);
-        }
-    }
 
     /**
      * general operation execution entry method for all schedulers.
@@ -288,85 +128,52 @@ public abstract class OGScheduler<Context extends OGSchedulerContext>
             commitLog(operation);
             return;
         }
-        if (operation.accessType.equals(READ_WRITE_COND_READ)) {
-            Transfer_Fun(operation, mark_ID, clean);
-            if (operation.stateAccess.getStateObject(defaultString) != null) {
-                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-        } else if (operation.accessType.equals(READ_WRITE_COND)) {
-            if (this.tpg.getApp() == 1) {//SL
-                Transfer_Fun(operation, mark_ID, clean);
-            } else {//OB
-                AppConfig.randomDelay();
-                List<DataBox> d_record = operation.condition_records.get(defaultString).content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType).getValues();
-                long askPrice = d_record.get(1).getLong();//price
-                long left_qty = d_record.get(2).getLong();//available qty;
-                long bidPrice = 100; //old condition: event.getBidPrice(i), default=100
-                long bid_qty = 1; //old condition: event.getBidQty(i)), default=1
-                if (bidPrice > askPrice || bid_qty < left_qty) {
-                    d_record.get(2).setLong(left_qty - (Long) operation.stateAccess.getValue("delta_long"));//new quantity.
-                } else {
-                    operation.isFailed.set(true);
-                }
-            }
-        } else if (operation.accessType.equals(READ_WRITE)) {
-            if (this.tpg.getApp() == 1) { //SL
-                Depo_Fun(operation, mark_ID, clean);
-            } else {
-                AppConfig.randomDelay();
-                SchemaRecord srcRecord = operation.d_record.content_.ReadAccess(operation.bid, mark_ID, clean, operation.accessType);
-                List<DataBox> values = srcRecord.getValues();
-                if (operation.stateAccess.getValue("function") == "INC") {
-                    values.get(2).setLong(values.get(2).getLong() + (Long) operation.stateAccess.getValue("delta_long"));
-                } else
-                    throw new UnsupportedOperationException();
-            }
-        } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {
-            GrepSum_Fun(operation, mark_ID, clean);
-            if (operation.stateAccess.getStateObject(defaultString) != null) {
-                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-        } else if (operation.accessType.equals(NON_READ_WRITE_COND_READN)) {
-            Non_GrepSum_Fun(operation, mark_ID, clean);
-            if (operation.stateAccess.getStateObject(defaultString) != null) {
-                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-            }
-        } else if (operation.accessType.equals(READ_WRITE_READ)) {
-            //TODO: implement the operation
-            assert operation.stateAccess.getStateObject(defaultString) != null;
-            AppConfig.randomDelay();
-            List<DataBox> srcRecord = operation.d_record.record_.getValues();
-            if (operation.stateAccess.getValue("function") == "AVG") {
-                if (true) { //TODO: Original condition: operation.condition.arg1 < operation.condition.arg2
-                    double latestAvgSpeeds = srcRecord.get(1).getDouble();
-                    double lav;
-                    if (latestAvgSpeeds == 0) {//not initialized
-                        lav = (double) operation.stateAccess.getValue("delta_double");
-                    } else
-                        lav = (latestAvgSpeeds + (double) operation.stateAccess.getValue("delta_double")) / 2;
 
-                    srcRecord.get(1).setDouble(lav);//write to state.
-                    operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new DoubleDataBox(lav)));//return updated record.
-                } else {
-                    operation.isFailed.set(true);
-                }
-            } else {
-                HashSet cnt_segment = srcRecord.get(1).getHashSet();
-                cnt_segment.add(operation.stateAccess.getValue("delta_int"));//update hashset; updated state also. TODO: be careful of this.
-                operation.stateAccess.getStateObject(defaultString).setSchemaRecord(new SchemaRecord(new IntDataBox(cnt_segment.size())));//return updated record.
-            }
-        } else if (operation.accessType.equals(WRITE_ONLY)) {
-            //OB-Alert
-            AppConfig.randomDelay();
-            operation.d_record.record_.getValues().get(1).setLong((Long) operation.stateAccess.getValue("ask_price")); //TODO: Refine it, used to be OBEvent.askPrice
-        } else if (operation.accessType.equals(WINDOWED_READ_ONLY)) {
-            assert operation.stateAccess.getStateObject(defaultString) != null;
-            AppConfig.randomDelay();
-            Windowed_GrepSum_Fun(operation, mark_ID, clean);
-            operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
-        } else {
-            throw new UnsupportedOperationException();
+        /**
+         * Start of newly defined txn execution logic
+         */
+        //Before executing udf, read schemaRecord from tableRecord and write into stateAccess. Applicable to all 6 types of operations.
+        for (Map.Entry<String, TableRecord> entry : operation.condition_records.entrySet()) {
+            SchemaRecord readRecord = entry.getValue().content_.readPreValues(operation.bid);
+            operation.stateAccess.getStateObject(entry.getKey()).setSchemaRecord(readRecord);
         }
+
+        //UDF updates operation.udfResult, which is the value to be written to writeRecord
+        boolean udfSuccess = false;
+        try {
+            Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
+            if (Client.class.isAssignableFrom(clientClass)) {
+                Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
+                udfSuccess = clientObj.transactionUDF(operation.stateAccess);
+            }
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (udfSuccess) {
+            if (operation.accessType == CommonMetaTypes.AccessType.WRITE
+                    || operation.accessType == CommonMetaTypes.AccessType.WINDOW_WRITE
+                    || operation.accessType == CommonMetaTypes.AccessType.NON_DETER_WRITE) {
+                //Update udf results to writeRecord
+                Object udfResult = operation.stateAccess.udfResult; //value to be written
+                SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
+                SchemaRecord tempo_record = new SchemaRecord(srcRecord);
+                //TODO: pass in the write object-type, avoid isInstanceOf check
+                tempo_record.getValues().get(1).setDouble((double) udfResult);
+                operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
+                //Assign updated schemaRecord back to stateAccess
+                operation.stateAccess.setUpdatedStateObject(tempo_record);
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        } else {
+            operation.isFailed.set(true);
+        }
+        /**
+         * End of newly defined txn execution logic
+         */
+
         commitLog(operation);
     }
 

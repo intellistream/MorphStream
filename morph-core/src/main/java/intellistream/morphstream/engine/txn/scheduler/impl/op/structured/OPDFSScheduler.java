@@ -10,8 +10,8 @@ public class OPDFSScheduler<Context extends OPSContext> extends OPSScheduler<Con
     private static final Logger log = LoggerFactory.getLogger(OPDFSScheduler.class);
 
 
-    public OPDFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OPDFSScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     /**

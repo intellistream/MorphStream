@@ -7,5 +7,5 @@ import java.util.HashMap;
 
 public abstract class Client {
     public abstract boolean transactionUDF(StateAccess access);
-    public abstract Result postUDF(HashMap<String, StateAccess> stateAccessMap);
+    public abstract Result postUDF(String txnFlag, HashMap<String, StateAccess> stateAccessMap);
 }

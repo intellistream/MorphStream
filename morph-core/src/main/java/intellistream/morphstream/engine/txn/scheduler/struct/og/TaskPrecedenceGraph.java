@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler.struct.og;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingEntry.PathRecord;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.scheduler.Request;
@@ -47,18 +48,17 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     private final int NUM_ITEMS;
     private final ConcurrentHashMap<String, TableOCs<OperationChain>> operationChains;//shared data structure.
     private final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;
-    private final int app;
     public ConcurrentHashMap<Integer, PathRecord> threadToPathRecord;// Used path logging
     public int isLogging = LOGOption_no;
     CyclicBarrier barrier;
     private int maxLevel = 0; // just for layered scheduling
+    private final String[] tableNames;
 
     /**
      * @param totalThreads
      * @param delta
-     * @param app
      */
-    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS, int app) {
+    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS) {
         barrier = new CyclicBarrier(totalThreads);
         this.totalThreads = totalThreads;
         this.delta = delta;
@@ -66,9 +66,9 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         threadToContextMap = new ConcurrentHashMap<>();
         threadToOCs = new ConcurrentHashMap<>();
         //shared data structure.
-        this.app = app;
         //create holder.
         operationChains = new ConcurrentHashMap<>();
+        tableNames = MorphStreamEnv.get().configuration().getString("tableNames").split(",");
     }
 
     public void reset(Context context) {
@@ -79,23 +79,9 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
     }
 
     public void initTPG(int offset) {
-        if (app == 0 || app == 6) {//GS
-            operationChains.put("MicroTable", new TableOCs<>(totalThreads, offset));
-        } else if (app == 1) {//SL
-            operationChains.put("accounts", new TableOCs<>(totalThreads, offset));
-            operationChains.put("bookEntries", new TableOCs<>(totalThreads, offset));
-        } else if (app == 2) {//TP
-            operationChains.put("segment_speed", new TableOCs<>(totalThreads, offset));
-            operationChains.put("segment_cnt", new TableOCs<>(totalThreads, offset));
-        } else if (app == 3) {
-            operationChains.put("goods", new TableOCs<>(totalThreads, offset));
-        } else if (app == 4) {//OB
-            operationChains.put("MicroTable", new TableOCs<>(totalThreads, offset));
-        } else if (app == 5) {//IBWJ
-            operationChains.put("index_r_table", new TableOCs(totalThreads, offset));
-            operationChains.put("index_s_table", new TableOCs(totalThreads, offset));
-        } else
-            throw new UnsupportedOperationException();
+        for (String tableName : tableNames) {
+            operationChains.put(tableName, new TableOCs<>(totalThreads, offset));
+        }
     }
 
     /**
@@ -116,53 +102,19 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
         resetOCs(context);
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
-            if (app == 0 || app == 6) {
-                OperationChain gsOC = context.createTask("MicroTable", _key, 0);
-                operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
-                ocs.add(gsOC);
-            } else if (app == 1) {
-                OperationChain accOC = context.createTask("accounts", _key, 0);
-                OperationChain beOC = context.createTask("bookEntries", _key, 0);
-                operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, accOC);
-                operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
-                ocs.add(accOC);
-                ocs.add(beOC);
-            } else if (app == 2) {
-                OperationChain speedOC = context.createTask("segment_speed", _key, 0);
-                OperationChain cntOC = context.createTask("segment_cnt", _key, 0);
-                operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, speedOC);
-                operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, cntOC);
-                ocs.add(speedOC);
-                ocs.add(cntOC);
-            } else if (app == 3) {
-                OperationChain gsOC = context.createTask("goods", _key, 0);
-                operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
-                ocs.add(gsOC);
-            } else if (app == 4) {
-                OperationChain gsOC = context.createTask("MicroTable", _key, 0);
-                operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
-                ocs.add(gsOC);
-            } else
-                throw new UnsupportedOperationException();
+            for (String table_name : tableNames) {
+                OperationChain oc = context.createTask(table_name, _key, 0);
+                operationChains.get(table_name).threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, oc);
+                ocs.add(oc);
+            }
         }
         threadToOCs.put(context.thisThreadId, ocs);
     }
 
     private void resetOCs(Context context) {
-        if (app == 0 || app == 6) {
-            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 1) {
-            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 2) {
-            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 3) {
-            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 4) {
-            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else
-            throw new UnsupportedOperationException();
+        for (String table_name : tableNames) {
+            operationChains.get(table_name).threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        }
     }
 
     public TableOCs<OperationChain> getTableOCs(String table_name) {
@@ -537,9 +489,5 @@ public class TaskPrecedenceGraph<Context extends OGSchedulerContext> {
 
     public Collection<Context> getContexts() {
         return threadToContextMap.values();
-    }
-
-    public int getApp() {
-        return app;
     }
 }

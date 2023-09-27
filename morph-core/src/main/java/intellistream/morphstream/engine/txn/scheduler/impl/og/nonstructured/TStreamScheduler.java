@@ -9,8 +9,8 @@ public class TStreamScheduler extends OGNSScheduler {
 
     public boolean needAbortHandling = false;
 
-    public TStreamScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public TStreamScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     @Override

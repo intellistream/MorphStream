@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler.struct.recovery;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingEntry.PathRecord;
 import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,34 +18,26 @@ public class TaskPrecedenceGraph<Context extends RSContext> {
     public final ConcurrentHashMap<Integer, Deque<OperationChain>> threadToOCs;//Exactly which OCs are executed by each thread.
     protected final int delta;//range of each partition. depends on the number of op in the stage.
     private final int NUM_ITEMS;
-    private final int app;
     private final ConcurrentHashMap<String, TableOCs> operationChains;//shared data structure.
     public int isLogging;
     public ConcurrentHashMap<Integer, PathRecord> threadToPathRecord;// Used by fault tolerance
 
     public ConcurrentHashMap<Integer, Task> idToTask;//Exactly which OCs are in one task.
+    private final String[] tableNames;
 
-    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS, int app) {
+    public TaskPrecedenceGraph(int totalThreads, int delta, int NUM_ITEMS) {
         this.totalThreads = totalThreads;
         this.delta = delta;
         this.NUM_ITEMS = NUM_ITEMS;
-        this.app = app;
         this.threadToContextMap = new ConcurrentHashMap<>();
         this.operationChains = new ConcurrentHashMap<>();
         this.threadToOCs = new ConcurrentHashMap<>();
+        tableNames = MorphStreamEnv.get().configuration().getString("tableNames").split(",");
     }
 
     public void initTPG(int offset) {
-        if (app == 0) {//GS
-            operationChains.put("MicroTable", new TableOCs(totalThreads, offset));
-        } else if (app == 1) {//SL
-            operationChains.put("accounts", new TableOCs(totalThreads, offset));
-            operationChains.put("bookEntries", new TableOCs(totalThreads, offset));
-        } else if (app == 2) {//TP
-            operationChains.put("segment_speed", new TableOCs(totalThreads, offset));
-            operationChains.put("segment_cnt", new TableOCs(totalThreads, offset));
-        } else if (app == 3) {//OB
-            operationChains.put("goods", new TableOCs(totalThreads, offset));
+        for (String tableName : tableNames) {
+            operationChains.put(tableName, new TableOCs(totalThreads, offset));
         }
     }
 
@@ -61,44 +54,18 @@ public class TaskPrecedenceGraph<Context extends RSContext> {
         String _key;
         for (int key = left_bound; key < right_bound; key++) {
             _key = String.valueOf(key);
-            if (app == 0) {
-                OperationChain gsOC = context.createTask("MicroTable", _key);
-                operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
-                ocs.add(gsOC);
-            } else if (app == 1) {
-                OperationChain accOC = context.createTask("accounts", _key);
-                OperationChain beOC = context.createTask("bookEntries", _key);
-                operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, accOC);
-                operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, beOC);
-                ocs.add(accOC);
-                ocs.add(beOC);
-            } else if (app == 2) {
-                OperationChain speedOC = context.createTask("segment_speed", _key);
-                OperationChain cntOC = context.createTask("segment_cnt", _key);
-                operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, speedOC);
-                operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, cntOC);
-                ocs.add(speedOC);
-                ocs.add(cntOC);
-            } else if (app == 3) {
-                OperationChain gsOC = context.createTask("goods", _key);
-                operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, gsOC);
-                ocs.add(gsOC);
+            for (String tableName : tableNames) {
+                OperationChain oc = context.createTask(tableName, _key);
+                operationChains.get(tableName).threadOCsMap.get(context.thisThreadId).holder_v1.put(_key, oc);
+                ocs.add(oc);
             }
         }
         threadToOCs.put(context.thisThreadId, ocs);//Init task placing
     }
 
     private void resetOCs(Context context) {
-        if (app == 0) {
-            operationChains.get("MicroTable").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 1) {
-            operationChains.get("accounts").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-            operationChains.get("bookEntries").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 2) {
-            operationChains.get("segment_speed").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-            operationChains.get("segment_cnt").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
-        } else if (app == 3) {
-            operationChains.get("goods").threadOCsMap.get(context.thisThreadId).holder_v1.clear();
+        for (String tableName : tableNames) {
+            operationChains.get(tableName).threadOCsMap.get(context.thisThreadId).holder_v1.clear();
         }
     }
 
@@ -128,10 +95,5 @@ public class TaskPrecedenceGraph<Context extends RSContext> {
         OperationChain retOc = getOC(table_name, primaryKey, operation.context.thisThreadId);
         retOc.addOperation(operation);
         return retOc;
-    }
-
-
-    public int getApp() {
-        return app;
     }
 }
