@@ -28,7 +28,7 @@ public class TopologyContext {
     private static FTManager ftManager;
     private static FTManager loggingManager;
     private static HashMap<Integer, executorThread> threadMap;
-    private final int _taskId;
+    private final int _taskId;//global ID for this executorNode in current Brisk.topology
 
     /**
      * Instead of Store Brisk.topology, we Store Brisk.execution graph directly!

@@ -26,7 +26,7 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
     public GeneralMsg generalMsg;
     public Tuple tuple;
     public Tuple marker;
-    public int taskId;
+    public int taskId; //global ID for this executorNode in current Brisk.topology
     protected int ccOption;
     protected int myiteration = 0;//start from 1st iteration.
     public long systemStartTime;
