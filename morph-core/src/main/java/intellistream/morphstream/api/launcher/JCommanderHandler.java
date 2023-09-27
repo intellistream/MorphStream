@@ -210,16 +210,18 @@ public class JCommanderHandler {
      */
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 100_000;//number of records in each table
+    @Parameter(names = {"--loadDBThreadNum"}, description = "NUM_PARTITIONS in DB.")
+    public int loadDBThreadNum = 4;//number of partitions in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
-    public String tableNames = "account,bookEntries";
+    public String tableNames = "accounts,bookEntries";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
     public String numberItemsForTables = "10000,10000";
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
     public String keyDataTypesForTables = "string,string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
-    public String valueDataTypesForTables = "int,int";
+    public String valueDataTypesForTables = "double,double";
     @Parameter(names = {"--valueNamesForTables"}, description = "value names for each table, split by ,")
-    public String valueNamesForTables = "value1,value2";
+    public String valueNamesForTables = "balance,balance";
 
 
 
@@ -241,22 +243,22 @@ public class JCommanderHandler {
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default";
     //SL configurations
-    @Parameter(names = {"--slEventTypes"}, description = "String of event types, split by ,")
-    public String SLEventTypes = "transfer;deposit";
-    @Parameter(names = {"--slTableNameForEvents"}, description = "table names for each type of event, split by ;")
-    public String SLTableNameForEvents = "account,bookEntries;account,bookEntries";
-    @Parameter(names = {"--slKeyNumberForEvents"}, description = "number of keys for each type of event, split by ;")
-    public String SLKeyNumberForEvents = "2,2;2,2";
-    @Parameter(names = {"--slValueNameForEvents"}, description = "value names for each type of event, split by ;")
-    public String SLValueNameForEvents = "v1,v2;v1,v2";
-    @Parameter(names = {"--slEventRatio"}, description = "event ratio for each type of event, split by ,")
-    public String SLEventRatio = "0.5,0.5";
-    @Parameter(names = {"--slRatioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
-    public String SLRatioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
-    @Parameter(names = {"--slStateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
-    public String SLStateAccessSkewnessForEvents = "0.5,0.5";
-    @Parameter(names = {"--slAbortRatioForEvents"}, description = "state access skewness for each types of event, split by ,")
-    public String SLAbortRatioForEvents = "0,0";
+    @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
+    public String eventTypes = "transfer;deposit";
+    @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
+    public String tableNameForEvents = "accounts,bookEntries;accounts,bookEntries";
+    @Parameter(names = {"--keyNumberForEvents"}, description = "number of keys for each type of event, split by ;")
+    public String keyNumberForEvents = "2,2;1,1"; //transfer: {account:2(src,dest). bookEntries:2(src,dest)}; deposit: {account:1(src), bookEntries:1(src)}
+    @Parameter(names = {"--valueNameForEvents"}, description = "value names for each type of event, split by ;")
+    public String valueNameForEvents = "transferAmount,transferAmount;depositAmount,depositAmount";
+    @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
+    public String eventRatio = "0.5,0.5";
+    @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
+    public String ratioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
+    @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
+    public String stateAccessSkewnessForEvents = "0.5,0.5";
+    @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
+    public String abortRatioForEvents = "0,0";
 
 
 
@@ -287,7 +289,7 @@ public class JCommanderHandler {
      * Client configurations
      */
     @Parameter(names = {"--clientClassName"}, description = "Client class name, used for UDF Reflection")
-    public String clientClassName = "SLClient";
+    public String clientClassName = "cli.SLClient"; //TODO: Refine this
 
 
 
@@ -437,6 +439,7 @@ public class JCommanderHandler {
 
         /* Database configurations */
         config.put("NUM_ITEMS", NUM_ITEMS);
+        config.put("loadDBThreadNum", loadDBThreadNum);
         config.put("tableNames", tableNames);
         String[] tableNameString = tableNames.split(",");
         for (int i = 0; i < tableNameString.length; i ++) {
@@ -454,16 +457,16 @@ public class JCommanderHandler {
         config.put("totalEvents", totalEvents);
         config.put("workloadType", workloadType);
         //SL
-        config.put("eventTypes", SLEventTypes);
-        String[] eventTypeString = SLEventTypes.split(";");
+        config.put("eventTypes", eventTypes);
+        String[] eventTypeString = eventTypes.split(";");
         for (int i = 0; i < eventTypeString.length; i ++) {
-            config.put(eventTypeString[i] + "_tables", SLTableNameForEvents.split(";")[i]);
-            config.put(eventTypeString[i] + "_key_number", SLKeyNumberForEvents.split(";")[i]);
-            config.put(eventTypeString[i] + "_values", SLValueNameForEvents.split(";")[i]);
-            config.put(eventTypeString[i] + "_event_ratio", SLEventRatio.split(",")[i]);
-            config.put(eventTypeString[i] + "_ratio_of_multi_partition_transactions", SLRatioOfMultiPartitionTransactionsForEvents.split(",")[i]);
-            config.put(eventTypeString[i] + "_state_access_skewness", SLStateAccessSkewnessForEvents.split(",")[i]);
-            config.put(eventTypeString[i] + "_abort_ratio", SLAbortRatioForEvents.split(",")[i]);
+            config.put(eventTypeString[i] + "_tables", tableNameForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_key_number", keyNumberForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_values", valueNameForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_event_ratio", eventRatio.split(",")[i]);
+            config.put(eventTypeString[i] + "_ratio_of_multi_partition_transactions", ratioOfMultiPartitionTransactionsForEvents.split(",")[i]);
+            config.put(eventTypeString[i] + "_state_access_skewness", stateAccessSkewnessForEvents.split(",")[i]);
+            config.put(eventTypeString[i] + "_abort_ratio", abortRatioForEvents.split(",")[i]);
         }
 
         /* Benchmarking and evaluation configurations */
@@ -483,6 +486,8 @@ public class JCommanderHandler {
         } else {
             config.put("cleanUp",true);
         }
+
+        configSystem(config);
     }
 
     private void configSystem(Configuration config) {

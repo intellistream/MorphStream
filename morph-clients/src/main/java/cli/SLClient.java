@@ -33,8 +33,8 @@ public class SLClient extends Client {
             String stateAccessName = access.getStateAccessName();
             if (Objects.equals(stateAccessName, "srcTransfer")) {
                 StateObject srcAccountState = access.getStateObject("srcAccountState");
-                double srcBalance = srcAccountState.getDoubleValue("balance");
-                double transferAmount = (double) access.getValue("transferAmount");
+                float srcBalance = srcAccountState.getFloatValue("balance");
+                float transferAmount = Float.parseFloat((String) access.getValue("transferAmount"));
                 if (srcBalance > 100 && srcBalance > transferAmount) {
                     access.udfResult = srcBalance - transferAmount;
                     return true;
@@ -44,9 +44,9 @@ public class SLClient extends Client {
             } else if (Objects.equals(stateAccessName, "destTransfer")) {
                 StateObject srcAccountState = access.getStateObject("srcAccountState");
                 StateObject destAccountState = access.getStateObject("destAccountState");
-                double srcBalance = srcAccountState.getDoubleValue("balance");
-                double destBalance = destAccountState.getDoubleValue("balance");
-                double transferAmount = (double) access.getValue("transferAmount");
+                float srcBalance = srcAccountState.getFloatValue("balance");
+                float destBalance = destAccountState.getFloatValue("balance");
+                float transferAmount = Float.parseFloat((String) access.getValue("transferAmount"));
                 if (srcBalance > 100 && srcBalance > transferAmount) {
                     access.udfResult = destBalance + transferAmount;
                     return true;
@@ -57,7 +57,11 @@ public class SLClient extends Client {
                 return false; //abort txn
             }
         } else if (Objects.equals(txnName, "deposit")) {
-            return false;
+            StateObject srcAccountState = access.getStateObject("srcAccountState");
+            float srcBalance = srcAccountState.getFloatValue("balance");
+            float depositAmount = Float.parseFloat((String) access.getValue("depositAmount"));
+            access.udfResult = srcBalance + depositAmount;
+            return true;
         } else {
             return false;
         }
@@ -116,7 +120,9 @@ public class SLClient extends Client {
         txnDescriptions.put("deposit", depositDescriptor);
 
         //Define topology
-        SLClient.setSpoutCombo("spout", txnDescriptions, 1);
+        SLClient.setSpoutCombo("spout", txnDescriptions, 4);
+        //TODO: let client determine number of DB loader threads, and update in config, then pass to DBInitializer
+        //TODO: loadDBThreadNum = total threads of all stateful operators (bolts)
 
         //Initiate runner
         try {

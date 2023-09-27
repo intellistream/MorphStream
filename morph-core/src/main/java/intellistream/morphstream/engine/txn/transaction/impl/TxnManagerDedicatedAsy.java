@@ -222,7 +222,18 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
 
             condition_tables[i] = stateObjTable;
             condition_keys[i] = stateObjKey;
-            condition_records.put(stateObj.getName(), storageManager_.getTable(stateObjTable).SelectKeyRecord(stateObjKey));
+            BaseTable table = storageManager_.getTable(stateObjTable);
+            if (table == null) {
+                if (enable_log) log.info("No table is found:" + stateObjTable);
+                return false;
+            }
+            TableRecord condition_record = table.SelectKeyRecord(stateObjKey);
+            if (condition_record != null) {
+                condition_records.put(stateObj.getName(), condition_record);
+            } else {
+                if (enable_log) log.info("No record is found:" + stateObjKey);
+                return false;
+            }
         }
 
         StateObject writeStateObj = stateAccess.getStateObjectToWrite();

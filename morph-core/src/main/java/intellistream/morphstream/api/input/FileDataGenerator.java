@@ -3,7 +3,6 @@ package intellistream.morphstream.api.input;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.util.FastZipfGenerator;
-import intellistream.morphstream.util.OsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,7 @@ public class FileDataGenerator {
     private int punctuation;
     //Event configure
     private HashMap<String, HashMap<String, Integer>> eventKeyMap = new HashMap<>();//event -> tableName -> keyNumber
-    private HashMap<String, List<String>> eventValueMap = new HashMap<>();//event -> value list
+    private HashMap<String, List<String>> eventValueNamesMap = new HashMap<>();//event -> value name list
     //InputStream configuration
     private int totalEvents;
     private HashMap<String, Integer> numItemMaps;//table name (key) to number of items
@@ -91,7 +90,7 @@ public class FileDataGenerator {
                 keyMap.put(tableNames[i], Integer.parseInt(keyNumbers[i]));
             }
             eventKeyMap.put(eventType, keyMap);
-            eventValueMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_values", "v1,v2").split(",")));
+            eventValueNamesMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_values", "v1,v2").split(",")));
             stateAssessSkewMap.put(eventType, configuration.getInt(eventType + "_state_access_skewness", 0));
             eventRatioMap.put(eventType, configuration.getInt(eventType + "_event_ratio", 50));
             for (int i = 0; i < eventRatioMap.get(eventType) / 10; i++) {
@@ -105,7 +104,7 @@ public class FileDataGenerator {
                 zipfHashMap.put(tableName, new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(eventType) / 100, 0,123456789));
                 List<FastZipfGenerator> zipfGenerators = new ArrayList<>();
                 for (int i = 0; i < totalThreads; i++) {
-                    zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(tableName), (double) stateAssessSkewMap.get(eventType) / 100, i * intervalMaps.get(tableName),123456789));
+                    zipfGenerators.add(new FastZipfGenerator(numItemMaps.get(tableName)/totalThreads, (double) stateAssessSkewMap.get(eventType) / 100, i * intervalMaps.get(tableName),123456789));
                 }
                 partitionZipfHashMap.put(tableName, zipfGenerators);
             }
@@ -141,8 +140,8 @@ public class FileDataGenerator {
         HashMap<String, Object> valueMap = new HashMap<>();
         HashMap<String, String> valueTypeMap = new HashMap<>();
         for (int i = 0; i < values.length; i++) {
-            valueMap.put(eventValueMap.get(eventType).get(i), values[i]);
-            valueTypeMap.put(eventValueMap.get(eventType).get(i), "int");
+            valueMap.put(eventValueNamesMap.get(eventType).get(i), values[i]);
+            valueTypeMap.put(eventValueNamesMap.get(eventType).get(i), "int");
         }
         if (random.nextInt(1000) < eventRatioMap.get(eventType)) {
             inputEvent = new TransactionalEvent(eventID, keys, valueMap, valueTypeMap, eventType, true);
@@ -177,7 +176,7 @@ public class FileDataGenerator {
         return keyMap;
     }
     private String[] generateValue(String eventType) {
-        String[] values = new String[eventValueMap.get(eventType).size()];
+        String[] values = new String[eventValueNamesMap.get(eventType).size()];
         for (int i = 0; i < values.length; i++) {
             values[i] = String.valueOf(random.nextInt(10000));
         }

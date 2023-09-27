@@ -50,6 +50,7 @@ public class ApplicationSpoutCombo extends AbstractSpoutCombo {
                 break;
         }
         bolt.prepare(conf, context, collector);
+        bolt.loadDB(conf, context, collector);
     }
     @Override
     public void nextTuple() throws InterruptedException {
