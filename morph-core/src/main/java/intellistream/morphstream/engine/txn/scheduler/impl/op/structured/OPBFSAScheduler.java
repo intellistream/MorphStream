@@ -24,8 +24,8 @@ public class OPBFSAScheduler<Context extends OPSAContext> extends OPBFSScheduler
     public final AtomicBoolean needAbortHandling = new AtomicBoolean(false);//if any operation is aborted during processing.
     public int targetRollbackLevel = 0;//shared data structure.
 
-    public OPBFSAScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OPBFSAScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     /**

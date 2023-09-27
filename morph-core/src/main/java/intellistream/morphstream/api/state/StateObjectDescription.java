@@ -3,10 +3,12 @@ package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 
+import java.io.Serializable;
+
 /**
  * Used as a data carrier for SchemaRecord, provides simplified retrieval-by-columnName APIs.
  */
-public class StateObjectDescription {
+public class StateObjectDescription implements Serializable {
     private final String name;
     private final AccessType type;
     private final int keyIndex;

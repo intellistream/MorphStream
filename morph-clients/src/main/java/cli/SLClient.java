@@ -28,8 +28,8 @@ public class SLClient extends Client {
      */
     @Override
     public boolean transactionUDF(StateAccess access) {
-        String transactionName = access.getTxnName();
-        if (Objects.equals(transactionName, "transfer")) {
+        String txnName = access.getTxnName();
+        if (Objects.equals(txnName, "transfer")) {
             String stateAccessName = access.getStateAccessName();
             if (Objects.equals(stateAccessName, "srcTransfer")) {
                 StateObject srcAccountState = access.getStateObject("srcAccountState");
@@ -56,7 +56,7 @@ public class SLClient extends Client {
             } else {
                 return false; //abort txn
             }
-        } else if (Objects.equals(transactionName, "deposit")) {
+        } else if (Objects.equals(txnName, "deposit")) {
             return false;
         } else {
             return false;
@@ -64,14 +64,21 @@ public class SLClient extends Client {
     }
 
     @Override
-    public Result postUDF(HashMap<String, StateAccess> stateAccessMap) {
+    public Result postUDF(String txnName, HashMap<String, StateAccess> stateAccessMap) {
         Result result = new Result();
-        StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
-        StateAccess destTransfer = stateAccessMap.get("destTransfer");
-        Double[] stateAccessResults = new Double[2];
-        stateAccessResults[0] = destTransfer.getStateObject("srcAccountState").getDoubleValue("balance");
-        stateAccessResults[1] = destTransfer.getStateObject("destAccountState").getDoubleValue("balance");
-        result.setResults(stateAccessResults);
+        if (Objects.equals(txnName, "transfer")) {
+            StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
+            StateAccess destTransfer = stateAccessMap.get("destTransfer");
+            Double[] stateAccessResults = new Double[2];
+            stateAccessResults[0] = srcTransfer.getStateObject("srcAccountState").getDoubleValue("balance");
+            stateAccessResults[1] = destTransfer.getStateObject("destAccountState").getDoubleValue("balance");
+            result.setResults(stateAccessResults);
+        } else if (Objects.equals(txnName, "deposit")) {
+            StateAccess deposit = stateAccessMap.get("deposit");
+            Double[] stateAccessResults = new Double[1];
+            stateAccessResults[0] = deposit.getStateObject("srcAccountState").getDoubleValue("balance");
+            result.setResults(stateAccessResults);
+        }
         return result;
     }
 
@@ -84,42 +91,32 @@ public class SLClient extends Client {
         //Initialize transactions for Combo to execute
         HashMap<String, TxnDescription> txnDescriptions = new HashMap<>(); //Flag -> TxnDescription
 
-        //Transfer transaction
+        //Define transfer transaction
         TxnDescription transferDescriptor = new TxnDescription();
-        txnDescriptions.put("transfer", transferDescriptor);
-
-        //Define 1st state accesses
+        //Define transfer's 1st state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
         srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
         srcTransfer.addValueName("transferAmount");
-        srcTransfer.setTxnUDFName("transactionUDF"); //Method invoked by its name during reflection
-
-        //Define 2nd state accesses
+        //Define transfer's 2nd state accesses
         StateAccessDescription destTransfer = new StateAccessDescription("destTransfer", AccessType.WRITE);
         destTransfer.addStateObjectDescription("srcAccountState", AccessType.READ, "accounts", "srcAccountID", "accountValue", 0);
         destTransfer.addStateObjectDescription("destAccountState", AccessType.WRITE, "accounts", "destAccountID", "accountValue", 1);
         destTransfer.addValueName("transferAmount");
-        destTransfer.setTxnUDFName("transactionUDF");
-
         //Add state accesses to transaction
         transferDescriptor.addStateAccess("srcTransfer", srcTransfer);
         transferDescriptor.addStateAccess("destTransfer", destTransfer);
+        txnDescriptions.put("transfer", transferDescriptor);
 
-        //Define bolt post-processing UDF
-        transferDescriptor.setPostUDFName("postUDF"); //Method invoked by its name during reflection
-
-
-        //Deposit transaction
+        //Define deposit transaction
         TxnDescription depositDescriptor = new TxnDescription();
+        StateAccessDescription deposit = new StateAccessDescription("deposit", AccessType.WRITE);
+        deposit.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);
+        deposit.addValueName("depositAmount");
+        depositDescriptor.addStateAccess("deposit", deposit);
         txnDescriptions.put("deposit", depositDescriptor);
-        //...
 
         //Define topology
         SLClient.setSpoutCombo("spout", txnDescriptions, 1);
-
-//
-//        builder.setGlobalScheduler(new SequentialScheduler());
-//        Topology topology = builder.createTopology(db, this);
 
         //Initiate runner
         try {

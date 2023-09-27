@@ -2,13 +2,13 @@ package intellistream.morphstream.api.state;
 
 import intellistream.morphstream.api.utils.MetaTypes.AccessType;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class StateAccessDescription {
+public class StateAccessDescription implements Serializable {
     private final String name;
     private final AccessType accessType;
     private final List<StateObjectDescription> stateObjDescList;
-    private String txnUDFName;//Method name of txn UDF, used to invoke txn UDF using Method Reflection during OPScheduler
     private final List<String> valueNames;//Condition refers to values that are not commonly-shared among events, but used in txn-UDF
 
     public StateAccessDescription(String name, AccessType type) {
@@ -36,14 +36,6 @@ public class StateAccessDescription {
 
     public List<String> getValueNames() {
         return valueNames;
-    }
-
-    public void setTxnUDFName(String name) {
-        txnUDFName = name;
-    }
-
-    public String getTxnUDFName() {
-        return txnUDFName;
     }
 
     public AccessType getAccessType() {

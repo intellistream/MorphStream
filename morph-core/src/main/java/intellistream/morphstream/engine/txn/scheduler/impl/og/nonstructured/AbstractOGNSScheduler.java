@@ -9,8 +9,8 @@ import intellistream.morphstream.engine.txn.transaction.impl.ordered.MyList;
 public abstract class AbstractOGNSScheduler<Context extends AbstractOGNSContext>
         extends OGScheduler<Context> {
 
-    public AbstractOGNSScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public AbstractOGNSScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     @Override

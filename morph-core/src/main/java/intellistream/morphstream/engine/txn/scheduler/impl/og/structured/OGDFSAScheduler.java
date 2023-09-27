@@ -31,8 +31,8 @@ public class OGDFSAScheduler extends AbstractOGDFSScheduler<OGSAContext> {
     public final ConcurrentLinkedDeque<Operation> failedOperations = new ConcurrentLinkedDeque<>();//aborted operations per thread.
     public final AtomicBoolean needAbortHandling = new AtomicBoolean(false); //if any operation is aborted during processing.
 
-    public OGDFSAScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OGDFSAScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     @Override

@@ -20,8 +20,8 @@ public class OPNSScheduler<Context extends OPNSContext> extends OPScheduler<Cont
 
     public boolean needAbortHandling = false;
 
-    public OPNSScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OPNSScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     @Override

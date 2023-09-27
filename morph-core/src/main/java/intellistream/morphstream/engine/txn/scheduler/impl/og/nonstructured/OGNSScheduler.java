@@ -23,8 +23,8 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
 
     public AtomicBoolean needAbortHandling = new AtomicBoolean(false);
 
-    public OGNSScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OGNSScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     @Override

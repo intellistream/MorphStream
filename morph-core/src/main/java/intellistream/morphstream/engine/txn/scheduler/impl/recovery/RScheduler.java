@@ -1,5 +1,6 @@
 package intellistream.morphstream.engine.txn.scheduler.impl.recovery;
 
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.ImplLoggingManager.PathLoggingManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingStrategy.LoggingManager;
 import intellistream.morphstream.engine.txn.durability.struct.FaultToleranceRelax;
@@ -22,10 +23,7 @@ import intellistream.morphstream.util.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static intellistream.morphstream.common.constants.TPConstants.Constant.MAX_INT;
@@ -42,10 +40,12 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
     public AtomicBoolean abortHandling = new AtomicBoolean(false);
     public int isLogging;
     public LoggingManager loggingManager;
+    String appName;
 
-    public RScheduler(int totalThreads, int NUM_ITEMS, int app) {
+    public RScheduler(int totalThreads, int NUM_ITEMS) {
         this.delta = (int) Math.ceil(NUM_ITEMS / (double) totalThreads);
-        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS, app);
+        this.tpg = new TaskPrecedenceGraph<>(totalThreads, delta, NUM_ITEMS);
+        this.appName = MorphStreamEnv.get().configuration().getString("app");
     }
 
     public static int getTaskId(String key, Integer delta) {
@@ -261,9 +261,9 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
 
     private void inspectDependency(long groupId, OperationChain curOC, Operation op, String table_name,
                                    String key, String[] condition_sourceTable, String[] condition_source) {
-        if (tpg.getApp() == 0) {
+        if (Objects.equals(appName, "GrepSum")) {
             inspectGSDependency(groupId, curOC, op, table_name, key, condition_sourceTable, condition_source);
-        } else if (tpg.getApp() == 1) {
+        } else if (Objects.equals(appName, "StreamLedger")) {
             inspectSLDependency(groupId, curOC, op, table_name, key, condition_sourceTable, condition_source);
         }
     }
@@ -282,11 +282,11 @@ public class RScheduler<Context extends RSContext> implements IScheduler<Context
                 operation.stateAccess.getStateObject(defaultString).setSchemaRecord(operation.d_record.content_.readPreValues(operation.bid));//read the resulting tuple.
             }
         } else if (operation.accessType.equals(READ_WRITE_COND)) {
-            if (this.tpg.getApp() == 1) {//SL
+            if (Objects.equals(appName, "StreamLedger")) {//SL
                 Transfer_Fun(operation, mark_ID, clean);
             }
         } else if (operation.accessType.equals(READ_WRITE)) {
-            if (this.tpg.getApp() == 1) {
+            if (Objects.equals(appName, "StreamLedger")) {
                 Depo_Fun(operation, mark_ID, clean);
             }
         } else if (operation.accessType.equals(READ_WRITE_COND_READN)) {

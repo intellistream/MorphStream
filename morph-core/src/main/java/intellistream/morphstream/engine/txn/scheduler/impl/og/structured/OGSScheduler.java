@@ -23,8 +23,8 @@ public abstract class OGSScheduler<Context extends OGSContext> extends OGSchedul
 
     public boolean needAbortHandling = false;
 
-    public OGSScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OGSScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     @Override

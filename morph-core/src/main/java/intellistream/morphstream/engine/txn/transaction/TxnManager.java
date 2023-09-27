@@ -48,19 +48,19 @@ public abstract class TxnManager implements ITxnManager {
     protected static HashMap<Integer, String> schedulerTypeByGroup;
     public static int groupNum;
 
-    public static void initScheduleForStaticWorkload(String schedulerType, int threadCount, int numberOfStates, int app) {
-        scheduler = CreateSchedulerByType(schedulerType, threadCount, numberOfStates, app);
+    public static void initScheduleForStaticWorkload(String schedulerType, int threadCount, int numberOfStates) {
+        scheduler = CreateSchedulerByType(schedulerType, threadCount, numberOfStates);
         scheduler.initTPG(0);
         if (loggingManager != null) {
             scheduler.setLoggingManager(loggingManager);
         }
     }
-    public static void initSchedulersByGroupForMultipleWorkload(String schedulerType, int threadCount, int numberOfStates, int app) {
+    public static void initSchedulersByGroupForMultipleWorkload(String schedulerType, int threadCount, int numberOfStates) {
         schedulerByGroup = new HashMap<>();
         schedulerTypeByGroup = new HashMap<>();
         String[] scheduler = schedulerType.split(",");
         for (int i = 0; i < scheduler.length; i++) {
-            TxnManager.schedulerByGroup.put(i, CreateSchedulerByType(scheduler[i], threadCount / scheduler.length, numberOfStates / scheduler.length, app));
+            TxnManager.schedulerByGroup.put(i, CreateSchedulerByType(scheduler[i], threadCount / scheduler.length, numberOfStates / scheduler.length));
             TxnManager.schedulerTypeByGroup.put(i, scheduler[i]);
             TxnManager.schedulerByGroup.get(i).initTPG(i * (threadCount / scheduler.length));
             if (loggingManager != null) {
@@ -73,11 +73,11 @@ public abstract class TxnManager implements ITxnManager {
     /**
      * Configure the scheduler pool
      */
-    public static void initSchedulerPoolForDynamicWorkload(String defaultScheduler, String schedulerPool, int threadCount, int numberOfStates, int app) {
+    public static void initSchedulerPoolForDynamicWorkload(String defaultScheduler, String schedulerPool, int threadCount, int numberOfStates) {
         TxnManager.schedulerPool = new HashMap<>();
         String[] scheduler = schedulerPool.split(",");
         for (int i = 0; i < scheduler.length; i++) {
-            TxnManager.schedulerPool.put(scheduler[i], CreateSchedulerByType(scheduler[i], threadCount, numberOfStates, app));
+            TxnManager.schedulerPool.put(scheduler[i], CreateSchedulerByType(scheduler[i], threadCount, numberOfStates));
             TxnManager.schedulerPool.get(scheduler[i]).initTPG(0);
             if (loggingManager != null) {
                 TxnManager.schedulerPool.get(scheduler[i]).setLoggingManager(loggingManager);
@@ -91,9 +91,9 @@ public abstract class TxnManager implements ITxnManager {
         log.info("Current Scheduler is " + defaultScheduler + " markId: " + 0);
         enableDynamic = true;
     }
-    public static void initRecoveryScheduler(int FTOption, int threadCount, int numberOfStates, int app) {
+    public static void initRecoveryScheduler(int FTOption, int threadCount, int numberOfStates) {
         if (FTOption == 3) {
-            recoveryScheduler = new RScheduler(threadCount, numberOfStates, app);
+            recoveryScheduler = new RScheduler(threadCount, numberOfStates);
             recoveryScheduler.initTPG(0);
             if (loggingManager != null) {
                 recoveryScheduler.setLoggingManager(loggingManager);
@@ -108,37 +108,36 @@ public abstract class TxnManager implements ITxnManager {
      * @param schedulerType
      * @param threadCount
      * @param numberOfStates
-     * @param app
      * @return
      */
-    public static IScheduler CreateSchedulerByType(String schedulerType, int threadCount, int numberOfStates, int app) {
+    public static IScheduler CreateSchedulerByType(String schedulerType, int threadCount, int numberOfStates) {
         switch (schedulerType) {
             case "OG_BFS": // Group of operation + Structured BFS exploration strategy + coarse-grained
-                return new OGBFSScheduler(threadCount, numberOfStates, app);
+                return new OGBFSScheduler(threadCount, numberOfStates);
             case "OG_BFS_A": // Group of operation + Structured BFS exploration strategy + fine-grained
-                return new OGBFSAScheduler(threadCount, numberOfStates, app);
+                return new OGBFSAScheduler(threadCount, numberOfStates);
             case "OG_DFS": // Group of operation + Structured DFS exploration strategy + coarse-grained
-                return new OGDFSScheduler(threadCount, numberOfStates, app);
+                return new OGDFSScheduler(threadCount, numberOfStates);
             case "OG_DFS_A": // Group of operation + Structured DFS exploration strategy + fine-grained
-                return new OGDFSAScheduler(threadCount, numberOfStates, app);
+                return new OGDFSAScheduler(threadCount, numberOfStates);
             case "OG_NS": // Group of operation + Non-structured exploration strategy + coarse-grained
-                return new OGNSScheduler(threadCount, numberOfStates, app);
+                return new OGNSScheduler(threadCount, numberOfStates);
             case "OG_NS_A": // Group of operation + Non-structured exploration strategy + fine-grained
-                return new OGNSAScheduler(threadCount, numberOfStates, app);
+                return new OGNSAScheduler(threadCount, numberOfStates);
             case "OP_NS": // Single operation + Non-structured exploration strategy + coarse-grained
-                return new OPNSScheduler<>(threadCount, numberOfStates, app);
+                return new OPNSScheduler<>(threadCount, numberOfStates);
             case "OP_NS_A": // Single operation + Non-structured exploration strategy + fine-grained
-                return new OPNSAScheduler<>(threadCount, numberOfStates, app);
+                return new OPNSAScheduler<>(threadCount, numberOfStates);
             case "OP_BFS": // Single operation + Structured BFS exploration strategy + coarse-grained
-                return new OPBFSScheduler<>(threadCount, numberOfStates, app);
+                return new OPBFSScheduler<>(threadCount, numberOfStates);
             case "OP_BFS_A": // Single operation + Structured BFS exploration strategy + fine-grained
-                return new OPBFSAScheduler<>(threadCount, numberOfStates, app);
+                return new OPBFSAScheduler<>(threadCount, numberOfStates);
             case "OP_DFS": // Single operation + Structured DFS exploration strategy + coarse-grained
-                return new OPDFSScheduler<>(threadCount, numberOfStates, app);
+                return new OPDFSScheduler<>(threadCount, numberOfStates);
             case "OP_DFS_A": // Single operation + Structured DFS exploration strategy + fine-grained
-                return new OPDFSAScheduler<>(threadCount, numberOfStates, app);
+                return new OPDFSAScheduler<>(threadCount, numberOfStates);
             case "TStream": // original TStream also uses Non-structured exploration strategy
-                return new TStreamScheduler(threadCount, numberOfStates, app);
+                return new TStreamScheduler(threadCount, numberOfStates);
             default:
                 throw new UnsupportedOperationException("unsupported scheduler type: " + schedulerType);
         }

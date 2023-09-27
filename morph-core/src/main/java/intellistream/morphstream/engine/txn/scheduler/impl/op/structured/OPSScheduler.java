@@ -20,8 +20,8 @@ public class OPSScheduler<Context extends OPSContext> extends OPScheduler<Contex
 
     public boolean needAbortHandling = false;
 
-    public OPSScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public OPSScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
     @Override

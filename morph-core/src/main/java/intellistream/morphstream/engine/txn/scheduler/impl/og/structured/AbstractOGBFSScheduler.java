@@ -13,8 +13,8 @@ import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
  */
 public class AbstractOGBFSScheduler<Context extends OGSContext> extends OGSScheduler<Context> {
 
-    public AbstractOGBFSScheduler(int totalThreads, int NUM_ITEMS, int app) {
-        super(totalThreads, NUM_ITEMS, app);
+    public AbstractOGBFSScheduler(int totalThreads, int NUM_ITEMS) {
+        super(totalThreads, NUM_ITEMS);
     }
 
 

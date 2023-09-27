@@ -364,6 +364,7 @@ public class JCommanderHandler {
 
         /* Workload configurations */
         config.put("common", application);
+        config.put("app", application);
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);
         config.put("NUM_ACCESS", NUM_ACCESS);
