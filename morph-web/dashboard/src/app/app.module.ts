@@ -40,6 +40,8 @@ import {NzTableModule} from "ng-zorro-antd/table";
 import {NzUploadModule} from "ng-zorro-antd/upload";
 import {NzFormModule} from "ng-zorro-antd/form";
 import {NzSelectModule} from "ng-zorro-antd/select";
+import {NzListModule} from "ng-zorro-antd/list";
+import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
 
 registerLocaleData(en);
 
@@ -84,7 +86,11 @@ registerLocaleData(en);
     NzUploadModule,
     NzFormModule,
     ReactiveFormsModule,
-    NzSelectModule
+    NzSelectModule,
+    NzListModule,
+    CdkVirtualForOf,
+    CdkVirtualScrollViewport,
+    CdkFixedSizeVirtualScroll
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }

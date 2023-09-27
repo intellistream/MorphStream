@@ -9,7 +9,8 @@ import {SubmitNewJobComponent} from "./pages/submit-new-job/submit-new-job.compo
 const routes: Routes = [
   // Home
   { path: '', pathMatch: 'full', redirectTo: '/overview' },
-  { path: 'overview/application-details', component: JobInformationComponent },
+  { path: 'job/:id', component: JobInformationComponent },
+  // { path: 'overview/application-details', component: JobInformationComponent },
   { path: 'overview', component: OverviewComponent },
   { path: 'applications/finished-applications', component: FinishedApplicationsComponent },
   { path: 'applications/processing-applications', component: ProcessingApplicationsComponent },

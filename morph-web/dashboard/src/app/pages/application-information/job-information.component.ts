@@ -2,10 +2,10 @@ import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/
 import {ApplicationService} from "../../shared/services/application.service";
 import {Websocket} from "../../services/utils/websocket";
 
-
 import {BasicApplication} from "../../model/BasicApplication";
 import {JobInformationService} from "./job-information.service";
 import {Application} from "../../model/Application";
+import {ActivatedRoute} from "@angular/router";
 
 @Component({
   selector: 'app-application-information',
@@ -22,7 +22,7 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   basicApplication: BasicApplication;
   application: Application;
 
-  constructor(private applicationService: ApplicationService, private websocket: Websocket, private applicationInformationService: JobInformationService) {
+  constructor(private route: ActivatedRoute, private applicationService: ApplicationService, private websocket: Websocket, private applicationInformationService: JobInformationService) {
   }
 
   ngAfterViewInit() {
@@ -34,14 +34,16 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.basicApplication = this.applicationService.getCurrentApplication();
-    const applicationId: string = this.basicApplication.appId;
-
     this.websocket.connect("ws://localhost:5001/websocket");
 
-    this.applicationInformationService.getHistoricalJob(applicationId).subscribe(res => {
-      console.log(res);
-      this.application = res;
+    this.route.params.subscribe(params => {
+      const jobId = params['id'];
+      console.log(jobId)
+
+      this.applicationInformationService.getHistoricalJob(jobId).subscribe(res => {
+        this.application = res;
+        this.basicApplication = this.applicationService.getCurrentApplication();
+      });
     });
   }
 }

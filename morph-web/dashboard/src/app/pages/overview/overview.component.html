@@ -72,7 +72,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let application of currentPageJob">
-            <td><b>{{application.name}}</b></td>
+            <td><a [routerLink]="['/job', application.appId]"><b>{{application.name}}</b></a></td>
             <td>{{application.nthreads}}</td>
             <td>{{application.cpu}}</td>
             <td>{{application.ram}}</td>

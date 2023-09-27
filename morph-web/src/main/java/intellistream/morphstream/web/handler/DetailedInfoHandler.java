@@ -16,7 +16,7 @@ import java.io.IOException;
 @Slf4j
 @ChannelHandler.Sharable
 public class DetailedInfoHandler extends SimpleChannelInboundHandler<DetailedInfoRequest> {
-    private final String PATH = "C:\\Users\\data\\job\\";  // TODO: Extract this to Config
+    private final String PATH = "C:\\Users\\siqxi\\data\\job\\";  // TODO: Extract this to Config
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, DetailedInfoRequest request) throws Exception {
