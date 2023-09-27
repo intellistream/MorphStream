@@ -33,8 +33,8 @@ public class SLClient extends Client {
             String stateAccessName = access.getStateAccessName();
             if (Objects.equals(stateAccessName, "srcTransfer")) {
                 StateObject srcAccountState = access.getStateObject("srcAccountState");
-                float srcBalance = srcAccountState.getFloatValue("balance");
-                float transferAmount = Float.parseFloat((String) access.getValue("transferAmount"));
+                double srcBalance = srcAccountState.getDoubleValue("balance");
+                double transferAmount = Double.parseDouble((String) access.getValue("transferAmount"));
                 if (srcBalance > 100 && srcBalance > transferAmount) {
                     access.udfResult = srcBalance - transferAmount;
                     return true;
@@ -44,9 +44,9 @@ public class SLClient extends Client {
             } else if (Objects.equals(stateAccessName, "destTransfer")) {
                 StateObject srcAccountState = access.getStateObject("srcAccountState");
                 StateObject destAccountState = access.getStateObject("destAccountState");
-                float srcBalance = srcAccountState.getFloatValue("balance");
-                float destBalance = destAccountState.getFloatValue("balance");
-                float transferAmount = Float.parseFloat((String) access.getValue("transferAmount"));
+                double srcBalance = srcAccountState.getDoubleValue("balance");
+                double destBalance = destAccountState.getDoubleValue("balance");
+                double transferAmount = Double.parseDouble((String) access.getValue("transferAmount"));
                 if (srcBalance > 100 && srcBalance > transferAmount) {
                     access.udfResult = destBalance + transferAmount;
                     return true;
@@ -58,8 +58,8 @@ public class SLClient extends Client {
             }
         } else if (Objects.equals(txnName, "deposit")) {
             StateObject srcAccountState = access.getStateObject("srcAccountState");
-            float srcBalance = srcAccountState.getFloatValue("balance");
-            float depositAmount = Float.parseFloat((String) access.getValue("depositAmount"));
+            double srcBalance = srcAccountState.getDoubleValue("balance");
+            double depositAmount = Double.parseDouble((String) access.getValue("depositAmount"));
             access.udfResult = srcBalance + depositAmount;
             return true;
         } else {

@@ -45,12 +45,6 @@ public class JCommanderHandler {
     public boolean enable_partition = false;
     @Parameter(names = {"-bt"}, description = "Batch Emit.", required = false)
     public int batch = 1;
-    @Parameter(names = {"--tthread"}, description = "total execution threads")
-    public int tthread = 4;// default total execution threads
-    @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
-    public int spoutNum = 4;// number of spout threads
-    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
-    public int checkpoint_interval = 2500;//checkpoint per thread.
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
     public String fanoutDist = "uniform";
     @Parameter(names = {"--idGenType"}, description = "State ids distribution scheme.[uniform, normal]")
@@ -235,14 +229,13 @@ public class JCommanderHandler {
     @Parameter(names = {"--inputFileType"}, description = "input file type, [txt, csv, json]")
     public int inputFileType = 0;
     @Parameter(names = {"--inputFilePath"}, description = "relative path of input file to the root")
-    public String inputFilePath = rootPath + OsUtils.OS_wrapper("inputs/sl/events.txt");
+    public String inputFilePath;
     @Parameter(names = {"--inputFileName"}, description = "input file name")
     public String inputFileName = "events.txt";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
-    public int totalEvents = 10000;
+    public int totalEvents = 20000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default";
-    //SL configurations
     @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
     public String eventTypes = "transfer;deposit";
     @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
@@ -259,6 +252,14 @@ public class JCommanderHandler {
     public String stateAccessSkewnessForEvents = "0.5,0.5";
     @Parameter(names = {"--abortRatioForEvents"}, description = "abort ratio for each types of event, split by ,")
     public String abortRatioForEvents = "0,0";
+
+    //System configure
+    @Parameter(names = {"--tthread"}, description = "total execution threads")
+    public int tthread = 4;// default total execution threads
+    @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
+    public int spoutNum = 4;// number of spout threads
+    @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
+    public int checkpoint_interval = 2500;//checkpoint per thread.
 
 
 
@@ -365,27 +366,13 @@ public class JCommanderHandler {
         }
 
         /* Workload configurations */
-        config.put("common", application);
-        config.put("app", application);
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);
         config.put("NUM_ACCESS", NUM_ACCESS);
-        if (application.equals("OnlineBiding")){
-            config.put("Ratio_Of_Buying", Ratio_Of_Buying);
-        }else {
-            config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
-        }
-        config.put("State_Access_Skewness", State_Access_Skewness);
-        config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
-        config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
         config.put("Period_of_Window_Reads", Period_of_Window_Reads);
-        config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
-        config.put("Transaction_Length", Transaction_Length);
         config.put("Ratio_of_Non_Deterministic_State_Access", Ratio_of_Non_Deterministic_State_Access);
         config.put("complexity", complexity);
         config.put("windowSize", windowSize);
-        config.put("numberOfDLevels", numberOfDLevels);
-        config.put("ratio_of_read", ratio_of_read);
         // Dynamic workload configurations
         config.put("shiftRate", shiftRate);
         config.put("phaseNum", phaseNum);
@@ -452,11 +439,10 @@ public class JCommanderHandler {
         /* Input configurations */
         config.put("rootPath", rootPath);
         config.put("inputFileType", inputFileType);
-        config.put("inputFilePath", inputFilePath);
+        config.put("inputFilePath", rootPath + OsUtils.OS_wrapper("inputs/sl/events.txt"));
         config.put("inputFileName", inputFileName);
         config.put("totalEvents", totalEvents);
         config.put("workloadType", workloadType);
-        //SL
         config.put("eventTypes", eventTypes);
         String[] eventTypeString = eventTypes.split(";");
         for (int i = 0; i < eventTypeString.length; i ++) {

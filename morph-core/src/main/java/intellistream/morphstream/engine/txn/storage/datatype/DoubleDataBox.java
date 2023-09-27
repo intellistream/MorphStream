@@ -53,7 +53,7 @@ public class DoubleDataBox extends DataBox {
 
     @Override
     public Types type() {
-        return Types.FLOAT;
+        return Types.DOUBLE;
     }
 
     @Override

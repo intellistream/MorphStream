@@ -9,6 +9,7 @@ import intellistream.morphstream.api.utils.MetaTypes;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractMorphStreamBolt;
 import intellistream.morphstream.engine.stream.components.operators.api.sink.AbstractSink;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Tuple;
+import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.msgs.GeneralMsg;
 import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
+import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_ID;
 
 public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MorphStreamBolt.class);
@@ -126,7 +128,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
     protected void Transaction_Post_Process() {
         for (TransactionalEvent event : eventQueue) {
-            Result udfResultReflect;
+            Result udfResultReflect = null;
             try {
                 //Invoke client defined post-processing UDF using Reflection
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
@@ -142,12 +144,11 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 //                    udfResultReflect = (Result) postUDF.invoke(clientObj, stateAccesses);
                     //We can also use reflection to access fields in client class
                 }
-                if (!enable_app_combo) {
+                if (!isCombo) {
                     collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent(), event.getTimestamp());
                 } else {
                     if (enable_latency_measurement) {
-                        //TODO: Define sink for bolt
-//                        sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.transaction_result, event.getTimestamp())));
+                       sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getTimestamp())));
                     }
                 }
 
@@ -161,6 +162,8 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 throw new RuntimeException("Client post UDF invocation failed");
             } catch (InterruptedException e) {
                 throw new RuntimeException("Output emission interrupted");
+            } catch (BrokenBarrierException | IOException | DatabaseException e) {
+                throw new RuntimeException(e);
             }
         }
     }
@@ -170,21 +173,19 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
-            MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
             {
                 transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
             }
-            MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
-            MeasureTools.BEGIN_POST_TIME_MEASURE(thread_Id);
             {
                 Transaction_Post_Process();
             }
-            MeasureTools.END_POST_TIME_MEASURE_ACC(thread_Id);
             {
                 eventQueue.clear();
                 eventStateAccessesMap.clear();
             }
-            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, numEvents);
+            if (isCombo) {
+                sink.execute(in);
+            }
         } else {
             execute_ts_normal(in);
         }

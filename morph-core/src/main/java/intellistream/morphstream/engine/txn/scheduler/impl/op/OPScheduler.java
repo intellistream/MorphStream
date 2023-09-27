@@ -139,7 +139,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 SchemaRecord srcRecord = operation.d_record.content_.readPreValues(operation.bid);
                 SchemaRecord tempo_record = new SchemaRecord(srcRecord);
                 //TODO: pass in the write object-type, avoid isInstanceOf check
-                tempo_record.getValues().get(1).setFloat((float) udfResult);
+                tempo_record.getValues().get(1).setDouble((double) udfResult);
                 operation.d_record.content_.updateMultiValues(operation.bid, mark_ID, clean, tempo_record);
                 //Assign updated schemaRecord back to stateAccess
                 operation.stateAccess.setUpdatedStateObject(tempo_record);

@@ -4,6 +4,7 @@ import intellistream.morphstream.api.input.TransactionalEvent;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.api.operator.bolt.MorphStreamBolt;
 import intellistream.morphstream.api.operator.bolt.SStoreBolt;
+import intellistream.morphstream.api.operator.sink.ApplicationSink;
 import intellistream.morphstream.configuration.CONTROL;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.engine.stream.components.operators.api.spout.AbstractSpoutCombo;
@@ -36,7 +37,7 @@ public class ApplicationSpoutCombo extends AbstractSpoutCombo {
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        //TODO: add sink
+        sink = new ApplicationSink(0);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_MorphStream: {//T-Stream
                 bolt = new MorphStreamBolt(TxnDescriptionHashMap, 0, this.sink);
