@@ -147,6 +147,7 @@ public abstract class OPScheduler<Context extends OPSchedulerContext, Task> impl
                 throw new UnsupportedOperationException();
             }
         } else {
+            operation.stateAccess.setAborted();
             operation.isFailed.set(true);
         }
         /**

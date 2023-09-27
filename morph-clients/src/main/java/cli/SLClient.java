@@ -70,6 +70,13 @@ public class SLClient extends Client {
     @Override
     public Result postUDF(String txnName, HashMap<String, StateAccess> stateAccessMap) {
         Result result = new Result();
+        for (StateAccess stateAccess : stateAccessMap.values()) {
+            if (stateAccess.isAborted()) {
+                String[] abortResult = {"aborted"};
+                result.setResults(abortResult);
+                return result;
+            }
+        }
         if (Objects.equals(txnName, "transfer")) {
             StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
             StateAccess destTransfer = stateAccessMap.get("destTransfer");

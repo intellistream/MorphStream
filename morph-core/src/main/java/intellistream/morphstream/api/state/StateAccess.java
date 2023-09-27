@@ -14,6 +14,7 @@ public class StateAccess {
     private final HashMap<String, StateObject> stateObjectMap; //Store all state objects required during txn-UDF
     private final HashMap<String, Object> valueMap; //Store all values required during txn-UDF, including WRITE value
     public Object udfResult;
+    private boolean isAborted;
 
     public StateAccess(String txnName, StateAccessDescription description) {
         this.txnName = txnName;
@@ -21,6 +22,7 @@ public class StateAccess {
         stateObjectMap = new HashMap<>();
         accessType = description.getAccessType();
         valueMap = new HashMap<>();
+        isAborted = false;
     }
 
     public String getTxnName() {
@@ -66,6 +68,13 @@ public class StateAccess {
 
     public HashMap<String, Object> getValueMap() {
         return valueMap;
+    }
+    public void setAborted() {
+        isAborted = true;
+    }
+
+    public boolean isAborted() {
+        return isAborted;
     }
 }
 
