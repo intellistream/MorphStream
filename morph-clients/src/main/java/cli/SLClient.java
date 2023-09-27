@@ -34,7 +34,7 @@ public class SLClient extends Client {
             if (Objects.equals(stateAccessName, "srcTransfer")) {
                 StateObject srcAccountState = access.getStateObject("srcAccountState");
                 double srcBalance = srcAccountState.getDoubleValue("balance");
-                double transferAmount = (double) access.getValue("transferAmount");
+                double transferAmount = Double.parseDouble((String) access.getValue("transferAmount"));
                 if (srcBalance > 100 && srcBalance > transferAmount) {
                     access.udfResult = srcBalance - transferAmount;
                     return true;
@@ -46,7 +46,7 @@ public class SLClient extends Client {
                 StateObject destAccountState = access.getStateObject("destAccountState");
                 double srcBalance = srcAccountState.getDoubleValue("balance");
                 double destBalance = destAccountState.getDoubleValue("balance");
-                double transferAmount = (double) access.getValue("transferAmount");
+                double transferAmount = Double.parseDouble((String) access.getValue("transferAmount"));
                 if (srcBalance > 100 && srcBalance > transferAmount) {
                     access.udfResult = destBalance + transferAmount;
                     return true;
@@ -57,7 +57,11 @@ public class SLClient extends Client {
                 return false; //abort txn
             }
         } else if (Objects.equals(txnName, "deposit")) {
-            return false;
+            StateObject srcAccountState = access.getStateObject("srcAccountState");
+            double srcBalance = srcAccountState.getDoubleValue("balance");
+            double depositAmount = Double.parseDouble((String) access.getValue("depositAmount"));
+            access.udfResult = srcBalance + depositAmount;
+            return true;
         } else {
             return false;
         }
@@ -66,6 +70,13 @@ public class SLClient extends Client {
     @Override
     public Result postUDF(String txnName, HashMap<String, StateAccess> stateAccessMap) {
         Result result = new Result();
+        for (StateAccess stateAccess : stateAccessMap.values()) {
+            if (stateAccess.isAborted()) {
+                String[] abortResult = {"aborted"};
+                result.setResults(abortResult);
+                return result;
+            }
+        }
         if (Objects.equals(txnName, "transfer")) {
             StateAccess srcTransfer = stateAccessMap.get("srcTransfer");
             StateAccess destTransfer = stateAccessMap.get("destTransfer");
@@ -116,7 +127,9 @@ public class SLClient extends Client {
         txnDescriptions.put("deposit", depositDescriptor);
 
         //Define topology
-        SLClient.setSpoutCombo("spout", txnDescriptions, 1);
+        SLClient.setSpoutCombo("spout", txnDescriptions, 4);
+        //TODO: let client determine number of DB loader threads, and update in config, then pass to DBInitializer
+        //TODO: loadDBThreadNum = total threads of all stateful operators (bolts)
 
         //Initiate runner
         try {

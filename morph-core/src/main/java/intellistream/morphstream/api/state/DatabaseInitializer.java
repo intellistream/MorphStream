@@ -52,6 +52,7 @@ public class DatabaseInitializer {
                 _key = String.valueOf(key);
                 insertRecord(tableName, _key, pid, spinLocks, pid);
             }
+            LOG.info("Thread " + threadId + " loaded " + (right_bound - left_bound) + " records into table " + tableName);
         }
     }
     public void loadDB(int threadId, boolean isPartition) {//Used by SStore
@@ -63,7 +64,7 @@ public class DatabaseInitializer {
     public void configure_db(){
         configuration = MorphStreamEnv.get().configuration();
         tableNames = configuration.getString("tableNames","table1,table2").split(",");
-        totalThreads = configuration.getInt("tthread", 4);
+        totalThreads = configuration.getInt("loadDBThreadNum", 4);
         spinlock = new SpinLock[totalThreads];
         for (String tableName : tableNames) {
             numItemMaps.put(tableName, configuration.getInt(tableName + "_num_items", 1000000));
@@ -76,9 +77,9 @@ public class DatabaseInitializer {
     private void insertRecord(String tableName, String key, int pid, SpinLock[] spinLocks, int partition_id) {
         try {
             if (spinLocks != null)
-                MorphStreamEnv.get().database().InsertRecord("bookEntries", getTableRecordWithSpinLock(tableName, key, pid, spinLocks), partition_id);
+                MorphStreamEnv.get().database().InsertRecord(tableName, getTableRecordWithSpinLock(tableName, key, pid, spinLocks), partition_id);
             else
-                MorphStreamEnv.get().database().InsertRecord("bookEntries", getTableRecord(tableName, key), partition_id);
+                MorphStreamEnv.get().database().InsertRecord(tableName, getTableRecord(tableName, key), partition_id);
         } catch (DatabaseException e) {
             LOG.error("Error inserting record: " + e.getMessage());
         }
