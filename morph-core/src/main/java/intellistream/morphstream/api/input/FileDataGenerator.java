@@ -11,6 +11,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -24,7 +25,7 @@ public class FileDataGenerator {
     private final Random random = new Random(0);
     private Configuration configuration;
     //File configuration
-    private String fileName;
+    private String inputFilePath;
     private String rootPath;
     //System configuration
     private int totalThreads = 4;
@@ -53,22 +54,31 @@ public class FileDataGenerator {
         configure_store();
         generateStream();
         dumpGeneratedDataToFile();
-        return rootPath + fileName;
+        return inputFilePath;
     }
     private void configure_store() {
         configuration = MorphStreamEnv.get().configuration();
         numItemMaps = MorphStreamEnv.get().databaseInitializer().getNumItemMaps();
-        rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark/") + OsUtils.OS_wrapper("inputs");
+        rootPath = configuration.getString("rootPath", "/Users/curryzjj/hair-loss/MorphStream/Benchmark");
         if (!new File(rootPath).exists()) {
             new File(rootPath).mkdirs();
         }
-        fileName = configuration.getString("inputFileName", "events.txt");
+        inputFilePath = configuration.getString("inputFilePath", "events.txt");
+        Path inputFile = Paths.get(inputFilePath);
+        try {
+            if (!Files.exists(inputFile) || !Files.exists(inputFile.getParent())) {
+                Files.createDirectories(inputFile.getParent());
+                Files.createFile(inputFile);
+            }
+        } catch (IOException e) {
+            System.out.println("Error in locating input file: " + e.getMessage());
+        }
         totalThreads = configuration.getInt("totalThreads", 4);
         punctuation = configuration.getInt("punctuation", 1000);
         totalEvents = configuration.getInt("totalEvents", totalThreads * punctuation);
         phaseType = configuration.getString("workloadType", "default").split(",");
         phase = 0;
-        eventTypes = configuration.getString("eventTypes", "event1,event2").split(",");
+        eventTypes = configuration.getString("eventTypes", "event1,event2").split(";");
         inputEvents = new ArrayList<TransactionalEvent>(totalEvents);
         for (Map.Entry<String, Integer> s : numItemMaps.entrySet()) {
             intervalMaps.put(s.getKey(), s.getValue() / totalThreads);
@@ -82,13 +92,13 @@ public class FileDataGenerator {
             }
             eventKeyMap.put(eventType, keyMap);
             eventValueMap.put(eventType, Arrays.asList(configuration.getString(eventType + "_values", "v1,v2").split(",")));
-            stateAssessSkewMap.put(eventType, configuration.getInt(eventType + ".State_Access_Skewness", 0));
+            stateAssessSkewMap.put(eventType, configuration.getInt(eventType + "_state_access_skewness", 0));
             eventRatioMap.put(eventType, configuration.getInt(eventType + "_event_ratio", 50));
             for (int i = 0; i < eventRatioMap.get(eventType) / 10; i++) {
                 eventList.add(eventType);
             }
-            eventAbortMap.put(eventType, configuration.getInt(eventType + "_ratio_of_multi_partition_transactions", 0));
-            eventMultiPartitionMap.put(eventType, configuration.getInt(eventType + "_state_access_skewness", 0));
+            eventAbortMap.put(eventType, configuration.getInt(eventType + "_abort_ratio", 0));
+            eventMultiPartitionMap.put(eventType, configuration.getInt(eventType + "_ratio_of_multi_partition_transactions", 0));
             HashMap<String, FastZipfGenerator> zipfHashMap = new HashMap<>();//tableNames -> zipf generator
             HashMap<String, List<FastZipfGenerator>> partitionZipfHashMap = new HashMap<>();//tableNames -> Lists of partition zipf generator
             for (String tableName: eventKeyMap.get(eventType).keySet()) {
@@ -118,17 +128,11 @@ public class FileDataGenerator {
         LOG.info("Dumping generated data to file... Done!");
     }
     private void sinkEvents() throws IOException {
-        BufferedWriter transferEventBufferedWriter = CreateWriter(fileName);
+        BufferedWriter transferEventBufferedWriter = Files.newBufferedWriter(Paths.get(inputFilePath));
         for (TransactionalEvent inputEvent : inputEvents) {
             transferEventBufferedWriter.write(inputEvent + "\n");
         }
         transferEventBufferedWriter.close();
-    }
-    private BufferedWriter CreateWriter(String FileName) throws IOException {
-        File file = new File(rootPath + OsUtils.OS_wrapper(FileName));
-        if (!file.exists())
-            file.createNewFile();
-        return Files.newBufferedWriter(Paths.get(file.getPath()));
     }
     private void generateTuple(String eventType) {
         TransactionalEvent inputEvent;

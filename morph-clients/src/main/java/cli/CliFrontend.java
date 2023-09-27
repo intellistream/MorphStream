@@ -57,26 +57,26 @@ public class CliFrontend {
 
     public void prepare() throws IOException {
         env.DatabaseInitialize();
-        if (env.configuration().getInt("inputSourceType", 0) == 0) {
-            String inputFile = env.configuration().getString("inputFile");
+        if (env.configuration().getInt("inputSourceType", 0) == 0) { //read input as string
+            String inputFile = env.configuration().getString("inputFilePath");
             File file = new File(inputFile);
             if (file.exists()) {
                 LOG.info("Data already exists.. skipping data generation...");
             } else {
                 String fileName = env.fileDataGenerator().prepareInputData();
-                env.configuration().put("inputFile", fileName);
+                env.configuration().put("inputFilePath", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFile"), InputSource.InputSourceType.FILE_STRING, env.configuration().getInt("spoutNum"));
-        } else if (env.configuration().getInt("inputSourceType", 0) == 1) {
-            String inputFile = env.configuration().getString("inputFile");
+            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, env.configuration().getInt("spoutNum"));
+        } else if (env.configuration().getInt("inputSourceType", 0) == 1) { //read input as JSON
+            String inputFile = env.configuration().getString("inputFilePath");
             File file = new File(inputFile);
             if (file.exists()) {
                 LOG.info("Data already exists.. skipping data generation...");
             } else {
                 String fileName = env.fileDataGenerator().prepareInputData();
-                env.configuration().put("inputFile", fileName);
+                env.configuration().put("inputFilePath", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFile"), InputSource.InputSourceType.FILE_JSON, env.configuration().getInt("spoutNum"));
+            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, env.configuration().getInt("spoutNum"));
         }
     }
     public void run() throws InterruptedException {

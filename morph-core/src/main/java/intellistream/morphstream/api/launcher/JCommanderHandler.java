@@ -1,8 +1,6 @@
 package intellistream.morphstream.api.launcher;
 
 import com.beust.jcommander.Parameter;
-import intellistream.morphstream.common.io.Enums.platform.HP_Machine;
-import intellistream.morphstream.common.io.Enums.platform.HUAWEI_Machine;
 import intellistream.morphstream.configuration.Configuration;
 import intellistream.morphstream.configuration.Constants;
 import intellistream.morphstream.engine.txn.durability.struct.FaultToleranceRelax;
@@ -14,10 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Properties;
 
-import static intellistream.morphstream.configuration.CONTROL.enable_log;
 import static intellistream.morphstream.engine.txn.content.LVTStreamContent.LVTSTREAM_CONTENT;
 import static intellistream.morphstream.engine.txn.content.LWMContentImpl.LWM_CONTENT;
 import static intellistream.morphstream.engine.txn.content.LockContentImpl.LOCK_CONTENT;
@@ -51,6 +47,8 @@ public class JCommanderHandler {
     public int batch = 1;
     @Parameter(names = {"--tthread"}, description = "total execution threads")
     public int tthread = 4;// default total execution threads
+    @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
+    public int spoutNum = 4;// number of spout threads
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 2500;//checkpoint per thread.
     @Parameter(names = {"--fanoutDist"}, description = "Fanout rate distribution scheme. [uniform, zipfinv, zipf, zipfcenter]")
@@ -213,9 +211,9 @@ public class JCommanderHandler {
     @Parameter(names = {"--NUM_ITEMS"}, description = "NUM_ITEMS in DB.")
     public int NUM_ITEMS = 100_000;//number of records in each table
     @Parameter(names = {"--tableNames"}, description = "String of table names, split by ,")
-    public String tableNames = "table1,table2";
+    public String tableNames = "account,bookEntries";
     @Parameter(names = {"--numberItemsForTables"}, description = "number of items for each table, split by ,")
-    public String numberItemsForTables = "1000000,1000000";
+    public String numberItemsForTables = "10000,10000";
     @Parameter(names = {"--keyDataTypesForTables"}, description = "key data types for each table, split by ,")
     public String keyDataTypesForTables = "string,string";
     @Parameter(names = {"--valueDataTypesForTables"}, description = "value data types for each table, split by ,")
@@ -230,32 +228,35 @@ public class JCommanderHandler {
      */
     @Parameter(names = {"--config-str"}, required = false, description = "Path to the configuration file for the application")
     public String configStr; //TODO: if config string specified, load configs from the file using loadProperties()
+    @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
+    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
     @Parameter(names = {"--inputFileType"}, description = "input file type, [txt, csv, json]")
     public int inputFileType = 0;
-    @Parameter(names = {"--inputFile"}, description = "path of input file ")
-    public String inputFile = "/Users/curryzjj/hair-loss/MorphStream/Benchmark/input/event.txt";
+    @Parameter(names = {"--inputFilePath"}, description = "relative path of input file to the root")
+    public String inputFilePath = rootPath + OsUtils.OS_wrapper("inputs/sl/events.txt");
     @Parameter(names = {"--inputFileName"}, description = "input file name")
     public String inputFileName = "events.txt";
     @Parameter(names = {"--totalEvents"}, description = "Total number of events to process.")
     public int totalEvents = 10000;
     @Parameter(names = {"--workloadType"}, description = "which type of dynamic workload")
     public String workloadType = "default";
-    @Parameter(names = {"--eventTypes"}, description = "String of event types, split by ,")
-    public String eventTypes = "event1,event2";
-    @Parameter(names = {"--tableNameForEvents"}, description = "table names for each type of event, split by ;")
-    public String tableNameForEvents = "table1,table2;table1,table2";
-    @Parameter(names = {"keyNumberForEvents"}, description = "number of keys for each type of event, split by ;")
-    public String keyNumberForEvents = "2,2;2,2";
-    @Parameter(names = {"valueNameForEvents"}, description = "value names for each type of event, split by ;")
-    public String valueNameForEvents = "v1,v2;v1,v2";
-    @Parameter(names = {"conditionNameForEvents"}, description = "condition names for each type of event, split by ;")
-    public String conditionNameForEvents = "c1,c2;c1,c2";
-    @Parameter(names = {"--eventRatio"}, description = "event ratio for each type of event, split by ,")
-    public String eventRatio = "0.5,0.5";
-    @Parameter(names = {"--ratioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
-    public String ratioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
-    @Parameter(names = {"--stateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
-    public String stateAccessSkewnessForEvents = "0.5,0.5";
+    //SL configurations
+    @Parameter(names = {"--slEventTypes"}, description = "String of event types, split by ,")
+    public String SLEventTypes = "transfer;deposit";
+    @Parameter(names = {"--slTableNameForEvents"}, description = "table names for each type of event, split by ;")
+    public String SLTableNameForEvents = "account,bookEntries;account,bookEntries";
+    @Parameter(names = {"--slKeyNumberForEvents"}, description = "number of keys for each type of event, split by ;")
+    public String SLKeyNumberForEvents = "2,2;2,2";
+    @Parameter(names = {"--slValueNameForEvents"}, description = "value names for each type of event, split by ;")
+    public String SLValueNameForEvents = "v1,v2;v1,v2";
+    @Parameter(names = {"--slEventRatio"}, description = "event ratio for each type of event, split by ,")
+    public String SLEventRatio = "0.5,0.5";
+    @Parameter(names = {"--slRatioOfMultiPartitionTransactionsForEvents"}, description = "ratio of multi partition transactions for each type of event, split by ,")
+    public String SLRatioOfMultiPartitionTransactionsForEvents = "0.5,0.5";
+    @Parameter(names = {"--slStateAccessSkewnessForEvents"}, description = "state access skewness for each types of event, split by ,")
+    public String SLStateAccessSkewnessForEvents = "0.5,0.5";
+    @Parameter(names = {"--slAbortRatioForEvents"}, description = "state access skewness for each types of event, split by ,")
+    public String SLAbortRatioForEvents = "0,0";
 
 
 
@@ -264,8 +265,6 @@ public class JCommanderHandler {
      */
     @Parameter(names = {"--measure"}, description = "enable measurement")
     public boolean enable_measurement = false;
-    @Parameter(names = {"--rootFilePath"}, description = "Root path for data files.")
-    public String rootPath = System.getProperty("user.home") + OsUtils.OS_wrapper("data");
     @Parameter(names = {"-mp"}, description = "Metric path", required = false)
     public String metric_path = rootPath + OsUtils.OS_wrapper("metric_output");
     @Parameter(names = {"--machine"}, description = "which machine to use? 0 (default): a simple one-socket machine with four cores. Add your machine specification accordingly and select them by change this specification")
@@ -321,6 +320,7 @@ public class JCommanderHandler {
             config.put("batch", batch);
         }
         config.put("tthread", tthread);
+        config.put("spoutNum", spoutNum);
         config.put("checkpoint", checkpoint_interval);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
@@ -446,27 +446,28 @@ public class JCommanderHandler {
         }
 
         /* Input configurations */
+        config.put("rootPath", rootPath);
         config.put("inputFileType", inputFileType);
-        config.put("inputFile", inputFile);
+        config.put("inputFilePath", inputFilePath);
         config.put("inputFileName", inputFileName);
         config.put("totalEvents", totalEvents);
         config.put("workloadType", workloadType);
-        config.put("eventTypes", eventTypes);
-        String[] eventTypeString = eventTypes.split(";");
+        //SL
+        config.put("eventTypes", SLEventTypes);
+        String[] eventTypeString = SLEventTypes.split(";");
         for (int i = 0; i < eventTypeString.length; i ++) {
-            config.put(eventTypeString[i] + "_tables", tableNameForEvents.split(";")[i]);
-            config.put(eventTypeString[i] + "_key_number", keyNumberForEvents.split(";")[i]);
-            config.put(eventTypeString[i] + "_values", valueNameForEvents.split(";")[i]);
-            config.put(eventTypeString[i] + "_conditions", conditionNameForEvents.split(";")[i]);
-            config.put(eventTypeString[i] + "_event_ratio", eventRatio.split(",")[i]);
-            config.put(eventTypeString[i] + "_ratio_of_multi_partition_transactions", ratioOfMultiPartitionTransactionsForEvents.split(",")[i]);
-            config.put(eventTypeString[i] + "_state_access_skewness", stateAccessSkewnessForEvents.split(",")[i]);
+            config.put(eventTypeString[i] + "_tables", SLTableNameForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_key_number", SLKeyNumberForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_values", SLValueNameForEvents.split(";")[i]);
+            config.put(eventTypeString[i] + "_event_ratio", SLEventRatio.split(",")[i]);
+            config.put(eventTypeString[i] + "_ratio_of_multi_partition_transactions", SLRatioOfMultiPartitionTransactionsForEvents.split(",")[i]);
+            config.put(eventTypeString[i] + "_state_access_skewness", SLStateAccessSkewnessForEvents.split(",")[i]);
+            config.put(eventTypeString[i] + "_abort_ratio", SLAbortRatioForEvents.split(",")[i]);
         }
 
         /* Benchmarking and evaluation configurations */
         config.put("measure", enable_measurement);
         config.put("machine", machine);
-        config.put("rootFilePath", rootPath);
         config.put("metrics.output", metric_path);
         config.put("verbose", verbose);
         config.put("runtimeInSeconds", runtimeInSeconds);

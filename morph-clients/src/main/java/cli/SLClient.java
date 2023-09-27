@@ -87,15 +87,7 @@ public class SLClient extends Client {
         //Transfer transaction
         TxnDescription transferDescriptor = new TxnDescription();
         txnDescriptions.put("transfer", transferDescriptor);
-        /**
-         * One state access can be defined as one of the follows:
-         * READ
-         * WRITE
-         * WINDOW_READ
-         * WINDOW_WRITE
-         * NON_DETER_READ
-         * NON_DETER_WRITE
-         */
+
         //Define 1st state accesses
         StateAccessDescription srcTransfer = new StateAccessDescription("srcTransfer", AccessType.WRITE);
         srcTransfer.addStateObjectDescription("srcAccountState", AccessType.WRITE, "accounts", "srcAccountID", "accountValue", 0);

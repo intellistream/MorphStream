@@ -29,7 +29,7 @@ public class StorageManager {
         tables = new ConcurrentHashMap<>();
         snapshotStrategy = new InMemorySnapshotStrategy(tables,
                 new SnapshotOptions(configuration.getInt("parallelNum"), "None"),
-                configuration.getString("rootFilePath") + OsUtils.OS_wrapper("snapshot"));
+                configuration.getString("rootPath") + OsUtils.OS_wrapper("snapshot"));
     }
 
     public BaseTable getTable(String tableName) throws DatabaseException {

@@ -22,7 +22,6 @@ public class InputSource {
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
     //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
     private final HashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
-    private int spoutNum;
     private int bid;
     public enum InputSourceType {
         FILE_STRING,
@@ -55,7 +54,7 @@ public class InputSource {
                 inputQueues.get(index).add(inputFromStringToTxnEvent(input));
             else if (this.inputSourceType == InputSourceType.FILE_JSON)
                 inputQueues.get(index).add(inputFromJsonToTxnEvent(input));
-            index ++;
+            index = (index + 1) % spoutNum;
         }
     }
 
