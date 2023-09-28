@@ -164,10 +164,8 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
                 if (!enable_app_combo) {
                     collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent(), event.getTimestamp());
                 } else {
-                    if (enable_latency_measurement) {
-                        //TODO: Define sink for bolt
-//                        sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.transaction_result, event.getTimestamp())));
-                    }
+                    //TODO: Define sink for bolt
+                    //sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, event.transaction_result, event.getTimestamp())));
                 }
 
             } catch (ClassNotFoundException e) {
