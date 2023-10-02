@@ -36,10 +36,13 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
-    private DescriptiveStatistics latencyArray = new DescriptiveStatistics();
-    private double throughput = 0;
-    private int lastMeasuredBatchID = -1; //ID of the last batch that has been completely measured
+    private final HashMap<Integer, Double> throughputMap = new HashMap<>(); //batchID -> throughput in seconds
+    private final HashMap<Integer, DescriptiveStatistics> latencyStatMap = new HashMap<>(); //batchID -> latency statistics
+    private int lastMeasuredBatchID = -1;
+    private final DescriptiveStatistics latencyStat = new DescriptiveStatistics(); //latency statistics of current batch
     private long batchStartTS = 0; //Timestamp of the first event in the current batch
+    private boolean isNewBatch = true; //Whether the input event indicates a new batch
+    private final int batchSize = MorphStreamEnv.get().configuration().getInt("checkpoint");
 
     public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
         super(LOG, fid);
@@ -58,31 +61,32 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
 
-    protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
+    protected void execute_ts_normal(Tuple in) throws DatabaseException {
         MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
         MeasureTools.END_PREPARE_TIME_MEASURE_ACC(thread_Id);
-        PRE_TXN_PROCESS(_bid, timestamp);
+        PRE_TXN_PROCESS(_bid);
     }
 
     protected void PRE_EXECUTE(Tuple in) {
         if (enable_latency_measurement)
-            timestamp = in.getLong(1);
+            operatorTimestamp = System.nanoTime();
         else
-            timestamp = 0L;//
+            operatorTimestamp = 0L;//
         _bid = in.getBID();
         input_event = in.getValue(0);
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
     }
 
     @Override
-    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
+    protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TransactionalEvent event = (TransactionalEvent) input_event;
-            if (enable_latency_measurement)
-                (event).setTimestamp(timestamp);
+            if (enable_latency_measurement) {
+                event.setOperationTimestamp(operatorTimestamp);
+            }
             Transaction_Request_Construct(event, txnContext);
             MeasureTools.END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
         }
@@ -141,11 +145,14 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                     HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
                     udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
                 }
+                if (enable_latency_measurement) {
+                    latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
+                }
                 if (!isCombo) {
-                    collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent(), event.getTimestamp());
+                    collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
                 } else {
                     if (enable_latency_measurement) {
-                       sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getTimestamp())));
+                       sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getOriginTimestamp())));
                     }
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
@@ -157,6 +164,14 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             } catch (BrokenBarrierException | IOException | DatabaseException e) {
                 throw new RuntimeException(e);
             }
+        }
+        if (enable_latency_measurement) {
+            isNewBatch = true;
+            lastMeasuredBatchID += 1;
+            long batchProcessingTime = System.nanoTime() - batchStartTS;
+            double batchThroughput = (batchSize * 1E9 / batchProcessingTime);
+            throughputMap.put(lastMeasuredBatchID, batchThroughput);
+            latencyStatMap.put(lastMeasuredBatchID, latencyStat);
         }
     }
 
@@ -174,17 +189,13 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             }
         } else {
             execute_ts_normal(in);
+            if (enable_latency_measurement) {
+                if (isNewBatch) { //only executed by 1st event in a batch
+                    isNewBatch = false;
+                    batchStartTS = System.nanoTime();
+                }
+            }
         }
-    }
-
-    @Override
-    public DescriptiveStatistics getLatencyStats() {
-        return null;
-    }
-
-    @Override
-    public double getThroughputStats() {
-        return 0;
     }
 
 }

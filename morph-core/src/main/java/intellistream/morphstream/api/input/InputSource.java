@@ -2,6 +2,7 @@ package intellistream.morphstream.api.input;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import intellistream.morphstream.configuration.CONTROL;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -23,6 +24,7 @@ public class InputSource {
     //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
     private final HashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
     private int bid;
+    private boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
     public enum InputSourceType {
         FILE_STRING,
         FILE_JSON,
@@ -78,6 +80,11 @@ public class InputSource {
         } else {
             txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
         }
+        if (createTimestampForEvent) {
+            txnEvent.setOriginTimestamp(System.nanoTime());
+        } else {
+            txnEvent.setOriginTimestamp(0L);
+        }
 
         bid++;
         return txnEvent;
@@ -116,6 +123,11 @@ public class InputSource {
             txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
         } else {
             txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
+        }
+        if (createTimestampForEvent) {
+            txnEvent.setOriginTimestamp(System.nanoTime());
+        } else {
+            txnEvent.setOriginTimestamp(0L);
         }
 
         bid++;
