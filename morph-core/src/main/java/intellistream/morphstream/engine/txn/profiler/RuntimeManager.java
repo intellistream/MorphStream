@@ -2,7 +2,6 @@ package intellistream.morphstream.engine.txn.profiler;
 
 
 import intellistream.morphstream.engine.stream.components.Topology;
-import intellistream.morphstream.engine.stream.components.operators.api.delete.TransactionalBolt;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
 import java.util.ArrayList;

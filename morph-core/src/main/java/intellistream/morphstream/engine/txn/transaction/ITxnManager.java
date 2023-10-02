@@ -24,30 +24,6 @@ public interface ITxnManager {
     PartitionedOrderLock.LOCK getOrderLock(int p_id);//partitioned. Global ordering can not be partitioned.
     boolean submitStateAccess(StateAccess stateAccess, TxnContext txnContext) throws DatabaseException;
 
-    /**
-     * Read-only
-     * This API pushes a place-holder to the shared-store.
-     *
-     * @param txn_context
-     * @param srcTable
-     * @param key
-     * @return
-     * @throws DatabaseException
-     */
-    boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String key) throws DatabaseException;
-    //Used by native T-Stream.
-
-    boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String srcKey, StateAccess stateAccess) throws DatabaseException;
-
-    boolean Asy_WriteRecord(TxnContext txn_context, String srcTable, String srcKey, StateAccess stateAccess) throws DatabaseException;
-
-    boolean Asy_WriteRecord_Cond(TxnContext txn_context, String srcTable, String key, String[] condition_sourceTable, String[] condition_source, StateAccess stateAccess) throws DatabaseException;
-
-    // add window support
-    boolean Asy_WindowReadRecords(TxnContext txn_context, String srcTable, String key, String[] condition_sourceTable, String[] condition_source) throws DatabaseException;
-
-    boolean Asy_WriteRecord_Non_Deter(TxnContext txn_context, String srcTable, String key, String[] condition_sourceTable, String[] condition_source, StateAccess stateAccess) throws DatabaseException;
-
     //used by speculative T-Stream.
 //    boolean Specu_ReadRecord(TxnContext txn_context, String microTable, String key, SchemaRecordRef record_ref, MetaTypes.AccessType accessType) throws DatabaseException;
     void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException;

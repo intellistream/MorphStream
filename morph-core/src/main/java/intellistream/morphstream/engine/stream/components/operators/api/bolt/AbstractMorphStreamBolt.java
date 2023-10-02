@@ -27,7 +27,7 @@ public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt 
         this.thread_Id = thread_Id;
         tthread = config.getInt("tthread", 0);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(),
-                thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler"));
+                thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler"), this.context.getStageMap().get(this.fid));
         if (config.getBoolean("isGroup")) {
             SOURCE_CONTROL.getInstance().config(tthread, config.getInt("groupNum"));
         } else {

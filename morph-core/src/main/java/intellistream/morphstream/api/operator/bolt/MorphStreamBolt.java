@@ -36,6 +36,10 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
+    private DescriptiveStatistics latencyArray = new DescriptiveStatistics();
+    private double throughput = 0;
+    private int lastMeasuredBatchID = -1; //ID of the last batch that has been completely measured
+    private long batchStartTS = 0; //Timestamp of the first event in the current batch
 
     public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
         super(LOG, fid);
@@ -133,16 +137,9 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 //Invoke client defined post-processing UDF using Reflection
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
                 if (Client.class.isAssignableFrom(clientClass)) {
-                    // Cast the class object to MyAbstractClass
                     Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
                     HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                    // Option 1: Invoke postUDF using Interface
                     udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
-                    // Option 2: Invoke postUDF using Method Reflection
-//                    String postUDFName = txnDescriptionMap.get(event.getFlag()).getPostUDFName();
-//                    Method postUDF = clientClass.getMethod(postUDFName, HashMap.class);
-//                    udfResultReflect = (Result) postUDF.invoke(clientObj, stateAccesses);
-                    //We can also use reflection to access fields in client class
                 }
                 if (!isCombo) {
                     collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent(), event.getTimestamp());
@@ -151,14 +148,9 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                        sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getTimestamp())));
                     }
                 }
-
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Client class not found");
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Fail to create instance for client class");
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException("Client post UDF method not found");
-            } catch (InvocationTargetException e) {
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("Client class instantiation failed");
+            } catch (NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException("Client post UDF invocation failed");
             } catch (InterruptedException e) {
                 throw new RuntimeException("Output emission interrupted");
@@ -173,16 +165,10 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
-            {
-                transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
-            }
-            {
-                Transaction_Post_Process();
-            }
-            {
-                eventQueue.clear();
-                eventStateAccessesMap.clear();
-            }
+            transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
+            Transaction_Post_Process();
+            eventQueue.clear();
+            eventStateAccessesMap.clear();
             if (isCombo) {
                 sink.execute(in);
             }
