@@ -14,6 +14,7 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,6 +173,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             double batchThroughput = (batchSize * 1E9 / batchProcessingTime);
             throughputMap.put(lastMeasuredBatchID, batchThroughput);
             latencyStatMap.put(lastMeasuredBatchID, latencyStat);
+            RuntimeMonitor.get().submitRuntimeData(lastMeasuredBatchID, fid, thread_Id, latencyStat, batchThroughput);
         }
     }
 

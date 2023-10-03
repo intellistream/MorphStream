@@ -19,6 +19,7 @@ import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
 import intellistream.morphstream.engine.txn.durability.logging.LoggingResult.LoggingResult;
 import intellistream.morphstream.engine.txn.durability.snapshot.SnapshotResult.SnapshotResult;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
+import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.util.FaultToleranceConstants;
@@ -191,6 +192,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             double batchThroughput = (batchSize * 1E9 / batchProcessingTime);
             throughputMap.put(lastMeasuredBatchID, batchThroughput);
             latencyStatMap.put(lastMeasuredBatchID, latencyStat);
+            RuntimeMonitor.get().submitRuntimeData(lastMeasuredBatchID, fid, thread_Id, latencyStat, batchThroughput);
         }
     }
 
