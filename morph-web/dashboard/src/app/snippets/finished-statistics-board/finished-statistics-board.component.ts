@@ -1,7 +1,9 @@
-import {AfterViewInit, Component, Input, OnInit} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, OnInit} from '@angular/core';
 import * as Highcharts from 'highcharts';
 import { Options } from 'highcharts';
 import {Application} from "../../model/Application";
+
+import * as d3 from 'd3';
 
 @Component({
   selector: 'app-finished-statistics-board',
@@ -11,6 +13,8 @@ import {Application} from "../../model/Application";
 export class FinishedStatisticsBoardComponent implements AfterViewInit, OnInit {
   @Input()
   job!: Application;
+
+  constructor(private el: ElementRef) {}
 
   timeChartData: Options = {
     chart: {
@@ -26,51 +30,12 @@ export class FinishedStatisticsBoardComponent implements AfterViewInit, OnInit {
     }
   };
 
-  throughputLatencyData: Options = {
-    chart: {
-      type: 'area',
-      backgroundColor: 'rgba(67,78,131, 10)'
-    },
-    title: {
-      text: 'Throughput & Latency',
-      style: {
-        color: '#ffffff',
-        fontFamily: 'Inter'
-      }
-    },
-    xAxis: {
-      categories: ['100', '200', '300', '400', '500', '600', '700', '800', '900', '1000'],
-      lineColor: '#ffffff',
-      labels: {
-        style: {
-          color: '#ffffff'
-        }
-      }
-    },
-    yAxis: {
-      title: {
-        text: 'Value',
-        style: {
-          color: '#ffffff',
-        }
-      },
-      labels: {
-        style: {
-          color: '#ffffff'
-        }
-      },
-    },
-    legend: {
-      itemStyle: {
-        color: '#ffffff' // 图例项的颜色
-      }
-    },
-  };
+  throughputLatencyData: any[] = [];
 
   ngAfterViewInit() {
     console.log(this.job)
-    Highcharts.chart('throughputLatencyContainer', this.throughputLatencyData)
-    Highcharts.chart('timeChartContainer', this.timeChartData);
+    // Highcharts.chart('throughputLatencyContainer', this.throughputLatencyData)
+    // Highcharts.chart('timeChartContainer', this.timeChartData);
   }
 
   ngOnInit(): void {
@@ -96,18 +61,23 @@ export class FinishedStatisticsBoardComponent implements AfterViewInit, OnInit {
       ]
     }]
 
-    this.throughputLatencyData.series = [
+    this.throughputLatencyData = [
       {
-        type: 'area',
         name: 'Throughput (k tuples/s)',
-        data: this.job.periodicalThroughput,
+        series: this.job.periodicalThroughput.map((value, index) => ({
+          name: index.toString() + " s",
+          value: value
+        })),
         color: '#8BDB4D'
       },
       {
-        type: 'area',
-        name: 'latency (s)',
-        data: this.job.periodicalLatency,
+        name: 'Latency (s)',
+        series: this.job.periodicalLatency.map((value, index) => ({
+          name: index.toString() + " s",
+          value: value
+        })),
         color: '#0FB2E5'
-      }]
+      }
+    ];
   }
 }

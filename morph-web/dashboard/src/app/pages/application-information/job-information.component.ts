@@ -7,30 +7,29 @@ import {JobInformationService} from "./job-information.service";
 import {Application} from "../../model/Application";
 import {ActivatedRoute} from "@angular/router";
 
+import * as d3 from 'd3';
+import {NzCascaderOption} from "ng-zorro-antd/cascader";
+
 @Component({
   selector: 'app-application-information',
   templateUrl: './job-information.component.html',
   styleUrls: ['./job-information.component.less']
 })
-export class JobInformationComponent implements OnInit, AfterViewInit {
-  overallThroughput = (): string => `20.9 K tuple/sec`;
-  processingLatency = (): string => `2230 ms`;
-
-  @ViewChild('progressBarCol', { static: false }) progressBarCol!: ElementRef;
-  progressBarWidth = 0; // the width of the progressbar
-
+export class JobInformationComponent implements OnInit {
   basicApplication: BasicApplication;
   application: Application;
 
-  constructor(private route: ActivatedRoute, private applicationService: ApplicationService, private websocket: Websocket, private applicationInformationService: JobInformationService) {
-  }
+  throughputLatencyData: any[] = [];
+  timePieData: any[] = [];
 
-  ngAfterViewInit() {
-    this.setProgressBarWidth();
-  }
+  batchOptions: any[] = [];
 
-  setProgressBarWidth() {
-    this.progressBarWidth = this.progressBarCol.nativeElement.offsetWidth;
+
+  constructor(private route: ActivatedRoute,
+              private applicationService: ApplicationService,
+              private websocket: Websocket,
+              private applicationInformationService: JobInformationService,
+              private el: ElementRef) {
   }
 
   ngOnInit(): void {
@@ -38,11 +37,72 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
 
     this.route.params.subscribe(params => {
       const jobId = params['id'];
-      console.log(jobId)
 
       this.applicationInformationService.getHistoricalJob(jobId).subscribe(res => {
         this.application = res;
         this.basicApplication = this.applicationService.getCurrentApplication();
+
+        this.throughputLatencyData = [
+          {
+            name: 'Throughput (k tuples/s)',
+            series: this.application.periodicalThroughput.map((value, index) => ({
+              name: index.toString() + " s",
+              value: value
+            })),
+            // color: '#8BDB4D'
+          },
+          {
+            name: 'Latency (s)',
+            series: this.application.periodicalLatency.map((value, index) => ({
+              name: index.toString() + " s",
+              value: value
+            })),
+            // color: '#0FB2E5'
+          }
+        ];
+
+        this.timePieData = [
+          {
+            name: 'exploration time (ms)',
+            value: this.application.schedulerTimeBreakdown.exploreTime,
+            // color: '#8BDB4D'
+          },
+          {
+            name: 'tpg construction time (ms)',
+            value: this.application.schedulerTimeBreakdown.constructTime,
+            // color: '#0FB2E5'
+          },
+          {
+            name: 'other time (ms)',
+            value: this.application.schedulerTimeBreakdown.abortTime +
+              this.application.schedulerTimeBreakdown.trackingTime +
+              this.application.schedulerTimeBreakdown.usefulTime,
+            // color: '#EF5A5A'
+          }
+        ];
+
+        this.batchOptions = [
+          {
+            value: '1',
+            label: '1',
+          },
+          {
+            value: '2',
+            label: '2',
+          },
+          {
+            value: '3',
+            label: '3',
+          },
+          {
+            value: '4',
+            label: '4',
+          },
+          {
+            value: '5',
+            label: '5',
+          }
+        ];
       });
     });
   }

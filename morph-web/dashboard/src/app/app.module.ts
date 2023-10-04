@@ -42,6 +42,8 @@ import {NzFormModule} from "ng-zorro-antd/form";
 import {NzSelectModule} from "ng-zorro-antd/select";
 import {NzListModule} from "ng-zorro-antd/list";
 import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
+import {NgxChartsModule} from "@swimlane/ngx-charts";
+import {NzCascaderModule} from "ng-zorro-antd/cascader";
 
 registerLocaleData(en);
 
@@ -90,7 +92,9 @@ registerLocaleData(en);
     NzListModule,
     CdkVirtualForOf,
     CdkVirtualScrollViewport,
-    CdkFixedSizeVirtualScroll
+    CdkFixedSizeVirtualScroll,
+    NgxChartsModule,
+    NzCascaderModule,
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
