@@ -13,7 +13,7 @@ import java.util.concurrent.BrokenBarrierException;
 
 public abstract class AbstractTransactionalBolt extends AbstractBolt {
     private static final long serialVersionUID = -3899457584889441657L;
-    protected int thread_Id;
+    protected int thread_Id;//Order of the thread in this operator
     protected int tthread;
     public TxnManager transactionManager;
     public AbstractTransactionalBolt(Logger log, int fid) {

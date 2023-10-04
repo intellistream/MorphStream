@@ -22,6 +22,4 @@ public abstract class AbstractBolt extends Operator {
         }
     }
     public abstract void execute(Tuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException;
-    public abstract DescriptiveStatistics getLatencyStats();
-    public abstract double getThroughputStats();
 }

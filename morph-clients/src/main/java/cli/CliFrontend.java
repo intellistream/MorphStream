@@ -80,7 +80,6 @@ public class CliFrontend {
         }
     }
     public void run() throws InterruptedException {
-//        MeasureTools.Initialize();
         runTopologyLocally();
         //TODO: run for distributed mode
     }
@@ -117,7 +116,6 @@ public class CliFrontend {
         Topology topology = env.createTopology();
         env.submitTopology(topology);
         listenToStop();
-        //TODO: stop application
     }
 
     public void listenToStop() throws InterruptedException {

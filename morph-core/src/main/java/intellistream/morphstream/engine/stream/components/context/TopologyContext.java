@@ -9,6 +9,7 @@ import intellistream.morphstream.engine.stream.execution.runtime.executorThread;
 import intellistream.morphstream.engine.stream.execution.runtime.tuple.impl.Fields;
 import intellistream.morphstream.engine.txn.db.Database;
 import intellistream.morphstream.engine.txn.durability.ftmanager.FTManager;
+import intellistream.morphstream.engine.txn.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,19 +29,25 @@ public class TopologyContext {
     private static FTManager ftManager;
     private static FTManager loggingManager;
     private static HashMap<Integer, executorThread> threadMap;
-    private final int _taskId;
+    private final int _taskId;//global ID for this executorNode in current Brisk.topology
+    private final HashMap<Integer, Stage> stageMap;
 
     /**
      * Instead of Store Brisk.topology, we Store Brisk.execution graph directly!
      * This is a global access memory structure,
      */
-    public TopologyContext(ExecutionGraph g, Database db, FTManager ftManager, FTManager loggingManager, ExecutionNode executor, HashMap<Integer, executorThread> threadMap) {
+    public TopologyContext(ExecutionGraph g, Database db, FTManager ftManager, FTManager loggingManager, ExecutionNode executor, HashMap<Integer, executorThread> threadMap, HashMap<Integer, Stage> stageMap) {
         TopologyContext.graph = g;
         TopologyContext.db = db;
         TopologyContext.threadMap = threadMap;
         TopologyContext.ftManager = ftManager;
         TopologyContext.loggingManager = loggingManager;
         this._taskId = executor.getExecutorID();
+        this.stageMap = stageMap;
+    }
+
+    public HashMap<Integer, Stage> getStageMap() {
+        return stageMap;
     }
 
     public Database getDb() {

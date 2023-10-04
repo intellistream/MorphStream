@@ -14,6 +14,8 @@ import intellistream.morphstream.engine.txn.db.DatabaseException;
 import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
+import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
+import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
@@ -36,6 +39,13 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
+    private final HashMap<Integer, Double> throughputMap = new HashMap<>(); //batchID -> throughput in seconds
+    private final HashMap<Integer, DescriptiveStatistics> latencyStatMap = new HashMap<>(); //batchID -> latency statistics
+    private int lastMeasuredBatchID = -1;
+    private final DescriptiveStatistics latencyStat = new DescriptiveStatistics(); //latency statistics of current batch
+    private long batchStartTS = 0; //Timestamp of the first event in the current batch
+    private boolean isNewBatch = true; //Whether the input event indicates a new batch
+    private final int batchSize = MorphStreamEnv.get().configuration().getInt("checkpoint");
 
     public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
         super(LOG, fid);
@@ -54,31 +64,32 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
 
-    protected void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException {
+    protected void execute_ts_normal(Tuple in) throws DatabaseException {
         MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
         MeasureTools.END_PREPARE_TIME_MEASURE_ACC(thread_Id);
-        PRE_TXN_PROCESS(_bid, timestamp);
+        PRE_TXN_PROCESS(_bid);
     }
 
     protected void PRE_EXECUTE(Tuple in) {
         if (enable_latency_measurement)
-            timestamp = in.getLong(1);
+            operatorTimestamp = System.nanoTime();
         else
-            timestamp = 0L;//
+            operatorTimestamp = 0L;//
         _bid = in.getBID();
         input_event = in.getValue(0);
         txn_context[0] = new TxnContext(thread_Id, this.fid, _bid);
     }
 
     @Override
-    protected void PRE_TXN_PROCESS(long _bid, long timestamp) throws DatabaseException, InterruptedException {
+    protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
         MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TransactionalEvent event = (TransactionalEvent) input_event;
-            if (enable_latency_measurement)
-                (event).setTimestamp(timestamp);
+            if (enable_latency_measurement) {
+                event.setOperationTimestamp(operatorTimestamp);
+            }
             Transaction_Request_Construct(event, txnContext);
             MeasureTools.END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
         }
@@ -133,38 +144,39 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 //Invoke client defined post-processing UDF using Reflection
                 Class<?> clientClass = Class.forName(MorphStreamEnv.get().configuration().getString("clientClassName"));
                 if (Client.class.isAssignableFrom(clientClass)) {
-                    // Cast the class object to MyAbstractClass
                     Client clientObj = (Client) clientClass.getDeclaredConstructor().newInstance();
                     HashMap<String, StateAccess> stateAccesses = eventStateAccessesMap.get(event.getBid());
-                    // Option 1: Invoke postUDF using Interface
                     udfResultReflect = clientObj.postUDF(event.getFlag(), stateAccesses);
-                    // Option 2: Invoke postUDF using Method Reflection
-//                    String postUDFName = txnDescriptionMap.get(event.getFlag()).getPostUDFName();
-//                    Method postUDF = clientClass.getMethod(postUDFName, HashMap.class);
-//                    udfResultReflect = (Result) postUDF.invoke(clientObj, stateAccesses);
-                    //We can also use reflection to access fields in client class
+                }
+                if (enable_latency_measurement) {
+                    latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
                 }
                 if (!isCombo) {
-                    collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent(), event.getTimestamp());
+                    assert udfResultReflect != null;
+                    collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
                 } else {
                     if (enable_latency_measurement) {
-                       sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getTimestamp())));
+                       sink.execute(new Tuple(event.getBid(), this.thread_Id, context, new GeneralMsg<>(DEFAULT_STREAM_ID, udfResultReflect.getResults(), event.getOriginTimestamp())));
                     }
                 }
-
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Client class not found");
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Fail to create instance for client class");
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException("Client post UDF method not found");
-            } catch (InvocationTargetException e) {
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("Client class instantiation failed");
+            } catch (NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException("Client post UDF invocation failed");
             } catch (InterruptedException e) {
                 throw new RuntimeException("Output emission interrupted");
             } catch (BrokenBarrierException | IOException | DatabaseException e) {
                 throw new RuntimeException(e);
             }
+        }
+        if (enable_latency_measurement) {
+            isNewBatch = true;
+            lastMeasuredBatchID += 1;
+            long batchProcessingTime = System.nanoTime() - batchStartTS;
+            double batchThroughput = (batchSize * 1E9 / batchProcessingTime);
+            throughputMap.put(lastMeasuredBatchID, batchThroughput);
+            latencyStatMap.put(lastMeasuredBatchID, latencyStat);
+            RuntimeMonitor.get().submitRuntimeData(lastMeasuredBatchID, fid, thread_Id, latencyStat, batchThroughput);
         }
     }
 
@@ -173,32 +185,27 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
-            {
-                transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
-            }
-            {
-                Transaction_Post_Process();
-            }
-            {
-                eventQueue.clear();
-                eventStateAccessesMap.clear();
-            }
+            transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
+            Transaction_Post_Process();
+            eventQueue.clear();
+            eventStateAccessesMap.clear();
             if (isCombo) {
                 sink.execute(in);
             }
+            if (Objects.equals(in.getMarker().getMessage(), "pause")) { //TODO: Call stage.SOURCE_CONTROL to perform the following operations
+//                SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
+//                SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
+//                getContext().stop_running();
+            }
         } else {
             execute_ts_normal(in);
+            if (enable_latency_measurement) {
+                if (isNewBatch) { //only executed by 1st event in a batch
+                    isNewBatch = false;
+                    batchStartTS = System.nanoTime();
+                }
+            }
         }
-    }
-
-    @Override
-    public DescriptiveStatistics getLatencyStats() {
-        return null;
-    }
-
-    @Override
-    public double getThroughputStats() {
-        return 0;
     }
 
 }

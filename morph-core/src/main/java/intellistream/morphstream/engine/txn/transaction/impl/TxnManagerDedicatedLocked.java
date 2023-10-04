@@ -197,37 +197,6 @@ public abstract class TxnManagerDedicatedLocked extends TxnManager {
         throw new UnsupportedOperationException();
     }
 
-    // Those should not be used by dedicated locked txn manager.
-    @Override
-    public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String key) throws DatabaseException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean Asy_ReadRecord(TxnContext txn_context, String srcTable, String key, StateAccess stateAccess) throws DatabaseException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean Asy_WriteRecord(TxnContext txn_context, String table, String key, StateAccess stateAccess) throws DatabaseException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean Asy_WriteRecord_Cond(TxnContext txn_context, String srcTable, String key, String[] condition_sourceTable, String[] condition_source, StateAccess stateAccess) throws DatabaseException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean Asy_WindowReadRecords(TxnContext txn_context, String srcTable, String key, String[] condition_sourceTable, String[] condition_source) throws DatabaseException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean Asy_WriteRecord_Non_Deter(TxnContext txn_context, String srcTable, String key, String[] condition_sourceTable, String[] condition_source, StateAccess stateAccess) throws DatabaseException {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public boolean lock_all(SpinLock[] spinLocks) throws DatabaseException {
         throw new UnsupportedOperationException();

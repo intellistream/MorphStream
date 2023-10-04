@@ -33,12 +33,12 @@ public abstract class TxnManager implements ITxnManager {
     protected StorageManager storageManager_;
     public static boolean enableGroup = false;
     protected static boolean enableDynamic = false;
-    protected static IScheduler scheduler; // TODO: this is a bad encapsulation, try to make it non static
+    protected static IScheduler scheduler; // TODO: this is a bad encapsulation, try to make it non static, remove after stage is done
     protected static IScheduler recoveryScheduler;
     /**
      * For dynamic workload
      */
-    protected static HashMap<String, IScheduler> schedulerPool; // TODO: this is a bad encapsulation
+    protected static HashMap<String, IScheduler> schedulerPool; // TODO: this is a bad encapsulation, remove after stage is done
     protected static Collector collector = new Collector();
     protected static ConcurrentHashMap<Integer, String> currentSchedulerType = new ConcurrentHashMap<>();
     /**

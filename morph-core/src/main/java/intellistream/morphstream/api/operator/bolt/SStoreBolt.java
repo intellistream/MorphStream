@@ -32,14 +32,4 @@ public class SStoreBolt extends AbstractSStoreBolt {
 
     }
 
-    @Override
-    public DescriptiveStatistics getLatencyStats() {
-        return null;
-    }
-
-    @Override
-    public double getThroughputStats() {
-        return 0;
-    }
-
 }

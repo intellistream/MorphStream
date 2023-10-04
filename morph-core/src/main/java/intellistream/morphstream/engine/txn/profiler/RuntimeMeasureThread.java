@@ -1,7 +1,6 @@
 package intellistream.morphstream.engine.txn.profiler;
 
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
-import intellistream.morphstream.engine.stream.components.operators.api.delete.TransactionalBolt;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
 class RuntimeMeasureThread implements Runnable {
@@ -29,9 +28,7 @@ class RuntimeMeasureThread implements Runnable {
                     signaled = false;
                 }
 
-                // TODO: Fetch runtime performance info from the corresponding bolt thread
-                DescriptiveStatistics latencyStats = bolt.getLatencyStats(); //try to get the latest latency from bolt (per batch), if bolt not ready, let measure thread wait
-                double throughputStats = bolt.getThroughputStats();
+                // TODO: Wait for runtime performance info from the corresponding bolt thread
 
                 // Send the info back to the manager
 //                Metrics.RuntimeManager.updateLatencyStats(operatorID, threadID, latencyStats);

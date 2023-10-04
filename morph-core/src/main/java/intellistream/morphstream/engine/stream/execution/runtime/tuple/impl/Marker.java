@@ -9,11 +9,12 @@ public class Marker extends Message {
     private String message;
     private long snapshotId;
 
-    public Marker(String streamId, long timeStamp, long msgId, int myiteration) {
+    public Marker(String streamId, long timeStamp, long msgId, int myiteration, String message) {
         super(streamId, 0);
         this.timeStampNano = timeStamp;
         this.msgId = msgId;
         this.myiteration = myiteration;
+        this.message = message;
     }
 
     public Marker(String streamId, long timeStamp, long msgId, int myiteration, String message, long snapshotId) {

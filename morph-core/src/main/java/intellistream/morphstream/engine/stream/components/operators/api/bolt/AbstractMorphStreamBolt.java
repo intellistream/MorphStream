@@ -17,7 +17,7 @@ import static intellistream.morphstream.engine.txn.profiler.Metrics.NUM_ITEMS;
 
 public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt {
     protected Object input_event;
-    protected long timestamp;
+    protected long operatorTimestamp; //timestamp of event entering operator
     protected long _bid;
     public AbstractMorphStreamBolt(Logger log, int fid) {
         super(log, fid);
@@ -27,7 +27,7 @@ public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt 
         this.thread_Id = thread_Id;
         tthread = config.getInt("tthread", 0);
         transactionManager = new TxnManagerTStream(db.getStorageManager(), this.context.getThisComponentId(),
-                thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler"));
+                thread_Id, NUM_ITEMS, this.context.getThisComponent().getNumTasks(), config.getString("scheduler"), this.context.getStageMap().get(this.fid));
         if (config.getBoolean("isGroup")) {
             SOURCE_CONTROL.getInstance().config(tthread, config.getInt("groupNum"));
         } else {
@@ -38,6 +38,6 @@ public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt 
         MorphStreamEnv.get().databaseInitializer().loadDB(context.getThisTaskId() - context.getThisComponent().getExecutorList().get(0).getExecutorID(), false);
     }
     protected abstract void execute_ts_normal(Tuple in) throws DatabaseException, InterruptedException;
-    protected abstract void PRE_TXN_PROCESS(long bid, long timestamp) throws DatabaseException, InterruptedException;
+    protected abstract void PRE_TXN_PROCESS(long bid) throws DatabaseException, InterruptedException;
     protected abstract void PRE_EXECUTE(Tuple in);
 }

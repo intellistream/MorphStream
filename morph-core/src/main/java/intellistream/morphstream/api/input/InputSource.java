@@ -2,6 +2,7 @@ package intellistream.morphstream.api.input;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import intellistream.morphstream.configuration.CONTROL;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -23,6 +24,7 @@ public class InputSource {
     //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
     private final HashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
     private int bid;
+    private boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
     public enum InputSourceType {
         FILE_STRING,
         FILE_JSON,
@@ -78,6 +80,11 @@ public class InputSource {
         } else {
             txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
         }
+        if (createTimestampForEvent) {
+            txnEvent.setOriginTimestamp(System.nanoTime());
+        } else {
+            txnEvent.setOriginTimestamp(0L);
+        }
 
         bid++;
         return txnEvent;
@@ -85,41 +92,56 @@ public class InputSource {
 
     public TransactionalEvent inputFromStringToTxnEvent(String input) {
         String [] inputArray = input.split(";");
-        HashMap<String, List<String>> keyMap = new HashMap<>();
-        HashMap<String, Object> valueMap = new HashMap<>();
-        HashMap<String, String> valueTypeMap = new HashMap<>();
-        String [] keyMapPairs = inputArray[0].split(",");
+        if (inputArray.length == 5) {
+            HashMap<String, List<String>> keyMap = new HashMap<>();
+            HashMap<String, Object> valueMap = new HashMap<>();
+            HashMap<String, String> valueTypeMap = new HashMap<>();
+            String [] keyMapPairs = inputArray[0].split(",");
 
-        for (String pair : keyMapPairs) {
-            List<String> keys = new ArrayList<>();
-            String[] keyMapPair = pair.split(":");
-            for (int j = 1; j < keyMapPair.length; j++) {
-                keys.add(keyMapPair[j]);
+            for (String pair : keyMapPairs) {
+                List<String> keys = new ArrayList<>();
+                String[] keyMapPair = pair.split(":");
+                for (int j = 1; j < keyMapPair.length; j++) {
+                    keys.add(keyMapPair[j]);
+                }
+                keyMap.put(keyMapPair[0], keys);
             }
-            keyMap.put(keyMapPair[0], keys);
-        }
-        String [] valueMapPairs = inputArray[1].split(",");
-        for (String mapPair : valueMapPairs) {
-            String[] valueMapPair = mapPair.split(":");
-            valueMap.put(valueMapPair[0], valueMapPair[1]);
-        }
-        String [] valueTypeMapPairs = inputArray[2].split(",");
-        for (String typeMapPair : valueTypeMapPairs) {
-            String[] valueTypeMapPair = typeMapPair.split(":");
-            valueTypeMap.put(valueTypeMapPair[0], valueTypeMapPair[1]);
-        }
-        String flag = inputArray[3];
-        String isAbort = inputArray[4];
+            String [] valueMapPairs = inputArray[1].split(",");
+            for (String mapPair : valueMapPairs) {
+                String[] valueMapPair = mapPair.split(":");
+                valueMap.put(valueMapPair[0], valueMapPair[1]);
+            }
+            String [] valueTypeMapPairs = inputArray[2].split(",");
+            for (String typeMapPair : valueTypeMapPairs) {
+                String[] valueTypeMapPair = typeMapPair.split(":");
+                valueTypeMap.put(valueTypeMapPair[0], valueTypeMapPair[1]);
+            }
+            String flag = inputArray[3];
+            String isAbort = inputArray[4];
 
-        TransactionalEvent txnEvent;
-        if (isAbort.equals("true")) {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
+            TransactionalEvent txnEvent;
+            if (isAbort.equals("true")) {
+                txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, true);
+            } else {
+                txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
+            }
+            if (createTimestampForEvent) {
+                txnEvent.setOriginTimestamp(System.nanoTime());
+            } else {
+                txnEvent.setOriginTimestamp(0L);
+            }
+            bid++; //bid only used for normal events, not control signals
+            return txnEvent;
+        } else if (inputArray.length == 1) { //for control signals
+            String message = inputArray[0];
+            if (Objects.equals(message, "pause")) {
+                return new TransactionalEvent(-1, null, null, null, message, false);
+            } else {
+                throw new UnsupportedOperationException("Unsupported control signal: " + message);
+            }
         } else {
-            txnEvent = new TransactionalEvent(this.bid, keyMap, valueMap, valueTypeMap, flag, false);
+            throw new UnsupportedOperationException("Unsupported input format: " + input);
         }
-
-        bid++;
-        return txnEvent;
     }
 
     public String getStaticFilePath() {

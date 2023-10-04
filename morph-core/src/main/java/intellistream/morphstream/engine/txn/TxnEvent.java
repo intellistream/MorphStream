@@ -11,7 +11,8 @@ public class TxnEvent implements Comparable<TxnEvent> {
     public int[] partition_indexs;
     protected long[] bid_array;
     //embeded state.
-    protected long timestamp;//emit timestamp
+    protected long originTimestamp;//timestamp when the event is generated
+    protected long operationTimestamp;//timestamp when the event is processed at each operator
 
     public TxnEvent(long bid, int partition_id, String bid_array, String partition_index, int number_of_partitions) {
         this.bid = bid;
@@ -86,12 +87,20 @@ public class TxnEvent implements Comparable<TxnEvent> {
         return bid_array;
     }
 
-    public long getTimestamp() {
-        return timestamp;
+    public long getOriginTimestamp() {
+        return originTimestamp;
     }
 
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
+    public void setOriginTimestamp(long originTimestamp) {
+        this.originTimestamp = originTimestamp;
+    }
+
+    public long getOperationTimestamp() {
+        return operationTimestamp;
+    }
+
+    public void setOperationTimestamp(long operationTimestamp) {
+        this.operationTimestamp = operationTimestamp;
     }
 
     public TxnEvent cloneEvent() {
