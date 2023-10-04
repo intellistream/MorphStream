@@ -19,6 +19,7 @@
     "@angular/platform-browser-dynamic": "^16.0.0",
     "@angular/router": "^16.0.0",
     "@swimlane/ngx-charts": "^20.4.1",
+    "alchemyjs": "^0.3.1",
     "cytoscape": "^3.26.0",
     "d3": "^7.8.5",
     "ng-zorro-antd": "^16.1.0",

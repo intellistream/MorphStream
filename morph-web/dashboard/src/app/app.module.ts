@@ -44,6 +44,7 @@ import {NzListModule} from "ng-zorro-antd/list";
 import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
 import {NgxChartsModule} from "@swimlane/ngx-charts";
 import {NzCascaderModule} from "ng-zorro-antd/cascader";
+import {CodeEditorComponent} from "./pages/code-editor/code-editor.component";
 
 registerLocaleData(en);
 
@@ -63,7 +64,8 @@ registerLocaleData(en);
     OperatorInformationComponent,
     TpgGraphComponent,
     FinishedStatisticsBoardComponent,
-    SubmitNewJobComponent
+    SubmitNewJobComponent,
+    CodeEditorComponent
   ],
   imports: [
     BrowserModule,
