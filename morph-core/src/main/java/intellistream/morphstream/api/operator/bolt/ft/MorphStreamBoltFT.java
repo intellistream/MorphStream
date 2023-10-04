@@ -169,6 +169,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
                     latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
                 }
                 if (!isCombo) {
+                    assert udfResultReflect != null;
                     collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
                 } else {
                     if (enable_latency_measurement) {
@@ -239,6 +240,14 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             {
                 eventQueue.clear();
                 eventStateAccessesMap.clear();
+            }
+            if (isCombo) {
+                sink.execute(in);
+            }
+            if (Objects.equals(in.getMarker().getMessage(), "pause")) { //TODO: Call stage.SOURCE_CONTROL to perform the following operations
+//                SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
+//                SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
+//                getContext().stop_running();
             }
         } else {
             execute_ts_normal(in);

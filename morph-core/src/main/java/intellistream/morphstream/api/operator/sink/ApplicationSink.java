@@ -24,13 +24,4 @@ public class ApplicationSink extends AbstractSink {
         }
     }
 
-    @Override
-    public DescriptiveStatistics getLatencyStats() {
-        return null;
-    }
-
-    @Override
-    public double getThroughputStats() {
-        return 0;
-    }
 }

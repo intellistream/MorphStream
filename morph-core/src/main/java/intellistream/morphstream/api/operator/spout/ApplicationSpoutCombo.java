@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
@@ -56,30 +57,33 @@ public class ApplicationSpoutCombo extends AbstractSpoutCombo {
     @Override
     public void nextTuple() throws InterruptedException {
         try {
-            if (counter == start_measure) {
-                //TODO: start sink
-            }
+//            if (counter == start_measure) {
+//                //TODO: start sink
+//            }
             if (!inputQueue.isEmpty()) {
-
-                //TODO: InputSource inputSource should be retrieved from client.getInputSource();
-                //TODO: Should we keep both streaming and original input?
-
                 TransactionalEvent event = inputQueue.take(); //this should be txnEvent already
-
                 long bid = event.getBid();
-                if (CONTROL.enable_latency_measurement)
-                    generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
-                else {
-                    generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
-                }
 
-                tuple = new Tuple(bid, this.taskId, context, generalMsg);
-                bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
-                counter++;
+                if (bid != -1) { //txn events
+                    if (CONTROL.enable_latency_measurement)
+                        generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event, System.nanoTime());
+                    else {
+                        generalMsg = new GeneralMsg(DEFAULT_STREAM_ID, event);
+                    }
 
-                if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
-                    if (model_switch(counter)) {
-                        marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration));
+                    tuple = new Tuple(bid, this.taskId, context, generalMsg);
+                    bolt.execute(tuple);  // public Tuple(long bid, int sourceId, TopologyContext context, Message message)
+                    counter++;
+
+                    if (ccOption == CCOption_MorphStream || ccOption == CCOption_SStore) {// This is only required by T-Stream.
+                        if (model_switch(counter)) {
+                            marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration, "punctuation"));
+                            bolt.execute(marker);
+                        }
+                    }
+                } else { //control signals
+                    if (Objects.equals(event.getFlag(), "pause")) {
+                        marker = new Tuple(bid, this.taskId, context, new Marker(DEFAULT_STREAM_ID, -1, bid, myiteration, "pause"));
                         bolt.execute(marker);
                     }
                 }

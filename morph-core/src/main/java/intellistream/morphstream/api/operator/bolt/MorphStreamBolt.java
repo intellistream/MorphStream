@@ -15,6 +15,7 @@ import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
+import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.*;
@@ -150,6 +152,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                     latencyStat.addValue(System.nanoTime() - event.getOperationTimestamp());
                 }
                 if (!isCombo) {
+                    assert udfResultReflect != null;
                     collector.emit(event.getBid(), udfResultReflect.getTransactionalEvent());
                 } else {
                     if (enable_latency_measurement) {
@@ -188,6 +191,11 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             eventStateAccessesMap.clear();
             if (isCombo) {
                 sink.execute(in);
+            }
+            if (Objects.equals(in.getMarker().getMessage(), "pause")) { //TODO: Call stage.SOURCE_CONTROL to perform the following operations
+//                SOURCE_CONTROL.getInstance().oneThreadCompleted(taskId); // deregister all barriers
+//                SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
+//                getContext().stop_running();
             }
         } else {
             execute_ts_normal(in);

@@ -135,11 +135,11 @@ public abstract class PartitionController implements IPartitionController, Seria
     }
 
     private Marker package_marker(String streamId, Marker marker) {
-        return new Marker(streamId, marker.timeStampNano, marker.msgId, marker.getMyiteration());
+        return new Marker(streamId, marker.timeStampNano, marker.msgId, marker.getMyiteration(), null);
     }
 
     private Marker package_marker(String streamId, long timestamp, long bid, int myiteration) {
-        return new Marker(streamId, timestamp, bid, myiteration);
+        return new Marker(streamId, timestamp, bid, myiteration, null);
     }
 
     private GeneralMsg package_message(String streamId, Object... msg) {
