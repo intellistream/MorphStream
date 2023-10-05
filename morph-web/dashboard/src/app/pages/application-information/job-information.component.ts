@@ -6,7 +6,6 @@ import {BasicApplication} from "../../model/BasicApplication";
 import {JobInformationService} from "./job-information.service";
 import {Application} from "../../model/Application";
 import {ActivatedRoute} from "@angular/router";
-import * as Alchemy from 'alchemy.js'
 
 import * as d3 from 'd3';
 
@@ -26,8 +25,7 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   constructor(private route: ActivatedRoute,
               private applicationService: ApplicationService,
               private websocket: Websocket,
-              private applicationInformationService: JobInformationService,
-              private el: ElementRef) {
+              private applicationInformationService: JobInformationService) {
   }
 
   drawGraph() {
@@ -38,7 +36,6 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
           name: index.toString() + " s",
           value: value
         })),
-        // color: '#8BDB4D'
       },
       {
         name: 'Latency (s)',
@@ -46,7 +43,6 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
           name: index.toString() + " s",
           value: value
         })),
-        // color: '#0FB2E5'
       }
     ];
 
@@ -54,19 +50,16 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
       {
         name: 'exploration time (ms)',
         value: this.application.schedulerTimeBreakdown.exploreTime,
-        // color: '#8BDB4D'
       },
       {
         name: 'tpg construction time (ms)',
         value: this.application.schedulerTimeBreakdown.constructTime,
-        // color: '#0FB2E5'
       },
       {
         name: 'other time (ms)',
         value: this.application.schedulerTimeBreakdown.abortTime +
           this.application.schedulerTimeBreakdown.trackingTime +
           this.application.schedulerTimeBreakdown.usefulTime,
-        // color: '#EF5A5A'
       }
     ];
 
@@ -100,7 +93,12 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
       .append('svg')
       .attr('width', 500)
       .attr('height', 400)
-      .attr("viewBox", [0, 0, 640, 480]);
+      .attr("viewBox", [0, 0, 640, 480])
+
+    // let width = this.svg.node().clientWidth;
+    // let heigth = this.svg.node().clientHeight;
+    //
+    // this.svg.attr("viewBox", [0, 0, 640, 480]);
 
     this.simulation = d3.forceSimulation(this.nodes)
       .force('charge', d3.forceManyBody().strength(-20))
@@ -147,12 +145,10 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   }
 
   tick() {
-    // 更新节点的位置
     this.nodesSelection
       .attr('cx', (d: any) => d.x)
       .attr('cy', (d: any) => d.y);
 
-    // 更新链接的位置
     this.linksSelection
       .attr('x1', (d: any) => d.source.x)
       .attr('y1', (d: any) => d.source.y)

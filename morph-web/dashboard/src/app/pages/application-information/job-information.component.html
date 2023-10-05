@@ -24,11 +24,16 @@
         <nz-descriptions id="job-description" nzBordered>
           <nz-descriptions-item nzTitle="Working Threads" nzSpan="2">{{application.nthreads}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Status" nzSpan="1">{{application.isRunning?"Running":"Stopped"}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="CPU" nzSpan="3">{{application.cpu}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="RAM Size" nzSpan="1">{{application.ram}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Duration" nzSpan="2">{{application.duration}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="CPU Utilization" nzSpan="2">{{"20%"}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="RAM Utilization" nzSpan="1">{{"60%"}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Number of Batches" nzSpan="2">{{101}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{application.duration}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Start Time" nzSpan="2">{{application.startTime}}</nz-descriptions-item>
         </nz-descriptions>
+        <nz-row>
+          <button nz-button nzType="primary" [disabled]="application.isRunning" style="margin-right: 20px">Resume</button>
+          <button nz-button nzType="primary" [disabled]="!application.isRunning" style="margin-right: 20px">Pause</button>
+        </nz-row>
       </nz-col>
       <!--    Information Showcase    -->
       <nz-col nzSpan="12" class="container" id="operator-list-view">

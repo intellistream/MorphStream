@@ -29,7 +29,6 @@ import { ApplicationBoardComponent } from "./snippets/application-board/applicat
 import { InfoScrollWrapperComponent } from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
 import { OperatorInformationComponent } from "./snippets/operator-information/operator-information.component";
 import { NzCardModule } from "ng-zorro-antd/card";
-import { TpgGraphComponent } from "./pages/application-information/tpg-graph/tpg-graph.component";
 import { NzModalModule } from "ng-zorro-antd/modal";
 import { FinishedStatisticsBoardComponent } from "./snippets/finished-statistics-board/finished-statistics-board.component";
 import { SubmitNewJobComponent } from "./pages/submit-new-job/submit-new-job.component";
@@ -45,6 +44,7 @@ import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} fr
 import {NgxChartsModule} from "@swimlane/ngx-charts";
 import {NzCascaderModule} from "ng-zorro-antd/cascader";
 import {CodeEditorComponent} from "./pages/code-editor/code-editor.component";
+import {CodemirrorModule} from "@ctrl/ngx-codemirror";
 
 registerLocaleData(en);
 
@@ -62,7 +62,6 @@ registerLocaleData(en);
     ApplicationBoardComponent,
     InfoScrollWrapperComponent,
     OperatorInformationComponent,
-    TpgGraphComponent,
     FinishedStatisticsBoardComponent,
     SubmitNewJobComponent,
     CodeEditorComponent
@@ -97,6 +96,7 @@ registerLocaleData(en);
     CdkFixedSizeVirtualScroll,
     NgxChartsModule,
     NzCascaderModule,
+    CodemirrorModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
