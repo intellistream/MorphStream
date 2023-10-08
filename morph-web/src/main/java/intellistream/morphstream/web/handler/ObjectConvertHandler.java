@@ -33,11 +33,9 @@ public class ObjectConvertHandler extends SimpleChannelInboundHandler<TextWebSoc
             case "BasicInfoRequest":
                 request = objectMapper.treeToValue(rootNode, BasicInfoRequest.class);
                 break;
-
             case "DetailInfoRequest":
                 request = objectMapper.treeToValue(rootNode, DetailedInfoRequest.class);
                 break;
-
             default:
                 throw new RuntimeException("No corresponding request type found");
         }
