@@ -13,10 +13,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,7 +26,7 @@ public class RuntimeMonitor extends Thread {
     private static final ConcurrentHashMap<Integer, LinkedList<Long[]>> opBatchEndTimeMap = new ConcurrentHashMap<>(); //operatorID -> batchEndTime[batchID][threadID]
     private static final ConcurrentHashMap<Integer, AtomicInteger> opNumThreadCompletedMap = new ConcurrentHashMap<>(); //operatorID -> num of threads that have submitted performance data
     private static final String[] operatorIDs = MorphStreamEnv.get().configuration().getString("operatorIDs").split(",");
-    private static String applicationID = MorphStreamEnv.get().configuration().getString("application");
+    private static final String applicationID = MorphStreamEnv.get().configuration().getString("application");
     private static final HashMap<Integer, Integer> operatorThreadNumMap = new HashMap<>(); //operatorID -> its thread number
     private static final BlockingQueue<Object> readyOperatorQueue = new LinkedBlockingQueue<>(); //ID of operators whose performance data is ready to be shown in the UI
     EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -39,7 +36,7 @@ public class RuntimeMonitor extends Thread {
 
     public static void Initialize() {
         for (String operatorIDString : operatorIDs) {
-            int operatorID = Integer.valueOf(operatorIDString);
+            int operatorID = Integer.parseInt(operatorIDString);
             operatorThreadNumMap.put(operatorID, MorphStreamEnv.get().configuration().getInt("threadNumOf_" + operatorID, 4));
             opLatencyMap.put(operatorID, new LinkedList<>());
             opThroughputMap.put(operatorID, new LinkedList<>());
@@ -87,25 +84,52 @@ public class RuntimeMonitor extends Thread {
     }
 
     private void sendDataToFrontend(int operatorID) {
+        // summarize runtime data before sending
         int threadNum = operatorThreadNumMap.get(operatorID);
-        DescriptiveStatistics batchLatencyStats = Objects.requireNonNull(opLatencyMap.get(operatorID).peekLast())[0];
-        long batchStartTime = Objects.requireNonNull(opBatchStartTimeMap.get(operatorID).peekLast())[0];
-        long batchEndTime = Objects.requireNonNull(opBatchEndTimeMap.get(operatorID).peekLast())[0];
-        double throughput = batchLatencyStats.getN() * 1E9 / (batchEndTime - batchStartTime);
+        long[] batchStartTimeArray = new long[threadNum];
+        long[] batchEndTimeArray = new long[threadNum];
+        double[] avgLatencyArray = new double[threadNum];
+        double[] minLatencyArray = new double[threadNum];
+        double[] maxLatencyArray = new double[threadNum];
+        long[] batchSizeArray = new long[threadNum];
+        long batchSizeSum = 0;
 
-        //TODO: aggregate performance data from threads
-        int totalNumEvent = 0;
-        double avgLatency = 0;
-        double maxLatency = 0;
-        ArrayList<Double> avgLatencyList = new ArrayList<>();
-        ArrayList<Double> maxLatencyList = new ArrayList<>();
+        for (int i=0; i<threadNum; i++) {
+            batchStartTimeArray[i] = Objects.requireNonNull(opBatchStartTimeMap.get(operatorID).peekLast())[i];
+            batchEndTimeArray[i] = Objects.requireNonNull(opBatchEndTimeMap.get(operatorID).peekLast())[i];
+            DescriptiveStatistics[] batchLatencyStats = Objects.requireNonNull(opLatencyMap.get(operatorID).peekLast());
+            avgLatencyArray[i] = batchLatencyStats[i].getMean();
+            minLatencyArray[i] = batchLatencyStats[i].getMin();
+            maxLatencyArray[i] = batchLatencyStats[i].getMax();
+            batchSizeArray[i] = batchLatencyStats[i].getN();
+            batchSizeSum += batchSizeArray[i];
+        }
+
+        long batchStartTime = Arrays.stream(batchStartTimeArray).min().orElse(Long.MAX_VALUE);
+        long batchEndTime = Arrays.stream(batchEndTimeArray).max().orElse(Long.MIN_VALUE);
+        long batchDuration = batchEndTime - batchStartTime;
+        assert batchDuration > 0;
+        double throughput = batchSizeSum * 1E9 / batchDuration;
+        opThroughputMap.get(operatorID).add(throughput); // keep record for throughput history
+
+        double latencySum = 0;
+        for (int i=0; i<threadNum; i++) {
+            latencySum += avgLatencyArray[i] * batchSizeArray[i];
+        }
+        double avgLatency = latencySum / batchSizeSum;
+        double minLatency = Arrays.stream(minLatencyArray).min().orElse(Double.MAX_VALUE);
+        double maxLatency = Arrays.stream(maxLatencyArray).max().orElse(Double.MIN_VALUE);
 
         BatchRuntimeData batchRuntimeData = new BatchRuntimeData();
         batchRuntimeData.setAppId(applicationID);
         batchRuntimeData.setOperatorID(String.valueOf(operatorID));
         batchRuntimeData.setThroughput(throughput);
-        opThroughputMap.get(operatorID).add(throughput);
-        webSocketHandler.getBatchInfoSender().send("{\"1\": \"Hello\"}");
+        batchRuntimeData.setAvgLatency(avgLatency);
+        batchRuntimeData.setMinLatency(minLatency);
+        batchRuntimeData.setMaxLatency(maxLatency);
+        batchRuntimeData.setBatchSize(batchSizeSum);
+
+        webSocketHandler.getBatchInfoSender().send(batchRuntimeData.toString());
     }
 
 

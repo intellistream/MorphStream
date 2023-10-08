@@ -14,6 +14,7 @@ public class BatchRuntimeData {
     private double minLatency;
     private double maxLatency;
     private double avgLatency;
+    private long batchSize;
 //    private TotalTimeBreakdown totalTimeBreakdown;
 //    private SchedulerTimeBreakdown schedulerTimeBreakdown;
 //    private TPG tpg;
@@ -41,6 +42,10 @@ public class BatchRuntimeData {
 
     public void setAvgLatency(double avgLatency) {
         this.avgLatency = avgLatency;
+    }
+
+    public void setBatchSize(long batchSize) {
+        this.batchSize = batchSize;
     }
 
 }
