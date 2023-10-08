@@ -24,7 +24,6 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
 
   constructor(private route: ActivatedRoute,
               private applicationService: ApplicationService,
-              private websocket: Websocket,
               private applicationInformationService: JobInformationService) {
   }
 
@@ -162,16 +161,21 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.websocket.connect("ws://localhost:5001/websocket");
-
     this.route.params.subscribe(params => {
       const jobId = params['id'];
 
       this.applicationInformationService.getHistoricalJob(jobId).subscribe(res => {
         this.application = res;
         this.basicApplication = this.applicationService.getCurrentApplication();
+
+        this.applicationInformationService.listenOnPerformanceData(jobId).subscribe(
+          res => {
+            console.log(res);
+          }
+        )
         this.drawGraph();
       });
+
     });
   }
 }

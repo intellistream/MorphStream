@@ -6,7 +6,7 @@ import {Application} from "../../model/Application";
   templateUrl: './finished-statistics-board.component.html',
   styleUrls: ['./finished-statistics-board.component.less']
 })
-export class FinishedStatisticsBoardComponent implements AfterViewInit, OnInit {
+export class FinishedStatisticsBoardComponent implements OnInit {
   @Input()
   job!: Application;
 
@@ -14,12 +14,6 @@ export class FinishedStatisticsBoardComponent implements AfterViewInit, OnInit {
 
 
   throughputLatencyData: any[] = [];
-
-  ngAfterViewInit() {
-    console.log(this.job)
-    // Highcharts.chart('throughputLatencyContainer', this.throughputLatencyData)
-    // Highcharts.chart('timeChartContainer', this.timeChartData);
-  }
 
   ngOnInit(): void {
 

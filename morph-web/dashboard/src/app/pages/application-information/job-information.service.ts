@@ -8,7 +8,6 @@ import {DetailedInfoRequest} from "../../dto/DetailedInfoRequest";
   providedIn: 'root'
 })
 export class JobInformationService {
-
   constructor(private websocket: Websocket) {
     this.websocket.connect("ws://localhost:5001/websocket");
   }
@@ -21,5 +20,9 @@ export class JobInformationService {
     }
 
     return this.websocket.sendRequest<Application>(msg);
+  }
+
+  public listenOnPerformanceData(jobId: number): Observable<any> {
+    return this.websocket.listenOnJobData(jobId);
   }
 }

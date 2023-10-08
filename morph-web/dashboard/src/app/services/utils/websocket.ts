@@ -9,9 +9,9 @@ import { v4 as uuidv4 } from 'uuid';// import {uuid} from 'uuidv4'
   providedIn: 'root'
 })
 export class Websocket {
-  messageSubject: Subject<any>;                            // subject -> send messages
-  private url;                                             // default requested url
-  private webSocket: WebSocket;                            // websocket
+  consistentSubject: Subject<any>;                            // subject -> send messages
+  url;                                                     // default requested url
+  webSocket: WebSocket;                                    // websocket
   connectSuccess = false;                         // websocket connected signifier
   heartbeatPeriod = 60 * 1000 * 10;               // Heartbeat Check Period
   serverTimeoutSubscription;                               // Timeout checker
@@ -22,7 +22,7 @@ export class Websocket {
   runTimePeriod = 60 * 10000;                     // Record subscription time
 
   constructor() {
-    this.messageSubject = new Subject();
+    this.consistentSubject = new Subject();
     this.startHeartbeat();
     this.calcRunTime();
   }
@@ -94,6 +94,13 @@ export class Websocket {
     this.createWebSocket();
   }
 
+  jobId: number;
+
+  listenOnJobData(jobId: number) {
+    this.jobId = jobId;
+    return this.consistentSubject.asObservable();
+  }
+
   /**
    * Create a new websocket
    */
@@ -154,9 +161,11 @@ export class Websocket {
         subject?.complete(); // subject is finished, cancel subscribe
         this.subjectMap.delete(correlationId);
       }
-    } else {
+    } else if (message.type === "Performance") {
       // pass message to messageSubject
-      this.messageSubject.next(message);
+      if (message.jobId == this.jobId) {
+        this.consistentSubject.next(message);
+      }
     }
   }
 
