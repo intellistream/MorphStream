@@ -30,25 +30,25 @@ public class TopologyContext {
     private static FTManager loggingManager;
     private static HashMap<Integer, executorThread> threadMap;
     private final int _taskId;//global ID for this executorNode in current Brisk.topology
-    private final HashMap<Integer, Stage> stageMap;
+//    private final HashMap<Integer, Stage> stageMap;
 
     /**
      * Instead of Store Brisk.topology, we Store Brisk.execution graph directly!
      * This is a global access memory structure,
      */
-    public TopologyContext(ExecutionGraph g, Database db, FTManager ftManager, FTManager loggingManager, ExecutionNode executor, HashMap<Integer, executorThread> threadMap, HashMap<Integer, Stage> stageMap) {
+    public TopologyContext(ExecutionGraph g, Database db, FTManager ftManager, FTManager loggingManager, ExecutionNode executor, HashMap<Integer, executorThread> threadMap) {
         TopologyContext.graph = g;
         TopologyContext.db = db;
         TopologyContext.threadMap = threadMap;
         TopologyContext.ftManager = ftManager;
         TopologyContext.loggingManager = loggingManager;
         this._taskId = executor.getExecutorID();
-        this.stageMap = stageMap;
+//        this.stageMap = stageMap;
     }
 
-    public HashMap<Integer, Stage> getStageMap() {
-        return stageMap;
-    }
+//    public HashMap<Integer, Stage> getStageMap() {
+//        return stageMap;
+//    }
 
     public Database getDb() {
         return db;

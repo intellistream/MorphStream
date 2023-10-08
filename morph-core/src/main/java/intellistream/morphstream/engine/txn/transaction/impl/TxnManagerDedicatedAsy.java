@@ -35,7 +35,6 @@ import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 
 import static intellistream.morphstream.configuration.CONTROL.enable_log;
-import static intellistream.morphstream.engine.txn.content.common.CommonMetaTypes.defaultString;
 
 /**
  * TxnManagerDedicated is a thread-local structure.
@@ -50,10 +49,11 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
     protected boolean is_first_access_;
     protected int thread_count_;
     protected int dalta;
-    public final Stage stage; //Each stateful operator has its own Stage, encapsulating a scheduler and a SOURCE_CONTROL.
+//    public final Stage stage; //Each stateful operator has its own Stage, encapsulating a scheduler and a SOURCE_CONTROL.
 
-    public TxnManagerDedicatedAsy(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, int numberOfStates, String schedulerType, Stage stage) {
-        this.stage = stage;
+    public TxnManagerDedicatedAsy(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, int numberOfStates, String schedulerType) {
+//    public TxnManagerDedicatedAsy(StorageManager storageManager, String thisComponentId, int thisTaskId, int thread_count, int numberOfStates, String schedulerType, Stage stage) {
+//        this.stage = stage;
         this.storageManager_ = storageManager;
         this.thisComponentId = thisComponentId;
         thread_count_ = thread_count;

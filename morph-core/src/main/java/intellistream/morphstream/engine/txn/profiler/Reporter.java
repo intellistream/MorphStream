@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Reporter implements profiler.Scheduled {
+public class Reporter implements Scheduled {
     public static boolean closed = false;
     private static DatagramSocket socket;
     private static InetSocketAddress address;

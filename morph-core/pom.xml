@@ -227,6 +227,18 @@
             <artifactId>scala-library</artifactId>
             <version>2.12.7</version>
         </dependency>
+        <dependency>
+            <groupId>intellistream</groupId>
+            <artifactId>morph-web</artifactId>
+            <version>0.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>intellistream</groupId>
+            <artifactId>morph-web</artifactId>
+            <version>0.1</version>
+            <scope>compile</scope>
+        </dependency>
 
     </dependencies>
 

@@ -15,7 +15,6 @@ import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
-import intellistream.morphstream.engine.txn.utils.SOURCE_CONTROL;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,13 +38,10 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
-    private final HashMap<Integer, Double> throughputMap = new HashMap<>(); //batchID -> throughput in seconds
-    private final HashMap<Integer, DescriptiveStatistics> latencyStatMap = new HashMap<>(); //batchID -> latency statistics
-    private int lastMeasuredBatchID = -1;
+    private int lastMeasuredBatchID = 0; //batchID starts from 1
     private final DescriptiveStatistics latencyStat = new DescriptiveStatistics(); //latency statistics of current batch
-    private long batchStartTS = 0; //Timestamp of the first event in the current batch
+    private long batchStartTime = 0; //Timestamp of the first event in the current batch
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
-    private final int batchSize = MorphStreamEnv.get().configuration().getInt("checkpoint");
 
     public MorphStreamBolt(HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
         super(LOG, fid);
@@ -172,11 +168,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         if (enable_latency_measurement) {
             isNewBatch = true;
             lastMeasuredBatchID += 1;
-            long batchProcessingTime = System.nanoTime() - batchStartTS;
-            double batchThroughput = (batchSize * 1E9 / batchProcessingTime);
-            throughputMap.put(lastMeasuredBatchID, batchThroughput);
-            latencyStatMap.put(lastMeasuredBatchID, latencyStat);
-            RuntimeMonitor.get().submitRuntimeData(lastMeasuredBatchID, fid, thread_Id, latencyStat, batchThroughput);
+            RuntimeMonitor.get().submitRuntimeData(lastMeasuredBatchID, fid, thread_Id, latencyStat, batchStartTime, System.nanoTime()); //TODO: Replace fid with operatorID
         }
     }
 
@@ -185,8 +177,16 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
-            transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
-            Transaction_Post_Process();
+            {
+                MeasureTools.BEGIN_TXN_TIME_MEASURE(thread_Id);
+                transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
+                MeasureTools.END_TXN_TIME_MEASURE(thread_Id);
+            }
+            {
+                MeasureTools.BEGIN_POST_TIME_MEASURE(thread_Id);
+                Transaction_Post_Process();
+                MeasureTools.END_POST_TIME_MEASURE(thread_Id);
+            }
             eventQueue.clear();
             eventStateAccessesMap.clear();
             if (isCombo) {
@@ -197,12 +197,13 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
 //                SOURCE_CONTROL.getInstance().finalBarrier(taskId);//sync for all threads to come to this line.
 //                getContext().stop_running();
             }
+            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, numEvents);
         } else {
             execute_ts_normal(in);
             if (enable_latency_measurement) {
                 if (isNewBatch) { //only executed by 1st event in a batch
                     isNewBatch = false;
-                    batchStartTS = System.nanoTime();
+                    batchStartTime = System.nanoTime();
                 }
             }
         }

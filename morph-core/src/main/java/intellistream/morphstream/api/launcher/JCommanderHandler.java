@@ -122,6 +122,8 @@ public class JCommanderHandler {
 //    public String application = "WindowedGrepSum";
 //    public String application = "OnlineBiding";
 //    public String application = "TollProcessing";
+    @Parameter(names = {"--operatorIDs"}, description = "Unique identifiers for operators")
+    public String operatorIDs = "0";
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")
@@ -258,6 +260,8 @@ public class JCommanderHandler {
     public int tthread = 4;// default total execution threads
     @Parameter(names = {"--spoutNum"}, description = "total execution spout threads")
     public int spoutNum = 4;// number of spout threads
+    @Parameter(names = {"--operatorThreadNum"}, description = "total execution spout threads")
+    public String operatorThreadNum = "4";// number of threads for each operator
     @Parameter(names = {"--checkpoint_interval"}, description = "checkpoint interval (#tuples)")
     public int checkpoint_interval = 2500;//checkpoint per thread.
 
@@ -324,6 +328,10 @@ public class JCommanderHandler {
         }
         config.put("tthread", tthread);
         config.put("spoutNum", spoutNum);
+        String[] operatorThreadNumArray = operatorThreadNum.split(";");
+        for (int i = 0; i < operatorThreadNumArray.length; i ++) {
+            config.put("threadNumOf_" + i, Integer.valueOf(operatorThreadNumArray[i]));
+        }
         config.put("checkpoint", checkpoint_interval);
         config.put("fanoutDist", fanoutDist);
         config.put("idGenType", idGenType);
@@ -366,6 +374,15 @@ public class JCommanderHandler {
         }
 
         /* Workload configurations */
+        config.put("application", application);
+        config.put("operatorIDs", operatorIDs);
+        config.put("ratio_of_read", ratio_of_read);
+        config.put("Ratio_Of_Deposit", Ratio_Of_Deposit);
+        config.put("Ratio_Of_Buying", Ratio_Of_Buying);
+        config.put("State_Access_Skewness", State_Access_Skewness);
+        config.put("Ratio_of_Multiple_State_Access", Ratio_of_Multiple_State_Access);
+        config.put("Ratio_of_Overlapped_Keys", Ratio_of_Overlapped_Keys);
+        config.put("Ratio_of_Transaction_Aborts", Ratio_of_Transaction_Aborts);
         config.put("COMPUTE_COMPLEXITY", COMPUTE_COMPLEXITY);
         config.put("POST_COMPUTE", POST_COMPUTE);
         config.put("NUM_ACCESS", NUM_ACCESS);

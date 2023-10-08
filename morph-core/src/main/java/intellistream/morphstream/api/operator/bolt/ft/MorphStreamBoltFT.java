@@ -47,13 +47,10 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
-    private final HashMap<Integer, Double> throughputMap = new HashMap<>(); //batchID -> throughput in seconds
-    private final HashMap<Integer, DescriptiveStatistics> latencyStatMap = new HashMap<>(); //batchID -> latency statistics
     private int lastMeasuredBatchID = -1;
     private final DescriptiveStatistics latencyStat = new DescriptiveStatistics(); //latency statistics of current batch
-    private long batchStartTS = 0; //Timestamp of the first event in the current batch
+    private long batchStartTime = 0; //Timestamp of the first event in the current batch
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
-    private final int batchSize = MorphStreamEnv.get().configuration().getInt("checkpoint");
     public FTManager ftManager;
     public FTManager loggingManager;
 
@@ -189,11 +186,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
         if (enable_latency_measurement) {
             isNewBatch = true;
             lastMeasuredBatchID += 1;
-            long batchProcessingTime = System.nanoTime() - batchStartTS;
-            double batchThroughput = (batchSize * 1E9 / batchProcessingTime);
-            throughputMap.put(lastMeasuredBatchID, batchThroughput);
-            latencyStatMap.put(lastMeasuredBatchID, latencyStat);
-            RuntimeMonitor.get().submitRuntimeData(lastMeasuredBatchID, fid, thread_Id, latencyStat, batchThroughput);
+            RuntimeMonitor.get().submitRuntimeData(lastMeasuredBatchID, fid, thread_Id, latencyStat, batchStartTime, System.nanoTime()); //TODO: Replace fid with operatorID
         }
     }
 
@@ -254,7 +247,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
             if (enable_latency_measurement) {
                 if (isNewBatch) { //only executed by 1st event in a batch
                     isNewBatch = false;
-                    batchStartTS = System.nanoTime();
+                    batchStartTime = System.nanoTime();
                 }
             }
         }

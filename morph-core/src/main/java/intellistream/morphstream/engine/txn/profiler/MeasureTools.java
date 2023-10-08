@@ -42,6 +42,7 @@ public class MeasureTools {
         Metrics.RuntimePerformance.Initialize();
         Metrics.RecoveryPerformance.Initialize();
         jobStartTime = LocalDateTime.now();
+        RuntimeMonitor.Initialize();
     }
 
     public static void SCHEDULE_TIME_RECORD(int threadId, int num_events) {
@@ -191,7 +192,7 @@ public class MeasureTools {
     public static void END_TXN_TIME_MEASURE(int thread_id) {
         if (CONTROL.enable_profile && !Thread.currentThread().isInterrupted()) {
             Metrics.COMPUTE_TXN_TIME(thread_id);
-            Metrics.RECORD_TXN_BREAKDOWN_RATIO(thread_id);
+//            Metrics.RECORD_TXN_BREAKDOWN_RATIO(thread_id); //TODO: Support breakdown measure
         }
     }
 
@@ -574,8 +575,8 @@ public class MeasureTools {
 //        List<Double> periodicalThroughput = new ArrayList<>();
 //
 //        for (int i = 0; i < tthread; i++) {
-//            latencys.add(Metrics.RuntimePerformance.Latency[i].getValues());
-//            throughputs.add(Metrics.RuntimePerformance.Throughput[i].getValues());
+//            latencys.add(Metrics.BatchRuntimeData.Latency[i].getValues());
+//            throughputs.add(Metrics.BatchRuntimeData.Throughput[i].getValues());
 //        }
 //        loop: for (int i = 0; i < latencys.get(0).length; i++) {
 //            double throughput = 0;

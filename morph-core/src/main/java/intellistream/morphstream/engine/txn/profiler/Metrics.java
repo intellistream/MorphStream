@@ -129,7 +129,7 @@ public class Metrics {
     }
 
     public static void COMPUTE_POST_EXE_TIME_ACC(int thread_id) {
-        Runtime.Post[thread_id] = System.nanoTime() - Runtime.PostStart[thread_id];
+        Runtime.Post[thread_id] += System.nanoTime() - Runtime.PostStart[thread_id];
     }
 
     public static void COMPUTE_START_WAIT_TIME(int thread_id) {

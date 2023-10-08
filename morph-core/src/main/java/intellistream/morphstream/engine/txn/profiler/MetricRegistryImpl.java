@@ -14,7 +14,7 @@ public class MetricRegistryImpl {
 //        profiler.Reporter.Initialize(4);
         Duration duration = Duration.ofSeconds(1); // set duration to 10 seconds
         this.reporterScheduledExecutor.scheduleWithFixedDelay(
-                new MetricRegistryImpl.ReporterTask((profiler.Scheduled) reporterInstance),
+                new MetricRegistryImpl.ReporterTask(reporterInstance),
                 duration.toMillis(),
                 duration.toMillis(),
                 TimeUnit.MILLISECONDS
@@ -22,9 +22,9 @@ public class MetricRegistryImpl {
     }
 
     private static final class ReporterTask extends TimerTask {
-        private final profiler.Scheduled reporter;
+        private final Scheduled reporter;
 
-        private ReporterTask(profiler.Scheduled reporter) {
+        private ReporterTask(Scheduled reporter) {
             this.reporter = reporter;
         }
 

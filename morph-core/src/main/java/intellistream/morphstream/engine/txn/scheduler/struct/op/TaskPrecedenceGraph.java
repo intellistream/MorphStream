@@ -134,7 +134,7 @@ public class TaskPrecedenceGraph<Context extends OPSchedulerContext> {
     }
 
     /**
-     * set up functional dependencies among operations
+     * set up functional (parametric) dependencies among operations
      *
      * @param operation
      * @param request

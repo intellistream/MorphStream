@@ -12,6 +12,7 @@ import intellistream.morphstream.engine.stream.components.Topology;
 import intellistream.morphstream.engine.stream.components.grouping.Grouping;
 import intellistream.morphstream.engine.stream.components.operators.api.bolt.AbstractBolt;
 import intellistream.morphstream.engine.stream.execution.runtime.executorThread;
+import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +81,7 @@ public class CliFrontend {
         }
     }
     public void run() throws InterruptedException {
+        MeasureTools.Initialize();
         runTopologyLocally();
         //TODO: run for distributed mode
     }
