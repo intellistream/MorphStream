@@ -26,7 +26,7 @@ public class Job {
     private Double throughput;
     private Integer ncore;
     private Operator[] operators;
-    private TotalTimeBreakdown totalTimeBreakdown;
+    private OverallTimeBreakdown overallTimeBreakdown;
     private SchedulerTimeBreakdown schedulerTimeBreakdown;
     private List<Double> periodicalThroughput;
     private List<Double> periodicalLatency;

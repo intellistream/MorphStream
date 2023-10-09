@@ -3,7 +3,7 @@ package intellistream.morphstream.web.common.response;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import intellistream.morphstream.web.common.dao.Operator;
 import intellistream.morphstream.web.common.dao.SchedulerTimeBreakdown;
-import intellistream.morphstream.web.common.dao.TotalTimeBreakdown;
+import intellistream.morphstream.web.common.dao.OverallTimeBreakdown;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -32,7 +32,7 @@ public class DetailedInfoResponse extends AbstractResponse {
     private Float throughput;
     private Integer ncore;
     private Operator[] operators;
-    private TotalTimeBreakdown totalTimeBreakdown;
+    private OverallTimeBreakdown overallTimeBreakdown;
     private SchedulerTimeBreakdown schedulerTimeBreakdown;
     private List<Double> periodicalThroughput;
     private List<Double> periodicalLatency;

@@ -61,7 +61,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
-        RuntimeMonitor.get().TOTAL_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         RuntimeMonitor.get().PREPARE_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
         PRE_EXECUTE(in);
         RuntimeMonitor.get().ACC_PREPARE_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
@@ -194,6 +193,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             }
             eventQueue.clear();
             eventStateAccessesMap.clear();
+            RuntimeMonitor.get().END_TOTAL_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
             if (isCombo) {
                 sink.execute(in);
             }
