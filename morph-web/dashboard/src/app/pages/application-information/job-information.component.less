@@ -1,11 +1,3 @@
-//.container {
-//  margin: 0;
-//  background-color: var(--background-secondary);
-//  padding: 16px 20px 30px;
-//  border-radius: 20px;
-//  border: 2px;
-//}
-
 .container {
   margin: 10px 0 16px 0;
   //background-color: var(--background-secondary);
@@ -151,4 +143,25 @@
   border-radius: 0;
   text-align: center;
   word-break: break-all;
+  transition: 0.3s;
+}
+
+.operator-node:hover {
+  background-color: #f0f0f0; /* 更改背景颜色 */
+  transition: 0.3s;
+}
+
+#modal-container {
+  width: 100%;
+  height: 500px;
+}
+
+.hover-popup {
+  display: none;
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8); /* 透明黑色背景 */
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  pointer-events: none; /* 禁止悬浮窗阻挡鼠标事件 */
 }

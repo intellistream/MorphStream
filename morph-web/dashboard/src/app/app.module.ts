@@ -47,6 +47,7 @@ import {CodeEditorComponent} from "./pages/code-editor/code-editor.component";
 import {CodemirrorModule} from "@ctrl/ngx-codemirror";
 import {NzCollapseModule} from "ng-zorro-antd/collapse";
 import { NzGraphModule } from 'ng-zorro-antd/graph';
+import {NzPopoverModule} from "ng-zorro-antd/popover";
 
 registerLocaleData(en);
 
@@ -68,40 +69,41 @@ registerLocaleData(en);
     SubmitNewJobComponent,
     CodeEditorComponent
   ],
-    imports: [
-        BrowserModule,
-        FormsModule,
-        HttpClientModule,
-        BrowserAnimationsModule,
-        AppRoutingModule,
-        IconsProviderModule,
-        NzLayoutModule,
-        NzMenuModule,
-        NgOptimizedImage,
-        NzGridModule,
-        NzButtonModule,
-        NzBreadCrumbModule,
-        NzProgressModule,
-        NzCardModule,
-        NzModalModule,
-        NzTabsModule,
-        NzDescriptionsModule,
-        NzDividerModule,
-        NzTableModule,
-        NzUploadModule,
-        NzFormModule,
-        ReactiveFormsModule,
-        NzSelectModule,
-        NzListModule,
-        CdkVirtualForOf,
-        CdkVirtualScrollViewport,
-        CdkFixedSizeVirtualScroll,
-        NgxChartsModule,
-        NzCascaderModule,
-        CodemirrorModule,
-        NzCollapseModule,
-        NzGraphModule
-    ],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    HttpClientModule,
+    BrowserAnimationsModule,
+    AppRoutingModule,
+    IconsProviderModule,
+    NzLayoutModule,
+    NzMenuModule,
+    NgOptimizedImage,
+    NzGridModule,
+    NzButtonModule,
+    NzBreadCrumbModule,
+    NzProgressModule,
+    NzCardModule,
+    NzModalModule,
+    NzTabsModule,
+    NzDescriptionsModule,
+    NzDividerModule,
+    NzTableModule,
+    NzUploadModule,
+    NzFormModule,
+    ReactiveFormsModule,
+    NzSelectModule,
+    NzListModule,
+    CdkVirtualForOf,
+    CdkVirtualScrollViewport,
+    CdkFixedSizeVirtualScroll,
+    NgxChartsModule,
+    NzCascaderModule,
+    CodemirrorModule,
+    NzCollapseModule,
+    NzGraphModule,
+    NzPopoverModule
+  ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
   ],

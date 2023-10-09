@@ -68,11 +68,13 @@
               [nzGraphData]="nzGraphData"
               [nzAutoSize]="true"
               [nzRankDirection]="'LR'"
-              (nzGraphInitialized)="graphInitialized($event)"
-            >
+              (nzGraphInitialized)="graphInitialized($event)">
               <ng-container *nzGraphNode="let node">
                 <foreignObject x="0" y="0" width="140px" height="80px">
-                  <div class="operator-node">
+                  <div class="operator-node" nz-popover
+                       [nzPopoverContent]="'instance: ' + 1"
+                       [nzPopoverTitle]="node.label"
+                       nzPopoverPlacement="right">
                     <span>{{ node.label }}</span>
                   </div>
                 </foreignObject>
@@ -155,15 +157,34 @@
       <nz-col nzSpan="10" class="container">
         <nz-row nzJustify="space-between">
           <!--Selector-->
-          <nz-col nzSpan="15" class="selector_container">
+          <nz-col nzSpan="14" class="selector_container">
             <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%">
               <nz-option *ngFor="let operator of application.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
             </nz-select>
           </nz-col>
-          <nz-col nzSpan="8" class="selector_container">
+          <nz-col nzSpan="7" class="selector_container">
             <nz-select nzAllowClear nzPlaceHolder="Branch" style="width: 100%">
               <nz-option *ngFor="let option of batchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
             </nz-select>
+          </nz-col>
+          <nz-col nzSpan="2" class="selector_container">
+            <div>
+              <button nz-button [disabled]="true" (click)="onExpandTpg()"><span nz-icon nzType="zoom-in" nzTheme="outline"></span></button>
+            </div>
+            <nz-modal
+              [(nzVisible)]="isTpgModalVisible"
+              [nzTitle]="tpgModalTitle"
+              [nzContent]="tpgModalContent"
+              (nzOnCancel)="onTpgModalCancel()"
+              [nzFooter]="null"
+              nzWidth="1000px"
+              [nzStyle]="{'top': '10%'}"
+            ></nz-modal>
+            <ng-template #tpgModalContent>
+              <div id="modal-container">
+
+              </div>
+            </ng-template>
           </nz-col>
         </nz-row>
         <nz-row>

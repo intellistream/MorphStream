@@ -27,6 +27,16 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   timePieData: any[] = [];
   batchOptions: any[] = [];
 
+  @ViewChild('tpgContainer') private tpgContainer!: ElementRef;
+  @ViewChild(NzGraphZoomDirective, { static: true }) zoomController!: NzGraphZoomDirective;
+
+  private tpgSvg: any;
+  private simulation: any;
+
+
+  isTpgModalVisible = false;
+  tpgModalTitle = "TPG";
+
   constructor(private route: ActivatedRoute,
               private applicationService: ApplicationService,
               private applicationInformationService: JobInformationService) {
@@ -83,13 +93,6 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
 
   private nodesSelection: any;
   private linksSelection: any;
-
-  @ViewChild('tpgContainer') private tpgContainer!: ElementRef;
-
-  @ViewChild(NzGraphZoomDirective, { static: true }) zoomController!: NzGraphZoomDirective;
-
-  private tpgSvg: any;
-  private simulation: any;
 
   ngAfterViewInit() {
     this.drawTpg();
@@ -206,5 +209,12 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
         this.drawOperators();
       });
     });
+  }
+
+  onExpandTpg() {
+    this.isTpgModalVisible = true;
+  }
+  onTpgModalCancel() {
+    this.isTpgModalVisible = false;
   }
 }
