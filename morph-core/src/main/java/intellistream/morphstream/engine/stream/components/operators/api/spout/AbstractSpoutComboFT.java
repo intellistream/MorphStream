@@ -13,8 +13,8 @@ public abstract class AbstractSpoutComboFT extends AbstractSpoutFT{
     protected AbstractTransactionalBolt bolt;
     protected AbstractSink sink;
 
-    protected AbstractSpoutComboFT(Logger log, int fid) {
-        super(log, fid);
+    protected AbstractSpoutComboFT(String id, Logger log, int fid) {
+        super(id, log, fid);
         this.scalable = false;
     }
     @Override

@@ -24,8 +24,8 @@ public class ApplicationSpout extends AbstractSpout {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationSpout.class);
     private RdmaShuffleManager rdmaShuffleManager;
     private Configuration conf = MorphStreamEnv.get().configuration();
-    public ApplicationSpout() throws Exception {
-        super(LOG, 0);
+    public ApplicationSpout(String id) throws Exception {
+        super(id, LOG, 0);
         if (conf.getBoolean("isRemote", false)) {
             this.rdmaShuffleManager = new RdmaShuffleManager(new RdmaShuffleConf(conf), conf.getBoolean("isDriver"));
         }

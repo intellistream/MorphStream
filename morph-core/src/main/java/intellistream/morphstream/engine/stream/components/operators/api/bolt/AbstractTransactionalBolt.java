@@ -16,7 +16,7 @@ public abstract class AbstractTransactionalBolt extends AbstractBolt {
     protected int thread_Id;//Order of the thread in this operator
     protected int tthread;
     public TxnManager transactionManager;
-    public AbstractTransactionalBolt(Logger log, int fid) {
-        super(log, fid);
+    public AbstractTransactionalBolt(String id, Logger log, int fid) {
+        super(id, log, fid);
     }
 }

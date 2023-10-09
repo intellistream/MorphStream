@@ -30,8 +30,8 @@ public abstract class AbstractSpout extends Operator implements Checkpointable {
     protected int ccOption;
     protected int myiteration = 0;//start from 1st iteration.
     public long systemStartTime;
-    protected AbstractSpout(Logger log, int fid) {
-        super(log, 1);
+    protected AbstractSpout(String id, Logger log, int fid) {
+        super(id, log, 1);
         this.fid = fid;
     }
     @Override

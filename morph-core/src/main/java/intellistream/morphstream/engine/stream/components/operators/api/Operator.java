@@ -27,6 +27,7 @@ import static intellistream.morphstream.configuration.Constants.DEFAULT_STREAM_I
 
 public abstract class Operator implements IOperator {
     private static final long serialVersionUID = -7816511217365808709L;
+    private final String operatorID;
     public final Map<String, Double> input_selectivity;//input_selectivity used to capture multi-stream effect.
     public final Map<String, Double> output_selectivity;//output_selectivity can be > 1
     public final double branch_selectivity;
@@ -54,9 +55,10 @@ public abstract class Operator implements IOperator {
      * @param read_selectivity
      * @param window_size
      */
-    public Operator(Logger log, Map<String, Double> input_selectivity,
+    public Operator(String id, Logger log, Map<String, Double> input_selectivity,
                     Map<String, Double> output_selectivity, double branch_selectivity,
                     double read_selectivity, double window_size) {
+        operatorID = id;
         LOG = log;
         if (input_selectivity == null) {
             this.input_selectivity = new HashMap<>();
@@ -77,7 +79,8 @@ public abstract class Operator implements IOperator {
         fields = new HashMap<>();
     }
 
-    public Operator(Logger log, double w) {
+    public Operator(String id, Logger log, double w) {
+        operatorID = id;
         LOG = log;
         this.input_selectivity = new HashMap<>();
         this.output_selectivity = new HashMap<>();
@@ -123,6 +126,9 @@ public abstract class Operator implements IOperator {
         initialize(thread_Id, thisTaskId, graph);
     }
     public abstract void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph);
+    public String getOperatorID() {
+        return operatorID;
+    }
     public abstract void loadDB(Map conf, TopologyContext context, OutputCollector collector);
     public void setStateful() {
         Stateful = true;

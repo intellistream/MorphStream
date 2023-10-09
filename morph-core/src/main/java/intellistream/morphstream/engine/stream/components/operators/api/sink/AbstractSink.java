@@ -11,8 +11,8 @@ import java.util.Map;
 public abstract class AbstractSink extends AbstractBolt {
     protected int thread_Id;
     protected int tthread;
-    public AbstractSink(Logger log, int fid) {
-        super(log, fid);
+    public AbstractSink(String id, Logger log, int fid) {
+        super(id, log, fid);
     }
 
     @Override

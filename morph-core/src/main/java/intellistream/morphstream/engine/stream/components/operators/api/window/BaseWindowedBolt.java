@@ -14,13 +14,13 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
     private final transient Map<String, Object> windowConfiguration;
     private TimestampExtractor timestampExtractor;
 
-    protected BaseWindowedBolt(double w) {
-        super(0, w);
+    protected BaseWindowedBolt(String id, double w) {
+        super(id, 0, w);
         windowConfiguration = new HashMap<>();
     }
 
-    public BaseWindowedBolt(Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity, double branch_selectivity, double read_selectivity, boolean byP, double event_frequency, double w) {
-        super(log, input_selectivity, output_selectivity, branch_selectivity, read_selectivity, byP, event_frequency, w);
+    public BaseWindowedBolt(String id, Logger log, Map<String, Double> input_selectivity, Map<String, Double> output_selectivity, double branch_selectivity, double read_selectivity, boolean byP, double event_frequency, double w) {
+        super(id, log, input_selectivity, output_selectivity, branch_selectivity, read_selectivity, byP, event_frequency, w);
         windowConfiguration = new HashMap<>();
     }
 
@@ -161,7 +161,7 @@ public abstract class BaseWindowedBolt extends AbstractWindowedBolt {
 
     /**
      * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the
-     * {@link org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field.
+     * @link org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field.
      * It must be defined on a per-component basis, and in conjunction with the
      * {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
      *

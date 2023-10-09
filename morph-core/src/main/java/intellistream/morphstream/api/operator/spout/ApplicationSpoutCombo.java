@@ -28,24 +28,26 @@ import static intellistream.morphstream.configuration.Constants.*;
 
 public class ApplicationSpoutCombo extends AbstractSpoutCombo {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationSpoutCombo.class);
+    private String operatorID;
     private HashMap<String, TxnDescription> TxnDescriptionHashMap;
     private Configuration conf = MorphStreamEnv.get().configuration();
-    public ApplicationSpoutCombo(HashMap<String, TxnDescription> txnDescriptionHashMap) throws Exception {
-        super(LOG, 0);
+    public ApplicationSpoutCombo(String operatorID, HashMap<String, TxnDescription> txnDescriptionHashMap) throws Exception {
+        super(operatorID, LOG, 0);
+        this.operatorID = operatorID;
         this.TxnDescriptionHashMap = txnDescriptionHashMap;
     }
 
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
         super.initialize(thread_Id, thisTaskId, graph);
-        sink = new ApplicationSink(0);
+        sink = new ApplicationSink("sink", 0);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_MorphStream: {//T-Stream
-                bolt = new MorphStreamBolt(TxnDescriptionHashMap, 0, this.sink);
+                bolt = new MorphStreamBolt(operatorID, TxnDescriptionHashMap, 0, this.sink);
                 break;
             }
             case CCOption_SStore:
-                bolt = new SStoreBolt(TxnDescriptionHashMap, 0, this.sink);
+                bolt = new SStoreBolt(operatorID, TxnDescriptionHashMap, 0, this.sink);
                 break;
             default:
                 if (enable_log) LOG.error("Please select correct CC option!");

@@ -13,8 +13,8 @@ import java.util.Map;
 
 public abstract class AbstractSStoreBolt extends AbstractTransactionalBolt{
 
-    public AbstractSStoreBolt(Logger log, int fid) {
-        super(log, fid);
+    public AbstractSStoreBolt(String id, Logger log, int fid) {
+        super(id, log, fid);
     }
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {

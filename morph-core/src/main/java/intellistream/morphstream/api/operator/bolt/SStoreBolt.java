@@ -18,11 +18,11 @@ public class SStoreBolt extends AbstractSStoreBolt {
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
 
-    public SStoreBolt(HashMap<String, TxnDescription> txnDescriptionHashMap, int fid) {
-        super(LOG, fid);
+    public SStoreBolt(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int fid) {
+        super(id, LOG, fid);
     }
-    public SStoreBolt(HashMap<String, TxnDescription> txnDescriptionHashMap, int fid, AbstractSink sink) {
-        super(LOG, fid);
+    public SStoreBolt(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int fid, AbstractSink sink) {
+        super(id, LOG, fid);
         this.sink = sink;
         this.isCombo = true;
     }

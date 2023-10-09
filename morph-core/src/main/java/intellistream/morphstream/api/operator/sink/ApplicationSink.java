@@ -13,8 +13,8 @@ import java.util.concurrent.BrokenBarrierException;
 
 public class ApplicationSink extends AbstractSink {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationSink.class);
-    public ApplicationSink(int fid) {
-        super(LOG, fid);
+    public ApplicationSink(String id, int fid) {
+        super(id, LOG, fid);
     }
 
     @Override

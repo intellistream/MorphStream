@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.util.concurrent.BrokenBarrierException;
 
 public abstract class AbstractBolt extends Operator {
-    public AbstractBolt(Logger log, int fid) {
-        super(log, null, null, 1, 1, 1);
+    public AbstractBolt(String id, Logger log, int fid) {
+        super(id, log, null, null, 1, 1, 1);
         this.fid = fid;
     }
     public void execute(JumboTuple in) throws InterruptedException, DatabaseException, BrokenBarrierException, IOException {

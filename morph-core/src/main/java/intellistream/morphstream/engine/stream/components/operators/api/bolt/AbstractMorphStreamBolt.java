@@ -19,8 +19,8 @@ public abstract class AbstractMorphStreamBolt extends AbstractTransactionalBolt 
     protected Object input_event;
     protected long operatorTimestamp; //timestamp of event entering operator
     protected long _bid;
-    public AbstractMorphStreamBolt(Logger log, int fid) {
-        super(log, fid);
+    public AbstractMorphStreamBolt(String id, Logger log, int fid) {
+        super(id, log, fid);
     }
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {

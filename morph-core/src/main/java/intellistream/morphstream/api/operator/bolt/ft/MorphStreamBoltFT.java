@@ -47,22 +47,22 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
     private final HashMap<String, HashMap<String, Integer>> tableFieldIndexMap; //Table name -> {field name -> field index}
     public AbstractSink sink;//If combo is enabled, we need to define a sink for the bolt
     public boolean isCombo = false;
-    private int lastMeasuredBatchID = -1;
+    private int currentBatchID = 0; //batchID starts from 1
     private final DescriptiveStatistics latencyStat = new DescriptiveStatistics(); //latency statistics of current batch
     private long batchStartTime = 0; //Timestamp of the first event in the current batch
     private boolean isNewBatch = true; //Whether the input event indicates a new batch
     public FTManager ftManager;
     public FTManager loggingManager;
 
-    public MorphStreamBoltFT(HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
-        super(LOG, fid);
+    public MorphStreamBoltFT(String id, HashMap<String, TxnDescription> txnDescriptionMap, int fid) {
+        super(id, LOG, fid);
         this.txnDescriptionMap = txnDescriptionMap;
         eventQueue = new ArrayDeque<>();
         eventStateAccessesMap = new HashMap<>();
         tableFieldIndexMap = MorphStreamEnv.get().databaseInitializer().getTableFieldIndexMap();
     }
-    public MorphStreamBoltFT(HashMap<String, TxnDescription> txnDescriptionMap, int fid, AbstractSink sink) {
-        super(LOG, fid);
+    public MorphStreamBoltFT(String id, HashMap<String, TxnDescription> txnDescriptionMap, int fid, AbstractSink sink) {
+        super(id, LOG, fid);
         this.sink = sink;
         this.isCombo = true;
         this.txnDescriptionMap = txnDescriptionMap;
@@ -79,9 +79,7 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
     }
 
     protected void execute_ts_normal(Tuple in) throws DatabaseException {
-        MeasureTools.BEGIN_TOTAL_TIME_MEASURE_TS(thread_Id);
         PRE_EXECUTE(in);
-        MeasureTools.END_PREPARE_TIME_MEASURE_ACC(thread_Id);
         PRE_TXN_PROCESS(_bid);
     }
 
@@ -97,7 +95,6 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
 
     @Override
     protected void PRE_TXN_PROCESS(long _bid) throws DatabaseException {
-        MeasureTools.BEGIN_PRE_TXN_TIME_MEASURE(thread_Id);
         for (long i = _bid; i < _bid + combo_bid_size; i++) {
             TxnContext txnContext = new TxnContext(thread_Id, this.fid, i);
             TransactionalEvent event = (TransactionalEvent) input_event;
@@ -105,7 +102,6 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
                 event.setOperationTimestamp(operatorTimestamp);
             }
             Transaction_Request_Construct(event, txnContext);
-            MeasureTools.END_PRE_TXN_TIME_MEASURE_ACC(thread_Id);
         }
     }
 
@@ -185,8 +181,8 @@ public class MorphStreamBoltFT extends AbstractMorphStreamBolt {
         }
         if (enable_latency_measurement) {
             isNewBatch = true;
-            lastMeasuredBatchID += 1;
-            RuntimeMonitor.get().submitRuntimeData(lastMeasuredBatchID, fid, thread_Id, latencyStat, batchStartTime, System.nanoTime()); //TODO: Replace fid with operatorID
+            RuntimeMonitor.get().submitRuntimeData(this.getOperatorID(), currentBatchID, thread_Id, latencyStat, batchStartTime, System.nanoTime());
+            currentBatchID += 1;
         }
     }
 

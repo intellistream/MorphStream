@@ -45,8 +45,10 @@ public class ApplicationSpoutComboISC extends AbstractSpoutComboFT {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationSpoutComboISC.class);
     private HashMap<String, TxnDescription> TxnDescriptionHashMap;
     private Configuration conf = MorphStreamEnv.get().configuration();
-    public ApplicationSpoutComboISC(HashMap<String, TxnDescription> txnDescriptionHashMap) throws Exception {
-        super(LOG, 0);
+    private final String id;
+    public ApplicationSpoutComboISC(String id, HashMap<String, TxnDescription> txnDescriptionHashMap) throws Exception {
+        super(id, LOG, 0);
+        this.id = id;
         this.TxnDescriptionHashMap = txnDescriptionHashMap;
     }
 
@@ -55,11 +57,11 @@ public class ApplicationSpoutComboISC extends AbstractSpoutComboFT {
         super.initialize(thread_Id, thisTaskId, graph);
         switch (config.getInt("CCOption", 0)) {
             case CCOption_MorphStream: {//T-Stream
-                bolt = new MorphStreamBoltFT(TxnDescriptionHashMap, 0, this.sink);
+                bolt = new MorphStreamBoltFT(id, TxnDescriptionHashMap, 0, this.sink);
                 break;
             }
             case CCOption_SStore:
-                bolt = new SStoreBolt(TxnDescriptionHashMap, 0, this.sink);
+                bolt = new SStoreBolt(id, TxnDescriptionHashMap, 0, this.sink);
             default:
                 if (enable_log) LOG.error("Please select correct CC option!");
         }

@@ -26,8 +26,8 @@ public abstract class AbstractSpoutCombo extends AbstractSpout {
     protected AbstractTransactionalBolt bolt;
     protected AbstractSink sink;
 
-    public AbstractSpoutCombo(Logger log, int i) {
-        super(log, i);
+    public AbstractSpoutCombo(String id, Logger log, int i) {
+        super(id, log, i);
         this.scalable = false;
     }
 

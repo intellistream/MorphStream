@@ -86,22 +86,22 @@ public class CliFrontend {
         //TODO: run for distributed mode
     }
     public void setSpoutCombo(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks) throws Exception {
-        ApplicationSpoutCombo spout = new ApplicationSpoutCombo(txnDescriptionHashMap);
+        ApplicationSpoutCombo spout = new ApplicationSpoutCombo(id, txnDescriptionHashMap);
         env.setSpout(id, spout, numTasks);
     }
     public void setSpout(String id, int numTasks) throws Exception {
-        ApplicationSpout spout = new ApplicationSpout();
+        ApplicationSpout spout = new ApplicationSpout(id);
         env.setSpout(id, spout, numTasks);
     }
     public void setBolt(String id, HashMap<String, TxnDescription> txnDescriptionHashMap, int numTasks, int fid, Grouping ... groups) {
         AbstractBolt bolt = null;
         switch (env.configuration().getInt("CCOption", 0)) {
             case CCOption_MorphStream: {//T-Stream
-                bolt = new MorphStreamBolt(txnDescriptionHashMap, fid);
+                bolt = new MorphStreamBolt(id, txnDescriptionHashMap, fid);
                 break;
             }
             case CCOption_SStore:{
-                bolt = new SStoreBolt(txnDescriptionHashMap, fid);
+                bolt = new SStoreBolt(id, txnDescriptionHashMap, fid);
                 break;
             }
             default:

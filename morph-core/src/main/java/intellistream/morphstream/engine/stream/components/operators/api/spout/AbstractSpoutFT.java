@@ -32,8 +32,8 @@ public abstract class AbstractSpoutFT extends AbstractSpout implements FaultTole
     public int snapshot_interval;
     public FTManager ftManager;
     public FTManager loggingManager;
-    protected AbstractSpoutFT(Logger log, int fid) {
-        super(log, fid);
+    protected AbstractSpoutFT(String id, Logger log, int fid) {
+        super(id, log, fid);
     }
     @Override
     public void initialize(int thread_Id, int thisTaskId, ExecutionGraph graph) {
