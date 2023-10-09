@@ -1,6 +1,5 @@
 import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {ApplicationService} from "../../shared/services/application.service";
-import {Websocket} from "../../services/utils/websocket";
 
 import {BasicApplication} from "../../model/BasicApplication";
 import {JobInformationService} from "./job-information.service";
@@ -8,6 +7,12 @@ import {Application} from "../../model/Application";
 import {ActivatedRoute} from "@angular/router";
 
 import * as d3 from 'd3';
+import {
+  NzGraphComponent,
+  NzGraphData,
+  NzGraphDataDef,
+  NzGraphZoomDirective,
+} from "ng-zorro-antd/graph";
 
 @Component({
   selector: 'app-application-information',
@@ -27,7 +32,7 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
               private applicationInformationService: JobInformationService) {
   }
 
-  drawGraph() {
+  drawStatisticGraph() {
     this.throughputLatencyData = [
       {
         name: 'Throughput (k tuples/s)',
@@ -79,32 +84,56 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   private nodesSelection: any;
   private linksSelection: any;
 
-  @ViewChild('graphContainer') private graphContainer!: ElementRef;
-  private svg: any;
+  @ViewChild('tpgContainer') private tpgContainer!: ElementRef;
+
+  @ViewChild(NzGraphZoomDirective, { static: true }) zoomController!: NzGraphZoomDirective;
+
+  private tpgSvg: any;
   private simulation: any;
 
   ngAfterViewInit() {
-    this.createGraph();
+    this.drawTpg();
   }
 
-  createGraph() {
-    this.svg = d3.select(this.graphContainer.nativeElement)
+  graphData: NzGraphDataDef = {
+    nodes: [
+      {id: '1', label: 'Spout'},
+      {id: '2', label: 'Tweet Registrant'},
+      {id: '3', label: 'Word Updater'},
+      {id: '4', label: 'Sink'},
+    ],
+    edges: [
+      {v: '1', w: '2'},
+      {v: '2', w: '3'},
+      {v: '3', w: '4'},
+    ]
+  };
+  nzGraphData: any;
+  // rankDirection: NzRankDirection = 'LR';
+  drawOperators() {
+    this.nzGraphData = new NzGraphData(this.graphData);
+  }
+
+  graphInitialized(_ele: NzGraphComponent): void {
+    // Only nz-graph-zoom enabled, you should run `fitCenter` manually
+    this.zoomController?.fitCenter();
+  }
+
+  drawTpg() {
+    this.tpgSvg = d3.select(this.tpgContainer.nativeElement)
       .append('svg')
-      .attr('width', 500)
-      .attr('height', 400)
-      .attr("viewBox", [0, 0, 640, 480])
+      // .attr('width', 500)
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr("viewBox", [0, 0, 640, 480]);
 
-    // let width = this.svg.node().clientWidth;
-    // let heigth = this.svg.node().clientHeight;
-    //
-    // this.svg.attr("viewBox", [0, 0, 640, 480]);
-
+    // @ts-ignore
     this.simulation = d3.forceSimulation(this.nodes)
       .force('charge', d3.forceManyBody().strength(-20))
       .force('link', d3.forceLink(this.links).id((d: any) => d.name))
       .force('center', d3.forceCenter(250, 200));
 
-    this.linksSelection = this.svg.selectAll('.link')
+    this.linksSelection = this.tpgSvg.selectAll('.link')
       .data(this.links)
       .enter().append('line')
       .attr('class', 'link')
@@ -126,7 +155,7 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
       })
       .style('stroke-width', 3);
 
-    this.nodesSelection = this.svg.selectAll('.node')
+    this.nodesSelection = this.tpgSvg.selectAll('.node')
       .data(this.nodes)
       .enter().append('circle')
       .attr('class', 'node')
@@ -135,7 +164,7 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
 
     this.simulation.on('tick', this.tick.bind(this));
 
-    this.svg.call(d3.zoom()
+    this.tpgSvg.call(d3.zoom()
       .extent([[0, 0], [648, 480]])
       .scaleExtent([0.5, 10])
       .on("zoom", this.zoomed.bind(this)));
@@ -156,8 +185,8 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   }
 
   zoomed({transform}) {
-    this.svg.selectAll('.node').attr('transform', transform);
-    this.svg.selectAll('.link').attr('transform', transform);
+    this.tpgSvg.selectAll('.node').attr('transform', transform);
+    this.tpgSvg.selectAll('.link').attr('transform', transform);
   }
 
   ngOnInit(): void {
@@ -173,9 +202,9 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
             console.log(res);
           }
         )
-        this.drawGraph();
+        this.drawStatisticGraph();
+        this.drawOperators();
       });
-
     });
   }
 }

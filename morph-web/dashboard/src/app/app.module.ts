@@ -45,6 +45,8 @@ import {NgxChartsModule} from "@swimlane/ngx-charts";
 import {NzCascaderModule} from "ng-zorro-antd/cascader";
 import {CodeEditorComponent} from "./pages/code-editor/code-editor.component";
 import {CodemirrorModule} from "@ctrl/ngx-codemirror";
+import {NzCollapseModule} from "ng-zorro-antd/collapse";
+import { NzGraphModule } from 'ng-zorro-antd/graph';
 
 registerLocaleData(en);
 
@@ -66,38 +68,40 @@ registerLocaleData(en);
     SubmitNewJobComponent,
     CodeEditorComponent
   ],
-  imports: [
-    BrowserModule,
-    FormsModule,
-    HttpClientModule,
-    BrowserAnimationsModule,
-    AppRoutingModule,
-    IconsProviderModule,
-    NzLayoutModule,
-    NzMenuModule,
-    NgOptimizedImage,
-    NzGridModule,
-    NzButtonModule,
-    NzBreadCrumbModule,
-    NzProgressModule,
-    NzCardModule,
-    NzModalModule,
-    NzTabsModule,
-    NzDescriptionsModule,
-    NzDividerModule,
-    NzTableModule,
-    NzUploadModule,
-    NzFormModule,
-    ReactiveFormsModule,
-    NzSelectModule,
-    NzListModule,
-    CdkVirtualForOf,
-    CdkVirtualScrollViewport,
-    CdkFixedSizeVirtualScroll,
-    NgxChartsModule,
-    NzCascaderModule,
-    CodemirrorModule
-  ],
+    imports: [
+        BrowserModule,
+        FormsModule,
+        HttpClientModule,
+        BrowserAnimationsModule,
+        AppRoutingModule,
+        IconsProviderModule,
+        NzLayoutModule,
+        NzMenuModule,
+        NgOptimizedImage,
+        NzGridModule,
+        NzButtonModule,
+        NzBreadCrumbModule,
+        NzProgressModule,
+        NzCardModule,
+        NzModalModule,
+        NzTabsModule,
+        NzDescriptionsModule,
+        NzDividerModule,
+        NzTableModule,
+        NzUploadModule,
+        NzFormModule,
+        ReactiveFormsModule,
+        NzSelectModule,
+        NzListModule,
+        CdkVirtualForOf,
+        CdkVirtualScrollViewport,
+        CdkFixedSizeVirtualScroll,
+        NgxChartsModule,
+        NzCascaderModule,
+        CodemirrorModule,
+        NzCollapseModule,
+        NzGraphModule
+    ],
   providers: [
     { provide: NZ_I18N, useValue: en_US }
   ],
