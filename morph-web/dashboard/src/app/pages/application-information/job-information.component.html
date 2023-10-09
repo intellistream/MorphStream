@@ -40,7 +40,12 @@
     <nz-row>
       <nz-col nzSpan="24" class="container" id="operator-list-view">
         <nz-collapse>
-          <nz-collapse-panel nzHeader="Operator Statistics">
+          <nz-collapse-panel [nzHeader]="operatorPanelHeader">
+            <ng-template #operatorPanelHeader>
+              <div>
+                <span nz-icon nzType="area-chart" nzTheme="outline" style="margin-right: 2px;"></span> Operator Statistics
+              </div>
+            </ng-template>
             <nz-list nzItemLayout="horizontal">
               <nz-list-item *ngFor="let operator of application.operators">
                 <nz-list-item-meta>
@@ -52,7 +57,12 @@
               </nz-list-item>
             </nz-list>
           </nz-collapse-panel>
-          <nz-collapse-panel nzHeader="Topology">
+          <nz-collapse-panel [nzHeader]="topologyPanelHeader">
+            <ng-template #topologyPanelHeader>
+              <div>
+                <span nz-icon nzType="apartment" nzTheme="outline"  style="margin-right: 2px;"></span> Operator Topology
+              </div>
+            </ng-template>
             <nz-graph
               nz-graph-zoom
               [nzGraphData]="nzGraphData"
@@ -75,7 +85,12 @@
     <nz-row nzJustify="space-between" nzAlign="top" class="job-info-row">
       <nz-col nzSpan="13" class="container">
         <nz-tabset>
-          <nz-tab nzTitle="Performance">
+          <nz-tab [nzTitle]="performanceHeader">
+            <ng-template #performanceHeader>
+              <div>
+                <span nz-icon nzType="line-chart" nzTheme="outline" style="margin-right: 2px;"></span> Performance
+              </div>
+            </ng-template>
             <nz-row nzJustify="space-around">
               <nz-col nzSpan="24">
                 <ngx-charts-area-chart
@@ -91,7 +106,12 @@
               </nz-col>
             </nz-row>
           </nz-tab>
-          <nz-tab nzTitle="Time Distribution">
+          <nz-tab [nzTitle]="timeDistributionHeader">
+            <ng-template #timeDistributionHeader>
+              <div>
+                <span nz-icon nzType="pie-chart" nzTheme="outline" style="margin-right: 2px;"></span> Time Distribution
+              </div>
+            </ng-template>
             <nz-row nzJustify="space-around">
               <nz-col nzSpan="24">
                 <ngx-charts-pie-chart
@@ -104,7 +124,12 @@
               </nz-col>
             </nz-row>
           </nz-tab>
-          <nz-tab nzTitle="Statistics">
+          <nz-tab [nzTitle]="StatisticsHeader">
+            <ng-template #StatisticsHeader>
+              <div>
+                <span nz-icon nzType="fund" nzTheme="outline" style="margin-right: 2px;"></span> Statistics
+              </div>
+            </ng-template>
             <nz-descriptions nzBordered>
               <nz-descriptions-item nzSpan="2" nzTitle="Total Number of Events">{{application.nevents}}</nz-descriptions-item>
               <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{application.minProcessTime}}</nz-descriptions-item>
@@ -118,20 +143,26 @@
               <nz-descriptions-item nzSpan="3" nzTitle="Output File Path">C:\Users\siqxi\data\E901C1E456140E515FC645602F8AF5A12B7BDC3CDE42D11F7823938B6FBE8919_200.txt</nz-descriptions-item>
             </nz-descriptions>
           </nz-tab>
-          <nz-tab nzTitle="Output Files"></nz-tab>
+          <nz-tab [nzTitle]="OutputFileHeader">
+            <ng-template #OutputFileHeader>
+              <div>
+                <span nz-icon nzType="file-zip" nzTheme="outline" style="margin-right: 2px;"></span> Output File
+              </div>
+            </ng-template>
+          </nz-tab>
         </nz-tabset>
       </nz-col>
       <nz-col nzSpan="10" class="container">
         <nz-row nzJustify="space-between">
           <!--Selector-->
-          <nz-col nzSpan="8" class="selector_container">
-            <nz-select nzAllowClear nzPlaceHolder="Branch" style="width: 100%">
-              <nz-option *ngFor="let option of batchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
-            </nz-select>
-          </nz-col>
           <nz-col nzSpan="15" class="selector_container">
             <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%">
               <nz-option *ngFor="let operator of application.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
+            </nz-select>
+          </nz-col>
+          <nz-col nzSpan="8" class="selector_container">
+            <nz-select nzAllowClear nzPlaceHolder="Branch" style="width: 100%">
+              <nz-option *ngFor="let option of batchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
             </nz-select>
           </nz-col>
         </nz-row>
@@ -143,5 +174,3 @@
     </nz-row>
   </nz-content>
 </div>
-
-<!--<svg width="500" height="600" #graphContainer></svg>-->
