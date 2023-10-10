@@ -8,14 +8,12 @@ import intellistream.morphstream.web.common.request.DetailedInfoRequest;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * ObjectConvertHandler converts inbound messages to corresponding requests
  * which will therefore be handled by a specific handler
  */
-@Slf4j
 public class ObjectConvertHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
     private final ObjectMapper objectMapper = new ObjectMapper();
 

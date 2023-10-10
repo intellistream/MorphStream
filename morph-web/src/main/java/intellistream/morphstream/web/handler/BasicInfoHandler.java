@@ -8,7 +8,6 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import lombok.extern.slf4j.Slf4j;
 
 
 import java.io.File;
@@ -17,7 +16,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
 @ChannelHandler.Sharable
 public class BasicInfoHandler extends SimpleChannelInboundHandler<BasicInfoRequest> {
     private final String PATH = "C:\\Users\\siqxi\\data\\job\\";  // TODO: Extract this to Config
@@ -26,7 +24,6 @@ public class BasicInfoHandler extends SimpleChannelInboundHandler<BasicInfoReque
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, BasicInfoRequest request) throws Exception {
         String appId = request.getAppId();
         String correlationId = request.getCorrelationId();
-        log.debug("New request received => Basic info request for id: {}", appId);
 
         // retrieving basic historical data
         try {
