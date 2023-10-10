@@ -171,7 +171,6 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         if (enable_latency_measurement) {
             isNewBatch = true;
             RuntimeMonitor.get().submitRuntimeData(this.getOperatorID(), currentBatchID, thread_Id, latencyStat, batchStartTime, System.nanoTime());
-            currentBatchID += 1;
             latencyStat.clear();
         }
     }
@@ -194,6 +193,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             eventQueue.clear();
             eventStateAccessesMap.clear();
             RuntimeMonitor.get().END_TOTAL_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
+            currentBatchID += 1;
             if (isCombo) {
                 sink.execute(in);
             }

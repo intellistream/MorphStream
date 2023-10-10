@@ -127,7 +127,7 @@ public class SLClient extends Client {
         txnDescriptions.put("deposit", depositDescriptor);
 
         //Define topology
-        SLClient.setSpoutCombo("spout", txnDescriptions, 4);
+        SLClient.setSpoutCombo("sl", txnDescriptions, 4);
         //TODO: let client determine number of DB loader threads, and update in config, then pass to DBInitializer
         //TODO: loadDBThreadNum = total threads of all stateful operators (bolts)
 

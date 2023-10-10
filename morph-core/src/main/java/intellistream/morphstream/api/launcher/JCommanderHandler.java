@@ -123,7 +123,7 @@ public class JCommanderHandler {
 //    public String application = "OnlineBiding";
 //    public String application = "TollProcessing";
     @Parameter(names = {"--operatorIDs"}, description = "Unique identifiers for operators")
-    public String operatorIDs = "0";
+    public String operatorIDs = "sl";
     @Parameter(names = {"--COMPUTE_COMPLEXITY"}, description = "COMPUTE_COMPLEXITY per event")
     public int COMPUTE_COMPLEXITY = 0;// 1, 10, 100
     @Parameter(names = {"--POST_COMPUTE"}, description = "POST COMPUTE_COMPLEXITY per event")

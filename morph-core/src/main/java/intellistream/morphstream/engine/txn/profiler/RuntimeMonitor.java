@@ -37,11 +37,10 @@ public class RuntimeMonitor extends Thread {
     // The following 2 keep record of summarized execution time for each event, updated after each event's processing finished
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, DescriptiveStatistics[]>> opStreamTimePerEvent = new ConcurrentHashMap<>(); //operatorID -> batchID -> stream processing time per batch
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, DescriptiveStatistics[]>> opTxnTimePerEvent = new ConcurrentHashMap<>(); //operatorID -> batchID -> txn time per batch
-
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, AtomicInteger>> opNumThreadCompletedMap = new ConcurrentHashMap<>(); //operatorID -> num of threads that have submitted performance data
-
     private static final String[] operatorIDs = MorphStreamEnv.get().configuration().getString("operatorIDs").split(",");
     private static final String applicationID = MorphStreamEnv.get().configuration().getString("application");
+    private static final HashMap<String, Long[]> opEmptyLongArrays = new HashMap<>(); //operatorID -> empty long array, used for quick creation of breakdown time arrays for each new batch
     private static final HashMap<String, Integer> operatorThreadNumMap = new HashMap<>(); //operatorID -> its thread number
     private static final BlockingQueue<Object> readyOperatorQueue = new LinkedBlockingQueue<>(); //ID of operators whose performance data is ready to be shown in the UI
     EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
@@ -55,6 +54,8 @@ public class RuntimeMonitor extends Thread {
     public static void Initialize() {
         for (String operatorID : operatorIDs) {
             operatorThreadNumMap.put(operatorID, MorphStreamEnv.get().configuration().getInt("threadNumOf_" + operatorID, 4));
+            opEmptyLongArrays.put(operatorID, new Long[operatorThreadNumMap.get(operatorID)]);
+
             opLatencyMap.put(operatorID, new ConcurrentHashMap<>());
             opThroughputMap.put(operatorID, new ConcurrentHashMap<>());
             opBatchStartTimeMap.put(operatorID, new ConcurrentHashMap<>());
@@ -79,49 +80,49 @@ public class RuntimeMonitor extends Thread {
 
     public void PREPARE_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
         ConcurrentHashMap<Integer, Long[]> eventPrepareStartTimes = opPrepareStartTime.get(operatorID);
-        eventPrepareStartTimes.putIfAbsent(batchID, new Long[operatorThreadNumMap.get(operatorID)]);
+        eventPrepareStartTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
         eventPrepareStartTimes.get(batchID)[threadID] = System.nanoTime();
     }
 
     public void ACC_PREPARE_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
         ConcurrentHashMap<Integer, Long[]> eventPrepareTimes = opPrepareTime.get(operatorID);
-        eventPrepareTimes.putIfAbsent(batchID, new Long[operatorThreadNumMap.get(operatorID)]);
+        eventPrepareTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
         eventPrepareTimes.get(batchID)[threadID] += System.nanoTime() - opPrepareStartTime.get(operatorID).get(batchID)[threadID];
     }
 
     public void PRE_EXE_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
         ConcurrentHashMap<Integer, Long[]> eventPreExeStartTimes = opPreExeStartTime.get(operatorID);
-        eventPreExeStartTimes.putIfAbsent(batchID, new Long[operatorThreadNumMap.get(operatorID)]);
+        eventPreExeStartTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
         eventPreExeStartTimes.get(batchID)[threadID] = System.nanoTime();
     }
 
     public void ACC_PRE_EXE_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
         ConcurrentHashMap<Integer, Long[]> eventPreExeTimes = opPreExeTime.get(operatorID);
-        eventPreExeTimes.putIfAbsent(batchID, new Long[operatorThreadNumMap.get(operatorID)]);
+        eventPreExeTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
         eventPreExeTimes.get(batchID)[threadID] += System.nanoTime() - opPreExeStartTime.get(operatorID).get(batchID)[threadID];
     }
 
     public void TXN_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
         ConcurrentHashMap<Integer, Long[]> eventTxnStartTimes = opTxnStartTime.get(operatorID);
-        eventTxnStartTimes.putIfAbsent(batchID, new Long[operatorThreadNumMap.get(operatorID)]);
+        eventTxnStartTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
         eventTxnStartTimes.get(batchID)[threadID] = System.nanoTime();
     }
 
     public void TXN_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
         ConcurrentHashMap<Integer, Long[]> eventTxnTimes = opTxnTime.get(operatorID);
-        eventTxnTimes.putIfAbsent(batchID, new Long[operatorThreadNumMap.get(operatorID)]);
+        eventTxnTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
         eventTxnTimes.get(batchID)[threadID] = System.nanoTime() - opTxnStartTime.get(operatorID).get(batchID)[threadID];
     }
 
     public void POST_START_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
         ConcurrentHashMap<Integer, Long[]> eventPostStartTimes = opPostStartTime.get(operatorID);
-        eventPostStartTimes.putIfAbsent(batchID, new Long[operatorThreadNumMap.get(operatorID)]);
+        eventPostStartTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
         eventPostStartTimes.get(batchID)[threadID] = System.nanoTime();
     }
 
     public void POST_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event
         ConcurrentHashMap<Integer, Long[]> eventPostTimes = opPostTime.get(operatorID);
-        eventPostTimes.putIfAbsent(batchID, new Long[operatorThreadNumMap.get(operatorID)]);
+        eventPostTimes.putIfAbsent(batchID, opEmptyLongArrays.get(operatorID));
         eventPostTimes.get(batchID)[threadID] = System.nanoTime() - opPostStartTime.get(operatorID).get(batchID)[threadID];
     }
 
@@ -161,6 +162,7 @@ public class RuntimeMonitor extends Thread {
         batchEndTimeStats.get(batchID)[threadID] = batchEndTime;
 
         if (numThreadCompletedMap.get(batchID).incrementAndGet() == threadNum) {
+            LOG.info("Batch " + batchID + " runtime data received from all threads of operator " + operatorID);
             readyOperatorQueue.add(operatorID); // notify monitor to summarize this operator's runtime data and send to UI
         }
     }
