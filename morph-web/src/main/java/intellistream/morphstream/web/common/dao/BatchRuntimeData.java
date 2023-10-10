@@ -30,5 +30,4 @@ public class BatchRuntimeData {
         this.batchSize = batchSize;
         this.overallTimeBreakdown = overallTimeBreakdown;
     }
-
 }

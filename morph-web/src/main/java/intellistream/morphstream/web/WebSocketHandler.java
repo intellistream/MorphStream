@@ -5,7 +5,6 @@ import intellistream.morphstream.web.handler.DetailedInfoHandler;
 import intellistream.morphstream.web.handler.HttpHandler;
 import intellistream.morphstream.web.handler.ObjectConvertHandler;
 import intellistream.morphstream.web.handler.sender.BatchInfoSender;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;

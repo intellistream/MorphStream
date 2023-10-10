@@ -237,12 +237,14 @@ public class RuntimeMonitor extends Thread {
             Channel channel = bootstrap.bind(5001).sync().channel();
 
             while (true) {
-                try {
-                    String operatorID = (String) readyOperatorQueue.take();
-                    sendDataToFrontend(operatorID);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
+                if (this.webSocketHandler.getBatchInfoSender().getContext() != null) {
+                    try {
+                        String operatorID = (String) readyOperatorQueue.take();
+                        sendDataToFrontend(operatorID);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
             channel.closeFuture().sync(); // block until server is closed
