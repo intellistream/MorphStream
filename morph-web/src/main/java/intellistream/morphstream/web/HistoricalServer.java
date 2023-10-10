@@ -35,7 +35,7 @@ public class HistoricalServer {
             Channel channel = bootstrap.bind(5001).sync().channel();
 
             service.scheduleAtFixedRate(()->{
-                webSocketHandler.getBatchInfoSender().send("{\"type\": \"Performance\", \"jobId\": 1}");
+//                webSocketHandler.getBatchInfoSender().send("{\"type\": \"Performance\", \"jobId\": 1}");
             }, 10, 1, TimeUnit.SECONDS);
             channel.closeFuture().sync(); // block until server is closed
         } catch (InterruptedException e) {

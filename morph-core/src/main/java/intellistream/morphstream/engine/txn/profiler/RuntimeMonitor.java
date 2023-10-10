@@ -46,7 +46,7 @@ public class RuntimeMonitor extends Thread {
     private static final BlockingQueue<Object> readyOperatorQueue = new LinkedBlockingQueue<>(); //ID of operators whose performance data is ready to be shown in the UI
     EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
     EventLoopGroup workerGroup = new NioEventLoopGroup(2);
-    WebSocketHandler webSocketHandler = new WebSocketHandler();
+    WebSocketHandler webSocketHandler;
     private final Object lock = new Object();
 
     public static RuntimeMonitor get() {
@@ -167,7 +167,6 @@ public class RuntimeMonitor extends Thread {
             LOG.info("Batch " + batchID + " runtime data received from all threads of operator " + operatorID);
             readyOperatorQueue.add(operatorID); // notify monitor to summarize this operator's runtime data and send to UI
         }
-
     }
 
     private void sendDataToFrontend(String operatorID) {
@@ -222,13 +221,15 @@ public class RuntimeMonitor extends Thread {
 
         BatchRuntimeData batchRuntimeData = new BatchRuntimeData(applicationID, String.valueOf(operatorID),
                 throughput, minLatency, maxLatency, avgLatency, totalBatchSize, overallTimeBreakdown);
-        webSocketHandler.getBatchInfoSender().send(batchRuntimeData.toString());
-    }
 
+
+        webSocketHandler.getBatchInfoSender().send(batchRuntimeData);
+    }
 
     @Override
     public void run() {
         try {
+            this.webSocketHandler = new WebSocketHandler();
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
@@ -245,17 +246,12 @@ public class RuntimeMonitor extends Thread {
                 }
             }
             channel.closeFuture().sync(); // block until server is closed
-
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
-
     }
-
-
-
 }
 
