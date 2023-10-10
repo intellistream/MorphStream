@@ -1,0 +1,73 @@
+<div id="app-box" [style.width]="cardWidth" [style.height]="cardHeight" (click)="navigateToAppDetails()">
+  <div nz-row id="app-title" nzJustify="space-between" nzAlign="top">
+    <nz-col nzSpan="16">
+      <span><b>{{ application.name }}</b></span>
+    </nz-col>
+    <nz-col nzSpan="6" *ngIf="application.isRunning" class="running-icon">
+      <span><b>Running </b></span>
+      <span nz-icon [nzType]="'sync'" [nzSpin]="true"></span>
+    </nz-col>
+    <nz-col nzSpan="7" *ngIf="!application.isRunning" class="completed-icon">
+      <span><b>Complete </b></span>
+      <span nz-icon nzType="issues-close" nzTheme="outline"></span>
+    </nz-col>
+  </div>
+  <nz-row>
+    <nz-col nzSpan="10">
+      <nz-row nzJustify="space-around" nzAlign="middle">
+        <nz-col nzSpan="18" class="info-title">
+          <div>
+            <b><span>Working</span><br/>
+            <span>Threads</span></b>
+          </div>
+        </nz-col>
+        <nz-col nzSpan="6" class="info-number">
+          <span>{{ application.nthreads }}</span>
+        </nz-col>
+      </nz-row>
+    </nz-col>
+    <nz-col nzSpan="14">
+      <nz-row nzJustify="space-around" nzAlign="middle">
+        <nz-col nzSpan="8" class="info-title">
+          <div>
+            <b><span>CPU</span></b>
+          </div>
+        </nz-col>
+        <nz-col nzSpan="16">
+          <span>{{ application.cpu }}</span>
+        </nz-col>
+      </nz-row>
+      <nz-row nzJustify="space-around" nzAlign="middle">
+        <nz-col nzSpan="8" class="info-title">
+          <div>
+            <b><span>RAM</span></b>
+          </div>
+        </nz-col>
+        <nz-col nzSpan="16">
+          <span>{{ application.ram }}</span>
+        </nz-col>
+      </nz-row>
+    </nz-col>
+  </nz-row>
+  <div class="separator"></div>
+  <nz-row nzJustify="space-around" nzAlign="middle">
+    <nz-col nzSpan="8" class="info-title">
+      <div>
+        <b><span>Start Time</span></b>
+      </div>
+    </nz-col>
+    <nz-col nzSpan="16">
+      <span>{{ application.startTime }}</span>
+    </nz-col>
+  </nz-row>
+  <nz-row nzJustify="space-around" nzAlign="middle">
+    <nz-col nzSpan="8" class="info-title">
+      <div>
+        <b><span>Duration</span></b>
+      </div>
+    </nz-col>
+    <nz-col nzSpan="16">
+      <span>{{ application.duration }}</span>
+    </nz-col>
+  </nz-row>
+</div>

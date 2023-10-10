@@ -1,0 +1,197 @@
+<div id="main-container">
+  <nz-content>
+    <div nz-row>
+      <nz-col nzSpan="24">
+<!--        <span id="title-text"><b>Application Details</b></span>-->
+<!--        <div nz-row class="separator"></div>-->
+        <!--    breadcrumb    -->
+        <nz-breadcrumb>
+          <nz-breadcrumb-item>
+            <a [routerLink]="['../../']">Overview</a>
+          </nz-breadcrumb-item>
+          <nz-breadcrumb-item *ngIf="application.isRunning">
+            <a [routerLink]="['../../applications/processing-applications']">Processing Applications</a>
+          </nz-breadcrumb-item>
+          <nz-breadcrumb-item *ngIf="!application.isRunning">
+            <a [routerLink]="['../../applications/finished-applications']">Finished Applications</a>
+          </nz-breadcrumb-item>
+          <nz-breadcrumb-item>{{application.name}} <b>[{{application.isRunning?'Running':'Stopped'}}]</b></nz-breadcrumb-item>
+        </nz-breadcrumb>
+      </nz-col>
+    </div>
+    <nz-row nzJustify="space-between" nzAlign="top" class="job-info-row">
+      <nz-col nzSpan="24" class="container" id="job-description-view">
+        <nz-descriptions id="job-description" nzBordered>
+          <nz-descriptions-item nzTitle="Working Threads" nzSpan="2">{{application.nthreads}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Status" nzSpan="1">{{application.isRunning?"Running":"Stopped"}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="CPU Utilization" nzSpan="2">{{"20%"}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="RAM Utilization" nzSpan="1">{{"60%"}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Number of Batches" nzSpan="2">{{101}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{application.duration}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Start Time" nzSpan="2">{{application.startTime}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Operation" nzSpan="2">
+            <button nz-button nzType="primary" [disabled]="application.isRunning" style="margin-right: 20px">Resume</button>
+            <button nz-button nzType="primary" [disabled]="!application.isRunning" style="margin-right: 20px">Pause</button>
+          </nz-descriptions-item>
+        </nz-descriptions>
+      </nz-col>
+      <!--    Information Showcase    -->
+    </nz-row>
+    <nz-row>
+      <nz-col nzSpan="24" class="container" id="operator-list-view">
+        <nz-collapse>
+          <nz-collapse-panel [nzHeader]="operatorPanelHeader">
+            <ng-template #operatorPanelHeader>
+              <div>
+                <span nz-icon nzType="area-chart" nzTheme="outline" style="margin-right: 2px;"></span> Operator Statistics
+              </div>
+            </ng-template>
+            <nz-list nzItemLayout="horizontal">
+              <nz-list-item *ngFor="let operator of application.operators">
+                <nz-list-item-meta>
+                  <nz-list-item-meta-title>{{operator.name}}</nz-list-item-meta-title>
+                  <nz-list-item-meta-description>Number of instance: {{operator.numOfInstances}}</nz-list-item-meta-description>
+                </nz-list-item-meta>
+                throughput: {{operator.throughput}} tuples/s &nbsp;&nbsp;&nbsp;&nbsp;
+                latency: {{operator.latency}} s
+              </nz-list-item>
+            </nz-list>
+          </nz-collapse-panel>
+          <nz-collapse-panel [nzHeader]="topologyPanelHeader">
+            <ng-template #topologyPanelHeader>
+              <div>
+                <span nz-icon nzType="apartment" nzTheme="outline"  style="margin-right: 2px;"></span> Operator Topology
+              </div>
+            </ng-template>
+            <nz-graph
+              nz-graph-zoom
+              [nzGraphData]="nzGraphData"
+              [nzAutoSize]="true"
+              [nzRankDirection]="'LR'"
+              (nzGraphInitialized)="graphInitialized($event)">
+              <ng-container *nzGraphNode="let node">
+                <foreignObject x="0" y="0" width="140px" height="80px">
+                  <div class="operator-node" nz-popover
+                       [nzPopoverContent]="'instance: ' + 1"
+                       [nzPopoverTitle]="node.label"
+                       nzPopoverPlacement="right">
+                    <span>{{ node.label }}</span>
+                  </div>
+                </foreignObject>
+              </ng-container>
+            </nz-graph>
+          </nz-collapse-panel>
+        </nz-collapse>
+      </nz-col>
+    </nz-row>
+    <nz-row nzJustify="space-between" nzAlign="top" class="job-info-row">
+      <nz-col nzSpan="13" class="container">
+        <nz-tabset>
+          <nz-tab [nzTitle]="performanceHeader">
+            <ng-template #performanceHeader>
+              <div>
+                <span nz-icon nzType="line-chart" nzTheme="outline" style="margin-right: 2px;"></span> Performance
+              </div>
+            </ng-template>
+            <nz-row nzJustify="space-around">
+              <nz-col nzSpan="24">
+                <ngx-charts-area-chart
+                  [results]="throughputLatencyData"
+                  [xAxis]="true"
+                  [yAxis]="true"
+                  [legend]="true"
+                  [showXAxisLabel]="false"
+                  [showYAxisLabel]="false"
+                  xAxisLabel="Time"
+                  yAxisLabel="Val">
+                </ngx-charts-area-chart>
+              </nz-col>
+            </nz-row>
+          </nz-tab>
+          <nz-tab [nzTitle]="timeDistributionHeader">
+            <ng-template #timeDistributionHeader>
+              <div>
+                <span nz-icon nzType="pie-chart" nzTheme="outline" style="margin-right: 2px;"></span> Time Distribution
+              </div>
+            </ng-template>
+            <nz-row nzJustify="space-around">
+              <nz-col nzSpan="24">
+                <ngx-charts-pie-chart
+                  [results]="timePieData"
+                  [labels]="true"
+                  [legend]="true"
+                  [explodeSlices]="false"
+                  [doughnut]="false">
+                </ngx-charts-pie-chart>
+              </nz-col>
+            </nz-row>
+          </nz-tab>
+          <nz-tab [nzTitle]="StatisticsHeader">
+            <ng-template #StatisticsHeader>
+              <div>
+                <span nz-icon nzType="fund" nzTheme="outline" style="margin-right: 2px;"></span> Statistics
+              </div>
+            </ng-template>
+            <nz-descriptions nzBordered>
+              <nz-descriptions-item nzSpan="2" nzTitle="Total Number of Events">{{application.nevents}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{application.minProcessTime}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Event Maximal Processing Time (ms)">{{application.maxProcessTime}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">{{application.meanProcessTime}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Total Time Used (s)">{{application.duration}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Average Latency (ms)">{{application.latency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Overall Throughput (tuple/s)">{{application.throughput}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Number of Core">{{application.ncore}}</nz-descriptions-item>
+              <!--     TODO: add a file path variable     -->
+              <nz-descriptions-item nzSpan="3" nzTitle="Output File Path">C:\Users\siqxi\data\E901C1E456140E515FC645602F8AF5A12B7BDC3CDE42D11F7823938B6FBE8919_200.txt</nz-descriptions-item>
+            </nz-descriptions>
+          </nz-tab>
+          <nz-tab [nzTitle]="OutputFileHeader">
+            <ng-template #OutputFileHeader>
+              <div>
+                <span nz-icon nzType="file-zip" nzTheme="outline" style="margin-right: 2px;"></span> Output File
+              </div>
+            </ng-template>
+          </nz-tab>
+        </nz-tabset>
+      </nz-col>
+      <nz-col nzSpan="10" class="container">
+        <nz-row nzJustify="space-between">
+          <!--Selector-->
+          <nz-col nzSpan="14" class="selector_container">
+            <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%">
+              <nz-option *ngFor="let operator of application.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
+            </nz-select>
+          </nz-col>
+          <nz-col nzSpan="7" class="selector_container">
+            <nz-select nzAllowClear nzPlaceHolder="Branch" style="width: 100%">
+              <nz-option *ngFor="let option of batchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
+            </nz-select>
+          </nz-col>
+          <nz-col nzSpan="2" class="selector_container">
+            <div>
+              <button nz-button [disabled]="true" (click)="onExpandTpg()"><span nz-icon nzType="zoom-in" nzTheme="outline"></span></button>
+            </div>
+            <nz-modal
+              [(nzVisible)]="isTpgModalVisible"
+              [nzTitle]="tpgModalTitle"
+              [nzContent]="tpgModalContent"
+              (nzOnCancel)="onTpgModalCancel()"
+              [nzFooter]="null"
+              nzWidth="1000px"
+              [nzStyle]="{'top': '10%'}"
+            ></nz-modal>
+            <ng-template #tpgModalContent>
+              <div id="modal-container">
+
+              </div>
+            </ng-template>
+          </nz-col>
+        </nz-row>
+        <nz-row>
+          <!--TPG Graph-->
+          <div id="tpg-container" #tpgContainer></div>
+        </nz-row>
+      </nz-col>
+    </nz-row>
+  </nz-content>
+</div>

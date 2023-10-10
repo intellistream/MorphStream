@@ -1,0 +1,35 @@
+# Example CSV file for configuration
+# Each line consists of a key and a value separated by a comma
+
+# Set the data location to UDS
+dataLocation,UDS
+
+# Define backend servers with IPs and ports
+# Multiple backend servers can be defined on separate lines
+backendServer,127.0.0.1:8080
+backendServer,127.0.0.1:8081
+
+# Set buffer size to 2048
+bufferSize,128
+
+# Set data store threshold to 75
+dataStoreThreshold,131072
+
+# Set the number of core numbers to 8
+coreNumbers,1
+
+# Set the data store socket path
+dataStoreSocketPath,/tmp/my_datastore.sock
+
+# Set the number of data store file names
+dataStoreFileNames,15
+
+# If data location is REMOTE, set data store IP and port
+# Otherwise, these will be left at their default values
+# In this case, data location is UDS, so these values won't affect the final configuration
+dataStoreIP,127.0.0.1
+dataStorePort,9090
+
+# Set the server IP and port
+serverIP,127.0.0.1
+serverPort,8080

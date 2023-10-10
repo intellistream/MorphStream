@@ -1,0 +1,9 @@
+.idea
+cmake-build-debug
+*a.out
+build
+*.o
+*~
+temp/
+tags
+.vscode

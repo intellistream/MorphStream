@@ -1,0 +1,9 @@
+Server:
+make b
+Usage: ./b <num-threads> <serverIp> <serverPort>
+./b 3 127.0.0.1 8000
+
+Client:
+make a
+Usage: ./a <num-threads> <request-per-thread> <clientIp> <clientPort> <serverIp> <serverPort>
+./a 3 3 127.0.0.1 5000 127.0.0.1 8000

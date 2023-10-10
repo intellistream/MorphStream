@@ -1,0 +1,6 @@
+a
+b-kernel-static
+b-kernel-dynamic
+c
+CMakeLists.txt
+*log
