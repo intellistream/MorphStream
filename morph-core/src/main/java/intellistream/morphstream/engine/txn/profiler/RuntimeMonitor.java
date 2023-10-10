@@ -6,6 +6,7 @@ import intellistream.morphstream.web.WebSocketHandler;
 import intellistream.morphstream.web.common.dao.BatchRuntimeData;
 import intellistream.morphstream.web.common.dao.OverallTimeBreakdown;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -46,6 +47,7 @@ public class RuntimeMonitor extends Thread {
     EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
     EventLoopGroup workerGroup = new NioEventLoopGroup(2);
     WebSocketHandler webSocketHandler = new WebSocketHandler();
+    private final Object lock = new Object();
 
     public static RuntimeMonitor get() {
         return runtimeMonitor;
@@ -143,7 +145,7 @@ public class RuntimeMonitor extends Thread {
         eventTxnTimes.get(batchID)[threadID].addValue(txnTime);
     }
 
-    public void submitRuntimeData(String operatorID, int batchID, int threadID, DescriptiveStatistics latencyStats, long batchStartTime, long batchEndTime) {
+    public void submitRuntimeData(String operatorID, int batchID, int threadID, SynchronizedDescriptiveStatistics latencyStats, long batchStartTime, long batchEndTime) {
         LOG.info("Batch " + batchID + " runtime data received from operator " + operatorID + " thread " + threadID);
         int threadNum = operatorThreadNumMap.get(operatorID);
 
@@ -152,19 +154,22 @@ public class RuntimeMonitor extends Thread {
         ConcurrentHashMap<Integer, Long[]> batchEndTimeStats = opBatchEndTimeMap.get(operatorID);
         ConcurrentHashMap<Integer, AtomicInteger> numThreadCompletedMap = opNumThreadCompletedMap.get(operatorID);
 
-        batchLatencyStats.putIfAbsent(batchID, new DescriptiveStatistics[threadNum]);
-        batchStartTimeStats.putIfAbsent(batchID, new Long[threadNum]);
-        batchEndTimeStats.putIfAbsent(batchID, new Long[threadNum]);
-        numThreadCompletedMap.putIfAbsent(batchID, new AtomicInteger(0));
+        synchronized (lock) {
+            batchLatencyStats.putIfAbsent(batchID, new DescriptiveStatistics[threadNum]);
+            batchStartTimeStats.putIfAbsent(batchID, new Long[threadNum]);
+            batchEndTimeStats.putIfAbsent(batchID, new Long[threadNum]);
+            numThreadCompletedMap.putIfAbsent(batchID, new AtomicInteger(0));
 
-        batchLatencyStats.get(batchID)[threadID] = latencyStats;
-        batchStartTimeStats.get(batchID)[threadID] = batchStartTime;
-        batchEndTimeStats.get(batchID)[threadID] = batchEndTime;
+            batchLatencyStats.get(batchID)[threadID] = latencyStats.copy();
+            batchStartTimeStats.get(batchID)[threadID] = batchStartTime;
+            batchEndTimeStats.get(batchID)[threadID] = batchEndTime;
 
-        if (numThreadCompletedMap.get(batchID).incrementAndGet() == threadNum) {
-            LOG.info("Batch " + batchID + " runtime data received from all threads of operator " + operatorID);
-            readyOperatorQueue.add(operatorID); // notify monitor to summarize this operator's runtime data and send to UI
+            if (opNumThreadCompletedMap.get(operatorID).get(batchID).incrementAndGet() == threadNum) {
+                LOG.info("Batch " + batchID + " runtime data received from all threads of operator " + operatorID);
+                readyOperatorQueue.add(operatorID); // notify monitor to summarize this operator's runtime data and send to UI
+            }
         }
+
     }
 
     private void sendDataToFrontend(String operatorID) {
@@ -231,7 +236,6 @@ public class RuntimeMonitor extends Thread {
                     .channel(NioServerSocketChannel.class)
                     .childHandler(webSocketHandler);
             Channel channel = bootstrap.bind(5001).sync().channel();
-            channel.closeFuture().sync(); // block until server is closed
 
             while (true) {
                 try {
@@ -242,6 +246,7 @@ public class RuntimeMonitor extends Thread {
                     break;
                 }
             }
+            channel.closeFuture().sync(); // block until server is closed
 
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

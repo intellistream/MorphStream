@@ -149,6 +149,7 @@ export class Websocket {
   private subjectMap: Map<string, Subject<any>> = new Map();
 
   onMessage(msg) {
+    console.log("New message received: ", msg);
     const message = JSON.parse(msg.data); // parse the received message
     // check the type of the message => response |
     if (message.type === "response") {
