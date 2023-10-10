@@ -154,20 +154,18 @@ public class RuntimeMonitor extends Thread {
         ConcurrentHashMap<Integer, Long[]> batchEndTimeStats = opBatchEndTimeMap.get(operatorID);
         ConcurrentHashMap<Integer, AtomicInteger> numThreadCompletedMap = opNumThreadCompletedMap.get(operatorID);
 
-        synchronized (lock) {
-            batchLatencyStats.putIfAbsent(batchID, new DescriptiveStatistics[threadNum]);
-            batchStartTimeStats.putIfAbsent(batchID, new Long[threadNum]);
-            batchEndTimeStats.putIfAbsent(batchID, new Long[threadNum]);
-            numThreadCompletedMap.putIfAbsent(batchID, new AtomicInteger(0));
+        batchLatencyStats.putIfAbsent(batchID, new DescriptiveStatistics[threadNum]);
+        batchStartTimeStats.putIfAbsent(batchID, new Long[threadNum]);
+        batchEndTimeStats.putIfAbsent(batchID, new Long[threadNum]);
+        numThreadCompletedMap.putIfAbsent(batchID, new AtomicInteger(0));
 
-            batchLatencyStats.get(batchID)[threadID] = latencyStats.copy();
-            batchStartTimeStats.get(batchID)[threadID] = batchStartTime;
-            batchEndTimeStats.get(batchID)[threadID] = batchEndTime;
+        batchLatencyStats.get(batchID)[threadID] = latencyStats.copy();
+        batchStartTimeStats.get(batchID)[threadID] = batchStartTime;
+        batchEndTimeStats.get(batchID)[threadID] = batchEndTime;
 
-            if (opNumThreadCompletedMap.get(operatorID).get(batchID).incrementAndGet() == threadNum) {
-                LOG.info("Batch " + batchID + " runtime data received from all threads of operator " + operatorID);
-                readyOperatorQueue.add(operatorID); // notify monitor to summarize this operator's runtime data and send to UI
-            }
+        if (opNumThreadCompletedMap.get(operatorID).get(batchID).incrementAndGet() == threadNum) {
+            LOG.info("Batch " + batchID + " runtime data received from all threads of operator " + operatorID);
+            readyOperatorQueue.add(operatorID); // notify monitor to summarize this operator's runtime data and send to UI
         }
 
     }
