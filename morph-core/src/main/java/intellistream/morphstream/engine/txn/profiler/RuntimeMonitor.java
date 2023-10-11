@@ -5,6 +5,8 @@ import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.web.WebSocketHandler;
 import intellistream.morphstream.web.common.dao.BatchRuntimeData;
 import intellistream.morphstream.web.common.dao.OverallTimeBreakdown;
+import intellistream.morphstream.web.common.dao.TPGEdge;
+import intellistream.morphstream.web.common.dao.TPGNode;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
@@ -18,6 +20,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class RuntimeMonitor extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(RuntimeMonitor.class);
@@ -38,6 +41,8 @@ public class RuntimeMonitor extends Thread {
     // The following 2 keep record of summarized execution time for each event, updated after each event's processing finished
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, DescriptiveStatistics[]>> opStreamTimePerEvent = new ConcurrentHashMap<>(); //operatorID -> batchID -> stream processing time per batch
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, DescriptiveStatistics[]>> opTxnTimePerEvent = new ConcurrentHashMap<>(); //operatorID -> batchID -> txn time per batch
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, ConcurrentHashMap<TPGNode, List<TPGEdge>>>> opTPGMap = new ConcurrentHashMap<>(); //operatorID -> batchID -> TPG
+    // General usages
     private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, AtomicInteger>> opNumThreadCompletedMap = new ConcurrentHashMap<>(); //operatorID -> num of threads that have submitted performance data
     private static final String[] operatorIDs = MorphStreamEnv.get().configuration().getString("operatorIDs").split(",");
     private static final String applicationID = MorphStreamEnv.get().configuration().getString("application");
@@ -72,6 +77,7 @@ public class RuntimeMonitor extends Thread {
             opTxnTime.put(operatorID, new ConcurrentHashMap<>());
             opPostStartTime.put(operatorID, new ConcurrentHashMap<>());
             opPostTime.put(operatorID, new ConcurrentHashMap<>());
+            opTPGMap.put(operatorID, new ConcurrentHashMap<>());
 
             opStreamTimePerEvent.put(operatorID, new ConcurrentHashMap<>());
             opTxnTimePerEvent.put(operatorID, new ConcurrentHashMap<>());
@@ -128,6 +134,13 @@ public class RuntimeMonitor extends Thread {
         eventPostTimes.get(batchID)[threadID] = System.nanoTime() - opPostStartTime.get(operatorID).get(batchID)[threadID];
     }
 
+    public void UPDATE_TPG(String operatorID, int batchID, TPGNode node, List<TPGEdge> edges) {
+        ConcurrentHashMap<Integer, ConcurrentHashMap<TPGNode, List<TPGEdge>>> batchTPGMap = opTPGMap.get(operatorID);
+        batchTPGMap.putIfAbsent(batchID, new ConcurrentHashMap<>());
+        batchTPGMap.get(batchID).put(node, edges);
+    }
+
+    //TODO: Merge this with runtime submission method
     public void END_TOTAL_TIME_MEASURE(String operatorID, int batchID, int threadID) { // per event, keep record for all events' txn and stream-processing time
         ConcurrentHashMap<Integer, DescriptiveStatistics[]> eventStreamTimes = opStreamTimePerEvent.get(operatorID);
         ConcurrentHashMap<Integer, DescriptiveStatistics[]> eventTxnTimes = opTxnTimePerEvent.get(operatorID);
@@ -222,8 +235,8 @@ public class RuntimeMonitor extends Thread {
         OverallTimeBreakdown overallTimeBreakdown = new OverallTimeBreakdown(avgTotalTime, avgStreamTime, avgTxnTime, avgOverheadTime);
 
         BatchRuntimeData batchRuntimeData = new BatchRuntimeData(applicationID, String.valueOf(operatorID),
-                throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration, overallTimeBreakdown);
-
+                throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
+                overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID));
 
         webSocketHandler.getBatchInfoSender().send(batchRuntimeData);
     }
@@ -239,7 +252,7 @@ public class RuntimeMonitor extends Thread {
             Channel channel = bootstrap.bind(5001).sync().channel();
 
             while (true) {
-                if (this.webSocketHandler.getBatchInfoSender().getContext() != null) {
+                if (this.webSocketHandler.getBatchInfoSender().getContext() != null) { // Do not send data to frontend until the connection is established
                     try {
                         String operatorID = (String) readyOperatorQueue.take();
                         sendDataToFrontend(operatorID);

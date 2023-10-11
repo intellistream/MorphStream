@@ -45,11 +45,11 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
     }
 
     @Override
-    public void start_evaluation(OGNSContext context, long mark_ID, int num_events) {
+    public void start_evaluation(OGNSContext context, long mark_ID, int num_events, int batchID) {
         INITIALIZE(context);
         do {
             EXPLORE(context);
-            PROCESS(context, mark_ID);
+            PROCESS(context, mark_ID, batchID);
         } while (!FINISHED(context));
         SOURCE_CONTROL.getInstance().waitForOtherThreads(context.thisThreadId);
         if (needAbortHandling.get()) {
@@ -59,7 +59,7 @@ public class OGNSScheduler extends AbstractOGNSScheduler<OGNSContext> {
             REINITIALIZE(context);
             do {
                 EXPLORE(context);
-                PROCESS(context, mark_ID);
+                PROCESS(context, mark_ID, batchID);
             } while (!FINISHED(context));
         }
         RESET(context);

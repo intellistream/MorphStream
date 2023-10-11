@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.ToString;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Data
 @ToString(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -18,10 +22,10 @@ public class BatchRuntimeData {
     private long batchDuration;
     private OverallTimeBreakdown overallTimeBreakdown;
 //    private SchedulerTimeBreakdown schedulerTimeBreakdown;
-//    private TPG tpg;
+    private ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg;
     public BatchRuntimeData(String appId, String operatorID, double throughput,
                             double minLatency, double maxLatency, double avgLatency, long batchSize, long batchDuration,
-                            OverallTimeBreakdown overallTimeBreakdown) {
+                            OverallTimeBreakdown overallTimeBreakdown, ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg) {
         this.appId = appId;
         this.operatorID = operatorID;
         this.throughput = throughput;
@@ -31,5 +35,6 @@ public class BatchRuntimeData {
         this.batchSize = batchSize;
         this.batchDuration = batchDuration;
         this.overallTimeBreakdown = overallTimeBreakdown;
+        this.tpg = tpg;
     }
 }

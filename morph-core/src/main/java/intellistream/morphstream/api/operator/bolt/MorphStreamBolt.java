@@ -15,7 +15,6 @@ import intellistream.morphstream.engine.txn.profiler.MeasureTools;
 import intellistream.morphstream.engine.txn.transaction.TxnDescription;
 import intellistream.morphstream.engine.txn.transaction.context.TxnContext;
 import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,7 +103,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             //Initialize state access based on state access description
             String stateAccessName = descEntry.getKey();
             StateAccessDescription stateAccessDesc = descEntry.getValue();
-            StateAccess stateAccess = new StateAccess(event.getFlag(), stateAccessDesc);
+            StateAccess stateAccess = new StateAccess(this.getOperatorID(), event.getFlag(), stateAccessDesc);
 
             //Each state access involves multiple state objects
             for (StateObjectDescription stateObjDesc: stateAccessDesc.getStateObjDescList()) {
@@ -169,11 +168,7 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
                 throw new RuntimeException(e);
             }
         }
-        if (enable_latency_measurement) {
-            isNewBatch = true;
-            RuntimeMonitor.get().submitRuntimeData(this.getOperatorID(), currentBatchID, thread_Id, latencyStat, batchStartTime, System.nanoTime());
-            latencyStat.clear();
-        }
+
     }
 
     @Override
@@ -182,14 +177,17 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
         if (in.isMarker()) {
             int numEvents = eventQueue.size();
             { // state access
-                RuntimeMonitor.get().TXN_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
-                transactionManager.start_evaluate(thread_Id, in.getBID(), numEvents);
-                RuntimeMonitor.get().TXN_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
+                transactionManager.start_evaluate(this.getOperatorID(), currentBatchID, numEvents, thread_Id, in.getBID());
             }
             { // post-processing
                 RuntimeMonitor.get().POST_START_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
                 Transaction_Post_Process();
                 RuntimeMonitor.get().POST_TIME_MEASURE(this.getOperatorID(), currentBatchID, thread_Id);
+            }
+            if (enable_latency_measurement) {
+                isNewBatch = true;
+                RuntimeMonitor.get().submitRuntimeData(this.getOperatorID(), currentBatchID, thread_Id, latencyStat, batchStartTime, System.nanoTime());
+                latencyStat.clear();
             }
             eventQueue.clear();
             eventStateAccessesMap.clear();
@@ -205,13 +203,13 @@ public class MorphStreamBolt extends AbstractMorphStreamBolt {
             }
 //            MeasureTools.END_TOTAL_TIME_MEASURE_TS(thread_Id, numEvents); //TODO: Double confirm for FT measurement
         } else {
-            execute_ts_normal(in);
             if (enable_latency_measurement) {
                 if (isNewBatch) { //only executed by 1st event in a batch
                     isNewBatch = false;
                     batchStartTime = System.nanoTime();
                 }
             }
+            execute_ts_normal(in);
         }
     }
 
