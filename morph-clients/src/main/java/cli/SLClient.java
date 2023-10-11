@@ -93,10 +93,10 @@ public class SLClient extends Client {
         return result;
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void startJob() throws Exception {
         CliFrontend slClientJob = CliFrontend.getOrCreate().appName("SLClient");
 //        SLClient.LoadConfiguration("/home/resources/SLClient.properties", args);
-        slClientJob.LoadConfiguration(null, args); //TODO: add loadConfig from file
+        slClientJob.LoadConfiguration(null, null); //TODO: add loadConfig from file
         slClientJob.prepare();
 
         //Initialize transactions for Combo to execute

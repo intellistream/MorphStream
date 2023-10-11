@@ -49,10 +49,9 @@ public class RuntimeMonitor extends Thread {
     private static final HashMap<String, Long[]> opEmptyLongArrays = new HashMap<>(); //operatorID -> empty long array, used for quick creation of breakdown time arrays for each new batch
     private static final HashMap<String, Integer> operatorThreadNumMap = new HashMap<>(); //operatorID -> its thread number
     private static final BlockingQueue<Object> readyOperatorQueue = new LinkedBlockingQueue<>(); //ID of operators whose performance data is ready to be shown in the UI
-    EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
-    EventLoopGroup workerGroup = new NioEventLoopGroup(2);
-    WebSocketHandler webSocketHandler;
-    private final Object lock = new Object();
+    private static final EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
+    private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
+    private static final WebSocketHandler webSocketHandler = new WebSocketHandler();
 
     public static RuntimeMonitor get() {
         return runtimeMonitor;
@@ -239,12 +238,13 @@ public class RuntimeMonitor extends Thread {
                 overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID));
 
         webSocketHandler.getBatchInfoSender().send(batchRuntimeData);
+
+        //TODO: Store batchRuntimeData into file
     }
 
     @Override
     public void run() {
         try {
-            this.webSocketHandler = new WebSocketHandler();
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
@@ -252,7 +252,7 @@ public class RuntimeMonitor extends Thread {
             Channel channel = bootstrap.bind(5001).sync().channel();
 
             while (true) {
-                if (this.webSocketHandler.getBatchInfoSender().getContext() != null) { // Do not send data to frontend until the connection is established
+                if (webSocketHandler.getBatchInfoSender().getContext() != null) { // Do not send data to frontend until the connection is established
                     try {
                         String operatorID = (String) readyOperatorQueue.take();
                         sendDataToFrontend(operatorID);
