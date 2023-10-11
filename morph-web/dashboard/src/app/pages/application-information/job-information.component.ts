@@ -217,4 +217,12 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   onTpgModalCancel() {
     this.isTpgModalVisible = false;
   }
+
+  onResume() {
+    this.applicationInformationService.sendResumeSignal(this.application.appId).subscribe(res => {
+      if (res.success) {
+        // the job resumes
+      }
+    });
+  }
 }

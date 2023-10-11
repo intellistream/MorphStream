@@ -1,4 +1,4 @@
-import {Operator} from "./operator";
+import {Operator} from "./Operator";
 import {TotalTimeBreakdown} from "./TotalTimeBreakdown";
 import {SchedulerTimeBreakdown} from "./SchedulerTimeBreakdown";
 

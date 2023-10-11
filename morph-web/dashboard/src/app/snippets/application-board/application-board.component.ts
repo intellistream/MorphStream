@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Operator} from "../../model/operator";
+import {Operator} from "../../model/Operator";
 import {Application} from "../../model/Application";
 
 @Component({
