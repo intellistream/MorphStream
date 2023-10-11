@@ -2,6 +2,7 @@ package intellistream.morphstream.api.input;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.configuration.CONTROL;
 
 import java.io.BufferedReader;
@@ -9,6 +10,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 
@@ -18,11 +20,12 @@ import java.util.concurrent.LinkedBlockingQueue;
  * It maintains a BlockingQueue to manage data insertion (from data source) and retrieval (by Spout).
  */
 public class InputSource {
-
+    private static final InputSource ourInstance = new InputSource();
     private InputSourceType inputSourceType; //from file or streaming
+    private static int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
     //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
-    private final HashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
+    private final ConcurrentHashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
     private int bid;
     private boolean createTimestampForEvent = CONTROL.enable_latency_measurement;
     public enum InputSourceType {
@@ -33,15 +36,27 @@ public class InputSource {
         WEBSOCKET
     }
 
+    public static InputSource get() {
+        return ourInstance;
+    }
+
     public InputSource() {
-        this.inputQueues = new HashMap<>();
+        this.inputQueues = new ConcurrentHashMap<>();
         this.bid = 0;
+    }
+
+    public void insertStopSignal() { //TODO: Modify workload, so that stop signal can be inserted before spout finish reading all events
+        for (int i = 0; i < spoutNum; i++) {
+            BlockingQueue<TransactionalEvent> inputQueue = inputQueues.get(i);
+            inputQueue.add(new TransactionalEvent(-1, null, null, null, "stop", false));
+        }
     }
 
     /**
      * For InputSource from file, once file path is specified, automatically convert all lines into TransactionalEvents
      */
-    public void initialize(String staticFilePath, InputSourceType inputSourceType, int spoutNum) throws IOException {
+    public void initialize(String staticFilePath, InputSourceType inputSourceType) throws IOException {
+
         this.staticFilePath = staticFilePath;
         this.inputSourceType = inputSourceType;
         BufferedReader csvReader = new BufferedReader(new FileReader(this.staticFilePath));

@@ -21,7 +21,6 @@ import intellistream.morphstream.engine.txn.scheduler.context.op.OPSContext;
 import intellistream.morphstream.engine.txn.scheduler.context.recovery.RSContext;
 import intellistream.morphstream.engine.txn.scheduler.impl.IScheduler;
 import intellistream.morphstream.engine.txn.scheduler.impl.recovery.RScheduler;
-import intellistream.morphstream.engine.txn.stage.Stage;
 import intellistream.morphstream.engine.txn.storage.*;
 import intellistream.morphstream.engine.txn.storage.table.BaseTable;
 import intellistream.morphstream.engine.txn.transaction.TxnManager;
@@ -147,7 +146,7 @@ public abstract class TxnManagerDedicatedAsy extends TxnManager {
         }
     }
 
-    public void start_evaluate(int taskId, long mark_ID, int num_events) throws InterruptedException, BrokenBarrierException {
+    public void start_evaluate(String operatorID, int batchID, int num_events, int taskId, long mark_ID) throws InterruptedException, BrokenBarrierException {
         throw new UnsupportedOperationException();
     }
 
