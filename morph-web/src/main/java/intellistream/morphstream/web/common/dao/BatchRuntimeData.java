@@ -15,11 +15,12 @@ public class BatchRuntimeData {
     private double maxLatency;
     private double avgLatency;
     private long batchSize;
+    private long batchDuration;
     private OverallTimeBreakdown overallTimeBreakdown;
 //    private SchedulerTimeBreakdown schedulerTimeBreakdown;
 //    private TPG tpg;
     public BatchRuntimeData(String appId, String operatorID, double throughput,
-                            double minLatency, double maxLatency, double avgLatency, long batchSize,
+                            double minLatency, double maxLatency, double avgLatency, long batchSize, long batchDuration,
                             OverallTimeBreakdown overallTimeBreakdown) {
         this.appId = appId;
         this.operatorID = operatorID;
@@ -28,6 +29,7 @@ public class BatchRuntimeData {
         this.maxLatency = maxLatency;
         this.avgLatency = avgLatency;
         this.batchSize = batchSize;
+        this.batchDuration = batchDuration;
         this.overallTimeBreakdown = overallTimeBreakdown;
     }
 }

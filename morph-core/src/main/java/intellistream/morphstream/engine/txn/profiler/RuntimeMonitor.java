@@ -174,6 +174,7 @@ public class RuntimeMonitor extends Thread {
         int threadNum = operatorThreadNumMap.get(operatorID);
         long[] batchStartTimeArray = new long[threadNum];
         long[] batchEndTimeArray = new long[threadNum];
+        long[] batchDurationArray = new long[threadNum];
         double[] avgLatencyArray = new double[threadNum];
         double[] minLatencyArray = new double[threadNum];
         double[] maxLatencyArray = new double[threadNum];
@@ -187,6 +188,7 @@ public class RuntimeMonitor extends Thread {
             // throughput and latency
             batchStartTimeArray[i] = Objects.requireNonNull(opBatchStartTimeMap.get(operatorID).get(latestBatchID))[i];
             batchEndTimeArray[i] = Objects.requireNonNull(opBatchEndTimeMap.get(operatorID).get(latestBatchID))[i];
+            batchDurationArray[i] = batchEndTimeArray[i] - batchStartTimeArray[i];
             DescriptiveStatistics[] batchLatencyStats = Objects.requireNonNull(opLatencyMap.get(operatorID).get(latestBatchID));
             avgLatencyArray[i] = batchLatencyStats[i].getMean();
             minLatencyArray[i] = batchLatencyStats[i].getMin();
@@ -200,9 +202,9 @@ public class RuntimeMonitor extends Thread {
         // throughput
         long batchStartTime = Arrays.stream(batchStartTimeArray).min().orElse(Long.MAX_VALUE);
         long batchEndTime = Arrays.stream(batchEndTimeArray).max().orElse(Long.MIN_VALUE);
-        long batchDuration = batchEndTime - batchStartTime;
-        assert batchDuration > 0;
-        double throughput = totalBatchSize * 1E9 / batchDuration;
+        long actualBatchDuration = batchEndTime - batchStartTime;
+        long batchDurationSum = Arrays.stream(batchDurationArray).sum();
+        double throughput = totalBatchSize * 1E9 / batchDurationSum;
         opThroughputMap.get(operatorID).put(latestBatchID, throughput); // keep record for throughput history
         // latency
         double latencySum = 0;
@@ -215,12 +217,12 @@ public class RuntimeMonitor extends Thread {
         // overall execution breakdown
         long avgStreamTime = totalStreamTime / totalBatchSize;
         long avgTxnTime = totalTxnTime / totalBatchSize;
-        long avgTotalTime = batchDuration / totalBatchSize;
+        long avgTotalTime = batchDurationSum / totalBatchSize;
         long avgOverheadTime = avgTotalTime - avgStreamTime - avgTxnTime;
         OverallTimeBreakdown overallTimeBreakdown = new OverallTimeBreakdown(avgTotalTime, avgStreamTime, avgTxnTime, avgOverheadTime);
 
         BatchRuntimeData batchRuntimeData = new BatchRuntimeData(applicationID, String.valueOf(operatorID),
-                throughput, minLatency, maxLatency, avgLatency, totalBatchSize, overallTimeBreakdown);
+                throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration, overallTimeBreakdown);
 
 
         webSocketHandler.getBatchInfoSender().send(batchRuntimeData);
