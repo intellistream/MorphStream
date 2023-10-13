@@ -233,13 +233,6 @@
             <version>0.1</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>intellistream</groupId>
-            <artifactId>morph-web</artifactId>
-            <version>0.1</version>
-            <scope>compile</scope>
-        </dependency>
-
     </dependencies>
 
 </project>

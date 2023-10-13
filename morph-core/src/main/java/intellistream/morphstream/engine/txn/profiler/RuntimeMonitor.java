@@ -2,7 +2,7 @@ package intellistream.morphstream.engine.txn.profiler;
 
 
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.web.WebSocketHandler;
+import intellistream.morphstream.web.handler.WebSocketHandler;
 import intellistream.morphstream.web.common.dao.BatchRuntimeData;
 import intellistream.morphstream.web.common.dao.OverallTimeBreakdown;
 import intellistream.morphstream.web.common.dao.TPGEdge;
@@ -20,7 +20,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 public class RuntimeMonitor extends Thread {
     private static final Logger LOG = LoggerFactory.getLogger(RuntimeMonitor.class);

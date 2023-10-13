@@ -2,13 +2,14 @@ package cli;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import intellistream.morphstream.api.input.InputSource;
-import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
-import intellistream.morphstream.web.WebSocketHandler;
+import intellistream.morphstream.web.handler.SignalHandler;
+import intellistream.morphstream.web.handler.WebSocketHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,18 +42,22 @@ public class WebServer implements Runnable {
                     .childHandler(webSocketHandler);
             Channel channel = bootstrap.bind(5001).sync().channel();
 
+            SignalHandler signalHandler = webSocketHandler.getSignalHandler();
+
             while (true) {
                 try {
-                    if (webSocketHandler.getBatchInfoSender().getContext() != null) { // Do not send data to frontend until the connection is established
-                        String controlSignal = webSocketHandler.getBatchInfoSender().getContext().channel().read().toString(); //TODO: Double check this
-                        while (!Objects.equals(controlSignal, "start") && !Objects.equals(controlSignal, "stop")) {
-                            controlSignal = webSocketHandler.getBatchInfoSender().getContext().channel().read().toString();
-                        }
-                        if (controlSignal.equals("start")) {
+                    if (webSocketHandler.getSignalHandler().getContext() != null) {
+//                        // Do not send data to frontend until the connection is established
+//                        String controlSignal = webSocketHandler.getBatchInfoSender().getContext().channel().read().toString(); //TODO: Double check this
+                        SignalHandler.SignalType controlSignal = webSocketHandler.getSignalHandler().getSignalType();
+//                        while (!Objects.equals(controlSignal, "start") && !Objects.equals(controlSignal, "stop")) {
+//                            controlSignal = webSocketHandler.getBatchInfoSender().getContext().channel().read().toString();
+//                        }
+                        if (controlSignal.equals(SignalHandler.SignalType.START)) {
                             log.info("Starting new job...");
                             createJobInfoJSON("3"); // prepare jobInfo json file for new job
                             SLClient.startJob();
-                        } else if (controlSignal.equals("stop")) {
+                        } else if (controlSignal.equals(SignalHandler.SignalType.STOP)) {
                             log.info("Stopping current job...");
                             InputSource.get().insertStopSignal(); // notify spout to pass stop signal downstream
                         } else {
@@ -64,7 +69,7 @@ public class WebServer implements Runnable {
                     break;
                 }
             }
-//            channel.closeFuture().sync(); // TODO: block until server is closed?
+            channel.closeFuture().sync(); // TODO: block until server is closed?
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -75,7 +80,7 @@ public class WebServer implements Runnable {
     }
 
 
-    private static void createJobInfoJSON(String newAppID) {
+    public static void createJobInfoJSON(String newAppID) {
         String newJobInfoFile = jobInfoDirectory + String.format("/%s.json", newAppID);
         Path inputFile = Paths.get(newJobInfoFile);
         // create jobInfo json file for new job

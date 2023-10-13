@@ -1,9 +1,5 @@
-package intellistream.morphstream.web;
+package intellistream.morphstream.web.handler;
 
-import intellistream.morphstream.web.handler.BasicInfoHandler;
-import intellistream.morphstream.web.handler.DetailedInfoHandler;
-import intellistream.morphstream.web.handler.HttpHandler;
-import intellistream.morphstream.web.handler.ObjectConvertHandler;
 import intellistream.morphstream.web.handler.sender.BatchInfoSender;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -20,10 +16,12 @@ import lombok.Getter;
 @Getter
 public class WebSocketHandler extends ChannelInitializer<SocketChannel> {
     BatchInfoSender batchInfoSender = new BatchInfoSender();
+    SignalHandler signalHandler = new SignalHandler();
 
     @Override
     protected void initChannel(SocketChannel channel) {
         this.batchInfoSender = new BatchInfoSender();
+        this.signalHandler = new SignalHandler();
 
         channel.pipeline()
                 // Websocket config
@@ -35,6 +33,7 @@ public class WebSocketHandler extends ChannelInitializer<SocketChannel> {
                 // self-defined handlers
                 .addLast("basic-info-handler", new BasicInfoHandler())
                 .addLast("detailed-info-handler", new DetailedInfoHandler())
+                .addLast("signal-handler", this.signalHandler)
                 // http handlers
                 .addLast("http-handler", new HttpHandler())
                 // sender

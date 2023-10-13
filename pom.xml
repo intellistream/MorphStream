@@ -11,6 +11,7 @@
         <module>morph-core</module>
         <module>morph-clients</module>
         <module>morph-web</module>
+        <module>morph-common</module>
     </modules>
 
     <build>
