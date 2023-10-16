@@ -233,6 +233,11 @@
             <version>0.1</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>intellistream</groupId>
+            <artifactId>morph-common</artifactId>
+            <version>0.1</version>
+        </dependency>
     </dependencies>
 
 </project>

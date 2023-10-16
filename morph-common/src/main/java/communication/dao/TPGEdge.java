@@ -1,4 +1,4 @@
-package intellistream.morphstream.web.common.dao;
+package communication.dao;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;

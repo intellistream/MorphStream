@@ -2,7 +2,7 @@ package intellistream.morphstream.web.handler.sender;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import intellistream.morphstream.web.common.dao.BatchRuntimeData;
+import communication.dao.BatchRuntimeData;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;

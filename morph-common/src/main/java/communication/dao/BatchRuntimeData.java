@@ -1,9 +1,10 @@
-package intellistream.morphstream.web.common.dao;
+package communication.dao;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,7 +22,8 @@ public class BatchRuntimeData {
     private long batchDuration;
     private OverallTimeBreakdown overallTimeBreakdown;
 //    private SchedulerTimeBreakdown schedulerTimeBreakdown;
-    private ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg;
+//    private ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg;
+    private List<TPGNode> tpg;
     public BatchRuntimeData(String appId, String operatorID, double throughput,
                             double minLatency, double maxLatency, double avgLatency, long batchSize, long batchDuration,
                             OverallTimeBreakdown overallTimeBreakdown, ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg) {
@@ -34,6 +36,10 @@ public class BatchRuntimeData {
         this.batchSize = batchSize;
         this.batchDuration = batchDuration;
         this.overallTimeBreakdown = overallTimeBreakdown;
-        this.tpg = tpg;
+        this.tpg = new ArrayList<>();
+        tpg.forEach((node, edges) -> {
+            node.setEdges(edges);
+            this.tpg.add(node);
+        });
     }
 }

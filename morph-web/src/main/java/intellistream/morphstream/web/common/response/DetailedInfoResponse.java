@@ -1,9 +1,9 @@
 package intellistream.morphstream.web.common.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import intellistream.morphstream.web.common.dao.Operator;
-import intellistream.morphstream.web.common.dao.SchedulerTimeBreakdown;
-import intellistream.morphstream.web.common.dao.OverallTimeBreakdown;
+import communication.dao.Operator;
+import communication.dao.SchedulerTimeBreakdown;
+import communication.dao.OverallTimeBreakdown;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;

@@ -1,4 +1,4 @@
-package intellistream.morphstream.web.common.dao;
+package communication.dao;
 
 import lombok.Data;
 import lombok.ToString;

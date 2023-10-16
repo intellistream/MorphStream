@@ -1,23 +1,20 @@
 package intellistream.morphstream.engine.txn.profiler;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.esotericsoftware.minlog.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.web.handler.WebSocketHandler;
-import intellistream.morphstream.web.common.dao.BatchRuntimeData;
-import intellistream.morphstream.web.common.dao.OverallTimeBreakdown;
-import intellistream.morphstream.web.common.dao.TPGEdge;
-import intellistream.morphstream.web.common.dao.TPGNode;
+import communication.dao.BatchRuntimeData;
+import communication.dao.OverallTimeBreakdown;
+import communication.dao.TPGEdge;
+import communication.dao.TPGNode;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +53,7 @@ public class RuntimeMonitor extends Thread {
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
     private static final WebSocketHandler webSocketHandler = new WebSocketHandler();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final String dataPath = "data/jobs";
 
     public static RuntimeMonitor get() {
         return runtimeMonitor;
@@ -185,7 +183,7 @@ public class RuntimeMonitor extends Thread {
         }
     }
 
-    private void sendDataToFrontend(String operatorID) {
+    private void sendDataToFrontend(String operatorID, int batchId) {
         // summarize runtime data before sending
         int threadNum = operatorThreadNumMap.get(operatorID);
         long[] batchStartTimeArray = new long[threadNum];
@@ -241,39 +239,48 @@ public class RuntimeMonitor extends Thread {
                 throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
                 overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID));
 
-        File file = new File("data.json");
         try {
-            objectMapper.writeValue(file, batchRuntimeData);
+            File directory = new File(String.format("%s/%s/%s", dataPath, applicationID, operatorID));
+            if (!directory.exists()) {
+                if (directory.mkdirs()) {
+                    Log.info("Directory created successfully.");
+                } else {
+                    Log.info("Failed to create directory.");
+                    return;
+                }
+            }
+
+            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, applicationID, operatorID, batchId)), batchRuntimeData);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        webSocketHandler.getBatchInfoSender().send(batchRuntimeData);
-
-        //TODO: Store batchRuntimeData into file
     }
 
     @Override
     public void run() {
         try {
-            ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childHandler(webSocketHandler);
-            Channel channel = bootstrap.bind(5001).sync().channel();
+//            ServerBootstrap bootstrap = new ServerBootstrap();
+//            bootstrap.group(bossGroup, workerGroup)
+//                    .channel(NioServerSocketChannel.class)
+//                    .childHandler(webSocketHandler);
+//            Channel channel = bootstrap.bind(5001).sync().channel();
+            int batchId = 0;
 
             while (true) {
-                if (webSocketHandler.getBatchInfoSender().getContext() != null) { // Do not send data to frontend until the connection is established
-                    try {
-                        String operatorID = (String) readyOperatorQueue.take();
-                        sendDataToFrontend(operatorID);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
+                String operatorID = (String) readyOperatorQueue.take();
+                sendDataToFrontend(operatorID, batchId);
+                batchId += 1;
+//                if (webSocketHandler.getBatchInfoSender().getContext() != null) { // Do not send data to frontend until the connection is established
+//                    try {
+//                        String operatorID = (String) readyOperatorQueue.take();
+//                        sendDataToFrontend(operatorID);
+//                    } catch (InterruptedException e) {
+//                        Thread.currentThread().interrupt();
+//                        break;
+//                    }
+//                }
             }
-            channel.closeFuture().sync(); // block until server is closed
+//            channel.closeFuture().sync(); // block until server is closed
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {

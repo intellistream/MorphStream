@@ -6,19 +6,9 @@
         <artifactId>MorphStream</artifactId>
         <version>0.1</version>
     </parent>
-    <artifactId>morph-web</artifactId>
-    <name>morph-web</name>
+    <artifactId>morph-common</artifactId>
+    <name>morph-common</name>
     <dependencies>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>4.1.96.Final</version>
-        </dependency>
-        <dependency>
-            <groupId>intellistream</groupId>
-            <artifactId>morph-common</artifactId>
-            <version>0.1</version>
-        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
