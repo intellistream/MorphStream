@@ -1,11 +1,8 @@
-package intellistream.morphstream.web.handler;
+package runtimeweb.handler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import intellistream.morphstream.web.common.request.AbstractRequest;
-import intellistream.morphstream.web.common.request.BasicInfoRequest;
-import intellistream.morphstream.web.common.request.DetailedInfoRequest;
-import intellistream.morphstream.web.common.request.SignalRequest;
+import runtimeweb.common.request.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -22,7 +19,6 @@ public class ObjectConvertHandler extends SimpleChannelInboundHandler<TextWebSoc
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, TextWebSocketFrame textWebSocketFrame) throws Exception {
         String msg = textWebSocketFrame.text();
         JsonNode rootNode = objectMapper.readTree(msg);
-
         String type = rootNode.get("type").asText();
         AbstractRequest request;
 
@@ -36,6 +32,9 @@ public class ObjectConvertHandler extends SimpleChannelInboundHandler<TextWebSoc
                 break;
             case "Signal":
                 request = objectMapper.treeToValue(rootNode, SignalRequest.class);
+                break;
+            case "Performance":
+                request = objectMapper.treeToValue(rootNode, PerformanceRequest.class);
                 break;
             default:
                 throw new RuntimeException("No corresponding request type found");

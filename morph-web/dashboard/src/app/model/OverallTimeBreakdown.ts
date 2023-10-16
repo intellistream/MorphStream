@@ -1,4 +1,4 @@
-export interface SchedulerTimeBreakdown {
+export interface OverallTimeBreakdown {
   exploreTime: number;
   usefulTime: number;
   abortTime: number;

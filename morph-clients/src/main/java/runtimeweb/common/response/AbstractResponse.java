@@ -1,4 +1,4 @@
-package intellistream.morphstream.web.common.response;
+package runtimeweb.common.response;
 
 import lombok.Data;
 

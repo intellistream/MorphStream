@@ -1,4 +1,4 @@
-package intellistream.morphstream.web.common.request;
+package runtimeweb.common.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
@@ -9,12 +9,12 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SignalRequest extends AbstractRequest {
+public class DetailedInfoRequest extends AbstractRequest {
     private String appId;
-    private String signal;
-    public SignalRequest() {}
-    public SignalRequest(String appId, String signal) {
+
+    public DetailedInfoRequest() {}
+
+    public DetailedInfoRequest(String appId) {
         this.appId = appId;
-        this.signal = signal;
     }
 }

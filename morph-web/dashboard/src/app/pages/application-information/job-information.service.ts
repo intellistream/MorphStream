@@ -5,6 +5,8 @@ import {Application} from "../../model/Application";
 import {DetailedInfoRequest} from "../../dto/DetailedInfoRequest";
 import {ResumeRequest} from "../../dto/ResumeRequest";
 import {SignalResponse} from "../../model/SignalResponse";
+import {Performance} from "../../model/Performance";
+import {PerformanceRequest} from "../../dto/PerformanceRequest";
 
 @Injectable({
   providedIn: 'root'
@@ -24,8 +26,24 @@ export class JobInformationService {
     return this.websocket.sendRequest<Application>(msg);
   }
 
-  public listenOnPerformanceData(jobId: number): Observable<any> {
-    return this.websocket.listenOnJobData(jobId);
+  // public listenOnPerformanceData(jobId: string): Observable<any> {
+  //   return this.websocket.listenOnJobData(jobId);
+  // }
+
+
+  public listenOnPerformanceData(jobId: string): Observable<Performance> {
+    return this.websocket.listenOnPerformanceData(jobId);
+  }
+
+  public sendPerformanceRequest(jobId: string, latestBatch: number) {
+    let msg: PerformanceRequest = {
+      "type": "Performance",
+      "appId": jobId,
+      "correlationId": "",
+      "latestBatch": latestBatch
+    }
+    this.websocket.sendPerformanceRequest(msg)
+    return
   }
 
   public sendResumeSignal(appId: string): Observable<SignalResponse> {

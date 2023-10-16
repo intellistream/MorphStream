@@ -1,15 +1,13 @@
 package cli;
 
+import com.esotericsoftware.minlog.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import intellistream.morphstream.api.input.InputSource;
-import intellistream.morphstream.web.handler.SignalHandler;
-import intellistream.morphstream.web.handler.WebSocketHandler;
+import runtimeweb.handler.WebSocketHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,21 +18,16 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class WebServer implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
     private static final EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
     private static final WebSocketHandler webSocketHandler = new WebSocketHandler();
-    private static final String jobInfoDirectory = "morph-clients/src/main/java/cli/jobInfo";
+//    private static final String jobInfoDirectory = "morph-clients/src/main/java/cli/jobInfo";
+    private static final String dataPath = "data/jobs";
 
     public static void main(String[] args) {
-        // verify if jobInfo directory exists
-        if (!new File(jobInfoDirectory).exists()) {
-            new File(jobInfoDirectory).mkdirs();
-        }
-
         try {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
@@ -42,9 +35,9 @@ public class WebServer implements Runnable {
                     .childHandler(webSocketHandler);
             Channel channel = bootstrap.bind(5001).sync().channel();
 
-            log.info("Starting new job...");
-            createJobInfoJSON("3"); // prepare jobInfo json file for new job
-            SLClient.startJob(args);
+//            log.info("Starting new job...");
+//            createJobInfoJSON("StreamLedger"); // prepare jobInfo json file for new job
+//            SLClient.startJob(args);
 
 //            while (true) {
 //                try {
@@ -85,7 +78,18 @@ public class WebServer implements Runnable {
 
 
     public static void createJobInfoJSON(String newAppID) {
-        String newJobInfoFile = jobInfoDirectory + String.format("/%s.json", newAppID);
+
+        File directory = new File(String.format("%s/%s", dataPath, newAppID));
+        if (!directory.exists()) {
+            if (directory.mkdirs()) {
+                Log.info("Directory created successfully.");
+            } else {
+                Log.info("Failed to create directory.");
+                return;
+            }
+        }
+
+        String newJobInfoFile = String.format("%s/%s.json", directory, newAppID);
         Path inputFile = Paths.get(newJobInfoFile);
         // create jobInfo json file for new job
         try {
@@ -125,9 +129,7 @@ public class WebServer implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
-
 
     public static class JSONOperator {
         public String id;
@@ -229,10 +231,8 @@ public class WebServer implements Runnable {
             this.schedulerTimeBreakdown = schedulerTimeBreakdown;
         }
     }
-
     @Override
     public void run() {
         main(new String[0]);
     }
-
 }

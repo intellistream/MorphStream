@@ -72,6 +72,11 @@ export class Websocket {
     return responseSubject.asObservable();
   }
 
+  sendPerformanceRequest<T>(requestMsg) {
+    this.sendMessage(JSON.stringify(requestMsg)); // send message
+    return;
+  }
+
   // sendUpload<T>(uploadMsg) {
   //   let correlationId = uuidv4();
   //   uploadMsg.correlationId = correlationId;
@@ -94,9 +99,9 @@ export class Websocket {
     this.createWebSocket();
   }
 
-  jobId: number;
+  jobId: string;
 
-  listenOnJobData(jobId: number) {
+  listenOnPerformanceData(jobId: string) {
     this.jobId = jobId;
     return this.consistentSubject.asObservable();
   }

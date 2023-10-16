@@ -220,8 +220,11 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
 
   onResume() {
     this.applicationInformationService.sendResumeSignal(this.application.appId).subscribe(res => {
-      if (res.success) {
-        // the job resumes
+      if (res.jobStart) {
+        setInterval(() => this.applicationInformationService.sendPerformanceRequest(this.application.appId, 1), 1000);  // query every 1 second
+        // this.applicationInformationService.listenOnPerformanceData(this.application.appId).subscribe(res=>{
+        //   console.log(res);
+        // });
       }
     });
   }

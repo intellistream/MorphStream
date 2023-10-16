@@ -1,6 +1,6 @@
-package intellistream.morphstream.web.handler;
+package runtimeweb.handler;
 
-import intellistream.morphstream.web.handler.sender.BatchInfoSender;
+import runtimeweb.handler.sender.BatchInfoSender;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;

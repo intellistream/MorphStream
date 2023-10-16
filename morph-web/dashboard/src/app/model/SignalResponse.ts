@@ -1,3 +1,3 @@
 export interface SignalResponse {
-  success: boolean;
+  jobStart: boolean;
 }

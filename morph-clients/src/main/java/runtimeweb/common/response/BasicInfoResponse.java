@@ -1,4 +1,4 @@
-package intellistream.morphstream.web.common.response;
+package runtimeweb.common.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;

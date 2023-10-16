@@ -1,6 +1,6 @@
 import {Operator} from "./Operator";
 import {TotalTimeBreakdown} from "./TotalTimeBreakdown";
-import {SchedulerTimeBreakdown} from "./SchedulerTimeBreakdown";
+import {OverallTimeBreakdown} from "./OverallTimeBreakdown";
 
 export interface Application {
   appId: string;
@@ -20,7 +20,7 @@ export interface Application {
   ncore: number;
   operators: Operator[];
   totalTimeBreakdown: TotalTimeBreakdown;
-  schedulerTimeBreakdown: SchedulerTimeBreakdown;
+  schedulerTimeBreakdown: OverallTimeBreakdown;
   periodicalThroughput: number[];
   periodicalLatency: number[];
 }

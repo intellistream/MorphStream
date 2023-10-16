@@ -1,4 +1,4 @@
-package intellistream.morphstream.web.handler.sender;
+package runtimeweb.handler.sender;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,9 +1,9 @@
-package intellistream.morphstream.web.handler;
+package runtimeweb.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import communication.dao.Response;
-import intellistream.morphstream.web.common.request.DetailedInfoRequest;
-import intellistream.morphstream.web.common.response.DetailedInfoResponse;
+import runtimeweb.common.request.DetailedInfoRequest;
+import runtimeweb.common.response.DetailedInfoResponse;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

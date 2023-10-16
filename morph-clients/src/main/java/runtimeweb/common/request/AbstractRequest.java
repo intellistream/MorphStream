@@ -1,4 +1,4 @@
-package intellistream.morphstream.web.common.request;
+package runtimeweb.common.request;
 
 import lombok.Data;
 

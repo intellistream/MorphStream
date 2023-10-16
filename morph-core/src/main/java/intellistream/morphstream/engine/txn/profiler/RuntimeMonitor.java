@@ -4,7 +4,6 @@ package intellistream.morphstream.engine.txn.profiler;
 import com.esotericsoftware.minlog.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import intellistream.morphstream.web.handler.WebSocketHandler;
 import communication.dao.BatchRuntimeData;
 import communication.dao.OverallTimeBreakdown;
 import communication.dao.TPGEdge;
@@ -51,7 +50,6 @@ public class RuntimeMonitor extends Thread {
     private static final BlockingQueue<Object> readyOperatorQueue = new LinkedBlockingQueue<>(); //ID of operators whose performance data is ready to be shown in the UI
     private static final EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
-    private static final WebSocketHandler webSocketHandler = new WebSocketHandler();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String dataPath = "data/jobs";
 
@@ -183,7 +181,7 @@ public class RuntimeMonitor extends Thread {
         }
     }
 
-    private void sendDataToFrontend(String operatorID, int batchId) {
+    private void saveBatchData(String operatorID) {
         // summarize runtime data before sending
         int threadNum = operatorThreadNumMap.get(operatorID);
         long[] batchStartTimeArray = new long[threadNum];
@@ -238,7 +236,6 @@ public class RuntimeMonitor extends Thread {
         BatchRuntimeData batchRuntimeData = new BatchRuntimeData(applicationID, String.valueOf(operatorID),
                 throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
                 overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID));
-
         try {
             File directory = new File(String.format("%s/%s/%s", dataPath, applicationID, operatorID));
             if (!directory.exists()) {
@@ -249,8 +246,7 @@ public class RuntimeMonitor extends Thread {
                     return;
                 }
             }
-
-            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, applicationID, operatorID, batchId)), batchRuntimeData);
+            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, applicationID, operatorID, latestBatchID)), batchRuntimeData);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -264,12 +260,10 @@ public class RuntimeMonitor extends Thread {
 //                    .channel(NioServerSocketChannel.class)
 //                    .childHandler(webSocketHandler);
 //            Channel channel = bootstrap.bind(5001).sync().channel();
-            int batchId = 0;
 
             while (true) {
                 String operatorID = (String) readyOperatorQueue.take();
-                sendDataToFrontend(operatorID, batchId);
-                batchId += 1;
+                saveBatchData(operatorID);
 //                if (webSocketHandler.getBatchInfoSender().getContext() != null) { // Do not send data to frontend until the connection is established
 //                    try {
 //                        String operatorID = (String) readyOperatorQueue.take();
@@ -289,4 +283,3 @@ public class RuntimeMonitor extends Thread {
         }
     }
 }
-
