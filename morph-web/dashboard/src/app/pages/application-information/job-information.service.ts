@@ -30,9 +30,10 @@ export class JobInformationService {
 
   public sendResumeSignal(appId: string): Observable<SignalResponse> {
     let msg: ResumeRequest = {
-      "type": "ResumeRequest",
+      "type": "Signal",
       "appId": appId,
-      "correlationId": ""
+      "correlationId": "",
+      "signal": "start"
     }
 
     return this.websocket.sendRequest<SignalResponse>(msg);

@@ -1,6 +1,8 @@
 package intellistream.morphstream.engine.txn.profiler;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
 import intellistream.morphstream.web.handler.WebSocketHandler;
 import intellistream.morphstream.web.common.dao.BatchRuntimeData;
@@ -17,6 +19,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,6 +55,7 @@ public class RuntimeMonitor extends Thread {
     private static final EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
     private static final WebSocketHandler webSocketHandler = new WebSocketHandler();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public static RuntimeMonitor get() {
         return runtimeMonitor;
@@ -235,6 +240,13 @@ public class RuntimeMonitor extends Thread {
         BatchRuntimeData batchRuntimeData = new BatchRuntimeData(applicationID, String.valueOf(operatorID),
                 throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
                 overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID));
+
+        File file = new File("data.json");
+        try {
+            objectMapper.writeValue(file, batchRuntimeData);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         webSocketHandler.getBatchInfoSender().send(batchRuntimeData);
 

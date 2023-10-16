@@ -22,7 +22,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class InputSource {
     private static final InputSource ourInstance = new InputSource();
     private InputSourceType inputSourceType; //from file or streaming
-    private static int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
+//    private static int spoutNum = MorphStreamEnv.get().configuration().getInt("spoutNum");
     private String staticFilePath; //For now, streaming input is also read from here, difference is that streaming convert data to txnEvent in real time.
     //TODO: Add APIs for other streaming sources: Kafka, HTTP, WebSocket, etc
     private final ConcurrentHashMap<Integer,BlockingQueue<TransactionalEvent>> inputQueues; //stores input data fetched from input source
@@ -45,7 +45,7 @@ public class InputSource {
         this.bid = 0;
     }
 
-    public void insertStopSignal() { //TODO: Modify workload, so that stop signal can be inserted before spout finish reading all events
+    public void insertStopSignal(int spoutNum) { //TODO: Modify workload, so that stop signal can be inserted before spout finish reading all events
         for (int i = 0; i < spoutNum; i++) {
             BlockingQueue<TransactionalEvent> inputQueue = inputQueues.get(i);
             inputQueue.add(new TransactionalEvent(-1, null, null, null, "stop", false));
@@ -55,8 +55,7 @@ public class InputSource {
     /**
      * For InputSource from file, once file path is specified, automatically convert all lines into TransactionalEvents
      */
-    public void initialize(String staticFilePath, InputSourceType inputSourceType) throws IOException {
-
+    public void initialize(String staticFilePath, InputSourceType inputSourceType, int spoutNum) throws IOException {
         this.staticFilePath = staticFilePath;
         this.inputSourceType = inputSourceType;
         BufferedReader csvReader = new BufferedReader(new FileReader(this.staticFilePath));

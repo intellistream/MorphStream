@@ -67,7 +67,7 @@ public class CliFrontend {
                 String fileName = env.fileDataGenerator().prepareInputData();
                 env.configuration().put("inputFilePath", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING);
+            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_STRING, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         } else if (env.configuration().getInt("inputSourceType", 0) == 1) { //read input as JSON
             String inputFile = env.configuration().getString("inputFilePath");
             File file = new File(inputFile);
@@ -77,7 +77,7 @@ public class CliFrontend {
                 String fileName = env.fileDataGenerator().prepareInputData();
                 env.configuration().put("inputFilePath", fileName);
             }
-            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON);
+            env.inputSource().initialize(env.configuration().getString("inputFilePath"), InputSource.InputSourceType.FILE_JSON, MorphStreamEnv.get().configuration().getInt("spoutNum"));
         }
     }
     public void run() throws InterruptedException {
