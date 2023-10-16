@@ -37,6 +37,8 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   isTpgModalVisible = false;
   tpgModalTitle = "TPG";
 
+  latestBatches: {[key: string]: number} = {}
+
   constructor(private route: ActivatedRoute,
               private applicationService: ApplicationService,
               private applicationInformationService: JobInformationService) {
@@ -200,6 +202,10 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
         this.application = res;
         this.basicApplication = this.applicationService.getCurrentApplication();
 
+        for (let i = 0; i < this.application.operators.length; i++) {
+          this.latestBatches[this.application.operators[i].name] = this.application.operators[i].lastBatch;
+        }
+
         this.applicationInformationService.listenOnPerformanceData(jobId).subscribe(
           res => {
             console.log(res);
@@ -221,10 +227,9 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
   onResume() {
     this.applicationInformationService.sendResumeSignal(this.application.appId).subscribe(res => {
       if (res.jobStart) {
-        setInterval(() => this.applicationInformationService.sendPerformanceRequest(this.application.appId, 1), 1000);  // query every 1 second
-        // this.applicationInformationService.listenOnPerformanceData(this.application.appId).subscribe(res=>{
-        //   console.log(res);
-        // });
+        for (let i = 0; i < this.application.operators.length; i++) {
+          setInterval(() => this.applicationInformationService.sendPerformanceRequest(this.application.appId, this.application.operators[i].name, 1), 1000);  // query every 1 second
+        }
       }
     });
   }

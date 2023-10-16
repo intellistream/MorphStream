@@ -10,4 +10,5 @@ export interface Operator {
   numOfTD: number;
   numOfLD: number;
   numOfPD: number;
+  lastBatch: number;
 }

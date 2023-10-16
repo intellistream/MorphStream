@@ -35,11 +35,12 @@ export class JobInformationService {
     return this.websocket.listenOnPerformanceData(jobId);
   }
 
-  public sendPerformanceRequest(jobId: string, latestBatch: number) {
+  public sendPerformanceRequest(jobId: string, operator: string, latestBatch: number) {
     let msg: PerformanceRequest = {
       "type": "Performance",
       "appId": jobId,
       "correlationId": "",
+      "operator": operator,
       "latestBatch": latestBatch
     }
     this.websocket.sendPerformanceRequest(msg)

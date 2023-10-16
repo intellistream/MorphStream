@@ -25,9 +25,9 @@ import { NzButtonModule } from "ng-zorro-antd/button";
 import { JobInformationComponent } from "./pages/application-information/job-information.component";
 import { NzBreadCrumbModule } from "ng-zorro-antd/breadcrumb";
 import { NzProgressModule } from "ng-zorro-antd/progress";
-import { ApplicationBoardComponent } from "./snippets/application-board/application-board.component";
-import { InfoScrollWrapperComponent } from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
-import { OperatorInformationComponent } from "./snippets/operator-information/operator-information.component";
+// import { ApplicationBoardComponent } from "./snippets/application-board/application-board.component";
+// import { InfoScrollWrapperComponent } from "./snippets/info-scroll-wrapper/info-scroll-wrapper.component";
+// import { OperatorInformationComponent } from "./snippets/operator-information/operator-information.component";
 import { NzCardModule } from "ng-zorro-antd/card";
 import { NzModalModule } from "ng-zorro-antd/modal";
 import { FinishedStatisticsBoardComponent } from "./snippets/finished-statistics-board/finished-statistics-board.component";
@@ -62,9 +62,9 @@ registerLocaleData(en);
     ApplicationCardComponent,
     ScrollWrapperComponent,
     JobInformationComponent,
-    ApplicationBoardComponent,
-    InfoScrollWrapperComponent,
-    OperatorInformationComponent,
+    // ApplicationBoardComponent,
+    // InfoScrollWrapperComponent,
+    // OperatorInformationComponent,
     FinishedStatisticsBoardComponent,
     SubmitNewJobComponent,
     CodeEditorComponent

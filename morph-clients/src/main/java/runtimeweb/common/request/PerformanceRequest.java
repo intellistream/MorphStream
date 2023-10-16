@@ -11,5 +11,6 @@ import lombok.ToString;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PerformanceRequest extends AbstractRequest {
     private String appId;
+    private String operator;
     private int latestBatch;
 }

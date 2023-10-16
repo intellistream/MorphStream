@@ -10,6 +10,7 @@ import communication.dao.TPGEdge;
 import communication.dao.TPGNode;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
+import org.apache.hadoop.thirdparty.org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.netty.channel.EventLoopGroup;
@@ -51,6 +52,7 @@ public class RuntimeMonitor extends Thread {
     private static final EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, BatchRuntimeData>> batchedData = new ConcurrentHashMap<>();
     private final String dataPath = "data/jobs";
 
     public static RuntimeMonitor get() {
@@ -246,9 +248,20 @@ public class RuntimeMonitor extends Thread {
                     return;
                 }
             }
+            batchedData.putIfAbsent(operatorID, new ConcurrentHashMap<>());
+            batchedData.get(operatorID).put(latestBatchID, batchRuntimeData);
             objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, applicationID, operatorID, latestBatchID)), batchRuntimeData);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static BatchRuntimeData getBatchedDataByBatch(int batch, String operatorId) {
+        ConcurrentHashMap<Integer, BatchRuntimeData> operatorBatch = RuntimeMonitor.batchedData.get(operatorId);
+        if (operatorBatch == null) {
+            return null;
+        } else {
+            return operatorBatch.get(batch);
         }
     }
 

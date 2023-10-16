@@ -1,6 +1,5 @@
 package runtimeweb.handler;
 
-import runtimeweb.handler.sender.BatchInfoSender;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
@@ -15,14 +14,8 @@ import lombok.Getter;
  */
 @Getter
 public class WebSocketHandler extends ChannelInitializer<SocketChannel> {
-    BatchInfoSender batchInfoSender = new BatchInfoSender();
-    SignalHandler signalHandler = new SignalHandler();
-
     @Override
     protected void initChannel(SocketChannel channel) {
-        this.batchInfoSender = new BatchInfoSender();
-        this.signalHandler = new SignalHandler();
-
         channel.pipeline()
                 // Websocket config
                 .addLast("http-codec", new HttpServerCodec())
@@ -33,10 +26,9 @@ public class WebSocketHandler extends ChannelInitializer<SocketChannel> {
                 // self-defined handlers
                 .addLast("basic-info-handler", new BasicInfoHandler())
                 .addLast("detailed-info-handler", new DetailedInfoHandler())
-                .addLast("signal-handler", this.signalHandler)
+                .addLast("signal-handler", new SignalHandler())
+                .addLast("performance-handler", new PerformanceHandler())
                 // http handlers
-                .addLast("http-handler", new HttpHandler())
-                // sender
-                .addLast("batch-info-sender", this.batchInfoSender);
+                .addLast("http-handler", new HttpHandler());
     }
 }
