@@ -20,13 +20,14 @@ public class BatchRuntimeData {
     private double avgLatency;
     private long batchSize;
     private long batchDuration;
+    private int latestBatchId;
     private OverallTimeBreakdown overallTimeBreakdown;
 //    private SchedulerTimeBreakdown schedulerTimeBreakdown;
 //    private ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg;
     private List<TPGNode> tpg;
     public BatchRuntimeData(String appId, String operatorID, double throughput,
                             double minLatency, double maxLatency, double avgLatency, long batchSize, long batchDuration,
-                            OverallTimeBreakdown overallTimeBreakdown, ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg) {
+                            OverallTimeBreakdown overallTimeBreakdown, ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg, int latestBatchId) {
         this.appId = appId;
         this.operatorID = operatorID;
         this.throughput = throughput;
@@ -37,6 +38,7 @@ public class BatchRuntimeData {
         this.batchDuration = batchDuration;
         this.overallTimeBreakdown = overallTimeBreakdown;
         this.tpg = new ArrayList<>();
+        this.latestBatchId = latestBatchId;
         tpg.forEach((node, edges) -> {
             node.setEdges(edges);
             this.tpg.add(node);

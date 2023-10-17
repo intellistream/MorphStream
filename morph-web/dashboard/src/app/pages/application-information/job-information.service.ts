@@ -40,7 +40,7 @@ export class JobInformationService {
       "type": "Performance",
       "appId": jobId,
       "correlationId": "",
-      "operator": operator,
+      "operator": operator, // sl
       "latestBatch": latestBatch
     }
     this.websocket.sendPerformanceRequest(msg)

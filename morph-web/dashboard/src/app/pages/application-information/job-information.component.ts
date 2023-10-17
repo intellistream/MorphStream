@@ -102,15 +102,13 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
 
   graphData: NzGraphDataDef = {
     nodes: [
-      {id: '1', label: 'Spout'},
-      {id: '2', label: 'Tweet Registrant'},
-      {id: '3', label: 'Word Updater'},
-      {id: '4', label: 'Sink'},
+      // {id: '101', label: 'Spout'},
+      // {id: '102', label: 'Sink'},
     ],
     edges: [
-      {v: '1', w: '2'},
-      {v: '2', w: '3'},
-      {v: '3', w: '4'},
+      // {v: '1', w: '2'},
+      // {v: '2', w: '3'},
+      // {v: '3', w: '4'},
     ]
   };
   nzGraphData: any;
@@ -203,6 +201,13 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
         this.basicApplication = this.applicationService.getCurrentApplication();
 
         for (let i = 0; i < this.application.operators.length; i++) {
+          this.graphData.nodes.push({id: this.application.operators[i].id, label: this.application.operators[i].name});
+          if (i > 0) {
+            this.graphData.edges.push({v: this.application.operators[i-1].id, w: this.application.operators[i].id});
+          }
+        }
+
+        for (let i = 0; i < this.application.operators.length; i++) {
           this.latestBatches[this.application.operators[i].name] = this.application.operators[i].lastBatch;
         }
 
@@ -228,7 +233,7 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
     this.applicationInformationService.sendResumeSignal(this.application.appId).subscribe(res => {
       if (res.jobStart) {
         for (let i = 0; i < this.application.operators.length; i++) {
-          setInterval(() => this.applicationInformationService.sendPerformanceRequest(this.application.appId, this.application.operators[i].name, 1), 1000);  // query every 1 second
+          setInterval(() => this.applicationInformationService.sendPerformanceRequest(this.application.appId, this.application.operators[i].name, this.application.operators[i].lastBatch), 1000);  // query every 1 second
         }
       }
     });

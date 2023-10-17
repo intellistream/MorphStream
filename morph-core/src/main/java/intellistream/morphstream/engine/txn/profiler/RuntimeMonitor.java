@@ -235,11 +235,17 @@ public class RuntimeMonitor extends Thread {
         long avgOverheadTime = avgTotalTime - avgStreamTime - avgTxnTime;
         OverallTimeBreakdown overallTimeBreakdown = new OverallTimeBreakdown(avgTotalTime, avgStreamTime, avgTxnTime, avgOverheadTime);
 
-        BatchRuntimeData batchRuntimeData = new BatchRuntimeData(applicationID, String.valueOf(operatorID),
+//        BatchRuntimeData batchRuntimeData = new BatchRuntimeData(applicationID, String.valueOf(operatorID),
+//                throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
+//                overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID));
+        BatchRuntimeData batchRuntimeData = new BatchRuntimeData("3", String.valueOf(operatorID),
                 throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
-                overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID));
+                overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID), latestBatchID);
+
+
         try {
-            File directory = new File(String.format("%s/%s/%s", dataPath, applicationID, operatorID));
+//            File directory = new File(String.format("%s/%s/%s", dataPath, applicationID, operatorID));
+            File directory = new File(String.format("%s/%s/%s", dataPath, "3", operatorID));
             if (!directory.exists()) {
                 if (directory.mkdirs()) {
                     Log.info("Directory created successfully.");
@@ -250,7 +256,8 @@ public class RuntimeMonitor extends Thread {
             }
             batchedData.putIfAbsent(operatorID, new ConcurrentHashMap<>());
             batchedData.get(operatorID).put(latestBatchID, batchRuntimeData);
-            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, applicationID, operatorID, latestBatchID)), batchRuntimeData);
+//            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, applicationID, operatorID, latestBatchID)), batchRuntimeData);
+            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, "3", operatorID, latestBatchID)), batchRuntimeData);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

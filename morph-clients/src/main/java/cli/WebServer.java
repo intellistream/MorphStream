@@ -79,7 +79,7 @@ public class WebServer implements Runnable {
 
     public static void createJobInfoJSON(String newAppID) {
 
-        File directory = new File(String.format("%s/%s", dataPath, newAppID));
+        File directory = new File(String.format("%s", dataPath));
         if (!directory.exists()) {
             if (directory.mkdirs()) {
                 Log.info("Directory created successfully.");
@@ -89,7 +89,8 @@ public class WebServer implements Runnable {
             }
         }
 
-        String newJobInfoFile = String.format("%s/%s.json", directory, newAppID);
+//        String newJobInfoFile = String.format("%s/%s.json", directory, newAppID);
+        String newJobInfoFile = String.format("%s/%s.json", directory, "3");
         Path inputFile = Paths.get(newJobInfoFile);
         // create jobInfo json file for new job
         try {
@@ -134,18 +135,18 @@ public class WebServer implements Runnable {
     public static class JSONOperator {
         public String id;
         public String name;
-        public int numberOfInstances;
+        public int numOfInstances;
         public double throughput;
         public double latency;
         public String explorationStrategy;
         public String schedulingGranularity;
         public String abortHandling;
 
-        public JSONOperator(String id, String name, int numberOfInstances, double throughput, double latency,
+        public JSONOperator(String id, String name, int numOfInstances, double throughput, double latency,
                             String explorationStrategy, String schedulingGranularity, String abortHandling) {
             this.id = id;
             this.name = name;
-            this.numberOfInstances = numberOfInstances;
+            this.numOfInstances = numOfInstances;
             this.throughput = throughput;
             this.latency = latency;
             this.explorationStrategy = explorationStrategy;

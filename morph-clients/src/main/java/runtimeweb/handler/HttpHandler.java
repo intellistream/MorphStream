@@ -57,7 +57,7 @@ public class HttpHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         if (fileUpload.isCompleted()) {
             String fileName = fileUpload.getFilename();
             ByteBuf content = fileUpload.content();
-            String saveDirectory = "C:\\Users\\siqxi\\data\\cache\\test";
+            String saveDirectory = "data\\test";
             File file = new File(saveDirectory, fileName);
             try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
                 while (content.isReadable()) {
