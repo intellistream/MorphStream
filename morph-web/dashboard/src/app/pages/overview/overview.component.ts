@@ -1,7 +1,7 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {OverviewService} from "./overview.service";
-import {BasicApplication} from "../../model/BasicApplication";
 import {FormBuilder, FormGroup} from "@angular/forms";
+import {Job} from "../../model/Job";
 
 @Component({
   selector: 'app-home',
@@ -9,23 +9,22 @@ import {FormBuilder, FormGroup} from "@angular/forms";
   styleUrls: ['./overview.component.less']
 })
 export class OverviewComponent implements OnInit {
-  @ViewChild('runningAppContainer')
-  scrollContainer!: ElementRef<HTMLElement>;
-
   filterForm: FormGroup;
+  jobs: Job[] = [];
+  filteredJobs: Job[] = [];
+  tableIsLoading = false;   // Whether the table is loading
+  currentPageIndex = 1;     // Current page index
+  pageSize = 10;            // Number of jobs per page
+  currentPageJob: Job[] = [];
 
   constructor(private overviewService: OverviewService, private formBuilder: FormBuilder) {}
-
-  completedApplications: BasicApplication[] = [];
-
-  filteredJobs: BasicApplication[] = [];
 
   ngOnInit() {
     this.tableIsLoading = true;
 
-    this.overviewService.getAllHistoricalJobs().subscribe(res => {
-      this.completedApplications = res;
-      this.filteredJobs = this.completedApplications;
+    this.overviewService.getAllJobs().subscribe(res => {
+      this.jobs = res;
+      this.filteredJobs = this.jobs;
       this.filterJob();
     });
 
@@ -35,21 +34,23 @@ export class OverviewComponent implements OnInit {
     })
   }
 
-  tableIsLoading = false;
-  currentPageIndex = 1;
-  pageSize = 10;
-  currentPageJob: BasicApplication[] = [];
-
+  /**
+   * Change the page index
+   * @param index The new page index
+   */
   onPageIndexChange(index: number) {
     this.currentPageIndex = index;
     this.filterJob();
   }
 
+  /**
+   * Change the page size
+   * @param size The new page size
+   */
   onPageSizeChange(size: number) {
     this.pageSize = size;
     this.filterJob()
   }
-
 
   onFilterJob() {
     this.tableIsLoading = true;
@@ -57,23 +58,26 @@ export class OverviewComponent implements OnInit {
     this.filterJob();
   }
 
+  /**
+   * Filter jobs based on name and status
+   */
   filterJob() {
     const filterName = this.filterForm.value.name;
     const filterStatus = this.filterForm.value.status;
-    this.filteredJobs = this.completedApplications;
+    this.filteredJobs = this.jobs;
 
     if (filterName != null) {
       this.filteredJobs = this.filteredJobs.filter(job =>
         job.name.includes(`${filterName}`)
       );
     }
-
     if (filterStatus != null) {
       this.filteredJobs = this.filteredJobs.filter(job =>
         job.isRunning == filterStatus
       );
     }
 
+    // Update the table
     const startIndex = (this.currentPageIndex-1) * this.pageSize;
     const endIndex = startIndex + this.pageSize;
     this.currentPageJob = this.filteredJobs.slice(startIndex, endIndex);

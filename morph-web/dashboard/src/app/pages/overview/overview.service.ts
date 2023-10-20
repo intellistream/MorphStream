@@ -1,23 +1,17 @@
 import { Injectable } from '@angular/core';
-import {Websocket} from "../../services/utils/websocket";
-import {Observable} from "rxjs";
-import {BasicApplication} from "../../model/BasicApplication";
-import {BasicInfoRequest} from "../../dto/BasicInfoRequest";
+import {Job} from "../../model/Job";
+import {HttpClient} from "@angular/common/http";
 
 @Injectable({
   providedIn: 'root'
 })
 export class OverviewService {
-  constructor(private websocket: Websocket) {
-    this.websocket.connect("ws://localhost:5001/websocket");
-  }
+  constructor(private http: HttpClient) {}
 
-  public getAllHistoricalJobs(): Observable<BasicApplication[]> {
-    let msg: BasicInfoRequest = {
-      "type": "BasicInfoRequest",
-      "appId": "0",
-      "correlationId": ""
-    }
-    return this.websocket.sendRequest<BasicApplication[]>(msg);
+  /**
+   * Get all jobs from backend
+   */
+  public getAllJobs() {
+    return this.http.get<Job[]>("http://localhost:8080/jobInfo/get/all")
   }
 }

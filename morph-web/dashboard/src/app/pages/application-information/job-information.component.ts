@@ -1,9 +1,7 @@
-import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {ApplicationService} from "../../shared/services/application.service";
+import { Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 
-import {BasicApplication} from "../../model/BasicApplication";
 import {JobInformationService} from "./job-information.service";
-import {Application} from "../../model/Application";
+import {Job} from "../../model/Job";
 import {ActivatedRoute} from "@angular/router";
 
 import * as d3 from 'd3';
@@ -19,43 +17,71 @@ import {
   templateUrl: './job-information.component.html',
   styleUrls: ['./job-information.component.less']
 })
-export class JobInformationComponent implements OnInit, AfterViewInit {
-  basicApplication: BasicApplication;
-  application: Application;
-
-  throughputLatencyData: any[] = [];
-  timePieData: any[] = [];
-  batchOptions: any[] = [];
-
-  @ViewChild('tpgContainer') private tpgContainer!: ElementRef;
+export class JobInformationComponent implements OnInit {
+  @ViewChild('tpgContainer') private tpgContainer!: ElementRef; // tpg container
   @ViewChild(NzGraphZoomDirective, { static: true }) zoomController!: NzGraphZoomDirective;
 
-  private tpgSvg: any;
-  private simulation: any;
+  job: Job; // job entity
 
-
+  tpgSvg: any;            // tpg svg
+  tpgSvgSimulation: any;  // tpg graph drawing force simulation
   isTpgModalVisible = false;
-  tpgModalTitle = "TPG";
 
-  latestBatches: {[key: string]: number} = {}
+  OperatorGraphData: NzGraphDataDef = {nodes: [], edges: []} // operator graph data {v: '1', w: '2'}, {id: '101', label: 'Spout'}
+  nzOperatorGraphData: any; // operator graph data for nz-graph
 
-  constructor(private route: ActivatedRoute,
-              private applicationService: ApplicationService,
-              private applicationInformationService: JobInformationService) {
+  // Batch data
+  tpgBatchOptions: any[] = [];
+  throughputAndLatency: any[] = [];
+  timePieData: any[] = [];
+  latestBatches: {[key: string]: number} = {} // key: operator name, value: latest batch
+
+  // batch-tpg data
+  tpgNodes = [{name: 'A'}, {name: 'B'}, {name: 'C'}, {name: 'D'}, {name: 'E'}, {name: 'F'}, {name: 'G'}, {name: 'H'}, {name: 'I'}, {name: 'J'}, {name: 'K'}, {name: 'L'}, {name: 'M'}, {name: 'N'}];
+  tpgLinks = [{source: 'A', target: 'B', type: 'LD'}, {source: 'A', target: 'N', type: 'LD'}, {source: 'H', target: 'J', type: 'PD'}, {source: 'K', target: 'L', type: 'TD'},
+    {source: 'B', target: 'C', type: 'PD'}, {source: 'C', target: 'D', type: 'LD'}, {source: 'C', target: 'K', type: 'TD'}, {source: 'H', target: 'M', type: 'LD'}, {source: 'M', target: 'N', type: 'PD'},
+    {source: 'E', target: 'F', type: 'TD'}, {source: 'G', target: 'I', type: 'TD'}, {source: 'L', target: 'F', type: 'LD'}];
+
+  nodesSelections: any;
+  linksSelections: any;
+
+  constructor(private route: ActivatedRoute, private jobInformationService: JobInformationService) {}
+
+  ngOnInit(): void {
+    this.route.params.subscribe(params => {
+      const jobId = params['id'];
+      this.jobInformationService.getJob(jobId).subscribe(res => {
+        this.job = res;
+
+        // add operators to operator graph
+        for (let i = 0; i < this.job.operators.length; i++) {
+          this.OperatorGraphData.nodes.push({id: this.job.operators[i].id, label: this.job.operators[i].name});
+          if (i > 0) {
+            this.OperatorGraphData.edges.push({v: this.job.operators[i-1].id, w: this.job.operators[i].id});
+          }
+        }
+
+        this.drawOperatorGraph();
+        this.drawTpgGraph();
+      });
+    });
   }
 
+  /**
+   * Draw the statistic graph
+   */
   drawStatisticGraph() {
-    this.throughputLatencyData = [
+    this.throughputAndLatency = [
       {
         name: 'Throughput (k tuples/s)',
-        series: this.application.periodicalThroughput.map((value, index) => ({
+        series: this.job.periodicalThroughput.map((value, index) => ({
           name: index.toString() + " s",
           value: value
         })),
       },
       {
         name: 'Latency (s)',
-        series: this.application.periodicalLatency.map((value, index) => ({
+        series: this.job.periodicalLatency.map((value, index) => ({
           name: index.toString() + " s",
           value: value
         })),
@@ -65,21 +91,21 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
     this.timePieData = [
       {
         name: 'exploration time (ms)',
-        value: this.application.schedulerTimeBreakdown.exploreTime,
+        value: this.job.schedulerTimeBreakdown.exploreTime,
       },
       {
         name: 'tpg construction time (ms)',
-        value: this.application.schedulerTimeBreakdown.constructTime,
+        value: this.job.schedulerTimeBreakdown.constructTime,
       },
       {
         name: 'other time (ms)',
-        value: this.application.schedulerTimeBreakdown.abortTime +
-          this.application.schedulerTimeBreakdown.trackingTime +
-          this.application.schedulerTimeBreakdown.usefulTime,
+        value: this.job.schedulerTimeBreakdown.abortTime +
+          this.job.schedulerTimeBreakdown.trackingTime +
+          this.job.schedulerTimeBreakdown.usefulTime,
       }
     ];
 
-    this.batchOptions = [
+    this.tpgBatchOptions = [
       {value: '1', label: '1'},
       {value: '2', label: '2'},
       {value: '3', label: '3'},
@@ -88,56 +114,38 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
     ];
   }
 
-  private nodes = [{name: 'A'}, {name: 'B'}, {name: 'C'}, {name: 'D'}, {name: 'E'}, {name: 'F'}, {name: 'G'}, {name: 'H'}, {name: 'I'}, {name: 'J'}, {name: 'K'}, {name: 'L'}, {name: 'M'}, {name: 'N'}];
-  private links = [{source: 'A', target: 'B', type: 'LD'}, {source: 'A', target: 'N', type: 'LD'}, {source: 'H', target: 'J', type: 'PD'}, {source: 'K', target: 'L', type: 'TD'},
-    {source: 'B', target: 'C', type: 'PD'}, {source: 'C', target: 'D', type: 'LD'}, {source: 'C', target: 'K', type: 'TD'}, {source: 'H', target: 'M', type: 'LD'}, {source: 'M', target: 'N', type: 'PD'},
-    {source: 'E', target: 'F', type: 'TD'}, {source: 'G', target: 'I', type: 'TD'}, {source: 'L', target: 'F', type: 'LD'}];
-
-  private nodesSelection: any;
-  private linksSelection: any;
-
-  ngAfterViewInit() {
-    this.drawTpg();
+  /**
+   * Draw the operator graph
+   */
+  drawOperatorGraph() {
+    this.nzOperatorGraphData = new NzGraphData(this.OperatorGraphData);
   }
 
-  graphData: NzGraphDataDef = {
-    nodes: [
-      // {id: '101', label: 'Spout'},
-      // {id: '102', label: 'Sink'},
-    ],
-    edges: [
-      // {v: '1', w: '2'},
-      // {v: '2', w: '3'},
-      // {v: '3', w: '4'},
-    ]
-  };
-  nzGraphData: any;
-  // rankDirection: NzRankDirection = 'LR';
-  drawOperators() {
-    this.nzGraphData = new NzGraphData(this.graphData);
-  }
-
-  graphInitialized(_ele: NzGraphComponent): void {
-    // Only nz-graph-zoom enabled, you should run `fitCenter` manually
+  /**
+   * Callback when the operator graph is initialized
+   */
+  onOperatorGraphInitialized(_ele: NzGraphComponent): void {
     this.zoomController?.fitCenter();
   }
 
-  drawTpg() {
+  /**
+   * Draw the tpg graph
+   */
+  drawTpgGraph() {
     this.tpgSvg = d3.select(this.tpgContainer.nativeElement)
       .append('svg')
-      // .attr('width', 500)
       .attr('width', '100%')
       .attr('height', '100%')
       .attr("viewBox", [0, 0, 640, 480]);
 
     // @ts-ignore
-    this.simulation = d3.forceSimulation(this.nodes)
+    this.tpgSvgSimulation = d3.forceSimulation(this.tpgNodes)
       .force('charge', d3.forceManyBody().strength(-20))
-      .force('link', d3.forceLink(this.links).id((d: any) => d.name))
+      .force('link', d3.forceLink(this.tpgLinks).id((d: any) => d.name))
       .force('center', d3.forceCenter(250, 200));
 
-    this.linksSelection = this.tpgSvg.selectAll('.link')
-      .data(this.links)
+    this.linksSelections = this.tpgSvg.selectAll('.link')
+      .data(this.tpgLinks)
       .enter().append('line')
       .attr('class', 'link')
       .style("stroke", (d: any) => {
@@ -158,84 +166,57 @@ export class JobInformationComponent implements OnInit, AfterViewInit {
       })
       .style('stroke-width', 3);
 
-    this.nodesSelection = this.tpgSvg.selectAll('.node')
-      .data(this.nodes)
+    this.nodesSelections = this.tpgSvg.selectAll('.node')
+      .data(this.tpgNodes)
       .enter().append('circle')
       .attr('class', 'node')
       .attr('r', 4)
-      .style("fill", "#e79722")
+      .style("fill", "#e79722");
 
-    this.simulation.on('tick', this.tick.bind(this));
-
+    this.tpgSvgSimulation.on('tick', this.simulationTick.bind(this));
     this.tpgSvg.call(d3.zoom()
       .extent([[0, 0], [648, 480]])
       .scaleExtent([0.5, 10])
-      .on("zoom", this.zoomed.bind(this)));
-
-    this.simulation.alpha(1).restart();
+      .on("zoom", this.tpgZoomed.bind(this)));
+    this.tpgSvgSimulation.alpha(1).restart();
   }
 
-  tick() {
-    this.nodesSelection
+  simulationTick() {
+    this.nodesSelections
       .attr('cx', (d: any) => d.x)
       .attr('cy', (d: any) => d.y);
-
-    this.linksSelection
+    this.linksSelections
       .attr('x1', (d: any) => d.source.x)
       .attr('y1', (d: any) => d.source.y)
       .attr('x2', (d: any) => d.target.x)
       .attr('y2', (d: any) => d.target.y);
   }
 
-  zoomed({transform}) {
+  onResume() {
+    // this.jobInformationService.sendResumeSignal(this.job.jobId).subscribe(res => {
+    //   if (res.jobStart) {
+    //     for (let i = 0; i < this.job.operators.length; i++) {
+    //       setInterval(() => this.jobInformationService.sendPerformanceRequest(this.job.jobId, this.job.operators[i].name, this.job.operators[i].lastBatch), 1000);  // query every 1 second
+    //     }
+    //   }
+    // });
+  }
+
+  /**
+   * Callback when the tpg graph is zoomed
+   * @param transform
+   */
+  tpgZoomed({transform}) {
     this.tpgSvg.selectAll('.node').attr('transform', transform);
     this.tpgSvg.selectAll('.link').attr('transform', transform);
   }
 
-  ngOnInit(): void {
-    this.route.params.subscribe(params => {
-      const jobId = params['id'];
-
-      this.applicationInformationService.getHistoricalJob(jobId).subscribe(res => {
-        this.application = res;
-        this.basicApplication = this.applicationService.getCurrentApplication();
-
-        for (let i = 0; i < this.application.operators.length; i++) {
-          this.graphData.nodes.push({id: this.application.operators[i].id, label: this.application.operators[i].name});
-          if (i > 0) {
-            this.graphData.edges.push({v: this.application.operators[i-1].id, w: this.application.operators[i].id});
-          }
-        }
-
-        for (let i = 0; i < this.application.operators.length; i++) {
-          this.latestBatches[this.application.operators[i].name] = this.application.operators[i].lastBatch;
-        }
-
-        this.applicationInformationService.listenOnPerformanceData(jobId).subscribe(
-          res => {
-            console.log(res);
-          }
-        )
-        this.drawStatisticGraph();
-        this.drawOperators();
-      });
-    });
-  }
-
-  onExpandTpg() {
+  // TODO: tpg modal is not in use for now
+  onExpandTpgModal() {
     this.isTpgModalVisible = true;
   }
-  onTpgModalCancel() {
-    this.isTpgModalVisible = false;
-  }
 
-  onResume() {
-    this.applicationInformationService.sendResumeSignal(this.application.appId).subscribe(res => {
-      if (res.jobStart) {
-        for (let i = 0; i < this.application.operators.length; i++) {
-          setInterval(() => this.applicationInformationService.sendPerformanceRequest(this.application.appId, this.application.operators[i].name, this.application.operators[i].lastBatch), 1000);  // query every 1 second
-        }
-      }
-    });
+  onClearTpgModal() {
+    this.isTpgModalVisible = false;
   }
 }

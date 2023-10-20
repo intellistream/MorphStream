@@ -16,8 +16,6 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { OverviewComponent } from "./pages/overview/overview.component";
 import { HeaderComponent } from "./common/layout/header/header.component";
 import { FooterComponent } from "./common/layout/footer/footer.component";
-import { ProcessingApplicationsComponent } from "./pages/applications/processing-applications/processing-applications.component";
-import { FinishedApplicationsComponent } from "./pages/applications/finished-applications/finished-applications.component";
 import { ApplicationCardComponent } from "./snippets/application-card/application-card.component";
 import { NzGridModule } from "ng-zorro-antd/grid";
 import { ScrollWrapperComponent } from "./snippets/scroll-wrapper/scroll-wrapper.component";
@@ -57,8 +55,6 @@ registerLocaleData(en);
     OverviewComponent,
     HeaderComponent,
     FooterComponent,
-    ProcessingApplicationsComponent,
-    FinishedApplicationsComponent,
     ApplicationCardComponent,
     ScrollWrapperComponent,
     JobInformationComponent,

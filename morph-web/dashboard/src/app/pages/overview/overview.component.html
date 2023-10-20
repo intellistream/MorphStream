@@ -34,10 +34,8 @@
             <button nz-button nzType="primary" (click)="onFilterJob()">Filter</button>
           </nz-col>
         </div>
-
       </form>
     </div>
-<!--      <app-scroll-wrapper [applications]="completedApplications"></app-scroll-wrapper>-->
     <div class="container">
       <nz-table [nzData]="filteredJobs" [nzPageSize]="pageSize" [nzPageIndex]="currentPageIndex"
         [nzTotal]="filteredJobs.length" (nzPageIndexChange)="onPageIndexChange($event)"
@@ -55,7 +53,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let application of currentPageJob">
-            <td><a [routerLink]="['/job', application.appId]"><b>{{application.name}}</b></a></td>
+            <td><a [routerLink]="['/job', application.jobId]"><b>{{application.name}}</b></a></td>
             <td>{{application.nthreads}}</td>
             <td>{{application.cpu}}</td>
             <td>{{application.ram}}</td>

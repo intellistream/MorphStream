@@ -2,36 +2,33 @@
   <nz-content>
     <div nz-row>
       <nz-col nzSpan="24">
-<!--        <span id="title-text"><b>Application Details</b></span>-->
-<!--        <div nz-row class="separator"></div>-->
-        <!--    breadcrumb    -->
         <nz-breadcrumb>
           <nz-breadcrumb-item>
             <a [routerLink]="['../../']">Overview</a>
           </nz-breadcrumb-item>
-          <nz-breadcrumb-item *ngIf="application?.isRunning">
+          <nz-breadcrumb-item *ngIf="job?.isRunning">
             <a [routerLink]="['../../applications/processing-applications']">Processing Applications</a>
           </nz-breadcrumb-item>
-          <nz-breadcrumb-item *ngIf="!application?.isRunning">
+          <nz-breadcrumb-item *ngIf="!job?.isRunning">
             <a [routerLink]="['../../applications/finished-applications']">Finished Applications</a>
           </nz-breadcrumb-item>
-          <nz-breadcrumb-item>{{application?.name}} <b>[{{application?.isRunning?'Running':'Stopped'}}]</b></nz-breadcrumb-item>
+          <nz-breadcrumb-item>{{job?.name}} <b>[{{job?.isRunning?'Running':'Stopped'}}]</b></nz-breadcrumb-item>
         </nz-breadcrumb>
       </nz-col>
     </div>
     <nz-row nzJustify="space-between" nzAlign="top" class="job-info-row">
       <nz-col nzSpan="24" class="container" id="job-description-view">
         <nz-descriptions id="job-description" nzBordered>
-          <nz-descriptions-item nzTitle="Working Threads" nzSpan="2">{{application?.nthreads}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Status" nzSpan="1">{{application?.isRunning?"Running":"Stopped"}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Working Threads" nzSpan="2">{{job?.nthreads}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Status" nzSpan="1">{{job?.isRunning?"Running":"Stopped"}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="CPU Utilization" nzSpan="2">{{"20%"}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="RAM Utilization" nzSpan="1">{{"60%"}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Number of Batches" nzSpan="2">{{101}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{application?.duration}}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Start Time" nzSpan="2">{{application?.startTime}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Duration" nzSpan="1">{{job?.duration}}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Start Time" nzSpan="2">{{job?.startTime}}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Operation" nzSpan="1">
-            <button nz-button nzType="primary" [disabled]="application?.isRunning" style="margin-right: 20px" (click)="onResume()">Resume</button>
-            <button nz-button nzType="primary" [disabled]="!application?.isRunning" style="margin-right: 20px">Pause</button>
+            <button nz-button nzType="primary" [disabled]="job?.isRunning" style="margin-right: 20px" (click)="onResume()">Resume</button>
+            <button nz-button nzType="primary" [disabled]="!job?.isRunning" style="margin-right: 20px">Pause</button>
           </nz-descriptions-item>
         </nz-descriptions>
       </nz-col>
@@ -47,7 +44,7 @@
               </div>
             </ng-template>
             <nz-list nzItemLayout="horizontal">
-              <nz-list-item *ngFor="let operator of application?.operators">
+              <nz-list-item *ngFor="let operator of job?.operators">
                 <nz-list-item-meta>
                   <nz-list-item-meta-title>{{operator?.name}}</nz-list-item-meta-title>
                   <nz-list-item-meta-description>Number of instance: {{operator?.numOfInstances}}</nz-list-item-meta-description>
@@ -65,10 +62,10 @@
             </ng-template>
             <nz-graph
               nz-graph-zoom
-              [nzGraphData]="nzGraphData"
+              [nzGraphData]="nzOperatorGraphData"
               [nzAutoSize]="true"
               [nzRankDirection]="'LR'"
-              (nzGraphInitialized)="graphInitialized($event)">
+              (nzGraphInitialized)="onOperatorGraphInitialized($event)">
               <ng-container *nzGraphNode="let node">
                 <foreignObject x="0" y="0" width="140px" height="80px">
                   <div class="operator-node" nz-popover
@@ -96,7 +93,7 @@
             <nz-row nzJustify="space-around">
               <nz-col nzSpan="24">
                 <ngx-charts-area-chart
-                  [results]="throughputLatencyData"
+                  [results]="throughputAndLatency"
                   [xAxis]="true"
                   [yAxis]="true"
                   [legend]="true"
@@ -133,14 +130,14 @@
               </div>
             </ng-template>
             <nz-descriptions nzBordered>
-              <nz-descriptions-item nzSpan="2" nzTitle="Total Number of Events">{{application?.nevents}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{application?.minProcessTime}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Event Maximal Processing Time (ms)">{{application?.maxProcessTime}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">{{application?.meanProcessTime}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Total Time Used (s)">{{application?.duration}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Average Latency (ms)">{{application?.latency}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="2" nzTitle="Overall Throughput (tuple/s)">{{application?.throughput}}</nz-descriptions-item>
-              <nz-descriptions-item nzSpan="1" nzTitle="Number of Core">{{application?.ncore}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Total Number of Events">{{job?.nevents}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Event Minimal Processing Time (ms)">{{job?.minProcessTime}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Event Maximal Processing Time (ms)">{{job?.maxProcessTime}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Event Mean Processing Time (ms)">{{job?.meanProcessTime}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Total Time Used (s)">{{job?.duration}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Average Latency (ms)">{{job?.latency}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="2" nzTitle="Overall Throughput (tuple/s)">{{job?.throughput}}</nz-descriptions-item>
+              <nz-descriptions-item nzSpan="1" nzTitle="Number of Core">{{job?.ncore}}</nz-descriptions-item>
               <!--     TODO: add a file path variable     -->
               <nz-descriptions-item nzSpan="3" nzTitle="Output File Path">C:\Users\siqxi\data\E901C1E456140E515FC645602F8AF5A12B7BDC3CDE42D11F7823938B6FBE8919_200.txt</nz-descriptions-item>
             </nz-descriptions>
@@ -159,23 +156,23 @@
           <!--Selector-->
           <nz-col nzSpan="14" class="selector_container">
             <nz-select nzAllowClear nzPlaceHolder="Operator" style="width: 100%">
-              <nz-option *ngFor="let operator of application?.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
+              <nz-option *ngFor="let operator of job?.operators" [nzLabel]="operator.name" [nzValue]="operator.name"></nz-option>
             </nz-select>
           </nz-col>
           <nz-col nzSpan="7" class="selector_container">
             <nz-select nzAllowClear nzPlaceHolder="Branch" style="width: 100%">
-              <nz-option *ngFor="let option of batchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
+              <nz-option *ngFor="let option of tpgBatchOptions" [nzLabel]="option.label" [nzValue]="option.value"></nz-option>
             </nz-select>
           </nz-col>
           <nz-col nzSpan="2" class="selector_container">
             <div>
-              <button nz-button [disabled]="true" (click)="onExpandTpg()"><span nz-icon nzType="zoom-in" nzTheme="outline"></span></button>
+              <button nz-button [disabled]="true" (click)="onExpandTpgModal()"><span nz-icon nzType="zoom-in" nzTheme="outline"></span></button>
             </div>
             <nz-modal
               [(nzVisible)]="isTpgModalVisible"
-              [nzTitle]="tpgModalTitle"
+              nzTitle="TPG"
               [nzContent]="tpgModalContent"
-              (nzOnCancel)="onTpgModalCancel()"
+              (nzOnCancel)="onClearTpgModal()"
               [nzFooter]="null"
               nzWidth="1000px"
               [nzStyle]="{'top': '10%'}"

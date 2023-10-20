@@ -2,8 +2,8 @@ import {Operator} from "./Operator";
 import {TotalTimeBreakdown} from "./TotalTimeBreakdown";
 import {OverallTimeBreakdown} from "./OverallTimeBreakdown";
 
-export interface Application {
-  appId: string;
+export interface Job {
+  jobId: string;
   name: string;
   nthreads: string;
   cpu: string;

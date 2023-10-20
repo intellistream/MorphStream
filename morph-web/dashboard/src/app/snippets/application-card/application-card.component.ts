@@ -1,7 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {Router} from "@angular/router";
-import {ApplicationService} from "../../shared/services/application.service";
-import {BasicApplication} from "../../model/BasicApplication";
+import {Job} from "../../model/Job";
 
 @Component({
   selector: 'app-application-card',
@@ -10,7 +9,7 @@ import {BasicApplication} from "../../model/BasicApplication";
 })
 
 export class ApplicationCardComponent {
-  @Input() application: BasicApplication;
+  @Input() application: Job;
   //   = {
   //   id: 1,
   //   name: "Online Social Media Event Detection",
@@ -79,11 +78,10 @@ export class ApplicationCardComponent {
   @Input() cardWidth: string = "480px";
   @Input()  cardHeight: string = "270px";
 
-  constructor(private router: Router, private applicationService: ApplicationService) {
+  constructor(private router: Router) {
   }
 
   navigateToAppDetails() {
-    this.applicationService.setCurrentApplication(this.application);
     this.router.navigate(['overview/application-details']);
   }
 }

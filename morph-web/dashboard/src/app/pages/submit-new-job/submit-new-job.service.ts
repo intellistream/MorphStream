@@ -1,8 +1,5 @@
 import { Injectable } from '@angular/core';
 import {Websocket} from "../../services/utils/websocket";
-import {Observable} from "rxjs";
-import {BasicApplication} from "../../model/BasicApplication";
-import {BasicInfoRequest} from "../../dto/BasicInfoRequest";
 import {HttpClient} from "@angular/common/http";
 
 @Injectable({
