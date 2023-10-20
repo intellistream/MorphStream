@@ -1,7 +1,7 @@
 package runtimeweb.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import communication.dao.BatchRuntimeData;
+import communication.dao.Batch;
 import communication.dao.Response;
 import intellistream.morphstream.engine.txn.profiler.RuntimeMonitor;
 import io.netty.channel.ChannelHandlerContext;
@@ -16,9 +16,9 @@ public class PerformanceHandler  extends SimpleChannelInboundHandler<Performance
     private static final ObjectMapper objectMapper = new ObjectMapper();
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, PerformanceRequest performanceRequest) throws Exception {
-        BatchRuntimeData data = RuntimeMonitor.getBatchedDataByBatch(performanceRequest.getLatestBatch(), performanceRequest.getOperator());
+        Batch data = RuntimeMonitor.getBatchedDataByBatch(performanceRequest.getLatestBatch(), performanceRequest.getOperator());
         if (data != null) {
-            Response<BatchRuntimeData> response = new Response<>();
+            Response<Batch> response = new Response<>();
             response.setData(data);
             response.setType("performance");
             channelHandlerContext.writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(response)));

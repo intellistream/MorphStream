@@ -5,6 +5,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -15,7 +18,7 @@ public class BasicInfoResponse extends AbstractResponse {
     private String nthreads;
     private String CPU;
     private String RAM;
-    private String startTime;   // TODO: consider change to LocalDataTime
-    private String Duration;    // consider change to LocalDataTime
+    private String startTime;
+    private String Duration;
     private Boolean isRunning;
 }

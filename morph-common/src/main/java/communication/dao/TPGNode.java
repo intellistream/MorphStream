@@ -2,6 +2,7 @@ package communication.dao;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.List;
 @Data
 @ToString(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@NoArgsConstructor
 public class TPGNode {
     private String operationID;
     private String txnType;

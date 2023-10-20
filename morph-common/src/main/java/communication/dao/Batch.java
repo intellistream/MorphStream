@@ -2,6 +2,7 @@ package communication.dao;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.ArrayList;
@@ -11,8 +12,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 @ToString(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BatchRuntimeData {
-    private String appId;
+@NoArgsConstructor
+public class Batch {
+    private int batchId;
+    private String jobId;
     private String operatorID;
     private double throughput;
     private double minLatency;
@@ -22,13 +25,11 @@ public class BatchRuntimeData {
     private long batchDuration;
     private int latestBatchId;
     private OverallTimeBreakdown overallTimeBreakdown;
-//    private SchedulerTimeBreakdown schedulerTimeBreakdown;
-//    private ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg;
     private List<TPGNode> tpg;
-    public BatchRuntimeData(String appId, String operatorID, double throughput,
-                            double minLatency, double maxLatency, double avgLatency, long batchSize, long batchDuration,
-                            OverallTimeBreakdown overallTimeBreakdown, ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg, int latestBatchId) {
-        this.appId = appId;
+    public Batch(String jobId, String operatorID, double throughput,
+                 double minLatency, double maxLatency, double avgLatency, long batchSize, long batchDuration,
+                 OverallTimeBreakdown overallTimeBreakdown, ConcurrentHashMap<TPGNode, List<TPGEdge>> tpg, int latestBatchId) {
+        this.jobId = jobId;
         this.operatorID = operatorID;
         this.throughput = throughput;
         this.minLatency = minLatency;

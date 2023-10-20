@@ -2,7 +2,7 @@ package runtimeweb.handler.sender;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import communication.dao.BatchRuntimeData;
+import communication.dao.Batch;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -22,7 +22,7 @@ public class BatchInfoSender extends ChannelOutboundHandlerAdapter {
         this.context = ctx;
     }
 
-    public void send(BatchRuntimeData message) {
+    public void send(Batch message) {
         if (this.context != null) {
             try {
                 this.context.writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(message)));

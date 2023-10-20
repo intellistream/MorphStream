@@ -4,13 +4,12 @@ package intellistream.morphstream.engine.txn.profiler;
 import com.esotericsoftware.minlog.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import intellistream.morphstream.api.launcher.MorphStreamEnv;
-import communication.dao.BatchRuntimeData;
+import communication.dao.Batch;
 import communication.dao.OverallTimeBreakdown;
 import communication.dao.TPGEdge;
 import communication.dao.TPGNode;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math.stat.descriptive.SynchronizedDescriptiveStatistics;
-import org.apache.hadoop.thirdparty.org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.netty.channel.EventLoopGroup;
@@ -52,7 +51,7 @@ public class RuntimeMonitor extends Thread {
     private static final EventLoopGroup bossGroup = new NioEventLoopGroup(); //for message transmission over websocket
     private static final EventLoopGroup workerGroup = new NioEventLoopGroup(2);
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, BatchRuntimeData>> batchedData = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Batch>> batchedData = new ConcurrentHashMap<>();
     private final String dataPath = "data/jobs";
 
     public static RuntimeMonitor get() {
@@ -238,7 +237,7 @@ public class RuntimeMonitor extends Thread {
 //        BatchRuntimeData batchRuntimeData = new BatchRuntimeData(applicationID, String.valueOf(operatorID),
 //                throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
 //                overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID));
-        BatchRuntimeData batchRuntimeData = new BatchRuntimeData("3", String.valueOf(operatorID),
+        Batch batch = new Batch("3", String.valueOf(operatorID),
                 throughput, minLatency, maxLatency, avgLatency, totalBatchSize, actualBatchDuration,
                 overallTimeBreakdown, opTPGMap.get(operatorID).get(latestBatchID), latestBatchID);
 
@@ -255,16 +254,16 @@ public class RuntimeMonitor extends Thread {
                 }
             }
             batchedData.putIfAbsent(operatorID, new ConcurrentHashMap<>());
-            batchedData.get(operatorID).put(latestBatchID, batchRuntimeData);
+            batchedData.get(operatorID).put(latestBatchID, batch);
 //            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, applicationID, operatorID, latestBatchID)), batchRuntimeData);
-            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, "3", operatorID, latestBatchID)), batchRuntimeData);
+            objectMapper.writeValue(new File(String.format("%s/%s/%s/%d.json", dataPath, "3", operatorID, latestBatchID)), batch);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static BatchRuntimeData getBatchedDataByBatch(int batch, String operatorId) {
-        ConcurrentHashMap<Integer, BatchRuntimeData> operatorBatch = RuntimeMonitor.batchedData.get(operatorId);
+    public static Batch getBatchedDataByBatch(int batch, String operatorId) {
+        ConcurrentHashMap<Integer, Batch> operatorBatch = RuntimeMonitor.batchedData.get(operatorId);
         if (operatorBatch == null) {
             return null;
         } else {

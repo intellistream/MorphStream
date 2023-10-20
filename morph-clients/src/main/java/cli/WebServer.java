@@ -186,7 +186,7 @@ public class WebServer implements Runnable {
     }
 
     public static class JSONApplication {
-        public String appId;
+        public String jobId;
         public String name;
         public int nthreads;
         public String cpu;
@@ -206,11 +206,11 @@ public class WebServer implements Runnable {
         public List<JSONOperator> operators;
         public JSONTimeBreakdown totalTimeBreakdown;
         public JSONSchedulerTimeBreakdown schedulerTimeBreakdown;
-        public JSONApplication(String appId, String name, int nthreads, String cpu, String ram, String startTime, String duration,
+        public JSONApplication(String jobId, String name, int nthreads, String cpu, String ram, String startTime, String duration,
                                boolean isRunning, int nevents, long minProcessTime, long maxProcessTime, long meanProcessTime,
                                double latency, double throughput, int ncore, List<Double> periodicalThroughput, List<Double> periodicalLatency,
                                List<JSONOperator> operators, JSONTimeBreakdown totalTimeBreakdown, JSONSchedulerTimeBreakdown schedulerTimeBreakdown) {
-            this.appId = appId;
+            this.jobId = jobId;
             this.name = name;
             this.nthreads = nthreads;
             this.cpu = cpu;
