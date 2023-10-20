@@ -23,6 +23,14 @@ export class JobInformationService {
     return this.http.get<Job>(`http://localhost:8080/jobInfo/get/${jobId}`);
   }
 
+  public startJob(jobId: string): Observable<boolean> {
+    return this.http.post<boolean>(`http://localhost:8080/api/signal/start/${jobId}`, null);
+  }
+
+  public stopJob(jobId: string): Observable<boolean> {
+    return this.http.post<boolean>(`http://localhost:8080/api/signal/stop/${jobId}`, null);
+  }
+
   // public getHistoricalJob(appId: string): Observable<Job> {
   //   let msg: DetailedInfoRequest = {
   //     "type": "DetailInfoRequest",

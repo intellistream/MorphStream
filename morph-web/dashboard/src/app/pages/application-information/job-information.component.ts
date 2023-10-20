@@ -45,6 +45,8 @@ export class JobInformationComponent implements OnInit {
   nodesSelections: any;
   linksSelections: any;
 
+  jobStarted = false;
+
   constructor(private route: ActivatedRoute, private jobInformationService: JobInformationService) {}
 
   ngOnInit(): void {
@@ -52,6 +54,7 @@ export class JobInformationComponent implements OnInit {
       const jobId = params['id'];
       this.jobInformationService.getJob(jobId).subscribe(res => {
         this.job = res;
+        this.jobStarted = this.job.isRunning;
 
         // add operators to operator graph
         for (let i = 0; i < this.job.operators.length; i++) {
@@ -192,14 +195,28 @@ export class JobInformationComponent implements OnInit {
       .attr('y2', (d: any) => d.target.y);
   }
 
-  onResume() {
-    // this.jobInformationService.sendResumeSignal(this.job.jobId).subscribe(res => {
-    //   if (res.jobStart) {
-    //     for (let i = 0; i < this.job.operators.length; i++) {
-    //       setInterval(() => this.jobInformationService.sendPerformanceRequest(this.job.jobId, this.job.operators[i].name, this.job.operators[i].lastBatch), 1000);  // query every 1 second
-    //     }
-    //   }
-    // });
+  /**
+   * Callback when user starts the job
+   */
+  onStart() {
+    this.jobInformationService.startJob(this.job.jobId).subscribe(success => {
+      if (success) {
+        // start runtime-querying performance data
+      }
+    });
+    this.jobStarted = true;
+  }
+
+  /**
+   * Callback when user stops the job
+   */
+  onStop() {
+    this.jobInformationService.stopJob(this.job.jobId).subscribe(success => {
+      if (success) {
+        // stop runtime-querying performance data
+      }
+    });
+    this.jobStarted = false;
   }
 
   /**
